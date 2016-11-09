@@ -15,3 +15,10 @@
  - Windows File Monitoring - Dan
  - OSQuery - Dan
  - Notifications (Slack/Splunk)
+ 
+ Gabriel:
+ - Design new generic formats for all YAML profiles
+ - Module for checking installed packages: Linux/Windows
+ - Module for checking running services: Linux/Windows
+ - Module for checking file permissions and ownerships: Linux/Windows
+ 

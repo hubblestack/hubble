@@ -16,6 +16,8 @@
  - OSQuery - Dan
  - Notifications (Slack/Splunk)
  
+ 
+ 
  Gabriel:
  - Design new generic formats for all YAML profiles
  - Module for checking installed packages: Linux/Windows

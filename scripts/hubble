@@ -1,0 +1,9 @@
+#!/user/bin/env python
+'''
+Start the hubble daemon
+'''
+
+import hubble.daemon
+
+if __name__ == '__main__':
+    hubble.daemon.run()

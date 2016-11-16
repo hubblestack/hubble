@@ -14,7 +14,7 @@ import salt.utils
 
 log = logging.getLogger(__name__)
 
-__opts__
+__opts__ = {}
 
 def run():
     '''

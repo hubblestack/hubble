@@ -48,7 +48,7 @@ def main():
     Run the main hubble loop
     '''
     while True:
-        logging.debug('wheeee!')
+        log.debug('wheeee!')
         time.sleep(10)
 
 

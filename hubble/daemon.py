@@ -56,7 +56,7 @@ def parse_args():
     '''
     Parse command line arguments
     '''
-    parser = argsparse.ArgumentParser()
+    parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--daemonize',
                         help='Whether to daemonize and background the process',
                         action='store_true')

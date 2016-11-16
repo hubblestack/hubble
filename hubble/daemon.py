@@ -71,7 +71,7 @@ def logging_setup():
     log.setLevel(logging.DEBUG)
 
     # Logging format
-    formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s] [%(message)s]', datefmt='%Y/%m/%d %H:%M:%S')
+    formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s]: %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
 
     # Log to file
     fh = logging.FileHandler('/var/log/hubble')

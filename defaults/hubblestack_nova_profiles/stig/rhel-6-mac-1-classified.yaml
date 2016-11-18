@@ -1,0 +1,227 @@
+#######################################################################################
+# This is the Hubblestack Nova Auditing profile for the DISA SIGS:
+#
+# Source: https://www.stigviewer.com/stig/red_hat_enterprise_linux_6/2015-05-26/MAC-1_Classified/
+# OS Finger: Red Hat Enterprise Linux Server-6
+# Audit Level: MAC-I Classified
+#
+# Usage:
+#   salt <tgt> hubble.audit
+#   salt <tgt> hubble.audit <profile_name>
+#   salt <tgt> hubble.audit <profile_name> <tag>
+#
+#   Tags use the Vulnerability ID from the STIGs
+#   Example: You can check for a specific tag with this usage:
+#
+#     salt <tgt> hubble.audit stig-rhel6-mac1-classifed.yaml V-38677
+#
+# The Description field is structured following this scheme: (Severity) <Title>
+#
+# Coverage:
+#   NOTE: At this time, hubblestack provides 000% coverage of stig inspections
+#     due to the suite of available modules.  As more modules become available,
+#     coverage will increase.
+#
+#   Current coverage:   XX / 264 = 000%
+#     High Severity:    09 Done, 06 Partial, 2 Blocker =  15 / 17 = 88%
+#       - V-38666: (Partial)
+#           - Tailored: Checking for Clam AV packages installed and in cron.daily
+#           - Cannot verify the output of the nails status command for
+#             McAfee scans a this time
+#           - Cannot verify the age of AV definitions as a result of the output
+#             of a command at this time
+#       - V-38476: Cannot verify the output of the rpm command at this time
+#       - V-38491: Cannot verify presence of a file within an discovered list of directories
+#       - V-38602: (Partial) checking for running service, but cannot verify the
+#           output of the chkconfig command
+#       - V-38594: (Partial) checking for running service, but cannot verify the
+#           output of the chkconfig command
+#       - V-38598: (Partial) checking for running service, but cannot verify the
+#           output of the chkconfig command
+#       - V-38589: (Partial) checking for running service, but cannot verify the
+#           output of the chkconfig command
+#       - V-38701: Potentially a false positive if the file does not exist.
+#     Medium Severity:  XX / 146 = 000%
+#     Low Severity:     XX / 101 = 000%
+#
+# Tailoring:
+#   You may need to tailor some of these inspections to your system/site to account
+#   for:
+#     1. your environmental configuration
+#       ex: using McAfee AV Scan vs ClamAV
+#     2. compensating controls you may have
+#     3. tailoring you've done for your specific system
+#
+#######################################################################################
+grep:
+  blacklist:
+    snmpd_not_use_default_passwd:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/snmp/snmpd.conf:
+            pattern:      '^[^#]'
+            match_output: public
+            tag:          V-38653
+      description:        (HIGH) The snmpd service must not use a default password.
+    rpm_cryptographically_verify_packages:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/rpmrc:
+            pattern:      nosignature
+            tag:          V-38462
+        - /usr/lib/rpm/rpmrc:
+            pattern:      nosignature
+            tag:          V-38462
+        - /usr/lib/rpm/redhat/rpmrc:
+            pattern:      nosignature
+            tag:          V-38462
+        - /root/.rpmrc:
+            pattern:      nosignature
+            tag:          V-38462
+      description: |
+        (HIGH) The RPM package management tool must cryptographically verify
+        the authenticity of all software packages during installation.
+    null_passwords_cannot_be_used:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/pam.d/system-auth:
+            pattern:      nullok
+            tag:          V-38497
+        - /etc/pam.d/system-auth-ac:
+            pattern:      nullok
+            tag:          V-38497
+        - /etc/pam.d/password-auth:
+            pattern:      nullok
+            tag:          V-38497
+        - /etc/pam.d/password-auth-ac:
+            pattern:      nullok
+            tag:          V-38497
+        - /etc/pam.d/sshd:
+            pattern:      nullok
+            tag:          V-38497
+      description:        (HIGH) The system must not allow null passwords to be used.
+    nfs_no_insecure_file_locking:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/exports:
+            pattern:      insecure_locks
+            tag:          V-38677
+      description:        (HIGH) The NFS server must not have the insecure file locking option enabled.
+    sshd_no_empty_passwords:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            pattern:      '^PermitEmptyPasswords'
+            match_output: "yes"
+            tag:          V-38614
+        - /etc/ssh/sshd_config:
+            pattern:      '^PermitEmptyPasswords'
+            match_output: "Yes"
+            tag:          V-38614
+      description:        (HIGH) The SSH daemon must not allow authentication using an empty password.
+
+  whitelist:
+    x86_ctrl_alt_del_disabled:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/init/control-alt-delete.override:
+            pattern:      '^exec /usr/bin/logger'
+            match_output: security.info "Control-Alt-Delete pressed"
+            tag:          V-38668
+      description:        (HIGH) The x86 Ctrl-Alt-Delete key sequence must be disabled.
+    sshd_use_only_SSHv2_protocol:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            pattern:      '^Protocol'
+            match_output: Protocol 2
+            tag:          V-38607
+      description:        (HIGH) The SSH daemon must be configured to use only the SSHv2 protocol.
+    tftp_daemon_operate_in_secure_mode:
+      # NOTE: potentially a false positive if the file does not exist
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/xinetd.d/tftp:
+            pattern:      '^server_args'
+            match_output: -s
+            tag:          V-38701
+      description: |
+        (HIGH) The TFTP daemon must operate in secure mode which provides
+        access only to a single directory on the host file system. Potentially
+        a false positive if this file does not exist.
+
+pkg:
+  blacklist:
+    rsh-server_not_installed:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - rsh-server:     V-38591
+      description:        (HIGH) The rsh-server package must not be installed.
+    telnet-server_not_installed:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - telnet-server:  V-38587
+        - telnet:         V-38587
+      description:        (HIGH) The telnet-server and telnet package must not be installed.
+
+  whitelist:
+    approved_virus_scan_program:
+      # NOTE: This will need to be udated for your respective organization.
+      # This particular check is validating that clamav package is installed.
+      # This is a multi-part check to verify V-38666. Under the stat section,
+      # there is a check to verify cron.daily script for clamav inspection.
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - clamav:         V-38666
+        - clamd:          V-38666
+      description:        (HIGH) The system must use and update a DoD-approved virus scan program.
+
+service:
+  blacklist:
+    rlogind_not_running:
+      # This is partially implemented to ensure that the service is not running.
+      # This inspection alone does not fully satisfy the STIG check as it does
+      # not current check the output of the chkconfig command
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - rlogin:         V-38602
+      description:        (High) The rlogind service must not be running.
+    rshd_not_running:
+      # This is partially implemented to ensure that the service is not running.
+      # This inspection alone does not fully satisfy the STIG check as it does
+      # not current check the output of the chkconfig command
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - rsh:            V-38594
+      description:        (High) The rshd service must not be running.
+    rexecd_not_running:
+      # This is partially implemented to ensure that the service is not running.
+      # This inspection alone does not fully satisfy the STIG check as it does
+      # not current check the output of the chkconfig command
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - rexec:          V-38598
+      description:        (High) The rexecd service must not be running.
+    telnet_not_running:
+      # This is partially implemented to ensure that the service is not running.
+      # This inspection alone does not fully satisfy the STIG check as it does
+      # not current check the output of the chkconfig command
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - telnet:         V-38589
+      description:        (High) The telnet daemon must not be running.
+
+stat:
+  cron_daily_clamscan_host:
+      # NOTE: This will need to be udated for your respective organization.
+      # This particular check is validating that clamav is run on a daily basis.
+      # This is a multi-part check to verify V-38666. Under the pkg section,
+      # there is a check to verify clam is installed.
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/cron.daily/clamscan_host.sh:
+          group:          root
+          user:           root
+          mode:           755
+          tag:            V-38666
+    description:          (HIGH) The system must use and update a DoD-approved virus scan program.

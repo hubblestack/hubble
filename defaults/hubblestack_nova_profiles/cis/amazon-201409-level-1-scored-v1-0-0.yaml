@@ -1,0 +1,814 @@
+# NOTE: This CIS Profile only includes Level 1 Scored Items for Amazon Linux AMI-2014.
+# NOTE: Within this file, there are a few sections that should be tailored to your
+#       organization's specific policy.  Search for '# NOTE: ' comments through the file.
+
+
+
+pkg:
+  blacklist:
+
+    telnet:
+      data:
+        'Amazon Linux AMI-2014':
+          - 'telnet-server': 'CIS-2.1.1'
+          - 'telnet': 'CIS-2.1.2'
+      description: 'Remove telnet and telnet-server'
+
+    rsh:
+      data:
+        'Amazon Linux AMI-2014':
+          - 'rsh-server': 'CIS-2.1.3'
+          - 'rsh': 'CIS-2.1.4'
+      description: 'Remove rsh and rsh-server'
+
+    nis:
+      data:
+        'Amazon Linux AMI-2014':
+          - 'ypbind': 'CIS-2.1.5'
+          - 'ypserv': 'CIS-2.1.6'
+      description: 'Remove nis client and nis server'
+
+    tftp:
+      data:
+        'Amazon Linux AMI-2014':
+          - 'tftp': 'CIS-2.1.7'
+          - 'tftp-server': 'CIS-2.1.8'
+      description: 'Remove tftp and tftp-server'
+
+    talk:
+      data:
+        'Amazon Linux AMI-2014':
+          - 'talk': 'CIS-2.1.9'
+          - 'talk-server': 'CIS-2.1.10'
+      description: 'Remove talk and talk-server'
+
+    xinetd:
+      data:
+        'Amazon Linux AMI-2014':
+          - 'xinetd': 'CIS-2.1.11'
+      description: 'Remove xinetd'
+
+    dhcp:
+      data:
+        'Amazon Linux AMI-2014':
+          - 'dhcp': 'CIS-3.5'
+      description: 'Remove DHCP server'
+
+  whitelist:
+
+    rsyslog:
+      data:
+        'Amazon Linux AMI-2014':
+          'rsyslog': 'CIS-5.1.1'
+      description: 'Install rsyslog'
+
+    anacron:
+      data:
+        'Amazon Linux AMI-2014':
+          'cronie-anacron': 'CIS-6.1.1'
+      description: 'Enable anacron Daemon'
+
+
+
+stat:
+  grub_conf_own:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/grub.conf':
+            tag: 'CIS-1.5.1'
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: 'Grub must be owned by root'
+
+  grub_conf_perm:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/grub.conf':
+            tag: 'CIS-1.5.2'
+            mode: 600
+    description: 'Grub must have permissions 600'
+
+  hosts_allow:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/hosts.allow':
+            tag: 'CIS-4.4.3'
+            mode: 644
+    description: '/etc/hosts.allow must have permissions 644'
+
+  hosts_deny:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/hosts.deny':
+            tag: 'CIS-4.4.5'
+            mode: 644
+    description: '/etc/hosts.deny must have persmissions 644'
+
+  anacrontab:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/anacrontab':
+            tag: 'CIS-6.1.3'
+            mode: 600
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/anacrontab file be owned by root and must have permissions 600'
+
+  crontab:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/crontab':
+            tag: 'CIS-6.1.4'
+            mode: 600
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/crontab must be owned by root and have persmissions 600'
+
+  cron_hourly:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/cron.hourly':
+            tag: 'CIS-6.1.5'
+            mode: 700
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/cron.hourly must be owned by root and must have permissions 700'
+
+  cron_daily:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/cron.daily':
+            tag: 'CIS-6.1.6'
+            mode: 700
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/cron.daily must be owned by root and must have permissions 700'
+
+  cron_weekly:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/cron.weekly':
+            tag: 'CIS-6.1.7'
+            mode: 700
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/cron.weekly must be owned by root and must have permissions 700'
+
+  cron_monthly:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/cron.monthly':
+            tag: 'CIS-6.1.8'
+            mode: 700
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/cron.monthly must be owned by root and must have permissions 700'
+
+  cron_d:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/cron.d':
+            tag: 'CIS-6.1.9'
+            mode: 700
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/cron.d must be owned by root and must have permissions 700'
+
+  at_allow:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/at.allow':
+            tag: 'CIS-6.1.10'
+            mode: 600
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/at.allow must be owned by root and have persmissions 600'
+
+  at_cron_allow:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/cron.deny':
+            tag: 'CIS-6.1.11'
+            mode: null
+            user: null
+            uid: null
+            group: null
+            gid: null
+        - '/etc/at.deny':
+            tag: 'CIS-6.1.11'
+            mode: null
+            user: null
+            uid: null
+            group: null
+            gid: null
+        - '/etc/cron.allow':
+            tag: 'CIS-6.1.11'
+            mode: 600
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+        - '/etc/at.allow':
+            tag: 'CIS-6.1.11'
+            mode: 600
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: 'Restrict at/cron to authorized users'
+
+  sshd_config:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/ssh/sshd_config':
+            tag: 'CIS-6.2.3'
+            mode: 600
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/ssh/sshd_config must be owned by root and must have permissions 600'
+
+  warning_banner:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/motd':
+            tag: 'CIS-8.1'
+            mode: 644
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+        - '/etc/issue':
+            tag: 'CIS-8.1'
+            mode: 644
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+        - '/etc/issue.net':
+            tag: 'CIS-8.1'
+            mode: 644
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: 'Files containing the warning banners must be owned by root and must have permissions 644'
+
+  passwd_perm:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/passwd':
+            tag: 'CIS-9.1.2'
+            mode: 644
+    description: '/etc/passwd must have permissions 644'
+
+  passwd_own:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/passwd':
+            tag: 'CIS-9.1.6'
+            user: 'root'
+            uid: 0
+            group: 'root'
+            uid: 0
+    description: '/etc/passwd must be owned by root'
+
+  shadow_perm:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/shadow':
+            tag: 'CIS-9.1.3'
+            mode: 0
+    description: '/etc/shadow must have permissions 000'
+
+  shadow_own:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/shadow':
+            tag: 'CIS-9.1.7'
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/shadow must be owned by root'
+
+  gshadow_perm:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/gshadow':
+            tag: 'CIS-9.1.4'
+            mode: 0
+    description: '/etc/gshadow must have permissions 000'
+
+  gshadow_own:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/gshadow':
+            tag: 'CIS-9.1.8'
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/gshadow must be owned by root'
+
+  group_perm:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/group':
+            tag: 'CIS-9.1.5'
+            mode: 644
+    description: '/etc/group must have permissions 644'
+
+  group_own:
+    data:
+      'Amazon Linux AMI-2014':
+        - '/etc/group':
+            tag: 'CIS-9.1.9'
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: '/etc/group must be owned by root'
+
+
+
+sysctl:
+  bad_error_message_protection:
+    data:
+      Amazon Linux AMI-2014:
+      - net.ipv4.icmp_ignore_bogus_error_responses:
+          match_output: '1'
+          tag: CIS-4.2.6
+    description: Enable Bad Error Message Protection (Scored)
+  icmp_redirect_acceptance:
+    data:
+      Amazon Linux AMI-2014:
+      - net.ipv4.conf.all.accept_redirects:
+          match_output: '0'
+          tag: CIS-4.2.2
+      - net.ipv4.conf.default.accept_redirects:
+          match_output: '0'
+          tag: CIS-4.2.2
+    description: Disable ICMP Redirect Acceptance (Scored)
+  ignore_broadcast_requests:
+    data:
+      Amazon Linux AMI-2014:
+      - net.ipv4.icmp_echo_ignore_broadcasts:
+          match_output: '1'
+          tag: CIS-4.2.5
+    description: Enable Ignore Broadcast Requests (Scored)
+  ip_forwarding:
+    data:
+      Amazon Linux AMI-2014:
+      - net.ipv4.ip_forward:
+          match_output: '0'
+          tag: CIS-4.1.1
+    description: Disable IP Forwarding (Scored)
+  log_suspicious_packets:
+    data:
+      Amazon Linux AMI-2014:
+      - net.ipv4.conf.all.log_martians:
+          match_output: '1'
+          tag: CIS-4.2.4
+      - net.ipv4.conf.default.log_martians:
+          match_output: '1'
+          tag: CIS-4.2.4
+    description: Log Suspicious Activity (Scored)
+  randomize_va_space:
+    data:
+      Amazon Linux AMI-2014:
+      - kernel.randomize_va_space:
+          match_output: '2'
+          tag: CIS-1.6.2
+    description: Enable Randomized Virtual Memory Region Placement (Scored)
+  send_packet_redirect:
+    data:
+      Amazon Linux AMI-2014:
+      - net.ipv4.conf.all.send_redirects:
+          match_output: '0'
+          tag: CIS-4.1.2
+      - net.ipv4.conf.default.send_redirects:
+          match_output: '0'
+          tag: CIS-4.1.2
+    description: Disable Send Packet Redirect (Scored)
+  source_routed_packet_acceptance:
+    data:
+      Amazon Linux AMI-2014:
+      - net.ipv4.conf.all.accept_source_route:
+          match_output: '0'
+          tag: CIS-4.2.1
+      - net.ipv4.conf.default.accept_source_route:
+          match_output: '0'
+          tag: CIS-4.2.1
+    description: Disable Source Routed Packet Acceptance (Scored)
+  tcp_syn_cookies:
+    data:
+      Amazon Linux AMI-2014:
+      - net.ipv4.tcp_syncookies:
+          match_output: '1'
+          tag: CIS-4.2.8
+    description: Enable TCP SYN cookies (Scored)
+
+
+grep:
+  whitelist:
+
+    fstab_tmp_partition:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.1'
+              pattern: '/tmp'
+      description: 'Create Separate Partition for /tmp (Scored)'
+
+    fstab_tmp_partition_nodev:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.2'
+              pattern: '/tmp'
+              match_output: 'nodev'
+      description: 'Set nodev option for /tmp Partition (Scored)'
+
+    fstab_tmp_partition_nosuid:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.3'
+              pattern: '/tmp'
+              match_output: 'nosuid'
+      description: 'Set nosuid option for /tmp Partition (Scored)'
+
+    fstab_tmp_partition_noexec:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.4'
+              pattern: '/tmp'
+              match_output: 'noexec'
+      description: 'Set noexec option for /tmp Partition (Scored)'
+
+    fstab_var_partition:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.5'
+              pattern: '/var'
+      description: 'Create Separate Partition for /var (Scored)'
+
+    fstab_var_tmp_bind_mount:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.6'
+              pattern: '/tmp'
+              match_output: '/var/tmp'
+      description: 'Bind Mount the /var/tmp directory to /tmp (Scored)'
+
+    fstab_var_log_partition:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.7'
+              pattern: '/var/log'
+      description: 'Create Separate Partition for /var/log (Scored)'
+
+    fstab_var_log_audit_partition:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.8'
+              pattern: '/var/log/audit'
+      description: 'Create Separate Partition for /var/log/audit (Scored)'
+
+    fstab_home_partition:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.9'
+              pattern: '/home'
+      description: 'Create Separate Partition for /home (Scored)'
+
+    fstab_home_partition_nodev:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.10'
+              pattern: '/home'
+              match_output: 'nodev'
+      description: 'Add nodev Option to /home (Scored)'
+
+    fstab_dev_shm_partition_nodev:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.14'
+              pattern: '/dev/shm'
+              match_output: 'nodev'
+      description: 'Add nodev Option to /dev/shm Partition (Scored)'
+
+    fstab_dev_shm_partition_nosuid:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.15'
+              pattern: '/dev/shm'
+              match_output: 'nosuid'
+      description: 'Add nosuid Option to /dev/shm Partition (Scored)'
+
+    fstab_dev_shm_partition_noexec:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/fstab':
+              tag: 'CIS-1.1.16'
+              pattern: '/dev/shm'
+              match_output: 'noexec'
+      description: 'Add noexec Option to /dev/shm Partition (Scored)'
+
+    activate_gpg_check:
+      data:
+        Amazon Linux AMI-2014:
+          - '/etc/yum.conf':
+              tag: 'CIS-1.2.2'
+              pattern: 'gpgcheck'
+              match_output: 'gpgcheck=1'
+      description: 'Verify that gpgcheck is Globally Activated (Scored)'
+
+    boot_loader_passwd:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/grub.conf':
+              tag: 'CIS-1.5.3'
+              pattern: '^password'
+      description: 'Set Boot Loader Password (Scored)'
+
+    restrict_core_dumps:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/security/limits.conf':
+              tag: 'CIS-1.6.1'
+              pattern: 'hard core'
+      description: 'Restrict Core Dumps (Scored)'
+
+    set_daemon_umask:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/sysconfig/init':
+              tag: 'CIS-3.1'
+              pattern: 'umask'
+              match_output: 'umask 027'
+      description: 'Set Daemon umask (Scored)'
+
+    configure_ntp:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ntp.conf':
+              tag: 'CIS-3.6'
+              pattern: 'restrict default'
+          - '/etc/ntp.conf':
+              tag: 'CIS-3.6'
+              pattern: 'restrict -6 default'
+          - '/etc/ntp.conf':
+              tag: 'CIS-3.6'
+              pattern: '^server'
+          - '/etc/sysconfig/ntpd':
+              tag: 'CIS-3.6'
+              pattern: 'ntp:ntp'
+      description: 'Configure Network Time Protocol (NTP) (Scored)'
+
+    rsyslog_remote_logging:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/rsyslog.conf':
+              tag: 'CIS-5.1.5'
+              pattern: "^*.*[^I][^I]*@"
+      description: 'Configure rsyslog to Send Logs to a Remote Log Host (Scored)'
+
+    sshd_protocol_2:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.1'
+              pattern: "^Protocol"
+              match_output: 'Protocol 2'
+      description: 'Set SSH Protocol to 2 (Scored)'
+
+    sshd_loglevel_info:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.2'
+              pattern: "^LogLevel"
+              match_output: 'LogLevel INFO'
+      description: 'Set LogLevel to INFO (Scored)'
+
+    sshd_x11_forwarding:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.4'
+              pattern: "^X11Forwarding"
+              match_output: 'X11Forwarding no'
+      description: 'Disable SSH X11 Forwarding (Scored)'
+
+    # NOTE: Need to update this entry to reflect your organization's password policy
+    sshd_max_auth_retries:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.5'
+              pattern: "^MaxAuthTries"
+              match_output: "MaxAuthTries 4"
+      description: 'Set SSH MaxAuthTries to 4 or Less (Scored)'
+
+    sshd_ignore_rhosts:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.6'
+              pattern: "^IgnoreRhosts"
+              match_output: "IgnoreRhosts yes"
+      description: 'Set SSH IgnoreRhosts to Yes (Scored)'
+
+    sshd_hostbased_auth:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.7'
+              pattern: "^HostbasedAuthentication"
+              match_output: "HostbasedAuthentication no"
+      description: 'Set SSH HostbasedAuthentication to No (Scored)'
+
+    sshd_disable_root_login:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.8'
+              pattern: "^PermitRootLogin"
+              match_output: "PermitRootLogin no"
+      description: 'Set SSH HostbasedAuthentication to No (Scored)'
+
+    sshd_permit_empty_passwords:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.9'
+              pattern: "^PermitEmptyPasswords"
+              match_output: "PermitEmptyPasswords no"
+      description: 'Set SSH PermitEmptyPasswords to No (Scored)'
+
+    sshd_permit_user_environment:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.10'
+              pattern: "^PermitUserEnvironment"
+              match_output: "PermitUserEnvironment no"
+      description: 'Do Not Allow Users to Set Environment Options (Scored)'
+
+    sshd_approved_cipher:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.11'
+              pattern: "Ciphers"
+              match_output: "Ciphers aes128-ctr,aes192-ctr,aes256-ctr"
+      description: 'Use Only Approved Cipher in Counter Mode (Scored)'
+
+    sshd_idle_timeout:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.12'
+              pattern: "^ClientAliveInterval"
+              match_output: "ClientAliveInterval 300"
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.12'
+              pattern: "^ClientAliveCountMax"
+              match_output: "ClientAliveCountMax 0"
+      description: 'Set Idle Timeout Interval for User Login (Scored)'
+
+    sshd_limit_access:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.13'
+              pattern: '(^AllowUsers)|(^AllowGroups)|(^DenyUsers)|(^DenyGroups)'
+              grep_args:
+                - '-E'
+      description: 'Limit Access via SSH (Scored)'
+
+    sshd_banner:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-6.2.14'
+              pattern: "^Banner"
+      description: 'Set SSH Banner (Scored)'
+
+    # NOTE: Need to update this entry to reflect your organization's password policy
+    limit_password_reuse:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/pam.d/system-auth':
+              tag: 'CIS-6.3.4'
+              pattern: "pam_unix.so"
+              match_output: "remember=5"  # number of passwords to remember
+      description: 'PAM Password Reuse (Scored)'
+
+    limit_su_command_access:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/pam.d/su':
+              tag: 'CIS-6.5'
+              pattern: "pam_wheel.so"
+              match_output: "use_uid"
+          - '/etc/group':
+              tag: 'CIS-6.5'
+              pattern: "wheel"
+      description: 'Limit su command access (Scored)'
+
+    # NOTE: Need to update this entry to reflect your organization's password policy
+    passwd_expiration_days:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/login.defs':
+              tag: 'CIS-7.1.1'
+              pattern: "PASS_MAX_DAYS"
+              match_output: "90"
+      description: 'Set Password Expiration Days (Scored)'
+
+    # NOTE: Need to update this entry to reflect your organization's password policy
+    passwd_change_min_days:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/login.defs':
+              tag: 'CIS-7.1.2'
+              pattern: "PASS_MIN_DAYS"
+              match_output: "7"
+      description: 'Set Password Change Minimum Number of Days (Scored)'
+
+    # NOTE: Need to update this entry to reflect your organization's password policy
+    passwd_expiry_warning:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/login.defs':
+              tag: 'CIS-7.1.3'
+              pattern: "PASS_WARN_AGE"
+              match_output: "7"
+      description: 'Set Password Expiring Warning Days (Scored)'
+
+    default_umask:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/bashrc':
+              tag: 'CIS-7.4'
+              pattern: "^umask 077"
+          - '/etc/profile':
+              tag: 'CIS-7.4'
+              pattern: "^umask 077"
+      description: 'Set Default umask for Users (Scored)'
+
+  blacklist:
+    legacy_passwd_entries_passwd:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/passwd':
+              tag: 'CIS-9.2.2'
+              pattern: "^+:"
+      description: 'Verify No Legacy "+" Entries Exist in /etc/passwd (Scored)'
+
+    legacy_passwd_entries_shadow:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/shadow':
+              tag: 'CIS-9.2.3'
+              pattern: "^+:"
+      description: 'Verify No Legacy "+" Entries Exist in /etc/shadow (Scored)'
+
+    legacy_passwd_entries_group:
+      data:
+        'Amazon Linux AMI-2014':
+          - '/etc/group':
+              tag: 'CIS-9.2.4'
+              pattern: "^+:"
+      description: 'Verify No Legacy "+" Entries Exist in /etc/group (Scored)'

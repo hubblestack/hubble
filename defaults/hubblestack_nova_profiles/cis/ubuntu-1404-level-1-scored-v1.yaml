@@ -1,0 +1,1021 @@
+grep:
+  whitelist:
+    fstab_dev_shm_partition_nodev:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            match_output: nodev
+            pattern: /dev/shm
+            tag: CIS-2.14
+      description: Add nodev Option to /dev/shm Partition (Scored)
+    fstab_dev_shm_partition_noexec:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            match_output: noexec
+            pattern: /dev/shm
+            tag: CIS-2.16
+      description: Add noexec Option to /dev/shm Partition (Scored)
+    fstab_dev_shm_partition_nosuid:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            match_output: nosuid
+            pattern: /dev/shm
+            tag: CIS-2.15
+      description: Add nosuid Option to /dev/shm Partition (Scored)
+    fstab_home_partition:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            pattern: /home
+            tag: CIS-2.9
+      description: Create Separate Partition for /home (Scored)
+    fstab_home_partition_nodev:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            match_output: nodev
+            pattern: /home
+            tag: CIS-2.10
+      description: Add nodev Option to /home (Scored)
+    fstab_tmp_partition:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            pattern: /tmp
+            tag: CIS-2.1
+      description: Create Separate Partition for /tmp (Scored)
+    fstab_tmp_partition_nodev:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            match_output: nodev
+            pattern: /tmp
+            tag: CIS-2.2
+      description: Set nodev option for /tmp Partition (Scored)
+    fstab_tmp_partition_noexec:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            match_output: nosuid
+            pattern: /tmp
+            tag: CIS-2.4
+      description: Set noexec option for /tmp Partition (Scored)
+    fstab_tmp_partition_nosuid:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            match_output: nosuid
+            pattern: /tmp
+            tag: CIS-2.3
+      description: Set nosuid option for /tmp Partition (Scored)
+    fstab_var_log_audit_partition:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            pattern: /var/log/audit
+            tag: CIS-2.8
+      description: Create Separate Partition for /var/log/audit (Scored)
+    fstab_var_log_partition:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            pattern: /var/log
+            tag: CIS-2.7
+      description: Create Separate Partition for /var/log (Scored)
+    fstab_var_partition:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            pattern: /var
+            tag: CIS-2.5
+      description: Create Separate Partition for /var (Scored)
+    fstab_var_tmp_bind_mount:
+      data:
+        Ubuntu-14.04:
+        - /etc/fstab:
+            match_output: /var/tmp
+            pattern: /var
+            tag: CIS-2.6
+      description: Bind Mount the /var/tmp directory to /tmp (Scored)
+    grub_password:
+      data:
+        Ubuntu-14.04:
+        - /boot/grub/grub.cfg:
+            pattern: password
+            tag: CIS-3.3
+      description: Set Bootloader Password (Scored)
+    core_hard_limit:
+      data:
+        Ubuntu-14.04:
+        - /etc/security/limits.conf:
+            match_output: '0'
+            pattern: hard core
+            tag: CIS-4.1
+      description: Restrict Core Dumps (Scored)
+    ntp_restrict_default:
+      data:
+        Ubuntu-14.04:
+        - /etc/ntp.conf:
+            pattern: '^restrict'
+            match_output: default
+            tag: CIS-6.5
+        - /etc/ntp.conf:
+            pattern: restrict -6 default
+            tag: CIS-6.5
+        - /etc/ntp.conf:
+            pattern: '^server'
+            tag: CIS-6.5
+        - /etc/init.d/ntp:
+            pattern: RUNASUSER=
+            tag: CIS-6.5
+      description: Configure Network Time Protocol (NTP) (Scored)
+    local_mta:
+      data:
+        Ubuntu-14.04:
+          - /etc/postfix/main.cf:
+              pattern: '^inet_interfaces'
+              match_output: localhost
+              tag: CIS-6.15
+      description: Ensure MTA is configured for local-only (Scored)
+    rsync:
+      data:
+        Ubuntu-14.04:
+        - /etc/default/rsync:
+            pattern: ^RSYNC_ENABLE
+            match_output: 'false'
+            tag: CIS-6.16
+      description: Ensure RSYNC is disabled (Scored)
+    rsyslog_file_perms:
+      data:
+        Ubuntu-14.04:
+        - /etc/rsyslog.conf:
+            pattern: '^\$FileCreateMode'
+            match_output: '0640'
+            tag: CIS-8.2.4
+      description: Create and Set Permissions on rsyslog Log Files (Scored)
+    rsyslog_remote_logging:
+      data:
+        Ubuntu-14.04:
+        - /etc/rsyslog.conf:
+            pattern: ^*.*[^I][^I]*@
+            tag: CIS-8.2.5
+      description: Configure rsyslog to Send Logs to a Remote Log Host (Scored)
+    pam_cracklib_settings:
+      data:
+        Ubuntu-14.04:
+        - /etc/pam.d/common-password:
+            pattern: pam_cracklib
+            match_output: 'retry=3'
+            tag: CIS-9.2.1
+        - /etc/pam.d/common-password:
+            pattern: pam_cracklib
+            match_output: 'minlen=14'
+            tag: CIS-9.2.1
+        - /etc/pam.d/common-password:
+            pattern: pam_cracklib
+            match_output: 'dcredit=-1'
+            tag: CIS-9.2.1
+        - /etc/pam.d/common-password:
+            pattern: pam_cracklib
+            match_output: 'ucredit=-1'
+            tag: CIS-9.2.1
+        - /etc/pam.d/common-password:
+            pattern: pam_cracklib
+            match_output: 'ocredit=-1'
+            tag: CIS-9.2.1
+        - /etc/pam.d/common-password:
+            pattern: pam_cracklib
+            match_output: 'lcredit=-1'
+            tag: CIS-9.2.1
+      description: PAM cracklib policy (Scored)
+    pam_password_reuse:
+      data:
+        Ubuntu-14.04:
+        - /etc/pam.d/common-password:
+            pattern: remember
+            match_output: 'remember=5'
+            tag: CIS-9.2.3
+      description: Limit Password Reuse (Scored)
+    ssh_version_2:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: Protocol
+            match_output: '2'
+            tag: CIS-9.3.1
+      description: Set SSH Protocol to 2 (Scored)
+    ssh_log_level:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: LogLevel
+            match_output: INFO
+            tag: CIS-9.3.2
+      description: Set LogLevel to INFO (Scored)
+    ssh_disable_xforward:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: XForwarding
+            match: 'no'
+            tag: CIS-9.3.4
+      description: Disable SSH X11 Forwarding (Scored)
+    ssh_auth_retries:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: MaxAuthTries
+            match: '4'
+            tag: CIS-9.3.5
+      description: Set SSH MaxAuthTries to 4 or Less (Scored)
+    ssh_ignore_rhosts:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: IgnoreRhosts
+            match: 'yes'
+            tag: CIS-9.3.6
+      description: Set SSH IgnoreRhosts to Yes (Scored)
+    ssh_hostbased_auth:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: HostbasedAuthentication
+            match: 'no'
+            tag: CIS-9.3.7
+      description: Set SSH HostbasedAuthentication to No (Scored)
+    ssh_permit_root:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: PermitRootLogin
+            match: 'no'
+            tag: CIS-9.3.8
+      description: Disable SSH Root Login (Scored)
+    ssh_permit_empty_pw:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: PermitEmptyPasswords
+            match: 'no'
+            tag: CIS-9.3.9
+      description: Set SSH PermitEmptyPasswords to No (Scored)
+    ssh_permit_user_env:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: PermitUserEnvironment
+            match: 'no'
+            tag: CIS-9.3.10
+      description: Do Not Allow Users to Set Environment Options (Scored)
+    ssh_restrict_cipher:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: Ciphers
+            match: 'aes128-ctr,aes192-ctr,aes256-ctr'
+            tag: CIS-9.3.11
+      description: Use Only Approved Cipher in Counter Mode (Scored)
+    ssh_idle_timeout:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: ClientAliveInterval
+            match: '300'
+            tag: CIS-9.3.12
+        - /etc/ssh/sshd_config:
+            pattern: ClientAliveCountMax
+            match: 0
+            tag: CIS-9.3.12
+      description: Set Idle Timeout Interval for User Login (Scored)
+    ssh_limit_access:
+      data:
+        Ubuntu-14.04:
+        - /etc/ssh/sshd_config:
+            pattern: AllowUsers
+            tag: CIS-9.3.13
+        - /etc/ssh/sshd_config:
+            pattern: AllowGroups
+            tag: CIS-9.3.13
+        - /etc/ssh/sshd_config:
+            pattern: DenyUsers
+            tag: CIS-9.3.13
+        - /etc/ssh/sshd_config:
+            pattern: DenyGroups
+            tag: CIS-9.3.13
+      description:  Limit Access via SSH (Scored)
+    ssh_set_banner:
+      data:
+        Ubuntu-14.04:
+        - /etc/sshd_conf:
+            pattern: Banner
+            match: issue
+            tag: CIS-9.3.14
+      description: Set SSH Banner (Scored)
+    limit_su_access:
+      data:
+        Ubuntu-14.04:
+        - /etc/pam.d/su:
+            pattern: pam_wheel.so
+            match_output: use_uid
+            tag: CIS-9.5
+        - /etc/group:
+            pattern: wheel
+            tag: CIS-9.5
+      description: Restrict Access to the su Command (Scored)
+    password_max_days:
+      data:
+        Ubuntu-14.04:
+        - /etc/login.defs:
+            pattern: PASS_MAX_DAYS
+            match_output: '90'
+            tag: CIS-10.1.1
+      description: Set Password Expiration Days (Scored)
+    password_min_days:
+      data:
+        Ubuntu-14.04:
+        - /etc/login.defs:
+            pattern: PASS_MIN_DAYS
+            match_output: '7'
+            tag: CIS-10.1.2
+      description: Set Password Change Minimum Number of Days (Scored)
+    password_warn_days:
+      data:
+        Ubuntu-14.04:
+        - /etc/login.defs:
+            pattern: PASS_WARN_AGE
+            match_output: '7'
+            tag: CIS-10.1.3
+      description: Set Password Expiring Warning Days (Scored)
+    umask:
+      data:
+        Ubuntu-14.04:
+        - /etc/login.defs:
+            pattern: UMASK
+            match_output: '077'
+            tag: CIS-10.4
+      description: Set Default umask for Users (Scored)
+  blacklist:
+    root_passwd_set:
+      data:
+        Ubuntu-14.04:
+        - /etc/passwd:
+            pattern: '^root:[*\!]:'
+            tag: CIS-3.4
+      description: Require Authentication for Single User Mode (Scored)
+    rsh_inet:
+      data:
+        Ubuntu-14.04:
+        - /etc/inetd.conf:
+            pattern: '^shell'
+            tag: CIS-5.1.2
+        - /etc/inetd.conf:
+            pattern: '^login'
+            tag: CIS-5.1.2
+        - /etc/inetd.conf:
+            pattern: '^exec'
+            tag: CIS-5.1.2
+      description: Ensure RSH server is not Enabled (Scored)
+    talk:
+      data:
+        Ubuntu-14.04:
+        - /etc/inetd.conf:
+            pattern: '^talk'
+            tag: CIS-5.1.4
+        - /etc/inetd.conf:
+            pattern: '^ntalk'
+            tag: CIS-5.1.4
+      description: Ensure Talk Server is not Enabled (Scored)
+    telnet:
+      data:
+        Ubuntu-14.04:
+        - /etc/inetd.conf:
+            pattern: '^telnet'
+            tag: CIS-5.1.6
+      description: Ensure Telnet Server is not Enabled (Scored)
+    tftp:
+      data:
+        Ubuntu-14.04:
+        - /etc/inetd.conf:
+            pattern: '^tftp'
+            tag: CIS-5.1.7
+      description: Ensure TFTP Server is not Enabled (Scored)
+    chargen:
+      data:
+        Ubuntu-14.04:
+        - /etc/inetd.conf:
+            pattern: '^chargen'
+            tag: CIS-5.2
+      description: Ensure Chargen is not Enabled (Scored)
+    daytime:
+      data:
+        Ubuntu-14.04:
+        - /etc/inetd.conf:
+            pattern: '^daytime'
+            tag: CIS-5.3
+      description: Ensure daytime is not Enabled (Scored)
+    echo:
+      data:
+        Ubuntu-14.04:
+        - /etc/inetd.conf:
+            pattern: '^echo'
+            tag: CIS-5.4
+      description: Ensure echo is not Enabled (Scored)
+    discard:
+      data:
+        Ubuntu-14.04:
+        - /etc/inetd.conf:
+            pattern: '^discard'
+            tag: CIS-5.5
+      description: Ensure discard is not Enabled (Scored)
+    time:
+      data:
+        Ubuntu-14.04:
+        - /etc/inetd.conf:
+            pattern: '^time'
+            tag: CIS-5.6
+      description: Ensure time is not Enabled (Scored)
+    banner_os_info_motd:
+      data:
+        Ubuntu-14.04:
+        - /etc/motd:
+            pattern: '\v'
+            tag: CIS-11.2
+        - /etc/motd:
+            pattern: '\r'
+            tag: CIS-11.2
+        - /etc/motd:
+            pattern: '\m'
+            tag: CIS-11.2
+        - /etc/motd:
+            pattern: '\s'
+            tag: CIS-11.2
+      description: Remove OS Information from Login Warning Banners (motd) (Scored)
+    banner_os_info_issue:
+      data:
+        Ubuntu-14.04:
+        - /etc/issue:
+            pattern: '\v'
+            tag: CIS-11.2
+        - /etc/issue:
+            pattern: '\r'
+            tag: CIS-11.2
+        - /etc/issue:
+            pattern: '\m'
+            tag: CIS-11.2
+        - /etc/issue:
+            pattern: '\s'
+            tag: CIS-11.2
+      description: Remove OS Information from Login Warning Banners (issue) (Scored)
+    banner_os_info_issue_net:
+      data:
+        Ubuntu-14.04:
+        - /etc/issue.net:
+            pattern: '\v'
+            tag: CIS-11.2
+        - /etc/issue.net:
+            pattern: '\r'
+            tag: CIS-11.2
+        - /etc/issue.net:
+            pattern: '\m'
+            tag: CIS-11.2
+        - /etc/issue.net:
+            pattern: '\s'
+            tag: CIS-11.2
+      description: Remove OS Information from Login Warning Banners (issue.net) (Scored)
+    legacy_entries_passwd:
+      data:
+        Ubuntu-14.04:
+        - /etc/passwd:
+            pattern: '^+'
+            tag: CIS-13.2
+      description: Verify No Legacy "+" Entries Exist in /etc/passwd File (Scored)
+    legacy_entries_shadow:
+      data:
+        Ubuntu-14.04:
+        - /etc/shadow:
+            pattern: '^+'
+            tag: CIS-13.2
+      description: Verify No Legacy "+" Entries Exist in /etc/shadow File (Scored)
+    legacy_entries_group:
+      data:
+        Ubuntu-14.04:
+        - /etc/group:
+            pattern: '^+'
+            tag: CIS-13.2
+      description: Verify No Legacy "+" Entries Exist in /etc/group File (Scored)
+
+service:
+  blacklist:
+    autofs:
+      data:
+        Ubuntu-14.04:
+        - autofs: CIS-2.25
+      description: Disable Automounting (Scored)
+    apport:
+      data:
+        Ubuntu-14.04:
+        - apport: CIS-4.1
+      description: Disable Apport to Restrict Core Dumps (Scored)
+    whoopsie:
+      data:
+        Ubuntu-14.04:
+        - whoopsie: CIS-4.1
+      description: Disable Whoopsie to Restrict Core Dumps (Scored)
+    xinetd:
+      data:
+        Ubuntu-14.04:
+          - xinetd: CIS-5.1.8
+      description: Disable xinetd Service (Scored)
+    avahi_daemon:
+      data:
+        Ubuntu-14.04:
+          - avahi-daemon: CIS-6.2
+      description: Ensure Avahi Server is not enabled (Scored)
+    cups:
+      data:
+        Ubuntu-14.04:
+          - cups: CIS-6.3
+      description: Ensure print server is not enabled (Scored)
+    dhcp-server:
+      data:
+        Ubuntu-14.04:
+          - isc-dhcp-server: CIS-6.4
+      description: Ensure DHCP Server is not enabled (Scored)
+  whitelist:
+    rsyslog:
+      data:
+        Ubuntu-14.04:
+          - rsyslog: CIS-8.2.2
+      description: Ensure the rsyslog Service is activated (Scored)
+    cron:
+      data:
+        Ubuntu-14.04:
+          - cron: CIS-9.1.1
+      description: Enable cron Daemon (Scored)
+
+sysctl:
+  disable_suid_dumpable:
+    data:
+      Ubuntu-14.04:
+      - fs.suid_dumpable:
+          match_output: '0'
+          tag: CIS-4.1
+    description: Prevent suid Applications from Core Dumping (Scored)
+  randomize_va_space:
+    data:
+      Ubuntu-14.04:
+      - kernel.randomize_va_space:
+          match_output: '2'
+          tag: CIS-4.3
+    description: Enable Randomized Virtual Memory Region Placement (Scored)
+  disable_ip4_ip_forward:
+    data:
+      Ubuntu-14.04:
+      - net.ipv4.ip_forward:
+          match_output: '0'
+          tag: CIS-7.1.1
+    description: Disable IP Forwarding (Scored)
+  disable_packet_redirect:
+    data:
+      Ubuntu-14.04:
+      - net.ipv4.conf.all.send_redirects:
+          match_output: '0'
+          tag: CIS-7.1.2
+    description: Disable Send Packet Redirects (Scored)
+  disable_source_routed_packets:
+    data:
+      Ubuntu-14.04:
+      - net.ipv4.conf.all.accept_source_route:
+          match_output: '0'
+          tag: CIS-7.2.1
+    description: Disable Source Routed Packet Acceptance (Scored)
+  disable_icmp_redirect:
+    data:
+      Ubuntu-14.04:
+      - net.ipv4.conf.all.accept_redirects:
+          match_output: '0'
+          tag: CIS-7.2.2
+    description: Disable ICMP Redirect Acceptance (Scored)
+  disable_secure_icmp_redirect:
+    data:
+      Ubuntu-14.04:
+      - net.ipv4.conf.all.secure_redirects:
+          match_output: '0'
+          tag: CIS-7.2.3
+    description: Disable Secure ICMP Redirect Acceptance (Scored)
+  log_martians:
+    data:
+      Ubuntu-14.04:
+      - net.ipv4.conf.all.log_martians:
+          match_output: '1'
+          tag: CIS-7.2.4
+    description: Log Suspicious Packets (Scored)
+  ignore_broadcast:
+    data:
+      Ubuntu-14.04:
+      - net.ipv4.icmp_echo_ignore_broadcasts:
+          match_output: '1'
+          tag: CIS-7.2.5
+    description: Enable Ignore Broadcast Requests (Scored)
+  bogus_errors:
+    data:
+      Ubuntu-14.04:
+      - icmp_ignore_bogus_error_responses:
+          match_output: '1'
+          tag: CIS-7.2.6
+    description: Enable Bad Error Message Protection (Scored)
+  rp_filter:
+    data:
+      Ubuntu-14.04:
+      - net.ipv4.conf.all.rp_filter:
+          match_output: '1'
+          tag: CIS-7.2.7
+    description: Enable RFC-recommended Source Route Validation (Scored)
+  tcp_syncookies:
+    data:
+      Ubuntu-14.04:
+      - net.ipv4.tcp_syncookies:
+          match_output: '1'
+          tag: CIS-7.2.8
+    description: Enable TCP SYN Cookies (Scored)
+
+pkg:
+  blacklist:
+    prelink:
+      data:
+        Ubuntu-14.04:
+        - prelink: CIS-4.4
+      description: Disable Prelink (Scored)
+    nis:
+      data:
+        Ubuntu-14.04:
+        - nis: CIS-5.1.1
+      description: Ensure NIS is not installed (Scored)
+    talk:
+      data:
+        Ubuntu-14.04:
+        - talk: CIS-5.1.5
+      description: Ensure Talk Client is not installed (Scored)
+    xserver:
+      data:
+        Ubuntu-14.04:
+        - xserver-xorg-core\*: CIS-6.1
+      description: Ensure the XWindow System is not installed (Scored)
+    biosdevname:
+      data:
+        Ubuntu-14.04:
+        - biosdevname: CIS-6.17
+      description: Ensure biosdevname is not enabled (Scored)
+  whitelist:
+    ntp:
+      data:
+        Ubuntu-14.04:
+        - ntp: CIS-6.5
+      description: Ensure ntp is installed (Scored)
+    tcpd:
+      data:
+        Ubuntu-14.04:
+        - tcpd: CIS-7.4.1
+      description: Install TCP Wrappers (Scored)
+    rsyslog:
+      data:
+        Ubuntu-14.04:
+        - rsyslog: CIS-8.2.1
+      description: Install the rsyslog package (Scored)
+
+stat:
+  grub_cfg_owner:
+    data:
+      Ubuntu-14.04:
+      - /boot/grub/grub.cfg:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          tag: CIS-3.1
+    description: Set User/Group Owner on bootloader config (Scored)
+  grub_cfg_perms:
+    data:
+      Ubuntu-14.04:
+      - /boot/grub/grub.cfg:
+          mode: 600
+          tag: CIS-3.2
+    description: Set Permissions on bootloader config (Scored)
+  hosts_allow_perms:
+    data:
+      Ubuntu-14.04:
+      - /etc/hosts.allow:
+          mode: 644
+          tag: CIS-7.4.3
+    description: Verify Permissions on /etc/hosts.allow (Scored)
+  hosts_deny_perms:
+    data:
+      Ubuntu-14.04:
+      - /etc/hosts.deny:
+          mode: 644
+          tag: CIS-7.4.5
+    description: Verify Permissions on /etc/hosts.deny (Scored)
+  crontab_own_perms:
+    data:
+      Ubuntu-14.04:
+      - /etc/crontab:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 600
+          tag: CIS-9.1.2
+    description:  Set User/Group Owner and Permission on /etc/crontab (Scored)
+  cron_hourly_own_perms:
+    data:
+      Ubuntu-14.04:
+      - /etc/cron.hourly:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 600
+          tag: CIS-9.1.3
+    description:  Set User/Group Owner and Permission on /etc/cron.hourly (Scored)
+  cron_daily_own_perms:
+    data:
+      Ubuntu-14.04:
+      - /etc/cron.daily:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 600
+          tag: CIS-9.1.4
+    description:  Set User/Group Owner and Permission on /etc/cron.daily (Scored)
+  cron_weekly_own_perms:
+    data:
+      Ubuntu-14.04:
+      - /etc/cron.weekly:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 600
+          tag: CIS-9.1.5
+    description:  Set User/Group Owner and Permission on /etc/cron.weekly (Scored)
+  cron_monthly_own_perms:
+    data:
+      Ubuntu-14.04:
+      - /etc/cron.monthly:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 600
+          tag: CIS-9.1.6
+    description:  Set User/Group Owner and Permission on /etc/cron.monthly (Scored)
+  cron_d_own_perms:
+    data:
+      Ubuntu-14.04:
+      - /etc/cron.d:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 700
+          tag: CIS-9.1.7
+    description:  Set User/Group Owner and Permission on /etc/cron.d (Scored)
+  at_cron_allow:
+    data:
+      Ubuntu-14.04:
+      - /etc/cron.deny:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-9.1.8
+          uid: 0
+          user: root
+      - /etc/at.deny:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-9.1.8
+          uid: 0
+          user: root
+      - /etc/cron.allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-9.1.8
+          uid: 0
+          user: root
+      - /etc/at.allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-9.1.8
+          uid: 0
+          user: root
+    description: Restrict at/cron to authorized users (Scored)
+  sshd_config:
+    data:
+      Ubuntu-14.04:
+      - /etc/ssh/sshd_config:
+          uid: 0
+          gid: 0
+          user: root
+          group: root
+          mode: 600
+          tag: CIS-9.3.3
+    description: Set Permissions on /etc/ssh/sshd_config (Scored)
+  banner_files:
+    data:
+      Ubuntu-14.04:
+      - /etc/motd:
+          uid: 0
+          gid: 0
+          user: root
+          group: root
+          mode: 644
+          tag: CIS-11.1
+      - /etc/issue:
+          uid: 0
+          gid: 0
+          user: root
+          group: root
+          mode: 644
+          tag: CIS-11.1
+      - /etc/issue.net:
+          uid: 0
+          gid: 0
+          user: root
+          group: root
+          mode: 644
+          tag: CIS-11.1
+    description: Set Warning Banner for Standard Login Services (Scored)
+  passwd_perms:
+    data:
+      Ubuntu-14.04:
+      - /etc/passwd:
+          mode: 644
+          tag: CIS-12.1
+    description: Verify Permissions on /etc/passwd (Scored)
+  shadow_perms:
+    data:
+      Ubuntu-14.04:
+      - /etc/shadow:
+          mode: 640
+          tag: CIS-12.2
+    description: Verify Permissions on /etc/shadow (Scored)
+  group_perms:
+    data:
+      Ubuntu-14.04:
+      - /etc/group:
+          mode: 644
+          tag: CIS-12.3
+    description: Verify Permissions on /etc/group (Scored)
+  passwd_owner_group:
+    data:
+      Ubuntu-14.04:
+      - /etc/passwd:
+          uid: 0
+          gid: 0
+          user: root
+          group: root
+          tag: CIS-12.4
+    description: Verify User and Group on /etc/passwd (Scored)
+  shadow_owner_group:
+    data:
+      Ubuntu-14.04:
+      - /etc/shadow:
+          uid: 0
+          gid: 42
+          user: root
+          group: shadow
+          tag: CIS-12.5
+    description: Verify User and Group on /etc/shadow (Scored)
+  group_user_group:
+    data:
+      Ubuntu-14.04:
+      - /etc/group:
+          uid: 0
+          gid: 0
+          user: root
+          group: root
+          tag: CIS-12.6
+    description: Verify User and Group on /etc/group (Scored)
+
+command:
+  rsh_client:
+    data:
+      Ubuntu-14.04:
+        tag: CIS-5.1.3
+        commands:
+          - 'dpkg -s rsh-client':
+              match_output: is not installed
+          - 'dpkg -s rsh-redone-client':
+              match_output: is not installed
+    description: Ensure RSH Client is not Installed (Scored)
+  ufw_active:
+    data:
+      Ubuntu-14.04:
+        tag: CIS-7.7
+        commands:
+          - 'ufw status':
+              match_output: Status active
+    description: Ensure Firewall is active (Scored)
+  disable_system_accts:
+    data:
+      Ubuntu-14.04:
+        tag: CIS-10.2
+        commands:
+          - ?
+              >
+                egrep -v "^\+" /etc/passwd | awk -F: '($1!="root" && $1!="sync"
+                && $1!="shutdown" && $1!="halt" && $3<500
+                && $7!="/usr/sbin/nologin" && $7!="/bin/false") {print}'
+            :
+              shell: /bin/bash
+              fail_if_matched: true
+    description: Disable System Accounts (Scored)
+  default_root_group:
+    data:
+      Ubuntu-14.04:
+        tag: CIS-10.3
+        commands:
+          - 'grep "^root:" /etc/passwd | cut -f4 -d:':
+              match_output: '0'
+    description: Set Default Group for root Account (Scored)
+  inactive_users:
+    data:
+      Ubuntu-14.04:
+        tag: CIS-10.5
+        commands:
+          - 'useradd -D | grep INACTIVE':
+              match_output: '35'
+    description: Lock Inactive User Accounts (Scored)
+  empty_passwd_field:
+    data:
+      Ubuntu-14.04:
+        tag: CIS-13.1
+        commands:
+          - ?
+              >
+                cat /etc/shadow | /usr/bin/awk -F: '($2 == "" ) { print $1 }'
+            :
+              shell: /bin/bash
+              fail_if_matched: true
+    description: Ensure Password Fields are Not Empty (Scored)
+  uid_zero_only_root:
+    data:
+      Ubuntu-14.04:
+        tag: CIS-13.5
+        commands:
+          - ?
+              >
+                cat /etc/passwd | /usr/bin/awk -F: '($1!="root" && $3==0) { print $1 }'
+            :
+              shell: /bin/bash
+              fail_if_matched: true
+    description: Verify No UID 0 Accounts Exist Other Than root (Scored)
+  root_path:
+    data:
+      Ubuntu-14.04:
+        tag: CIS-13.6
+        commands:
+          - ?
+              |-
+                if [ "`echo $PATH | grep :: `" != "" ]; then
+                echo "Empty Directory in PATH (::)"
+                fi
+                if [ "`echo $PATH | grep :$`" != "" ]; then
+                echo "Trailing : in PATH"
+                fi
+                p=`echo $PATH | sed -e 's/::/:/' -e 's/:$//' -e 's/:/ /g'`
+                set -- $p
+                while [ "$1" != "" ]; do
+                if [ "$1" = "." ]; then
+                echo "PATH contains ."
+                shift
+                continue
+                fi
+                if [ -d $1 ]; then
+                dirperm=`ls -ldH $1 | cut -f1 -d" "`
+                if [ `echo $dirperm | cut -c6 ` != "-" ]; then
+                echo "Group Write permission set on directory $1"
+                fi
+                if [ `echo $dirperm | cut -c9 ` != "-" ]; then
+                echo "Other Write permission set on directory $1"
+                fi
+                dirown=`ls -ldH $1 | awk '{print $3}'`
+                if [ "$dirown" != "root" ] ; then
+                echo $1 is not owned by root
+                fi
+                else
+                echo $1 is not a directory
+                fi
+                shift
+                done
+            :
+              shell: /bin/bash
+              fail_if_matched: true
+    description: Ensure root PATH Integrity (Scored)

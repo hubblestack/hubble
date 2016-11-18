@@ -1,0 +1,2080 @@
+# NOTE: This CIS Profile only includes Level 1 Scored Items for Windows 2012
+# NOTE: Within this file, there are a few sections that should be tailored to your
+#       organization's specific policy.  Search for '# NOTE: ' comments throughout the file
+# NOTE: The value_types are as follows:
+#         1) more = more than the number located in match_output.  *Must be a number*
+#         2) less = less than the number located in match_output.  *Must be a number*
+#         3) equal = equal to the item located in match_output.  *Does not need to be a number*
+#         4) account = Match account names.  *Must be account names only*
+#         5) configured = Must be set to company specific information.  *Cannot be blank or default*
+
+
+
+win_secedit:
+  whitelist:
+    password_history_size:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'PasswordHistorySize':
+              tag: CIS-1.1.1
+              match_output: '23'
+              value_type: 'more'
+      description: (l1) ensure 'enforce password history' is set to '24 or more password(s)'
+    maximum_password_age:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MaximumPasswordAge':
+              tag: CIS-1.1.2
+              match_output: '61'
+              value_type: 'less'
+      description: (l1) ensure 'maximum password age' is set to '60 or fewer days, but not 0'
+    minimum_password_age:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MinimumPasswordAge':
+              tag: CIS-1.1.3
+              match_output: '1'
+              value_type: 'more'
+      description: (l1) ensure 'minimum password age' is set to '1 or more day(s)'
+    minimum_password_length:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MinimumPasswordLength':
+              tag: CIS-1.1.4
+              match_output: '14'
+              value_type: 'more'
+      description: (l1) ensure 'minimum password length' is set to '14 or more character(s)'
+    password_complexity:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'PasswordComplexity':
+              tag: CIS-1.1.5
+              match_output: '1'
+              value_type: 'equal'
+      description: (l1) ensure 'password must meet complexity requirements' is set to 'enabled'
+    reversible_encryption:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'ClearTextPassword':
+              tag: CIS-1.1.6
+              match_output: '0'
+              value_type: 'equal'
+      description: (l1) ensure 'store passwords using reversible encryption' is set to 'disabled'
+    lockout_duration:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'LockoutDuration':
+              tag: CIS-1.2.1
+              match_output: '14'
+              value_type: 'more'
+      description: (l1) ensure 'account lockout duration' is set to '15 or more minute(s)'
+    lockout_threshold:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'LockoutBadCount':
+              tag: CIS-1.2.2
+              match_output: '11'
+              value_type: 'less'
+      description: (l1) ensure 'account lockout threshold' is set to '10 or fewer invalid logon attempt(s), but not 0'
+    reset_lockout_counter:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'ResetLockoutCount':
+              tag: CIS-1.2.3
+              match_output: '14'
+              value_type: 'more'
+      description: (l1) ensure 'reset account lockout counter after' is set to '15 or more minute(s)'
+    access_from_network:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeNetworkLogonRight':
+              tag: CIS-2.2.2
+              match_output: 'Administrators, Authenticated Users'
+              value_type: 'account'
+      description: (l1) configure 'access this computer from the network'
+    adjust_memory_quotas:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeIncreaseQuotaPrivilege':
+              tag: CIS-2.2.5
+              match_output: 'Administrators, LOCAL SERVICE, NETWORK SERVICE'
+              value_type: 'match'
+      description: (l1) ensure 'adjust memory quotas for a process' is set to 'administrators, local service, network service'
+    allow_logon_locally:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeInteractiveLogonRight':
+              tag: CIS-2.2.6
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) configure 'allow log on locally'
+    allow_log_on_through_remote_desktop_services :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeRemoteInteractiveLogonRight':
+              tag: CIS-2.2.7
+              match_output: Administrators
+              value_type: 'account'
+      description: (l1) configure 'allow log on through remote desktop services'
+    back_up_files_and_directories :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeBackupPrivilege':
+              tag: CIS-2.2.8
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'back up files and directories' is set to 'administrators'
+    change_the_system_time :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Changethesystemtime':
+              tag: CIS-2.2.9
+              match_output: 'Administrators, LOCAL SERVICE'
+              value_type: 'account'
+      description: (l1) ensure 'change the system time' is set to 'administrators, local service'
+    change_the_time_zone :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeSystemtimePrivilege':
+              tag: CIS-2.2.10
+              match_output: 'Administrators, LOCAL SERVICE'
+              value_type: 'account'
+      description: (l1) ensure 'change the time zone' is set to 'administrators, local service'
+    create_a_pagefile :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeCreatePagefilePrivilege':
+              tag: CIS-2.2.11
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'create a pagefile' is set to 'administrators'
+    create_global_objects :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeCreateGlobalPrivilege':
+              tag: CIS-2.2.13
+              match_output: 'Administrators, LOCAL SERVICE, NETWORK SERVICE, SERVICE'
+              value_type: 'account'
+      description: (l1) ensure 'create global objects' is set to 'administrators, local service, network service, service'
+    create_symbolic_links :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeCreateSymbolicLinkPrivilege':
+              tag: CIS-2.2.15
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'create symbolic links' is set to 'administrators'
+    debug_programs :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeDebugPrivilege':
+              tag: CIS-2.2.16
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'debug programs' is set to 'administrators'
+    deny_access_to_this_computer_from_the_network :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeDenyNetworkLogonRight':
+              tag: CIS-2.2.17
+              match_output: 'Guests'
+              value_type: 'account'
+      description: (l1) ensure 'deny access to this computer from the network' to include 'guests'
+    deny_log_on_as_a_batch_job :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeDenyBatchLogonRight':
+              tag: CIS-2.2.18
+              match_output: 'Guests'
+              value_type: 'account'
+      description: (l1) ensure 'deny log on as a batch job' to include 'guests'
+    deny_log_on_as_a_service :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeDenyServiceLogonRight':
+              tag: CIS-2.2.19
+              match_output: 'Guests'
+              value_type: 'account'
+      description: (l1) ensure 'deny log on as a service' to include 'guests'
+    deny_log_on_locally :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeDenyInteractiveLogonRight':
+              tag: CIS-2.2.20
+              match_output: 'Guests'
+              value_type: 'account'
+      description: (l1) ensure 'deny log on locally' to include 'guests'
+    deny_log_on_through_remote_desktop_services :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeDenyRemoteInteractiveLogonRight':
+              tag: CIS-2.2.21
+              match_output: 'Guests, LOCAL SERVICE'
+              value_type: 'account'
+      description: (l1) ensure 'deny log on through remote desktop services' to include 'guests'
+    force_shutdown_from_a_remote_system :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeRemoteShutdownPrivilege':
+              tag: CIS-2.2.23
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'force shutdown from a remote system' is set to 'administrators'
+    generate_security_audits :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeAuditPrivilege':
+              tag: CIS-2.2.24
+              match_output: 'LOCAL SERVICE, NETWORK SERVICE'
+              value_type: 'account'
+      description: (l1) ensure 'generate security audits' is set to 'local service, network service'
+    impersonate_a_client_after_authentication :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeImpersonatePrivilege':
+              tag: CIS-2.2.25
+              match_output: 'Administrators, LOCAL SERVICE, NETWORK SERVICE, SERVICE'
+              value_type: 'account'
+      description: (l1) configure 'impersonate a client after authentication'
+    increase_scheduling_priority :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeIncreaseBasePriorityPrivilege':
+              tag: CIS-2.2.26
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'increase scheduling priority' is set to 'administrators'
+    load_and_unload_device_drivers :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeLoadDriverPrivilege':
+              tag: CIS-2.2.27
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'load and unload device drivers' is set to 'administrators'
+    manage_auditing_and_security_log :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeSecurityPrivilege':
+              tag: CIS-2.2.30
+              match_output: '*S-1-5-32-544' #Administrators
+              value_type: 'account'
+      description: (l1) configure 'manage auditing and security log'
+    modify_firmware_environment_values :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeSystemEnvironmentPrivilege':
+              tag: CIS-2.2.32
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'modify firmware environment values' is set to 'administrators'
+    perform_volume_maintenance_tasks :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeManageVolumePrivilege':
+              tag: CIS-2.2.33
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'perform volume maintenance tasks' is set to 'administrators'
+    profile_single_process :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeProfileSingleProcessPrivilege':
+              tag: CIS-2.2.34
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'profile single process' is set to 'administrators'
+    profile_system_performance :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeSystemProfilePrivilege':
+              tag: CIS-2.2.35
+              match_output: 'Administrators, NT SERVICE\WdiServiceHost'
+              value_type: 'account'
+      description: (l1) ensure 'profile system performance' is set to 'administrators, nt service\wdiservicehost'
+    replace_a_process_level_token :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeAssignPrimaryTokenPrivilege':
+              tag: CIS-2.2.36
+              match_output: 'LOCAL SERVICE, NETWORK SERVICE'
+              value_type: 'account'
+      description: (l1) ensure 'replace a process level token' is set to 'local service, network service'
+    restore_files_and_directories :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeRestorePrivilege':
+              tag: CIS-2.2.37
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'restore files and directories' is set to 'administrators'
+    shut_down_the_system :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeShutdownPrivilege':
+              tag: CIS-2.2.38
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'shut down the system' is set to 'administrators'
+    take_ownership_of_files_or_other_objects :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeTakeOwnershipPrivilege':
+              tag: CIS-2.2.40
+              match_output: 'Administrators'
+              value_type: 'account'
+      description: (l1) ensure 'take ownership of files or other objects' is set to 'administrators'
+    accounts_administrator_account_status :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'EnableAdminAccount':
+              tag: CIS-2.3.1.1
+              match_output: '0'
+              value_type: 'equal'
+      description: (l1) ensure 'accounts - administrator account status' is set to 'disabled'
+    accounts_guest_account_status :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'EnableGuestAccount':
+              tag: CIS-2.3.1.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'accounts - guest account status' is set to 'disabled'
+    accounts_limit_local_account_use_of_blank_passwords_to_console_logon_only :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\LimitBlankPasswordUse':
+              tag: CIS-2.3.1.3
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'accounts - limit local account use of blank passwords to console logon only' is set to 'enabled'
+    audit_force_audit_policy_subcategory_settings_to_override_audit_policy_category_settings :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\SCENoApplyLegacyAuditPolicy':
+              tag: CIS-2.3.2.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'audit - force audit policy subcategory settings (windows vista or later) to override audit policy category settings' is set to 'enabled'
+    audit_shut_down_system_immediately_if_unable_to_log_security_audits :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\CrashOnAuditFail':
+              tag: CIS-2.3.2.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'audit - shut down system immediately if unable to log security audits' is set to 'disabled'
+    devices_allowed_to_format_and_eject_removable_media :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\AllocateDASD':
+              tag: CIS-2.3.4.1
+              match_output: 'Administrators'
+              value_type: 'equal'
+      description: (l1) ensure 'devices - allowed to format and eject removable media' is set to 'administrators'
+    devices_prevent_users_from_installing_printer_drivers :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Print\Providers\LanMan Print Services\Servers\AddPrinterDrivers':
+              tag: CIS-2.3.4.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'devices - prevent users from installing printer drivers' is set to 'enabled'
+    domain_member_digitally_encrypt_or_sign_secure_channel_data_ :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\RequireSignOrSeal':
+              tag: CIS-2.3.6.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'domain member - digitally encrypt or sign secure channel data (always)' is set to 'enabled'
+    domain_member_digitally_encrypt_secure_channel_data :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\SealSecureChannel':
+              tag: CIS-2.3.6.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'domain member - digitally encrypt secure channel data (when possible)' is set to 'enabled'
+    domain_member_digitally_sign_secure_channel_data :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\SignSecureChannel':
+              tag: CIS-2.3.6.3
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'domain member - digitally sign secure channel data (when possible)' is set to 'enabled'
+    domain_member_disable_machine_account_password_changes :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\DisablePasswordChange':
+              tag: CIS-2.3.6.4
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'domain member - disable machine account password changes' is set to 'disabled'
+    domain_member_maximum_machine_account_password_age :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\MaximumPasswordAge':
+              tag: CIS-2.3.6.5
+              match_output: '31'
+              value_type: 'less'
+      description: (l1) ensure 'domain member - maximum machine account password age' is set to '30 or fewer days, but not 0'
+    domain_member_require_strong_session_key :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\RequireStrongKey':
+              tag: CIS-2.3.6.6
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'domain member - require strong (windows 2000 or later) session key' is set to 'enabled'
+    interactive_logon_do_not_display_last_user_name :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\DontDisplayLastUserName':
+              tag: CIS-2.3.7.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'interactive logon - do not display last user name' is set to 'enabled'
+    interactive_logon_do_not_require_ctrl+alt+del :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\DisableCAD':
+              tag: CIS-2.3.7.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'interactive logon - do not require ctrl+alt+del' is set to 'disabled'
+    interactive_logon_message_text_for_users_attempting_to_log_on : #NOTE: Configure this
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\LegalNoticeText':
+              tag: CIS-2.3.7.3
+              match_output: ''
+              value_type: 'configured'
+      description: (l1) configure 'interactive logon - message text for users attempting to log on'
+    interactive_logon_message_title_for_users_attempting_to_log_on : #NOTE: Configure this
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\LegalNoticeCaption':
+              tag: CIS-2.3.7.4
+              match_output: ''
+              value_type: 'configured'
+      description: (l1) configure 'interactive logon - message title for users attempting to log on'
+    interactive_logon_prompt_user_to_change_password_before_expiration :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\PasswordExpiryWarning':
+              tag: CIS-2.3.7.6
+              match_output: '15' # between 5 and 14
+              value_type: 'less'
+      description: (l1) ensure 'interactive logon - prompt user to change password before expiration' is set to 'between 5 and 14 days'
+    interactive_logon_require_domain_controller_authentication_to_unlock_workstation :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\ForceUnlockLogon':
+              tag: CIS-2.3.7.7
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: 'Interactive logon Require Domain Controller Authentication to unlock workstation'
+    interactive_logon_smart_card_removal_behavior :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\ScRemoveOption':
+              tag: CIS-2.3.7.8
+              match_output: 'Lock Workstation' # can be anything but No Action
+              value_type: 'equal'
+      description: (l1) ensure 'interactive logon - smart card removal behavior' is set to 'lock workstation' or higher
+    microsoft_network_client_digitally_sign_communications_ :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanmanWorkstation\Parameters\RequireSecuritySignature':
+              tag: CIS-2.3.8.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'microsoft network client - digitally sign communications (always)' is set to 'enabled'
+    microsoft_network_client_digitally_sign_communications_ :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanmanWorkstation\Parameters\EnableSecuritySignature':
+              tag: CIS-2.3.8.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'microsoft network client - digitally sign communications (if server agrees)' is set to 'enabled'
+    microsoft_network_client_send_unencrypted_password_to_third-party_smb_servers :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanmanWorkstation\Parameters\EnablePlainTextPassword':
+              tag: CIS-2.3.8.3
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'microsoft network client - send unencrypted password to third-party smb servers' is set to 'disabled'
+    microsoft_network_server_amount_of_idle_time_required_before_suspending_session :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\AutoDisconnect':
+              tag: CIS-2.3.9.1
+              match_output: '16'
+              value_type: 'less'
+      description: (l1) ensure 'microsoft network server - amount of idle time required before suspending session' is set to '15 or fewer minute(s), but not 0'
+    microsoft_network_server_digitally_sign_communications_ :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\RequireSecuritySignature':
+              tag: CIS-2.3.9.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'microsoft network server - digitally sign communications (always)' is set to 'enabled'
+    microsoft_network_server_digitally_sign_communications_ :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\EnableSecuritySignature':
+              tag: CIS-2.3.9.3
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'microsoft network server - digitally sign communications (if client agrees)' is set to 'enabled'
+    microsoft_network_server_disconnect_clients_when_logon_hours_expire :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\EnableForcedLogOff':
+              tag: CIS-2.3.9.4
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'microsoft network server - disconnect clients when logon hours expire' is set to 'enabled'
+    microsoft_network_server_server_spn_target_name_validation_level :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\SMBServerNameHardeningLevel':
+              tag: CIS-2.3.9.5
+              match_output: 'Accept if provided by client'
+              value_type: 'equal'
+      description: (l1) ensure 'microsoft network server - server spn target name validation level' is set to 'accept if provided by client' or higher
+    network_access_allow_anonymous_sid/name_translation :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'LSAAnonymousNameLookup':
+              tag: CIS-2.3.10.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'network access - allow anonymous sid/name translation' is set to 'disabled'
+    network_access_do_not_allow_anonymous_enumeration_of_sam_accounts :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\RestrictAnonymousSAM':
+              tag: CIS-2.3.10.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'network access - do not allow anonymous enumeration of sam accounts' is set to 'enabled'
+    network_access_do_not_allow_anonymous_enumeration_of_sam_accounts_and_shares :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\RestrictAnonymous':
+              tag: CIS-2.3.10.3
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'network access - do not allow anonymous enumeration of sam accounts and shares' is set to 'enabled'
+    network_access_do_not_allow_storage_of_passwords_and_credentials_for_network_authentication :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\DisableDomainCreds':
+              tag: CIS-2.3.10.4
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: 'Network access Do not allow storage of passwords and credentials for network authentication'
+    network_access_let_everyone_persmissions_apply_to_anonymous_users :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\EveryoneIncludesAnonymous':
+              tag: CIS-2.3.10.5
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'network access - let everyone permissions apply to anonymous users' is set to 'disabled'
+    network_access_remotely_accessible_registry_paths :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\SecurePipeServers\Winreg\AllowedExactPaths\Machine':
+              tag: CIS-2.3.10.7
+              match_output: 'System\CurrentControlSet\Control\ProductOptions, System\CurrentControlSet\Control\Server Applications, Software\Microsoft\Windows NT\CurrentVersion'
+              value_type: 'equal'
+      description: (l1) ensure 'network access - remotely accessible registry paths'
+    network_access_remotely_accessible_registry_paths_and_sub-paths :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\SecurePipeServers\Winreg\AllowedPaths\Machine':
+              tag: CIS-2.3.10.8
+              match_output: 'System\CurrentControlSet\Control\Print\Printers, System\CurrentControlSet\Services\Eventlog, Software\Microsoft\OLAP Server, Software\Microsoft\Windows NT\CurrentVersion\Print, Software\Microsoft\Windows NT\CurrentVersion\Windows, System\CurrentControlSet\Control\ContentIndex, System\CurrentControlSet\Control\Terminal Server, System\CurrentControlSet\Control\Terminal Server\UserConfig, System\CurrentControlSet\Control\Terminal Server\DefaultUserConfiguration, Software\Microsoft\Windows NT\CurrentVersion\Perflib, System\CurrentControlSet\Services\SysmonLog'
+              value_type: 'equal'
+      description: (l1) ensure 'network access - remotely accessible registry paths and sub-paths'
+    network_access_restrict_anonymous_access_to_named_pipes_and_shares :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\RestrictNullSessAccess':
+              tag: CIS-2.3.10.9
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'network access - restrict anonymous access to named pipes and shares' is set to 'enabled'
+    network_access_sharing_and_security_model_for_local_accounts :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\ForceGuest':
+              tag: CIS-2.3.10.11
+              match_output: 'Classic - local users authenticate as themselves'
+              value_type: 'equal'
+      description: (l1) ensure 'network access - sharing and security model for local accounts' is set to 'classic - local users authenticate as themselves'
+    network_security_allow_local_system_to_use_computer_identity_for_ntlm :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\UseMachineId':
+              tag: CIS-2.3.11.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'network security - allow local system to use computer identity for ntlm' is set to 'enabled'
+    network_security_allow_localsystem_null_session_fallback :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\MSV1_0\allownullsessionfallback':
+              tag: CIS-2.3.11.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'network security - allow localsystem null session fallback' is set to 'disabled'
+    network_security_allow_pku2u_authentication_requests_to_this_computer_to_use_online_identities :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\pku2u\AllowOnlineID':
+              tag: CIS-2.3.11.3
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'network security - allow pku2u authentication requests to this computer to use online identities' is set to 'disabled'
+    network_security_configure_encryption_types_allowed_for_kerberos :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters\SupportedEncryptionTypes':
+              tag: CIS-2.3.11.4
+              match_output: 'RC4_HMAC_MD5, AES128_HMAC_SHA1, AES256_HMAC_SHA1, Future encryption types'
+              value_type: 'equal'
+      description: (l1) ensure 'network security - configure encryption types allowed for kerberos' is set to 'rc4_hmac_md5, aes128_hmac_sha1, aes256_hmac_sha1, future encryption types'
+    network_security_do_not_store_lan_manager_hash_value_on_next_password_change :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\NoLMHash':
+              tag: CIS-2.3.11.5
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'network security - do not store lan manager hash value on next password change' is set to 'enabled'
+    network_security_force_logoff_when_logon_hours_expire :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\EnableForcedLogOff':
+              tag: CIS-2.3.11.6
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'network security - force logoff when logon hours expire' is set to 'enabled'
+    network_security_lan_manager_authentication_level :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\LmCompatibilityLevel':
+              tag: CIS-2.3.11.7
+              match_output: 'Send NTLMv2 response only. Refuse LM & NTLM'
+              value_type: 'equal'
+      description: (l1) ensure 'network security - lan manager authentication level' is set to 'send ntlmv2 response only. refuse lm & ntlm'
+    network_security_ldap_client_signing_requirements :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LDAP\LDAPClientIntegrity':
+              tag: CIS-2.3.11.8
+              match_output: 'Negotiate signing'
+              value_type: 'equal'
+      description: (l1) ensure 'network security - ldap client signing requirements' is set to 'negotiate signing' or higher
+    network_security_minimum_session_security_for_ntlm_ssp_based_clients :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\MSV1_0\NTLMMinClientSec':
+              tag: CIS-2.3.11.9
+              match_output: 'Require NTLMv2 session security, Require 128-bit encryption'
+              value_type: 'equal'
+      description: (l1) ensure 'network security - minimum session security for ntlm ssp based (including secure rpc) clients' is set to 'require ntlmv2 session security, require 128-bit encryption'
+    network_security_minimum_session_security_for_ntlm_ssp_based_(including_secure_rpc_servers :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Lsa\MSV1_0\NTLMMinServerSec':
+              tag: CIS-2.3.11.10
+              match_output: 'Require NTLMv2 session security, Require 128-bit encryption'
+              value_type: 'equal'
+      description: (l1) ensure 'network security - minimum session security for ntlm ssp based (including secure rpc) servers' is set to 'require ntlmv2 session security, require 128-bit encryption'
+    shutdown_allow_system_to_be_shut_down_without_having_to_log_on :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\ShutdownWithoutLogon':
+              tag: CIS-2.3.13.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'shutdown - allow system to be shut down without having to log on' is set to 'disabled'
+    system_objects_require_case_insensitivity_for_non-windows_subsystems :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Session Manager\Kernel\ObCaseInsensitive':
+              tag: CIS-2.3.15.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'system objects - require case insensitivity for non-windows subsystems' is set to 'enabled'
+    system_objects_strengthen_default_permissions_of_internal_system_objects_(e.g._symbolic_links :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Session Manager\ProtectionMode':
+              tag: CIS-2.3.15.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'system objects - strengthen default permissions of internal system objects (e.g. symbolic links)' is set to 'enabled'
+    system_settings_optional_subsystems :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Control\Session Manager\SubSystems\optional' :
+              tag: CIS-2.3.16.1
+              match_output: 'Defined' # blank
+              value_type: 'equal'
+      description: (l1) ensure 'system settings - optional subsystems' is set to 'defined - (blank)'
+    user_account_control_admin_approval_mode_for_the_built-in_administrator_account :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\FilterAdministratorToken':
+              tag: CIS-2.3.17.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'user account control - admin approval mode for the built-in administrator account' is set to 'enabled'
+    user_account_control_allow_uiaccess_applications_to_prompt_for_elevation_without_using_the_secure_desktop :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\EnableUIADesktopToggle':
+              tag: CIS-2.3.17.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'user account control - allow uiaccess applications to prompt for elevation without using the secure desktop' is set to 'disabled'
+    user_account_control_behavior_of_the_elevation_prompt_for_administrators_in_admin_approval_mode :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\ConsentPromptBehaviorAdmin':
+              tag: CIS-2.3.17.3
+              match_output: 'Prompt for consent on the secure desktop'
+              value_type: 'equal'
+      description: (l1) ensure 'user account control - behavior of the elevation prompt for administrators in admin approval mode' is set to 'prompt for consent on the secure desktop'
+    user_account_control_behavior_of_the_elevation_prompt_for_standard_users :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\ConsentPromptBehaviorUser':
+              tag: CIS-2.3.17.4
+              match_output: 'Automatically deny elevation requests'
+              value_type: 'equal'
+      description: (l1) ensure 'user account control - behavior of the elevation prompt for standard users' is set to 'automatically deny elevation requests'
+    user_account_control_detect_application_installations_and_prompt_for_elevation :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\EnableInstallerDetection':
+              tag: CIS-2.3.17.5
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'user account control - detect application installations and prompt for elevation' is set to 'enabled'
+    user_account_control_only_elevate_uiaccess_applications_that_are_installed_in_secure_locations :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\EnableSecureUIAPaths':
+              tag: CIS-2.3.17.6
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'user account control - only elevate uiaccess applications that are installed in secure locations' is set to 'enabled'
+    user_account_control_run_all_administrators_in_admin_approval_mode :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\EnableLUA':
+              tag: CIS-2.3.17.7
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'user account control - run all administrators in admin approval mode' is set to 'enabled'
+    user_account_control_switch_to_the_secure_desktop_when_prompting_for_elevation :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\PromptOnSecureDesktop':
+              tag: CIS-2.3.17.8
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'user account control - switch to the secure desktop when prompting for elevation' is set to 'enabled'
+    user_account_control_virtualize_file_and_registry_write_failures_to_per-user_locations :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\':
+              tag: CIS-2.3.17.9
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'user account control - virtualize file and registry write failures to per-user locations' is set to 'enabled'
+
+  blacklist:
+    accounts_rename_administrator_account :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'NewAdministratorName':
+              tag: CIS-2.3.1.4
+              match_output: 'Administrator'
+              value_type: 'equal'
+      description: (l1) configure 'accounts - rename administrator account'
+    accounts_rename_guest_account :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'AccountsRenameguestaccount':
+              tag: CIS-2.3.1.5
+              match_output: 'Guest'
+              value_type: 'equal'
+      description: (l1) configure 'accounts - rename guest account'
+    network_access_named_pipes_that_can_be_accessed_anonymously :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\':
+              tag: CIS-2.3.10.6
+              match_output: ''
+              value_type: 'equal'
+      description: (l1) configure 'network access - named pipes that can be accessed anonymously'
+    network_access_shares_that_can_be_accessed_anonymously :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\NullSessionShares':
+              tag: CIS-2.3.10.10
+              match_output: ''
+              value_type: 'equal'
+      description: (l1) ensure 'network access - shares that can be accessed anonymously' is set to 'none'
+    access_credential_manager:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeTrustedCredManAccessPrivilege':
+              tag: CIS-2.2.1
+              match_output: 'No One'
+              value_type: 'match'
+      description: (l1) ensure 'access credential manager as a trusted caller' is set to 'no one'
+    act_as_operating_system:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeTcbPrivilege':
+              tag: CIS-2.2.3
+              match_output: 'No One'
+              value_type: 'match'
+      description: (l1) ensure 'act as part of the operating system' is set to 'no one'
+    create_a_token_object :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeCreateTokenPrivilege':
+              tag: CIS-2.2.12
+              match_output: 'No One'
+              value_type: 'account'
+      description: (l1) ensure 'create a token object' is set to 'no one'
+    create_permanent_shared_objects :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Createpermanentsharedobjects':
+              tag: CIS-2.2.14
+              match_output: 'No One'
+              value_type: 'account'
+      description: (l1) ensure 'create permanent shared objects' is set to 'no one'
+    enable_computer_and_user_accounts_to_be_trusted_for_delegation :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeEnableDelegationPrivilege':
+              tag: CIS-2.2.22
+              match_output: 'No one'
+              value_type: 'account'
+      description: (l1) configure 'enable computer and user accounts to be trusted for delegation'
+    lock_pages_in_memory :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeLockMemoryPrivilege':
+              tag: CIS-2.2.28
+              match_output: 'No One'
+              value_type: 'account'
+      description: (l1) ensure 'lock pages in memory' is set to 'no one'
+    modify_an_object_label :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeRelabelPrivilege':
+              tag: CIS-2.2.31
+              match_output: 'No One'
+              value_type: 'account'
+      description: (l1) ensure 'modify an object label' is set to 'no one'
+    synchronize_directory_service_data :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'SeSyncAgentPrivilege':
+              tag: CIS-2.2.39
+              match_output: 'No One'
+              value_type: 'account'
+      description: (l1) ensure 'synchronize directory service data' is set to 'no one' (dc only)
+
+#win_firewall:
+#  whitelist:
+#    windows_firewall_domain_firewall_state :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'Enabled':
+#              tag: CIS-9.1.1
+#              match_output: 'True'
+#              value_type: 'domain'
+#      description: (l1) ensure 'windows firewall - domain - firewall state' is set to 'on (recommended)'
+#    windows_firewall_domain_inbound_connections :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'DefaultInboundAction':
+#              tag: CIS-9.1.2
+#              match_output: 'Block'
+#              value_type: 'domain'
+#      description: (l1) ensure 'windows firewall - domain - inbound connections' is set to 'block (default)'
+#    windows_firewall_domain_outbound_connections :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'DefaultOutboundAction':
+#              tag: CIS-9.1.3
+#              match_output: 'Allow'
+#              value_type: 'domain'
+#      description: (l1) ensure 'windows firewall - domain - outbound connections' is set to 'allow (default)'
+#    windows_firewall_domain_settings_display_a_notification :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'NotifyOnListen':
+#              tag: CIS-9.1.4
+#              match_output: 'False'
+#              value_type: 'domain'
+#      description: (l1) ensure 'windows firewall - domain - settings - display a notification' is set to 'no'
+#    windows_firewall_domain_settings_apply_local_firewall_rules :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'AllowLocalFirewallRules':
+#              tag: CIS-9.1.5
+#              match_output: 'True'
+#              value_type: 'domain'
+#      description: (l1) ensure 'windows firewall - domain - settings - apply local firewall rules' is set to 'yes (default)'
+#    windows_firewall_domain_settings_apply_local_connection_security_rules :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'AllowLocalIPsecRules':
+#              tag: CIS-9.1.6
+#              match_output: 'True'
+#              value_type: 'domain'
+#      description: (l1) ensure 'windows firewall - domain - settings - apply local connection security rules' is set to 'yes (default)'
+#    windows_firewall_domain_logging_name :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogFileName':
+#              tag: CIS-9.1.7
+#              match_output: '%SYSTEMROOT%\System32\logfiles\firewall\domainfw.log'
+#              value_type: 'domain'
+#      description: (l1) ensure 'windows firewall - domain - logging - name' is set to '%systemroot%\system32\logfiles\firewall\domainfw.log'
+#    windows_firewall_domain_logging_size_limit :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogMaxSizeKilobytes':
+#              tag: CIS-9.1.8
+#              match_output: '16384'
+#              value_type: 'domain'
+#      description: (l1) ensure 'windows firewall - domain - logging - size limit (kb)' is set to '16,384 kb or greater'
+#    windows_firewall_domain_logging_log_dropped_packets :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogBlocked':
+#              tag: CIS-9.1.9
+#              match_output: 'True'
+#              value_type: 'domain'
+#      description: (l1) ensure 'windows firewall - domain - logging - log dropped packets' is set to 'yes'
+#    windows_firewall_domain_logging_log_successful_connections :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogAllowed':
+#              tag: CIS-9.1.10
+#              match_output: 'True'
+#              value_type: 'domain'
+#      description: (l1) ensure 'windows firewall - domain - logging - log successful connections' is set to 'yes'
+#    windows_firewall_private_firewall_state :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'Enabled':
+#              tag: CIS-9.2.1
+#              match_output: 'True'
+#              value_type: 'private'
+#      description: (l1) ensure 'windows firewall - private - firewall state' is set to 'on (recommended)'
+#    windows_firewall_private_inbound_connections :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'DefaultInboundAction':
+#              tag: CIS-9.2.2
+#              match_output: 'Block'
+#              value_type: 'private'
+#      description: (l1) ensure 'windows firewall - private - inbound connections' is set to 'block (default)'
+#    windows_firewall_private_outbound_connections :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'DefaultOutboundAction':
+#              tag: CIS-9.2.3
+#              match_output: 'Allow'
+#              value_type: 'private'
+#      description: (l1) ensure 'windows firewall - private - outbound connections' is set to 'allow (default)'
+#    windows_firewall_private_settings_display_a_notification :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'NotifyOnListen':
+#              tag: CIS-9.2.4
+#              match_output: 'False'
+#              value_type: 'private'
+#      description: (l1) ensure 'windows firewall - private - settings - display a notification' is set to 'no'
+#    windows_firewall_private_settings_apply_local_firewall_rules :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'AllowLocalFirewallRules':
+#              tag: CIS-9.2.5
+#              match_output: 'True'
+#              value_type: 'private'
+#      description: (l1) ensure 'windows firewall - private - settings - apply local firewall rules' is set to 'yes (default)'
+#    windows_firewall_private_settings_apply_local_connection_security_rules :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'AllowLocalIPsecRules':
+#              tag: CIS-9.2.6
+#              match_output: 'True'
+#              value_type: 'private'
+#      description: (l1) ensure 'windows firewall - private - settings - apply local connection security rules' is set to 'yes (default)'
+#    windows_firewall_private_logging_name :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogFileName':
+#              tag: CIS-9.2.7
+#              match_output: '%SYSTEMROOT%\System32\logfiles\firewall\privatefw.log'
+#              value_type: 'private'
+#      description: (l1) ensure 'windows firewall - private - logging - name' is set to '%systemroot%\system32\logfiles\firewall\privatefw.log'
+#    windows_firewall_private_logging_size_limit :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogMaxSizeKilobytes':
+#              tag: CIS-9.2.8
+#              match_output: '16384'
+#              value_type: 'private'
+#      description: (l1) ensure 'windows firewall - private - logging - size limit (kb)' is set to '16,384 kb or greater'
+#    windows_firewall_private_logging_log_dropped_packets :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogBlocked':
+#              tag: CIS-9.2.9
+#              match_output: 'True'
+#              value_type: 'private'
+#      description: (l1) ensure 'windows firewall - private - logging - log dropped packets' is set to 'yes'
+#    windows_firewall_private_logging_log_successful_connections :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogAllowed':
+#              tag: CIS-9.2.10
+#              match_output: 'True'
+#              value_type: 'private'
+#      description: (l1) ensure 'windows firewall - private - logging - log successful connections' is set to 'yes'
+#    windows_firewall_public_firewall_state :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'Enabled':
+#              tag: CIS-9.3.1
+#              match_output: 'True'
+#              value_type: 'public'
+#      description: (l1) ensure 'windows firewall - public - firewall state' is set to 'on (recommended)'
+#    windows_firewall_public_inbound_connections :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'DefaultInboundAction':
+#              tag: CIS-9.3.2
+#              match_output: 'Block'
+#              value_type: 'public'
+#      description: (l1) ensure 'windows firewall - public - inbound connections' is set to 'block (default)'
+#    windows_firewall_public_outbound_connections :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'DefaultOutboundAction':
+#              tag: CIS-9.3.3
+#              match_output: 'Allow'
+#              value_type: 'public'
+#      description: (l1) ensure 'windows firewall - public - outbound connections' is set to 'allow (default)'
+#    windows_firewall_public_settings_display_a_notification :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'NotifyOnListen':
+#              tag: CIS-9.3.4
+#              match_output: 'True'
+#              value_type: 'public'
+#      description: (l1) ensure 'windows firewall - public - settings - display a notification' is set to 'yes'
+#    windows_firewall_public_settings_apply_local_firewall_rules :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'AllowLocalFirewallRules':
+#              tag: CIS-9.3.5
+#              match_output: 'False'
+#              value_type: 'public'
+#      description: (l1) ensure 'windows firewall - public - settings - apply local firewall rules' is set to 'no'
+#    windows_firewall_public_settings_apply_local_connection_security_rules :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'AllowLocalIPsecRules':
+#              tag: CIS-9.3.6
+#              match_output: 'False'
+#              value_type: 'public'
+#      description: (l1) ensure 'windows firewall - public - settings - apply local connection security rules' is set to 'no'
+#    windows_firewall_public_logging_name :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogFileName':
+#              tag: CIS-9.3.7
+#              match_output: '%SYSTEMROOT%\System32\logfiles\firewall\publicfw.log'
+#              value_type: 'public'
+#      description: (l1) ensure 'windows firewall - public - logging - name' is set to '%systemroot%\system32\logfiles\firewall\publicfw.log'
+#    windows_firewall_public_logging_size_limit_(kb :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogMaxSizeKilobytes':
+#              tag: CIS-9.3.8
+#              match_output: '16384'
+#              value_type: 'public'
+#      description: (l1) ensure 'windows firewall - public - logging - size limit (kb)' is set to '16,384 kb or greater'
+#    windows_firewall_public_logging_log_dropped_packets :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogBlocked':
+#              tag: CIS-9.3.9
+#              match_output: 'True'
+#              value_type: 'public'
+#      description: (l1) ensure 'windows firewall - public - logging - log dropped packets' is set to 'yes'
+#    windows_firewall_public_logging_log_successful_connections :
+#      data:
+#        'Microsoft Windows Server 2008*':
+#          - 'LogAllowed':
+#              tag: CIS-9.3.10
+#              match_output: 'True'
+#              value_type: 'public'
+#      description: (l1) ensure 'windows firewall - public - logging - log successful connections' is set to 'yes'
+
+win_auditpol:
+  whitelist:
+    Audit Credential Validation :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Credential Validation':
+              tag: CIS-17.1.1
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit credential validation' is set to 'success and failure'
+    Audit Application Group Management :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Application Group Management':
+              tag: CIS-17.2.1
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit application group management' is set to 'success and failure'
+    Audit Computer Account Management :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Computer Account Management':
+              tag: CIS-17.2.2
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit computer account management' is set to 'success and failure'
+    Audit Other Account Management Events :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Other Account Management Events':
+              tag: CIS-17.2.4
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit other account management events' is set to 'success and failure'
+    Audit Security Group Management :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Security Group Management':
+              tag: CIS-17.2.5
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit security group management' is set to 'success and failure'
+    Audit User Account Management :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'User Account Management':
+              tag: CIS-17.2.6
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit user account management' is set to 'success and failure'
+    Audit Process Creation :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Process Creation':
+              tag: CIS-17.3.1
+              match_output: 'Success'
+              value_type: 'equal'
+      description: (l1) ensure 'audit process creation' is set to 'success'
+    Audit Account Lockout :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Account Lockout':
+              tag: CIS-17.5.1
+              match_output: 'Success'
+              value_type: 'equal'
+      description: (l1) ensure 'audit account lockout' is set to 'success'
+    Audit Logoff :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Logoff':
+              tag: CIS-17.5.2
+              match_output: 'Success'
+              value_type: 'equal'
+      description: (l1) ensure 'audit logoff' is set to 'success'
+    Audit Logon :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Logon':
+              tag: CIS-17.5.3
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit logon' is set to 'success and failure'
+    Audit Other Logon/Logoff Events :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Other Logon/Logoff Events':
+              tag: CIS-17.5.4
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit other logon/logoff events' is set to 'success and failure'
+    Audit Special Logon :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Special Logon':
+              tag: CIS-17.5.5
+              match_output: 'Success'
+              value_type: 'equal'
+      description: (l1) ensure 'audit special logon' is set to 'success'
+    Audit Audit Policy Change :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Audit Policy Change':
+              tag: CIS-17.7.1
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit audit policy change' is set to 'success and failure'
+    Audit Authentication Policy Change :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Authentication Policy Change':
+              tag: CIS-17.7.2
+              match_output: 'Success'
+              value_type: 'equal'
+      description: (l1) ensure 'audit authentication policy change' is set to 'success'
+    Audit Sensitive Privilege Use :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Sensitive Privilege Use':
+              tag: CIS-17.8.1
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit sensitive privilege use' is set to 'success and failure'
+    Audit IPsec Driver :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'IPsec Driver':
+              tag: CIS-17.9.1
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit ipsec driver' is set to 'success and failure'
+    Audit Other System Events :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Other System Events':
+              tag: CIS-17.9.2
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit other system events' is set to 'success and failure'
+    Audit Security State Change :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Security State Change':
+              tag: CIS-17.9.3
+              match_output: 'Success'
+              value_type: 'equal'
+      description: (l1) ensure 'audit security state change' is set to 'success'
+    Audit Security System Extension :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Security System Extension':
+              tag: CIS-17.9.4
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit security system extension' is set to 'success and failure'
+    Audit System Integrity :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'System Integrity':
+              tag: CIS-17.9.5
+              match_output: 'Success and Failure'
+              value_type: 'equal'
+      description: (l1) ensure 'audit system integrity' is set to 'success and failure'
+
+win_reg:
+  whitelist:
+    Do not allow password expiration time longer than required by policy :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft Services\AdmPwd\PwdExpirationProtectionEnabled':
+              tag: CIS-18.2.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: 'Ensure Do not allow password expiration time longer than required by policy is set to Enabled '
+    Enable Local Admin Password Management :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft Services\AdmPwd\AdmPwdEnabled':
+              tag: CIS-18.2.3
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: 'Ensure Enable Local Admin Password Management is set to Enabled '
+    Password Settings_ Password Complexity :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft Services\AdmPwd\PasswordComplexity':
+              tag: CIS-18.2.4
+              match_output: 'Enabled: Large letters + small letters + numbers + special characters'
+              value_type: 'equal'
+      description: 'Ensure Password SettingS- Password Complexity is set to Enabled - Large letters + small letters + numbers + special characters '
+    Password Settings_ Password Length :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft Services\AdmPwd\PasswordLength':
+              tag: CIS-18.2.5
+              match_output: 'Enabled: 15 or more'
+              value_type: 'equal'
+      description: 'Ensure Password SettingS- Password Length is set to Enabled - 15 or more '
+    Password Settings_ Password Age :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft Services\AdmPwd\PasswordAgeDays':
+              tag: CIS-18.2.6
+              match_output: 'Enabled: 30 or fewer'
+              value_type: 'equal'
+      description: 'Ensure Password SettingS- Password Age is set to Enabled - 30 or fewer '
+
+    MSS_DisableIPSourceRouting IPv6 IP source routing protection level protects against packet spoofing :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\Tcpip6\Parameters\DisableIPSourceRouting':
+              tag: CIS-18.3.2
+              match_output: 'Enabled' #: Highest protection, source routing is completely disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'mss - (disableipsourcerouting ipv6) ip source routing protection level (protects against packet spoofing)' is set to 'enabled - highest protection, source routing is completely disabled'
+    MSS_ IP source routing protection level protects against packet spoofing :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\Tcpip\Parameters\DisableIPSourceRouting':
+              tag: CIS-18.3.3
+              match_output: 'Enabled' #: Highest protection, source routing is completely disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'mss - (disableipsourcerouting) ip source routing protection level (protects against packet spoofing)' is set to 'enabled - highest protection, source routing is completely disabled'
+    MSS_ Allow ICMP redirects to override OSPF generated routes :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\Tcpip\Parameters\EnableICMPRedirect':
+              tag: CIS-18.3.4
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'mss - (enableicmpredirect) allow icmp redirects to override ospf generated routes' is set to 'disabled'
+    MSS_ Allow the computer to ignore NetBIOS name release requests except from WINS servers :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\NetBT\Parameters\nonamereleaseondemand':
+              tag: CIS-18.3.6
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'mss - (nonamereleaseondemand) allow the computer to ignore netbios name release requests except from wins servers' is set to 'enabled'
+    MSS_ Enable Safe DLL search mode :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\SafeDllSearchMode':
+              tag: CIS-18.3.8
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'mss - (safedllsearchmode) enable safe dll search mode (recommended)' is set to 'enabled'
+    MSS_ The time in seconds before the screen saver grace period expires :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\ScreenSaverGracePeriod':
+              tag: CIS-18.3.9
+              match_output: 'Enabled: 5 or fewer seconds'
+              value_type: 'equal'
+      description: (l1) ensure 'mss - (screensavergraceperiod) the time in seconds before the screen saver grace period expires (0 recommended)' is set to 'enabled - 5 or fewer seconds'
+    MSS_ Percentage threshold for the security event log at which the system will generate a warning :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Eventlog\Security\WarningLevel':
+              tag: CIS-18.3.12
+              match_output: 'Enabled' #Enabled: 90% or less
+              value_type: 'less'
+      description: (l1) ensure 'mss - (warninglevel) percentage threshold for the security event log at which the system will generate a warning' is set to 'enabled - 90% or less'
+    Ensure Turn off Microsoft Peer-to-Peer Networking Services is set to Enabled :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Peernet\Disabled':
+              tag: CIS-18.4.9.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: 'Ensure Turn off Microsoft Peer-to-Peer Networking Services is set to Enabled'
+    Prohibit installation and configuration of Network Bridge on your DNS domain network :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Network Connections\NC_AllowNetBridge_NLA':
+              tag: CIS-18.4.10.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'prohibit installation and configuration of network bridge on your dns domain network' is set to 'enabled'
+    Require domain users to elevate when setting a network :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Network Connections\NC_StdDomainUserSetLocation':
+              tag: CIS-18.4.10.3
+              match_output: ' is set to '
+              value_type: 'equal'
+      description: 'Ensure Require domain users to elevate when setting a networks location is set to Enabled'
+    Hardened UNC Paths :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths\\*\NETLOGON':
+              tag: CIS-18.4.13.1
+              match_output: 'Enabled' #with "Require Mutual Authentication" and "Require Integrity" set for all NETLOGON and SYSVOL shares'
+              value_type: 'equal'
+      description: (l1) ensure 'hardened unc paths' is set to 'enabled, with "require mutual authentication" and "require integrity" set for all netlogon and sysvol shares'
+    Disable IPv6 :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\TCPIP6\Parameters\DisabledComponents':
+              tag: CIS-18.4.18.2.1
+              match_output: '255'
+              value_type: 'equal'
+      description: 'Disable IPv6 - Ensure TCPIP6 Parameter DisabledComponents is set to 0xff (255)'
+    Apply UAC restrictions to local accounts on network logons :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\LocalAccountTokenFilterPolicy':
+              tag: CIS-18.6.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: 'Ensure Apply UAC restrictions to local accounts on network logons is set to Enabled '
+    Configure registry policy processing_ Do not apply during periodic background processing :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}\NoBackgroundPolicy':
+              tag: CIS-18.8.18.2
+              match_output: 'Enabled'# : FALSE'
+              value_type: 'equal'
+      description: (l1) ensure 'configure registry policy processing - do not apply during periodic background processing' is set to 'enabled - false'
+    Configure registry policy processing_ Process even if the Group Policy objects have not changed :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Group Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}\NoGPOListChanges':
+              tag: CIS-18.8.18.3
+              match_output: 'Enabled' #: TRUE'
+              value_type: 'equal'
+      description: (l1) ensure 'configure registry policy processing - process even if the group policy objects have not changed' is set to 'enabled - true'
+    Do not display network selection UI :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\LogonType':
+              tag: CIS-18.8.24.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: 'Ensure Always use classic logon is set to enabled'
+    Enable RPC Endpoint Mapper Client Authentication :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\Rpc\EnableAuthEpResolution':
+              tag: CIS-18.8.31.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: 'Ensure Enable RPC Endpoint Mapper Client Authentication is set to Enabled '
+    Disallow Autoplay for non-volume devices :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Explorer\NoAutoplayfornonVolume':
+              tag: CIS-18.9.8.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'set the default behavior for autorun' is set to 'enabled - do not execute any autorun commands'
+    Set the default behavior for AutoRun :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoAutorun':
+              tag: CIS-18.9.8.2
+              match_output: 'Enabled'# : Do not execute any autorun commands'
+              value_type: 'equal'
+      description: (l1) ensure 'turn off autoplay' is set to 'enabled - all drives'
+    Turn off Autoplay :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoDriveTypeAutoRun':
+              tag: CIS-18.9.8.3
+              match_output: 'Enabled: All drives'
+              value_type: 'equal'
+      description: 'Ensure Turn off Autoplay is set to Enabled - All drives'
+    Do not display the password reveal button :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CredUI\DisablePasswordReveal':
+              tag: CIS-18.9.13.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'enumerate administrator accounts on elevation' is set to 'disabled'
+    Turn off desktop gadgets :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Windows\Sidebar\TurnOffSideb':
+              tag: CIS-18.9.16.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'turn off desktop gadgets' is set to 'enabled'
+    Turn off user-installed desktop gadgets :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Windows\Sidebar\TurnOffUserInstalledGadget':
+              tag: CIS-18.9.16.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'turn off user-installed desktop gadgets' is set to 'enabled'
+    Default Action and Mitigation Settings :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\SysSettings\AntiDetours': #, HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\SysSettings\BannedFunctions, HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\SysSettings\DeepHooks, HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\SysSettings\ExploitAction':
+              tag: CIS-18.9.22.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'default action and mitigation settings' is set to 'enabled' (plus subsettings)
+    Default Protections for Internet Explorer :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\Defaults\IE':
+              tag: CIS-18.9.22.3
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'default protections for internet explorer' is set to 'enabled'
+    Default Protections for Popular Software :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\Defaults':
+              tag: CIS-18.9.22.4
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'default protections for popular software' is set to 'enabled'
+    Default Protections for Recommended Software :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\Defaults':
+              tag: CIS-18.9.22.5
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'default protections for recommended software' is set to 'enabled'
+    System ASLR :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\SysSettings\ASLR':
+              tag: CIS-18.9.22.6
+              match_output: 'Enabled'#: Application Opt-In'
+              value_type: 'equal'
+      description: (l1) ensure 'system aslr' is set to 'enabled - application opt-in'
+    System DEP :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\SysSettings\DEP':
+              tag: CIS-18.9.22.7
+              match_output: 'Enabled'#: Application Opt-Out'
+              value_type: 'equal'
+      description: (l1) ensure 'system dep' is set to 'enabled - application opt-out'
+    System SEHOP :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\SysSettings\SEHOP':
+              tag: CIS-18.9.22.8
+              match_output: 'Enabled'#: Application Opt-Out'
+              value_type: 'equal'
+      description: (l1) ensure 'system sehop' is set to 'enabled - application opt-out'
+    Application_ Specify the maximum log file size  :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize':
+              tag: CIS-18.9.24.1.2
+              match_output: 'Enabled'#_ 32768 or greater'
+              value_type: 'equal'
+      description: (l1) ensure 'application - specify the maximum log file size (kb)' is set to 'enabled - 32,768 or greater'
+    Security_ Specify the maximum log file size  :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Security\MaxSize':
+              tag: CIS-18.9.24.2.2
+              match_output: 'Enabled'#_ 196608 or greater'
+              value_type: 'equal'
+      description: (l1) ensure 'security - specify the maximum log file size (kb)' is set to 'enabled - 196,608 or greater'
+    Setup_ Specify the maximum log file size  :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Setup\MaxSize':
+              tag: CIS-18.9.24.3.2
+              match_output: 'Enabled' # 32,768 or greater'
+              value_type: 'equal'
+      description: (l1) ensure 'setup - specify the maximum log file size (kb)' is set to 'enabled - 32,768 or greater'
+    System_ Specify the maximum log file size  :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\System\MaxSize':
+              tag: CIS-18.9.24.4.2
+              match_output: 'Enabled'#_ 32768 or greater'
+              value_type: 'equal'
+      description: (l1) ensure 'system - specify the maximum log file size (kb)' is set to 'enabled - 32,768 or greater'
+    Do not allow passwords to be saved :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services\DisablePasswordSaving':
+              tag: CIS-18.9.48.2.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'do not allow passwords to be saved' is set to 'enabled'
+    Do not allow drive redirection :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services\fDisableCdm':
+              tag: CIS-18.9.48.3.3.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'do not allow drive redirection' is set to 'enabled'
+    Always prompt for password upon connection :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services\fPromptForPassword':
+              tag: CIS-18.9.48.3.9.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'always prompt for password upon connection' is set to 'enabled'
+    Require secure RPC communication :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\Terminal Services\fEncryptRPCTraffic':
+              tag: CIS-18.9.48.3.9.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'require secure rpc communication' is set to 'enabled'
+    Set client connection encryption level :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services\MinEncryptionLevel':
+              tag: CIS-18.9.48.3.9.3
+              match_output: 'Enabled'#: High Level'
+              value_type: 'equal'
+      description: (l1) ensure 'set client connection encryption level' is set to 'enabled - high level'
+    Prevent downloading of enclosures :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Internet Explorer\Feeds\DisableEnclosureDownload':
+              tag: CIS-18.9.49.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'prevent downloading of enclosures' is set to 'enabled'
+    Configure Default consent :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting\Consent\DefaultConsent':
+              tag: CIS-18.9.67.2.1
+              match_output: 'Enabled'#: Always ask before sending data'
+              value_type: 'equal'
+      description: (l1) ensure 'configure default consent' is set to 'enabled - always ask before sending data'
+    Disallow Digest authentication :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Client\AllowDigest':
+              tag: CIS-18.9.81.1.3
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'disallow digest authentication' is set to 'enabled'
+    Disallow WinRM from storing RunAs credentials :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Service\DisableRunAs':
+              tag: CIS-18.9.81.2.3
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'disallow winrm from storing runas credentials' is set to 'enabled'
+    Configure Automatic Updates :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsUpdate\AU\NoAutoUpdate':
+              tag: CIS-18.9.85.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'configure automatic updates' is set to 'enabled'
+    Configure Automatic Updates_ Scheduled install day :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsUpdate\AU\ScheduledInstallDay':
+              tag: CIS-18.9.85.2
+              match_output: '0'# - Every day'
+              value_type: 'equal'
+      description: (l1) ensure 'configure automatic updates - scheduled install day' is set to '0 - every day'
+    Do Not Adjust Default Option To Install Updates and Shutdown Windows Dialog Box :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsUpdate\AU\NoAUAsDefaultShutdownOption':
+              tag: CIS-18.9.85.3
+              match_output: ''
+              value_type: 'equal'
+      description: (l1) ensure 'do not adjust default option to 'install updates and shut down' in shut down windows dialog box' is set to 'disabled'
+    Do Not Display Install Updates and Shut Down Dialog Box :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsUpdate\AU\NoAUShutdownOption':
+              tag: CIS-18.9.85.4
+              match_output: '0'# - Every day'
+              value_type: 'equal'
+      description: (l1) ensure 'do not display 'install updates and shut down' option in shut down windows dialog box' is set to 'disabled'
+    No Auto-Restart With Logged on Users for Scheduled Updates Installations :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsUpdate\AU\U\NoAutoRebootWithLoggedOnUsers':
+              tag: CIS-18.9.85.5
+              match_output: '0'# - Every day'
+              value_type: 'equal'
+      description: (l1) ensure 'no auto-restart with logged on users for scheduled automatic updates installations' is set to 'disabled'
+    Reschedule Automatic Updates Scheduled Installations :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsUpdate\AU\U:RescheduleWaitTimeEnabled':
+              tag: CIS-18.9.85.6
+              match_output: '0'# - Every day'
+              value_type: 'equal'
+      description: (l1) ensure 'reschedule automatic updates scheduled installations' is set to 'enabled - 1 minute'
+    Enable Screen Saver :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_USERS\<SID>\Software\Policies\Microsoft\Windows\Control Panel\Desktop\ScreenSaveActive':
+              tag: CIS-19.1.3.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'enable screen saver' is set to 'enabled'
+    Force specific screen saver_ Screen saver executable name :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_USERS\<SID>\Software\Policies\Microsoft\Windows\Control Panel\Desktop\SCRNSAVE.EXE':
+              tag: CIS-19.1.3.2
+              match_output: 'Enabled'#: scrnsave.scr'
+              value_type: 'equal'
+      description: (l1) ensure 'force specific screen saver - screen saver executable name' is set to 'enabled - scrnsave.scr'
+    Password protect the screen saver :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_USERS\<SID>\Software\Policies\Microsoft\Windows\Control Panel\Desktop\ScreenSaverIsSecure':
+              tag: CIS-19.1.3.3
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'password protect the screen saver' is set to 'enabled'
+    Screen saver timeout :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_USERS\<SID>\Software\Policies\Microsoft\Windows\Control Panel\Desktop\ScreenSaveTimeOut':
+              tag: CIS-19.1.3.4
+              match_output: 'Enabled'#: 900 seconds or fewer, but not 0'
+              value_type: 'equal'
+      description: (l1) ensure 'screen saver timeout' is set to 'enabled - 900 seconds or fewer, but not 0'
+    Notify antivirus programs when opening attachments :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_USERS\<SID>\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments\ScanWithAntiVirus':
+              tag: CIS-19.7.4.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'notify antivirus programs when opening attachments' is set to 'enabled'
+    Prevent users from sharing files within their profile. :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_USERS\[USER SID]\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoInplaceSharing':
+              tag: CIS-19.7.25.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: (l1) ensure 'prevent users from sharing files within their profile.' is set to 'enabled'
+
+  blacklist:
+    MSS_ Enable Automatic Logon :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows NT\CurrentVersion\Winlogon\AutoAdminLogon':
+              tag: CIS-18.3.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'mss - (autoadminlogon) enable automatic logon (not recommended)' is set to 'disabled'
+    Ensure Turn on Mapper I/O driver is set to Disabled :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\LLTD\AllowLLTDIOOnDomain':
+              tag: CIS-18.4.8.1
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: 'Ensure Turn on Mapper I/O (LLTDIO) driver is set to Disabled'
+    Ensure Turn on Responder (RSPNDR) driver is set to Disabled :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\LLTD\AllowRspndrOnDomain':
+              tag: CIS-18.4.8.2
+              match_output: 'Enabled'
+              value_type: 'equal'
+      description: 'Ensure Turn on Responder (RSPNDR) driver is set to Disabled'
+    WDigest Authentication :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\SecurityProviders\WDigest\UseLogonCredential':
+              tag: CIS-18.6.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: 'Ensure WDigest Authentication is set to Disabled'
+    Ensure Include command line in process creation events is Disabled:
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit\ProcessCreationIncludeCmdLine_Enabled':
+              tag: CIS-18.8.2.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: 'Ensure Include command line in process creation events is set to Disabled'
+    Allow remote access to the Plug and Play interface :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\DeviceInstall\Settings\AllowRemoteRPC':
+              tag: CIS-18.8.5.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'allow remote access to the plug and play interface' is set to 'disabled'
+    Turn off background refresh of Group Policy :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\DisableBkGndGroupPolicy':
+              tag: CIS-18.8.18.4
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'turn off background refresh of group policy' is set to 'disabled'
+    Enumerate local users on domain-joined computers :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\System\EnumerateLocalUsers':
+              tag: CIS-18.8.24.3
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: 'Ensure Enumerate local users on domain-joined computers is set to Disabled'
+    Turn on convenience PIN sign-in :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\System\AllowDomainPINLogon':
+              tag: CIS-18.8.24.5
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: 'Ensure Turn on convenience PIN sign-in is set to Disabled'
+    Configure Offer Remote Assistance :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\policies\Microsoft\Windows NT\Terminal Services\fAllowUnsolicited':
+              tag: CIS-18.8.30.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'configure offer remote assistance' is set to 'disabled'
+    Configure Solicited Remote Assistance :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\policies\Microsoft\Windows NT\Terminal Services\fAllowToGetHelp':
+              tag: CIS-18.8.30.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'configure solicited remote assistance' is set to 'disabled'
+    Enumerate administrator accounts on elevation :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\CredUI\EnumerateAdministrators':
+              tag: CIS-18.9.13.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: 'Ensure Enumerate administrator accounts on elevation is set to Disabled'
+    Application_ Control Event Log behavior when the log file reaches its maximum size :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\Retention':
+              tag: CIS-18.9.24.1.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'application - control event log behavior when the log file reaches its maximum size' is set to 'disabled'
+    Security_ Control Event Log behavior when the log file reaches its maximum size :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Security\Retention':
+              tag: CIS-18.9.24.2.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'security - control event log behavior when the log file reaches its maximum size' is set to 'disabled'
+    Setup_ Control Event Log behavior when the log file reaches its maximum size :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Setup\Retention':
+              tag: CIS-18.9.24.3.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'setup - control event log behavior when the log file reaches its maximum size' is set to 'disabled'
+    System_ Control Event Log behavior when the log file reaches its maximum size :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\System\Retention':
+              tag: CIS-18.9.24.4.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'system - control event log behavior when the log file reaches its maximum size' is set to 'disabled'
+    Turn off Data Execution Prevention for Explorer :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Explorer\NoDataExecutionPrevention':
+              tag: CIS-18.9.28.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'turn off heap termination on corruption' is set to 'disabled'
+    Turn off heap termination on corruption :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Explorer\NoHeapTerminationOnCorruption':
+              tag: CIS-18.9.28.3
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'turn off shell protocol protected mode' is set to 'disabled'
+    Turn off shell protocol protected mode :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\PreXPSP2ShellProtocolBehavior':
+              tag: CIS-18.9.28.4
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: 'Ensure Turn off shell protocol protected mode is set to Disabled'
+    Do not delete temp folders upon exit :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows NT\Terminal Services\DeleteTempDirsOnExit':
+              tag: CIS-18.9.48.3.11.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'do not delete temp folders upon exit' is set to 'disabled'
+    Do not use temporary folders per session :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\Terminal Services\PerSessionTempDir':
+              tag: CIS-18.9.48.3.11.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'do not use temporary folders per session' is set to 'disabled'
+    Allow indexing of encrypted files :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\Windows Search\AllowIndexingEncryptedStoresOrItems':
+              tag: CIS-18.9.50.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'allow indexing of encrypted files' is set to 'disabled'
+    Allow user control over installs :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Installer\EnableUserControl':
+              tag: CIS-18.9.69.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'allow user control over installs' is set to 'disabled'
+    Always install with elevated privileges :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Installer\AlwaysInstallElevated':
+              tag: CIS-18.9.69.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'always install with elevated privileges' is set to 'disabled'
+    Turn on PowerShell Script Block Logging :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging\EnableScriptBlockLogging':
+              tag: CIS-18.9.79.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'turn on powershell script block logging' is set to 'disabled'
+    Turn on PowerShell Transcription :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows\PowerShell\Transcription\EnableTranscripting':
+              tag: CIS-18.9.79.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'turn on powershell transcription' is set to 'disabled'
+    Allow Basic authentication :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Client\AllowBasic':
+              tag: CIS-18.9.81.1.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'allow basic authentication' is set to 'disabled'
+    Allow unencrypted traffic :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Client\AllowUnencryptedTraffic':
+              tag: CIS-18.9.81.1.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'allow unencrypted traffic' is set to 'disabled'
+    Allow Basic authentication :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Service\AllowBasic':
+              tag: CIS-18.9.81.2.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'allow basic authentication' is set to 'disabled'
+    Allow unencrypted traffic :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic':
+              tag: CIS-18.9.81.2.2
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'allow unencrypted traffic' is set to 'disabled'
+    No auto-restart with logged on users for scheduled automatic updates installations :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsUpdate\AU\NoAutoRebootWithLoggedOnUsers':
+              tag: CIS-18.9.85.3
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'do not adjust default option to 'install updates and shut down' in shut down windows dialog box' is set to 'disabled'
+    Do not preserve zone information in file attachments :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_USERS\<SID>\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments\SaveZoneInformation':
+              tag: CIS-19.7.4.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'do not preserve zone information in file attachments' is set to 'disabled'
+    Always install with elevated privileges :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'HKEY_USERS\<SID>\Software\Policies\Microsoft\Windows\Installer\AlwaysInstallElevated':
+              tag: CIS-19.7.37.1
+              match_output: 'Disabled'
+              value_type: 'equal'
+      description: (l1) ensure 'always install with elevated privileges' is set to 'disabled'
+
+
+win_pkg:
+  whitelist:
+    EMET 5.5 :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'EMET':
+              tag: CIS-18.9.22.1
+              match_output: '5.4'
+              value_type: 'more'
+      description: (l1) ensure 'emet 5.5' or higher is installed
+    LAPS AdmPwd GPO Extension / CSE is installed :
+      data:
+        'Microsoft Windows Server 2008*':
+          - 'Navigate to Control Panel\Program\Programs and Features and confirm "lAPS" is listed in the Name column.':
+              tag: CIS-18.2.1
+              match_output: 'Local Administrator Password Solution'
+              value_type: 'equal'
+      description: 'Ensure LAPS AdmPwd GPO Extension / CSE is installed '

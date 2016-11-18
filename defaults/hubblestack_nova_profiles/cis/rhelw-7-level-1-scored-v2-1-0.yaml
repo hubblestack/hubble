@@ -1,0 +1,1173 @@
+grep:
+  blacklist:
+    legacy_passwd_entries_group:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/group:
+            pattern: '^+:'
+            tag: CIS-6.2.4
+      description: Ensure no legacy "+" entries exist in /etc/group
+    legacy_passwd_entries_passwd:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/passwd:
+            pattern: '^+:'
+            tag: CIS-6.2.2
+      description: Ensure no legacy "+" entries exist in /etc/passwd
+    legacy_passwd_entries_shadow:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/shadow:
+            pattern: '^+:'
+            tag: CIS-6.2.3
+      description: Ensure no legacy "+" entries exist in /etc/shadow
+  whitelist:
+    activate_gpg_check:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/yum.conf:
+            match_output: gpgcheck=1
+            pattern: gpgcheck
+            tag: CIS-1.2.2
+      description: Ensure gpgcheck is globally activated
+    aide_filesystem_scans:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/cron.d:
+            pattern: aide
+            grep_args:
+              - '-r'
+            tag: CIS-1.3.2
+      description: Ensure filesystem integrity is regularly checked
+    boot_loader_passwd:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/grub.conf:
+            pattern: password
+            tag: CIS-1.4.2
+      description: Ensure bootloader password is set
+    chargen_disabled:
+      data:
+        Red Hat Enterprise Server-7:
+        - /etc/xinetd.d/chargen-dgram:
+            pattern: disable
+            match_output: yes
+            tag: CIS-2.1.1
+        - /etc/xinetd.d/chargen-stream:
+            pattern: disable
+            match_output: yes
+            tag: CIS-2.1.1
+      description: Ensure chargen services are not enabled
+    daytime_disabled:
+      data:
+        Red Hat Enterprise Server-7:
+        - /etc/xinetd.d/daytime-dgram:
+            pattern: disable
+            match_output: yes
+            tag: CIS-2.1.2
+        - /etc/xinetd.d/daytime-stream:
+            pattern: disable
+            match_output: yes
+            tag: CIS-2.1.2
+      description: Ensure daytime services are not enabled
+    discard_disabled:
+      data:
+        Red Hat Enterprise Server-7:
+        - /etc/xinetd.d/discard-dgram:
+            pattern: disable
+            match_output: yes
+            tag: CIS-2.1.3
+        - /etc/xinetd.d/discard-stream:
+            pattern: disable
+            match_output: yes
+            tag: CIS-2.1.3
+      description: Ensure discard services are not enabled
+    echo_disabled:
+      data:
+        Red Hat Enterprise Server-7:
+        - /etc/xinetd.d/echo-dgram:
+            pattern: disable
+            match_output: yes
+            tag: CIS-2.1.4
+        - /etc/xinetd.d/echo-stream:
+            pattern: disable
+            match_output: yes
+            tag: CIS-2.1.4
+      description: Ensure echo services are not enabled
+    time_disabled:
+      data:
+        Red Hat Enterprise Server-7:
+        - /etc/xinetd.d/time-dgram:
+            pattern: disable
+            match_output: yes
+            tag: CIS-2.1.5
+        - /etc/xinetd.d/time-stream:
+            pattern: disable
+            match_output: yes
+            tag: CIS-2.1.5
+      description: Ensure time services are not enabled
+    configure_ntp:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ntp.conf:
+            pattern: ^restrict
+            match_output: default
+            tag: CIS-2.2.1.2
+        - /etc/ntp.conf:
+            pattern: restrict -6 default
+            tag: CIS-2.2.1.2
+        - /etc/ntp.conf:
+            tag: CIS-2.2.1.2
+            pattern: '^server'
+        - /etc/sysconfig/ntpd:
+            tag: CIS-2.2.1.2
+            pattern: 'ntp:ntp'
+      description: Ensure ntp is configured
+    configure_chrony:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/chrony.conf:
+            tag: CIS-2.2.1.3
+            pattern: '^server'
+        - /etc/sysconfig/chronyd:
+            tag: CIS-2.2.1.3
+            pattern: 'chrony'
+      description: Ensure chrony is configured
+    local_mail:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/postfix/main.cf:
+            pattern: ^inet_interfaces
+            match_output: localhost
+            tag: CIS-2.2.15
+      description: Ensure mail transfer agent is configured for local-only mode
+    default_umask:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/bashrc:
+            pattern: umask
+            match_pattern: '027'
+            tag: CIS-5.4.4
+        - /etc/profile.d:
+            pattern: umask
+            match_pattern: '027'
+            grep_args:
+              - '-r'
+            tag: CIS-5.4.4
+      description: Ensure default user umask is 027 or more restrictive
+    disable_mount_cramfs:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/modprobe.d:
+            match_output: /bin/true
+            pattern: cramfs
+            grep_args:
+              - '-r'
+            tag: CIS-1.1.1.1
+      description: Ensure mounting of cramfs filesystems is disabled
+    disable_mount_freevxfs:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/modprobe.d:
+            match_output: /bin/true
+            pattern: freevxfs
+            grep_args:
+              - '-r'
+            tag: CIS-1.1.1.2
+      description: Ensure mounting of freevxfs filesystems is disabled
+    disable_mount_jffs2:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/modprobe.d:
+            match_output: /bin/true
+            pattern: jffs2
+            grep_args:
+              - '-r'
+            tag: CIS-1.1.1.3
+      description: Ensure mounting of jffs2 filesystems is disabled
+    disable_mount_hfs:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/modprobe.d:
+            match_output: /bin/true
+            pattern: hfs
+            grep_args:
+              - '-r'
+            tag: CIS-1.1.1.4
+      description: Ensure mounting of hfs filesystems is disabled
+    disable_mount_hfsplus:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/modprobe.d:
+            match_output: /bin/true
+            pattern: hfsplus
+            grep_args:
+              - '-r'
+            tag: CIS-1.1.1.5
+      description: Ensure mounting of hfsplus filesystems is disabled
+    disable_mount_squashfs:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/modprobe.d:
+            match_output: /bin/true
+            pattern: squashfs
+            grep_args:
+              - '-r'
+            tag: CIS-1.1.1.6
+      description: Ensure mounting of squashfs filesystems is disabled
+    disable_mount_udf:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/modprobe.d:
+            match_output: /bin/true
+            pattern: udf
+            grep_args:
+              - '-r'
+            tag: CIS-1.1.1.7
+      description: Ensure mounting of udf filesystems is disabled
+    fstab_dev_shm_partition_nodev:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/fstab:
+            match_output: nodev
+            pattern: /dev/shm
+            tag: CIS-1.1.15
+      description: Ensure nodev option set on /dev/shm partition
+    fstab_dev_shm_partition_noexec:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/fstab:
+            match_output: noexec
+            pattern: /dev/shm
+            tag: CIS-1.1.17
+      description: Ensure noexec option set on /dev/shm partition
+    fstab_dev_shm_partition_nosuid:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/fstab:
+            match_output: nosuid
+            pattern: /dev/shm
+            tag: CIS-1.1.16
+      description: Ensure nosuid option set on /dev/shm partition
+    fstab_home_partition_nodev:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/fstab:
+            match_output: nodev
+            pattern: /home
+            tag: CIS-1.1.14
+      description: Ensure nodev option set on /home partition
+    fstab_tmp_partition_nodev:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/fstab:
+            match_output: nodev
+            pattern: /tmp
+            tag: CIS-1.1.3
+      description: Ensure nodev option set on /tmp partition
+    fstab_tmp_partition_noexec:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/fstab:
+            match_output: noexec
+            pattern: /tmp
+            tag: CIS-1.1.5
+      description: Ensure noexec option set on /tmp partition
+    fstab_tmp_partition_nosuid:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/fstab:
+            match_output: nosuid
+            pattern: /tmp
+            tag: CIS-1.1.4
+      description: Ensure nosuid option set on /tmp partition
+    hosts_allow:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/hosts.allow:
+            pattern: ALL
+            tag: CIS-3.4.2
+      description: Ensure /etc/hosts.allow is configured
+    hosts_deny:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/hosts.deny:
+            pattern:  ALL
+            tag: CIS-3.4.3
+      description: Ensure /etc/hosts.deny is configured
+    firewall_default_deny:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/sysconfig/iptables:
+            pattern: :INPUT
+            match_output: DROP
+            tag: CIS-3.6.2
+        - /etc/sysconfig/iptables:
+            pattern: :FORWARD
+            match_pattern: DROP
+            tag: CIS-3.6.2
+        - /etc/sysconfig/iptables:
+            pattern: :OUTPUT
+            match_output: DROP
+            tag: CIS-3.6.2
+      description: Ensure default deny firewall policy
+    firewall_accept_lo:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/sysconfig/iptables:
+            pattern: lo
+            match_output: ACCEPT
+            tag: CIS-3.6.3
+      description: Ensure loopback traffic is configured
+    rsyslog_file_perms:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/rsyslog.conf:
+            pattern: '^\$FileCreateMode'
+            match_output: '0640'
+            tag: CIS-4.2.1.3
+      description: Ensure rsyslog default file permissions configured
+    rsyslog_remote_logging:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/rsyslog.conf:
+            pattern: ^*.*[^I][^I]*@
+            tag: CIS-4.2.1.4
+      description: Ensure rsyslog is configured to send logs to a remote log host
+    syslog-ng_file_perms:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/syslog-ng/syslog-ng.conf:
+            pattern: ^options
+            match_output: 'perm(0640)'
+            tag: CIS-4.2.2.3
+      description: Ensure syslog-ng default file permissions configured
+    limit_password_reuse:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/pam.d/system-auth:
+            pattern: '"^password\s+sufficient\s+pam_unix\.so.*"'
+            match_output: remember=5
+            grep_args:
+              - '-E'
+            tag: CIS-5.3.3
+      description: Ensure password reuse is limited
+    password_hash:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/pam.d/password-auth:
+            pattern: '"^password\s+\w+\s+pam_unix\.so"'
+            match_output: sha512
+            grep_args:
+              - '-E'
+            tag: CIS-5.3.4
+      description: Ensure password hashing algorithm is SHA-512
+    limit_su_command_access:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/pam.d/su:
+            match_output: use_uid
+            pattern: pam_wheel.so
+            tag: CIS-5.6
+        - /etc/group:
+            pattern: wheel
+            tag: CIS-5.6
+      description: Ensure access to the su command is restricted
+    pam_pwquality_try_first_pass:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/pam.d/system-auth:
+            match_output: try_first_pass
+            pattern: pam_pwquality.so
+            tag: CIS-5.3.1
+        - /etc/pam.d/system-auth:
+            match_output: retry=3
+            pattern: pam_pwquality.so
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: minlen
+            match_output: '14'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: dcredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: ucredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: ocredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: lcredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+      description: Ensure password creation requirements are configured
+    passwd_change_min_days:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/login.defs:
+            match_output: '7'
+            pattern: PASS_MIN_DAYS
+            tag: CIS-5.4.1.2
+      description: Ensure minimum days between password changes is 7 or more
+    passwd_expiration_days:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/login.defs:
+            match_output: '90'
+            pattern: PASS_MAX_DAYS
+            tag: CIS-5.4.1.1
+      description: Ensure password expiration is 90 days or less
+    passwd_expiry_warning:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/login.defs:
+            match_output: '7'
+            pattern: PASS_WARN_AGE
+            tag: CIS-5.4.1.3
+      description: Ensure password expiration warning days is 7 or more
+    passwd_inactive:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/default/useradd:
+            pattern: INACTIVE=30
+            tag: CIS-5.4.1.4
+      description: Ensure inactive password lock is 30 days or less
+    restrict_core_dumps:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/security/limits.conf:
+            match_output: '0'
+            pattern: hard core
+            tag: CIS-1.5.1
+      description: Ensure core dumps are restricted
+    rsyslog_remote_logging:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/rsyslog.conf:
+            pattern: ^*.*[^I][^I]*@
+            tag: CIS-4.2.1.4
+      description: Ensure rsyslog is configured to send logs to a remote log host
+    sshd_approved_cipher:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            match_output: 'aes256-ctr,aes192-ctr,aes128-ctr'
+            pattern: Ciphers
+            tag: CIS-5.2.11
+      description: Ensure only approved ciphers are used
+    sshd_banner:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            pattern: ^Banner
+            tag: CIS-5.2.16
+      description: Ensure SSH warning banner is configured
+    sshd_disable_root_login:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            match_output: PermitRootLogin no
+            pattern: ^PermitRootLogin
+            tag: CIS-5.2.8
+      description: Ensure SSH root login is disabled
+    sshd_hostbased_auth:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            match_output: HostbasedAuthentication no
+            pattern: ^HostbasedAuthentication
+            tag: CIS-5.2.7
+      description: Ensure SSH HostbasedAuthentication is disabled
+    sshd_idle_timeout:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            match_output: ClientAliveInterval 300
+            pattern: ^ClientAliveInterval
+            tag: CIS-5.2.13
+        - /etc/ssh/sshd_config:
+            match_output: ClientAliveCountMax 0
+            pattern: ^ClientAliveCountMax
+            tag: CIS-5.2.13
+      description: Ensure SSH Idle Timeout Interval is configured
+    sshd_gracetime:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            pattern: ^LoginGraceTime
+            match_output: '60'
+            tag: CIS-5.2.14
+      description: Ensure SSH LoginGraceTime is set to one minute or less
+    sshd_ignore_rhosts:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            match_output: IgnoreRhosts yes
+            pattern: ^IgnoreRhosts
+            tag: CIS-5.2.6
+      description: Ensure SSH IgnoreRhosts is enabled
+    sshd_limit_access:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            pattern: ^AllowUsers
+            tag: CIS-5.2.15
+        - /etc/ssh/sshd_config:
+            pattern: ^AllowGroups
+            tag: CIS-5.2.15
+        - /etc/ssh/sshd_config:
+            pattern: ^DenyUsers
+            tag: CIS-5.2.15
+        - /etc/ssh/sshd_config:
+            pattern: ^DenyGroups
+            tag: CIS-5.2.15
+      description: Ensure SSH access is limited
+    sshd_loglevel_info:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            match_output: LogLevel INFO
+            pattern: ^LogLevel
+            tag: CIS-5.2.3
+      description: Ensure SSH LogLevel is set to INFO
+    sshd_max_auth_retries:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            match_output: MaxAuthTries 4
+            pattern: ^MaxAuthTries
+            tag: CIS-5.2.5
+      description: Ensure SSH MaxAuthTries is set to 4 or less
+    sshd_permit_empty_passwords:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            match_output: PermitEmptyPasswords no
+            pattern: ^PermitEmptyPasswords
+            tag: CIS-5.2.9
+      description: Ensure SSH PermitEmptyPasswords is disabled
+    sshd_permit_user_environment:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            match_output: PermitUserEnvironment no
+            pattern: ^PermitUserEnvironment
+            tag: CIS-5.2.10
+      description: Ensure SSH PermitUserEnvironment is disabled
+    sshd_protocol_2:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            match_output: Protocol 2
+            pattern: ^Protocol
+            tag: CIS-5.2.2
+      description: Ensure SSH Protocol is set to 2
+    sshd_x11_forwarding:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/ssh/sshd_config:
+            match_output: X11Forwarding no
+            pattern: ^X11Forwarding
+            tag: CIS-5.2.4
+      description: Ensure SSH X11 forwarding is disabled
+    lockout_account:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - /etc/pam.d/system-auth:
+            pattern: '"^auth\s+required\s+pam_faillock\.so.*"'
+            match_output: deny=5
+            grep_args:
+              - '-E'
+            tag: CIS-5.3.2
+        - /etc/pam.d/password-auth:
+            pattern: '"^auth\s+required\s+pam_faillock\.so.*"'
+            match_output: deny=5
+            grep_args:
+              - '-E'
+            tag: CIS-5.3.2
+      description: Ensure lockout for failed password attempts is configured
+pkg:
+  blacklist:
+    avahi-daemon:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - avahi-daemon: CIS-2.2.3
+      description: Ensure Avahi Server is not enabledj
+    dhcp:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - dhcp: CIS-2.2.5
+      description: Ensure DHCP Server is not enabled
+    slapd:
+      data:
+        Red Hat Entetrprise Linux Workstation-7:
+        - openldap-servers: CIS-2.2.6
+      description: Ensure LDAP server is not enabled
+    ftp:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - perl-ftpd: CIS-2.2.9
+        - proftpd: CIS-2.2.9
+        - pure-ftpd: CIS-2.2.9
+        - vsftpd: CIS-2.2.9
+      description: Ensure FTP Server is not enabled
+    nis-client:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - ypbind: CIS-2.3.1
+      description: Ensure NIS Client is not installed
+    nis-server:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - ypserv: CIS-2.2.16
+      description: Ensure NIS Server is not enabled
+    rsh:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - rsh-server: CIS-2.1.6
+      description: Ensure rsh server is not enabled
+    rsh:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - rsh: CIS-2.3.2
+      description: Ensure rsh client is not installed
+    talk-client:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - talk: CIS-2.3.3
+      description: Ensure talk client is not installed
+    talk-server:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - talk-server: CIS-2.1.7
+      description: Ensure talk server is not enabled
+    telnet-client:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - telnet: CIS-2.3.4
+      description: Ensure telnet client is not installed
+    telnet-server:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - telnet-server: CIS-2.1.8
+      description: Ensure telnet server is not enabled
+    tftp-server:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - tftp-server: CIS-2.1.9
+      description: Ensure tftp server is not enabled
+    tftp:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - tftp: CIS-2.1.9
+      description: Ensure tftp server is not enabled
+    xinetd:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - xinetd: CIS-2.1.11
+      description: Ensure xinetd is not enabled
+    xorg-x11-server-common:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - xorg-x11-server-common: CIS-2.1.11
+      description: Ensure xinetd is not enabled
+    prelink:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - prelink: CIS-1.5.4
+      description: Ensure prelink is disabled
+    ldap_clients:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - openldap-clients: CIS-2.3.5
+      description: Ensure LDAP client is not installed
+  whitelist:
+    aide:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - aide: CIS-1.3.1
+      description: Ensure AIDE is installed
+    firewalld:
+      data: {}
+      description: Enable firewalld (Scored)
+    tcp_wrappers:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - tcp_wrappers: CIS-3.4.1
+      description: Ensure TCP Wrappers is installed
+    iptables:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - iptables: CIS-3.6.1_installed
+      description: Ensure iptables is installed
+    syslog:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - rsyslog: CIS-4.2.3
+      description: Ensure rsyslog or syslog-ng is installed
+    syslog-ng:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - syslog-ng: CIS-4.2.3
+      description: Ensure rsyslog or syslog-ng is installed
+service:
+  blacklist:
+    rsync:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - rsyncd: CIS-2.1.10
+      description: Ensure rsync service is not enabled
+    nfs:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - nfs: 2.2.7
+      description: Ensure NFS and RPC are not enabled
+    rpc:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - rpcbind: CIS-2.2.7
+      description: Ensure NFS and RPC are not enabled
+    named:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - named: CIS-2.2.8
+      description: Ensure DNS Server is not enabled
+    httpd:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - httpd: CIS-2.2.10
+      description: Ensure HTTP server is not enabled
+    pop3_imap:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - dovecot: CIS-2.2.11
+      description: Ensure IMAP and POP3 server is not enabled
+    samba:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - smb: CIS-2.2.12
+      description: Ensure Samba is not enabled
+    http_proxy:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - squid: CIS-2.2.13
+      description: Ensure HTTP Proxy Server is not enabled
+    snmp:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - snmpd: CIS-2.2.14
+      description: Ensure SNMP Server is not enabled
+  whitelist:
+    auditd_running:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - auditd: CIS-4.1.1.1_running
+      description: auditd should be running
+    crond_running:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - crond: CIS-5.1.1_running
+      description: Ensure cron daemon is enabled
+    iptables_running:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - iptables: CIS-3.6.1_running
+      description: Ensure iptables is installed
+    rsyslogd_running:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - rsyslog: CIS-4.2.1.1_running
+      description: Ensure rsyslog Service is enabled
+    syslog-ng_running:
+      data:
+        Red Hat Enterprise Linux Workstation-7:
+        - syslog-ng: CIS-4.2.2.1_running
+      description: Ensure syslog-ng service is enabled
+stat:
+  at_allow:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/at.allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-5.1.8
+          uid: 0
+          user: root
+    description: /etc/at.allow must be owned by root and have persmissions 600 (Scored)
+  at_cron_allow:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/cron.deny:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-5.1.8
+          uid: 0
+          user: root
+      - /etc/at.deny:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-5.1.8
+          uid: 0
+          user: root
+      - /etc/cron.allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-5.1.8
+          uid: 0
+          user: root
+      - /etc/at.allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-5.1.8
+          uid: 0
+          user: root
+    description: Ensure at/cron is restricted to authorized users
+  cron_d:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/cron.d:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-5.1.7
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/cron.d are configured
+  cron_daily:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/cron.daily:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-5.1.4
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/cron.daily are configured
+  cron_hourly:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/cron.hourly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-5.1.3
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/cron.hourly are configured
+  cron_monthly:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/cron.monthly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-5.1.6
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/cron.monthly are configured
+  cron_weekly:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/cron.weekly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-5.1.5
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/cron.weekly are configured
+  crontab:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/crontab:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-5.1.2
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/crontab are configured
+  passwd_own_perm:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/passwd:
+          group: root
+          tag: CIS-6.1.2
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/passwd are configured
+  shadow_own_perm:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/shadow:
+          gid: 0
+          group: root
+          mode: 000
+          tag: CIS-6.1.3
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/shadow are configured
+  group_own_perm:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/group:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-6.1.4
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/group are configured
+  gshadow_own_perm:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/gshadow:
+          gid: 0
+          group: root
+          mode: 0
+          tag: CIS-6.1.5
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/gshadow are configured
+  passwd-_own_perm:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/passwd-:
+          group: root
+          tag: CIS-6.1.6
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/passwd- are configured
+  shadow-_own_perm:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/shadow-:
+          gid: 0
+          group: root
+          mode: 000
+          tag: CIS-6.1.7
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/shadow- are configured
+  group-_own_perm:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/group-:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-6.1.8
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/group- are configured
+  gshadow-_own_perm:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/gshadow-:
+          gid: 0
+          group: root
+          mode: 0
+          tag: CIS-6.1.9
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/gshadow- are configured
+  grub_conf_own_perm:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/grub.conf:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-1.4.1
+          uid: 0
+          user: root
+    description: Ensure permissions on bootloader config are configured
+  hosts_allow:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/hosts.allow:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-3.4.4
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/hosts.allow are configured
+  hosts_deny:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/hosts.deny:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-3.4.5
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/hosts.deny are 644
+  sshd_config:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/ssh/sshd_config:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-5.2.1
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/ssh/sshd_config are configured
+  warning_banner_motd:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/motd:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-1.7.1.4
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/motd are configured
+  warning_banner_issue:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/issue:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-1.7.1.5
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/issue are configured
+  warning_banner_issue.net:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - /etc/issue.net:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-1.7.1.6
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/issue.net are configured
+sysctl:
+  bad_error_message_protection:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - net.ipv4.icmp_ignore_bogus_error_responses:
+          match_output: '1'
+          tag: CIS-3.2.6
+      description: Ensure bogus ICMP responses are ignored
+  icmp_redirect_acceptance:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - net.ipv4.conf.all.accept_redirects:
+          match_output: '0'
+          tag: CIS-3.2.2
+      - net.ipv4.conf.default.accept_redirects:
+          match_output: '0'
+          tag: CIS-3.2.2
+    description: Ensure ICMP redirects are not accepted
+  ignore_broadcast_requests:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - net.ipv4.icmp_echo_ignore_broadcasts:
+          match_output: '1'
+          tag: CIS-3.2.5
+    description: Ensure broadcast ICMP requests are ignored
+  ip_forwarding:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - net.ipv4.ip_forward:
+          match_output: '0'
+          tag: CIS-3.1.1
+    description: Ensure IP forwarding is disabled
+  log_suspicious_packets:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - net.ipv4.conf.all.log_martians:
+          match_output: '1'
+          tag: CIS-3.2.4
+      - net.ipv4.conf.default.log_martians:
+          match_output: '1'
+          tag: CIS-3.2.4
+    description: Ensure suspicious packets are logged
+  ipv6_adverts:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - net.ipv6.conf.all.accept_ra:
+          match_output: '0'
+          tag: CIS 3.3.1
+      - net.ipv6.conf.default.accept_ra:
+          match_output: '0'
+          tag: CIS-3.3.1
+    description: Ensure IPv6 router advertisements are not accepted
+  ipv6_redir:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - net.ipv6.conf.all.accept_redirects:
+          match_output: '0'
+          tag: CIS-3.3.2
+      - net.ipv6.conf.default.accept_redirects:
+          match_output: '0'
+          tag: CIS-3.3.2
+    description: Ensure IPv6 redirects are not accepted
+  randomize_va_space:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - kernel.randomize_va_space:
+          match_output: '2'
+          tag: CIS-1.5.3
+    description: Ensure address space layout randomization (ASLR) is enabled
+  restrict_suid_core_dumps:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - fs.suid_dumpable:
+          match_output: '0'
+          tag: CIS-1.5.1
+    description: Ensure core dumps are restricted
+  secure_icmp_redirect_acceptance:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - net.ipv4.conf.all.secure_redirects:
+          match_output: '0'
+          tag: CIS-3.2.3
+      - net.ipv4.conf.default.secure_redirects:
+          match_output: '0'
+          tag: CIS-3.2.3
+    description: Ensure secure ICMP redirects are not accepted
+  send_packet_redirect:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - net.ipv4.conf.all.send_redirects:
+          match_output: '0'
+          tag: CIS-3.1.2
+      - net.ipv4.conf.default.send_redirects:
+          match_output: '0'
+          tag: CIS-3.1.2
+    description: Ensure packet redirect sending is disabled
+  source_routed_packet_acceptance:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - net.ipv4.conf.all.accept_source_route:
+          match_output: '0'
+          tag: CIS-3.2.1
+      - net.ipv4.conf.default.accept_source_route:
+          match_output: '0'
+          tag: CIS-3.2.1
+    description: Ensure source routed packets are not accepted
+  tcp_syn_cookies:
+    data:
+      Red Hat Enterprise Linux Workstation-7:
+      - net.ipv4.tcp_syncookies:
+          match_output: '1'
+          tag: CIS-3.2.8
+    description: Ensure TCP SYN Cookies is enabled

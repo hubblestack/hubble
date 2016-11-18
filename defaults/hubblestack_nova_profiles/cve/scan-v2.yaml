@@ -1,0 +1,5 @@
+cve_scan_v2:
+    ttl: 86400
+    url: "http://vulners.com"
+    # control:
+    #   score: 4

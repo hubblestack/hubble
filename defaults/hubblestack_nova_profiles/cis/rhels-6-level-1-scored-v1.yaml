@@ -1,0 +1,844 @@
+grep:
+  blacklist:
+    legacy_passwd_entries_group:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/group:
+            pattern: '^+:'
+            tag: CIS-9.2.4
+      description: Verify No Legacy "+" Entries Exist in /etc/group (Scored)
+    legacy_passwd_entries_passwd:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/passwd:
+            pattern: '^+:'
+            tag: CIS-9.2.2
+      description: Verify No Legacy "+" Entries Exist in /etc/passwd (Scored)
+    legacy_passwd_entries_shadow:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/shadow:
+            pattern: '^+:'
+            tag: CIS-9.2.3
+      description: Verify No Legacy "+" Entries Exist in /etc/shadow (Scored)
+  whitelist:
+    activate_gpg_check:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/yum.conf:
+            match_output: gpgcheck=1
+            pattern: gpgcheck
+            tag: CIS-1.2.3
+      description: Verify that gpgcheck is Globally Activated (Scored)
+    boot_loader_passwd:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/grub.conf:
+            pattern: ^password
+            tag: CIS-1.5.3
+      description: Set Boot Loader Password (Scored)
+    configure_ntp:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ntp.conf:
+            pattern: restrict default
+            tag: CIS-3.6
+        - /etc/ntp.conf:
+            pattern: restrict -6 default
+            tag: CIS-3.6
+        - '/etc/ntp.conf':
+            tag: 'CIS-3.6'
+            pattern: '^server'
+        - '/etc/sysconfig/ntpd':
+            tag: 'CIS-3.6'
+            pattern: 'ntp:ntp'
+      description: Configure Network Time Protocol (NTP) (Scored)
+    default_umask:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/bashrc:
+            pattern: ^umask 077
+            tag: CIS-7.4
+        - /etc/profile.d/*:
+            pattern: ^umask 077
+            tag: CIS-7.4
+      description: Set Default umask for Users (Scored)
+    fstab_dev_shm_partition_nodev:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            match_output: nodev
+            pattern: /dev/shm
+            tag: CIS-1.1.14
+      description: Add nodev Option to /dev/shm Partition (Scored)
+    fstab_dev_shm_partition_noexec:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            match_output: noexec
+            pattern: /dev/shm
+            tag: CIS-1.1.16
+      description: Add noexec Option to /dev/shm Partition (Scored)
+    fstab_dev_shm_partition_nosuid:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            match_output: nosuid
+            pattern: /dev/shm
+            tag: CIS-1.1.15
+      description: Add nosuid Option to /dev/shm Partition (Scored)
+    fstab_home_partition:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            pattern: /home
+            tag: CIS-1.1.9
+      description: Create Separate Partition for /home (Scored)
+    fstab_home_partition_nodev:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            match_output: nodev
+            pattern: /home
+            tag: CIS-1.1.10
+      description: Add nodev Option to /home (Scored)
+    fstab_tmp_partition:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            pattern: /tmp
+            tag: CIS-1.1.1
+      description: Create Separate Partition for /tmp (Scored)
+    fstab_tmp_partition_nodev:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            match_output: nodev
+            pattern: /tmp
+            tag: CIS-1.1.2
+      description: Set nodev option for /tmp Partition (Scored)
+    fstab_tmp_partition_noexec:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            match_output: noexec
+            pattern: /tmp
+            tag: CIS-1.1.4
+      description: Set noexec option for /tmp Partition (Scored)
+    fstab_tmp_partition_nosuid:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            match_output: nosuid
+            pattern: /tmp
+            tag: CIS-1.1.3
+      description: Set nosuid option for /tmp Partition (Scored)
+    fstab_var_log_audit_partition:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            pattern: /var/log/audit
+            tag: CIS-1.1.8
+      description: Create Separate Partition for /var/log/audit (Scored)
+    fstab_var_log_partition:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            pattern: /var/log
+            tag: CIS-1.1.7
+      description: Create Separate Partition for /var/log (Scored)
+    fstab_var_partition:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            pattern: /var
+            tag: CIS-1.1.5
+      description: Create Separate Partition for /var (Scored)
+    fstab_var_tmp_bind_mount:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/fstab:
+            match_output: /var/tmp
+            pattern: /tmp
+            tag: CIS-1.1.6
+      description: Bind Mount the /var/tmp directory to /tmp (Scored)
+    limit_password_reuse:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/pam.d/system-auth:
+            match_output: remember=5
+            pattern: pam_unix.so
+            tag: CIS-6.3.4
+      description: PAM Password Reuse (Scored)
+    limit_su_command_access:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/pam.d/su:
+            match_output: use_uid
+            pattern: pam_wheel.so
+            tag: CIS-6.5
+        - /etc/group:
+            pattern: wheel
+            tag: CIS-6.5
+      description: Limit su command access (Scored)
+    pam_cracklib_try_first_pass:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/pam.d/system-auth:
+            match_output: try_first_pass
+            pattern: pam_cracklib.so
+            tag: CIS-6.3.2
+        - /etc/pam.d/system-auth:
+            match_output: retry=3
+            pattern: pam_cracklib.so
+            tag: CIS-6.3.2
+        - /etc/pam.d/system-auth:
+            match_output: minlen=14
+            pattern: pam_cracklib.so
+            tag: CIS-6.3.2
+        - /etc/pam.d/system-auth:
+            match_output: dcredit=-1
+            pattern: pam_cracklib.so
+            tag: CIS-6.3.2
+        - /etc/pam.d/system-auth:
+            match_output: ucredit=-1
+            pattern: pam_cracklib.so
+            tag: CIS-6.3.2
+        - /etc/pam.d/system-auth:
+            match_output: ocredit=-1
+            pattern: pam_cracklib.so
+            tag: CIS-6.3.2
+        - /etc/pam.d/system-auth:
+            match_output: lcredit=-1
+            pattern: pam_cracklib.so
+            tag: CIS-6.3.2
+      description: PAM cracklib policy (Scored)
+    passwd_change_min_days:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/login.defs:
+            match_output: '7'
+            pattern: PASS_MIN_DAYS
+            tag: CIS-7.1.2
+      description: Set Password Change Minimum Number of Days (Scored)
+    passwd_expiration_days:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/login.defs:
+            match_output: '90'
+            pattern: PASS_MAX_DAYS
+            tag: CIS-7.1.1
+      description: Set Password Expiration Days (Scored)
+    passwd_expiry_warning:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/login.defs:
+            match_output: '7'
+            pattern: PASS_WARN_AGE
+            tag: CIS-7.1.3
+      description: Set Password Expiring Warning Days (Scored)
+    restrict_core_dumps:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/security/limits.conf:
+            pattern: hard core
+            tag: CIS-1.6.1
+      description: Restrict Core Dumps (Scored)
+    rsyslog_remote_logging:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/rsyslog.conf:
+            pattern: ^*.*[^I][^I]*@
+            tag: CIS-5.1.5
+      description: Configure rsyslog to Send Logs to a Remote Log Host (Scored)
+    set_daemon_umask:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/sysconfig/init:
+            match_output: umask 027
+            pattern: umask
+            tag: CIS-3.1
+      description: Set Daemon umask (Scored)
+    sshd_approved_cipher:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            match_output: 'Ciphers aes128-ctr,aes192-ctr,aes256-ctr '
+            pattern: Ciphers
+            tag: CIS-6.2.11
+      description: Use Only Approved Cipher in Counter Mode (Scored)
+    sshd_banner:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            pattern: ^Banner
+            tag: CIS-6.2.14
+      description: Set SSH Banner (Scored)
+    sshd_disable_root_login:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            match_output: PermitRootLogin no
+            pattern: ^PermitRootLogin
+            tag: CIS-6.2.8
+      description: Set SSH HostbasedAuthentication to No (Scored)
+    sshd_hostbased_auth:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            match_output: HostbasedAuthentication no
+            pattern: ^HostbasedAuthentication
+            tag: CIS-6.2.7
+      description: Set SSH HostbasedAuthentication to No (Scored)
+    sshd_idle_timeout:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            match_output: ClientAliveInterval 300
+            pattern: ^ClientAliveInterval
+            tag: CIS-6.2.12
+        - /etc/ssh/sshd_config:
+            match_output: ClientAliveCountMax 0
+            pattern: ^ClientAliveCountMax
+            tag: CIS-6.2.12
+      description: Set Idle Timeout Interval for User Login (Scored)
+    sshd_ignore_rhosts:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            match_output: IgnoreRhosts yes
+            pattern: ^IgnoreRhosts
+            tag: CIS-6.2.6
+      description: Set SSH IgnoreRhosts to Yes (Scored)
+    sshd_limit_access:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            pattern: ^AllowUsers
+            tag: CIS-6.2.13
+        - /etc/ssh/sshd_config:
+            pattern: ^AllowGroups
+            tag: CIS-6.2.13
+        - /etc/ssh/sshd_config:
+            pattern: ^DenyUsers
+            tag: CIS-6.2.13
+        - /etc/ssh/sshd_config:
+            pattern: ^DenyGroups
+            tag: CIS-6.2.13
+      description: Limit Access via SSH (Scored)
+    sshd_loglevel_info:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            match_output: LogLevel INFO
+            pattern: ^LogLevel
+            tag: CIS-6.2.2
+      description: Set LogLevel to INFO (Scored)
+    sshd_max_auth_retries:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            match_output: MaxAuthTries 4
+            pattern: ^MaxAuthTries
+            tag: CIS-6.2.5
+      description: Set SSH MaxAuthTries to 4 or Less (Scored)
+    sshd_permit_empty_passwords:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            match_output: PermitEmptyPasswords no
+            pattern: ^PermitEmptyPasswords
+            tag: CIS-6.2.9
+      description: Set SSH PermitEmptyPasswords to No (Scored)
+    sshd_permit_user_environment:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            match_output: PermitUserEnvironment no
+            pattern: ^PermitUserEnvironment
+            tag: CIS-6.2.10
+      description: Do Not Allow Users to Set Environment Options (Scored)
+    sshd_protocol_2:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            match_output: Protocol 2
+            pattern: ^Protocol
+            tag: CIS-6.2.1
+      description: Set SSH Protocol to 2 (Scored)
+    sshd_x11_forwarding:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /etc/ssh/sshd_config:
+            match_output: X11Forwarding no
+            pattern: ^X11Forwarding
+            tag: CIS-6.2.4
+      description: Disable SSH X11 Forwarding (Scored)
+pkg:
+  blacklist:
+    avahi-daemon:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - avahi-daemon: CIS-3.3
+      description: Disable Avahi Server (Scored)
+    dhcp:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - dhcp: CIS-3.5
+      description: Remove DHCP server (Scored)
+    nis:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - ypbind: CIS-2.1.5
+        - ypserv: CIS-2.1.6
+      description: Remove nis client and nis server (Scored)
+    rsh:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - rsh-server: CIS-2.1.3
+        - rsh: CIS-2.1.4
+      description: Remove rsh and rsh-server (Scored)
+    talk:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - talk: CIS-2.1.9
+        - talk-server: CIS-2.1.10
+      description: Remove talk and talk-server (Scored)
+    telnet:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - telnet-server: CIS-2.1.1
+        - telnet: CIS-2.1.2
+      description: Remove telnet and telnet-server (Scored)
+    tftp:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - tftp: CIS-2.1.7
+        - tftp-server: CIS-2.1.8
+      description: Remove tftp and tftp-server (Scored)
+    xinetd:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - xinetd: CIS-2.1.11
+      description: Remove xinetd (Scored)
+    xorg-x11-server-common:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - xorg-x11-server-common: CIS-3.2
+      description: Remove the X Window System (Scored)
+  whitelist:
+    aide:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - aide: CIS-1.3.1
+      description: Install AIDE (Scored)
+    anacron:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - cronie-anacron: CIS-6.1.1
+      description: Enable anacron Daemon (Scored)
+    firewalld:
+      data: {}
+      description: Enable firewalld (Scored)
+    iptables:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - iptables: CIS-4.7_installed
+      description: Install IPtables (Scored)
+    rsyslog:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - rsyslog: CIS-5.1.1
+      description: Install rsyslog (Scored)
+service:
+  whitelist:
+    anacron_running:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - cronie-anacron: CIS-6.1.1_running
+      description: anacron should be running
+    auditd_running:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - auditd: CIS-5.2_running
+      description: auditd should be running
+    crond_running:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - crond: CIS-6.1.2_running
+      description: crond should be running
+    iptables_running:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - iptables: CIS-4.7_running
+      description: rsyslogd should be running
+    rsyslogd_running:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - rsyslogd: CIS-5.1.2_running
+      description: rsyslogd should be running
+stat:
+  anacrontab:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/anacrontab:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.3
+          uid: 0
+          user: root
+    description: /etc/anacrontab file be owned by root and must have permissions 600
+      (Scored)
+  at_allow:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/at.allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.10
+          uid: 0
+          user: root
+    description: /etc/at.allow must be owned by root and have persmissions 600 (Scored)
+  at_cron_allow:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/cron.deny:
+          gid: null
+          group: null
+          mode: null
+          tag: CIS-6.1.11
+          uid: null
+          user: null
+      - /etc/at.deny:
+          gid: null
+          group: null
+          mode: null
+          tag: CIS-6.1.11
+          uid: null
+          user: null
+      - /etc/cron.allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.11
+          uid: 0
+          user: root
+      - /etc/at/allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.11
+          uid: 0
+          user: root
+    description: Restrict at/cron to authorized users (Scored)
+  cron_d:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/cron.d:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-6.1.9
+          uid: 0
+          user: root
+    description: /etc/cron.d must be owned by root and must have permissions 700 (Scored)
+  cron_daily:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/cron.daily:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-6.1.6
+          uid: 0
+          user: root
+    description: /etc/cron.daily must be owned by root and must have permissions 700
+      (Scored)
+  cron_hourly:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/cron.hourly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-6.1.5
+          uid: 0
+          user: root
+    description: /etc/cron.hourly must be owned by root and must have permissions
+      700 (Scored)
+  cron_monthly:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/cron.monthly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-6.1.8
+          uid: 0
+          user: root
+    description: /etc/cron.monthly must be owned by root and must have permissions
+      700 (Scored)
+  cron_weekly:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/cron.weekly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-6.1.7
+          uid: 0
+          user: root
+    description: /etc/cron.weekly must be owned by root and must have permissions
+      700 (Scored)
+  crontab:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/crontab:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.4
+          uid: 0
+          user: root
+    description: /etc/crontab must be owned by root and have persmissions 600 (Scored)
+  group_own:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/group:
+          gid: 0
+          group: root
+          tag: CIS-9.1.9
+          uid: 0
+          user: root
+    description: /etc/group must be owned by root (Scored)
+  group_perm:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/group:
+          mode: 644
+          tag: CIS-9.1.5
+    description: /etc/group must have permissions 000 (Scored)
+  grub_conf_own:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/grub.conf:
+          gid: 0
+          group: root
+          tag: CIS-1.5.1
+          uid: 0
+          user: root
+    description: Grub must be owned by root (Scored)
+  grub_conf_perm:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/grub.conf:
+          mode: 600
+          tag: CIS-1.5.2
+    description: Grub must have permissions 600 (Scored)
+  gshadow_own:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/gshadow:
+          gid: 0
+          group: root
+          tag: CIS-9.1.8
+          uid: 0
+          user: root
+    description: /etc/gshadow must be owned by root (Scored)
+  gshadow_perm:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/gshadow:
+          mode: 0
+          tag: CIS-9.1.4
+    description: /etc/gshadow must have permissions 000 (Scored)
+  hosts_allow:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/hosts.allow:
+          mode: 644
+          tag: CIS-4.5.3
+    description: /etc/hosts.allow must have permissions 644 (Scored)
+  hosts_deny:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/hosts.deny:
+          mode: 644
+          tag: CIS-4.5.5
+    description: /etc/hosts.deny must have persmissions 644 (Scored)
+  passwd_own:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/passwd:
+          group: root
+          tag: CIS-9.1.6
+          uid: 0
+          user: root
+    description: /etc/passwd must be owned by root (Scored)
+  passwd_perm:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/passwd:
+          mode: 644
+          tag: CIS-9.1.2
+    description: /etc/passwd must have permissions 644 (Scored)
+  shadow_own:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/shadow:
+          gid: 0
+          group: root
+          tag: CIS-9.1.7
+          uid: 0
+          user: root
+    description: /etc/shadow must be owned by root (Scored)
+  shadow_perm:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/shadow:
+          mode: 0
+          tag: CIS-9.1.3
+    description: /etc/shadow must have permissions 000 (Scored)
+  sshd_config:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/ssh/sshd_config:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.2.3
+          uid: 0
+          user: root
+    description: /etc/ssh/sshd_config must be owned by root and must have permissions
+      600 (Scored)
+  warning_banner:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - /etc/motd:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-8.1
+          uid: 0
+          user: root
+      - /etc/issue:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-8.1
+          uid: 0
+          user: root
+      - /etc/issue.net:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-8.1
+          uid: 0
+          user: root
+    description: Files containing the warning banners must be owned by root and must
+      have permissions 644 (Scored)
+sysctl:
+  bad_error_message_protection:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - net.ipv4.icmp_ignore_bogus_error_responses:
+          match_output: '1'
+          tag: CIS-4.2.6
+    description: Enable Bad Error Message Protection (Scored)
+  exec_shield:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - kernel.exec-shield:
+          match_output: '1'
+          tag: CIS-1.6.2
+    description: Configure ExecShield (Scored)
+  icmp_redirect_acceptance:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - net.ipv4.conf.all.accept_redirects:
+          match_output: '0'
+          tag: CIS-4.2.2
+      - net.ipv4.conf.default.accept_redirects:
+          match_output: '0'
+          tag: CIS-4.2.2
+    description: Disable ICMP Redirect Acceptance (Scored)
+  ignore_broadcast_requests:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - net.ipv4.icmp_echo_ignore_broadcasts:
+          match_output: '1'
+          tag: CIS-4.2.5
+    description: Enable Ignore Broadcast Requests (Scored)
+  ip_forwarding:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - net.ipv4.ip_forward:
+          match_output: '0'
+          tag: CIS-4.1.1
+    description: Disable IP Forwarding (Scored)
+  log_suspicious_packets:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - net.ipv4.conf.all.log_martians:
+          match_output: '1'
+          tag: CIS-4.2.4
+      - net.ipv4.conf.default.log_martians:
+          match_output: '1'
+          tag: CIS-4.2.4
+    description: Log Suspicious Activity (Scored)
+  randomize_va_space:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - kernel.randomize_va_space:
+          match_output: '2'
+          tag: CIS-1.6.3
+    description: Enable Randomized Virtual Memory Region Placement (Scored)
+  restrict_suid_core_dumps:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - fs.suid_dumpable:
+          match_output: '0'
+          tag: CIS-1.6.1
+    description: Restrict SUID Core Dumps (Scored)
+  secure_icmp_redirect_acceptance:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - net.ipv4.conf.all.secure_redirects:
+          match_output: '0'
+          tag: CIS-4.2.3
+      - net.ipv4.conf.default.secure_redirects:
+          match_output: '0'
+          tag: CIS-4.2.3
+    description: Disable Secure ICMP Redirect Acceptance (Scored)
+  send_packet_redirect:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - net.ipv4.conf.all.send_redirects:
+          match_output: '0'
+          tag: CIS-4.1.2
+      - net.ipv4.conf.default.send_redirects:
+          match_output: '0'
+          tag: CIS-4.1.2
+      - net.ipv4.conf.default.send_redirects:
+          match_output: '0'
+          tag: CIS-4.1.2
+    description: Disable Send Packet Redirect (Scored)
+  source_routed_packet_acceptance:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - net.ipv4.conf.all.accept_source_route:
+          match_output: '0'
+          tag: CIS-4.2.1
+      - net.ipv4.conf.default.accept_source_route:
+          match_output: '0'
+          tag: CIS-4.2.1
+    description: Disable Source Routed Packet Acceptance (Scored)
+  tcp_syn_cookies:
+    data:
+      Red Hat Enterprise Linux Server-6:
+      - net.ipv4.tcp_syncookies:
+          match_output: '1'
+          tag: CIS-4.2.8
+    description: Enable TCP SYN cookies (Scored)

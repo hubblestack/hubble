@@ -12,9 +12,12 @@ import sys
 
 import salt.utils
 
+import hubble.nova as nova
+
 log = logging.getLogger(__name__)
 
 __opts__ = {}
+
 
 def run():
     '''
@@ -48,7 +51,11 @@ def main():
     Run the main hubble loop
     '''
     while True:
-        log.debug('wheeee!')
+        try:
+            log.info('Executing nova.top')
+            log.debug(nova.top())
+        except Exception as e:
+            log.exception('Error executing nova.top')
         time.sleep(10)
 
 

@@ -1,0 +1,15 @@
+openssl:
+  google:
+    data:
+      tag: 'CERT-001'             # tag (required)
+      endpoint: 'www.google.com'  # required if file is not defined
+      file: null                  # /path/to/the/pem/file (required if endpoint is not defined)
+      port: 443                   # required only if both
+                                  #       - endpoint is defined
+                                  #       - https is not configured on port 443
+      not_after: 30                # minimum number of days until expiration (default value: 0)
+                                  # the check is failed if the certificate expires in less then 30 days
+      not_before: 10               # number of days until the ceriticate becomes valid (default value: 0)
+                                  # the check is failed if the certificate becomes valid in more then 10 days
+      fail_if_not_before: True     # fails the check if the certificate is not valid yet
+    description: 'google certificate'

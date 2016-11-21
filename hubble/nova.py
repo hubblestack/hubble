@@ -39,11 +39,10 @@ from salt.loader import LazyLoader
 __nova__ = {}
 __version__ = 'v2016.10.1'
 
-__opts__ = salt.config.minion_config('/tmp/doesntexist')
-__grains__ = salt.loader.grains(__opts__)
-__opts__['grains'] = __grains__
-__utils__ = salt.loader.utils(__opts__)
-__salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+__opts__ = {}
+__grains__ = {}
+__salt__ = {}
+__utils__ = {}
 
 
 def audit(configs=None,

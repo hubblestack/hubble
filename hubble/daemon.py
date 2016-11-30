@@ -10,6 +10,7 @@ import time
 import os
 import sys
 
+import salt.fileclient
 import salt.utils
 
 import hubble.nova as nova
@@ -47,7 +48,24 @@ def main():
     '''
     Run the main hubble loop
     '''
+    # Initial fileclient setup
+    try:
+        fc = salt.fileclient.get_file_client(opts)
+        fc.channel.fs.update()
+        last_fc_update = time.time()
+    except Exception as exc:
+        log.exception('Exception thrown trying to setup fileclient. Exiting.')
+        sys.exit(1)
+
     while True:
+        # Check if fileserver needs update
+        if time.time() - last_fc_update >= __opts__['fileserver_update_frequency']:
+            try:
+                fc.channel.fs.update()
+                last_fc_update = time.time()
+            except Exception as exc:
+                log.exception('Exception thrown trying to update fileclient.')
+
         try:
             log.info('Executing nova.top')
             log.debug(nova.top())
@@ -65,6 +83,8 @@ def load_config():
     log.debug('Parsed args: {0}'.format(parsed_args))
 
     salt.config.DEFAULT_MINION_OPTS['cachedir'] = '/var/cache/hubble'
+    salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
+    salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 60
 
     global __opts__
     global __grains__

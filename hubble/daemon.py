@@ -35,7 +35,7 @@ def run():
     if not os.path.isdir(__opts__['cachedir']):
         os.makedirs(__opts__['cachedir'])
 
-    if __opts__.daemonize:
+    if __opts__['daemonize']:
         salt.utils.daemonize()
 
     try:
@@ -50,7 +50,7 @@ def main():
     '''
     # Initial fileclient setup
     try:
-        fc = salt.fileclient.get_file_client(opts)
+        fc = salt.fileclient.get_file_client(__opts__)
         fc.channel.fs.update()
         last_fc_update = time.time()
     except Exception as exc:
@@ -116,7 +116,7 @@ def parse_args():
                       default='/etc/hubble/hubble',
                       help=('Pass in an alternative configuration file. Default: %(default)s')
     )
-    return parser.parse_args()
+    return vars(parser.parse_args())
 
 
 def logging_setup():

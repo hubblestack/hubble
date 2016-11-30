@@ -114,7 +114,7 @@ def parse_args():
                         action='store_true')
     parser.add_argument('-c', '--configfile',
                       default='/etc/hubble/hubble',
-                      help=('Pass in an alternative configuration file. Default: %default')
+                      help=('Pass in an alternative configuration file. Default: %(default)s')
     )
     return parser.parse_args()
 

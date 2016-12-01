@@ -90,18 +90,22 @@ def load_config():
     global __grains__
     global __utils__
     global __salt__
+    global __pillar__
     __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
     __grains__ = salt.loader.grains(__opts__)
+    __pillar__ = {}
     __opts__['grains'] = __grains__
+    __opts__['pillar'] = __pillar__
     __utils__ = salt.loader.utils(__opts__)
     __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
 
-    # Load the globals into the salt modules
+    # Load the globals into the hubble modules
     nova.__opts__ = __opts__
     nova.__grains__ = __grains__
     nova.__utils__ = __utils__
     nova.__salt__ = __salt__
+    nova.__pillar__ = __pillar__
 
 
 def parse_args():

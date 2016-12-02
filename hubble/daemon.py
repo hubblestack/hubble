@@ -168,7 +168,7 @@ def parse_args():
                         default=None,
                         help='Optional argument for the single function to be run')
     parser.add_argument('args',
-                        nargs=argparse.REMAINDER,
+                        nargs='*',
                         help='Any arguments necessary for a single function run')
     return vars(parser.parse_args())
 

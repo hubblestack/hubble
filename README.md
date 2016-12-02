@@ -23,13 +23,13 @@ gitpython or pygit2 to get gitfs working:
 
 ```
 gitfs_remotes:
-  - git://github.com/hubblestack/Nova.git:
+  - https://github.com/hubblestack/Nova.git:
     - base: v2016.10.2
-  - git://github.com/hubblestack/Nebula.git:
+  - https://github.com/hubblestack/Nebula.git:
     - base: v2016.10.2
-  - git://github.com/hubblestack/Pulsar.git:
+  - https://github.com/hubblestack/Pulsar.git:
     - base: v2016.10.3
-  - git://github.com/hubblestack/Quasar.git:
+  - https://github.com/hubblestack/Quasar.git:
     - base: v2016.10.4
 fileserver_backend:
   - root

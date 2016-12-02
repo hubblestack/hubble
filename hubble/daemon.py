@@ -160,7 +160,9 @@ def parse_args():
                         action='store_false')
     parser.add_argument('-v', '--verbose',
                         action='count',
-                        help='Verbosity level. Use -v or -vv or -vvv for varying levels of verbosity.')
+                        help=('Verbosity level. Use -v or -vv or -vvv for '
+                              'varying levels of verbosity. Note that -vv '
+                              'will be used by default in daemon mode.'))
     parser.add_argument('function',
                         nargs='?',
                         default=None,
@@ -178,6 +180,10 @@ def logging_setup():
     global log
 
     log.setLevel(logging.ERROR)
+
+    if __opts__['daemonize']:
+        log.setLevel(logging.INFO)
+
     if __opts__['verbose'] == 1:
         log.setLevel(logging.WARNING)
     elif __opts__['verbose'] == 2:

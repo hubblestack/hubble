@@ -98,7 +98,7 @@ def run_function():
         else:
             args.append(arg)
 
-    log.debug('Parsed args: {0}\nParsed kwargs: {1}'.format(args, kwargs))
+    log.debug('Parsed args: {0} | Parsed kwargs: {1}'.format(args, kwargs))
     log.info('Executing user-requested function {0}'.format(__opts__['function']))
 
     ret = __hubble__[__opts__['function']](*args, **kwargs)

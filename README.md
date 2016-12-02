@@ -19,7 +19,7 @@ zipimport.ZipImportError: bad local file header in /usr/lib/python2.7/site-packa
 
 You can do `hubble -h` to see the available options. Here's a sample working
 config you can place in `/etc/hubble/hubble`. Note that you'll need to install
-gitpython or pygit2 to get gitfs working:
+python-pygit2 to get gitfs working:
 
 ```
 gitfs_remotes:

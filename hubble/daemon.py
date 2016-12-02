@@ -104,7 +104,7 @@ def run_function():
     ret = __hubble__[__opts__['function']](*args, **kwargs)
 
     # TODO instantiate the salt outputter system?
-    if(__opts__['pprint']):
+    if(__opts__['no_pprint']):
         pprint.pprint(ret)
     else:
         print(ret)
@@ -155,9 +155,12 @@ def parse_args():
     parser.add_argument('-c', '--configfile',
                         default='/etc/hubble/hubble',
                         help='Pass in an alternative configuration file. Default: %(default)s')
-    parser.add_argument('-p', '--pprint',
-                        help='Whether to use pprint for single-function output',
-                        action='store_true')
+    parser.add_argument('-p', '--no-pprint',
+                        help='Turn off pprint for single-function output',
+                        action='store_false')
+    parser.add_argument('-v', '--verbose',
+                        action='count',
+                        help='Verbosity level. Use -v or -vv or -vvv for varying levels of verbosity.')
     parser.add_argument('function',
                         nargs='?',
                         default=None,
@@ -173,7 +176,14 @@ def logging_setup():
     Set up logger
     '''
     global log
-    log.setLevel(logging.DEBUG)
+
+    log.setLevel(logging.ERROR)
+    if __opts__['verbose'] == 1:
+        log.setLevel(logging.WARNING)
+    elif __opts__['verbose'] == 2:
+        log.setLevel(logging.INFO)
+    elif __opts__['verbose'] >= 3:
+        log.setLevel(logging.DEBUG)
 
     # Logging format
     formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s]: %(message)s', datefmt='%Y/%m/%d %H:%M:%S')

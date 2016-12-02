@@ -52,6 +52,7 @@ def main():
     Run the main hubble loop
     '''
     # Initial fileclient setup
+    log.info('Setting up the fileclient/fileserver')
     try:
         fc = salt.fileclient.get_file_client(__opts__)
         fc.channel.fs.update()
@@ -65,6 +66,7 @@ def main():
         run_function()
         sys.exit(0)
 
+    log.info('Starting main loop')
     while True:
         # Check if fileserver needs update
         if time.time() - last_fc_update >= __opts__['fileserver_update_frequency']:
@@ -96,9 +98,12 @@ def run_function():
         else:
             args.append(arg)
 
+    log.debug('Parsed args: {0}\nParsed kwargs: {1}'.format(args, kwargs))
+    log.info('Executing user-requested function {0}'.format(__opts__['function']))
+
     ret = __hubble__[__opts__['function']](*args, **kwargs)
 
-    # TODO instantiate the outputter system?
+    # TODO instantiate the salt outputter system?
     if(__opts__['pprint']):
         pprint.pprint(ret)
     else:

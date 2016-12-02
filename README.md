@@ -35,3 +35,32 @@ fileserver_backend:
   - root
   - git
 ```
+
+## Single invocation
+
+Hubble v2 now supports one-off invocations of specific functions:
+
+```
+[root@host1 hubble-v2]# hubble nova.audit cis.centos-7-level-1-scored-v2-1-0 tags=CIS-3.\*
+{'Compliance': '45%',
+ 'Failure': [{'CIS-3.4.2': 'Ensure /etc/hosts.allow is configured'},
+             {'CIS-3.4.3': 'Ensure /etc/hosts.deny is configured'},
+             {'CIS-3.6.2': 'Ensure default deny firewall policy'},
+             {'CIS-3.6.3': 'Ensure loopback traffic is configured'},
+             {'CIS-3.6.1_running': 'Ensure iptables is installed'},
+             {'CIS-3.2.4': 'Ensure suspicious packets are logged'},
+             {'CIS-3.2.2': 'Ensure ICMP redirects are not accepted'},
+             {'CIS-3.2.3': 'Ensure secure ICMP redirects are not accepted'},
+             {'CIS-3.1.2': 'Ensure packet redirect sending is disabled'},
+             {'CIS-3.3.1': 'Ensure IPv6 router advertisements are not accepted'},
+             {'CIS-3.3.2': 'Ensure IPv6 redirects are not accepted'}],
+ 'Success': [{'CIS-3.6.1_installed': 'Ensure iptables is installed'},
+             {'CIS-3.4.1': 'Ensure TCP Wrappers is installed'},
+             {'CIS-3.4.5': 'Ensure permissions on /etc/hosts.deny are 644'},
+             {'CIS-3.4.4': 'Ensure permissions on /etc/hosts.allow are configured'},
+             {'CIS-3.2.5': 'Ensure broadcast ICMP requests are ignored'},
+             {'CIS-3.2.6': None},
+             {'CIS-3.2.1': 'Ensure source routed packets are not accepted'},
+             {'CIS-3.1.1': 'Ensure IP forwarding is disabled'},
+             {'CIS-3.2.8': 'Ensure TCP SYN Cookies is enabled'}]}
+```

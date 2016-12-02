@@ -2,11 +2,13 @@
 '''
 Main entry point for the hubble daemon
 '''
+from __future__ import print_function
 
 #import lockfile
 import argparse
 import logging
 import time
+import pprint
 import os
 import sys
 
@@ -26,6 +28,7 @@ def run():
     '''
     # Don't put anything that needs config above this line
     load_config()
+    load_funcs()
 
     # Set up logging
     logging_setup()
@@ -57,6 +60,11 @@ def main():
         log.exception('Exception thrown trying to setup fileclient. Exiting.')
         sys.exit(1)
 
+    # Check for single function run
+    if __opts__['function']:
+        run_function()
+        sys.exit(0)
+
     while True:
         # Check if fileserver needs update
         if time.time() - last_fc_update >= __opts__['fileserver_update_frequency']:
@@ -72,6 +80,29 @@ def main():
         except Exception as e:
             log.exception('Error executing nova.top')
         time.sleep(10)
+
+
+def run_function():
+    '''
+    Run a single function requested by the user
+    '''
+    # Parse the args
+    args = []
+    kwargs = {}
+    for arg in __opts__['args']:
+        if '=' in arg:
+            kwarg, _, value = arg.partition('=')
+            kwargs[kwarg] = value
+        else:
+            args.append(arg)
+
+    ret = __hubble__[__opts__['function']](*args, **kwargs)
+
+    # TODO instantiate the outputter system?
+    if(__opts__['pprint']):
+        pprint.pprint(ret)
+    else:
+        print(ret)
 
 
 def load_config():
@@ -117,9 +148,18 @@ def parse_args():
                         help='Whether to daemonize and background the process',
                         action='store_true')
     parser.add_argument('-c', '--configfile',
-                      default='/etc/hubble/hubble',
-                      help=('Pass in an alternative configuration file. Default: %(default)s')
-    )
+                        default='/etc/hubble/hubble',
+                        help='Pass in an alternative configuration file. Default: %(default)s')
+    parser.add_argument('-p', '--pprint',
+                        help='Whether to use pprint for single-function output',
+                        action='store_true')
+    parser.add_argument('function',
+                        nargs='?',
+                        default=None,
+                        help='Optional argument for the single function to be run')
+    parser.add_argument('args',
+                        nargs=argparse.REMAINDER,
+                        help='Any arguments necessary for a single function run')
     return vars(parser.parse_args())
 
 
@@ -144,3 +184,21 @@ def logging_setup():
     sh.setLevel(logging.DEBUG)
     sh.setFormatter(formatter)
     log.addHandler(sh)
+
+
+def load_funcs():
+    '''
+    Helper function to load all the relevant functions into a dictionary
+    for easy dispatch based on command line arguments.
+
+    If we switch to the salt loader for hubble components it would eliminate
+    the need for this hack, but it's more work than it's worth at the moment.
+    '''
+    global __hubble__
+    __hubble__ = {}
+
+    __hubble__['nova.top'] = nova.top
+    __hubble__['nova.audit'] = nova.audit
+    __hubble__['nova.sync'] = nova.sync
+    __hubble__['nova.load'] = nova.load
+    __hubble__['nova.version'] = nova.version

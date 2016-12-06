@@ -96,7 +96,7 @@ def schedule():
 
         schedule:
           job1:
-            function: nova.audit
+            function: hubble.audit
             seconds: 3600
             splay: 100
             args:
@@ -179,7 +179,7 @@ def schedule():
         if 'last_run' not in jobdata:
             if jobdata.get('run_on_start', False):
                 run = True
-            jodata['last_run'] = time.time()
+            jobdata['last_run'] = time.time()
         if 'set_splay' not in jobdata:
             jobdata['set_splay'] = random.randint(0, splay)
         splay = jobdata['set_splay']

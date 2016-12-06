@@ -10,6 +10,7 @@ import logging
 import time
 import pprint
 import os
+import random
 import sys
 
 import salt.fileclient

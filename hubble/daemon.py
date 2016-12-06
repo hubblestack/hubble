@@ -237,7 +237,6 @@ def load_config():
     '''
     # Parse arguments
     parsed_args = parse_args()
-    log.debug('Parsed args: {0}'.format(parsed_args))
 
     salt.config.DEFAULT_MINION_OPTS['cachedir'] = '/var/cache/hubble'
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'

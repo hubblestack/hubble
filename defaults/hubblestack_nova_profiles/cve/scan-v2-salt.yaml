@@ -1,3 +1,0 @@
-cve_scan_v2:
-  ttl: 86400
-  url: "salt://hubblestack_nova/centos_7.json"

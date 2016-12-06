@@ -3,7 +3,7 @@
 Loader and primary interface for nova modules
 
 :maintainer: HubbleStack / basepi
-:maturity: 2016.7.0
+:maturity: 2016.10.2
 :platform: All
 :requires: SaltStack
 
@@ -30,19 +30,12 @@ import yaml
 import traceback
 
 import salt
-import salt.config
-import salt.loader
 import salt.utils
 from salt.exceptions import CommandExecutionError
 from salt.loader import LazyLoader
 
 __nova__ = {}
-__version__ = 'v2016.10.1'
-
-__opts__ = {}
-__grains__ = {}
-__salt__ = {}
-__utils__ = {}
+__version__ = 'v2016.10.2'
 
 
 def audit(configs=None,

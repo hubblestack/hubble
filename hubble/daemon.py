@@ -231,7 +231,7 @@ def run_function():
         else:
             returner_ret = {'id': __grains__['id'],
                             'jid': salt.utils.jid.gen_jid(),
-                            'fun': func,
+                            'fun': __opts__['function'],
                             'fun_args': args + ([kwargs] if kwargs else []),
                             'return': ret}
             __returners__[returner](returner_ret)

@@ -224,6 +224,18 @@ def run_function():
 
     ret = __salt__[__opts__['function']](*args, **kwargs)
 
+    if __opts__['return']:
+        returner = '{0}.returner'.format(__opts__['return'])
+        if returner not in __returners__:
+            log.error('Could not find {0} returner.'.format(returner))
+        else:
+            returner_ret = {'id': __grains__['id'],
+                            'jid': salt.utils.jid.gen_jid(),
+                            'fun': func,
+                            'fun_args': args + ([kwargs] if kwargs else []),
+                            'return': ret}
+            __returners__[returner](returner_ret)
+
     # TODO instantiate the salt outputter system?
     if(__opts__['no_pprint']):
         pprint.pprint(ret)
@@ -285,6 +297,9 @@ def parse_args():
                         help=('Verbosity level. Use -v or -vv or -vvv for '
                               'varying levels of verbosity. Note that -vv '
                               'will be used by default in daemon mode.'))
+    parser.add_argument('-r', '--return',
+                        default=None,
+                        help='Pass in a returner for single-function runs')
     parser.add_argument('function',
                         nargs='?',
                         default=None,

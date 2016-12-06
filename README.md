@@ -64,3 +64,37 @@ Hubble v2 now supports one-off invocations of specific functions:
              {'CIS-3.1.1': 'Ensure IP forwarding is disabled'},
              {'CIS-3.2.8': 'Ensure TCP SYN Cookies is enabled'}]}
 ```
+
+## Scheduler
+
+Hubble v2 now supports scheduled jobs. See the docstring for `schedule` for
+more information, but it follows the basic structure of salt scheduled jobs:
+
+```
+schedule:
+  job1:
+    function: hubble.audit
+    seconds: 60
+    splay: 30
+    args:
+      - cis.centos-7-level-1-scored-v2-1-0
+    kwargs:
+      verbose: True
+      show_profile: True
+    returner: splunk_nova_return
+    run_on_start: True
+```
+
+Note that you need to have your splunk_nova_return configured in order to use
+the above block:
+
+```
+hubblestack:
+  nova:
+    returner:
+      splunk:
+        token: <token>
+        indexer: <hec endpoint>
+        sourcetype: hubble_audit
+        index: <index>
+```

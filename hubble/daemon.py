@@ -197,6 +197,7 @@ def schedule():
                 if returner not in __returners__:
                     log.error('Could not find {0} returner.'.format(returner))
                     continue
+                log.info('Returning job data to {0}'.format(returner))
                 returner_ret = {'id': __grains__['id'],
                                 'jid': salt.utils.jid.gen_jid(),
                                 'fun': func,
@@ -229,6 +230,7 @@ def run_function():
         if returner not in __returners__:
             log.error('Could not find {0} returner.'.format(returner))
         else:
+            log.info('Returning job data to {0}'.format(returner))
             returner_ret = {'id': __grains__['id'],
                             'jid': salt.utils.jid.gen_jid(),
                             'fun': __opts__['function'],

@@ -157,7 +157,7 @@ def beacon():
     If pillar/grains/minion config key `hubblestack:pulsar:maintenance` is set to
     True, then changes will be discarded.
     '''
-    config = __opts__.get('beacons', {}).get('pulsar', {})
+    config = __opts__.get('pulsar', {})
     global CONFIG_STALENESS
     global CONFIG
     if config.get('verbose'):

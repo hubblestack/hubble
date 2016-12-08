@@ -80,7 +80,7 @@ def _get_notifier():
     return __context__['pulsar.notifier']
 
 
-def beacon(config):
+def beacon():
     '''
     Watch the configured files
 
@@ -157,6 +157,7 @@ def beacon(config):
     If pillar/grains/minion config key `hubblestack:pulsar:maintenance` is set to
     True, then changes will be discarded.
     '''
+    config = __opts__.get('beacons', {}).get('pulsar', {})
     global CONFIG_STALENESS
     global CONFIG
     if config.get('verbose'):
@@ -343,46 +344,48 @@ def beacon(config):
         # We're in maintenance mode, throw away findings
         ret = []
 
-    if ret and 'return' in config:
-        __opts__['grains'] = __grains__
-        __opts__['pillar'] = __pillar__
-        __returners__ = salt.loader.returners(__opts__, __salt__)
-        return_config = config['return']
-        if isinstance(return_config, salt.ext.six.string_types):
-            tmp = {}
-            for conf in return_config.split(','):
-                tmp[conf] = None
-            return_config = tmp
-        for returner_mod in return_config:
-            returner = '{0}.returner'.format(returner_mod)
-            if returner not in __returners__:
-                log.error('Could not find {0} returner for pulsar beacon'.format(config['return']))
-                return ret
-            batch_config = config.get('batch')
-            if isinstance(return_config[returner_mod], dict) and return_config[returner_mod].get('batch'):
-                batch_config = True
-            if batch_config:
-                transformed = []
-                for item in ret:
-                    transformed.append({'return': item})
-                if config.get('multiprocessing_return', True):
-                    p = multiprocessing.Process(target=__returners__[returner], args=(transformed,))
-                    p.daemon = True
-                    p.start()
-                else:
-                    __returners__[returner](transformed)
-            else:
-                for item in ret:
-                    if config.get('multiprocessing_return', True):
-                        p = multiprocessing.Process(target=__returners__[returner], args=({'return': item},))
-                        p.daemon = True
-                        p.start()
-                    else:
-                        __returners__[returner]({'return': item})
-        return []
-    else:
-        # Return event data
-        return ret
+    return ret
+
+    #if ret and 'return' in config:
+    #    __opts__['grains'] = __grains__
+    #    __opts__['pillar'] = __pillar__
+    #    __returners__ = salt.loader.returners(__opts__, __salt__)
+    #    return_config = config['return']
+    #    if isinstance(return_config, salt.ext.six.string_types):
+    #        tmp = {}
+    #        for conf in return_config.split(','):
+    #            tmp[conf] = None
+    #        return_config = tmp
+    #    for returner_mod in return_config:
+    #        returner = '{0}.returner'.format(returner_mod)
+    #        if returner not in __returners__:
+    #            log.error('Could not find {0} returner for pulsar beacon'.format(config['return']))
+    #            return ret
+    #        batch_config = config.get('batch')
+    #        if isinstance(return_config[returner_mod], dict) and return_config[returner_mod].get('batch'):
+    #            batch_config = True
+    #        if batch_config:
+    #            transformed = []
+    #            for item in ret:
+    #                transformed.append({'return': item})
+    #            if config.get('multiprocessing_return', True):
+    #                p = multiprocessing.Process(target=__returners__[returner], args=(transformed,))
+    #                p.daemon = True
+    #                p.start()
+    #            else:
+    #                __returners__[returner](transformed)
+    #        else:
+    #            for item in ret:
+    #                if config.get('multiprocessing_return', True):
+    #                    p = multiprocessing.Process(target=__returners__[returner], args=({'return': item},))
+    #                    p.daemon = True
+    #                    p.start()
+    #                else:
+    #                    __returners__[returner]({'return': item})
+    #    return []
+    #else:
+    #    # Return event data
+    #    return ret
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):

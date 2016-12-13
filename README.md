@@ -32,7 +32,7 @@ gitfs_remotes:
   - https://github.com/hubblestack/Quasar.git:
     - base: v2016.10.4
 fileserver_backend:
-  - root
+  - roots
   - git
 ```
 

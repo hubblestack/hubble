@@ -79,7 +79,7 @@ def _get_notifier():
     return __context__['pulsar.notifier']
 
 
-def process(config='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
+def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
             verbose=False):
     '''
     Watch the configured files

@@ -65,6 +65,8 @@ hec = None
 
 
 def returner(ret):
+    if not ret:
+        return
     # Customized to split up the change events and send to Splunk.
     opts = _get_options()
     logging.info('Options: %s' % json.dumps(opts))

@@ -91,8 +91,14 @@ def returner(ret):
     except IndexError:
         fqdn_ip4 = __grains__['ipv4'][0]
 
+    alerts = []
     for item in data:
-        alert = item['return']
+        events = item['return']
+        if not isinstance(events, list):
+            events = [events]
+        alerts.extend(events)
+
+    for alert in alerts:
         event = {}
         payload = {}
         if('change' in alert):  # Linux, normal pulsar

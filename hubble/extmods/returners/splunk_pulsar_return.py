@@ -57,7 +57,7 @@ __version__ = 'v2016.10.4'
 
 _max_content_bytes = 100000
 http_event_collector_SSL_verify = False
-http_event_collector_debug = True
+http_event_collector_debug = False
 
 log = logging.getLogger(__name__)
 
@@ -65,7 +65,8 @@ hec = None
 
 
 def returner(ret):
-    if not ret:
+    if isinstance(ret, dict) and not ret.get('return'):
+        # Empty single return, let's not do any setup or anything
         return
     # Customized to split up the change events and send to Splunk.
     opts = _get_options()

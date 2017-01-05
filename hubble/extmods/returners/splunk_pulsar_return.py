@@ -57,7 +57,7 @@ __version__ = 'v2016.10.4'
 
 _max_content_bytes = 100000
 http_event_collector_SSL_verify = False
-http_event_collector_debug = True
+http_event_collector_debug = False
 
 log = logging.getLogger(__name__)
 
@@ -65,6 +65,9 @@ hec = None
 
 
 def returner(ret):
+    if isinstance(ret, dict) and not ret.get('return'):
+        # Empty single return, let's not do any setup or anything
+        return
     # Customized to split up the change events and send to Splunk.
     opts = _get_options()
     logging.info('Options: %s' % json.dumps(opts))
@@ -91,8 +94,14 @@ def returner(ret):
     except IndexError:
         fqdn_ip4 = __grains__['ipv4'][0]
 
+    alerts = []
     for item in data:
-        alert = item['return']
+        events = item['return']
+        if not isinstance(events, list):
+            events = [events]
+        alerts.extend(events)
+
+    for alert in alerts:
         event = {}
         payload = {}
         if('change' in alert):  # Linux, normal pulsar

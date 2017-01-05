@@ -17,8 +17,6 @@ import salt.fileclient
 import salt.utils
 import salt.utils.jid
 
-import hubble.nova as nova
-
 log = logging.getLogger(__name__)
 
 __opts__ = {}

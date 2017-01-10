@@ -25,7 +25,7 @@ python-pygit2 to get gitfs working:
 
 ```
 gitfs_remotes:
-  - https://github.com/hubblestack/hubble-salt.git:
+  - https://github.com/hubblestack/hubble-salt.git
 fileserver_backend:
   - roots
   - git

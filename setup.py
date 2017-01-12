@@ -9,11 +9,14 @@ setup(
         ],
     },
     install_requires=[
-        'salt-ssh >= 2016.3.4',
+        'salt >= 2016.3.4',
     ],
     options={
-        'build_scripts': {
-            'executable': '/usr/bin/env python',
+#        'build_scripts': {
+#            'executable': '/usr/bin/env python',
+#        },
+        'bdist_rpm': {
+            'requires': 'salt',
         },
     },
 

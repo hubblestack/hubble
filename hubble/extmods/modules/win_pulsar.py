@@ -417,7 +417,11 @@ def _pull_events(time_frame):
             event_dict['Accesses'] = _get_access_translation(event_dict['Accesses'])
             event_dict['Hash'] = _get_item_hash(event_dict['Object Name'])
             #needs hostname, checksum, filepath, time stamp, action taken
-            events_list.append({k: event_dict[k] for k in ('EntryType', 'Accesses', 'TimeGenerated', 'Object Name', 'Hash')})
+            # Generate the dictionary without a dictionary comp, for py2.6
+            tmpdict = {}
+            for k in ('EntryType', 'Accesses', 'TimeGenerated', 'Object Name', 'Hash'):
+                tmpdict[k] = event_dict[k]
+            events_list.append(tmpdict)
     return events_list
 
 

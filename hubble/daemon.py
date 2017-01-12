@@ -359,7 +359,7 @@ def create_pidfile():
     '''
     pid = os.getpid()
     with open(__opts__['pidfile'], 'w') as f:
-        f.write(pid)
+        f.write(str(pid))
 
 
 def clean_up_process(signal, frame):

@@ -11,6 +11,7 @@ import time
 import pprint
 import os
 import random
+import signal
 import sys
 
 import salt.fileclient
@@ -29,6 +30,9 @@ def run():
     # Don't put anything that needs config above this line
     load_config()
 
+    signal.signal(signal.SIGTERM, clean_up_process)
+    signal.signal(signal.SIGINT, clean_up_process)
+
     # Set up logging
     logging_setup()
 
@@ -38,11 +42,12 @@ def run():
 
     if __opts__['daemonize']:
         salt.utils.daemonize()
+        create_pidfile()
 
     try:
         main()
     except KeyboardInterrupt:
-        sys.exit(0)
+        clean_up_process()
 
 
 def main():
@@ -252,6 +257,7 @@ def load_config():
     parsed_args = parse_args()
 
     salt.config.DEFAULT_MINION_OPTS['cachedir'] = '/var/cache/hubble'
+    salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 60
 
@@ -343,3 +349,21 @@ def logging_setup():
     sh.setLevel(logging.DEBUG)
     sh.setFormatter(formatter)
     log.addHandler(sh)
+
+
+def create_pidfile():
+    '''
+    Create a pidfile after daemonizing
+    '''
+    pid = os.getpid()
+    with open(__opts__['pidfile'], 'w') as f:
+        f.write(pid)
+
+
+def clean_up_process(signal, frame):
+    '''
+    Clean up pidfile and anything else that needs to be cleaned up
+    '''
+    if os.path.isfile(__opts__['pidfile']):
+        os.remove(__opts__['pidfile'])
+    sys.exit(0)

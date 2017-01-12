@@ -30,10 +30,6 @@ def run():
     # Don't put anything that needs config above this line
     load_config()
 
-    create_pidfile()
-    signal.signal(signal.SIGTERM, clean_up_process)
-    signal.signal(signal.SIGINT, clean_up_process)
-
     # Set up logging
     logging_setup()
 
@@ -43,6 +39,10 @@ def run():
 
     if __opts__['daemonize']:
         salt.utils.daemonize()
+
+    create_pidfile()
+    signal.signal(signal.SIGTERM, clean_up_process)
+    signal.signal(signal.SIGINT, clean_up_process)
 
     try:
         main()

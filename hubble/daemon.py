@@ -30,6 +30,7 @@ def run():
     # Don't put anything that needs config above this line
     load_config()
 
+    create_pidfile()
     signal.signal(signal.SIGTERM, clean_up_process)
     signal.signal(signal.SIGINT, clean_up_process)
 
@@ -42,12 +43,13 @@ def run():
 
     if __opts__['daemonize']:
         salt.utils.daemonize()
-        create_pidfile()
 
     try:
         main()
     except KeyboardInterrupt:
-        clean_up_process()
+        pass
+
+    clean_up_process()
 
 
 def main():

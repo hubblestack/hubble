@@ -11,6 +11,7 @@ setup(
     install_requires=[
         'salt >= 2016.3.4',
     ],
+    data_files=[('/etc/init.d', ['pkg/hubble']),],
     options={
 #        'build_scripts': {
 #            'executable': '/usr/bin/env python',

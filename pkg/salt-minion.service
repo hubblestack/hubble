@@ -1,0 +1,10 @@
+[Unit]
+Description=Hubblestack
+
+[Service]
+Type=forking
+PIDFile=/var/run/hubble
+ExecStart=/usr/bin/hubble
+
+[Install]
+WantedBy=multi-user.target

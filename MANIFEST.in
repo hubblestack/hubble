@@ -1,1 +1,2 @@
 recursive-include pkg *
+recursive-include conf *

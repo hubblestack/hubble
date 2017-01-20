@@ -3,10 +3,12 @@
 #################################
 ##
 ## Hubble doesn't ship with profiles. To get the default profiles, you can
-## subscribe via GitFS to the hubblestack_data repo.
+## subscribe via GitFS to the hubblestack_data repo. You must also have either
+## python-gitpython or python-pygit2 installed. (python-pygit2 is recommended
+## if available
 
 gitfs_remotes:
-  - https://github.com/hubblestack/hubblestack_data.git
+  - git://github.com/hubblestack/hubblestack_data.git
 fileserver_backend:
   - git
   - roots

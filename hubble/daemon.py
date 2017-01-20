@@ -277,6 +277,9 @@ def load_config():
     module_dirs = __opts__.get('module_dirs', [])
     module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods'))
     __opts__['module_dirs'] = module_dirs
+    __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
+    if 'roots' not in __opts__['fileserver_backend']:
+        __opts__['fileserver_backend'].append('roots')
 
     __grains__ = salt.loader.grains(__opts__)
     __pillar__ = {}

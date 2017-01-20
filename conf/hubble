@@ -1,0 +1,103 @@
+#################################
+## GitFS Config
+#################################
+##
+## Hubble doesn't ship with profiles. To get the default profiles, you can
+## subscribe via GitFS to the hubblestack_data repo. You must also have either
+## python-gitpython or python-pygit2 installed. (python-pygit2 is recommended
+## if available
+
+gitfs_remotes:
+  - git://github.com/hubblestack/hubblestack_data.git
+fileserver_backend:
+  - git
+  - roots
+
+#################################
+## Scheduler Config
+#################################
+##
+## Hubble has a basic scheduler which can be used to schedule jobs at various
+## intervals (defined by the `seconds` argument), with optional splay.
+##
+## Below is a sample schedule for all of the modules includedin hubble
+
+#schedule:
+#  audit_daily:
+#    function: hubble.audit
+#    seconds: 86400
+#    splay: 3600
+#    kwargs:
+#      verbose: True
+#      show_profile: True
+#    returner: splunk_nova_return
+#    run_on_start: False
+#  nebula_fifteen_min:
+#    function: nebula.queries
+#    seconds: 900
+#    splay: 300
+#    args:
+#      - fifteen_min
+#    returner: splunk_nebula_return
+#    run_on_start: False
+#  nebula_hour:
+#    function: nebula.queries
+#    seconds: 3600
+#    splay: 900
+#    args:
+#      - hour
+#    returner: splunk_nebula_return
+#    run_on_start: False
+#  nebula_day:
+#    function: nebula.queries
+#    seconds: 86400
+#    splay: 3600
+#    args:
+#      - day
+#    returner: splunk_nebula_return
+#    run_on_start: False
+#  pulsar:
+#    function: pulsar.process
+#    seconds: 1
+#    returner: splunk_pulsar_return
+#    run_on_start: True
+
+#################################
+## Returner Config
+#################################
+##
+## In order for the sample scheduler config to work, you must configure the
+## returners which are being used. In the case of the Splunk returners, you
+## must add index, token, and endpoint information
+
+#hubblestack:
+#  nova:
+#    returner:
+#      splunk:
+#        token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+#        indexer: splunk-indexer.domain.tld
+#        sourcetype: hubble_audit
+#        index: hubble
+#  nebula:
+#    returner:
+#      splunk:
+#        token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+#        indexer: splunk-indexer.domain.tld
+#        sourcetype: hubble_osquery
+#        index: hubble
+#  pulsar:
+#    returner:
+#      splunk:
+#        token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+#        indexer: splunk-indexer.domain.tld
+#        sourcetype: hubble_fim
+#        index: hubble
+
+## If you are instead using the slack returner, you'll need a block similar to
+## this:
+
+#slack_pulsar:
+#  as_user: true
+#  username: calculon
+#  channel: channel
+#  api_key: xoxb-xxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx

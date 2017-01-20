@@ -4,13 +4,16 @@ import platform
 distro, version, _ = platform.dist()
 
 # Default to cent7
-data_files = [('/usr/lib/systemd/system', ['pkg/hubble.service']),]
+data_files = [('/usr/lib/systemd/system', ['pkg/hubble.service']),
+              ('/etc/hubble/hubble', ['conf/hubble']),]
 
 if distro == 'redhat' or distro == 'centos':
     if version.startswith('6'):
-        data_files = [('/etc/init.d', ['pkg/hubble']),]
+        data_files = [('/etc/init.d', ['pkg/hubble']),
+                      ('/etc/hubble/hubble', ['conf/hubble']),]
     elif version.startswith('7'):
-        data_files = [('/usr/lib/systemd/system', ['pkg/hubble.service']),]
+        data_files = [('/usr/lib/systemd/system', ['pkg/hubble.service']),
+                      ('/etc/hubble/hubble', ['conf/hubble']),]
 
 setup(
     name="hubblestack",

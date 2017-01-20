@@ -3,6 +3,18 @@
 An alternate version of Hubblestack which can be run without an existing
 SaltStack infrastructure.
 
+# Building packages (CentOS)
+
+```bash
+yum install rpm-build
+git clone git://github.com/hubblestack/hubble
+cd hubble
+python setup.py clean && python setup.py bdist_rpm
+```
+
+Package will be in the `dist/` directory.
+
+
 # Installation/testing
 
 ```bash

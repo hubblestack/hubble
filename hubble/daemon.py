@@ -27,11 +27,8 @@ def run():
     '''
     Set up program, daemonize if needed
     '''
-    # Don't put anything that needs config above this line
+    # Don't put anything that needs config or logging above this line
     load_config()
-
-    # Set up logging
-    logging_setup()
 
     # Create cache directory if not present
     if not os.path.isdir(__opts__['cachedir']):
@@ -281,6 +278,9 @@ def load_config():
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')
 
+    # Setup logging
+    logging_setup()
+
     __grains__ = salt.loader.grains(__opts__)
     __pillar__ = {}
     __opts__['grains'] = __grains__
@@ -327,18 +327,24 @@ def logging_setup():
     Set up logger
     '''
     global log
+    global __opts__
 
     log.setLevel(logging.ERROR)
+    __opts__['log_level'] = 'error'
 
     if __opts__['daemonize']:
         log.setLevel(logging.INFO)
+        __opts__['log_level'] = 'info'
 
     if __opts__['verbose'] == 1:
         log.setLevel(logging.WARNING)
+        __opts__['log_level'] = 'warning'
     elif __opts__['verbose'] == 2:
         log.setLevel(logging.INFO)
+        __opts__['log_level'] = 'info'
     elif __opts__['verbose'] >= 3:
         log.setLevel(logging.DEBUG)
+        __opts__['log_level'] = 'debug'
 
     # Logging format
     formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s]: %(message)s', datefmt='%Y/%m/%d %H:%M:%S')

@@ -41,6 +41,9 @@ setup(
         'bdist_rpm': {
             'requires': 'salt',
         },
+        'install': {
+            'prefix': '/usr',
+        },
     },
 
 )

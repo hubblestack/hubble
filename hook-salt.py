@@ -27,6 +27,7 @@ DATAS.extend(collect_data_files('salt', include_py_files=True))
 
 # Let's filter out salt loader modules which are included as data files
 SALT_LOADERS = [
+    'hubble',
     'salt.auth',
     'salt.beacons',
     'salt.cloud.clouds',
@@ -84,7 +85,10 @@ for pkg in PACKAGES:
     BINARIES.extend(collect_dynamic_libs(pkg))
     HIDDEN_IMPORTS.extend(collect_submodules(pkg))
 
+DATAS.extend(collect_data_files('hubble', subdir=".", include_py_files=True))
 # Finally, define the globals that PyInstaller expects
 hiddenimports = HIDDEN_IMPORTS
 datas = DATAS
 binaries = BINARIES
+
+print DATAS

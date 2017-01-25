@@ -5,11 +5,14 @@ _BINARY_LOG_LEVEL="INFO"
 
 function pkg_create {
 _INCLUDE_PATH=""
+
+: '
 for i in `find $_SOURCE_DIR -type d`
 do
    _INCLUDE_PATH=$_INCLUDE_PATH"    --path=$i"
 done
-  
+'
+
 #pyinstaller --onefile \
 pyinstaller \
   --noconfirm \

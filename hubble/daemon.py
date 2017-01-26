@@ -17,6 +17,7 @@ import sys
 import salt.fileclient
 import salt.utils
 import salt.utils.jid
+import salt.log.setup
 
 log = logging.getLogger(__name__)
 
@@ -257,6 +258,8 @@ def load_config():
 
     salt.config.DEFAULT_MINION_OPTS['cachedir'] = '/var/cache/hubble'
     salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
+    salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
+    salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 60
 
@@ -270,6 +273,20 @@ def load_config():
     __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
 
+    # Convert -vvv to log level
+    # Default to 'error'
+    __opts__['log_level'] = 'error'
+    # Default to more verbose if we're daemonizing
+    if __opts__['daemonize']:
+        __opts__['log_level'] = 'info'
+    # Handle the explicit -vvv settings
+    if __opts__['verbose'] == 1:
+        __opts__['log_level'] = 'warning'
+    elif __opts__['verbose'] == 2:
+        __opts__['log_level'] = 'info'
+    elif __opts__['verbose'] >= 3:
+        __opts__['log_level'] = 'debug'
+
     # Setup module dirs
     module_dirs = __opts__.get('module_dirs', [])
     module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods'))
@@ -279,7 +296,9 @@ def load_config():
         __opts__['fileserver_backend'].append('roots')
 
     # Setup logging
-    logging_setup()
+    salt.log.setup.setup_console_logger(__opts__['log_level'])
+    salt.log.setup.setup_logfile_logger(__opts__['log_file'],
+                                        __opts__['log_level'])
 
     __grains__ = salt.loader.grains(__opts__)
     __pillar__ = {}
@@ -320,46 +339,6 @@ def parse_args():
                         nargs='*',
                         help='Any arguments necessary for a single function run')
     return vars(parser.parse_args())
-
-
-def logging_setup():
-    '''
-    Set up logger
-    '''
-    global log
-    global __opts__
-
-    log.setLevel(logging.ERROR)
-    __opts__['log_level'] = 'error'
-
-    if __opts__['daemonize']:
-        log.setLevel(logging.INFO)
-        __opts__['log_level'] = 'info'
-
-    if __opts__['verbose'] == 1:
-        log.setLevel(logging.WARNING)
-        __opts__['log_level'] = 'warning'
-    elif __opts__['verbose'] == 2:
-        log.setLevel(logging.INFO)
-        __opts__['log_level'] = 'info'
-    elif __opts__['verbose'] >= 3:
-        log.setLevel(logging.DEBUG)
-        __opts__['log_level'] = 'debug'
-
-    # Logging format
-    formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s]: %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
-
-    # Log to file
-    fh = logging.FileHandler('/var/log/hubble')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    log.addHandler(fh)
-
-    # Log to stdout
-    sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG)
-    sh.setFormatter(formatter)
-    log.addHandler(sh)
 
 
 def create_pidfile():

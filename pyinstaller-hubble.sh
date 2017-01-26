@@ -13,8 +13,7 @@ do
 done
 '
 
-#pyinstaller --onefile \
-pyinstaller \
+pyinstaller --onefile \
   --noconfirm \
   --log-level $_BINARY_LOG_LEVEL \
   --additional-hooks-dir=$_SOURCE_DIR \

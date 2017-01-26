@@ -1,4 +1,13 @@
 HIDDEN_IMPORTS = [
+ 'ssl',
+ 'argparse',
+ 'base64',
+ 'HTMLParser',
+ 'json',
+ 'logging',
+ 'Crypto',
+ 'requests',
+ 'functools',
  'BaseHTTPServer',
  'argparse',
  'logging',
@@ -17,6 +26,7 @@ HIDDEN_IMPORTS = [
  'inspect',
  'yaml',
  'traceback'
+ 'pygit2'
 ]
 DATAS = []
 binaries = []

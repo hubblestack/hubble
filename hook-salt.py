@@ -79,20 +79,18 @@ for entry in DATAS[:]:
 # Some packages salt required, which we should include that are not discovered by PyInstaller
 PACKAGES = [
  'ssl',
- 'Crypto',
+ 'crypto',
  'OpenSSL',
  'argparse',
  'base64',
  'HTMLParser',
  'json',
  'logging',
- 'Crypto',
  'requests',
  'functools',
  'BaseHTTPServer',
  'argparse',
  'logging',
- 'time',
  'pprint',
  'os',
  'random',
@@ -117,5 +115,3 @@ DATAS.extend(collect_data_files('hubble', subdir=".", include_py_files=True))
 hiddenimports = HIDDEN_IMPORTS
 datas = DATAS
 binaries = BINARIES
-
-print BINARIES

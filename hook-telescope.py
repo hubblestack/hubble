@@ -1,6 +1,6 @@
 HIDDEN_IMPORTS = [
  'ssl',
- 'Crypto',
+ 'crypto',
  'OpenSSL',
  'argparse',
  'base64',
@@ -31,12 +31,7 @@ HIDDEN_IMPORTS = [
  'pygit2',
 ]
 DATAS = []
-binaries = [
-'/lib64/libcrypt-2.17.so',
-'/lib64/libcrypto.so.10',
-'/lib64/libcrypto.so.1.0.1k',
-'/lib64/libcrypt.so.1',
-]
+binaries = []
 
 
 hiddenimports = HIDDEN_IMPORTS

@@ -1,3 +1,4 @@
+apt-get install python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev
 export LIBGIT2=/usr/local/
 mkdir temp
 cd temp

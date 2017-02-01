@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
-from hubble import daemon
+from hubblestack import daemon
 
 daemon.run()

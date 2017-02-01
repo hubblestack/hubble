@@ -27,7 +27,7 @@ setup(
     packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'hubble = hubble.daemon:run',
+            'hubble = hubblestack.daemon:run',
         ],
     },
     install_requires=[

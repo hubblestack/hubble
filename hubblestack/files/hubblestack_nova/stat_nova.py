@@ -50,6 +50,7 @@ from distutils.version import LooseVersion
 
 log = logging.getLogger(__name__)
 
+__virtualname__ = 'stat'
 
 def __virtual__():
     if salt.utils.is_windows():

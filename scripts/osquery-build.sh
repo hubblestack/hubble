@@ -7,7 +7,8 @@ cd osquery
 make sysprep
 make deps
 make
-sudo mv ./build/linux/osquery /opt/
+make strip
+sudo mv ./build/linux/osquery/osqueryi ./build/linux/osquery/osqueryd /opt/osquery
 sudo chown -R root. /opt/osquery
 cd ../../
 sudo cp ../conf/osquery.conf /etc/osquery/

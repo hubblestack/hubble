@@ -1,5 +1,6 @@
 # Building osquery
 mkdir -p temp
+sudo chown -R $USER. temp
 cd temp
 git clone https://github.com/facebook/osquery.git
 cd osquery

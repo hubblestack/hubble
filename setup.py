@@ -51,5 +51,21 @@ setup(
             'prefix': '/usr',
         },
     },
-
+    classifiers=[
+          'Development Status :: 4 - Beta',
+          'Environment :: Console',
+          'Intended Audience :: System Administrators',
+          'License :: OSI Approved :: Apache Software License',
+          'Natural Language :: English',
+          'Operating System :: Unix',
+          'Operating System :: POSIX',
+          'Operating System :: POSIX :: Linux',
+          'Operating System :: Microsoft :: Windows',
+          'Programming Language :: Python',
+          'Topic :: Security',
+          'Topic :: System',
+          'Topic :: System :: Logging',
+          'Topic :: System :: Monitoring',
+          'Topic :: System :: Systems Administration',
+          ],
 )

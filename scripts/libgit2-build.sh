@@ -12,4 +12,4 @@ export LDFLAGS="-Wl,-rpath='$LIBGIT2/lib',--enable-new-dtags $LDFLAGS"
 
 # Destroying the build directory
 cd ../../
-rm -rf temp
+#rm -rf temp

@@ -6,8 +6,9 @@ cd osquery
 make sysprep
 make deps
 make
-mv ./build/linux/osquery /opt/
-cp conf/osquery.conf /etc/osquery/
-cp conf/osquery.flags /etc/osquery/
+sudo mv ./build/linux/osquery /opt/
+sudo chown -R root. /opt/osquery
 cd ../../
-rm -rf temp
+sudo cp ../conf/osquery.conf /etc/osquery/
+sudo cp ../conf/osquery.flags /etc/osquery/
+#rm -rf temp

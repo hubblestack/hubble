@@ -18,6 +18,7 @@ import salt.fileclient
 import salt.utils
 import salt.utils.jid
 import salt.log.setup
+from hubblestack import __version__
 
 log = logging.getLogger(__name__)
 
@@ -35,6 +36,11 @@ def run():
     if not os.path.isdir(__opts__['cachedir']):
         os.makedirs(__opts__['cachedir'])
 
+    if __opts__['version']:
+        print(__version__)
+        clean_up_process(None, None)
+        sys.exit(0)
+
     if __opts__['daemonize']:
         salt.utils.daemonize()
 
@@ -47,7 +53,7 @@ def run():
     except KeyboardInterrupt:
         pass
 
-    clean_up_process()
+    clean_up_process(None, None)
 
 
 def main():
@@ -314,8 +320,8 @@ def parse_args():
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--daemonize',
-                        help='Whether to daemonize and background the process',
-                        action='store_true')
+                        action='store_true',
+                        help='Whether to daemonize and background the process')
     parser.add_argument('-c', '--configfile',
                         default='/etc/hubble/hubble',
                         help='Pass in an alternative configuration file. Default: %(default)s')
@@ -330,6 +336,9 @@ def parse_args():
     parser.add_argument('-r', '--return',
                         default=None,
                         help='Pass in a returner for single-function runs')
+    parser.add_argument('--version',
+                        action='store_true',
+                        help='Show version information')
     parser.add_argument('function',
                         nargs='?',
                         default=None,

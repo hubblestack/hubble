@@ -1,0 +1,6 @@
+--disable_events=false
+--disable_audit=false
+--audit_allow_config=true
+--audit_persist=true
+--audit_allow_sockets
+--events_expiry=1

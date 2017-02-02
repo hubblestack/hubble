@@ -20,10 +20,13 @@ elif distro == 'Amazon Linux AMI':
     data_files = [('/etc/init.d', ['pkg/hubble']),
                   ('/etc/hubble', ['conf/hubble']),]
 
+with open('hubblestack/__init__.py', 'r') as fd:
+    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
+                        fd.read(), re.MULTILINE).group(1)
 
 setup(
     name='hubblestack',
-    version='2.0.1',
+    version=version,
     description='Modular, open-source security compliance framework',
     author='Colton Myers',
     author_email='colton.myers@gmail.com',

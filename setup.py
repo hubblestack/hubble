@@ -1,5 +1,6 @@
 from setuptools import setup, find_packages
 import platform
+import re
 
 distro, version, _ = platform.dist()
 if not distro:

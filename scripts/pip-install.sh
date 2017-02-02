@@ -3,6 +3,7 @@ _python_version=`python -c 'import sys; version=sys.version_info[:3]; print("{0}
 if [ "$_python_version" == "2.6.6" ]
 then
   pip install -r pyinstaller-requirements-2.6.txt
+  pip uninstall jinja2
 else
   pip install -r pyinstaller-requirements.txt
 fi

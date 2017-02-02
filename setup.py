@@ -50,7 +50,7 @@ setup(
 #            'executable': '/usr/bin/env python',
 #        },
         'bdist_rpm': {
-            'requires': 'salt python-argparse',
+            'requires': 'salt python-argparse python-inotify python-pygit2',
         },
         'install': {
             'prefix': '/usr',

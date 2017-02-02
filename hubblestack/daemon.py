@@ -38,7 +38,7 @@ def run():
 
     if __opts__['version']:
         print(__version__)
-        clean_up_process()
+        clean_up_process(None, None)
         sys.exit(0)
 
     if __opts__['daemonize']:
@@ -53,7 +53,7 @@ def run():
     except KeyboardInterrupt:
         pass
 
-    clean_up_process()
+    clean_up_process(None, None)
 
 
 def main():

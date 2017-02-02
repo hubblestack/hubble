@@ -1,11 +1,25 @@
 # Hubble
-The infamous HubbleStack written in Python to run autonomously (independent of SaltStack).
+
+An alternate version of Hubblestack which can be run without an existing
+SaltStack infrastructure.
+
+# Building packages (CentOS)
+
+```bash
+yum install rpm-build
+git clone git://github.com/hubblestack/hubble
+cd hubble
+python setup.py clean && python setup.py bdist_rpm
+```
+
+Package will be in the `dist/` directory.
+
 
 # Installation/testing
 
 ```bash
-git clone git@github.com:dmcteer/hubble hubblev2
-cd hubblev2
+git clone git@github.com:hubblestack/hubble
+cd hubble
 python setup.py clean && python setup.py install
 hubble
 ```
@@ -23,22 +37,15 @@ python-pygit2 to get gitfs working:
 
 ```
 gitfs_remotes:
-  - https://github.com/hubblestack/Nova.git:
-    - base: v2016.10.2
-  - https://github.com/hubblestack/Nebula.git:
-    - base: v2016.10.2
-  - https://github.com/hubblestack/Pulsar.git:
-    - base: v2016.10.3
-  - https://github.com/hubblestack/Quasar.git:
-    - base: v2016.10.4
+  - https://github.com/hubblestack/hubble-salt.git
 fileserver_backend:
-  - root
+  - roots
   - git
 ```
 
 ## Single invocation
 
-Hubble v2 now supports one-off invocations of specific functions:
+Hubble supports one-off invocations of specific functions:
 
 ```
 [root@host1 hubble-v2]# hubble nova.audit cis.centos-7-level-1-scored-v2-1-0 tags=CIS-3.\*
@@ -67,8 +74,10 @@ Hubble v2 now supports one-off invocations of specific functions:
 
 ## Scheduler
 
-Hubble v2 now supports scheduled jobs. See the docstring for `schedule` for
-more information, but it follows the basic structure of salt scheduled jobs:
+Hubble supports scheduled jobs. See the docstring for `schedule` for
+more information, but it follows the basic structure of salt scheduled jobs.
+The schedule config should be placed in `/etc/hubble/hubble` along with any
+other hubble config:
 
 ```
 schedule:

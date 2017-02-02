@@ -33,9 +33,9 @@ import salt
 import salt.utils
 from salt.exceptions import CommandExecutionError
 from salt.loader import LazyLoader
+from hubblestack import __version__
 
 __nova__ = {}
-__version__ = 'v2016.10.2'
 
 
 def audit(configs=None,

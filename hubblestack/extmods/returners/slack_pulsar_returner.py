@@ -69,8 +69,6 @@ import salt.ext.six.moves.http_client
 # Import Salt Libs
 import salt.returners
 
-__version__ = 'v2016.10.4'
-
 log = logging.getLogger(__name__)
 
 __virtualname__ = 'slack_pulsar'

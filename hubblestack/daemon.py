@@ -11,13 +11,14 @@ import time
 import pprint
 import os
 import random
+import signal
 import sys
 
 import salt.fileclient
 import salt.utils
 import salt.utils.jid
-
-import hubble.nova as nova
+import salt.log.setup
+from hubblestack import __version__
 
 log = logging.getLogger(__name__)
 
@@ -28,23 +29,31 @@ def run():
     '''
     Set up program, daemonize if needed
     '''
-    # Don't put anything that needs config above this line
+    # Don't put anything that needs config or logging above this line
     load_config()
-
-    # Set up logging
-    logging_setup()
 
     # Create cache directory if not present
     if not os.path.isdir(__opts__['cachedir']):
         os.makedirs(__opts__['cachedir'])
 
+    if __opts__['version']:
+        print(__version__)
+        clean_up_process(None, None)
+        sys.exit(0)
+
     if __opts__['daemonize']:
         salt.utils.daemonize()
+
+    create_pidfile()
+    signal.signal(signal.SIGTERM, clean_up_process)
+    signal.signal(signal.SIGINT, clean_up_process)
 
     try:
         main()
     except KeyboardInterrupt:
-        sys.exit(0)
+        pass
+
+    clean_up_process(None, None)
 
 
 def main():
@@ -254,6 +263,8 @@ def load_config():
     parsed_args = parse_args()
 
     salt.config.DEFAULT_MINION_OPTS['cachedir'] = '/var/cache/hubble'
+    salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
+    salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 60
 
@@ -267,10 +278,32 @@ def load_config():
     __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
 
+    # Convert -vvv to log level
+    # Default to 'error'
+    __opts__['log_level'] = 'error'
+    # Default to more verbose if we're daemonizing
+    if __opts__['daemonize']:
+        __opts__['log_level'] = 'info'
+    # Handle the explicit -vvv settings
+    if __opts__['verbose'] == 1:
+        __opts__['log_level'] = 'warning'
+    elif __opts__['verbose'] == 2:
+        __opts__['log_level'] = 'info'
+    elif __opts__['verbose'] >= 3:
+        __opts__['log_level'] = 'debug'
+
     # Setup module dirs
     module_dirs = __opts__.get('module_dirs', [])
     module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods'))
     __opts__['module_dirs'] = module_dirs
+    __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
+    if 'roots' not in __opts__['fileserver_backend']:
+        __opts__['fileserver_backend'].append('roots')
+
+    # Setup logging
+    salt.log.setup.setup_console_logger(__opts__['log_level'])
+    salt.log.setup.setup_logfile_logger(__opts__['log_file'],
+                                        __opts__['log_level'])
 
     __grains__ = salt.loader.grains(__opts__)
     __pillar__ = {}
@@ -287,8 +320,8 @@ def parse_args():
     '''
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--daemonize',
-                        help='Whether to daemonize and background the process',
-                        action='store_true')
+                        action='store_true',
+                        help='Whether to daemonize and background the process')
     parser.add_argument('-c', '--configfile',
                         default='/etc/hubble/hubble',
                         help='Pass in an alternative configuration file. Default: %(default)s')
@@ -303,6 +336,9 @@ def parse_args():
     parser.add_argument('-r', '--return',
                         default=None,
                         help='Pass in a returner for single-function runs')
+    parser.add_argument('--version',
+                        action='store_true',
+                        help='Show version information')
     parser.add_argument('function',
                         nargs='?',
                         default=None,
@@ -313,35 +349,19 @@ def parse_args():
     return vars(parser.parse_args())
 
 
-def logging_setup():
+def create_pidfile():
     '''
-    Set up logger
+    Create a pidfile after daemonizing
     '''
-    global log
+    pid = os.getpid()
+    with open(__opts__['pidfile'], 'w') as f:
+        f.write(str(pid))
 
-    log.setLevel(logging.ERROR)
 
-    if __opts__['daemonize']:
-        log.setLevel(logging.INFO)
-
-    if __opts__['verbose'] == 1:
-        log.setLevel(logging.WARNING)
-    elif __opts__['verbose'] == 2:
-        log.setLevel(logging.INFO)
-    elif __opts__['verbose'] >= 3:
-        log.setLevel(logging.DEBUG)
-
-    # Logging format
-    formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s]: %(message)s', datefmt='%Y/%m/%d %H:%M:%S')
-
-    # Log to file
-    fh = logging.FileHandler('/var/log/hubble')
-    fh.setLevel(logging.DEBUG)
-    fh.setFormatter(formatter)
-    log.addHandler(fh)
-
-    # Log to stdout
-    sh = logging.StreamHandler()
-    sh.setLevel(logging.DEBUG)
-    sh.setFormatter(formatter)
-    log.addHandler(sh)
+def clean_up_process(signal, frame):
+    '''
+    Clean up pidfile and anything else that needs to be cleaned up
+    '''
+    if os.path.isfile(__opts__['pidfile']):
+        os.remove(__opts__['pidfile'])
+    sys.exit(0)

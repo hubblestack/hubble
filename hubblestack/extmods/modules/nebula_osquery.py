@@ -35,9 +35,9 @@ import os
 import sys
 import yaml
 
-import hubblestack.__version__ as __version__
 import salt.utils
 from salt.exceptions import CommandExecutionError
+from hubblestack import __version__
 
 log = logging.getLogger(__name__)
 

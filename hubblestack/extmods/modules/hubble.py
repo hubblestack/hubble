@@ -29,11 +29,11 @@ import inspect
 import yaml
 import traceback
 
-import hubblestack.__version__ as __version__
 import salt
 import salt.utils
 from salt.exceptions import CommandExecutionError
 from salt.loader import LazyLoader
+from hubblestack import __version__
 
 __nova__ = {}
 

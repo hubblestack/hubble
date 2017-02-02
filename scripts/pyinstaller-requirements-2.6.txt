@@ -1,0 +1,16 @@
+pyinstaller==3.0 # currently 3.2.1 version is not supported because of botocore exception
+Crypto
+pyopenssl
+argparse
+Crypto
+requests
+argparse
+logging
+pprint
+daemon
+boto3
+botocore
+pygit2
+salt-ssh
+gitpython
+pyinotify

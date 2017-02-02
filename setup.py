@@ -23,7 +23,13 @@ elif distro == 'Amazon Linux AMI':
 
 setup(
     name="hubblestack",
-    version="2.0",
+    version="2.0.1",
+    description="Modular, open-source security compliance framework",
+    author="Colton Myers",
+    author_email="colton.myers@gmail.com",
+    maintainer="Colton Myers",
+    maintainer_email="colton.myers@gmail.com",
+    url="https://hubblestack.io",
     packages=find_packages(),
     entry_points={
         'console_scripts': [
@@ -31,7 +37,7 @@ setup(
         ],
     },
     install_requires=[
-        'salt >= 2016.3.4',
+        'salt >= 2015.5.0',
     ],
     data_files=data_files,
     options={

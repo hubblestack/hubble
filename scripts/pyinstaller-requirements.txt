@@ -2,9 +2,7 @@ pyinstaller==3.2 # currently 3.2.1 version is not supported because of botocore 
 Crypto
 pyopenssl
 argparse
-Crypto
 requests
-argparse
 logging
 pprint
 daemon

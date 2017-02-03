@@ -5,7 +5,7 @@ then
   apt-get install python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev make cmake python-setuptools gcc -y
 elif [ -f "/usr/bin/yum" ]
 then
-  yum install python27-devel libffi-devel openssl-devel libxml2-devel libxslt-devel libjpeg-devel zlib-devel make cmake python27-setuptools gcc -y
+  yum install python27-devel libffi-devel openssl-devel libxml2-devel libxslt-devel libjpeg-devel zlib-devel make cmake python27-setuptools gcc python-devel python-setuptools -y
 else
   echo "No package managers found ..."
   exit

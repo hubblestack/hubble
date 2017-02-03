@@ -276,11 +276,11 @@ def returner(ret):
         log.error('slack_pulsar.api_key not defined in salt config')
         return
 
-    if isinstance(ret, dict):
+    if ret and isinstance(ret, dict):
         message = ('id: {0}\r\n'
                    'return: {1}\r\n').format(__opts__['id'],
                                              pprint.pformat(ret.get('return')))
-    elif isinstance(ret, list):
+    elif ret and isinstance(ret, list):
         message = 'id: {0}\r\n'
         for r in ret:
             message += pprint.pformat(r.get('return'))

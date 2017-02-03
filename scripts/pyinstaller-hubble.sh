@@ -7,7 +7,7 @@ _BINARY_LOG_LEVEL="INFO"
 function pkg_init {
 _INCLUDE_PATH=""
 
-pyinstaller --onefile \
+pyinstaller --onedir \
   --noconfirm \
   --log-level $_BINARY_LOG_LEVEL \
   --additional-hooks-dir=$_SOURCE_DIR \

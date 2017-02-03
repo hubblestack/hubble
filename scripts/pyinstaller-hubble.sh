@@ -16,7 +16,7 @@ pyinstaller --onedir \
 }
 
 function pkg_clean {
-  declare -a check_folders=('build' 'dist' '/opt/hubble' '/opt/osquery')
+  declare -a check_folders=('build' 'dist' '/opt/hubble/*' '/opt/osquery/*')
 
   for i in "${check_folders[@]}"
   do

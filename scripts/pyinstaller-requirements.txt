@@ -14,3 +14,4 @@ pygit2
 salt-ssh
 gitpython
 pyinotify
+cffi

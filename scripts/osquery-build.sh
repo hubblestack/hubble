@@ -6,7 +6,7 @@ git clone https://github.com/facebook/osquery.git
 cd osquery
 make sysprep
 make deps
-make
+SKIP_TESTS=1 make -j 4
 make strip
 sudo mv ./build/linux/osquery/osqueryi ./build/linux/osquery/osqueryd /opt/osquery
 sudo chown -R root. /opt/osquery

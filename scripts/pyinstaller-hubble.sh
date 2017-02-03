@@ -16,7 +16,25 @@ pyinstaller --onedir \
 }
 
 function pkg_clean {
-  rm -rf *spec *pyc build dist
+  declare -a check_folders=('build' 'dist' '/opt/hubble' '/opt/osquery')
+
+  for i in "${check_folders[@]}"
+  do
+    if [[ -f $i ]] || [[ -d $i ]];
+    then
+      read -r -p "The file/folder $i will be deleted, do you agree : [y/n]" _input
+      if [[ "$_input" == "y" ]];
+      then
+        echo "removing $i ..."
+        rm -rf $i
+      else
+        echo "skipping deletion of $i"
+      fi
+    else 
+      rm -f $i
+    fi
+  done
+
 }
 
 function pkg_create {

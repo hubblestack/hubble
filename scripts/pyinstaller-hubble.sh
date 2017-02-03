@@ -22,7 +22,8 @@ function pkg_clean {
 function pkg_create {
 cp -rf conf/hubble /etc/hubble/
 cp -rf conf/hubble-profile.sh /etc/profile.d/
-mv dist/hubble /opt/hubble/
+mv dist/hubble /opt/hubble/hubble-libs
+ln -s /opt/hubble/hubble-libs /opt/hubble/hubble-libs/hubble
 cp -rf conf/hubble /etc/hubble/
 tar -cPvzf hubble.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh
 }

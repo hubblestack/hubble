@@ -1,5 +1,6 @@
 #!/bin/bash
 
+_check_auto_deletion=$2
 pushd ../
 _SOURCE_DIR="./"
 _BINARY_LOG_LEVEL="INFO"
@@ -22,7 +23,14 @@ function pkg_clean {
   do
     if [[ -f $i ]];
     then
-      read -r -p "The file $i will be deleted, do you agree : [y/n]" _input
+
+      if [[ "$_check_auto_deletion" == "-y" ]];
+      then
+        _input="y"
+      else
+        read -r -p "The file $i will be deleted, do you agree : [y/n]" _input
+      fi
+
       if [[ "$_input" == "y" ]];
       then
         echo "removing $i ..."
@@ -30,9 +38,17 @@ function pkg_clean {
       else
         echo "skipping deletion of $i"
       fi
+
     elif [[ -d $i ]];
     then
-      read -r -p "The folder $i will be deleted, do you agree : [y/n]" _input
+
+      if [[ "$_check_auto_deletion" == "-y" ]];
+      then
+        _input="y"
+      else
+        read -r -p "The folder $i will be deleted, do you agree : [y/n]" _input
+      fi
+
       if [[ "$_input" == "y" ]];
       then
         echo "removing $i/* ..."
@@ -40,6 +56,7 @@ function pkg_clean {
       else
         echo "skipping deletion of $i"
       fi
+
     else 
       rm -f $i
     fi

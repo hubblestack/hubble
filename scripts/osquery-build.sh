@@ -8,7 +8,7 @@ make sysprep
 make deps
 SKIP_TESTS=1 make -j 4
 make strip
-sudo mv ./build/linux/osquery/osqueryi ./build/linux/osquery/osqueryd /opt/osquery
+sudo cp -pr ./build/linux/osquery/osqueryi ./build/linux/osquery/osqueryd /opt/osquery
 sudo chown -R root. /opt/osquery
 cd ../../
 sudo cp ../conf/osquery.conf /etc/osquery/

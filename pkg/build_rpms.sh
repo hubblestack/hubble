@@ -16,6 +16,9 @@ fi
 cd ..
 
 bash init_pkg.sh -y
+
+sudo yum install -y rpm-build
+
 mv hubble.tar.gz ~/hubble.tar.gz
 mkdir ~/hubblestack
 tar -xzvf ~/hubble.tar.gz -C ~/hubblestack

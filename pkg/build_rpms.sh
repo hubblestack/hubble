@@ -19,6 +19,10 @@ bash init_pkg.sh
 mv hubble.tar.gz ~/hubble.tar.gz
 mkdir ~/hubblestack
 tar -xzvf ~/hubble.tar.gz -C ~/hubblestack
+mkdir -p ~/hubblestack/etc/init.d
+cp pkg/hubble ~/hubblestack/etc/init.d
+mkdir -p ~/hubblestack/usr/lib/systemd/system
+cp pkg/hubble.service ~/hubblestack/usr/lib/systemd/system
 tar -czvf ~/hubbblestack.tar.gz ~/hubblestack/
 mkdir -p ~/rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
 

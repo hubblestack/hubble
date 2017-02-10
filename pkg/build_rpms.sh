@@ -15,7 +15,7 @@ fi
 
 cd ..
 
-bash init_pkg.sh
+bash init_pkg.sh -y
 mv hubble.tar.gz ~/hubble.tar.gz
 mkdir ~/hubblestack
 tar -xzvf ~/hubble.tar.gz -C ~/hubblestack

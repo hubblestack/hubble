@@ -11,7 +11,7 @@ Version: 2.1.0
 Release: 1
 License: Apache 2.0
 Group: Development/Tools
-SOURCE0: %{name}-%{version}.tar.gz
+SOURCE0: %{name}.tar.gz
 URL: https://hubblestack.io
 Requires: git
 

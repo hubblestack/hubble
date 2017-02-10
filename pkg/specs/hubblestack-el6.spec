@@ -48,9 +48,9 @@ rm -rf %{buildroot}
 %{_sysconfdir}/osquery
 %{_sysconfdir}/osquery/osquery.flags
 %{_sysconfdir}/osquery/osquery.conf
+%{_sysconfdir}/init.d/hubble
 /opt/*
 /usr/bin/*
-/usr/lib/*
 
 %changelog
 * Wed Feb 8 2017  Colton Myers <colton.myers@gmail.com> 2.1.0-1

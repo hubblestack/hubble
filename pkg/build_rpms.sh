@@ -16,17 +16,18 @@ fi
 cd ..
 
 bash init_pkg.sh -y
-
-sudo yum install -y rpm-build
-
-mv hubble.tar.gz ~/hubble.tar.gz
-mkdir ~/hubblestack
-tar -xzvf ~/hubble.tar.gz -C ~/hubblestack
-mkdir -p ~/hubblestack/etc/init.d
-cp pkg/hubble ~/hubblestack/etc/init.d
-mkdir -p ~/hubblestack/usr/lib/systemd/system
-cp pkg/hubble.service ~/hubblestack/usr/lib/systemd/system
-tar -czvf ~/hubbblestack.tar.gz ~/hubblestack/
+cp hubble.tar.gz ~/hubble.tar.gz
+rm -rf ~/hubblestack-2.1.0
+rm -rf ~/hubblestack-2.1.0.tar.gz
+mkdir ~/hubblestack-2.1.0
+tar -xzvf ~/hubble.tar.gz -C ~/hubblestack-2.1.0
+mkdir -p ~/hubblestack-2.1.0/etc/init.d
+cp pkg/hubble ~/hubblestack-2.1.0/etc/init.d
+mkdir -p ~/hubblestack-2.1.0/usr/lib/systemd/system
+cp pkg/hubble.service ~/hubblestack-2.1.0/usr/lib/systemd/system
+cd ~
+tar -czvf hubblestack-2.1.0.tar.gz hubblestack-2.1.0/
+rm -rf ~/rpmbuild
 mkdir -p ~/rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
 
 cat <<EOF >~/.rpmmacros
@@ -34,14 +35,16 @@ cat <<EOF >~/.rpmmacros
 %_tmppath  %{_topdir}/tmp
 EOF
 
-mv ~/hubblestack.tar.gz ~/rpmbuild/SOURCES/
+cp ~/hubblestack-2.1.0.tar.gz ~/rpmbuild/SOURCES/
 cd ~/rpmbuild
 
 cp ~/hubble/pkg/specs/* SPECS/
 
 rpmbuild -ba SPECS/hubblestack-el6.spec
+rm -rf ~/el6
 mkdir ~/el6
-mv ~/rpmbuild/RPMS/x86_64/* ~/el6/
+cp ~/rpmbuild/RPMS/x86_64/* ~/el6/
 rpmbuild -ba SPECS/hubblestack-el7.spec
+rm -rf ~/el7
 mkdir ~/el7
-mv ~/rpmbuild/RPMS/x86_64/* ~/el7/
+cp ~/rpmbuild/RPMS/x86_64/* ~/el7/

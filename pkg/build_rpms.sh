@@ -17,17 +17,17 @@ cd ..
 
 bash init_pkg.sh -y
 cp hubble.tar.gz ~/hubble.tar.gz
-rm -rf ~/hubblestack-2.1.1
-rm -rf ~/hubblestack-2.1.1.tar.gz
-mkdir ~/hubblestack-2.1.1
-tar -xzvf ~/hubble.tar.gz -C ~/hubblestack-2.1.1
-mkdir -p ~/hubblestack-2.1.1/etc/init.d
-cp pkg/hubble ~/hubblestack-2.1.1/etc/init.d
-mkdir -p ~/hubblestack-2.1.1/usr/lib/systemd/system
-cp pkg/hubble.service ~/hubblestack-2.1.1/usr/lib/systemd/system
-cp -f conf/hubble ~/hubblestack-2.1.1/etc/hubble/hubble
+rm -rf ~/hubblestack-2.1.2
+rm -rf ~/hubblestack-2.1.2.tar.gz
+mkdir ~/hubblestack-2.1.2
+tar -xzvf ~/hubble.tar.gz -C ~/hubblestack-2.1.2
+mkdir -p ~/hubblestack-2.1.2/etc/init.d
+cp pkg/hubble ~/hubblestack-2.1.2/etc/init.d
+mkdir -p ~/hubblestack-2.1.2/usr/lib/systemd/system
+cp pkg/hubble.service ~/hubblestack-2.1.2/usr/lib/systemd/system
+cp -f conf/hubble ~/hubblestack-2.1.2/etc/hubble/hubble
 cd ~
-tar -czvf hubblestack-2.1.1.tar.gz hubblestack-2.1.1/
+tar -czvf hubblestack-2.1.2.tar.gz hubblestack-2.1.2/
 rm -rf ~/rpmbuild
 mkdir -p ~/rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
 
@@ -36,7 +36,7 @@ cat <<EOF >~/.rpmmacros
 %_tmppath  %{_topdir}/tmp
 EOF
 
-cp ~/hubblestack-2.1.1.tar.gz ~/rpmbuild/SOURCES/
+cp ~/hubblestack-2.1.2.tar.gz ~/rpmbuild/SOURCES/
 cd ~/rpmbuild
 
 cp ~/hubble/pkg/specs/* SPECS/

@@ -25,6 +25,7 @@ mkdir -p ~/hubblestack-2.1.0/etc/init.d
 cp pkg/hubble ~/hubblestack-2.1.0/etc/init.d
 mkdir -p ~/hubblestack-2.1.0/usr/lib/systemd/system
 cp pkg/hubble.service ~/hubblestack-2.1.0/usr/lib/systemd/system
+cp -f conf/hubble ~/hubblestack-2.1.0/etc/hubble/hubble
 cd ~
 tar -czvf hubblestack-2.1.0.tar.gz hubblestack-2.1.0/
 rm -rf ~/rpmbuild

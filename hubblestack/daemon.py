@@ -198,7 +198,7 @@ def schedule():
             run = True
 
         if run:
-            log.info('Executing scheduled function {0}'.format(func))
+            log.debug('Executing scheduled function {0}'.format(func))
             jobdata['last_run'] = time.time()
             ret = __salt__[func](*args, **kwargs)
             log.debug('Job returned:\n{0}'.format(ret))
@@ -207,7 +207,7 @@ def schedule():
                 if returner not in __returners__:
                     log.error('Could not find {0} returner.'.format(returner))
                     continue
-                log.info('Returning job data to {0}'.format(returner))
+                log.debug('Returning job data to {0}'.format(returner))
                 returner_ret = {'id': __grains__['id'],
                                 'jid': salt.utils.jid.gen_jid(),
                                 'fun': func,
@@ -265,6 +265,7 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['cachedir'] = '/var/cache/hubble'
     salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
     salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
+    salt.config.DEFAULT_MINION_OPTS['log_level'] = None
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 60
 
@@ -279,11 +280,12 @@ def load_config():
     __opts__.update(parsed_args)
 
     # Convert -vvv to log level
-    # Default to 'error'
-    __opts__['log_level'] = 'error'
-    # Default to more verbose if we're daemonizing
-    if __opts__['daemonize']:
-        __opts__['log_level'] = 'info'
+    if __opts__['log_level'] is None:
+        # Default to 'error'
+        __opts__['log_level'] = 'error'
+        # Default to more verbose if we're daemonizing
+        if __opts__['daemonize']:
+            __opts__['log_level'] = 'info'
     # Handle the explicit -vvv settings
     if __opts__['verbose'] == 1:
         __opts__['log_level'] = 'warning'

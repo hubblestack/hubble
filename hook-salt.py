@@ -77,33 +77,7 @@ for entry in DATAS[:]:
             DATAS.remove(entry)
 
 # Some packages salt required, which we should include that are not discovered by PyInstaller
-PACKAGES = [
- 'ssl',
- 'crypto',
- 'OpenSSL',
- 'argparse',
- 'base64',
- 'HTMLParser',
- 'json',
- 'logging',
- 'requests',
- 'functools',
- 'BaseHTTPServer',
- 'argparse',
- 'logging',
- 'pprint',
- 'os',
- 'random',
- 'git',
- 'daemon',
- 'boto3',
- 'botocore',
- 'six',
- 'inspect',
- 'yaml',
- 'traceback',
- 'pygit2'
-]
+PACKAGES = []
 
 for pkg in PACKAGES:
     DATAS.extend(collect_data_files(pkg, include_py_files=True))

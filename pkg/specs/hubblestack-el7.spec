@@ -4,6 +4,8 @@
 %define        __spec_install_post %{nil}
 %define          debug_package %{nil}
 %define        __os_install_post %{_dbpath}/brp-compress
+# Don't fail out because we're not packaging the other distro's service files
+%define        _unpackaged_files_terminate_build 0
 
 Summary: Hubblestack is a module, open-source security compliance framework
 Name: hubblestack
@@ -13,6 +15,7 @@ License: Apache 2.0
 Group: Development/Tools
 SOURCE0: %{name}-%{version}.tar.gz
 URL: https://hubblestack.io
+Autoreq: 0
 Requires: git
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
@@ -44,10 +47,7 @@ rm -rf %{buildroot}
 
 %files
 %{_sysconfdir}/hubble
-%{_sysconfdir}/hubble/hubble
 %{_sysconfdir}/osquery
-%{_sysconfdir}/osquery/osquery.flags
-%{_sysconfdir}/osquery/osquery.conf
 /opt/*
 /usr/bin/*
 /usr/lib/*

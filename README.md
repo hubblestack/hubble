@@ -6,14 +6,16 @@ SaltStack infrastructure.
 # Building packages (CentOS)
 
 ```bash
-yum install rpm-build
-git clone git://github.com/hubblestack/hubble
-cd hubble
-python setup.py clean && python setup.py bdist_rpm
+sudo yum install git
+git clone git://github.com/hubblestack/hubble ~/hubble
+cd ~/hubble/pkg
+./build_rpms.sh  # note the lack of sudo, that is important
 ```
 
-Package will be in the `dist/` directory.
-
+Package will be in the `~/el6/` and `~/el7` directory. The only difference
+between the packages is the inclusion of `/etc/init.d/hubble` for el6 and
+the inclusion of a systemd unit file for el7. There's no guarantee of glibc
+compatibility.
 
 # Installation/testing
 

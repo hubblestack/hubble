@@ -15,6 +15,7 @@ License: Apache 2.0
 Group: Development/Tools
 SOURCE0: %{name}-%{version}.tar.gz
 URL: https://hubblestack.io
+Autoreq: 0
 Requires: git
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root

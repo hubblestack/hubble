@@ -22,7 +22,7 @@ then
   sudo yum install python27 -y
   cd scripts/
   sudo scl enable python27 'bash installessentials.sh'
-  sudo scl enable python27 'bash pyinstaller-hubble.sh pkg_clean $1'
+  sudo scl enable python27 "bash pyinstaller-hubble.sh pkg_clean $1"
   sudo scl enable python27 'bash libgit2-build.sh'
   bash osquery-build.sh
   sudo scl enable python27 'bash pip-install.sh'

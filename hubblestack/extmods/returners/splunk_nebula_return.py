@@ -79,6 +79,8 @@ def returner(ret):
     jid = ret['jid']
     master = __grains__['master']
     fqdn = __grains__['fqdn']
+    # Sometimes fqdn is blank. If it is, replace it with minion_id
+    fqdn = fqdn if fqdn else minion_id
     try:
         fqdn_ip4 = __grains__['fqdn_ip4'][0]
     except IndexError:

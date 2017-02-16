@@ -70,6 +70,19 @@ def returner(ret):
     proxy = opts['proxy']
     timeout = opts['timeout']
     custom_fields = opts['custom_fields']
+
+    # Gather amazon information if present
+    aws_ami_id = None
+    aws_instance_id = None
+    try:
+        aws_ami_id = requests.get('http://169.254.169.254/latest/meta-data/ami-id',
+                                  timeout=1).text
+        aws_instance_id = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
+                                       timeout=1).text
+    except requests.exceptions.ConnectTimeout:
+        # Not on an AWS box
+        pass
+
     # Set up the collector
     hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
 
@@ -101,6 +114,10 @@ def returner(ret):
                     event.update({'minion_id': minion_id})
                     event.update({'dest_host': fqdn})
                     event.update({'dest_ip': fqdn_ip4})
+
+                    if aws_instance_id is not None:
+                        event.update({'aws_ami_id': aws_ami_id})
+                        event.update({'aws_instance_id': aws_instance_id})
 
                     for custom_field in custom_fields:
                         custom_field_name = 'custom_' + custom_field

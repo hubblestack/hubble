@@ -9,7 +9,7 @@
 
 Summary: Hubblestack is a module, open-source security compliance framework
 Name: hubblestack
-Version: 2.1.2
+Version: 2.1.3
 Release: 1
 License: Apache 2.0
 Group: Development/Tools
@@ -53,6 +53,13 @@ rm -rf %{buildroot}
 /usr/bin/*
 
 %changelog
+* Tue Feb 28 2017  Colton Myers <colton.myers@gmail.com> 2.1.3-1
+- Add Debian packaging
+- Add uptime fallback query
+- Fix for blank hosts when fqdn doesn't return anything in returners
+- Add AWS information to events from splunk returners
+- Turn off http_event_collector_debug everywhere
+
 * Mon Feb 13 2017  Colton Myers <colton.myers@gmail.com> 2.1.2-1
 - Fix the changelog order
 

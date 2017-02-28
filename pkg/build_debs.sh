@@ -26,26 +26,19 @@ cp pkg/hubble ~/hubblestack-2.1.3/etc/init.d
 mkdir -p ~/hubblestack-2.1.3/usr/lib/systemd/system
 cp pkg/hubble.service ~/hubblestack-2.1.3/usr/lib/systemd/system
 cp -f conf/hubble ~/hubblestack-2.1.3/etc/hubble/hubble
-cd ~
-tar -czvf hubblestack-2.1.3.tar.gz hubblestack-2.1.3/
-rm -rf ~/rpmbuild
-mkdir -p ~/rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
+cd ~/hubblestack-2.1.3
 
-cat <<EOF >~/.rpmmacros
-%_topdir   %(echo $HOME)/rpmbuild
-%_tmppath  %{_topdir}/tmp
-EOF
-
-cp ~/hubblestack-2.1.3.tar.gz ~/rpmbuild/SOURCES/
-cd ~/rpmbuild
-
-cp ~/hubble/pkg/specs/* SPECS/
-
-rpmbuild -ba SPECS/hubblestack-el6.spec
-rm -rf ~/el6
-mkdir ~/el6
-cp ~/rpmbuild/RPMS/x86_64/* ~/el6/
-rpmbuild -ba SPECS/hubblestack-el7.spec
-rm -rf ~/el7
-mkdir ~/el7
-cp ~/rpmbuild/RPMS/x86_64/* ~/el7/
+sudo apt-get install -y ruby ruby-dev rubygems gcc make
+sudo gem install --no-ri --no-rdoc fpm
+mkdir -p usr/bin
+ln -s /opt/hubble/hubble usr/bin/hubble
+ln -s /opt/osquery/osqueryd usr/bin/osqueryd
+ln -s /opt/osquery/osqueryi usr/bin/osqueryi
+fpm -s dir -t deb \
+    -n hubblestack \
+    -v 2.1.3-1 \
+    -d 'git' \
+    --config-files /etc/hubble/hubble --config-files /etc/osquery/osquery.conf \
+    --deb-no-default-config-files \
+    etc/hubble etc/osquery etc/init.d opt usr/bin
+cp hubblestack_2.1.3-1_amd64.deb ~/

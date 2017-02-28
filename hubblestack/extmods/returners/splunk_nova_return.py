@@ -52,7 +52,7 @@ import logging
 
 _max_content_bytes = 100000
 http_event_collector_SSL_verify = False
-http_event_collector_debug = True
+http_event_collector_debug = False
 
 log = logging.getLogger(__name__)
 
@@ -69,6 +69,19 @@ def returner(ret):
     proxy = opts['proxy']
     timeout = opts['timeout']
     custom_fields = opts['custom_fields']
+
+    # Gather amazon information if present
+    aws_ami_id = None
+    aws_instance_id = None
+    try:
+        aws_ami_id = requests.get('http://169.254.169.254/latest/meta-data/ami-id',
+                                  timeout=1).text
+        aws_instance_id = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
+                                       timeout=1).text
+    except requests.exceptions.ConnectTimeout:
+        # Not on an AWS box
+        pass
+
     # Set up the collector
     hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
     # st = 'salt:hubble:nova'
@@ -76,6 +89,8 @@ def returner(ret):
     minion_id = ret['id']
     jid = ret['jid']
     fqdn = __grains__['fqdn']
+    # Sometimes fqdn is blank. If it is, replace it with minion_id
+    fqdn = fqdn if fqdn else minion_id
     master = __grains__['master']
     try:
         fqdn_ip4 = __grains__['fqdn_ip4'][0]
@@ -104,6 +119,10 @@ def returner(ret):
         event.update({'minion_id': minion_id})
         event.update({'dest_host': fqdn})
         event.update({'dest_ip': fqdn_ip4})
+
+        if aws_instance_id is not None:
+            event.update({'aws_ami_id': aws_ami_id})
+            event.update({'aws_instance_id': aws_instance_id})
 
         for custom_field in custom_fields:
             custom_field_name = 'custom_' + custom_field
@@ -138,6 +157,10 @@ def returner(ret):
         event.update({'dest_host': fqdn})
         event.update({'dest_ip': fqdn_ip4})
 
+        if aws_instance_id is not None:
+            event.update({'aws_ami_id': aws_ami_id})
+            event.update({'aws_instance_id': aws_instance_id})
+
         for custom_field in custom_fields:
             custom_field_name = 'custom_' + custom_field
             custom_field_value = __salt__['config.get'](custom_field, '')
@@ -162,6 +185,10 @@ def returner(ret):
         event.update({'minion_id': minion_id})
         event.update({'dest_host': fqdn})
         event.update({'dest_ip': fqdn_ip4})
+
+        if aws_instance_id is not None:
+            event.update({'aws_ami_id': aws_ami_id})
+            event.update({'aws_instance_id': aws_instance_id})
 
         for custom_field in custom_fields:
             custom_field_name = 'custom_' + custom_field

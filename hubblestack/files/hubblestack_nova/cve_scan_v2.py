@@ -168,7 +168,7 @@ def audit(data_list, tags, verbose=False, show_profile=False, debug=False):
                         os.remove(cached_zip)
                         extracted_json = os.path.join(__opts__['cachedir'],
                                                       'cve_scan_cache',
-                                                      '%s_%s.json' % (os_name, os_version.replace('.', '')))
+                                                      '%s_%s.json' % (os_name, str(os_version).replace('.', '')))
                         log.debug('attempting to open %s', extracted_json)
                         with open(extracted_json, 'r') as json_file:
                             master_json = json.load(json_file)

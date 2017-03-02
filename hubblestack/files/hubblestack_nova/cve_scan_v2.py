@@ -92,7 +92,7 @@ def __virtual__():
     return not salt.utils.is_windows()
 
 
-def audit(data_list, tags, verbose=False, show_profile=False, debug=False):
+def audit(data_list, tags, debug=False):
     '''
     Main audit function. See module docstring for more information on usage.
     '''
@@ -224,9 +224,9 @@ def audit(data_list, tags, verbose=False, show_profile=False, debug=False):
                                     vulnerable = affected_obj
                 if vulnerable:
                     if vulnerable.score < min_score:
-                        ret['Controlled'].append(vulnerable.get_report(verbose, show_profile, profile))
+                        ret['Controlled'].append(vulnerable.get_report(profile))
                     else:
-                        ret['Failure'].append(vulnerable.get_report(verbose, show_profile, profile))
+                        ret['Failure'].append(vulnerable.get_report(profile))
 
     if tags != '*':
         log.debug("tags: %s", tags)
@@ -379,25 +379,20 @@ class VulnerablePkg:
         self.oudated_version = None
 
 
-    def get_report(self, verbose, show_profile, profile):
+    def get_report(self, profile):
         '''
         Return the dictionary of what should be reported in failures, based on verbose.
         '''
-        uid = self.pkg + '-' + self.pkg_version
-        if verbose:
-            report = {
-                'href': self.href,
-                'affected_version': self.pkg_version,
-                'reporter': self.reporter,
-                'score': self.score,
-                'cve_list': self.cve_list,
-                'affected_pkg': self.pkg,
-                'local_version': self.oudated_version,
-                'description': self.title
-            }
-            if show_profile:
-                report['nova_profile'] = profile
-        else:
-            report = self.title
-        return {uid: report}
+        return {
+            'tag': self.pkg + '-' + self.pkg_version,
+            'href': self.href,
+            'affected_version': self.pkg_version,
+            'reporter': self.reporter,
+            'score': self.score,
+            'cve_list': self.cve_list,
+            'affected_pkg': self.pkg,
+            'local_version': self.oudated_version,
+            'description': self.title,
+            'nova_profile': profile
+        }
 

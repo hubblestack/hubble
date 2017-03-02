@@ -72,16 +72,13 @@ def __virtual__():
     return True
 
 
-def audit(data_list, tags, verbose=False, show_profile=False, debug=False):
+def audit(data_list, tags, debug=False):
     '''
     Run the service audits contained in the YAML files processed by __virtual__
     '''
     __data__ = {}
     for profile, data in data_list:
-        if show_profile:
-            _merge_yaml(__data__, data, profile)
-        else:
-            _merge_yaml(__data__, data)
+        _merge_yaml(__data__, data, profile)
     __tags__ = _get_tags(__data__)
 
     if debug:
@@ -113,63 +110,6 @@ def audit(data_list, tags, verbose=False, show_profile=False, debug=False):
                         ret['Success'].append(tag_data)
                     else:
                         ret['Failure'].append(tag_data)
-
-    failure = []
-    success = []
-    controlled = []
-
-    if not verbose:
-        # Pull out just the tag and description
-        tags_descriptions = set()
-
-        for tag_data in ret['Failure']:
-            tag = tag_data['tag']
-            description = tag_data.get('description')
-            if (tag, description) not in tags_descriptions:
-                failure.append({tag: description})
-                tags_descriptions.add((tag, description))
-
-        tags_descriptions = set()
-
-        for tag_data in ret['Success']:
-            tag = tag_data['tag']
-            description = tag_data.get('description')
-            if (tag, description) not in tags_descriptions:
-                success.append({tag: description})
-                tags_descriptions.add((tag, description))
-
-        control_reasons = set()
-
-        for tag_data in ret['Controlled']:
-            tag = tag_data['tag']
-            control_reason = tag_data.get('control', '')
-            description = tag_data.get('description')
-            if (tag, description, control_reason) not in control_reasons:
-                tag_dict = {'description': description,
-                        'control': control_reason}
-                controlled.append({tag: tag_dict})
-                control_reasons.add((tag, description, control_reason))
-
-    else:
-        # Format verbose output as single-key dictionaries with tag as key
-        for tag_data in ret['Failure']:
-            tag = tag_data['tag']
-            failure.append({tag: tag_data})
-
-        for tag_data in ret['Success']:
-            tag = tag_data['tag']
-            success.append({tag: tag_data})
-
-        for tag_data in ret['Controlled']:
-            tag = tag_data['tag']
-            controlled.append({tag: tag_data})
-
-    ret['Controlled'] = controlled
-    ret['Success'] = success
-    ret['Failure'] = failure
-
-    if not ret['Controlled']:
-        ret.pop('Controlled')
 
     return ret
 

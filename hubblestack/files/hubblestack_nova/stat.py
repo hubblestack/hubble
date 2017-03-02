@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 '''
-HubbleStack Nova module for using sysctl to verify sysctl parameter.
+HubbleStack Nova module for using stat to verify ownership & permissions.
 
 :maintainer: HubbleStack / avb76
 :maturity: 2016.7.0
@@ -8,23 +8,31 @@ HubbleStack Nova module for using sysctl to verify sysctl parameter.
 :requires: SaltStack
 
 This audit module requires yaml data to execute. It will search the local
-directory for any .yaml files, and if it finds a top-level 'sysctl' key, it will
+directory for any .yaml files, and if it finds a top-level 'stat' key, it will
 use that data.
 
 Sample YAML data, with inline comments:
 
-sysctl:
-  randomize_va_space:  # unique ID
+
+stat:
+  grub_conf_own:  # unique ID
     data:
-      'CentOS-6':  #osfinger grain
-        - 'kernel.randomize_va_space':  #sysctl param to check
-            tag: 'CIS-1.6.3'  #audit tag
-            match_output: '2'   #expected value of the checked parameter
-      'CentOS-7':
-        - 'kernel.randomize_va_space':
-            tag: 'CIS-1.6.2'
-            match_output: '2'
-    description: 'Enable Randomized Virtual Memory Region Placement (Scored)'
+      'CentOS-6':  # osfinger grain
+        - '/etc/grub.conf':  # filename
+            tag: 'CIS-1.5.1'  #audit tag
+            user: 'root'  #expected owner
+            uid: 0        #expected uid owner
+            group: 'root'  #expected group owner
+            gid: 0          #expected gid owner
+      'CentOS Linux-7':
+        - '/etc/grub2/grub.cfg':
+            tag: 'CIS-1.5.1'
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    # The rest of these attributes are optional, and currently not used
+    description: 'Grub must be owned by root'
     alert: email
     trigger: state
 '''
@@ -51,7 +59,7 @@ def __virtual__():
 
 def audit(data_list, tags, debug=False):
     '''
-    Run the sysctl audits contained in the YAML files processed by __virtual__
+    Run the stat audits contained in the YAML files processed by __virtual__
     '''
     __data__ = {}
     for profile, data in data_list:
@@ -68,39 +76,59 @@ def audit(data_list, tags, debug=False):
 
     for tag in __tags__:
         if fnmatch.fnmatch(tag, tags):
-            passed = True
             for tag_data in __tags__[tag]:
                 if 'control' in tag_data:
                     ret['Controlled'].append(tag_data)
                     continue
                 name = tag_data['name']
-                match_output = tag_data['match_output']
+                expected = {}
+                for e in ['mode', 'user', 'uid', 'group', 'gid']:
+                    if e in tag_data:
+                        expected[e] = tag_data[e]
 
-                salt_ret = __salt__['sysctl.get'](name)
+                #getting the stats using salt
+                salt_ret = __salt__['file.stats'](name)
                 if not salt_ret:
-                    passed = False
-                if str(salt_ret).startswith('error'):
-                    passed = False
-                if str(salt_ret) != str(match_output):
-                    passed = False
-            if passed:
-                ret['Success'].append(tag_data)
-            else:
-                ret['Failure'].append(tag_data)
+                    if None in expected.values():
+                        ret['Success'].append(tag_data)
+                    else:
+                        ret['Failure'].append(tag_data)
+                    continue
+
+                passed = True
+                reason_dict = {}
+                for e in expected.keys():
+                    r = salt_ret[e]
+                    if e == 'mode' and r != '0':
+                        r = r[1:]
+                    if str(expected[e]) != str(r):
+                        passed = False
+                        reason = { 'expected': str(expected[e]),
+                                   'current': str(r) }
+                        reason_dict[e] = reason
+
+                if reason_dict:
+                    tag_data['reason'] = reason_dict
+
+                if passed:
+                    ret['Success'].append(tag_data)
+                else:
+                    ret['Failure'].append(tag_data)
 
     return ret
+
 
 
 def _merge_yaml(ret, data, profile=None):
     '''
     Merge two yaml dicts together
     '''
-    if 'sysctl' not in ret:
-        ret['sysctl'] = []
-    for key, val in data.get('sysctl', {}).iteritems():
+    if 'stat' not in ret:
+        ret['stat'] = []
+    for key, val in data.get('stat', {}).iteritems():
         if profile and isinstance(val, dict):
             val['nova_profile'] = profile
-        ret['sysctl'].append({key: val})
+        ret['stat'].append({key: val})
     return ret
 
 
@@ -110,7 +138,7 @@ def _get_tags(data):
     '''
     ret = {}
     distro = __grains__.get('osfinger')
-    for audit_dict in data.get('sysctl', []):
+    for audit_dict in data.get('stat', []):
         for audit_id, audit_data in audit_dict.iteritems():
             tags_dict = audit_data.get('data', {})
             tags = None
@@ -142,7 +170,7 @@ def _get_tags(data):
                         ret[tag] = []
                     formatted_data = {'name': name,
                                       'tag': tag,
-                                      'module': 'sysctl'}
+                                      'module': 'stat'}
                     formatted_data.update(tag_data)
                     formatted_data.update(audit_data)
                     formatted_data.pop('data')

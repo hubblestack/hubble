@@ -83,9 +83,7 @@ def audit(configs=None,
         `hubblestack:nova:show_compliance` in minion config/pillar.
 
     show_profile
-        Whether to add the profile path to the verbose output for audits.
-        Defaults to False. Configurable via `hubblestack:nova:show_profile`
-        in minion config/pillar.
+        DEPRECATED
 
     called_from_top
         Ignore this argument. It is used for distinguishing between user-calls
@@ -107,9 +105,7 @@ def audit(configs=None,
     if configs is None:
         return top(verbose=verbose,
                    show_success=show_success,
-                   show_compliance=show_compliance,
-                   show_profile=show_profile,
-                   debug=debug)
+                   show_compliance=show_compliance)
 
     if __salt__['config.get']('hubblestack:nova:autoload', True):
         load()
@@ -122,8 +118,10 @@ def audit(configs=None,
         show_success = __salt__['config.get']('hubblestack:nova:show_success', True)
     if show_compliance is None:
         show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
-    if show_profile is None:
-        show_profile = __salt__['config.get']('hubblestack:nova:show_profile', False)
+    if show_profile is not None:
+        log.warning(
+            'Keyword argument \'show_profile\' is no longer supported'
+        )
     if debug is None:
         debug = __salt__['config.get']('hubblestack:nova:debug', False)
 
@@ -134,6 +132,95 @@ def audit(configs=None,
     # Convert config list to paths, with leading slashes
     configs = [os.path.join(os.path.sep, os.path.join(*(con.split('.yaml')[0]).split('.')))
                for con in configs]
+
+    ret = _run_audit(configs, tags, debug=debug)
+
+    terse_results = {}
+    verbose_results = {}
+
+    # Pull out just the tag and description
+    terse_results['Failure'] = []
+    tags_descriptions = set()
+
+    for tag_data in ret.get('Failure', []):
+        tag = tag_data['tag']
+        description = tag_data.get('description')
+        if (tag, description) not in tags_descriptions:
+            terse_results['Failure'].append({tag: description})
+            tags_descriptions.add((tag, description))
+
+    terse_results['Success'] = []
+    tags_descriptions = set()
+
+    for tag_data in ret.get('Success', []):
+        tag = tag_data['tag']
+        description = tag_data.get('description')
+        if (tag, description) not in tags_descriptions:
+            terse_results['Success'].append({tag: description})
+            tags_descriptions.add((tag, description))
+
+    terse_results['Controlled'] = []
+    control_reasons = set()
+
+    for tag_data in ret.get('Controlled', []):
+        tag = tag_data['tag']
+        control_reason = tag_data.get('control', '')
+        description = tag_data.get('description')
+        if (tag, description, control_reason) not in control_reasons:
+            terse_results['Controlled'].append({tag: control_reason})
+            control_reasons.add((tag, description, control_reason))
+
+    # Calculate compliance level
+    if show_compliance:
+        compliance = _calculate_compliance(terse_results)
+    else:
+        compliance = False
+
+    if not show_success and 'Success' in terse_results:
+        terse_results.pop('Success')
+
+    if not terse_results['Controlled']:
+        terse_results.pop('Controlled')
+
+    # Format verbose output as single-key dictionaries with tag as key
+    if verbose:
+        verbose_results['Failure'] = []
+
+        for tag_data in ret.get('Failure', []):
+            tag = tag_data['tag']
+            verbose_results['Failure'].append({tag: tag_data})
+
+        verbose_results['Success'] = []
+
+        for tag_data in ret.get('Success', []):
+            tag = tag_data['tag']
+            verbose_results['Success'].append({tag: tag_data})
+
+        if not show_success and 'Success' in verbose_results:
+            verbose_results.pop('Success')
+
+        verbose_results['Controlled'] = []
+
+        for tag_data in ret.get('Controlled', []):
+            tag = tag_data['tag']
+            verbose_results['Controlled'].append({tag: tag_data})
+
+        if not verbose_results['Controlled']:
+            verbose_results.pop('Controlled')
+
+        results = verbose_results
+    else:
+        results = terse_results
+
+    if compliance:
+        results['Compliance'] = compliance
+
+    if not called_from_top and not results:
+        results['Messages'] = 'No audits matched this host in the specified profiles.'
+
+    return results
+
+def _run_audit(configs, tags, debug):
 
     results = {}
 
@@ -174,11 +261,7 @@ def audit(configs=None,
     # We can revisit if this ever becomes a big bottleneck
     for key, func in __nova__._dict.iteritems():
         try:
-            ret = func(data_list,
-                       tags,
-                       verbose=verbose,
-                       show_profile=show_profile,
-                       debug=debug)
+            ret = func(data_list, tags, debug=debug)
         except Exception as exc:
             log.error('Exception occurred in nova module:')
             log.error(traceback.format_exc())
@@ -222,41 +305,24 @@ def audit(configs=None,
     # Look through the failed results to find audits which match our control config
     failures_to_remove = []
     for i, failure in enumerate(results.get('Failure', [])):
-        if isinstance(failure, str):
-            if failure in processed_controls:
-                failures_to_remove.append(i)
-                if 'Controlled' not in results:
-                    results['Controlled'] = []
-                results['Controlled'].append(
-                        {failure: processed_controls[failure].get('reason')})
-        else:  # dict
-            for failure_tag in failure:
-                if failure_tag in processed_controls:
-                    failures_to_remove.append(i)
-                    if 'Controlled' not in results:
-                        results['Controlled'] = []
-                    results['Controlled'].append(
-                            {failure_tag: processed_controls[failure_tag].get('reason')})
+        failure_tag = failure['tag']
+        if failure_tag in processed_controls:
+            failures_to_remove.append(i)
+            if 'Controlled' not in results:
+                results['Controlled'] = []
+            failure.update({
+                'control': processed_controls[failure_tag].get('reason')
+            })
+            results['Controlled'].append(failure)
 
     # Remove controlled failures from results['Failure']
     if failures_to_remove:
         for failure_index in reversed(sorted(set(failures_to_remove))):
             results['Failure'].pop(failure_index)
 
-    if show_compliance:
-        compliance = _calculate_compliance(results)
-        if compliance:
-            results['Compliance'] = compliance
-
     for key in results.keys():
         if not results[key]:
             results.pop(key)
-
-    if not called_from_top and not results:
-        results['Messages'] = 'No audits matched this host in the specified profiles.'
-
-    if not show_success and 'Success' in results:
-        results.pop('Success')
 
     return results
 
@@ -321,9 +387,7 @@ def top(topfile='top.nova',
         `hubblestack:nova:show_compliance` in minion config/pillar.
 
     show_profile
-        Whether to add the profile path to the verbose output for audits.
-        Defaults to False. Configurable via `hubblestack:nova:show_profile`
-        in minion config/pillar.
+        DEPRECATED
 
     debug
         Whether to log additional information to help debug nova. Defaults to
@@ -349,8 +413,10 @@ def top(topfile='top.nova',
         show_success = __salt__['config.get']('hubblestack:nova:show_success', True)
     if show_compliance is None:
         show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
-    if show_profile is None:
-        show_profile = __salt__['config.get']('hubblestack:nova:show_profile', False)
+    if show_profile is not None:
+        log.warning(
+            'Keyword argument \'show_profile\' is no longer supported'
+        )
     if debug is None:
         debug = __salt__['config.get']('hubblestack:nova:debug', False)
 
@@ -388,9 +454,7 @@ def top(topfile='top.nova',
                     verbose=verbose,
                     show_success=True,
                     show_compliance=False,
-                    show_profile=show_profile,
-                    called_from_top=True,
-                    debug=debug)
+                    called_from_top=True)
 
         # Merge in the results
         for key, val in ret.iteritems():

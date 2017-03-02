@@ -74,12 +74,15 @@ def returner(ret):
     # Gather amazon information if present
     aws_ami_id = None
     aws_instance_id = None
+    aws_account_id = None
     try:
         aws_ami_id = requests.get('http://169.254.169.254/latest/meta-data/ami-id',
                                   timeout=1).text
         aws_instance_id = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
                                        timeout=1).text
-    except requests.exceptions.ConnectTimeout:
+        aws_account_id = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
+                                      timeout=1).json().get('accountId', 'unknown')
+    except (requests.exceptions.ConnectTimeout, ValueError):
         # Not on an AWS box
         pass
 
@@ -118,6 +121,7 @@ def returner(ret):
                     if aws_instance_id is not None:
                         event.update({'aws_ami_id': aws_ami_id})
                         event.update({'aws_instance_id': aws_instance_id})
+                        event.update({'aws_account_id': aws_account_id})
 
                     for custom_field in custom_fields:
                         custom_field_name = 'custom_' + custom_field

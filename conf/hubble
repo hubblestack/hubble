@@ -71,27 +71,14 @@ fileserver_backend:
 ## must add index, token, and endpoint information
 
 #hubblestack:
-#  nova:
-#    returner:
-#      splunk:
-#        token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+#  returner:
+#    splunk:
+#      - token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 #        indexer: splunk-indexer.domain.tld
-#        sourcetype: hubble_audit
 #        index: hubble
-#  nebula:
-#    returner:
-#      splunk:
-#        token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-#        indexer: splunk-indexer.domain.tld
-#        sourcetype: hubble_osquery
-#        index: hubble
-#  pulsar:
-#    returner:
-#      splunk:
-#        token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
-#        indexer: splunk-indexer.domain.tld
-#        sourcetype: hubble_fim
-#        index: hubble
+#        sourcetype_nova: hubble_audit
+#        sourcetype_nebula: hubble_osquery
+#        sourcetype_pulsar: hubble_fim
 
 ## If you are instead using the slack returner, you'll need a block similar to
 ## this:

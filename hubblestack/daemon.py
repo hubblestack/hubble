@@ -30,7 +30,11 @@ def run():
     Set up program, daemonize if needed
     '''
     # Don't put anything that needs config or logging above this line
-    load_config()
+    try:
+        load_config()
+    except Exception as e:
+        print('An Error occurred while loading the config: {0}'.format(e))
+        raise
 
     # Create cache directory if not present
     if not os.path.isdir(__opts__['cachedir']):

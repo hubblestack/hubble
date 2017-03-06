@@ -242,7 +242,7 @@ def _get_options():
             processed['token'] = opt.get('token')
             processed['indexer'] = opt.get('indexer')
             processed['index'] = opt.get('index')
-            processed['custom_fields'] = opt.get('custom_fields')
+            processed['custom_fields'] = opt.get('custom_fields', [])
             processed['sourcetype'] = opt.get('sourcetype_nova', 'hubble_audit')
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})

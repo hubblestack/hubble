@@ -3,7 +3,6 @@
 HubbleStack Nova-to-Splunk returner
 
 :maintainer: HubbleStack
-:maturity: 2016.10.4
 :platform: All
 :requires: SaltStack
 
@@ -13,13 +12,12 @@ event collector. Required config/pillar settings:
 .. code-block:: yaml
 
     hubblestack:
-      nova:
-        returner:
-          splunk:
-            token: <splunk_http_forwarder_token>
-            indexer: <hostname/IP of Splunk indexer>
-            sourcetype: <Destination sourcetype for data>
-            index: <Destination index for data>
+      returner:
+        splunk:
+          - token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+            indexer: splunk-indexer.domain.tld
+            index: hubble
+            sourcetype_nova: hubble_audit
 
 You can also add an `custom_fields` argument which is a list of keys to add to events
 with using the results of config.get(<custom_field>). These new keys will be prefixed
@@ -30,13 +28,12 @@ be skipped:
 .. code-block:: yaml
 
     hubblestack:
-      nova:
-        returner:
-          splunk:
-            token: <splunk_http_forwarder_token>
-            indexer: <hostname/IP of Splunk indexer>
-            sourcetype: <Destination sourcetype for data>
-            index: <Destination index for data>
+      returner:
+        splunk:
+          - token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+            indexer: splunk-indexer.domain.tld
+            index: hubble
+            sourcetype_nova: hubble_audit
             custom_fields:
               - site
               - product_group
@@ -60,15 +57,7 @@ hec = None
 
 
 def returner(ret):
-    # Customized to split up the queries and extract the correct sourcetype
-    opts = _get_options()
-    logging.info('Options: %s' % json.dumps(opts))
-    http_event_collector_key = opts['token']
-    http_event_collector_host = opts['indexer']
-    hec_ssl = opts['http_event_server_ssl']
-    proxy = opts['proxy']
-    timeout = opts['timeout']
-    custom_fields = opts['custom_fields']
+    opts_list = _get_options()
 
     # Gather amazon information if present
     aws_ami_id = None
@@ -81,135 +70,145 @@ def returner(ret):
                                        timeout=1).text
         aws_account_id = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
                                       timeout=1).json().get('accountId', 'unknown')
-    except (requests.exceptions.ConnectTimeout, ValueError):
+    except (requests.exceptions.RequestException, ValueError):
         # Not on an AWS box
         pass
 
-    # Set up the collector
-    hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
-    # st = 'salt:hubble:nova'
-    data = ret['return']
-    minion_id = ret['id']
-    jid = ret['jid']
-    fqdn = __grains__['fqdn']
-    # Sometimes fqdn is blank. If it is, replace it with minion_id
-    fqdn = fqdn if fqdn else minion_id
-    master = __grains__['master']
-    try:
-        fqdn_ip4 = __grains__['fqdn_ip4'][0]
-    except IndexError:
-        fqdn_ip4 = __grains__['ipv4'][0]
+    for opts in opts_list:
+        logging.info('Options: %s' % json.dumps(opts))
+        http_event_collector_key = opts['token']
+        http_event_collector_host = opts['indexer']
+        hec_ssl = opts['http_event_server_ssl']
+        proxy = opts['proxy']
+        timeout = opts['timeout']
+        custom_fields = opts['custom_fields']
 
-    if __grains__['master']:
+
+        # Set up the collector
+        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
+        # st = 'salt:hubble:nova'
+        data = ret['return']
+        minion_id = ret['id']
+        jid = ret['jid']
+        fqdn = __grains__['fqdn']
+        # Sometimes fqdn is blank. If it is, replace it with minion_id
+        fqdn = fqdn if fqdn else minion_id
         master = __grains__['master']
-    else:
-        master = socket.gethostname()  # We *are* the master, so use our hostname
+        try:
+            fqdn_ip4 = __grains__['fqdn_ip4'][0]
+        except IndexError:
+            fqdn_ip4 = __grains__['ipv4'][0]
 
-    for fai in data.get('Failure', []):
-        check_id = fai.keys()[0]
-        payload = {}
-        event = {}
-        event.update({'check_result': 'Failure'})
-        event.update({'check_id': check_id})
-        event.update({'job_id': jid})
-        if not isinstance(fai[check_id], dict):
-            event.update({'description': fai[check_id]})
-        elif 'description' in fai[check_id]:
-            for key, value in fai[check_id].iteritems():
-                if key not in ['tag']:
-                    event[key] = value
-        event.update({'master': master})
-        event.update({'minion_id': minion_id})
-        event.update({'dest_host': fqdn})
-        event.update({'dest_ip': fqdn_ip4})
+        if __grains__['master']:
+            master = __grains__['master']
+        else:
+            master = socket.gethostname()  # We *are* the master, so use our hostname
 
-        if aws_instance_id is not None:
-            event.update({'aws_ami_id': aws_ami_id})
-            event.update({'aws_instance_id': aws_instance_id})
+        for fai in data.get('Failure', []):
+            check_id = fai.keys()[0]
+            payload = {}
+            event = {}
+            event.update({'check_result': 'Failure'})
+            event.update({'check_id': check_id})
+            event.update({'job_id': jid})
+            if not isinstance(fai[check_id], dict):
+                event.update({'description': fai[check_id]})
+            elif 'description' in fai[check_id]:
+                for key, value in fai[check_id].iteritems():
+                    if key not in ['tag']:
+                        event[key] = value
+            event.update({'master': master})
+            event.update({'minion_id': minion_id})
+            event.update({'dest_host': fqdn})
+            event.update({'dest_ip': fqdn_ip4})
 
-        for custom_field in custom_fields:
-            custom_field_name = 'custom_' + custom_field
-            custom_field_value = __salt__['config.get'](custom_field, '')
-            if isinstance(custom_field_value, str):
-                event.update({custom_field_name: custom_field_value})
-            elif isinstance(custom_field_value, list):
-                custom_field_value = ','.join(custom_field_value)
-                event.update({custom_field_name: custom_field_value})
+            if aws_instance_id is not None:
+                event.update({'aws_ami_id': aws_ami_id})
+                event.update({'aws_instance_id': aws_instance_id})
 
-        payload.update({'host': fqdn})
-        payload.update({'index': opts['index']})
-        payload.update({'sourcetype': opts['sourcetype']})
-        payload.update({'event': event})
-        hec.batchEvent(payload)
+            for custom_field in custom_fields:
+                custom_field_name = 'custom_' + custom_field
+                custom_field_value = __salt__['config.get'](custom_field, '')
+                if isinstance(custom_field_value, str):
+                    event.update({custom_field_name: custom_field_value})
+                elif isinstance(custom_field_value, list):
+                    custom_field_value = ','.join(custom_field_value)
+                    event.update({custom_field_name: custom_field_value})
 
-    for suc in data.get('Success', []):
-        check_id = suc.keys()[0]
-        payload = {}
-        event = {}
-        event.update({'check_result': 'Success'})
-        event.update({'check_id': check_id})
-        event.update({'job_id': jid})
-        if not isinstance(suc[check_id], dict):
-            event.update({'description': suc[check_id]})
-        elif 'description' in suc[check_id]:
-            for key, value in suc[check_id].iteritems():
-                if key not in ['tag']:
-                    event[key] = value
-        event.update({'master': master})
-        event.update({'minion_id': minion_id})
-        event.update({'dest_host': fqdn})
-        event.update({'dest_ip': fqdn_ip4})
+            payload.update({'host': fqdn})
+            payload.update({'index': opts['index']})
+            payload.update({'sourcetype': opts['sourcetype']})
+            payload.update({'event': event})
+            hec.batchEvent(payload)
 
-        if aws_instance_id is not None:
-            event.update({'aws_ami_id': aws_ami_id})
-            event.update({'aws_instance_id': aws_instance_id})
-            event.update({'aws_account_id': aws_account_id})
+        for suc in data.get('Success', []):
+            check_id = suc.keys()[0]
+            payload = {}
+            event = {}
+            event.update({'check_result': 'Success'})
+            event.update({'check_id': check_id})
+            event.update({'job_id': jid})
+            if not isinstance(suc[check_id], dict):
+                event.update({'description': suc[check_id]})
+            elif 'description' in suc[check_id]:
+                for key, value in suc[check_id].iteritems():
+                    if key not in ['tag']:
+                        event[key] = value
+            event.update({'master': master})
+            event.update({'minion_id': minion_id})
+            event.update({'dest_host': fqdn})
+            event.update({'dest_ip': fqdn_ip4})
 
-        for custom_field in custom_fields:
-            custom_field_name = 'custom_' + custom_field
-            custom_field_value = __salt__['config.get'](custom_field, '')
-            if isinstance(custom_field_value, str):
-                event.update({custom_field_name: custom_field_value})
-            elif isinstance(custom_field_value, list):
-                custom_field_value = ','.join(custom_field_value)
-                event.update({custom_field_name: custom_field_value})
+            if aws_instance_id is not None:
+                event.update({'aws_ami_id': aws_ami_id})
+                event.update({'aws_instance_id': aws_instance_id})
+                event.update({'aws_account_id': aws_account_id})
 
-        payload.update({'host': fqdn})
-        payload.update({'sourcetype': opts['sourcetype']})
-        payload.update({'index': opts['index']})
-        payload.update({'event': event})
-        hec.batchEvent(payload)
+            for custom_field in custom_fields:
+                custom_field_name = 'custom_' + custom_field
+                custom_field_value = __salt__['config.get'](custom_field, '')
+                if isinstance(custom_field_value, str):
+                    event.update({custom_field_name: custom_field_value})
+                elif isinstance(custom_field_value, list):
+                    custom_field_value = ','.join(custom_field_value)
+                    event.update({custom_field_name: custom_field_value})
 
-    if data.get('Compliance', None):
-        payload = {}
-        event = {}
-        event.update({'job_id': jid})
-        event.update({'compliance_percentage': data['Compliance']})
-        event.update({'master': master})
-        event.update({'minion_id': minion_id})
-        event.update({'dest_host': fqdn})
-        event.update({'dest_ip': fqdn_ip4})
+            payload.update({'host': fqdn})
+            payload.update({'sourcetype': opts['sourcetype']})
+            payload.update({'index': opts['index']})
+            payload.update({'event': event})
+            hec.batchEvent(payload)
 
-        if aws_instance_id is not None:
-            event.update({'aws_ami_id': aws_ami_id})
-            event.update({'aws_instance_id': aws_instance_id})
+        if data.get('Compliance', None):
+            payload = {}
+            event = {}
+            event.update({'job_id': jid})
+            event.update({'compliance_percentage': data['Compliance']})
+            event.update({'master': master})
+            event.update({'minion_id': minion_id})
+            event.update({'dest_host': fqdn})
+            event.update({'dest_ip': fqdn_ip4})
 
-        for custom_field in custom_fields:
-            custom_field_name = 'custom_' + custom_field
-            custom_field_value = __salt__['config.get'](custom_field, '')
-            if isinstance(custom_field_value, str):
-                event.update({custom_field_name: custom_field_value})
-            elif isinstance(custom_field_value, list):
-                custom_field_value = ','.join(custom_field_value)
-                event.update({custom_field_name: custom_field_value})
+            if aws_instance_id is not None:
+                event.update({'aws_ami_id': aws_ami_id})
+                event.update({'aws_instance_id': aws_instance_id})
 
-        payload.update({'host': fqdn})
-        payload.update({'sourcetype': opts['sourcetype']})
-        payload.update({'index': opts['index']})
-        payload.update({'event': event})
-        hec.batchEvent(payload)
+            for custom_field in custom_fields:
+                custom_field_name = 'custom_' + custom_field
+                custom_field_value = __salt__['config.get'](custom_field, '')
+                if isinstance(custom_field_value, str):
+                    event.update({custom_field_name: custom_field_value})
+                elif isinstance(custom_field_value, list):
+                    custom_field_value = ','.join(custom_field_value)
+                    event.update({custom_field_name: custom_field_value})
 
-    hec.flushBatch()
+            payload.update({'host': fqdn})
+            payload.update({'sourcetype': opts['sourcetype']})
+            payload.update({'index': opts['index']})
+            payload.update({'event': event})
+            hec.batchEvent(payload)
+
+        hec.flushBatch()
     return
 
 
@@ -233,22 +232,40 @@ def event_return(event):
 
 
 def _get_options():
-    try:
-        token = __salt__['config.get']('hubblestack:nova:returner:splunk:token').strip()
-        indexer = __salt__['config.get']('hubblestack:nova:returner:splunk:indexer')
-        sourcetype = __salt__['config.get']('hubblestack:nova:returner:splunk:sourcetype')
-        index = __salt__['config.get']('hubblestack:nova:returner:splunk:index')
-        custom_fields = __salt__['config.get']('hubblestack:nebula:returner:splunk:custom_fields', [])
-    except:
-        return None
-    splunk_opts = {'token': token, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}
+    if __salt__['config.get']('hubblestack:returner:splunk'):
+        splunk_opts = []
+        returner_opts = __salt__['config.get']('hubblestack:returner:splunk')
+        if not isinstance(returner_opts, list):
+            returner_opts = [returner_opts]
+        for opt in returner_opts:
+            processed = {}
+            processed['token'] = opt.get('token')
+            processed['indexer'] = opt.get('indexer')
+            processed['index'] = opt.get('index')
+            processed['custom_fields'] = opt.get('custom_fields', [])
+            processed['sourcetype'] = opt.get('sourcetype_nova', 'hubble_audit')
+            processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
+            processed['proxy'] = opt.get('proxy', {})
+            processed['timeout'] = opt.get('timeout', 9.05)
+            splunk_opts.append(processed)
+        return splunk_opts
+    else:
+        try:
+            token = __salt__['config.get']('hubblestack:nova:returner:splunk:token').strip()
+            indexer = __salt__['config.get']('hubblestack:nova:returner:splunk:indexer')
+            sourcetype = __salt__['config.get']('hubblestack:nova:returner:splunk:sourcetype')
+            index = __salt__['config.get']('hubblestack:nova:returner:splunk:index')
+            custom_fields = __salt__['config.get']('hubblestack:nebula:returner:splunk:custom_fields', [])
+        except:
+            return None
+        splunk_opts = {'token': token, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}
 
-    hec_ssl = __salt__['config.get']('hubblestack:nova:returner:splunk:hec_ssl', True)
-    splunk_opts['http_event_server_ssl'] = hec_ssl
-    splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nova:returner:splunk:proxy', {})
-    splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nova:returner:splunk:timeout', 9.05)
+        hec_ssl = __salt__['config.get']('hubblestack:nova:returner:splunk:hec_ssl', True)
+        splunk_opts['http_event_server_ssl'] = hec_ssl
+        splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nova:returner:splunk:proxy', {})
+        splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nova:returner:splunk:timeout', 9.05)
 
-    return splunk_opts
+        return [splunk_opts]
 
 
 def send_splunk(event, index_override=None, sourcetype_override=None):

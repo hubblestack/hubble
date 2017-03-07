@@ -9,7 +9,7 @@
 
 Summary: Hubblestack is a module, open-source security compliance framework
 Name: hubblestack
-Version: 2.1.3
+Version: 2.1.4
 Release: 1
 License: Apache 2.0
 Group: Development/Tools
@@ -53,6 +53,11 @@ rm -rf %{buildroot}
 /usr/lib/*
 
 %changelog
+* Tue Mar 7 2017  Colton Myers <colton.myers@gmail.com> 2.1.4-1
+- Consolidate pillar and allow for multiple splunk endpoints in splunk returners
+- Move output formatting code out of nova modules into hubble.py
+- Add error handling for problems in config file
+
 * Tue Feb 28 2017  Colton Myers <colton.myers@gmail.com> 2.1.3-1
 - Add Debian packaging
 - Add uptime fallback query

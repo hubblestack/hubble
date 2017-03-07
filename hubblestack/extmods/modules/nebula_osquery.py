@@ -88,7 +88,8 @@ def queries(query_group,
             ret = []
             ret.append(
                     {'fallback_osfinger': {
-                         'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname'))}],
+                         'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
+                                   'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
                          'result': True
                     }}
             )

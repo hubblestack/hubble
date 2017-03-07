@@ -3,7 +3,6 @@
 HubbleStack Nebula-to-Splunk returner
 
 :maintainer: HubbleStack
-:maturity: 2016.10.4
 :platform: All
 :requires: SaltStack
 
@@ -13,13 +12,12 @@ event collector. Required config/pillar settings:
 .. code-block:: yaml
 
     hubblestack:
-      nebula:
-        returner:
-          splunk:
-            token: <splunk_http_forwarder_token>
-            indexer: <hostname/IP of Splunk indexer>
-            sourcetype: <Destination sourcetype for data>
-            index: <Destination index for data>
+      returner:
+        splunk:
+          - token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+            indexer: splunk-indexer.domain.tld
+            index: hubble
+            sourcetype_nebula: hubble_osquery
 
 You can also add an `custom_fields` argument which is a list of keys to add to events
 with using the results of config.get(<custom_field>). These new keys will be prefixed
@@ -30,13 +28,12 @@ be skipped:
 .. code-block:: yaml
 
     hubblestack:
-      nebula:
-        returner:
-          splunk:
-            token: <splunk_http_forwarder_token>
-            indexer: <hostname/IP of Splunk indexer>
-            sourcetype: <Destination sourcetype for data>
-            index: <Destination index for data>
+      returner:
+        splunk:
+          - token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+            indexer: splunk-indexer.domain.tld
+            index: hubble
+            sourcetype_nebula: hubble_osquery
             custom_fields:
               - site
               - product_group
@@ -60,101 +57,123 @@ hec = None
 
 
 def returner(ret):
-    # Customized to split up the queries and extract the correct sourcetype
-
-    opts = _get_options()
-    logging.info('Options: %s' % json.dumps(opts))
-    http_event_collector_key = opts['token']
-    http_event_collector_host = opts['indexer']
-    hec_ssl = opts['http_event_server_ssl']
-    proxy = opts['proxy']
-    timeout = opts['timeout']
-    custom_fields = opts['custom_fields']
+    opts_list = _get_options()
 
     # Gather amazon information if present
     aws_ami_id = None
     aws_instance_id = None
+    aws_account_id = None
     try:
         aws_ami_id = requests.get('http://169.254.169.254/latest/meta-data/ami-id',
                                   timeout=1).text
         aws_instance_id = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
                                        timeout=1).text
-    except requests.exceptions.ConnectTimeout:
+        aws_account_id = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
+                                      timeout=1).json().get('accountId', 'unknown')
+    except (requests.exceptions.RequestException, ValueError):
         # Not on an AWS box
         pass
 
-    # Set up the collector
-    hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
+    for opts in opts_list:
+        logging.info('Options: %s' % json.dumps(opts))
+        http_event_collector_key = opts['token']
+        http_event_collector_host = opts['indexer']
+        hec_ssl = opts['http_event_server_ssl']
+        proxy = opts['proxy']
+        timeout = opts['timeout']
+        custom_fields = opts['custom_fields']
 
-    # st = 'salt:hubble:nova'
-    data = ret['return']
-    minion_id = ret['id']
-    jid = ret['jid']
-    master = __grains__['master']
-    fqdn = __grains__['fqdn']
-    # Sometimes fqdn is blank. If it is, replace it with minion_id
-    fqdn = fqdn if fqdn else minion_id
-    try:
-        fqdn_ip4 = __grains__['fqdn_ip4'][0]
-    except IndexError:
-        fqdn_ip4 = __grains__['ipv4'][0]
+        # Set up the collector
+        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
 
-    if not data:
-        return
-    else:
-        for query in data:
-            for query_name, query_results in query.iteritems():
-                for query_result in query_results['data']:
-                    event = {}
-                    payload = {}
-                    event.update(query_result)
-                    event.update({'query': query_name})
-                    event.update({'job_id': jid})
-                    event.update({'master': master})
-                    event.update({'minion_id': minion_id})
-                    event.update({'dest_host': fqdn})
-                    event.update({'dest_ip': fqdn_ip4})
+        # st = 'salt:hubble:nova'
+        data = ret['return']
+        minion_id = ret['id']
+        jid = ret['jid']
+        master = __grains__['master']
+        fqdn = __grains__['fqdn']
+        # Sometimes fqdn is blank. If it is, replace it with minion_id
+        fqdn = fqdn if fqdn else minion_id
+        try:
+            fqdn_ip4 = __grains__['fqdn_ip4'][0]
+        except IndexError:
+            fqdn_ip4 = __grains__['ipv4'][0]
 
-                    if aws_instance_id is not None:
-                        event.update({'aws_ami_id': aws_ami_id})
-                        event.update({'aws_instance_id': aws_instance_id})
+        if not data:
+            return
+        else:
+            for query in data:
+                for query_name, query_results in query.iteritems():
+                    for query_result in query_results['data']:
+                        event = {}
+                        payload = {}
+                        event.update(query_result)
+                        event.update({'query': query_name})
+                        event.update({'job_id': jid})
+                        event.update({'master': master})
+                        event.update({'minion_id': minion_id})
+                        event.update({'dest_host': fqdn})
+                        event.update({'dest_ip': fqdn_ip4})
 
-                    for custom_field in custom_fields:
-                        custom_field_name = 'custom_' + custom_field
-                        custom_field_value = __salt__['config.get'](custom_field, '')
-                        if isinstance(custom_field_value, str):
-                            event.update({custom_field_name: custom_field_value})
-                        elif isinstance(custom_field_value, list):
-                            custom_field_value = ','.join(custom_field_value)
-                            event.update({custom_field_name: custom_field_value})
+                        if aws_instance_id is not None:
+                            event.update({'aws_ami_id': aws_ami_id})
+                            event.update({'aws_instance_id': aws_instance_id})
+                            event.update({'aws_account_id': aws_account_id})
 
-                    payload.update({'host': fqdn})
-                    payload.update({'index': opts['index']})
-                    payload.update({'sourcetype': opts['sourcetype']})
-                    payload.update({'event': event})
-                    hec.batchEvent(payload)
+                        for custom_field in custom_fields:
+                            custom_field_name = 'custom_' + custom_field
+                            custom_field_value = __salt__['config.get'](custom_field, '')
+                            if isinstance(custom_field_value, str):
+                                event.update({custom_field_name: custom_field_value})
+                            elif isinstance(custom_field_value, list):
+                                custom_field_value = ','.join(custom_field_value)
+                                event.update({custom_field_name: custom_field_value})
 
-    hec.flushBatch()
+                        payload.update({'host': fqdn})
+                        payload.update({'index': opts['index']})
+                        payload.update({'sourcetype': opts['sourcetype']})
+                        payload.update({'event': event})
+                        hec.batchEvent(payload)
+
+        hec.flushBatch()
     return
 
 
 def _get_options():
-    try:
-        token = __salt__['config.get']('hubblestack:nebula:returner:splunk:token').strip()
-        indexer = __salt__['config.get']('hubblestack:nebula:returner:splunk:indexer')
-        sourcetype = __salt__['config.get']('hubblestack:nebula:returner:splunk:sourcetype')
-        index = __salt__['config.get']('hubblestack:nebula:returner:splunk:index')
-        custom_fields = __salt__['config.get']('hubblestack:nebula:returner:splunk:custom_fields', [])
-    except:
-        return None
-    splunk_opts = {'token': token, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}
+    if __salt__['config.get']('hubblestack:returner:splunk'):
+        splunk_opts = []
+        returner_opts = __salt__['config.get']('hubblestack:returner:splunk')
+        if not isinstance(returner_opts, list):
+            returner_opts = [returner_opts]
+        for opt in returner_opts:
+            processed = {}
+            processed['token'] = opt.get('token')
+            processed['indexer'] = opt.get('indexer')
+            processed['index'] = opt.get('index')
+            processed['custom_fields'] = opt.get('custom_fields', [])
+            processed['sourcetype'] = opt.get('sourcetype_nebula', 'hubble_osquery')
+            processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
+            processed['proxy'] = opt.get('proxy', {})
+            processed['timeout'] = opt.get('timeout', 9.05)
+            splunk_opts.append(processed)
+        return splunk_opts
+    else:
+        try:
+            token = __salt__['config.get']('hubblestack:nebula:returner:splunk:token').strip()
+            indexer = __salt__['config.get']('hubblestack:nebula:returner:splunk:indexer')
+            sourcetype = __salt__['config.get']('hubblestack:nebula:returner:splunk:sourcetype')
+            index = __salt__['config.get']('hubblestack:nebula:returner:splunk:index')
+            custom_fields = __salt__['config.get']('hubblestack:nebula:returner:splunk:custom_fields', [])
+        except:
+            return None
+        splunk_opts = {'token': token, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}
 
-    hec_ssl = __salt__['config.get']('hubblestack:nebula:returner:splunk:hec_ssl', True)
-    splunk_opts['http_event_server_ssl'] = hec_ssl
-    splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:proxy', {})
-    splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:timeout', 9.05)
+        hec_ssl = __salt__['config.get']('hubblestack:nebula:returner:splunk:hec_ssl', True)
+        splunk_opts['http_event_server_ssl'] = hec_ssl
+        splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:proxy', {})
+        splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:timeout', 9.05)
 
-    return splunk_opts
+        return [splunk_opts]
 
 
 def send_splunk(event, index_override=None, sourcetype_override=None):

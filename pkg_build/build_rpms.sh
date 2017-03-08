@@ -20,8 +20,8 @@ mkdir -p build
 mkdir -p dist
 
 bash ./init_pkg.sh -y
-cp hubble.tar.gz dist/hubble.tar.gz
-mv hubble.tar.gz build/hubble.tar.gz
+cp ../hubble.tar.gz dist/hubble.tar.gz
+mv ../hubble.tar.gz build/hubble.tar.gz
 mkdir build/hubblestack-2.1.4
 tar -xzvf build/hubble.tar.gz -C build/hubblestack-2.1.4
 mkdir -p build/hubblestack-2.1.4/etc/init.d

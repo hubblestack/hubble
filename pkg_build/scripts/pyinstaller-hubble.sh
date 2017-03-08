@@ -1,7 +1,7 @@
 #!/bin/bash
 
 _check_auto_deletion=$2
-pushd ../
+pushd ../../
 _SOURCE_DIR="./"
 _BINARY_LOG_LEVEL="INFO"
 

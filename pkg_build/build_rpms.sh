@@ -39,8 +39,6 @@ cd rpmbuild
 cp ../../specs/* SPECS/
 
 rpmbuild --define "_topdir $(pwd)" --define "_tmppath %{_topdir}/tmp" -ba SPECS/hubblestack-el6.spec
-mkdir -p ../../dist/el6
-cp RPMS/x86_64/* ../../dist/el6/
+cp RPMS/x86_64/hubblestack-2.1.4-1.x86_64.rpm ../../dist/hubblestack-2.1.4-1.el6.x86_64.rpm
 rpmbuild --define "_topdir $(pwd)" --define "_tmppath %{_topdir}/tmp" -ba SPECS/hubblestack-el7.spec
-mkdir -p ../../dist/el7
-cp RPMS/x86_64/* ../../dist/el7/
+cp RPMS/x86_64/hubblestack-2.1.4-1.x86_64.rpm ../../dist/hubblestack-2.1.4-1.el7.x86_64.rpm

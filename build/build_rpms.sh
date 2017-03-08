@@ -33,19 +33,14 @@ cd build
 tar -czvf hubblestack-2.1.4.tar.gz hubblestack-2.1.4/
 mkdir -p rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
 
-cat <<EOF >~/.rpmmacros
-%_topdir   %(pwd)/rpmbuild
-%_tmppath  %{_topdir}/tmp
-EOF
-
 cp hubblestack-2.1.4.tar.gz rpmbuild/SOURCES/
 cd rpmbuild
 
 cp ../../specs/* SPECS/
 
-rpmbuild -ba SPECS/hubblestack-el6.spec
+rpmbuild --define "_topdir $(pwd)" --define "_tmppath %{_topdir}/tmp" -ba SPECS/hubblestack-el6.spec
 mkdir -p ../../dist/el6
 cp RPMS/x86_64/* ../../dist/el6/
-rpmbuild -ba SPECS/hubblestack-el7.spec
+rpmbuild --define "_topdir $(pwd)" --define "_tmppath %{_topdir}/tmp" -ba SPECS/hubblestack-el7.spec
 mkdir -p ../../dist/el7
 cp RPMS/x86_64/* ../../dist/el7/

@@ -33,7 +33,7 @@ cd build
 tar -czvf hubblestack-2.1.4.tar.gz hubblestack-2.1.4/
 mkdir -p rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
 
-cat <<EOF >.rpmmacros
+cat <<EOF >~/.rpmmacros
 %_topdir   %(pwd)/rpmbuild
 %_tmppath  %{_topdir}/tmp
 EOF

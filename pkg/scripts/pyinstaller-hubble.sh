@@ -3,6 +3,7 @@
 _check_auto_deletion=$2
 pushd ../../
 _SOURCE_DIR="./"
+_HOOK_DIR="./pkg/"
 _BINARY_LOG_LEVEL="INFO"
 
 function pkg_init {
@@ -11,7 +12,7 @@ _INCLUDE_PATH=""
 pyinstaller --onedir \
   --noconfirm \
   --log-level $_BINARY_LOG_LEVEL \
-  --additional-hooks-dir=$_SOURCE_DIR \
+  --additional-hooks-dir=$_HOOK_DIR \
   $_INCLUDE_PATH \
   hubble.py
 }

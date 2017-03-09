@@ -11,6 +11,6 @@ make strip
 sudo cp -pr ./build/linux/osquery/osqueryi ./build/linux/osquery/osqueryd /opt/osquery
 sudo chown -R root. /opt/osquery
 cd ../../
-sudo cp ../conf/osquery.conf /etc/osquery/
-sudo cp ../conf/osquery.flags /etc/osquery/
+sudo cp ../../conf/osquery.conf /etc/osquery/
+sudo cp ../../conf/osquery.flags /etc/osquery/
 #rm -rf temp

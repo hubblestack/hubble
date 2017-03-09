@@ -57,7 +57,7 @@ function pkg_clean {
         echo "skipping deletion of $i"
       fi
 
-    else 
+    else
       rm -f $i
     fi
   done

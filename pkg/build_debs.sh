@@ -44,4 +44,4 @@ fpm -s dir -t deb \
     --config-files /etc/hubble/hubble --config-files /etc/osquery/osquery.conf \
     --deb-no-default-config-files \
     etc/hubble etc/osquery etc/init.d opt usr/bin
-cp hubblestack_2.1.4-1_amd64.deb ../dist/
+cp hubblestack_2.1.4-1_amd64.deb ../../dist/

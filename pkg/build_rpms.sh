@@ -25,9 +25,9 @@ mv ../hubble.tar.gz build/hubble.tar.gz
 mkdir build/hubblestack-2.1.4
 tar -xzvf build/hubble.tar.gz -C build/hubblestack-2.1.4
 mkdir -p build/hubblestack-2.1.4/etc/init.d
-cp ../pkg/hubble build/hubblestack-2.1.4/etc/init.d
+cp ./hubble build/hubblestack-2.1.4/etc/init.d
 mkdir -p build/hubblestack-2.1.4/usr/lib/systemd/system
-cp ../pkg/hubble.service build/hubblestack-2.1.4/usr/lib/systemd/system
+cp ./hubble.service build/hubblestack-2.1.4/usr/lib/systemd/system
 cp -f ../conf/hubble build/hubblestack-2.1.4/etc/hubble/hubble
 cd build
 tar -czvf hubblestack-2.1.4.tar.gz hubblestack-2.1.4/

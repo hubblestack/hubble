@@ -52,7 +52,7 @@ you're probably in business!
 Hubble supports one-off invocations of specific functions:
 
 ```
-[root@host1 hubble-v2]# hubble nova.audit cis.centos-7-level-1-scored-v2-1-0 tags=CIS-3.\*
+[root@host1 hubble-v2]# hubble hubble.audit cis.centos-7-level-1-scored-v2-1-0 tags=CIS-3.\*
 {'Compliance': '45%',
  'Failure': [{'CIS-3.4.2': 'Ensure /etc/hosts.allow is configured'},
              {'CIS-3.4.3': 'Ensure /etc/hosts.deny is configured'},

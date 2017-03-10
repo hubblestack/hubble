@@ -13,20 +13,23 @@ then
   exit
 fi
 
-cd ..
+rm -rf build
+rm -rf dist
 
-bash init_pkg.sh -y
-cp hubble.tar.gz ~/hubble.tar.gz
-rm -rf ~/hubblestack-2.1.4
-rm -rf ~/hubblestack-2.1.4.tar.gz
-mkdir ~/hubblestack-2.1.4
-tar -xzvf ~/hubble.tar.gz -C ~/hubblestack-2.1.4
-mkdir -p ~/hubblestack-2.1.4/etc/init.d
-cp pkg/hubble ~/hubblestack-2.1.4/etc/init.d
-mkdir -p ~/hubblestack-2.1.4/usr/lib/systemd/system
-cp pkg/hubble.service ~/hubblestack-2.1.4/usr/lib/systemd/system
-cp -f conf/hubble ~/hubblestack-2.1.4/etc/hubble/hubble
-cd ~/hubblestack-2.1.4
+mkdir -p build
+mkdir -p dist
+
+bash ./init_pkg.sh -y
+cp ../hubble.tar.gz dist/hubble.tar.gz
+mv ../hubble.tar.gz build/hubble.tar.gz
+mkdir build/hubblestack-2.1.4
+tar -xzvf build/hubble.tar.gz -C build/hubblestack-2.1.4
+mkdir -p build/hubblestack-2.1.4/etc/init.d
+cp ./hubble build/hubblestack-2.1.4/etc/init.d
+mkdir -p build/hubblestack-2.1.4/usr/lib/systemd/system
+cp ./hubble.service build/hubblestack-2.1.4/usr/lib/systemd/system
+cp -f ../conf/hubble build/hubblestack-2.1.4/etc/hubble/hubble
+cd build/hubblestack-2.1.4
 
 sudo apt-get install -y ruby ruby-dev rubygems gcc make
 sudo gem install --no-ri --no-rdoc fpm
@@ -41,4 +44,4 @@ fpm -s dir -t deb \
     --config-files /etc/hubble/hubble --config-files /etc/osquery/osquery.conf \
     --deb-no-default-config-files \
     etc/hubble etc/osquery etc/init.d opt usr/bin
-cp hubblestack_2.1.4-1_amd64.deb ~/
+cp hubblestack_2.1.4-1_amd64.deb ../../dist/

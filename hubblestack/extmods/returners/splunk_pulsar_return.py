@@ -41,7 +41,7 @@ be skipped:
 
 import socket
 # Import AWS details
-from aws_details import *
+from aws_details import get_aws_details
 
 # Imports for http event forwarder
 import requests

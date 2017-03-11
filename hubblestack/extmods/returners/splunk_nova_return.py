@@ -39,6 +39,8 @@ be skipped:
               - product_group
 '''
 import socket
+# Import AWS details
+from aws_details import get_aws_details
 
 # Imports for http event forwarder
 import requests
@@ -59,20 +61,8 @@ hec = None
 def returner(ret):
     opts_list = _get_options()
 
-    # Gather amazon information if present
-    aws_ami_id = None
-    aws_instance_id = None
-    aws_account_id = None
-    try:
-        aws_ami_id = requests.get('http://169.254.169.254/latest/meta-data/ami-id',
-                                  timeout=1).text
-        aws_instance_id = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
-                                       timeout=1).text
-        aws_account_id = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
-                                      timeout=1).json().get('accountId', 'unknown')
-    except (requests.exceptions.RequestException, ValueError):
-        # Not on an AWS box
-        pass
+    # Get aws details
+    aws = get_aws_details()
 
     for opts in opts_list:
         logging.info('Options: %s' % json.dumps(opts))
@@ -122,9 +112,10 @@ def returner(ret):
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})
 
-            if aws_instance_id is not None:
-                event.update({'aws_ami_id': aws_ami_id})
-                event.update({'aws_instance_id': aws_instance_id})
+            if aws['aws_account_id'] is not None:
+                event.update({'aws_ami_id': aws['aws_ami_id']})
+                event.update({'aws_instance_id': aws['aws_instance_id']})
+                event.update({'aws_account_id': aws['aws_account_id']})
 
             for custom_field in custom_fields:
                 custom_field_name = 'custom_' + custom_field
@@ -159,10 +150,10 @@ def returner(ret):
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})
 
-            if aws_instance_id is not None:
-                event.update({'aws_ami_id': aws_ami_id})
-                event.update({'aws_instance_id': aws_instance_id})
-                event.update({'aws_account_id': aws_account_id})
+            if aws['aws_account_id'] is not None:
+                event.update({'aws_ami_id': aws['aws_ami_id']})
+                event.update({'aws_instance_id': aws['aws_instance_id']})
+                event.update({'aws_account_id': aws['aws_account_id']})
 
             for custom_field in custom_fields:
                 custom_field_name = 'custom_' + custom_field
@@ -189,9 +180,10 @@ def returner(ret):
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})
 
-            if aws_instance_id is not None:
-                event.update({'aws_ami_id': aws_ami_id})
-                event.update({'aws_instance_id': aws_instance_id})
+            if aws['aws_account_id'] is not None:
+                event.update({'aws_ami_id': aws['aws_ami_id']})
+                event.update({'aws_instance_id': aws['aws_instance_id']})
+                event.update({'aws_account_id': aws['aws_account_id']})
 
             for custom_field in custom_fields:
                 custom_field_name = 'custom_' + custom_field

@@ -11,7 +11,6 @@ import collections
 import datetime
 import fnmatch
 import logging
-import threading
 import os
 import glob
 import yaml
@@ -36,7 +35,8 @@ def __virtual__():
     return __virtualname__
 
 
-def beacon(config):
+def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
+            verbose=False):
     '''
     Watch the configured files
 
@@ -106,6 +106,12 @@ def beacon(config):
 
     :return:
     '''
+    config = __opts__.get('pulsar', {})
+    if isinstance(configfile, list):
+        config['paths'] = configfile
+    else:
+        config['paths'] = [configfile]
+    config['verbose'] = verbose
     global CONFIG_STALENESS
     global CONFIG
     if config.get('verbose'):
@@ -123,17 +129,12 @@ def beacon(config):
         config = CONFIG
     else:
         if config.get('verbose'):
-            log.debug('No cached config found for pulsar, retrieving fresh from disk.')
+            log.debug('No cached config found for pulsar, retrieving fresh from fileserver.')
         new_config = config
         if isinstance(config.get('paths'), list):
             for path in config['paths']:
                 if 'salt://' in path:
-                    log.error('Path {0} is not an absolute path. Please use a '
-                              'scheduled cp.cache_file job to deliver the '
-                              'config to the minion, then provide the '
-                              'absolute path to the cached file on the minion '
-                              'in the beacon config.'.format(path))
-                    continue
+                    path = __salt__['cp.cache_file'](path)
                 if os.path.isfile(path):
                     with open(path, 'r') as f:
                         new_config = _dict_update(new_config,
@@ -225,46 +226,7 @@ def beacon(config):
             new_ret.append(r)
     ret = new_ret
 
-    if ret and 'return' in config:
-        __opts__['grains'] = __grains__
-        __opts__['pillar'] = __pillar__
-        __returners__ = salt.loader.returners(__opts__, __salt__)
-        return_config = config['return']
-        if isinstance(return_config, salt.ext.six.string_types):
-            tmp = {}
-            for conf in return_config.split(','):
-                tmp[conf] = None
-            return_config = tmp
-        for returner_mod in return_config:
-            returner = '{0}.returner'.format(returner_mod)
-            if returner not in __returners__:
-                log.error('Could not find {0} returner for pulsar beacon'.format(config['return']))
-                return ret
-            batch_config = config.get('batch')
-            if isinstance(return_config[returner_mod], dict) and return_config[returner_mod].get('batch'):
-                batch_config = True
-            if batch_config:
-                transformed = []
-                for item in ret:
-                    transformed.append({'return': item})
-                if config.get('multiprocessing_return', True):
-                    p = threading.Thread(target=_return, args=((transformed,), returner))
-                    p.daemon = True
-                    p.start()
-                else:
-                    __returners__[returner](transformed)
-            else:
-                for item in ret:
-                    if config.get('multiprocessing_return', True):
-                        p = threading.Thread(target=_return, args=(({'return': item},), returner))
-                        p.daemon = True
-                        p.start()
-                    else:
-                        __returners__[returner]({'return': item})
-        return []
-    else:
-        # Return event data
-        return ret
+    return ret
 
 
 def _return(args, returner):

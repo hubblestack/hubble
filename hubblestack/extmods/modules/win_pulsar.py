@@ -11,7 +11,7 @@ import collections
 import datetime
 import fnmatch
 import logging
-import multiprocessing
+import threading
 import os
 import glob
 import yaml
@@ -247,16 +247,16 @@ def beacon(config):
                 transformed = []
                 for item in ret:
                     transformed.append({'return': item})
-                if config.get('multiprocessing_return', False):
-                    p = multiprocessing.Process(target=_return, args=((transformed,), returner))
+                if config.get('multiprocessing_return', True):
+                    p = threading.Thread(target=_return, args=((transformed,), returner))
                     p.daemon = True
                     p.start()
                 else:
                     __returners__[returner](transformed)
             else:
                 for item in ret:
-                    if config.get('multiprocessing_return', False):
-                        p = multiprocessing.Process(target=_return, args=(({'return': item},), returner))
+                    if config.get('multiprocessing_return', True):
+                        p = threading.Thread(target=_return, args=(({'return': item},), returner))
                         p.daemon = True
                         p.start()
                     else:

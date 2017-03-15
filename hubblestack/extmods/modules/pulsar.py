@@ -81,7 +81,18 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     '''
     Watch the configured files
 
-    Example yaml config on fileserver:
+    Example pillar config
+
+    .. code-block:: yaml
+
+        beacons:
+          pulsar:
+            paths:
+              - /var/cache/salt/minion/files/base/hubblestack_pulsar/hubblestack_pulsar_config.yaml
+            refresh_interval: 300
+            verbose: False
+
+    Example yaml config on fileserver (targeted by pillar)
 
     .. code-block:: yaml
 
@@ -97,10 +108,17 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
             - /path/to/file/or/dir/exclude2
             - /path/to/file/or/dir/regex[\d]*$:
                 regex: True
+        return:
+          splunk:
+            batch: True
+          slack:
+            batch: False  # overrides the global setting
         checksum: sha256
         stats: True
-        refresh_interval: 300
-        verbose: False
+        batch: True
+
+    Note that if `batch: True`, the configured returner must support receiving
+    a list of events, rather than single one-off events.
 
     The mask list can contain the following events (the default mask is create,
     delete, and modify):
@@ -136,7 +154,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     If pillar/grains/minion config key `hubblestack:pulsar:maintenance` is set to
     True, then changes will be discarded.
     '''
-    if HAS_PYINOTIFY:
+    if not HAS_PYINOTIFY:
         log.debug('Not running beacon pulsar. No python-inotify installed.')
         return []
     config = __opts__.get('pulsar', {})

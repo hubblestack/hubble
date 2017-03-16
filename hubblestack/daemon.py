@@ -47,8 +47,8 @@ def run():
 
     if __opts__['daemonize']:
         salt.utils.daemonize()
+        create_pidfile()
 
-    create_pidfile()
     signal.signal(signal.SIGTERM, clean_up_process)
     signal.signal(signal.SIGINT, clean_up_process)
 
@@ -271,7 +271,7 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
     salt.config.DEFAULT_MINION_OPTS['log_level'] = None
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
-    salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 60
+    salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 3600
 
     global __opts__
     global __grains__
@@ -368,6 +368,7 @@ def clean_up_process(signal, frame):
     '''
     Clean up pidfile and anything else that needs to be cleaned up
     '''
-    if os.path.isfile(__opts__['pidfile']):
-        os.remove(__opts__['pidfile'])
+    if __opts__['daemonize']:
+        if os.path.isfile(__opts__['pidfile']):
+            os.remove(__opts__['pidfile'])
     sys.exit(0)

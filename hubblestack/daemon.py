@@ -271,7 +271,7 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
     salt.config.DEFAULT_MINION_OPTS['log_level'] = None
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
-    salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 21600  # 6 hours
+    salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
     salt.config.DEFAULT_MINION_OPTS['scheduler_sleep_frequency'] = 0.5
 
     global __opts__

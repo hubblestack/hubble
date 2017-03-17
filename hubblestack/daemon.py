@@ -94,7 +94,7 @@ def main():
             schedule()
         except Exception as e:
             log.exception('Error executing schedule')
-        time.sleep(0.5)
+        time.sleep(__opts__.get('scheduler_sleep_frequency', 0.5))
 
 
 def schedule():
@@ -271,7 +271,8 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
     salt.config.DEFAULT_MINION_OPTS['log_level'] = None
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
-    salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 3600
+    salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 21600  # 6 hours
+    salt.config.DEFAULT_MINION_OPTS['scheduler_sleep_frequency'] = 0.5
 
     global __opts__
     global __grains__

@@ -46,9 +46,10 @@ rm -rf %{buildroot}
 
 
 %files
-%{_sysconfdir}/hubble
-%{_sysconfdir}/osquery
-%{_sysconfdir}/init.d/hubble
+%config(noreplace) /etc/hubble/hubble
+%config /etc/osquery.conf
+%config /etc/osquery.flags
+/etc/init.d/hubble
 /opt/*
 /usr/bin/*
 

@@ -9,7 +9,7 @@
 
 Summary: Hubblestack is a module, open-source security compliance framework
 Name: hubblestack
-Version: 2.1.4
+Version: 2.1.5
 Release: 1
 License: Apache 2.0
 Group: Development/Tools
@@ -46,13 +46,20 @@ rm -rf %{buildroot}
 
 
 %files
-%{_sysconfdir}/hubble
-%{_sysconfdir}/osquery
-%{_sysconfdir}/init.d/hubble
+%config(noreplace) /etc/hubble/hubble
+%config /etc/osquery/osquery.conf
+%config /etc/osquery/osquery.flags
+/etc/init.d/hubble
 /opt/*
 /usr/bin/*
 
 %changelog
+* Wed Mar 22 2017  Colton Myers <colton.myers@gmail.com> 2.1.5-1
+- Reduce fileserver frequency by default
+- Fix pidfile management
+- Add %config macros
+- Multi-endpoint support in splunk returners
+
 * Tue Mar 7 2017  Colton Myers <colton.myers@gmail.com> 2.1.4-1
 - Consolidate pillar and allow for multiple splunk endpoints in splunk returners
 - Move output formatting code out of nova modules into hubble.py

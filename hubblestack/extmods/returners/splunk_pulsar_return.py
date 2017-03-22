@@ -40,6 +40,8 @@ be skipped:
 '''
 
 import socket
+# Import AWS details
+from aws_details import get_aws_details
 
 # Imports for http event forwarder
 import requests
@@ -65,21 +67,8 @@ def returner(ret):
         return
 
     opts_list = _get_options()
-
-    # Gather amazon information if present
-    aws_ami_id = None
-    aws_instance_id = None
-    aws_account_id = None
-    try:
-        aws_ami_id = requests.get('http://169.254.169.254/latest/meta-data/ami-id',
-                                  timeout=1).text
-        aws_instance_id = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
-                                       timeout=1).text
-        aws_account_id = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
-                                      timeout=1).json().get('accountId', 'unknown')
-    except (requests.exceptions.RequestException, ValueError):
-        # Not on an AWS box
-        pass
+    # Get aws details
+    aws = get_aws_details()
 
     for opts in opts_list:
         logging.info('Options: %s' % json.dumps(opts))
@@ -210,10 +199,10 @@ def returner(ret):
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})
 
-            if aws_instance_id is not None:
-                event.update({'aws_ami_id': aws_ami_id})
-                event.update({'aws_instance_id': aws_instance_id})
-                event.update({'aws_account_id': aws_account_id})
+            if aws['aws_account_id'] is not None:
+                event.update({'aws_ami_id': aws['aws_ami_id']})
+                event.update({'aws_instance_id': aws['aws_instance_id']})
+                event.update({'aws_account_id': aws['aws_account_id']})
 
             for custom_field in custom_fields:
                 custom_field_name = 'custom_' + custom_field
@@ -292,6 +281,7 @@ class http_event_collector:
         self.batchEvents = []
         self.maxByteLength = max_bytes
         self.currentByteLength = 0
+        self.server_uri = []
         if proxy and http_event_server_ssl:
             self.proxy = {'https': 'https://{0}'.format(proxy)}
         elif proxy:
@@ -309,13 +299,14 @@ class http_event_collector:
         # Defaults to SSL if flag not passed
         # Defaults to port 8088 if port not passed
 
-        if http_event_server_ssl:
-            buildURI = ['https://']
-        else:
-            buildURI = ['http://']
-        for i in [http_event_server, ':', http_event_port, '/services/collector/event']:
-            buildURI.append(i)
-        self.server_uri = ''.join(buildURI)
+        servers = http_event_server
+        if not isinstance(servers, list):
+            servers = [servers]
+        for server in servers:
+            if http_event_server_ssl:
+                self.server_uri.append(['https://%s:%s/services/collector/event' % (server, http_event_port), True])
+            else:
+                self.server_uri.append(['http://%s:%s/services/collector/event' % (server, http_event_port), True])
 
         if http_event_collector_debug:
             print self.token
@@ -376,11 +367,17 @@ class http_event_collector:
 
         if len(self.batchEvents) > 0:
             headers = {'Authorization': 'Splunk ' + self.token}
-            try:
-                r = requests.post(self.server_uri, data=' '.join(self.batchEvents), headers=headers, verify=http_event_collector_SSL_verify, proxies=self.proxy, timeout=self.timeout)
-            except requests.exceptions.Timeout:
-                log.error('Request to splunk timed out. Not retrying.')
-            except Exception as e:
-                log.error('Request to splunk threw an error: {0}'.format(e))
+            self.server_uri = [x for x in self.server_uri if x[1] is not False]
+            for server in self.server_uri:
+                try:
+                    r = requests.post(server[0], data=' '.join(self.batchEvents), headers=headers, verify=http_event_collector_SSL_verify, proxies=self.proxy, timeout=self.timeout)
+                    r.raise_for_status()
+                    server[1] = True
+                    break
+                except requests.exceptions.RequestException:
+                    log.info('Request to splunk server "%s" failed. Marking as bad.' % server[0])
+                    server[1] = False
+                except Exception as e:
+                    log.error('Request to splunk threw an error: {0}'.format(e))
             self.batchEvents = []
             self.currentByteLength = 0

@@ -8,7 +8,7 @@
 ## if available
 
 gitfs_remotes:
-  - git://github.com/hubblestack/hubblestack_data.git
+  - https://github.com/hubblestack/hubblestack_data.git
 fileserver_backend:
   - git
   - roots

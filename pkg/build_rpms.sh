@@ -13,39 +13,32 @@ then
   exit
 fi
 
-cd ..
+rm -rf build
+rm -rf dist
 
-bash init_pkg.sh -y
-cp hubble.tar.gz ~/hubble.tar.gz
-rm -rf ~/hubblestack-2.1.4
-rm -rf ~/hubblestack-2.1.4.tar.gz
-mkdir ~/hubblestack-2.1.4
-tar -xzvf ~/hubble.tar.gz -C ~/hubblestack-2.1.4
-mkdir -p ~/hubblestack-2.1.4/etc/init.d
-cp pkg/hubble ~/hubblestack-2.1.4/etc/init.d
-mkdir -p ~/hubblestack-2.1.4/usr/lib/systemd/system
-cp pkg/hubble.service ~/hubblestack-2.1.4/usr/lib/systemd/system
-cp -f conf/hubble ~/hubblestack-2.1.4/etc/hubble/hubble
-cd ~
-tar -czvf hubblestack-2.1.4.tar.gz hubblestack-2.1.4/
-rm -rf ~/rpmbuild
-mkdir -p ~/rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
+mkdir -p build
+mkdir -p dist
 
-cat <<EOF >~/.rpmmacros
-%_topdir   %(echo $HOME)/rpmbuild
-%_tmppath  %{_topdir}/tmp
-EOF
+bash ./init_pkg.sh -y
+cp ../hubble.tar.gz dist/hubble.tar.gz
+mv ../hubble.tar.gz build/hubble.tar.gz
+mkdir build/hubblestack-2.1.5
+tar -xzvf build/hubble.tar.gz -C build/hubblestack-2.1.5
+mkdir -p build/hubblestack-2.1.5/etc/init.d
+cp ./hubble build/hubblestack-2.1.5/etc/init.d
+mkdir -p build/hubblestack-2.1.5/usr/lib/systemd/system
+cp ./hubble.service build/hubblestack-2.1.5/usr/lib/systemd/system
+cp -f ../conf/hubble build/hubblestack-2.1.5/etc/hubble/hubble
+cd build
+tar -czvf hubblestack-2.1.5.tar.gz hubblestack-2.1.5/
+mkdir -p rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
 
-cp ~/hubblestack-2.1.4.tar.gz ~/rpmbuild/SOURCES/
-cd ~/rpmbuild
+cp hubblestack-2.1.5.tar.gz rpmbuild/SOURCES/
+cd rpmbuild
 
-cp ~/hubble/pkg/specs/* SPECS/
+cp ../../specs/* SPECS/
 
-rpmbuild -ba SPECS/hubblestack-el6.spec
-rm -rf ~/el6
-mkdir ~/el6
-cp ~/rpmbuild/RPMS/x86_64/* ~/el6/
-rpmbuild -ba SPECS/hubblestack-el7.spec
-rm -rf ~/el7
-mkdir ~/el7
-cp ~/rpmbuild/RPMS/x86_64/* ~/el7/
+rpmbuild --define "_topdir $(pwd)" --define "_tmppath %{_topdir}/tmp" -ba SPECS/hubblestack-el6.spec
+cp RPMS/x86_64/hubblestack-2.1.5-1.x86_64.rpm ../../dist/hubblestack-2.1.5-1.el6.x86_64.rpm
+rpmbuild --define "_topdir $(pwd)" --define "_tmppath %{_topdir}/tmp" -ba SPECS/hubblestack-el7.spec
+cp RPMS/x86_64/hubblestack-2.1.5-1.x86_64.rpm ../../dist/hubblestack-2.1.5-1.el7.x86_64.rpm

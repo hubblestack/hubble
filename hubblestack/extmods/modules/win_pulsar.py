@@ -11,10 +11,10 @@ import collections
 import datetime
 import fnmatch
 import logging
-import multiprocessing
 import os
 import glob
 import yaml
+import re
 
 import salt.ext.six
 import salt.loader
@@ -35,27 +35,43 @@ def __virtual__():
     return __virtualname__
 
 
-def beacon(config):
+def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
+            verbose=False):
     '''
     Watch the configured files
 
-    Example Config
+    Example pillar config
 
     .. code-block:: yaml
 
-      beacons:
-        win_notify:
-          /path/to/file/or/dir:
-            mask:
-              - Write
-              - ExecuteFile
-              - Delete
-              - DeleteSubdirectoriesAndFiles
-            wtype: all
-            recurse: True
-            exclude:
-              - /path/to/file/or/dir/exclude1
-              - /path/to/*/file/or/dir/*/exclude2
+        beacons:
+          pulsar:
+            paths:
+              - 'C:\salt\var\cache\salt\minion\files\base\hubblestack_pulsar\hubblestack_pulsar_win_config.yaml'
+            interval: 30 # MUST be the same as win_notify_interval in file config
+            disable_during_state_run: True
+
+    Example yaml config on fileserver (targeted by pillar)
+
+    .. code-block:: yaml
+
+        C:\Users: {}
+        C:\Windows:
+          mask:
+            - Write
+            - Delete
+            - DeleteSubdirectoriesAndFiles
+            - ChangePermissions
+            - TakeOwnership
+          exclude:
+            - C:\Windows\System32
+        C:\temp: {}
+        win_notify_interval: 30 # MUST be the same as interval in pillar config
+        return: splunk_pulsar_return
+        batch: True
+
+    Note that if `batch: True`, the configured returner must support receiving
+    a list of events, rather than single one-off events.
 
     The mask list can contain the following events (the default mask is create, delete, and modify):
 
@@ -79,18 +95,23 @@ def beacon(config):
 
        *If you want to monitor everything (A.K.A. Full Control) then you want options 9, 12, 13, 17
 
-    recurse:
-        Recursively watch files in the directory
     wtype:
         Type of Audit to watch for:
             1. Success  - Only report successful attempts
             2. Fail     - Only report failed attempts
             3. All      - Report both Success and Fail
     exclude:
-        Exclude directories or files from triggering events in the watched directory
+        Exclude directories or files from triggering events in the watched directory.
+        Note that directory excludes should *not* have a trailing slash.
 
     :return:
     '''
+    config = __opts__.get('pulsar', {})
+    if isinstance(configfile, list):
+        config['paths'] = configfile
+    else:
+        config['paths'] = [configfile]
+    config['verbose'] = verbose
     global CONFIG_STALENESS
     global CONFIG
     if config.get('verbose'):
@@ -100,6 +121,7 @@ def beacon(config):
     sys_check = 0
 
     # Get config(s) from filesystem if we don't have them already
+    update_acls= False
     if CONFIG and CONFIG_STALENESS < config.get('refresh_frequency', 60):
         CONFIG_STALENESS += 1
         CONFIG.update(config)
@@ -107,17 +129,12 @@ def beacon(config):
         config = CONFIG
     else:
         if config.get('verbose'):
-            log.debug('No cached config found for pulsar, retrieving fresh from disk.')
+            log.debug('No cached config found for pulsar, retrieving fresh from fileserver.')
         new_config = config
         if isinstance(config.get('paths'), list):
             for path in config['paths']:
                 if 'salt://' in path:
-                    log.error('Path {0} is not an absolute path. Please use a '
-                              'scheduled cp.cache_file job to deliver the '
-                              'config to the minion, then provide the '
-                              'absolute path to the cached file on the minion '
-                              'in the beacon config.'.format(path))
-                    continue
+                    path = __salt__['cp.cache_file'](path)
                 if os.path.isfile(path):
                     with open(path, 'r') as f:
                         new_config = _dict_update(new_config,
@@ -128,6 +145,7 @@ def beacon(config):
                     log.error('Path {0} does not exist or is not a file'.format(path))
         else:
             log.error('Pulsar beacon \'paths\' data improperly formatted. Should be list of paths')
+        update_acls = True
 
         new_config.update(config)
         config = new_config
@@ -142,32 +160,38 @@ def beacon(config):
                                        python_shell=True)
     if global_check:
         if not 'Success and Failure' in global_check:
-            __salt__['cmd.run']('auditpol /set /subcategory:"file system" /success:enable /failure:enable')
+            __salt__['cmd.run']('auditpol /set /subcategory:"file system" /success:enable /failure:enable',
+                                python_shell=True)
             sys_check = 1
 
     # Validate ACLs on watched folders/files and add if needed
-    for path in config:
-        if path == 'win_notify_interval':
-            continue
-        if isinstance(config[path], dict):
-            mask = config[path].get('mask', DEFAULT_MASK)
-            wtype = config[path].get('wtype', DEFAULT_TYPE)
-            recurse = config[path].get('recurse', True)
-            if isinstance(mask, list) and isinstance(wtype, str) and isinstance(recurse, bool):
-                success = _check_acl(path, mask, wtype, recurse)
-                if not success:
-                    confirm = _add_acl(path, mask, wtype, recurse)
-                    sys_check = 1
-                if config[path].get('exclude', False):
-                    for exclude in config[path]['exclude']:
-                        if '*' in exclude:
-                            for wildcard_exclude in glob.iglob(exclude):
-                                _remove_acl(wildcard_exclude)
-                        else:
-                            _remove_acl(exclude)
+    if update_acls:
+        for path in config:
+            if path == 'win_notify_interval' or path == 'return' or path == 'batch' or path == 'checksum' or path == 'stats':
+                continue
+            if not os.path.exists(path):
+                continue
+            if isinstance(config[path], dict):
+                mask = config[path].get('mask', DEFAULT_MASK)
+                wtype = config[path].get('wtype', DEFAULT_TYPE)
+                recurse = config[path].get('recurse', True)
+                if isinstance(mask, list) and isinstance(wtype, str) and isinstance(recurse, bool):
+                    success = _check_acl(path, mask, wtype, recurse)
+                    if not success:
+                        confirm = _add_acl(path, mask, wtype, recurse)
+                        sys_check = 1
+                    if config[path].get('exclude', False):
+                        for exclude in config[path]['exclude']:
+                            if not isinstance(exclude, str):
+                                continue
+                            if '*' in exclude:
+                                for wildcard_exclude in glob.iglob(exclude):
+                                    _remove_acl(wildcard_exclude)
+                            else:
+                                _remove_acl(exclude)
 
-    #Read in events since last call.  Time_frame in minutes
-    ret = _pull_events(config['win_notify_interval'])
+    # Read in events since last call.  Time_frame in minutes
+    ret = _pull_events(config['win_notify_interval'], config.get('checksum', 'sha256'))
     if sys_check == 1:
         log.error('The ACLs were not setup correctly, or global auditing is not enabled.  This could have '
                   'been remedied, but GP might need to be changed')
@@ -176,46 +200,33 @@ def beacon(config):
         # We're in maintenance mode, throw away findings
         ret = []
 
-    if ret and 'return' in config:
-        __opts__['grains'] = __grains__
-        __opts__['pillar'] = __pillar__
-        __returners__ = salt.loader.returners(__opts__, __salt__)
-        return_config = config['return']
-        if isinstance(return_config, salt.ext.six.string_types):
-            tmp = {}
-            for conf in return_config.split(','):
-                tmp[conf] = None
-            return_config = tmp
-        for returner_mod in return_config:
-            returner = '{0}.returner'.format(returner_mod)
-            if returner not in __returners__:
-                log.error('Could not find {0} returner for pulsar beacon'.format(config['return']))
-                return ret
-            batch_config = config.get('batch')
-            if isinstance(return_config[returner_mod], dict) and return_config[returner_mod].get('batch'):
-                batch_config = True
-            if batch_config:
-                transformed = []
-                for item in ret:
-                    transformed.append({'return': item})
-                if config.get('multiprocessing_return', False):
-                    p = multiprocessing.Process(target=_return, args=((transformed,), returner))
-                    p.daemon = True
-                    p.start()
-                else:
-                    __returners__[returner](transformed)
-            else:
-                for item in ret:
-                    if config.get('multiprocessing_return', False):
-                        p = multiprocessing.Process(target=_return, args=(({'return': item},), returner))
-                        p.daemon = True
-                        p.start()
+    # Handle excludes
+    new_ret = []
+    for r in ret:
+        _append = True
+        config_found = False
+        for path in config:
+            if not r['Object Name'].startswith(path):
+                continue
+            config_found = True
+            if isinstance(config[path], dict) and 'exclude' in config[path]:
+                for exclude in config[path]['exclude']:
+                    if isinstance(exclude, dict) and exclude.values()[0].get('regex', False):
+                        if re.search(exclude.keys()[0], r['Object Name']):
+                            _append = False
                     else:
-                        __returners__[returner]({'return': item})
-        return []
-    else:
-        # Return event data
-        return ret
+                        if fnmatch.fnmatch(r['Object Name'], exclude):
+                            _append = False
+                        elif r['Object Name'].startswith(exclude):
+                            # Startswith is well and good, but it needs to be a parent directory or it doesn't count
+                            _, _, leftover = r['Object Name'].partition(exclude)
+                            if leftover.startswith(os.sep):
+                                _append = False
+        if _append and config_found:
+            new_ret.append(r)
+    ret = new_ret
+
+    return ret
 
 
 def _return(args, returner):
@@ -398,23 +409,23 @@ def _remove_acl(path):
 
 
 
-def _pull_events(time_frame):
+def _pull_events(time_frame, checksum):
     events_list = []
     events_output = __salt__['cmd.run_stdout']('mode con:cols=1000 lines=1000; Get-EventLog -LogName Security '
                                                '-After ((Get-Date).AddSeconds(-{0})) -InstanceId 4663 | fl'.format(
                                                 time_frame), shell='powershell', python_shell=True)
-    events = events_output.split('\n\n')
+    events = events_output.split('\r\n\r\n')
     for event in events:
         if event:
             event_dict = {}
-            items = event.split('\n')
+            items = event.split('\r\n')
             for item in items:
                 if ':' in item:
                     item.replace('\t', '')
                     k, v = item.split(':', 1)
                     event_dict[k.strip()] = v.strip()
             event_dict['Accesses'] = _get_access_translation(event_dict['Accesses'])
-            event_dict['Hash'] = _get_item_hash(event_dict['Object Name'])
+            event_dict['Hash'] = _get_item_hash(event_dict['Object Name'], checksum)
             #needs hostname, checksum, filepath, time stamp, action taken
             # Generate the dictionary without a dictionary comp, for py2.6
             tmpdict = {}
@@ -490,12 +501,64 @@ def _get_access_translation(access):
         return 'Access number {0} is not a recognized access code.'.format(access)
 
 
-def _get_item_hash(item):
+def _get_item_hash(item, checksum):
     item = item.replace('\\\\','\\')
     test = os.path.isfile(item)
     if os.path.isfile(item):
-        hashy = __salt__['file.get_hash']('{0}'.format(item))
-        return hashy
+        try:
+            hashy = __salt__['file.get_hash']('{0}'.format(item), form=checksum)
+            return hashy
+        except:
+            return ''
     else:
         return 'Item is a directory'
 
+
+def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
+    '''
+    Recursive version of the default dict.update
+
+    Merges upd recursively into dest
+
+    If recursive_update=False, will use the classic dict.update, or fall back
+    on a manual merge (helpful for non-dict types like FunctionWrapper)
+
+    If merge_lists=True, will aggregate list object types instead of replace.
+    This behavior is only activated when recursive_update=True. By default
+    merge_lists=False.
+    '''
+    if (not isinstance(dest, collections.Mapping)) \
+            or (not isinstance(upd, collections.Mapping)):
+        raise TypeError('Cannot update using non-dict types in dictupdate.update()')
+    updkeys = list(upd.keys())
+    if not set(list(dest.keys())) & set(updkeys):
+        recursive_update = False
+    if recursive_update:
+        for key in updkeys:
+            val = upd[key]
+            try:
+                dest_subkey = dest.get(key, None)
+            except AttributeError:
+                dest_subkey = None
+            if isinstance(dest_subkey, collections.Mapping) \
+                    and isinstance(val, collections.Mapping):
+                ret = update(dest_subkey, val, merge_lists=merge_lists)
+                dest[key] = ret
+            elif isinstance(dest_subkey, list) \
+                     and isinstance(val, list):
+                if merge_lists:
+                    dest[key] = dest.get(key, []) + val
+                else:
+                    dest[key] = upd[key]
+            else:
+                dest[key] = upd[key]
+        return dest
+    else:
+        try:
+            for k in upd.keys():
+                dest[k] = upd[k]
+        except AttributeError:
+            # this mapping is not a dict
+            for k in upd:
+                dest[k] = upd[k]
+        return dest

@@ -3,10 +3,10 @@
 An alternate version of Hubblestack which can be run without an existing
 SaltStack infrastructure.
 
-# Building packages (CentOS)
+# Building standalone packages (CentOS)
 
 ```bash
-sudo yum install git
+sudo yum install git -y
 git clone git://github.com/hubblestack/hubble ~/hubble
 cd ~/hubble/pkg
 ./build_rpms.sh  # note the lack of sudo, that is important
@@ -17,21 +17,19 @@ between the packages is the inclusion of `/etc/init.d/hubble` for el6 and
 the inclusion of a systemd unit file for el7. There's no guarantee of glibc
 compatibility.
 
-# Installation/testing
+# Building dep-heavy cross-platform packages
 
 ```bash
-git clone git@github.com:hubblestack/hubble
+sudo yum install git -y
+git clone git://github.com/hubblestack/hubble
 cd hubble
-python setup.py clean && python setup.py install
-hubble
+python setup.py bdist_rpm
 ```
 
-Note that you sometimes have to run the setup.py line twice if you see an error
-like this one:
+You'll find the generated RPM in the `dist/` folder.
 
-```
-zipimport.ZipImportError: bad local file header in /usr/lib/python2.7/site-packages/hubblestack-2.0-py2.7.egg
-```
+
+# Testing
 
 You can do `hubble -h` to see the available options. Here's a sample working
 config you can place in `/etc/hubble/hubble`. Note that you'll need to install
@@ -39,18 +37,22 @@ python-pygit2 to get gitfs working:
 
 ```
 gitfs_remotes:
-  - https://github.com/hubblestack/hubble-salt.git
+  - https://github.com/hubblestack/hubblestack_data.git
 fileserver_backend:
   - roots
   - git
 ```
+
+The first two commands you should run to make sure things are set up correctly
+are `hubble --version` and `hubble test.ping`. If those run without issue
+you're probably in business!
 
 ## Single invocation
 
 Hubble supports one-off invocations of specific functions:
 
 ```
-[root@host1 hubble-v2]# hubble nova.audit cis.centos-7-level-1-scored-v2-1-0 tags=CIS-3.\*
+[root@host1 hubble-v2]# hubble hubble.audit cis.centos-7-level-1-scored-v2-1-0 tags=CIS-3.\*
 {'Compliance': '45%',
  'Failure': [{'CIS-3.4.2': 'Ensure /etc/hosts.allow is configured'},
              {'CIS-3.4.3': 'Ensure /etc/hosts.deny is configured'},
@@ -101,11 +103,12 @@ the above block:
 
 ```
 hubblestack:
-  nova:
-    returner:
-      splunk:
-        token: <token>
-        indexer: <hec endpoint>
-        sourcetype: hubble_audit
-        index: <index>
+  returner:
+    splunk:
+      - token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+        indexer: splunk-indexer.domain.tld
+        index: hubble
+        sourcetype_nova: hubble_audit
+        sourcetype_nebula: hubble_osquery
+        sourcetype_pulsar: hubble_fim
 ```

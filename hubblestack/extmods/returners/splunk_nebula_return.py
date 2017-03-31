@@ -46,6 +46,7 @@ from aws_details import get_aws_details
 import requests
 import json
 import time
+from datetime import datetime
 
 import logging
 
@@ -123,7 +124,17 @@ def returner(ret):
                         payload.update({'index': opts['index']})
                         payload.update({'sourcetype': opts['sourcetype']})
                         payload.update({'event': event})
-                        hec.batchEvent(payload)
+
+                        # If the osquery query includes a field called 'time' it will be checked.
+                        # If it's within the last year, it will be used as the eventtime.
+                        event_time = query_result.get('time', '')
+                        try:
+                            if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
+                                event_time = ''
+                        except:
+                            event_time = ''
+                        finally:
+                            hec.batchEvent(payload, eventtime=event_time)
 
         hec.flushBatch()
     return

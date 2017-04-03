@@ -4,6 +4,7 @@ sudo chown -R $USER. temp
 cd temp
 git clone https://github.com/facebook/osquery.git
 cd osquery
+git checkout 2.3.2
 make sysprep
 make deps
 SKIP_TESTS=1 make -j 4

@@ -7,6 +7,10 @@ cd osquery
 git checkout 2.3.2
 make sysprep
 make deps
+if [[ -n "$(python -mplatform | grep debian-7)" ]]; then
+    /usr/local/osquery/bin/brew untap homebrew/dupes
+    /usr/local/osquery/bin/brew link ncurses
+fi
 SKIP_TESTS=1 make -j 4
 make strip
 sudo cp -pr ./build/linux/osquery/osqueryi ./build/linux/osquery/osqueryd /opt/osquery

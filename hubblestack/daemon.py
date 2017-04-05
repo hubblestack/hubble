@@ -311,6 +311,8 @@ def load_config():
     salt.log.setup.setup_console_logger(__opts__['log_level'])
     salt.log.setup.setup_logfile_logger(__opts__['log_file'],
                                         __opts__['log_level'])
+    # 384 is 0o600 permissions, written without octal for python 2/3 compat
+    os.chmod(__opts__['log_file'], 384)
 
     __grains__ = salt.loader.grains(__opts__)
     __pillar__ = {}

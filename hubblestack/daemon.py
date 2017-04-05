@@ -313,6 +313,7 @@ def load_config():
                                         __opts__['log_level'])
     # 384 is 0o600 permissions, written without octal for python 2/3 compat
     os.chmod(__opts__['log_file'], 384)
+    os.chmod(parsed_args.get('configfile'), 384)
 
     __grains__ = salt.loader.grains(__opts__)
     __pillar__ = {}

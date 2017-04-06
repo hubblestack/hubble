@@ -89,6 +89,11 @@ def returner(ret):
             fqdn_ip4 = __grains__['fqdn_ip4'][0]
         except IndexError:
             fqdn_ip4 = __grains__['ipv4'][0]
+        if fqdn_ip4.startswith('127.'):
+            for ip4_addr in __grains__['ipv4']:
+                if ip4_addr and not ip4_addr.startswith('127.'):
+                    fqdn_ip4 = ip4_addr
+                    break
 
         if not data:
             return

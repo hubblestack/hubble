@@ -9,7 +9,7 @@
 
 Summary: Hubblestack is a module, open-source security compliance framework
 Name: hubblestack
-Version: 2.1.6
+Version: 2.1.7
 Release: 1
 License: Apache 2.0
 Group: Development/Tools
@@ -54,6 +54,10 @@ rm -rf %{buildroot}
 /usr/bin/*
 
 %changelog
+* Fri Apr 7 2017  Colton Myers <colton.myers@gmail.com> 2.1.7-1
+- Force config and logs to 600 permissions to hide tokens
+- Splunk returners: Fix for hosts with misconfigured FQDN (no localhost IPs, please!)
+
 * Mon Apr 3 2017  Colton Myers <colton.myers@gmail.com> 2.1.6-1
 - Fix pulsar loading
 - Fix splay in scheduler

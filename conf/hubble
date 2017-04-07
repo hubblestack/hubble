@@ -10,8 +10,8 @@
 gitfs_remotes:
   - https://github.com/hubblestack/hubblestack_data.git
 fileserver_backend:
-  - git
   - roots
+  - git
 
 #################################
 ## Scheduler Config

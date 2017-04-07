@@ -8,7 +8,6 @@ pprint
 daemon
 boto3
 botocore
-pygit2
 salt-ssh
 gitpython
 pyinotify

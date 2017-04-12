@@ -237,7 +237,12 @@ def run_function():
     log.debug('Parsed args: {0} | Parsed kwargs: {1}'.format(args, kwargs))
     log.info('Executing user-requested function {0}'.format(__opts__['function']))
 
-    ret = __salt__[__opts__['function']](*args, **kwargs)
+    try:
+        ret = __salt__[__opts__['function']](*args, **kwargs)
+    except KeyError:
+        log.error('Function {0} is not available, or not valid.'
+                  .format(__opts__['function']))
+        sys.exit(1)
 
     if __opts__['return']:
         returner = '{0}.returner'.format(__opts__['return'])

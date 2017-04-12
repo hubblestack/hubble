@@ -242,6 +242,7 @@ def run_function():
     except KeyError:
         log.error('Function {0} is not available, or not valid.'
                   .format(__opts__['function']))
+        sys.exit(1)
 
     if __opts__['return']:
         returner = '{0}.returner'.format(__opts__['return'])

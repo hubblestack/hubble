@@ -16,11 +16,11 @@ If (!(Test-Path "$nsis\NSIS.exe")) {
 $env:Path += ";$nsis"
 
 #Check for existing hubble pyinstall dir and removing
-if (Test-Path 'C:\temp\hubble\dist') {
-    Remove-Item 'C:\temp\hubble\dist' -Recurse -Force
+if (Test-Path '.\hubble\dist') {
+    Remove-Item '.\hubble\dist' -Recurse -Force
 }
-if (Test-Path 'C:\temp\hubble\build') {
-    Remove-Item 'C:\temp\hubble\build' -Recurse -Force
+if (Test-Path '.\hubble\build') {
+    Remove-Item '.\hubble\build' -Recurse -Force
 }
 
 # Modify gitfs fix for incorrect path variables until fix has been upstreamed
@@ -40,4 +40,26 @@ $specFile | Set-Content .\hubble.spec -Force
 # Run pyinstaller
 pyinstaller .\hubble.spec
 
-Copy-Item C:\ProgramData\osquery\osqueryi.exe .\hubble\pkg\
+cd .\hubble
+
+#check for intalled osquery
+if (!(Test-Path 'C:\ProgramData\osquery\osqueryi.exe')) {
+	choco install osquery
+}
+Copy-Item C:\ProgramData\osquery\osqueryi.exe .\pkg\
+
+
+# Build Installer
+$currDIR = $PWD.Path
+$instDIR = $currDIR + "\pkg\windows"
+
+if ($version -eq $null) {
+	$gitDesc = git describe
+	if ($gitDesc -eq $null) {
+		$version = '1.0'
+	} else {
+		$version = $gitDesc
+	}
+}
+
+makensis.exe /DHubbleVersion=$version "$instDIR\hubble-Setup.nsi"

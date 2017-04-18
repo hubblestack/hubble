@@ -73,7 +73,7 @@ ${StrStrAdv}
   !define MUI_ABORTWARNING
   !define MUI_ICON "hubble.ico"
   !define MUI_UNICON "hubble.ico"
-  !define MUI_WELCOMEFINISHPAGE_BITMAP "panel.bmp"
+  ;!define MUI_WELCOMEFINISHPAGE_BITMAP "panel.bmp"
 
 
 ;--------------------------------

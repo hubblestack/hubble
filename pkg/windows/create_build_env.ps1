@@ -1,5 +1,5 @@
 ﻿# Script to install hubble dependencies and create executible
-$chocoVer = "0.10.3"
+$chocoVer = "0.10.5"
 $gitVer = "2.12.0"
 $hooks = "./pkg/"
 
@@ -28,7 +28,7 @@ if (!(Test-Path C:\ProgramData\chocolatey)) {
 } else {
     $chocoCur = (choco) -replace "Chocolatey v",""
     if ($chocoCur -lt $chocoVer) {
-        choco upgrade choco -y
+        choco upgrade chocolatey -y
     }
 }
 
@@ -38,7 +38,7 @@ if (!($git)) {
     reloadEnv
 } else {
     if (($git -replace "git ","") -lt $gitVer) {
-        choco upgrade git
+        choco upgrade git -y
     }
 }
 
@@ -76,9 +76,9 @@ popd
 
 # Install osquery for executible
 if (!(Test-path C:\ProgramData\osquery)) {
-	choco install osquery
+	choco install osquery -y
 } else {
-	choco update osquery
+	choco update osquery -y
 }
 reloadEnv
 
@@ -90,3 +90,12 @@ if (!(Test-Path C:\Python27\Lib\site-packages\salt)) {
 $gitfsFile = Get-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py
 $gitfsFile = $gitfsFile -replace "files.add(add_mountpoint(relpath(repo_path)))","files.add('/'.join(repo_path.partition('.:\\')[2].split(os.sep)))"
 $gitfsFile | Set-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py -Force
+
+
+#Remove obligitory c:\salt directory if it was created during script run
+if (Test-Path C:\salt) {
+    $empty = Get-ChildItem C:\salt
+    if ($empty -eq $null) {
+        Remove-Item C:\salt
+    }
+}

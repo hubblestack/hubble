@@ -83,6 +83,10 @@ if (!(Test-path C:\ProgramData\osquery)) {
 reloadEnv
 
 # Modify gitfs fix for incorrect path variables until fix has been upstreamed
+if (!(Test-Path C:\Python27\Lib\site-packages\salt)) {
+    Copy-Item .\Salt-Dev\salt\salt -Destination C:\Python27\Lib\site-packages\ -Recurse -Force
+}
+
 $gitfsFile = Get-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py
 $gitfsFile = $gitfsFile -replace "files.add(add_mountpoint(relpath(repo_path)))","files.add('/'.join(repo_path.partition('.:\\')[2].split(os.sep)))"
 $gitfsFile | Set-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py -Force

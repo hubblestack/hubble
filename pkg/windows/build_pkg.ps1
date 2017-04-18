@@ -40,19 +40,25 @@ $specFile | Set-Content .\hubble.spec -Force
 # Run pyinstaller
 pyinstaller .\hubble.spec
 
-cd .\hubble
-
-#check for intalled osquery
+# Check for intalled osquery
 if (!(Test-Path 'C:\ProgramData\osquery\osqueryi.exe')) {
 	choco install osquery
 }
 Copy-Item C:\ProgramData\osquery\osqueryi.exe .\pkg\
 
-
-# Build Installer
+# Add needed variables
 $currDIR = $PWD.Path
 $instDIR = $currDIR + "\pkg\windows"
 
+# Get Prereqs vcredist
+If (Test-Path "C:\Program Files (x86)") {
+    Invoke-WebRequest -Uri 'http://repo.saltstack.com/windows/dependencies/64/vcredist_x64_2008_mfc.exe' -OutFile "$instDIR\vcredist.exe"
+} Else {
+    Invoke-WebRequest -Uri 'http://repo.saltstack.com/windows/dependencies/32/vcredist_x86_2008_mfc.exe' -OutFile "$instDIR\vcredist.exe"
+}
+
+
+# Build Installer
 if ($version -eq $null) {
 	$gitDesc = git describe
 	if ($gitDesc -eq $null) {

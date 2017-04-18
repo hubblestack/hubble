@@ -215,7 +215,7 @@ ${StrStrAdv}
             ClearErrors
             ; The Correct version of VCRedist is copied over by "build_pkg.bat"
             SetOutPath "$INSTDIR\"
-            File "..\prereqs\vcredist.exe"
+            File "$INSTDIR\vcredist.exe"
             ExecWait "$INSTDIR\vcredist.exe /qb!"
             IfErrors 0 endVcRedist
                 MessageBox MB_OK \

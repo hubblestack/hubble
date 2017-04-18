@@ -295,6 +295,82 @@ ${StrStrAdv}
 
   SectionEnd
 
+;--------------------------------
+;Uninstaller Section
+
+  Function un.onInit
+
+    ; Load the parameters
+    ${GetParameters} $R0
+
+    # Uninstaller: Remove Installation Directory
+    ${GetOptions} $R0 "/delete-install-dir" $R1
+    IfErrors delete_install_dir_not_found
+        StrCpy $DeleteInstallDir 1
+    delete_install_dir_not_found:
+
+    MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 \
+        "Are you sure you want to completely remove $(^Name) and all of its components?" \
+        /SD IDYES IDYES +2
+    Abort
+
+  FunctionEnd
+
+  !macro uninstallHubble un
+  Function ${un}uninstallHubble
+
+    ; Make sure we're in the right directory
+    ${If} $INSTDIR == "c:\salt\bin\Scripts"
+      StrCpy $INSTDIR "C:\${PFILES}\Hubble"
+    ${EndIf}
+
+    ; Stop and Remove salt-minion service
+    nsExec::Exec 'net stop hubble'
+    nsExec::Exec 'sc delete hubble'
+
+    ; Remove files
+    Delete "$INSTDIR\uninst.exe"
+    Delete "$INSTDIR\nssm.exe"
+    Delete "$INSTDIR\vcredist.exe"
+
+    ; Remove Registry entries
+    DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
+    DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY_OTHER}"
+    DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_CALL_REGKEY}"
+
+    ; Automatically close when finished
+    SetAutoClose true
+
+    ; Prompt to remove the Installation directory
+    ${IfNot} $DeleteInstallDir == 1
+        MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 \
+            "Would you like to completely remove $INSTDIR and all of its contents?" \
+            /SD IDNO IDNO finished
+    ${EndIf}
+
+    ; Make sure you're not removing Program Files
+    ${If} $INSTDIR != 'Program Files'
+    ${AndIf} $INSTDIR != 'Program Files (x86)'
+        RMDir /r "$INSTDIR"
+    ${EndIf}
+
+    finished:
+
+  FunctionEnd
+  !macroend
+
+
+  !insertmacro uninstallSalt ""
+  !insertmacro uninstallSalt "un."
+
+
+  Function un.onUninstSuccess
+    HideWindow
+    MessageBox MB_ICONINFORMATION|MB_OK \
+        "$(^Name) was successfully removed from your computer." \
+        /SD IDOK
+  FunctionEnd
+  
 
 ;--------------------------------
 ;functions
@@ -345,7 +421,7 @@ ${StrStrAdv}
         StrCpy $DeleteInstallDir 0
 
         ; Uninstall silently
-        Call uninstallSalt
+        Call uninstallHubble
 
         ; Set it back to Normal mode, if that's what it was before
         ${If} $R0 == 0
@@ -784,79 +860,3 @@ Function parseCommandLineSwitches
     ${EndIf}
 
 FunctionEnd
-
-;--------------------------------
-;Uninstaller Section
-
-  Function un.onInit
-
-    ; Load the parameters
-    ${GetParameters} $R0
-
-    # Uninstaller: Remove Installation Directory
-    ${GetOptions} $R0 "/delete-install-dir" $R1
-    IfErrors delete_install_dir_not_found
-        StrCpy $DeleteInstallDir 1
-    delete_install_dir_not_found:
-
-    MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 \
-        "Are you sure you want to completely remove $(^Name) and all of its components?" \
-        /SD IDYES IDYES +2
-    Abort
-
-  FunctionEnd
-
-  !macro uninstallHubble un
-  Function ${un}uninstallHubble
-
-    ; Make sure we're in the right directory
-    ${If} $INSTDIR == "c:\salt\bin\Scripts"
-      StrCpy $INSTDIR "C:\${PFILES}\Hubble"
-    ${EndIf}
-
-    ; Stop and Remove salt-minion service
-    nsExec::Exec 'net stop hubble'
-    nsExec::Exec 'sc delete hubble'
-
-    ; Remove files
-    Delete "$INSTDIR\uninst.exe"
-    Delete "$INSTDIR\nssm.exe"
-    Delete "$INSTDIR\vcredist.exe"
-
-    ; Remove Registry entries
-    DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
-    DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY_OTHER}"
-    DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_CALL_REGKEY}"
-
-    ; Automatically close when finished
-    SetAutoClose true
-
-    ; Prompt to remove the Installation directory
-    ${IfNot} $DeleteInstallDir == 1
-        MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 \
-            "Would you like to completely remove $INSTDIR and all of its contents?" \
-            /SD IDNO IDNO finished
-    ${EndIf}
-
-    ; Make sure you're not removing Program Files
-    ${If} $INSTDIR != 'Program Files'
-    ${AndIf} $INSTDIR != 'Program Files (x86)'
-        RMDir /r "$INSTDIR"
-    ${EndIf}
-
-    finished:
-
-  FunctionEnd
-  !macroend
-
-
-  !insertmacro uninstallSalt ""
-  !insertmacro uninstallSalt "un."
-
-
-  Function un.onUninstSuccess
-    HideWindow
-    MessageBox MB_ICONINFORMATION|MB_OK \
-        "$(^Name) was successfully removed from your computer." \
-        /SD IDOK
-  FunctionEnd

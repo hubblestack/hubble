@@ -108,12 +108,14 @@ ${StrStrAdv}
 ;Custom Dialog Box Variables
   Var Dialog
   Var Label
-  Var CheckBox_Hubble
+  Var CheckBox_Hubble_Start
+  Var CheckBox_Hubble_Start_Delayed
   Var HECToken
   Var HECToken_State
   Var IndexName
   Var IndexName_State
   Var StartHubble
+  Var StartHubbleDelayed
   Var DeleteInstallDir
 
 
@@ -147,7 +149,7 @@ ${StrStrAdv}
 
   FunctionEnd
   
-  Function pageMinionConfig_Leave
+  Function pageHubbleConfig_Leave
 
     ${NSD_GetText} $HECToken $HECToken_State
     ${NSD_GetText} $IndexName $IndexName_State
@@ -277,7 +279,7 @@ ${StrStrAdv}
 
     RMDir /R "$INSTDIR\var" ; removing cache from old version
 
-    Call updateMinionConfig
+    Call updateHubbleConfig
 
     Push "C:\${PFILES}\Hubble"
     Call AddToPath
@@ -809,7 +811,7 @@ Function updateHubbleConfig
     done:
     FileClose $0                                            ; close target file
     FileClose $1                                            ; close temp file
-    Delete "$INSTDIR\conf\minion"                           ; delete target file
+    Delete "$INSTDIR\etc\hubble\hubble.conf"                           ; delete target file
     CopyFiles /SILENT $R0 "$INSTDIR\etc\hubble\hubble.conf" ; copy temp file to target file
     Delete $R0                                              ; delete temp file
 
@@ -821,7 +823,7 @@ Function parseCommandLineSwitches
     ; Load the parameters
     ${GetParameters} $R0
 
-    ; Check for start-minion switches
+    ; Check for start-hubble switches
     ; /start-service is to be deprecated, so we must check for both
     ${GetOptions} $R0 "/start-service=" $R1
     ${GetOptions} $R0 "/start-hubble=" $R2
@@ -852,8 +854,8 @@ Function parseCommandLineSwitches
         StrCpy $HECToken_State ""
     ${EndIf}
 
-    # Minion Config: Minion ID
-    ${GetOptions} $R0 "/minion-name=" $R1
+    # hubble Config: hubble ID
+    ${GetOptions} $R0 "/hubble-name=" $R1
     ${IfNot} $R1 == ""
         StrCpy $IndexName_State $R1
     ${ElseIf} $IndexName_State == ""

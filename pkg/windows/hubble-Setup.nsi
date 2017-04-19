@@ -279,9 +279,16 @@ ${StrStrAdv}
     WriteRegStr HKLM "${PRODUCT_CALL_REGKEY}" "" "$INSTDIR\hubble.exe"
 
     ; Register the Hubble Service
-    nsExec::Exec "nssm.exe install hubble $INSTDIR\hubble.exe -c $INSTDIR\etc\hubble\hubble.conf"
-    nsExec::Exec "nssm.exe set hubble Description Hubble from Adobe"
-    nsExec::Exec "nssm.exe set hubble Start SERVICE_AUTO_START"
+    nsExec::Exec "nssm.exe install Hubble"
+    nsExec::Exec "nssm.exe set Hubble Description Hubble from Adobe"
+	nsExec::Exec "nssm.exe set Hubble Application $INSTDIR\hubble.exe"
+	nsExec::Exec "nssm.exe set Hubble AppDirectory $INSTDIR"
+	nsExec::Exec "nssm.exe set Hubble AppParameters -c .\etc\hubble\hubble.conf"
+    nsExec::Exec "nssm.exe set Hubble Start SERVICE_AUTO_START"
+	
+	nssm set UT2003 Application C:\games\ut2003\System\UCC.exe
+nssm set UT2003 AppDirectory C:\games\ut2003\System
+nssm set UT2003 AppParameters server
 
     RMDir /R "$INSTDIR\var" ; removing cache from old version
 

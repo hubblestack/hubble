@@ -40,12 +40,17 @@ $specFile | Set-Content .\hubble.spec -Force
 # Run pyinstaller
 pyinstaller .\hubble.spec
 
-# Move hubble.conf to correct location
+# Copy hubble.conf to correct location
 Start-Sleep -Seconds 5
 if (Test-Path '.\dist\hubble\etc\hubble') {
-    New-Item .\dist\hubble\etc\hubble -ItemType Directory
+    New-Item '.\dist\hubble\etc\hubble' -ItemType Directory
 }
-Copy-Item .\pkg\windows\hubble.conf -Destination .\dist\hubble\etc\hubble\
+Copy-Item '.\pkg\windows\hubble.conf' -Destination '.\dist\hubble\etc\hubble\'
+
+# Copy nssm.exe to correct location
+if (Test-Path '..\Salt-Dev\salt\pkg\windows\buildenv\nssm.exe') {
+    Copy-Item '..\Salt-Dev\salt\pkg\windows\buildenv\nssm.exe' -Destination '.\dist\hubble\'
+}
 
 # Check for intalled osquery
 if (!(Test-Path 'C:\ProgramData\osquery\osqueryi.exe')) {

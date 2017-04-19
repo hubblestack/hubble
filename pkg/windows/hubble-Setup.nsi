@@ -655,7 +655,7 @@ ${StrStrAdv}
 ;   Push "C:\path\to\add"
 ;   Call RemoveFromPath
 ;------------------------------------------------------------------------------
-  !macro RemoveFromPath
+  !macro RemoveFromPath un
   Function ${un}RemoveFromPath
 
     Exch $0

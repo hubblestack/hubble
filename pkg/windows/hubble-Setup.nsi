@@ -114,6 +114,7 @@ ${StrStrAdv}
   Var IndexName
   Var IndexName_State
   Var StartHubble
+  Var DeleteInstallDir
 
 
 ;--------------------------------
@@ -215,7 +216,7 @@ ${StrStrAdv}
             ClearErrors
             ; The Correct version of VCRedist is copied over by "build_pkg.bat"
             SetOutPath "$INSTDIR\"
-            File "$INSTDIR\vcredist.exe"
+            File "vcredist.exe"
             ExecWait "$INSTDIR\vcredist.exe /qb!"
             IfErrors 0 endVcRedist
                 MessageBox MB_OK \
@@ -269,7 +270,7 @@ ${StrStrAdv}
     ; Commandline Registry Entries
     WriteRegStr HKLM "${PRODUCT_CALL_REGKEY}" "" "$INSTDIR\hubble.exe"
 
-    ; Register the Salt-Minion Service
+    ; Register the Hubble Service
     nsExec::Exec "nssm.exe install hubble $INSTDIR\hubble.exe -c $INSTDIR\etc\hubble\hubble.conf"
     nsExec::Exec "nssm.exe set hubble Description Hubble from Adobe"
     nsExec::Exec "nssm.exe set hubble Start SERVICE_AUTO_START"
@@ -287,9 +288,9 @@ ${StrStrAdv}
   
   Section Uninstall
 
-    Call un.uninstallSalt
+    Call un.uninstallHubble
 
-    ; Remove C:\salt from the Path
+    ; Remove C:\Program Files\Hubble from the Path
     Push "C:\${PFILES}\Hubble"
     Call un.RemoveFromPath
 
@@ -324,7 +325,7 @@ ${StrStrAdv}
       StrCpy $INSTDIR "C:\${PFILES}\Hubble"
     ${EndIf}
 
-    ; Stop and Remove salt-minion service
+    ; Stop and Remove hubble service
     nsExec::Exec 'net stop hubble'
     nsExec::Exec 'sc delete hubble'
 
@@ -360,8 +361,8 @@ ${StrStrAdv}
   !macroend
 
 
-  !insertmacro uninstallSalt ""
-  !insertmacro uninstallSalt "un."
+  !insertmacro uninstallHubble ""
+  !insertmacro uninstallHubble "un."
 
 
   Function un.onUninstSuccess
@@ -394,7 +395,7 @@ ${StrStrAdv}
     Abort
 
     checkOther:
-        ; Check for existing installation of full salt
+        ; Check for existing installation of hubble
         ReadRegStr $R0 HKLM \
             "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME_OTHER}" \
             "UninstallString"
@@ -436,12 +437,12 @@ ${StrStrAdv}
 
     ; If StartHubbleDelayed is 1, then set the service to start delayed
     ${If} $StartHubbleDelayed == 1
-        nsExec::Exec "nssm.exe set salt-minion Start SERVICE_DELAYED_AUTO_START"
+        nsExec::Exec "nssm.exe set hubble Start SERVICE_DELAYED_AUTO_START"
     ${EndIf}
 
-    ; If start-minion is 1, then start the service
-    ${If} $StartMinion == 1
-        nsExec::Exec 'net start salt-minion'
+    ; If start-hubble is 1, then start the service
+    ${If} $StartHubble == 1
+        nsExec::Exec 'net start hubble'
     ${EndIf}
 
   FunctionEnd
@@ -825,9 +826,9 @@ Function parseCommandLineSwitches
     ${GetOptions} $R0 "/start-service=" $R1
     ${GetOptions} $R0 "/start-hubble=" $R2
 
-    # Service: Start Salt Minion
+    # Service: Start Hubble
     ${IfNot} $R2 == ""
-        ; If start-minion was passed something, then set it
+        ; If start-hubble was passed something, then set it
         StrCpy $StartHubble $R2
     ${ElseIfNot} $R1 == ""
         ; If start-service was passed something, then set StartHubble to that

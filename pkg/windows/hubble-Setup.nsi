@@ -243,10 +243,9 @@ ${StrStrAdv}
 
     SetOutPath "$INSTDIR\"
     SetOverwrite off
-	CreateDirectory $INSTDIR\etc\Hubble
 	CreateDirectory $INSTDIR\var
     File /r "..\..\dist\hubble\"
-	File "..\..\pkg\osqueryi.exe"
+	File "..\osqueryi.exe"
 
   SectionEnd
   
@@ -656,7 +655,6 @@ ${StrStrAdv}
 ;   Push "C:\path\to\add"
 ;   Call RemoveFromPath
 ;------------------------------------------------------------------------------
-  !macro RemoveFromPath un
   Function ${un}RemoveFromPath
 
     Exch $0

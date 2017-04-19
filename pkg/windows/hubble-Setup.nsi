@@ -279,7 +279,7 @@ ${StrStrAdv}
     WriteRegStr HKLM "${PRODUCT_CALL_REGKEY}" "" "$INSTDIR\hubble.exe"
 
     ; Register the Hubble Service
-    nsExec::Exec "nssm.exe install Hubble"
+    nsExec::Exec "nssm.exe install Hubble $INSTDIR\hubble.exe"
     nsExec::Exec "nssm.exe set Hubble Description Hubble from Adobe"
     nsExec::Exec "nssm.exe set Hubble Application $INSTDIR\hubble.exe"
     nsExec::Exec "nssm.exe set Hubble AppDirectory $INSTDIR"

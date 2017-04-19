@@ -1,7 +1,7 @@
-#script to build the Hubble .msi pkg
+# Script to build the Hubble .msi pkg
 cd C:\temp
 
-#Find the NSIS Installer
+# Find the NSIS Installer
 if (Test-Path "C:\Program Files\NSIS\") {
     $nsis = 'C:\Program Files\NSIS'
 } Else {
@@ -12,10 +12,10 @@ If (!(Test-Path "$nsis\NSIS.exe")) {
     break
 }
 
-#Add NSIS to the Path
+# Add NSIS to the Path
 $env:Path += ";$nsis"
 
-#Check for existing hubble pyinstall dir and removing
+# Check for existing hubble pyinstall dir and removing
 if (Test-Path '.\hubble\dist') {
     Remove-Item '.\hubble\dist' -Recurse -Force
 }
@@ -41,6 +41,7 @@ $specFile | Set-Content .\hubble.spec -Force
 pyinstaller .\hubble.spec
 
 # Move hubble.conf to correct location
+Start-Sleep -Seconds 5
 if (Test-Path '.\dist\hubble\etc\hubble') {
     New-Item .\dist\hubble\etc\hubble -ItemType Directory
 }

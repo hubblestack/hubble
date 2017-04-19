@@ -169,14 +169,21 @@ ${StrStrAdv}
 
     # Create Start Hubble Checkbox
     ${NSD_CreateCheckbox} 120u 90u 100% 12u "&Start Hubble"
-    Pop $CheckBox_Hubble
-    SetCtlColors $CheckBox_Hubble "" "ffffff"
+    Pop $CheckBox_Hubble_Start
+    SetCtlColors $CheckBox_Hubble_Start "" "ffffff"
     # This command required to bring the checkbox to the front
-    System::Call "User32::SetWindowPos(i, i, i, i, i, i, i) b ($CheckBox_Hubble, ${HWND_TOP}, 0, 0, 0, 0, ${SWP_NOSIZE}|${SWP_NOMOVE})"
+    System::Call "User32::SetWindowPos(i, i, i, i, i, i, i) b ($CheckBox_Hubble_Start, ${HWND_TOP}, 0, 0, 0, 0, ${SWP_NOSIZE}|${SWP_NOMOVE})"
+	
+	# Create Start Hubble Delayed Checkbox
+	${NSD_CreateCheckbox} 130u 102u 100% 12u "&Delayed Start"
+    Pop $CheckBox_Hubble_Start_Delayed
+    SetCtlColors $CheckBox_Hubble_Start_Delayed "" "ffffff"
+    # This command required to bring the checkbox to the front
+    System::Call "User32::SetWindowPos(i, i, i, i, i, i, i) b ($CheckBox_Hubble_Start_Delayed, ${HWND_TOP}, 0, 0, 0, 0, ${SWP_NOSIZE}|${SWP_NOMOVE})"
 
     # Load current settings for Hubble
     ${If} $StartHubble == 1
-        ${NSD_Check} $CheckBox_Hubble
+        ${NSD_Check} $CheckBox_Hubble_Start
     ${EndIf}
 
   FunctionEnd
@@ -185,7 +192,7 @@ ${StrStrAdv}
   Function pageFinish_Leave
 
     # Assign the current checkbox states
-    ${NSD_GetState} $CheckBox_Hubble $StartHubble
+    ${NSD_GetState} $CheckBox_Hubble_Start $StartHubble
 
   FunctionEnd
 

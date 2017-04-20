@@ -797,19 +797,19 @@ Function updateHubbleConfig
     IfErrors done                                        ; end if errors are encountered (end of line)
 
     ${If} $HECToken_State != ""                          ; if token is empty
-    ${AndIf} $HECToken_State != "salt"                   ; and if token is not 'salt'
+      ${AndIf} $HECToken_State != "salt"                   ; and if token is not 'salt'
         ${StrLoc} $3 $2 "token:" ">"                     ; where is 'token:' in this line
-        ${If} $3 == 0                                    ; is it in the first...
-        ${OrIf} $3 == 1                                  ; or second position (account for comments)
-            StrCpy $2 "token: $HECToken_State$\r$\n"    ; write the token
-        ${EndIf}                                         ; close if statement
+        ${If} $3 == 8                                    ; is it in the first...
+        ${OrIf} $3 == 9                                  ; or second position (account for comments)
+          StrCpy $2 "token: $HECToken_State$\r$\n"       ; write the token
+      ${EndIf}                                           ; close if statement
     ${EndIf}                                             ; close if statement
 
     ${If} $IndexName_State != ""                         ; if index is empty
     ${AndIf} $IndexName_State != "hostname"              ; and if index is not 'hostname'
         ${StrLoc} $3 $2 "index:" ">"                     ; where is 'index:' in this line
-        ${If} $3 == 0                                    ; is it in the first...
-        ${OrIf} $3 == 1                                  ; or the second position (account for comments)
+        ${If} $3 == 8                                    ; is it in the first...
+        ${OrIf} $3 == 9                                  ; or the second position (account for comments)
             StrCpy $2 "index: $IndexName_State$\r$\n"       ; change line
         ${EndIf}                                         ; close if statement
     ${EndIf}                                             ; close if statement

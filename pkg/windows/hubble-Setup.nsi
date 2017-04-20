@@ -788,41 +788,39 @@ FunctionEnd
 Function updateHubbleConfig
 
     ClearErrors
-    FileOpen $0 "$INSTDIR\etc\hubble\hubble.conf" "r"    ; open target file for reading
-    GetTempFileName $R0                                  ; get new temp file name
-    FileOpen $1 $R0 "w"                                  ; open temp file for writing
+    FileOpen $0 "$INSTDIR\etc\hubble\hubble.conf" "r"          ; open target file for reading
+    GetTempFileName $R0                                        ; get new temp file name
+    FileOpen $1 $R0 "w"                                        ; open temp file for writing
 
-    loop:                                                ; loop through each line
-    FileRead $0 $2                                       ; read line from target file
-    IfErrors done                                        ; end if errors are encountered (end of line)
+    loop:                                                      ; loop through each line
+    FileRead $0 $2                                             ; read line from target file
+    IfErrors done                                              ; end if errors are encountered (end of line)
 
-    ${If} $HECToken_State != ""                          ; if token is empty
-      ${AndIf} $HECToken_State != "salt"                   ; and if token is not 'salt'
-        ${StrLoc} $3 $2 "token:" ">"                     ; where is 'token:' in this line
-        ${If} $3 == 8                                    ; is it in the first...
-        ${OrIf} $3 == 9                                  ; or second position (account for comments)
-          StrCpy $2 "token: $HECToken_State$\r$\n"       ; write the token
-      ${EndIf}                                           ; close if statement
-    ${EndIf}                                             ; close if statement
+    ${If} $HECToken_State != ""                                ; if token is empty
+      ${AndIf} $HECToken_State != "salt"                       ; and if token is not 'salt'
+        ${StrLoc} $3 $2 "token:" ">"                           ; where is 'token:' in this line
+        ${If} $3 == 8                                          ; is it in the first...
+          StrCpy $2 "      - token: $HECToken_State$\r$\n"     ; write the token
+      ${EndIf}                                                 ; close if statement
+    ${EndIf}                                                   ; close if statement
 
-    ${If} $IndexName_State != ""                         ; if index is empty
-    ${AndIf} $IndexName_State != "hostname"              ; and if index is not 'hostname'
-        ${StrLoc} $3 $2 "index:" ">"                     ; where is 'index:' in this line
-        ${If} $3 == 8                                    ; is it in the first...
-        ${OrIf} $3 == 9                                  ; or the second position (account for comments)
-            StrCpy $2 "index: $IndexName_State$\r$\n"       ; change line
-        ${EndIf}                                         ; close if statement
-    ${EndIf}                                             ; close if statement
+    ${If} $IndexName_State != ""                               ; if index is empty
+    ${AndIf} $IndexName_State != "hostname"                    ; and if index is not 'hostname'
+        ${StrLoc} $3 $2 "index:" ">"                           ; where is 'index:' in this line
+        ${If} $3 == 8                                          ; is it in the first...
+            StrCpy $2 "        index: $IndexName_State$\r$\n"  ; change line
+        ${EndIf}                                               ; close if statement
+    ${EndIf}                                                   ; close if statement
 
-    FileWrite $1 $2                                      ; write changed or unchanged line to temp file
+    FileWrite $1 $2                                            ; write changed or unchanged line to temp file
     Goto loop
 
     done:
-    FileClose $0                                            ; close target file
-    FileClose $1                                            ; close temp file
+    FileClose $0                                               ; close target file
+    FileClose $1                                               ; close temp file
     Delete "$INSTDIR\etc\hubble\hubble.conf"                           ; delete target file
-    CopyFiles /SILENT $R0 "$INSTDIR\etc\hubble\hubble.conf" ; copy temp file to target file
-    Delete $R0                                              ; delete temp file
+    CopyFiles /SILENT $R0 "$INSTDIR\etc\hubble\hubble.conf"    ; copy temp file to target file
+    Delete $R0                                                 ; delete temp file
 
 FunctionEnd
 

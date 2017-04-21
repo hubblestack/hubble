@@ -114,6 +114,8 @@ ${StrStrAdv}
   Var HECToken_State
   Var IndexName
   Var IndexName_State
+  Var Indexer
+  Var Indexer_State
   Var StartHubble
   Var StartHubbleDelayed
   Var DeleteInstallDir

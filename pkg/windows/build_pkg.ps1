@@ -74,10 +74,18 @@ If (Test-Path "C:\Program Files (x86)") {
 if ($version -eq $null) {
 	$gitDesc = git describe
 	if ($gitDesc -eq $null) {
-		$version = '1.0'
+		$version = 'Beta'
 	} else {
 		$version = $gitDesc
 	}
 }
 
 makensis.exe /DHubbleVersion=$version "$instDIR\hubble-Setup.nsi"
+
+Move-Item .\pkg\windows\Hubble*.exe C:\temp\
+
+
+Write-Host "`n`n***************************"
+Write-Host "*********Finished**********"
+Write-Host "***************************"
+Write-Host "`nThe Hubble installer is located in C:\temp`n`n" -ForegroundColor Yellow

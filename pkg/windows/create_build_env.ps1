@@ -88,7 +88,7 @@ if (!(Test-Path C:\Python27\Lib\site-packages\salt)) {
 }
 
 $gitfsFile = Get-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py
-$gitfsFile = $gitfsFile -replace "files.add(add_mountpoint(relpath(repo_path)))","files.add('/'.join(repo_path.partition('.:\\')[2].split(os.sep)))"
+$gitfsFile = $gitfsFile -replace "files.add\(add_mountpoint\(relpath\(repo_path\)\)\)","files.add('/'.join(repo_path.partition('.:\\')[2].split(os.sep)))"
 $gitfsFile | Set-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py -Force
 
 

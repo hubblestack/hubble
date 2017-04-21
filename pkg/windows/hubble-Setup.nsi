@@ -1,5 +1,5 @@
 ;HubbleStack Installer
-;Install Hubble with options
+;Install Hubble with Index, Indexer, and Token options
 ;Written by Chad Mills
 
 ;--------------------------------
@@ -144,6 +144,12 @@ ${StrStrAdv}
 
     ${NSD_CreateText} 0 43u 100% 12u $IndexName_State
     Pop $IndexName
+	
+	${NSD_CreateLabel} 0 60u 100% 12u "Indexer:"
+    Pop $Label
+
+    ${NSD_CreateText} 0 73u 100% 12u $Indexer_State
+    Pop $Indexer
 
     nsDialogs::Show
 
@@ -153,6 +159,7 @@ ${StrStrAdv}
 
     ${NSD_GetText} $HECToken $HECToken_State
     ${NSD_GetText} $IndexName $IndexName_State
+	${NSD_GetText} $Indexer $Indexer_State
 
   FunctionEnd
 
@@ -280,7 +287,7 @@ ${StrStrAdv}
 
     ; Register the Hubble Service
     nsExec::Exec "nssm.exe install Hubble $INSTDIR\hubble.exe"
-    nsExec::Exec "nssm.exe set Hubble Description Hubble from Adobe"
+    nsExec::Exec "nssm.exe set Hubble Description Open Source software for security compliance"
     nsExec::Exec "nssm.exe set Hubble Application $INSTDIR\hubble.exe"
     nsExec::Exec "nssm.exe set Hubble AppDirectory $INSTDIR"
     nsExec::Exec "nssm.exe set Hubble AppParameters -c .\etc\hubble\hubble.conf"
@@ -763,16 +770,23 @@ ${StrStrAdv}
         IfErrors EndOfFile
         ${StrLoc} $2 $1 "token:" ">"
         ${If} $2 == 0
-            ${StrStrAdv} $2 $1 "token: " ">" ">" "0" "0" "0"
-            ${Trim} $2 $2
-                StrCpy $HECToken_State $2
-            ${EndIf}
+          ${StrStrAdv} $2 $1 "token: " ">" ">" "0" "0" "0"
+          ${Trim} $2 $2
+            StrCpy $HECToken_State $2
+        ${EndIf}
 
         ${StrLoc} $2 $1 "index:" ">"
         ${If} $2 == 0
-            ${StrStrAdv} $2 $1 "index: " ">" ">" "0" "0" "0"
-            ${Trim} $2 $2
+          ${StrStrAdv} $2 $1 "index: " ">" ">" "0" "0" "0"
+          ${Trim} $2 $2
             StrCpy $IndexName_State $2
+        ${EndIf}
+		
+		${StrLoc} $2 $1 "indexer:" ">"
+        ${If} $2 == 0
+          ${StrStrAdv} $2 $1 "indexer: " ">" ">" "0" "0" "0"
+          ${Trim} $2 $2
+            StrCpy $HECToken_State $2
         ${EndIf}
 
     Goto confLoop
@@ -805,13 +819,21 @@ Function updateHubbleConfig
     ${EndIf}                                                   ; close if statement
 
     ${If} $IndexName_State != ""                               ; if index is empty
-    ${AndIf} $IndexName_State != "hostname"                    ; and if index is not 'hostname'
+      ${AndIf} $IndexName_State != "splunk-indexer.domain.tld" ; and if index is not 'hostname'
         ${StrLoc} $3 $2 "index:" ">"                           ; where is 'index:' in this line
         ${If} $3 == 8                                          ; is it in the first...
-            StrCpy $2 "        index: $IndexName_State$\r$\n"  ; change line
-        ${EndIf}                                               ; close if statement
+          StrCpy $2 "        index: $IndexName_State$\r$\n"    ; change line
+      ${EndIf}                                                 ; close if statement
     ${EndIf}                                                   ; close if statement
 
+	${If} $Indexer_State != ""                                 ; if index is empty
+      ${AndIf} $Indexer_State != "hostname"                    ; and if index is not 'hostname'
+        ${StrLoc} $3 $2 "indexer:" ">"                         ; where is 'index:' in this line
+        ${If} $3 == 8                                          ; is it in the first...
+          StrCpy $2 "        indexer: $Indexer_State$\r$\n"    ; change line
+      ${EndIf}                                                 ; close if statement
+    ${EndIf}                                                   ; close if statement
+	
     FileWrite $1 $2                                            ; write changed or unchanged line to temp file
     Goto loop
 
@@ -853,7 +875,7 @@ Function parseCommandLineSwitches
         StrCpy $StartHubbleDelayed 1
     start_hubble_delayed_not_found:
 
-    # Hubble Config: Master IP/Name
+    # Hubble Config: Token IP/Name
     ${GetOptions} $R0 "/token=" $R1
     ${IfNot} $R1 == ""
         StrCpy $HECToken_State $R1
@@ -861,12 +883,20 @@ Function parseCommandLineSwitches
         StrCpy $HECToken_State ""
     ${EndIf}
 
-    # hubble Config: hubble ID
-    ${GetOptions} $R0 "/hubble-name=" $R1
+    # Hubble Config: Index Name
+    ${GetOptions} $R0 "/index-name=" $R1
     ${IfNot} $R1 == ""
         StrCpy $IndexName_State $R1
     ${ElseIf} $IndexName_State == ""
-        StrCpy $IndexName_State "hubble"
+        StrCpy $IndexName_State "hubble_generic"
+    ${EndIf}
+	
+	# Hubble Config: Indexer
+    ${GetOptions} $R0 "/indexer=" $R1
+    ${IfNot} $R1 == ""
+        StrCpy $Indexer_State $R1
+    ${ElseIf} $Indexer_State == ""
+        StrCpy $Indexer_State ""
     ${EndIf}
 
 FunctionEnd

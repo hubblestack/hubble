@@ -34,15 +34,18 @@ pyi-makespec --additional-hooks-dir=$hooks .\hubble.py
 
 # Edit the spec file and add libeay32.dll, C:\Python27\libeay32.dll, and BINARY
 $specFile = Get-Content .\hubble.spec
-$specFile = $specFile -replace "a.binaries","a.binaries + [('libeay32.dll', 'C:\Python27\libeay32.dll', 'BINARY')]"
-$specFile | Set-Content .\hubble.spec -Force
+$modified = $gitfsFile -match 'BINARY'
+if (!($modified)) {
+    $specFile = $specFile -replace "a.binaries","a.binaries + [('libeay32.dll', 'C:\Python27\libeay32.dll', 'BINARY')]"
+    $specFile | Set-Content .\hubble.spec -Force
+}
 
 # Run pyinstaller
 pyinstaller .\hubble.spec
 
 # Copy hubble.conf to correct location
 Start-Sleep -Seconds 5
-if (Test-Path '.\dist\hubble\etc\hubble') {
+if (!(Test-Path '.\dist\hubble\etc\hubble')) {
     New-Item '.\dist\hubble\etc\hubble' -ItemType Directory
 }
 Copy-Item '.\pkg\windows\hubble.conf' -Destination '.\dist\hubble\etc\hubble\'

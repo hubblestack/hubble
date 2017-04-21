@@ -147,7 +147,7 @@ ${StrStrAdv}
     ${NSD_CreateText} 0 43u 100% 12u $IndexName_State
     Pop $IndexName
 	
-	${NSD_CreateLabel} 0 60u 100% 12u "Indexer:"
+    ${NSD_CreateLabel} 0 60u 100% 12u "Indexer:"
     Pop $Label
 
     ${NSD_CreateText} 0 73u 100% 12u $Indexer_State
@@ -161,7 +161,7 @@ ${StrStrAdv}
 
     ${NSD_GetText} $HECToken $HECToken_State
     ${NSD_GetText} $IndexName $IndexName_State
-	${NSD_GetText} $Indexer $Indexer_State
+    ${NSD_GetText} $Indexer $Indexer_State
 
   FunctionEnd
 
@@ -882,7 +882,7 @@ Function parseCommandLineSwitches
     ${IfNot} $R1 == ""
         StrCpy $HECToken_State $R1
     ${ElseIf} $HECToken_State == ""
-        StrCpy $HECToken_State ""
+        StrCpy $HECToken_State "xxxxx-xxx-xxx-xxx-xxxxxx"
     ${EndIf}
 
     # Hubble Config: Index Name
@@ -890,7 +890,7 @@ Function parseCommandLineSwitches
     ${IfNot} $R1 == ""
         StrCpy $IndexName_State $R1
     ${ElseIf} $IndexName_State == ""
-        StrCpy $IndexName_State "hubble_generic"
+        StrCpy $IndexName_State "default_hubble"
     ${EndIf}
 	
 	# Hubble Config: Indexer
@@ -898,7 +898,7 @@ Function parseCommandLineSwitches
     ${IfNot} $R1 == ""
         StrCpy $Indexer_State $R1
     ${ElseIf} $Indexer_State == ""
-        StrCpy $Indexer_State ""
+        StrCpy $Indexer_State "splunk-hec.loc.adobe.net"
     ${EndIf}
 
 FunctionEnd

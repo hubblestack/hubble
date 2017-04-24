@@ -50,7 +50,7 @@ md Salt-Dev
 pushd Salt-Dev
 git clone https://github.com/saltstack/salt
 cd salt\pkg\windows
-git checkout 2016.11
+git checkout v2016.11.3
 powershell -file build_env.ps1 -Silent
 popd
 pushd Salt-Dev\salt
@@ -90,7 +90,6 @@ if (!(Test-Path C:\Python27\Lib\site-packages\salt)) {
 $gitfsFile = Get-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py
 $gitfsFile = $gitfsFile -replace "files.add\(add_mountpoint\(relpath\(repo_path\)\)\)","files.add('/'.join(repo_path.partition('.:\\')[2].split(os.sep)))"
 $gitfsFile | Set-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py -Force
-
 
 #Remove obligitory c:\salt directory if it was created during script run
 if (Test-Path C:\salt) {

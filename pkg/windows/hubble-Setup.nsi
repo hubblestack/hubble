@@ -119,6 +119,7 @@ ${StrStrAdv}
   Var StartHubble
   Var StartHubbleDelayed
   Var DeleteInstallDir
+  Var ConfLocation
 
 
 ;--------------------------------
@@ -836,6 +837,18 @@ Function updateHubbleConfig
       ${EndIf}                                                 ; close if statement
     ${EndIf}                                                   ; close if statement
 	
+    ${StrLoc} $3 $2 "cachedir:" ">"                                  ; where is 'index:' in this line
+      ${If} $3 == 0                                                  ; is it in the first...
+        StrCpy $2 "cachedir: 'C:\${PFILES}\hubble\var\cache'$\r$\n"  ; change line
+      ${EndIf}                                                       ; close if statement
+
+    ${StrLoc} $3 $2 "cachedir:" ">"                                           ; where is 'index:' in this line
+      ${If} $3 == 0                                                           ; is it in the first...
+        StrCpy $2 "cachedir: 'C:\${PFILES}\hubble\var\log\hubble.log'$\r$\n"  ; change line
+      ${EndIf}                                                                ; close if statement
+
+
+	log_file: ‘C:\Program Files (x86)\hubble\var\log\hubble.log’
     FileWrite $1 $2                                            ; write changed or unchanged line to temp file
     Goto loop
 

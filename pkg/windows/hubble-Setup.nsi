@@ -842,7 +842,7 @@ Function updateHubbleConfig
     done:
     FileClose $0                                               ; close target file
     FileClose $1                                               ; close temp file
-    Delete "$INSTDIR\etc\hubble\hubble.conf"                           ; delete target file
+    Delete "$INSTDIR\etc\hubble\hubble.conf"                   ; delete target file
     CopyFiles /SILENT $R0 "$INSTDIR\etc\hubble\hubble.conf"    ; copy temp file to target file
     Delete $R0                                                 ; delete temp file
 
@@ -855,8 +855,6 @@ Function parseCommandLineSwitches
     ${GetParameters} $R0
 
     ; Check for start-hubble switches
-    ; /start-service is to be deprecated, so we must check for both
-    ${GetOptions} $R0 "/start-service=" $R1
     ${GetOptions} $R0 "/start-hubble=" $R2
 
     # Service: Start Hubble

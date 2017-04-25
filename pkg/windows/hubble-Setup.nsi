@@ -847,8 +847,6 @@ Function updateHubbleConfig
         StrCpy $2 "cachedir: 'C:\${PFILES}\hubble\var\log\hubble.log'$\r$\n"  ; change line
       ${EndIf}                                                                ; close if statement
 
-
-	log_file: ‘C:\Program Files (x86)\hubble\var\log\hubble.log’
     FileWrite $1 $2                                            ; write changed or unchanged line to temp file
     Goto loop
 

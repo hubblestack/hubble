@@ -74,6 +74,7 @@ def queries(query_group,
         salt '*' nebula.queries hour verbose=True
         salt '*' nebula.queries hour pillar_key=sec_osqueries
     '''
+    MAX_FILE_SIZE = 104857600
     if query_file is None:
         if salt.utils.is_windows():
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
@@ -168,7 +169,7 @@ def queries(query_group,
             'result': True,
         }
 
-        cmd = ['osqueryi', '--json', query_sql]
+        cmd = ['osqueryi', '--read_max', MAX_FILE_SIZE, '--read_user_max', MAX_FILE_SIZE, '--json', query_sql]
         res = __salt__['cmd.run_all'](cmd)
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])

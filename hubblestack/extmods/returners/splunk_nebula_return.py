@@ -46,6 +46,7 @@ from aws_details import get_aws_details
 import requests
 import json
 import time
+from datetime import datetime
 
 import logging
 
@@ -88,6 +89,11 @@ def returner(ret):
             fqdn_ip4 = __grains__['fqdn_ip4'][0]
         except IndexError:
             fqdn_ip4 = __grains__['ipv4'][0]
+        if fqdn_ip4.startswith('127.'):
+            for ip4_addr in __grains__['ipv4']:
+                if ip4_addr and not ip4_addr.startswith('127.'):
+                    fqdn_ip4 = ip4_addr
+                    break
 
         if not data:
             return
@@ -121,9 +127,22 @@ def returner(ret):
 
                         payload.update({'host': fqdn})
                         payload.update({'index': opts['index']})
-                        payload.update({'sourcetype': opts['sourcetype']})
+                        if opts['add_query_to_sourcetype']:
+                            payload.update({'sourcetype': "%s:%s" % (opts['sourcetype'], query_name)})
+                        else:
+                            payload.update({'sourcetype': opts['sourcetype']})
                         payload.update({'event': event})
-                        hec.batchEvent(payload)
+
+                        # If the osquery query includes a field called 'time' it will be checked.
+                        # If it's within the last year, it will be used as the eventtime.
+                        event_time = query_result.get('time', '')
+                        try:
+                            if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
+                                event_time = ''
+                        except:
+                            event_time = ''
+                        finally:
+                            hec.batchEvent(payload, eventtime=event_time)
 
         hec.flushBatch()
     return
@@ -142,6 +161,7 @@ def _get_options():
             processed['index'] = opt.get('index')
             processed['custom_fields'] = opt.get('custom_fields', [])
             processed['sourcetype'] = opt.get('sourcetype_nebula', 'hubble_osquery')
+            processed['add_query_to_sourcetype'] = opt.get('add_query_to_sourcetype', True)
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)

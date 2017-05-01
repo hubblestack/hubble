@@ -191,14 +191,14 @@ def schedule():
         # Actually process the job
         run = False
         if 'last_run' not in jobdata:
-            if jobdata.get('run_on_start', False):
+            if jobdata.get('run_on_start', False) and splay == 0:
                 run = True
             jobdata['last_run'] = time.time()
         if 'set_splay' not in jobdata:
             jobdata['set_splay'] = random.randint(0, splay)
-        splay = jobdata['set_splay']
+            jobdata['last_run'] += jobdata['set_splay']
 
-        if jobdata['last_run'] < time.time() - seconds - splay:
+        if jobdata['last_run'] < time.time() - seconds:
             run = True
 
         if run:
@@ -237,7 +237,12 @@ def run_function():
     log.debug('Parsed args: {0} | Parsed kwargs: {1}'.format(args, kwargs))
     log.info('Executing user-requested function {0}'.format(__opts__['function']))
 
-    ret = __salt__[__opts__['function']](*args, **kwargs)
+    try:
+        ret = __salt__[__opts__['function']](*args, **kwargs)
+    except KeyError:
+        log.error('Function {0} is not available, or not valid.'
+                  .format(__opts__['function']))
+        sys.exit(1)
 
     if __opts__['return']:
         returner = '{0}.returner'.format(__opts__['return'])
@@ -311,6 +316,9 @@ def load_config():
     salt.log.setup.setup_console_logger(__opts__['log_level'])
     salt.log.setup.setup_logfile_logger(__opts__['log_file'],
                                         __opts__['log_level'])
+    # 384 is 0o600 permissions, written without octal for python 2/3 compat
+    os.chmod(__opts__['log_file'], 384)
+    os.chmod(parsed_args.get('configfile'), 384)
 
     __grains__ = salt.loader.grains(__opts__)
     __pillar__ = {}

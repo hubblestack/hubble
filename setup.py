@@ -42,7 +42,9 @@ setup(
         ],
     },
     install_requires=[
-        'salt >= 2015.5.0',
+        'salt-ssh >= 2015.8.0',
+        'gitpython',
+        'pyinotify',
     ],
     data_files=data_files,
     options={
@@ -51,9 +53,6 @@ setup(
 #        },
         'bdist_rpm': {
             'requires': 'salt python-argparse python-inotify python-pygit2 python-setuptools',
-        },
-        'install': {
-            'prefix': '/usr',
         },
     },
     classifiers=[

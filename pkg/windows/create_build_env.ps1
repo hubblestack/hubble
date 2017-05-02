@@ -26,7 +26,7 @@ if (!(Test-Path C:\ProgramData\chocolatey)) {
     iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex
     reloadEnv
 } else {
-    $chocoCur = (choco) -replace "Chocolatey v",""
+    $chocoCur = (choco)[0] -replace "Chocolatey v",""
     if ($chocoCur -lt $chocoVer) {
         choco upgrade chocolatey -y
     }
@@ -68,7 +68,7 @@ pushd hubble\pkg\scripts
 $lines = Get-Content pyinstaller-requirements.txt | Where {$_ -notmatch '^\s+$'} 
 foreach ($line in $lines) {
     $line = $line -replace "#.+$",""
-    if ($line -notlike '*pyinotify*' -or $line -notlike '*salt-ssh*') { #pyinotify and salt-ssh are for linux only
+    if ($line -notlike '*pyinotify*' -and $line -notlike '*salt-ssh*') { #pyinotify and salt-ssh are for linux only
         pip install $line
     }
 }

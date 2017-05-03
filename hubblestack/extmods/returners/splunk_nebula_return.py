@@ -128,7 +128,7 @@ def returner(ret):
                         payload.update({'host': fqdn})
                         payload.update({'index': opts['index']})
                         if opts['add_query_to_sourcetype']:
-                            payload.update({'sourcetype': "%s:%s" % (opts['sourcetype'], query_name)})
+                            payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], query_name)})
                         else:
                             payload.update({'sourcetype': opts['sourcetype']})
                         payload.update({'event': event})

@@ -289,9 +289,9 @@ ${StrStrAdv}
     ; Register the Hubble Service
     nsExec::Exec "nssm.exe install Hubble $INSTDIR\hubble.exe"
     nsExec::Exec "nssm.exe set Hubble Description Open Source software for security compliance"
-    nsExec::Exec "nssm.exe set Hubble Application $INSTDIR\hubble.exe"
+    nsExec::Exec "nssm.exe set Hubble Application $INSTDIR\PortableGit\git-cmd.exe"
     nsExec::Exec "nssm.exe set Hubble AppDirectory $INSTDIR"
-    nsExec::Exec "nssm.exe set Hubble AppParameters -c .\etc\hubble\hubble.conf"
+    nsExec::Exec "nssm.exe set Hubble AppParameters hubble.exe -c .\etc\hubble\hubble.conf"
     nsExec::Exec "nssm.exe set Hubble Start SERVICE_AUTO_START"
 
     RMDir /R "$INSTDIR\var" ; removing cache from old version

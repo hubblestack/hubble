@@ -119,8 +119,8 @@ def queries(query_group,
 
     if salt.utils.is_windows():
         win_version = __grains__['osfullname']
-        if '2012' not in win_version and '2016' not in win_version:
-            log.error('osquery does not run on windows versions earlier than Server 2012 and Windows 8')
+        if '2008' not in win_version and '2012' not in win_version and '2016' not in win_version:
+            log.error('osquery does not run on windows versions earlier than Server 2008')
             if query_group == 'day':
                 ret = []
                 ret.append(

@@ -42,6 +42,12 @@ if (!($git)) {
     }
 }
 
+$7zip = choco list --localonly | Where-Object {$_ -like "git *"} 
+if (!($7zip)) {
+    choco install 7zip -y
+    reloadEnv
+}
+
 # Install salt and dependencies - including python
 if (Test-Path .\Salt-Dev) {
     Remove-Item -Recurse -Force Salt-Dev
@@ -73,6 +79,16 @@ foreach ($line in $lines) {
     }
 }
 popd
+
+# Download PortableGit.  Requirement for Hubble
+$path = (Get-Location).Path
+If (Test-Path "C:\Program Files (x86)") {
+    Invoke-WebRequest -Uri https://github.com/git-for-windows/git/releases/download/v2.12.2.windows.2/PortableGit-2.12.2.2-64-bit.7z.exe -OutFile .\PortableGit.7z.exe
+} else {
+    Invoke-WebRequest -Uri https://github.com/git-for-windows/git/releases/download/v2.12.2.windows.2/PortableGit-2.12.2.2-32-bit.7z.exe -OutFile .\PortableGit.7z.exe
+}
+7za x PortableGit.7z.exe -o"$path\hubble\PortableGit" -y
+& "$path\hubble\PortableGit\post-install.bat"
 
 # Install osquery for executible
 if (!(Test-path C:\ProgramData\osquery)) {

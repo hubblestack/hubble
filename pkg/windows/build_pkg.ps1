@@ -46,6 +46,9 @@ if (!(Test-Path '.\dist\hubble\etc\hubble')) {
 }
 Copy-Item '.\pkg\windows\hubble.conf' -Destination '.\dist\hubble\etc\hubble\'
 
+# Copy PortableGit to correct location
+Copy-Item '.\PortableGit' -Destination '.\dist\hubble\' -Recurse -Force
+
 # Copy nssm.exe to correct location
 if (Test-Path '..\Salt-Dev\salt\pkg\windows\buildenv\nssm.exe') {
     Copy-Item '..\Salt-Dev\salt\pkg\windows\buildenv\nssm.exe' -Destination '.\dist\hubble\'

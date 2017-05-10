@@ -42,7 +42,7 @@ if (!($git)) {
     }
 }
 
-$7zip = choco list --localonly | Where-Object {$_ -like "git *"} 
+$7zip = choco list --localonly | Where-Object {$_ -like "7zip*"} 
 if (!($7zip)) {
     choco install 7zip -y
     reloadEnv

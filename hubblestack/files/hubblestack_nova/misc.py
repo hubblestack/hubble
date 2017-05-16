@@ -44,6 +44,7 @@ misc:
 from __future__ import absolute_import
 import logging
 
+import subprocess
 import fnmatch
 import yaml
 import os
@@ -167,6 +168,69 @@ def _get_tags(data):
 # Begin function definitions
 ############################
 
+def execute_shell_command(cmd):
+    '''
+    This function will execute passed command in shell
+    '''
+    p = subprocess.Popen(cmd, shell=True,stdout=subprocess.PIPE)
+    output, error = p.communicate()
+    if error != None:
+      return 'Error in executing this check'
+    if output == '':
+      return True
+    return output
+
+def check_password_fields_not_empty(reason):
+    '''
+    Ensure password fields are not empty
+    '''
+    result = execute_shell_command('cat /etc/shadow | awk -F: \'($2 == "" ) { print $1 " does not have a password "}\'')
+    return result
+
+def ungrouped_files_or_dir(reason):
+    '''
+    Ensure no ungrouped files or directories exist
+    '''
+    result = execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nogroup')
+    return result
+
+def unowned_files_or_dir(reason):
+    '''
+    Ensure no unowned files or directories exist
+    '''
+    result = execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nouser')
+    return result
+
+def world_writable_file(reason):
+    '''
+    Ensure no world writable files exist
+    '''
+    result = execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type f -perm -0002')
+    return result
+
+def system_account_non_login(reason):
+    '''
+    Ensure system accounts are non-login
+    '''
+    result = execute_shell_command('egrep -v "^\+" /etc/passwd | awk -F: \'($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false") {print}\'')
+    return result
+
+def sticky_bit_on_world_writable_dirs(reason):
+    '''
+    Ensure sticky bit is set on all world-writable directories
+    '''
+    result = execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null')
+    return result
+
+def default_group_for_root():
+    '''
+    Ensure default group for the root account is GID 0
+    '''
+    result = execute_shell_command('grep "^root:" /etc/passwd | cut -f4 -d:')
+    result = result.strip()
+    if result == '0':
+      return True
+    return False
 
 def test_success():
     '''
@@ -190,6 +254,13 @@ def test_failure_reason(reason):
 
 
 FUNCTION_MAP = {
+    'system_account_non_login': system_account_non_login,
+    'sticky_bit_on_world_writable_dirs': sticky_bit_on_world_writable_dirs,
+    'default_group_for_root': default_group_for_root,
+    'world_writable_file': world_writable_file,
+    'unowned_files_or_dir': unowned_files_or_dir,
+    'ungrouped_files_or_dir': ungrouped_files_or_dir,
+    'check_password_fields_not_empty': check_password_fields_not_empty,
     'test_success': test_success,
     'test_failure': test_failure,
     'test_failure_reason': test_failure_reason,

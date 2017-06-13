@@ -215,6 +215,7 @@ def test_failure_reason(reason):
 
 FUNCTION_MAP = {
     'check_password_fields_not_empty': check_password_fields_not_empty,
+    'ungrouped_files_or_dir': ungrouped_files_or_dir,
     'test_success': test_success,
     'test_failure': test_failure,
     'test_failure_reason': test_failure_reason,

@@ -186,6 +186,12 @@ def check_password_fields_not_empty(reason):
     '''
     return _execute_shell_command('cat /etc/shadow | awk -F: \'($2 == "" ) { print $1 " does not have a password "}\'')
 
+def ungrouped_files_or_dir(reason):
+    '''
+    Ensure no ungrouped files or directories exist
+    '''
+    return _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nogroup')
+
 def test_success():
     '''
     Automatically returns success

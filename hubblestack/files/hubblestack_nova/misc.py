@@ -44,6 +44,7 @@ misc:
 from __future__ import absolute_import
 import logging
 
+import subprocess
 import fnmatch
 import yaml
 import os
@@ -167,6 +168,23 @@ def _get_tags(data):
 # Begin function definitions
 ############################
 
+def _execute_shell_command(cmd):
+    '''
+    This function will execute passed command in shell
+    '''
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+    output, error = p.communicate()
+    if error != None:
+      return 'Error in executing this check'
+    if output == '':
+      return True
+    return output
+
+def check_password_fields_not_empty(reason):
+    '''
+    Ensure password fields are not empty
+    '''
+    return _execute_shell_command('cat /etc/shadow | awk -F: \'($2 == "" ) { print $1 " does not have a password "}\'')
 
 def test_success():
     '''
@@ -190,6 +208,7 @@ def test_failure_reason(reason):
 
 
 FUNCTION_MAP = {
+    'check_password_fields_not_empty': check_password_fields_not_empty,
     'test_success': test_success,
     'test_failure': test_failure,
     'test_failure_reason': test_failure_reason,

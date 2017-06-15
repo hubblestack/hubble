@@ -44,7 +44,6 @@ misc:
 from __future__ import absolute_import
 import logging
 
-import subprocess
 import fnmatch
 import yaml
 import os
@@ -170,27 +169,27 @@ def _get_tags(data):
 
 def _execute_shell_command(cmd):
     '''
-    This function will execute passed command in shell
+    This function will execute passed command in /bin/shell
     '''
-    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-    output, error = p.communicate()
-    if error != None:
-      return 'Error in executing this check'
-    if output == '':
-      return True
-    return output
+    return __salt__['cmd.run'](cmd, python_shell=True, shell='/bin/bash')
 
-def check_password_fields_not_empty(reason):
+def check_password_fields_not_empty(reason=''):
     '''
     Ensure password fields are not empty
     '''
-    return _execute_shell_command('cat /etc/shadow | awk -F: \'($2 == "" ) { print $1 " does not have a password "}\'')
+    result = _execute_shell_command('cat /etc/shadow | awk -F: \'($2 == "" ) { print $1 " does not have a password "}\'')
+    if result == '':
+      return True
+    return result
 
-def ungrouped_files_or_dir(reason):
+def ungrouped_files_or_dir(reason=''):
     '''
     Ensure no ungrouped files or directories exist
     '''
-    return _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nogroup')
+    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nogroup')
+    if result == '':
+      return True
+    return result
 
 def test_success():
     '''

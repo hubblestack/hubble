@@ -29,6 +29,7 @@ HIDDEN_IMPORTS = [
  'yaml',
  'traceback',
  'pygit2',
+ 'Queue',
 ]
 DATAS = []
 binaries = []

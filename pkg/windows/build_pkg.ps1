@@ -1,6 +1,8 @@
 # Script to build the Hubble .msi pkg
 cd C:\temp
 
+$hooks = ".\pkg\"
+
 # Find the NSIS Installer
 if (Test-Path "C:\Program Files\NSIS\") {
     $nsis = 'C:\Program Files\NSIS'

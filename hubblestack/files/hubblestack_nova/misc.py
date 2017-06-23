@@ -191,6 +191,61 @@ def ungrouped_files_or_dir(reason=''):
       return True
     return result
 
+def unowned_files_or_dir(reason=''):
+    '''
+    Ensure no unowned files or directories exist
+    '''
+    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nouser')
+    if result == '':
+      return True
+    return result
+
+def world_writable_file(reason=''):
+    '''
+    Ensure no world writable files exist
+    '''
+    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type f -perm -0002')
+    if result == '':
+      return True
+    return result
+
+def system_account_non_login(reason=''):
+    '''
+    Ensure system accounts are non-login
+    '''
+    result = _execute_shell_command('egrep -v "^\+" /etc/passwd | awk -F: \'($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false") {print}\'')
+    if result == '':
+      return True
+    return result
+
+def sticky_bit_on_world_writable_dirs(reason=''):
+    '''
+    Ensure sticky bit is set on all world-writable directories
+    '''
+    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null')
+    if result == '':
+      return True
+    return result
+
+def default_group_for_root(reason=''):
+    '''
+    Ensure default group for the root account is GID 0
+    '''
+    result = _execute_shell_command('grep "^root:" /etc/passwd | cut -f4 -d:')
+    result = result.strip()
+    if result == '0':
+      return True
+    return False
+
+def root_is_only_uid_0_account(reason=''):
+    '''
+    Ensure root is the only UID 0 account
+    '''
+    result = _execute_shell_command('cat /etc/passwd | awk -F: \'($3 == 0) { print $1 }\'')
+    if result.strip() == 'root':
+      return True
+    return result
+
 def test_success():
     '''
     Automatically returns success
@@ -215,6 +270,12 @@ def test_failure_reason(reason):
 FUNCTION_MAP = {
     'check_password_fields_not_empty': check_password_fields_not_empty,
     'ungrouped_files_or_dir': ungrouped_files_or_dir,
+    'unowned_files_or_dir': unowned_files_or_dir,
+    'world_writable_file': world_writable_file,
+    'system_account_non_login': system_account_non_login,
+    'sticky_bit_on_world_writable_dirs': sticky_bit_on_world_writable_dirs,
+    'default_group_for_root': default_group_for_root,
+    'root_is_only_uid_0_account': root_is_only_uid_0_account,
     'test_success': test_success,
     'test_failure': test_failure,
     'test_failure_reason': test_failure_reason,

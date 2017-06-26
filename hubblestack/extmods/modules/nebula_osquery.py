@@ -174,8 +174,8 @@ def queries(query_group,
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
-            queury_ret['result'] = False
-            queury_ret['error'] = res['stderr']
+            query_ret['result'] = False
+            query_ret['error'] = res['stderr']
 
         if verbose:
             tmp = copy.deepcopy(query)

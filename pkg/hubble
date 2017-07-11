@@ -1,17 +1,16 @@
 #!/bin/sh
 ### BEGIN INIT INFO
-# Provides:
+# Provides:          hubble
 # Required-Start:    $remote_fs $syslog
 # Required-Stop:     $remote_fs $syslog
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
-# Short-Description: Start daemon at boot time
-# Description:       Enable service provided by daemon.
+# Short-Description: Start hubble daemon
+# Description:       Start hubble daemon
 ### END INIT INFO
 
 dir="/etc/hubble"
 cmd="hubble -d"
-user="root"
 
 name=`basename $0`
 pid_file="/var/run/$name.pid"
@@ -32,11 +31,7 @@ case "$1" in
     else
         echo "Starting $name"
         cd "$dir"
-        if [ -z "$user" ]; then
-            sudo $cmd
-        else
-            sudo -u "$user" $cmd
-        fi
+        $cmd
         sleep 0.1
         if ! is_running; then
             echo "Unable to start, see $log_file"

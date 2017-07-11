@@ -48,7 +48,7 @@ log = logging.getLogger(__name__)
 def __virtual__():
     if salt.utils.is_windows():
         return False, 'This module only works on Linux'
-    return False
+    return True
 
 
 def _get_mask(mask):

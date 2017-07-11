@@ -1,7 +1,7 @@
 #win_notify
 '''
 This will setup your computer to enable auditing for specified folders inputted into a yaml file. It will
-then scan the event log for changes to those folders every 5 minutes and report when it finds one.
+then scan the event log for changes to those folders and report when it finds one.
 '''
 
 
@@ -40,18 +40,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     '''
     Watch the configured files
 
-    Example pillar config
-
-    .. code-block:: yaml
-
-        beacons:
-          pulsar:
-            paths:
-              - 'C:\salt\var\cache\salt\minion\files\base\hubblestack_pulsar\hubblestack_pulsar_win_config.yaml'
-            interval: 30 # MUST be the same as win_notify_interval in file config
-            disable_during_state_run: True
-
-    Example yaml config on fileserver (targeted by pillar)
+    Example yaml config on fileserver (targeted by configfile option)
 
     .. code-block:: yaml
 
@@ -66,7 +55,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
           exclude:
             - C:\Windows\System32
         C:\temp: {}
-        win_notify_interval: 30 # MUST be the same as interval in pillar config
+        win_notify_interval: 30 # MUST be the same as interval in schedule
         return: splunk_pulsar_return
         batch: True
 
@@ -106,7 +95,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
 
     :return:
     '''
-    config = __opts__.get('pulsar', {})
+    config = __salt__['config.get']('hubblestack_pulsar', {})
     if isinstance(configfile, list):
         config['paths'] = configfile
     else:
@@ -115,8 +104,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     global CONFIG_STALENESS
     global CONFIG
     if config.get('verbose'):
-        log.debug('Pulsar beacon called.')
-        log.debug('Pulsar beacon config from pillar:\n{0}'.format(config))
+        log.debug('Pulsar module called.')
+        log.debug('Pulsar module config from pillar:\n{0}'.format(config))
     ret = []
     sys_check = 0
 
@@ -227,11 +216,6 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     ret = new_ret
 
     return ret
-
-
-def _return(args, returner):
-    __returners__ = salt.loader.returners(__opts__, __salt__)
-    __returners__[returner](*args)
 
 
 def _check_acl(path, mask, wtype, recurse):

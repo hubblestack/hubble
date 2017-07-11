@@ -218,6 +218,11 @@ def audit(configs=None,
     if not called_from_top and not results:
         results['Messages'] = 'No audits matched this host in the specified profiles.'
 
+    for error in ret.get('Error', []):
+      if not results.has_key('Error'):
+        results['Errors'] = []
+      results['Errors'].append(error)
+
     return results
 
 def _run_audit(configs, tags, debug):

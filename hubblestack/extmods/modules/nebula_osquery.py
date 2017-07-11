@@ -74,6 +74,7 @@ def queries(query_group,
         salt '*' nebula.queries hour verbose=True
         salt '*' nebula.queries hour pillar_key=sec_osqueries
     '''
+    MAX_FILE_SIZE = 104857600
     if query_file is None:
         if salt.utils.is_windows():
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
@@ -118,8 +119,8 @@ def queries(query_group,
 
     if salt.utils.is_windows():
         win_version = __grains__['osfullname']
-        if '2012' not in win_version and '2016' not in win_version:
-            log.error('osquery does not run on windows versions earlier than Server 2012 and Windows 8')
+        if '2008' not in win_version and '2012' not in win_version and '2016' not in win_version:
+            log.error('osquery does not run on windows versions earlier than Server 2008')
             if query_group == 'day':
                 ret = []
                 ret.append(
@@ -168,13 +169,13 @@ def queries(query_group,
             'result': True,
         }
 
-        cmd = ['osqueryi', '--json', query_sql]
+        cmd = ['osqueryi', '--read_max', MAX_FILE_SIZE, '--read_user_max', MAX_FILE_SIZE, '--json', query_sql]
         res = __salt__['cmd.run_all'](cmd)
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
-            queury_ret['result'] = False
-            queury_ret['error'] = res['stderr']
+            query_ret['result'] = False
+            query_ret['error'] = res['stderr']
 
         if verbose:
             tmp = copy.deepcopy(query)

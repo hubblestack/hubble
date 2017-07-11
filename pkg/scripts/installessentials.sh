@@ -2,6 +2,7 @@
 
 if [ -f "/usr/bin/apt-get" ]
 then
+  apt-get update
   apt-get install python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev libjpeg8-dev zlib1g-dev make cmake python-setuptools gcc wget git -y
 elif [ -f "/usr/bin/yum" ]
 then

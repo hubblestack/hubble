@@ -13,6 +13,7 @@ import copy
 import fnmatch
 import logging
 import salt.utils
+from pprint import pprint
 
 try:
     import codecs
@@ -38,6 +39,7 @@ def audit(data_list, tags, debug=False):
     __data__ = {}
     __secdata__ = _secedit_export()
     __sidaccounts__ = _get_account_sid()
+    log.error('__sidaccounts__= {}'.format(__sidaccounts__))
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
     __tags__ = _get_tags(__data__)
@@ -57,9 +59,12 @@ def audit(data_list, tags, debug=False):
                 name = tag_data['name']
                 audit_type = tag_data['type']
                 output = tag_data['match_output'].lower()
+                log.error('**name= {}'.format(name))
+                log.error('*output={}'.format(output))
 
                 # Blacklisted audit (do not include)
                 if audit_type == 'blacklist':
+                    log.error('Inside blacklist***')
                     if 'no one' in output:
                         if name not in __secdata__:
                             ret['Success'].append(tag_data)
@@ -67,7 +72,7 @@ def audit(data_list, tags, debug=False):
                             ret['Failure'].append(tag_data)
                     else:
                         if name in __secdata__:
-                            secret = _translate_value_type(sec_value, tag_data['value_type'], match_output)
+                            secret = _translate_value_type(__secdata__[name], tag_data['value_type'], tag_data['match_output'])
                             if secret:
                                 ret['Failure'].append(tag_data)
                             else:
@@ -77,7 +82,8 @@ def audit(data_list, tags, debug=False):
                 if audit_type == 'whitelist':
                     if name in __secdata__:
                         sec_value = __secdata__[name]
-                        if 'machine\\' in output:
+                        tag_data['found_value'] = sec_value
+                        if 'MACHINE\\' in name:
                             match_output = _reg_value_translator(tag_data['match_output'])
                         else:
                             match_output = tag_data['match_output']
@@ -90,6 +96,7 @@ def audit(data_list, tags, debug=False):
                         else:
                             ret['Failure'].append(tag_data)
                     else:
+                        log.error('name was not in __secdata__')
                         ret['Failure'].append(tag_data)
 
     return ret
@@ -256,7 +263,7 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             current = current.replace('"', '')
         if '"' in evaluator:
             evaluator = evaluator.replace('"', '')
-        if int(current) > int(evaluator):
+        if int(current) >= int(evaluator):
             return True
         else:
             return False
@@ -269,7 +276,7 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             current = current.replace('"', '')
         if '"' in evaluator:
             evaluator = evaluator.replace('"', '')
-        if int(current) < int(evaluator):
+        if int(current) <= int(evaluator):
             if current != '0':
                 return True
             else:
@@ -286,8 +293,10 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             return False
     elif 'account' in value:
         evaluator = _account_audit(evaluator, __sidaccounts__)
+        log.error('evaluator= {}'.format(evaluator))
         evaluator_list = evaluator.split(',')
         current_list = current.split(',')
+        log.error('evaluator_list= {0} ***** current_list= {1}'.format(evaluator_list, current_list))
         list_match = False
         for list_item in evaluator_list:
             if list_item in current_list:
@@ -333,6 +342,8 @@ def _evaluator_translator(input_string):
         return '2'
     elif input_string == 'success,failure' or input_string == 'failure,success':
         return '3'
+    elif input_string in ['0','1','2','3']:
+        return input_string
     else:
         log.debug('error translating evaluator from enabled/disabled or success/failure.'
                   '  Could have received incorrect string')
@@ -363,7 +374,7 @@ def _account_audit(current, __sidaccounts__):
 
 
 def _reg_value_translator(input_string):
-    input_string.lower()
+    input_string = input_string.lower()
     if input_string == 'enabled':
         return '4,1'
     elif input_string == 'disabled':
@@ -384,13 +395,13 @@ def _reg_value_translator(input_string):
         return '4,5'
     elif input_string == 'negotiate signing':
         return '4,1'
-    elif input_string == 'Require ntlmv2 session security, require 128-bit encryption':
+    elif input_string == 'require ntlmv2 session security, require 128-bit encryption':
         return '4,537395200'
     elif input_string == 'prompt for consent on the secure desktop':
         return '4,2'
     elif input_string == 'automatically deny elevation requests':
         return '4,0'
-    elif input_string == 'Defined (blank)':
+    elif input_string == 'defined (blank)':
         return '7,'
     else:
         return input_string

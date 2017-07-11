@@ -26,7 +26,7 @@ def __virtual__():
 
 def audit(data_list, tags, debug=False):
     '''
-    Runs auditpol on the local machine and audits the return data
+    Runs salt reg query on the local machine and audits the return data
     with the CIS yaml processed by __virtual__
     '''
     __data__ = {}
@@ -48,7 +48,10 @@ def audit(data_list, tags, debug=False):
                     continue
                 name = tag_data['name']
                 audit_type = tag_data['type']
-                match_output = tag_data['match_output'].lower()
+                try:
+                    match_output = int(tag_data['match_output'])
+                except ValueError:                      
+                    match_output = tag_data['match_output'].lower()
                 reg_dict = _reg_path_splitter(name)
 
                 # Blacklisted audit (do not include)
@@ -61,12 +64,17 @@ def audit(data_list, tags, debug=False):
 
                 # Whitelisted audit (must include)
                 if 'whitelist' in audit_type:
+                    if 'user' in tag_data['value_type']:
+                        log.debug("HKEY_Users is still a work in progress")
+                        ret['Success'].append(tag_data)
+                        continue
                     current = _find_option_value_in_reg(reg_dict['hive'], reg_dict['key'], reg_dict['value'])
                     if isinstance(current, list):
                         if False in current:
                             ret['Failure'].append(tag_data)
                         else:
                             for key in current:
+                                tag_data['value_found'] = key
                                 secret = _translate_value_type(key, tag_data['value_type'], match_output)
                                 if not secret:
                                     break
@@ -74,9 +82,10 @@ def audit(data_list, tags, debug=False):
                                 ret['Success'].append(tag_data)
                             else:
                                 ret['Failure'].append(tag_data)
-                    if current:
+                    if current is not False:
                         secret = _translate_value_type(current, tag_data['value_type'], match_output)
                         if secret:
+                            tag_data['value_found'] = current
                             ret['Success'].append(tag_data)
                         else:
                             tag_data['value_found'] = current
@@ -186,7 +195,10 @@ def _find_option_value_in_reg(reg_hive, reg_key, reg_value):
             reg_key.replace('<SID>', sid)
             reg_result = __salt__['reg.read_value'](reg_hive, reg_key, reg_value)
             if reg_result['success']:
-                ret_list.append(reg_result['vdata'])
+                if reg_result['vdata'] == '(value not set)':
+                    ret_list.append(False)
+                else:
+                    ret_list.append(reg_result['vdata'])
             else:
                 ret_list.append(False)
         if False in ret_list:
@@ -198,26 +210,36 @@ def _find_option_value_in_reg(reg_hive, reg_key, reg_value):
     else:
         reg_result = __salt__['reg.read_value'](reg_hive, reg_key, reg_value)
         if reg_result['success']:
-            return reg_result['vdata']
+            if reg_result['vdata'] == '(value not set)':
+                return False
+            else:
+                return reg_result['vdata']
         else:
             return False
 
-
-def _translate_evaluator(output):
-    '''Helper function to return valid output you would find in the registry'''
-    if 'enabled' in output:
-        return '1'
-    if 'disabled' in output:
-        return '0'
-
-
 def _translate_value_type(current, value, evaluator):
-    evaluator = _translate_evaluator(evaluator)
-    if 'all' in value:
+    try:
+        current = int(current)
+    except ValueError:
+        log.debug('registry value is a string')
+    if 'equal' in value:
         if current == evaluator:
             return True
         else:
             return False
     if 'domain' in value:
         pass
+    if 'more' in value:
+        if current >= evaluator:
+            return True
+        else:
+            return False
+    if 'less' in value:
+        if current <= evaluator and current != 0:
+            return True
+        else:
+            return False
+    if 'user' in value:
+        log.debug("HKEY_Users is still a work in progress")
+        return True
 

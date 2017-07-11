@@ -37,10 +37,10 @@ import yaml
 
 import salt.utils
 from salt.exceptions import CommandExecutionError
-from hubblestack import __version__
 
 log = logging.getLogger(__name__)
 
+__version__ = 'v2017.4.1'
 __virtualname__ = 'nebula'
 
 
@@ -120,7 +120,7 @@ def queries(query_group,
     if salt.utils.is_windows():
         win_version = __grains__['osfullname']
         if '2008' not in win_version and '2012' not in win_version and '2016' not in win_version:
-            log.error('osquery does not run on windows versions earlier than Server 2008')
+            log.error('osquery does not run on windows versions earlier than Server 2008 and Windows 7')
             if query_group == 'day':
                 ret = []
                 ret.append(
@@ -174,8 +174,8 @@ def queries(query_group,
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
-            query_ret['result'] = False
-            query_ret['error'] = res['stderr']
+            queury_ret['result'] = False
+            queury_ret['error'] = res['stderr']
 
         if verbose:
             tmp = copy.deepcopy(query)
@@ -201,9 +201,40 @@ def hubble_versions():
     '''
     Report version of all hubble modules as query
     '''
-    versions = {'nova': __version__,
-                'nebula': __version__,
-                'pulsar': __version__,
-                'quasar': __version__}
+    versions = {}
+
+    # Nova
+    if 'hubble.version' in __salt__:
+        versions['nova'] = __salt__['hubble.version']()
+    else:
+        versions['nova'] = None
+
+    # Nebula
+    versions['nebula'] = version()
+
+    # Pulsar
+    if salt.utils.is_windows():
+        try:
+            sys.path.insert(0, os.path.dirname(__salt__['cp.cache_file']('salt://_beacons/win_pulsar.py')))
+            import win_pulsar
+            versions['pulsar'] = win_pulsar.__version__
+        except:
+            versions['pulsar'] = None
+    else:
+        try:
+            sys.path.insert(0, os.path.dirname(__salt__['cp.cache_file']('salt://_beacons/pulsar.py')))
+            import pulsar
+            versions['pulsar'] = pulsar.__version__
+        except:
+            versions['pulsar'] = None
+
+    # Quasar
+    try:
+        sys.path.insert(0, os.path.dirname(__salt__['cp.cache_file']('salt://_returners/splunk_nova_return.py')))
+        import splunk_nova_return
+        versions['quasar'] = splunk_nova_return.__version__
+    except:
+        versions['quasar'] = None
+
     return {'hubble_versions': {'data': [versions],
                                 'result': True}}

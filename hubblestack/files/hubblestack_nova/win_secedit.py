@@ -39,7 +39,6 @@ def audit(data_list, tags, debug=False):
     __data__ = {}
     __secdata__ = _secedit_export()
     __sidaccounts__ = _get_account_sid()
-    log.error('__sidaccounts__= {}'.format(__sidaccounts__))
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
     __tags__ = _get_tags(__data__)
@@ -59,12 +58,9 @@ def audit(data_list, tags, debug=False):
                 name = tag_data['name']
                 audit_type = tag_data['type']
                 output = tag_data['match_output'].lower()
-                log.error('**name= {}'.format(name))
-                log.error('*output={}'.format(output))
 
                 # Blacklisted audit (do not include)
                 if audit_type == 'blacklist':
-                    log.error('Inside blacklist***')
                     if 'no one' in output:
                         if name not in __secdata__:
                             ret['Success'].append(tag_data)
@@ -293,10 +289,8 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             return False
     elif 'account' in value:
         evaluator = _account_audit(evaluator, __sidaccounts__)
-        log.error('evaluator= {}'.format(evaluator))
         evaluator_list = evaluator.split(',')
         current_list = current.split(',')
-        log.error('evaluator_list= {0} ***** current_list= {1}'.format(evaluator_list, current_list))
         list_match = False
         for list_item in evaluator_list:
             if list_item in current_list:

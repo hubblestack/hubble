@@ -169,7 +169,7 @@ def queries(query_group,
             'result': True,
         }
 
-        cmd = ['osqueryi', '--read_max', MAX_FILE_SIZE, '--read_user_max', MAX_FILE_SIZE, '--json', query_sql]
+        cmd = ['osqueryi', '--read_max', MAX_FILE_SIZE, '--json', query_sql]
         res = __salt__['cmd.run_all'](cmd)
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])

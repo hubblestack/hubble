@@ -65,7 +65,7 @@ def returner(ret):
     aws = get_aws_details()
 
     for opts in opts_list:
-        logging.info('Options: %s' % json.dumps(opts))
+        log.info('Options: %s' % json.dumps(opts))
         http_event_collector_key = opts['token']
         http_event_collector_host = opts['indexer']
         hec_ssl = opts['http_event_server_ssl']
@@ -98,6 +98,11 @@ def returner(ret):
             master = __grains__['master']
         else:
             master = socket.gethostname()  # We *are* the master, so use our hostname
+
+        if not isinstance(data, dict):
+            log.error('Data sent to splunk_nova_return was not formed as a '
+                      'dict:\n{0}'.format(data))
+            return
 
         for fai in data.get('Failure', []):
             check_id = fai.keys()[0]
@@ -223,7 +228,7 @@ def event_return(event):
         elif(e['data']['fun'] != 'hubble.audit'):
             continue  # not a call to hubble.audit, so not relevant
         else:
-            logging.debug('Logging event: %s' % str(e))
+            log.debug('Logging event: %s' % str(e))
             returner(e['data'])  # Call the standard returner
     return
 
@@ -283,7 +288,7 @@ def send_splunk(event, index_override=None, sourcetype_override=None):
 
     # Add the event
     payload.update({'event': event})
-    logging.info('Payload: %s' % json.dumps(payload))
+    log.info('Payload: %s' % json.dumps(payload))
 
     # fire it off
     hec.batchEvent(payload)
@@ -356,8 +361,8 @@ class http_event_collector:
 
         # Print debug info if flag set
         if http_event_collector_debug:
-            logger.debug(r.text)
-            logger.debug(data)
+            log.debug(r.text)
+            log.debug(data)
 
     def batchEvent(self, payload, eventtime=''):
         # Method to store the event in a batch to flush later

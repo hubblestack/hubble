@@ -69,13 +69,14 @@ def returner(ret):
         logging.info('Options: %s' % json.dumps(opts))
         http_event_collector_key = opts['token']
         http_event_collector_host = opts['indexer']
+        http_event_collector_port = opts['port']
         hec_ssl = opts['http_event_server_ssl']
         proxy = opts['proxy']
         timeout = opts['timeout']
         custom_fields = opts['custom_fields']
 
         # Set up the collector
-        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
+        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
 
         # st = 'salt:hubble:nova'
         data = ret['return']
@@ -158,6 +159,7 @@ def _get_options():
             processed = {}
             processed['token'] = opt.get('token')
             processed['indexer'] = opt.get('indexer')
+            processed['port'] = str(opt.get('port', '8088'))
             processed['index'] = opt.get('index')
             processed['custom_fields'] = opt.get('custom_fields', [])
             processed['sourcetype'] = opt.get('sourcetype_nebula', 'hubble_osquery')

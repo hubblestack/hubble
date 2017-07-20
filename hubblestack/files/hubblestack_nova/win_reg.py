@@ -170,7 +170,11 @@ def _get_tags(data):
 def _reg_path_splitter(reg_path):
     dict_return = {}
     dict_return['hive'], temp = reg_path.split('\\', 1)
-    dict_return['key'], dict_return['value'] = temp.rsplit('\\', 1)
+    if '\\\\*\\' in temp:
+        dict_return['key'], dict_return['value'] = temp.rsplit('\\\\', 1)
+        dict_return['value'] = '\\\\{}'.format(dict_return['value'])
+    else:
+        dict_return['key'], dict_return['value'] = temp.rsplit('\\', 1)
 
     return dict_return
 
@@ -217,6 +221,7 @@ def _translate_value_type(current, value, evaluator):
         current = int(current)
     except ValueError:
         log.debug('registry value is a string')
+        current = current.lower()
     if 'equal' in value:
         if current == evaluator:
             return True

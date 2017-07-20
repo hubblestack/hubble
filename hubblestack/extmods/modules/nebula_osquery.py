@@ -37,10 +37,10 @@ import yaml
 
 import salt.utils
 from salt.exceptions import CommandExecutionError
-from hubblestack import __version__
 
 log = logging.getLogger(__name__)
 
+__version__ = 'v2017.4.1'
 __virtualname__ = 'nebula'
 
 
@@ -120,7 +120,7 @@ def queries(query_group,
     if salt.utils.is_windows():
         win_version = __grains__['osfullname']
         if '2008' not in win_version and '2012' not in win_version and '2016' not in win_version:
-            log.error('osquery does not run on windows versions earlier than Server 2008')
+            log.error('osquery does not run on windows versions earlier than Server 2008 and Windows 7')
             if query_group == 'day':
                 ret = []
                 ret.append(
@@ -206,5 +206,6 @@ def hubble_versions():
                 'nebula': __version__,
                 'pulsar': __version__,
                 'quasar': __version__}
+
     return {'hubble_versions': {'data': [versions],
                                 'result': True}}

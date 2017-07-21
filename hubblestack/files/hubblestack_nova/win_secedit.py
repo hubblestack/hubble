@@ -13,7 +13,6 @@ import copy
 import fnmatch
 import logging
 import salt.utils
-from pprint import pprint
 
 try:
     import codecs

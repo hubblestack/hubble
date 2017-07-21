@@ -173,6 +173,18 @@ def _execute_shell_command(cmd):
     '''
     return __salt__['cmd.run'](cmd, python_shell=True, shell='/bin/bash')
 
+def check_all_ports_firewall_rules(reason=''):
+    '''
+    Ensure firewall rule for all open ports
+    '''
+    end_open_ports = _execute_shell_command('netstat -ln | grep "Active UNIX domain sockets (only servers)" -n  | cut -d ":" -f1')
+    start_open_ports = _execute_shell_command('netstat -ln | grep "Active Internet connections (only servers)" -n | cut -d ":" -f1')
+    open_ports = _execute_shell_command('netstat -ln | awk \'FNR > ' + start_open_ports + ' && FNR < ' + end_open_ports + ' && $6 == "LISTEN" {print $4}\' | sed -e "s/.*://"')
+    firewall_ports = _execute_shell_command('iptables -L INPUT -v -n | awk \'FNR > 2 {print $11}\' | sed -e "s/.*://"')
+    if set(open_ports).issubset(set(firewall_ports)):
+        return True
+    return False
+
 def check_password_fields_not_empty(reason=''):
     '''
     Ensure password fields are not empty
@@ -268,6 +280,7 @@ def test_failure_reason(reason):
 
 
 FUNCTION_MAP = {
+    'check_all_ports_firewall_rules': check_all_ports_firewall_rules,
     'check_password_fields_not_empty': check_password_fields_not_empty,
     'ungrouped_files_or_dir': ungrouped_files_or_dir,
     'unowned_files_or_dir': unowned_files_or_dir,

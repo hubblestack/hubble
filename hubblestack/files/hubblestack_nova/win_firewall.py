@@ -178,6 +178,7 @@ def _import_firewall():
         dict_return[temp_vals['Name']] = temp_vals
     return dict_return
 
+
 def _translate_value_type(current, value, evaluator):
     if value in ('public', 'private', 'domain'):
         if current == evaluator:

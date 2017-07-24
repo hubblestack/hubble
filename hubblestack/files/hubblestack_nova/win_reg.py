@@ -50,7 +50,7 @@ def audit(data_list, tags, debug=False):
                 audit_type = tag_data['type']
                 try:
                     match_output = int(tag_data['match_output'])
-                except ValueError:                      
+                except ValueError:
                     match_output = tag_data['match_output'].lower()
                 reg_dict = _reg_path_splitter(name)
 
@@ -73,7 +73,7 @@ def audit(data_list, tags, debug=False):
                             answer_list = []
                             for item in current:
                                 answer_list.append(_translate_value_type(current[item], tag_data['value_type'], match_output))
-                            
+
                             if False in answer_list:
                                 ret['Failure'].append(tag_data)
                             else:

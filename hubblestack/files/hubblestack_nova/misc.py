@@ -87,9 +87,9 @@ def audit(data_list, tags, debug=False):
 
                 function = FUNCTION_MAP.get(tag_data['function'])
                 if not function:
-                    if 'Error' not in ret:
-                        ret['Error'] = []
-                    ret['Error'].append({tag: 'No function {0} found'
+                    if 'Errors' not in ret:
+                        ret['Errors'] = []
+                    ret['Errors'].append({tag: 'No function {0} found'
                                               .format(tag_data['function'])})
                 args = tag_data.get('args', [])
                 kwargs = tag_data.get('kwargs', {})

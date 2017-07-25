@@ -28,6 +28,8 @@ __virtualname__ = 'pulsar'
 CONFIG = None
 CONFIG_STALENESS = 0
 
+__version__ = 'v2017.4.1'
+
 
 def __virtual__():
     if not salt.utils.is_windows():
@@ -35,7 +37,7 @@ def __virtual__():
     return __virtualname__
 
 
-def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.yaml',
+def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
             verbose=False):
     '''
     Watch the configured files
@@ -395,9 +397,9 @@ def _remove_acl(path):
 
 def _pull_events(time_frame, checksum):
     events_list = []
-    events_output = __salt__['cmd.run_stdout']('mode con:cols=1000 lines=1000; Get-EventLog -LogName Security '
-                                               '-After ((Get-Date).AddSeconds(-{0})) -InstanceId 4663 | fl'.format(
-                                                time_frame), shell='powershell', python_shell=True)
+    events_output = __salt__['cmd.run_stdout']('mode con:cols=1000 lines=1000; Get-WinEvent -FilterHashTable @{{'
+                                               'LogName = "security"; StartTime = [datetime]::Now.AddSeconds(-30);'
+                                               'Id = 4663}} | fl'.format(time_frame), shell='powershell', python_shell=True)
     events = events_output.split('\r\n\r\n')
     for event in events:
         if event:
@@ -408,12 +410,12 @@ def _pull_events(time_frame, checksum):
                     item.replace('\t', '')
                     k, v = item.split(':', 1)
                     event_dict[k.strip()] = v.strip()
-            event_dict['Accesses'] = _get_access_translation(event_dict['Accesses'])
+            #event_dict['Accesses'] = _get_access_translation(event_dict['Accesses'])
             event_dict['Hash'] = _get_item_hash(event_dict['Object Name'], checksum)
             #needs hostname, checksum, filepath, time stamp, action taken
             # Generate the dictionary without a dictionary comp, for py2.6
             tmpdict = {}
-            for k in ('EntryType', 'Accesses', 'TimeGenerated', 'Object Name', 'Hash'):
+            for k in ('Message', 'Accesses', 'TimeCreated', 'Object Name', 'Hash'):
                 tmpdict[k] = event_dict[k]
             events_list.append(tmpdict)
     return events_list

@@ -1,5 +1,23 @@
 # -*- encoding: utf-8 -*-
 '''
+HubbleStack Nebula-to-Logstash (http input) returner
+
+:maintainer: HubbleStack
+:platform: All
+:requires: HubbleStack
+
+Deliver HubbleStack Nebula query data into Logstash using the HTTP input
+plugin. Required config/pillar settings:
+
+.. code-block:: yaml
+
+    hubblestack:
+      returner:
+        logstash:
+          - user: edwin
+            port: 8080
+            password: xoxepap0ooxoha4Xeen2ub6ohTh3huXo
+            indexer: http://logstash.http.input.tld
 '''
 
 import socket

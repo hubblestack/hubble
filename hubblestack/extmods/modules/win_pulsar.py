@@ -37,7 +37,7 @@ def __virtual__():
     return __virtualname__
 
 
-def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
+def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.yaml',
             verbose=False):
     '''
     Watch the configured files

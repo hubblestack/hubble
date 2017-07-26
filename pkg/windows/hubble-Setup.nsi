@@ -250,7 +250,7 @@ ${StrStrAdv}
   Section "MainSection" SEC01
 
     SetOutPath "$INSTDIR\"
-    SetOverwrite off
+    SetOverwrite ifdiff 
 	CreateDirectory $INSTDIR\var
     File /r "..\..\dist\hubble\"
 	File "..\osqueryi.exe"
@@ -294,7 +294,7 @@ ${StrStrAdv}
     nsExec::Exec "nssm.exe set Hubble AppParameters hubble.exe -c .\etc\hubble\hubble.conf"
     nsExec::Exec "nssm.exe set Hubble Start SERVICE_AUTO_START"
 
-    RMDir /R "$INSTDIR\var" ; removing cache from old version
+    RMDir /R "$INSTDIR\var\cache" ; removing cache from old version
 
     Call updateHubbleConfig
 

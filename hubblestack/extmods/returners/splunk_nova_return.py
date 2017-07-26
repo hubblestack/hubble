@@ -259,7 +259,7 @@ def _get_options():
             indexer = __salt__['config.get']('hubblestack:nova:returner:splunk:indexer')
             sourcetype = __salt__['config.get']('hubblestack:nova:returner:splunk:sourcetype')
             index = __salt__['config.get']('hubblestack:nova:returner:splunk:index')
-            custom_fields = __salt__['config.get']('hubblestack:nebula:returner:splunk:custom_fields', [])
+            custom_fields = __salt__['config.get']('hubblestack:nova:returner:splunk:custom_fields', [])
         except:
             return None
         splunk_opts = {'token': token, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}

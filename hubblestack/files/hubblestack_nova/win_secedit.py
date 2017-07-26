@@ -210,7 +210,7 @@ def _get_account_sid():
     '''This helper function will get all the users and groups on the computer
     and return a dictionary'''
     win32 = __salt__['cmd.run']('Get-WmiObject win32_useraccount -Filter "localaccount=\'True\'"'
-                                ' | Format-List -Property Name, SID', shell='powershell', 
+                                ' | Format-List -Property Name, SID', shell='powershell',
                                 python_shell=True)
     win32 += '\n'
     win32 += __salt__['cmd.run']('Get-WmiObject win32_group -Filter "localaccount=\'True\'" | '

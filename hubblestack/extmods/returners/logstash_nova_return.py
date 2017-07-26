@@ -14,26 +14,30 @@ plugin. Required config/pillar settings:
     hubblestack:
       returner:
         logstash:
-          - user: edwin
-            port: 8080
-            password: xoxepap0ooxoha4Xeen2ub6ohTh3huXo
+          - port: 8080
+            proxy: {}
+            timeout: 10
+            user: username
+            indexer_ssl: True
+            sourcetype_nova: hubble_audit
             indexer: http://logstash.http.input.tld
+            password: password
+            custom_fields:
+              - site
+              - product_group
 '''
 
-import socket
-import requests
-from requests.auth import HTTPBasicAuth
 import json
 import time
+import socket
+import requests
+from aws_details import get_aws_details
+from requests.auth import HTTPBasicAuth
 
 def returner(ret):
-    try:
-        port = __salt__['config.get']('hubblestack:returner:logstash:port')
-        user = __salt__['config.get']('hubblestack:returner:logstash:user')
-        indexer = __salt__['config.get']('hubblestack:returner:logstash:indexer')
-        password = __salt__['config.get']('hubblestack:returner:logstash:password')
-    except:
-        return None
+    opts = _get_options():
+
+    aws = get_aws_details()
 
     data = ret['return']
     minion_id = ret['id']
@@ -80,6 +84,20 @@ def returner(ret):
         event.update({'dest_host': fqdn})
         event.update({'dest_ip': fqdn_ip4})
 
+        if aws['aws_account_id'] is not None:
+            event.update({'aws_ami_id': aws['aws_ami_id']})
+            event.update({'aws_instance_id': aws['aws_instance_id']})
+            event.update({'aws_account_id': aws['aws_account_id']})
+
+        for custom_field in custom_fields:
+            custom_field_name = 'custom_' + custom_field
+            custom_field_value = __salt__['config.get'](custom_field, '')
+            if isinstance(custom_field_value, str):
+                event.update({custom_field_name: custom_field_value})
+            elif isinstance(custom_field_value, list):
+                custom_field_value = ','.join(custom_field_value)
+                event.update({custom_field_name: custom_field_value})
+
         payload.update({'host': fqdn})
         payload.update({'event': event})
 
@@ -105,6 +123,20 @@ def returner(ret):
         event.update({'dest_host': fqdn})
         event.update({'dest_ip': fqdn_ip4})
 
+        if aws['aws_account_id'] is not None:
+            event.update({'aws_ami_id': aws['aws_ami_id']})
+            event.update({'aws_instance_id': aws['aws_instance_id']})
+            event.update({'aws_account_id': aws['aws_account_id']})
+
+        for custom_field in custom_fields:
+            custom_field_name = 'custom_' + custom_field
+            custom_field_value = __salt__['config.get'](custom_field, '')
+            if isinstance(custom_field_value, str):
+                event.update({custom_field_name: custom_field_value})
+            elif isinstance(custom_field_value, list):
+                custom_field_value = ','.join(custom_field_value)
+                event.update({custom_field_name: custom_field_value})
+
         payload.update({'host': fqdn})
         payload.update({'event': event})
 
@@ -122,6 +154,20 @@ def returner(ret):
         event.update({'dest_host': fqdn})
         event.update({'dest_ip': fqdn_ip4})
 
+        if aws['aws_account_id'] is not None:
+            event.update({'aws_ami_id': aws['aws_ami_id']})
+            event.update({'aws_instance_id': aws['aws_instance_id']})
+            event.update({'aws_account_id': aws['aws_account_id']})
+
+        for custom_field in custom_fields:
+            custom_field_name = 'custom_' + custom_field
+            custom_field_value = __salt__['config.get'](custom_field, '')
+            if isinstance(custom_field_value, str):
+                event.update({custom_field_name: custom_field_value})
+            elif isinstance(custom_field_value, list):
+                custom_field_value = ','.join(custom_field_value)
+                event.update({custom_field_name: custom_field_value})
+
         payload.update({'host': fqdn})
         payload.update({'event': event})
 
@@ -129,3 +175,43 @@ def returner(ret):
         requests.put('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
 
     return
+
+
+def _get_options():
+    if __salt__['config.get']('hubblestack:returner:logstash'):
+        splunk_opts = []
+        returner_opts = __salt__['config.get']('hubblestack:returner:logstash')
+        if not isinstance(returner_opts, list):
+            returner_opts = [returner_opts]
+        for opt in returner_opts:
+            processed = {}
+            processed['token'] = opt.get('token')
+            processed['indexer'] = opt.get('indexer')
+            processed['port'] = str(opt.get('port', '8080'))
+            processed['index'] = opt.get('index')
+            processed['custom_fields'] = opt.get('custom_fields', [])
+            processed['sourcetype'] = opt.get('sourcetype_nova', 'hubble_audit')
+            processed['http_input_server_ssl'] = opt.get('indexer_ssl', True)
+            processed['proxy'] = opt.get('proxy', {})
+            processed['timeout'] = opt.get('timeout', 9.05)
+            logstash_opts.append(processed)
+        return logstash_opts
+    else:
+        try:
+            port = __salt__['config.get']('hubblestack:returner:logstash:port')
+            user = __salt__['config.get']('hubblestack:returner:logstash:user')
+            indexer = __salt__['config.get']('hubblestack:returner:logstash:indexer')
+            password = __salt__['config.get']('hubblestack:returner:logstash:password')
+            sourcetype = __salt__['config.get']('hubblestack:nova:returner:logstash:sourcetype')
+            custom_fields = __salt__['config.get']('hubblestack:nova:returner:logstash:custom_fields', [])
+        except:
+            return None
+
+        logstash_opts = {'token': token, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}
+
+        indexer_ssl = __salt__['config.get']('hubblestack:nova:returner:logstash:indexer_ssl', True)
+        logstash_opts['http_input_server_ssl'] = indexer_ssl
+        logstash_opts['proxy'] = __salt__['config.get']('hubblestack:nova:returner:logstash:proxy', {})
+        logstash_opts['timeout'] = __salt__['config.get']('hubblestack:nova:returner:logstash:timeout', 9.05)
+
+        return [logstash_opts]

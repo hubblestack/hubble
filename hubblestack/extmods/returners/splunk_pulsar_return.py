@@ -40,8 +40,8 @@ be skipped:
 '''
 
 import socket
-# Import AWS details
-from aws_details import get_aws_details
+# Import cloud details
+from cloud_details import get_cloud_details
 
 # Imports for http event forwarder
 import requests
@@ -67,8 +67,8 @@ def returner(ret):
         return
 
     opts_list = _get_options()
-    # Get aws details
-    aws = get_aws_details()
+    # Get cloud details
+    clouds = get_cloud_details()
 
     for opts in opts_list:
         logging.info('Options: %s' % json.dumps(opts))
@@ -205,10 +205,8 @@ def returner(ret):
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})
 
-            if aws['aws_account_id'] is not None:
-                event.update({'aws_ami_id': aws['aws_ami_id']})
-                event.update({'aws_instance_id': aws['aws_instance_id']})
-                event.update({'aws_account_id': aws['aws_account_id']})
+            for cloud in clouds:
+                event.update(cloud)
 
             for custom_field in custom_fields:
                 custom_field_name = 'custom_' + custom_field

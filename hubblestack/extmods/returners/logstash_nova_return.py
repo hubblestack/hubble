@@ -116,7 +116,7 @@ def returner(ret):
             payload.update({'event': event})
 
             rdy = json.dumps(payload)
-            requests.put('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
+            requests.post('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
 
 
         for suc in data.get('Success', []):
@@ -157,7 +157,7 @@ def returner(ret):
             payload.update({'event': event})
 
             rdy = json.dumps(payload)
-            requests.put('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
+            requests.post('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
 
 
         if data.get('Compliance', None):
@@ -190,7 +190,7 @@ def returner(ret):
             payload.update({'event': event})
 
             rdy = json.dumps(payload)
-            requests.put('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
+            requests.post('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
 
     return
 

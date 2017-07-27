@@ -204,7 +204,7 @@ def _get_options():
             processed['port'] = str(opt.get('port', '8080'))
             processed['index'] = opt.get('index')
             processed['custom_fields'] = opt.get('custom_fields', [])
-            processed['sourcetype'] = opt.get('sourcetype_pulsar', 'hubble_osquery')
+            processed['sourcetype'] = opt.get('sourcetype_pulsar', 'hubble_fim')
             processed['indexer_ssl'] = opt.get('indexer_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)

@@ -39,19 +39,19 @@ from requests.auth import HTTPBasicAuth
 def returner(ret):
     '''
     '''
-    opts = _get_options():
+    opts_list = _get_options()
 
     aws = get_aws_details()
 
     for opts in opts_list:
-        logging.info('Options: %s' % json.dumps(opts))
-        http_event_collector_key = opts['token']
-        http_event_collector_host = opts['indexer']
-        http_event_collector_port = opts['port']
-        hec_ssl = opts['http_event_server_ssl']
         proxy = opts['proxy']
         timeout = opts['timeout']
         custom_fields = opts['custom_fields']
+
+        indexer = opts['indexer']
+        port = opts['port']
+        password = opts['password']
+        user = opts['user']
 
         ## assign all the things
         data = ret['return']
@@ -102,10 +102,7 @@ def returner(ret):
 
                         payload.update({'host': fqdn})
                         payload.update({'index': opts['index']})
-                        if opts['add_query_to_sourcetype']:
-                            payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], query_name)})
-                        else:
-                            payload.update({'sourcetype': opts['sourcetype']})
+                        payload.update({'sourcetype': opts['sourcetype']})
                         payload.update({'event': event})
 
                         # If the osquery query includes a field called 'time' it will be checked.
@@ -123,18 +120,15 @@ def returner(ret):
 
 
 def _get_options():
-    opts = _get_options():
-
-    aws = get_aws_details()
-
     if __salt__['config.get']('hubblestack:returner:logstash'):
-        splunk_opts = []
+        logstash_opts = []
         returner_opts = __salt__['config.get']('hubblestack:returner:logstash')
         if not isinstance(returner_opts, list):
             returner_opts = [returner_opts]
         for opt in returner_opts:
             processed = {}
             processed['password'] = opt.get('password')
+            processed['user'] = opt.get('user')
             processed['indexer'] = opt.get('indexer')
             processed['port'] = str(opt.get('port', '8080'))
             processed['index'] = opt.get('index')
@@ -156,7 +150,7 @@ def _get_options():
         except:
             return None
 
-        logstash_opts = {'token': token, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}
+        logstash_opts = {'password': password, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}
 
         indexer_ssl = __salt__['config.get']('hubblestack:nebula:returner:logstash:indexer_ssl', True)
         logstash_opts['http_input_server_ssl'] = indexer_ssl

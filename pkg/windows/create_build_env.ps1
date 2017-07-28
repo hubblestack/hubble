@@ -1,7 +1,6 @@
 ﻿# Script to install hubble dependencies and create executible
 $chocoVer = "0.10.5"
 $gitVer = "2.12.0"
-$hooks = "./pkg/"
 
 # Verify you are running with elevated permission mode (administrator token)
 if (!([bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544"))) {
@@ -87,7 +86,7 @@ If (Test-Path "C:\Program Files (x86)") {
 } else {
     Invoke-WebRequest -Uri https://github.com/git-for-windows/git/releases/download/v2.12.2.windows.2/PortableGit-2.12.2.2-32-bit.7z.exe -OutFile .\PortableGit.7z.exe
 }
-7za x PortableGit.7z.exe -o"$path\hubble\PortableGit" -y
+7z x PortableGit.7z.exe -o"$path\hubble\PortableGit" -y
 & "$path\hubble\PortableGit\post-install.bat"
 
 # Install osquery for executible

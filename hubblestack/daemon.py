@@ -278,6 +278,7 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
     salt.config.DEFAULT_MINION_OPTS['scheduler_sleep_frequency'] = 0.5
+    salt.config.DEFAULT_MINION_OPTS['default_include'] = 'hubble.d/*.conf'
 
     global __opts__
     global __grains__

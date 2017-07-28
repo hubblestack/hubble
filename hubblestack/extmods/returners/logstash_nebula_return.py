@@ -115,7 +115,7 @@ def returner(ret):
                             event_time = ''
                         finally:
                             rdy = json.dumps(payload)
-                            requests.put('{}:{}/hubble/nebula'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
+                            requests.post('{}:{}/hubble/nebula'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
     return
 
 

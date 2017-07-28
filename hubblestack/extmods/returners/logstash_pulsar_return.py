@@ -186,7 +186,7 @@ def returner(ret):
             payload.update({'event': event})
 
             rdy = json.dumps(payload)
-            requests.put('{}:{}/hubble/pulsar'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
+            requests.post('{}:{}/hubble/pulsar'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
     return
 
 

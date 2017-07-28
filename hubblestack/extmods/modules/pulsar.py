@@ -255,10 +255,13 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                             _append = False
 
             if _append:
+                config_path = config['paths'][0]
+                pulsar_config = config_path[config_path.rfind('/')+1:len(config_path)]
                 sub = {'tag': event.path,
                        'path': event.pathname,
                        'change': event.maskname,
-                       'name': event.name}
+                       'name': event.name,
+                       'pulsar_config': pulsar_config}
 
                 if config.get('checksum', False) and os.path.isfile(pathname):
                     sum_type = config['checksum']
@@ -385,6 +388,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
                     dest[key] = upd[key]
             else:
                 dest[key] = upd[key]
+
         return dest
     else:
         try:

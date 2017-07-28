@@ -196,6 +196,9 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     for r in ret:
         _append = True
         config_found = False
+        config_path = config['paths'][0]
+        pulsar_config = config_path[config_path.rfind('/')+1:len(config_path)]
+        r['pulsar_config'] = pulsar_config
         for path in config:
             if not r['Object Name'].startswith(path):
                 continue

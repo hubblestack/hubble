@@ -147,6 +147,7 @@ def returner(ret):
                 event['object_path'] = alert['path']
                 event['file_name'] = alert['name']
                 event['file_path'] = alert['tag']
+                event['pulsar_config'] = alert['pulsar_config']
 
                 if alert['stats']:  # Gather more data if the change wasn't a delete
                     stats = alert['stats']
@@ -197,6 +198,7 @@ def returner(ret):
                 event['object_path'] = alert['Object Name']
                 event['file_name'] = os.path.basename(alert['Object Name'])
                 event['file_path'] = os.path.dirname(alert['Object Name'])
+                event['file_path'] = alert['pulsar_config']
                 # TODO: Should we be reporting 'EntryType' or 'TimeGenerated?
                 #   EntryType reports whether attempt to change was successful.
 

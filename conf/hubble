@@ -61,6 +61,10 @@ fileserver_backend:
 #    seconds: 1
 #    returner: splunk_pulsar_return
 #    run_on_start: True
+#  pulsar_canary:
+#    function: pulsar.canary
+#    seconds: 86400
+#    run_on_start: True
 
 #################################
 ## Returner Config

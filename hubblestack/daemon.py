@@ -156,6 +156,8 @@ def schedule():
         Optional.
     '''
     schedule_config = __opts__.get('schedule', {})
+    if 'user_schedule' in __opts__ and isinstance(__opts__['user_schedule'], dict):
+        schedule_config.update(__opts__['user_schedule'])
     for jobname, jobdata in schedule_config.iteritems():
         # Error handling galore
         if not jobdata or not isinstance(jobdata, dict):

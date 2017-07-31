@@ -64,3 +64,4 @@ class TestStatNova():
         except KeyError:
             assert val != 0
             pass
+

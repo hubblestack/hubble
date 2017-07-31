@@ -1,7 +1,6 @@
 import pytest
 import hubblestack.extmods.modules.pulsar
 import collections
-#import hubble
 
 class TestPulsar():
 
@@ -56,6 +55,14 @@ class TestPulsar():
         except TypeError:
             pass
 
+    def test_dict_update_for_upd_TypeError(self):
+        dest = {'key_1' : 'val_1', 'key_2' : 'val_2'}
+        upd = 'TestValue2'
+        try:
+            var = hubblestack.extmods.modules.pulsar._dict_update(dest, upd, recursive_update=True, merge_lists=False)
+        except TypeError:
+            pass
+
     def test_dict_update_for_upd_AttributeError(self):
         dest = {'key_1' : 'val_1', 'key_2' : 'val_2'}
         upd = {}
@@ -65,7 +72,7 @@ class TestPulsar():
             pass
 
     def test_process(self):
-        configfile='/root/myhubblefiles/data.yaml'
+        configfile='resources/data.yaml'
         verbose = False
         def config_get(value, default):
             return default
@@ -78,7 +85,7 @@ class TestPulsar():
         assert var != 0
 
     def test_process_for_regex_exclusion_list(self):
-        configfile='/root/myhubblefiles/data.yaml'
+        configfile='resources/data.yaml'
         verbose = False
         def config_get(value, default):
             return default
@@ -91,7 +98,7 @@ class TestPulsar():
         assert hubblestack.extmods.modules.pulsar.CONFIG != 0
 
     def test_top(self):
-        topfile = '/root/myhubblefiles/top.pulsar'
+        topfile = 'resources/top.pulsar'
         def config_get(value, default):
             return default
         __salt__ = {}
@@ -102,7 +109,7 @@ class TestPulsar():
         assert result != 0
 
     def test_top_result_for_list(self):
-        topfile = '/root/myhubblefiles/top.pulsar'
+        topfile = 'resources/top.pulsar'
         def config_get(value, default):
             return default
         __salt__ = {}
@@ -113,7 +120,12 @@ class TestPulsar():
         assert isinstance(result, list)
 
     def test_get_top_data(self):
-        topfile = '/root/myhubblefiles/top.pulsar'
+        topfile = 'resources/top.pulsar'
+        result = hubblestack.extmods.modules.pulsar._get_top_data(topfile)
+        assert result != 0
+
+    def test_get_top_data(self):
+        topfile = 'resources/top.pulsar'
         result = hubblestack.extmods.modules.pulsar._get_top_data(topfile)
         assert result != 0
 
@@ -123,3 +135,4 @@ class TestPulsar():
              result = hubblestack.extmods.modules.pulsar._get_top_data(topfile)
          except NameError:
              pass
+

@@ -54,6 +54,7 @@ class TestPkg():
         ret = hubblestack.files.hubblestack_nova.pkg._get_tags(data)
         assert ret['CIS-6.5'] == [{'tag': 'CIS-6.5', 'name': 'ntp', 'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0', 'type': 'whitelist', \
                                    'module': 'pkg', 'description': 'Configure Network Time Protocol (NTP)'}]
+
     def test_get_tags_for_empty_data(self):
         data = {'pkg': {}}
         hubblestack.files.hubblestack_nova.pkg.__grains__ = {'osfinger' : 'Ubuntu-16.04'}
@@ -89,4 +90,5 @@ class TestPkg():
                    'module': 'pkg', 'description': 'Configure Network Time Protocol (NTP)'}]}
         val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, debug=False)
         assert val['Controlled'] != 0
+
 

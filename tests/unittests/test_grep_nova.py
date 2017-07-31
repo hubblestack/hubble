@@ -1,7 +1,6 @@
 import hubblestack.files.hubblestack_nova.grep
 import yaml
 import pytest
-#from distutils.version import LooseVersion
 
 class TestGrep():
 
@@ -48,6 +47,7 @@ class TestGrep():
         hubblestack.files.hubblestack_nova.grep.__grains__ = {'osfinger' : 'Ubuntu-16.04'}
         val = hubblestack.files.hubblestack_nova.grep.audit(data_list, __tags__, debug=False)
         assert val['Success'] != 0
+
 
     def test_audit_for_Failure(self):
         val = {}

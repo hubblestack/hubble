@@ -289,6 +289,7 @@ def load_config():
 
     __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
+    __opts__['conf_file'] = parsed_args.get('configfile')
 
     # Convert -vvv to log level
     if __opts__['log_level'] is None:

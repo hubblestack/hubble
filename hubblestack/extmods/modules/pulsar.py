@@ -350,6 +350,21 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     return ret
 
 
+def canary(change_file=None):
+    '''
+    Simple module to change a file to trigger a FIM event (daily, etc)
+
+    THE SPECIFIED FILE WILL BE CREATED AND DELETED
+
+    Defaults to CONF_DIR/fim_canary.tmp, i.e. /etc/hubble/fim_canary.tmp
+    '''
+    if change_file is None:
+        conf_dir = os.path.dirname(__opts__['conf_file'])
+        change_file = os.path.join(conf_dir, 'fim_canary.tmp')
+    __salt__['file.touch'](change_file)
+    __salt__['file.remove'](change_file)
+
+
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
     '''
     Recursive version of the default dict.update

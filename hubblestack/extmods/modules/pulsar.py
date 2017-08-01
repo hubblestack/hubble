@@ -76,7 +76,7 @@ def _get_notifier():
     return __context__['pulsar.notifier']
 
 
-def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
+def process(configfile,
             verbose=False):
     '''
     Watch the configured files
@@ -395,3 +395,38 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
             for k in upd:
                 dest[k] = upd[k]
         return dest
+
+def top(topfile='/root/myhubblefiles/top.pulsar',
+        debug=None):
+
+    results = []
+
+    # Get a list of yaml to run
+    top_data = _get_top_data(topfile)
+
+    data_by_tag = {}
+    for data in top_data:
+        results.extend(process(configfile=data[0],verbose=False))
+
+    return results
+
+def _get_top_data(topfile):
+    '''
+    Helper method to retrieve and parse the nova topfile
+    '''
+    try:
+        with open(topfile) as handle:
+            topdata = yaml.safe_load(handle)
+    except Exception as e:
+        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
+
+    if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
+            not(isinstance(topdata['pulsar'], dict)):
+        raise CommandExecutionError('pulsar topfile not formatted correctly')
+
+    topdata = topdata['pulsar']
+
+    ret = topdata.values()
+
+    return ret
+

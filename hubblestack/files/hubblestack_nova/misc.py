@@ -59,7 +59,7 @@ def __virtual__():
     return True
 
 
-def audit(data_list, tags, debug=False):
+def audit(data_list, tags, debug=False, **kwargs):
     '''
     Run the misc audits contained in the data_list
     '''

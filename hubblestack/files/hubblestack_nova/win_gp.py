@@ -25,7 +25,7 @@ def __virtual__():
     return True
 
 
-def audit(data_list, tags, debug=False):
+def audit(data_list, tags, debug=False, **kwargs):
     '''
     Runs auditpol on the local machine and audits the return data
     with the CIS yaml processed by __virtual__

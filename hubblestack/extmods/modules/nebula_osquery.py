@@ -210,7 +210,7 @@ def fields(*args):
     '''
     ret = {}
     for field in args:
-        ret[field] = __salt__['config.get'](field)
+        ret['custom_{0}'.format(field)] = __salt__['config.get'](field)
     # Return it as nebula data
     if ret:
         return [{'custom_fields': {

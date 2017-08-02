@@ -198,27 +198,26 @@ def queries(query_group,
     return ret
 
 
-def fields(custom_fields=None):
+def fields(*args):
     '''
-    Use config.get to retrieve custom data based on the keys in the `custom_fields`
+    Use config.get to retrieve custom data based on the keys in the `*args`
     list.
 
     Arguments:
 
-    custom_fields
+    *args
         List of keys to retrieve
     '''
-    if custom_fields is None or not isinstance(fields, list):
-        log.error('custom_fields argument must be formed as a list of strings')
-        return []
     ret = {}
-    for field in custom_fields:
+    for field in args:
         ret[field] = __salt__['config.get'](field)
     # Return it as nebula data
-    return [{'custom_fields': {
-                 'data': [ret],
-                 'result': True
-            }}]
+    if ret:
+        return [{'custom_fields': {
+                     'data': [ret],
+                     'result': True
+                }}]
+    return []
 
 
 def version():

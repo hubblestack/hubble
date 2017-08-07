@@ -25,7 +25,7 @@ def __virtual__():
     return True
 
 
-def audit(data_list, tags, debug=False):
+def audit(data_list, tags, debug=False, **kwargs):
     '''
     Runs auditpol on the local machine and audits the return data
     with the CIS yaml processed by __virtual__
@@ -64,6 +64,7 @@ def audit(data_list, tags, debug=False):
                     if name in __firewalldata__[tag_data['value_type'].title()]:
                         audit_value = __firewalldata__[tag_data['value_type'].title()]
                         audit_value = audit_value[name].lower()
+                        tag_data['found_value'] = audit_value
                         secret = _translate_value_type(audit_value, tag_data['value_type'], match_output)
                         if secret:
                             ret['Success'].append(tag_data)
@@ -165,9 +166,9 @@ def _export_firewall():
 
 def _import_firewall():
     dict_return = {}
-    temp_vals = {}
     export = _export_firewall()
     for line in export:
+        temp_vals = {}
         vals = line.split('\n')
         for val in vals:
             if val:

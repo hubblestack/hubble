@@ -39,8 +39,8 @@ be skipped:
               - product_group
 '''
 import socket
-# Import AWS details
-from aws_details import get_aws_details
+# Import cloud details
+from cloud_details import get_cloud_details
 
 # Imports for http event forwarder
 import requests
@@ -62,20 +62,29 @@ hec = None
 def returner(ret):
     opts_list = _get_options()
 
-    # Get aws details
-    aws = get_aws_details()
+    # Get cloud details
+    clouds = get_cloud_details()
 
     for opts in opts_list:
         logging.info('Options: %s' % json.dumps(opts))
         http_event_collector_key = opts['token']
         http_event_collector_host = opts['indexer']
+        http_event_collector_port = opts['port']
         hec_ssl = opts['http_event_server_ssl']
         proxy = opts['proxy']
         timeout = opts['timeout']
         custom_fields = opts['custom_fields']
 
+        # Set up the fields to be extracted at index time. The field values must be strings.
+        # Note that these fields will also still be available in the event data
+        index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId']
+        try:
+            index_extracted_fields.extend(opts['index_extracted_fields'])
+        except TypeError:
+            pass
+
         # Set up the collector
-        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
+        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
 
         # st = 'salt:hubble:nova'
         data = ret['return']
@@ -111,10 +120,8 @@ def returner(ret):
                         event.update({'dest_host': fqdn})
                         event.update({'dest_ip': fqdn_ip4})
 
-                        if aws['aws_account_id'] is not None:
-                            event.update({'aws_ami_id': aws['aws_ami_id']})
-                            event.update({'aws_instance_id': aws['aws_instance_id']})
-                            event.update({'aws_account_id': aws['aws_account_id']})
+                        for cloud in clouds:
+                            event.update(cloud)
 
                         for custom_field in custom_fields:
                             custom_field_name = 'custom_' + custom_field
@@ -127,8 +134,19 @@ def returner(ret):
 
                         payload.update({'host': fqdn})
                         payload.update({'index': opts['index']})
-                        payload.update({'sourcetype': opts['sourcetype']})
+                        if opts['add_query_to_sourcetype']:
+                            payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], query_name)})
+                        else:
+                            payload.update({'sourcetype': opts['sourcetype']})
                         payload.update({'event': event})
+
+                        # Potentially add metadata fields:
+                        fields = {}
+                        for item in index_extracted_fields:
+                            if item in payload['event'] and not isinstance(payload['event'], (list, dict, tuple)):
+                                fields[item] = str(payload['event'][item])
+                        if fields:
+                            payload.update({'fields': fields})
 
                         # If the osquery query includes a field called 'time' it will be checked.
                         # If it's within the last year, it will be used as the eventtime.
@@ -155,12 +173,15 @@ def _get_options():
             processed = {}
             processed['token'] = opt.get('token')
             processed['indexer'] = opt.get('indexer')
+            processed['port'] = str(opt.get('port', '8088'))
             processed['index'] = opt.get('index')
             processed['custom_fields'] = opt.get('custom_fields', [])
             processed['sourcetype'] = opt.get('sourcetype_nebula', 'hubble_osquery')
+            processed['add_query_to_sourcetype'] = opt.get('add_query_to_sourcetype', True)
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
+            processed['index_extracted_fields'] = opt.get('index_extracted_fields', [])
             splunk_opts.append(processed)
         return splunk_opts
     else:
@@ -178,6 +199,7 @@ def _get_options():
         splunk_opts['http_event_server_ssl'] = hec_ssl
         splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:proxy', {})
         splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:timeout', 9.05)
+        splunk_opts['index_extracted_fields'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:index_extracted_fields', [])
 
         return [splunk_opts]
 

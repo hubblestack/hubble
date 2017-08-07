@@ -35,7 +35,7 @@ def __virtual__():
     return __virtualname__
 
 
-def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
+def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.yaml',
             verbose=False):
     '''
     Watch the configured files
@@ -194,6 +194,9 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     for r in ret:
         _append = True
         config_found = False
+        config_path = config['paths'][0]
+        pulsar_config = config_path[config_path.rfind('/')+1:len(config_path)]
+        r['pulsar_config'] = pulsar_config
         for path in config:
             if not r['Object Name'].startswith(path):
                 continue
@@ -216,6 +219,21 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     ret = new_ret
 
     return ret
+
+
+def canary(change_file=None):
+    '''
+    Simple module to change a file to trigger a FIM event (daily, etc)
+
+    THE SPECIFIED FILE WILL BE CREATED AND DELETED
+
+    Defaults to CONF_DIR/fim_canary.tmp, i.e. /etc/hubble/fim_canary.tmp
+    '''
+    if change_file is None:
+        conf_dir = os.path.dirname(__opts__['conf_file'])
+        change_file = os.path.join(conf_dir, 'fim_canary.tmp')
+    __salt__['file.touch'](change_file)
+    __salt__['file.remove'](change_file)
 
 
 def _check_acl(path, mask, wtype, recurse):
@@ -395,9 +413,9 @@ def _remove_acl(path):
 
 def _pull_events(time_frame, checksum):
     events_list = []
-    events_output = __salt__['cmd.run_stdout']('mode con:cols=1000 lines=1000; Get-EventLog -LogName Security '
-                                               '-After ((Get-Date).AddSeconds(-{0})) -InstanceId 4663 | fl'.format(
-                                                time_frame), shell='powershell', python_shell=True)
+    events_output = __salt__['cmd.run_stdout']('mode con:cols=1000 lines=1000; Get-WinEvent -FilterHashTable @{{'
+                                               'LogName = "security"; StartTime = [datetime]::Now.AddSeconds(-30);'
+                                               'Id = 4663}} | fl'.format(time_frame), shell='powershell', python_shell=True)
     events = events_output.split('\r\n\r\n')
     for event in events:
         if event:
@@ -408,12 +426,12 @@ def _pull_events(time_frame, checksum):
                     item.replace('\t', '')
                     k, v = item.split(':', 1)
                     event_dict[k.strip()] = v.strip()
-            event_dict['Accesses'] = _get_access_translation(event_dict['Accesses'])
+            #event_dict['Accesses'] = _get_access_translation(event_dict['Accesses'])
             event_dict['Hash'] = _get_item_hash(event_dict['Object Name'], checksum)
             #needs hostname, checksum, filepath, time stamp, action taken
             # Generate the dictionary without a dictionary comp, for py2.6
             tmpdict = {}
-            for k in ('EntryType', 'Accesses', 'TimeGenerated', 'Object Name', 'Hash'):
+            for k in ('Message', 'Accesses', 'TimeCreated', 'Object Name', 'Hash'):
                 tmpdict[k] = event_dict[k]
             events_list.append(tmpdict)
     return events_list

@@ -156,6 +156,8 @@ def schedule():
         Optional.
     '''
     schedule_config = __opts__.get('schedule', {})
+    if 'user_schedule' in __opts__ and isinstance(__opts__['user_schedule'], dict):
+        schedule_config.update(__opts__['user_schedule'])
     for jobname, jobdata in schedule_config.iteritems():
         # Error handling galore
         if not jobdata or not isinstance(jobdata, dict):
@@ -237,7 +239,12 @@ def run_function():
     log.debug('Parsed args: {0} | Parsed kwargs: {1}'.format(args, kwargs))
     log.info('Executing user-requested function {0}'.format(__opts__['function']))
 
-    ret = __salt__[__opts__['function']](*args, **kwargs)
+    try:
+        ret = __salt__[__opts__['function']](*args, **kwargs)
+    except KeyError:
+        log.error('Function {0} is not available, or not valid.'
+                  .format(__opts__['function']))
+        sys.exit(1)
 
     if __opts__['return']:
         returner = '{0}.returner'.format(__opts__['return'])
@@ -273,6 +280,7 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
     salt.config.DEFAULT_MINION_OPTS['scheduler_sleep_frequency'] = 0.5
+    salt.config.DEFAULT_MINION_OPTS['default_include'] = 'hubble.d/*.conf'
 
     global __opts__
     global __grains__
@@ -283,6 +291,7 @@ def load_config():
 
     __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
+    __opts__['conf_file'] = parsed_args.get('configfile')
 
     # Convert -vvv to log level
     if __opts__['log_level'] is None:
@@ -299,10 +308,19 @@ def load_config():
     elif __opts__['verbose'] >= 3:
         __opts__['log_level'] = 'debug'
 
-    # Setup module dirs
+    # Setup module/grain/returner dirs
     module_dirs = __opts__.get('module_dirs', [])
-    module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods'))
+    module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'modules'))
     __opts__['module_dirs'] = module_dirs
+    grains_dirs = __opts__.get('grains_dirs', [])
+    grains_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'grains'))
+    __opts__['grains_dirs'] = grains_dirs
+    returner_dirs = __opts__.get('returner_dirs', [])
+    returner_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'returners'))
+    __opts__['returner_dirs'] = returner_dirs
+    fileserver_dirs = __opts__.get('fileserver_dirs', [])
+    fileserver_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'fileserver'))
+    __opts__['fileserver_dirs'] = fileserver_dirs
     __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')

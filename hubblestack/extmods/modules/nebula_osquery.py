@@ -80,7 +80,7 @@ def queries(query_group,
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
         else:
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_queries.yaml'
-    if not salt.utils.which('osqueryi') and not salt.utils.which('/opt/osquery/osqueryi'):
+    if 'osquerybinpath' not in __grains__:
         if query_group == 'day':
             log.warning('osquery not installed on this host. Returning baseline data')
             # Match the formatting of normal osquery results. Not super
@@ -170,10 +170,7 @@ def queries(query_group,
             'result': True,
         }
 
-        if salt.utils.which('/opt/osquery/osqueryi'):
-            cmd = ['/opt/osquery/osqueryi', '--read_max', MAX_FILE_SIZE, '--json', query_sql]
-        else:
-            cmd = ['osqueryi', '--read_max', MAX_FILE_SIZE, '--json', query_sql]
+        cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
         res = __salt__['cmd.run_all'](cmd)
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])

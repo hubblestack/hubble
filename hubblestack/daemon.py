@@ -318,6 +318,9 @@ def load_config():
     returner_dirs = __opts__.get('returner_dirs', [])
     returner_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'returners'))
     __opts__['returner_dirs'] = returner_dirs
+    fileserver_dirs = __opts__.get('fileserver_dirs', [])
+    fileserver_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'fileserver'))
+    __opts__['fileserver_dirs'] = fileserver_dirs
     __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')

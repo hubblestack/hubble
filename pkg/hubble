@@ -10,7 +10,7 @@
 ### END INIT INFO
 
 dir="/etc/hubble"
-cmd="hubble -d"
+cmd="/opt/hubble/hubble -d"
 
 name=`basename $0`
 pid_file="/var/run/$name.pid"

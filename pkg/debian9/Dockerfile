@@ -120,7 +120,13 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/usr/lib/systemd/system \
     && cp /hubble_build/pkg/hubble.service /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/usr/lib/systemd/system/ \
     && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/etc/hubble/ \
+#during container run, if a configuration file exists in a /data copy it over the existing one so it would be
+#possile to optionally include a custom one with the package
+    && if [ -f /data/hubble ] ; then cp /data/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/etc/hubble/ ; fi \
     && cd /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION} \
+    && mkdir -p usr/bin \
+#symlink to have hubble binary in path
+    && ln -s /opt/hubble/hubble usr/bin/hubble \
 #fpm start
     && fpm -s dir -t deb \
        -n hubblestack \

@@ -21,7 +21,7 @@ ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 RUN yum -y install git make python ruby sudo which
 RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
- && sed -i 's/^%wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
+ && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
 RUN mkdir -p /usr/local/osquery/ \
  && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/
 USER $OSQUERY_BUILD_USER
@@ -56,11 +56,6 @@ RUN yum -y install  \
                zlib-devel make cmake python27-setuptools \
                python27-python-setuptools gcc python-devel \
                python-setuptools wget
-             #  python-dev libffi-dev libssl-dev libyaml-dev \
-             #  libxml2-dev libxslt1-dev python-cffi \
-             #  zlib1g-dev cmake python-setuptools  \
-             #  gcc wget python-pip openssl \
- #&& apt-get clean
 
 #libgit2 install start
 #must precede pyinstaller requirements
@@ -81,6 +76,7 @@ RUN mkdir -p "$LIBGIT2TEMP" && cd "$LIBGIT2TEMP" \
 #pyinstaller requirements start
 #must be preceded by libgit2 install
 COPY pyinstaller-requirements.txt /
+#default python-pip from yum does not like upgrading itself from pip. looking for better options other than wget.
 RUN wget -c https://bootstrap.pypa.io/get-pip.py \
  && python get-pip.py \
  && pip -v install -r pyinstaller-requirements.txt
@@ -116,7 +112,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && ln -s /opt/hubble/hubble-libs/hubble /opt/hubble/hubble \
     # make sure rpm shared libs are taken out to avoid mismatch between rpm database and shared libs that pyinstaller includes
     && rm -rf /opt/hubble/hubble-libs/librpm* \
-#debian pkg start
+#rpm pkg start
     && tar -cPvzf /data/hubblestack-${HUBBLE_SRC_VERSION}.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION} \
     && tar -xzvf /data/hubblestack-${HUBBLE_SRC_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION} \
@@ -125,14 +121,21 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/usr/lib/systemd/system \
     && cp /hubble_build/pkg/hubble.service /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/usr/lib/systemd/system/ \
     && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/etc/hubble/ \
+#during container run, if a configuration file exists in a /data copy it over the existing one so it would be
+#possile to optionally include a custom one with the package
+    && if [ -f /data/hubble ] ; then cp /data/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/etc/hubble/ ; fi \
     && cd /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION} \
+    && mkdir -p usr/bin \
+#symlink to have hubble binary in path
+    && ln -s /opt/hubble/hubble usr/bin/hubble \
 #fpm start
     && fpm -s dir -t rpm \
        -n hubblestack \
-       -v ${HUBBLE_SRC_VERSION}-1 \
+       -v ${HUBBLE_SRC_VERSION} \
     #todo: get rid of the git dependency with static bin in the future
        -d 'git' \
        --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
        --deb-no-default-config-files \
        etc/hubble etc/osquery etc/init.d opt usr \
-    && cp hubblestack-${HUBBLE_SRC_VERSION}_1-1.x86_64.rpm /data/hubblestack_${HUBBLE_SRC_VERSION}-1_centos7_x86_64.rpm" ]
+#edit to change iteration number, if necessary
+    && cp hubblestack-${HUBBLE_SRC_VERSION}-1.x86_64.rpm /data/hubblestack_${HUBBLE_SRC_VERSION}-1_centos7_x86_64.rpm" ]

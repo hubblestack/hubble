@@ -102,6 +102,9 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && cp /hubble_build/conf/osquery.flags /etc/osquery/ \
 # hubble default configuration file
     && cp -rf /hubble_build/conf/hubble /etc/hubble/ \
+#during container run, if a configuration file exists in a /data copy it over the existing one so it would be
+#possile to optionally include a custom one with the package
+    && if [ -f /data/hubble ] ; then cp /data/hubble /etc/hubble/ ; fi \
     && cp -rf /hubble_build/conf/hubble-profile.sh /etc/profile.d/ \
     && cp -pr /hubble_build/dist/hubble /opt/hubble/hubble-libs \
     && ln -s /opt/hubble/hubble-libs/hubble /opt/hubble/hubble \

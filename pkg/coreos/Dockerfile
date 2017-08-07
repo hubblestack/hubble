@@ -83,7 +83,8 @@ RUN pip install --upgrade pip \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_SRC_VERSION=2.2.0
+ENV HUBBLE_CHECKOUT=v2.2.0
+ENV HUBBLE_VERSION=2.2.0
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -91,7 +92,7 @@ ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
- && git checkout "v$HUBBLE_SRC_VERSION" \
+ && git checkout "$HUBBLE_CHECKOUT" \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build
 RUN mkdir /data
 VOLUME /data
@@ -110,5 +111,5 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && ln -s /opt/hubble/hubble-libs/hubble /opt/hubble/hubble \
     # make sure rpm shared libs are taken out to avoid mismatch between rpm database and shared libs that pyinstaller includes
     && rm -rf /opt/hubble/hubble-libs/librpm* \
-    && tar -cPvzf /data/hubble-${HUBBLE_SRC_VERSION}-coreos.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh" ]
+    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}-coreos.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh" ]
 

@@ -88,7 +88,8 @@ RUN yum install -y ruby ruby-devel rpmbuild rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_SRC_VERSION=2.2.0
+ENV HUBBLE_CHECKOUT=v2.2.0
+ENV HUBBLE_VERSION=2.2.0
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -96,7 +97,7 @@ ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
- && git checkout "v$HUBBLE_SRC_VERSION" \
+ && git checkout "$HUBBLE_CHECKOUT" \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build
 RUN mkdir /data
 VOLUME /data
@@ -113,29 +114,29 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     # make sure rpm shared libs are taken out to avoid mismatch between rpm database and shared libs that pyinstaller includes
     && rm -rf /opt/hubble/hubble-libs/librpm* \
 #rpm pkg start
-    && tar -cPvzf /data/hubblestack-${HUBBLE_SRC_VERSION}.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION} \
-    && tar -xzvf /data/hubblestack-${HUBBLE_SRC_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION} \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/etc/init.d \
-    && cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/etc/init.d/ \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/usr/lib/systemd/system \
-    && cp /hubble_build/pkg/hubble.service /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/usr/lib/systemd/system/ \
-    && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/etc/hubble/ \
+    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh \
+    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
+    && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
+    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
+    && cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/ \
+    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system \
+    && cp /hubble_build/pkg/hubble.service /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system/ \
+    && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
 #during container run, if a configuration file exists in a /data copy it over the existing one so it would be
 #possile to optionally include a custom one with the package
-    && if [ -f /data/hubble ] ; then cp /data/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION}/etc/hubble/ ; fi \
-    && cd /hubble_build/debbuild/hubblestack-${HUBBLE_SRC_VERSION} \
+    && if [ -f /data/hubble ] ; then cp /data/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ ; fi \
+    && cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p usr/bin \
 #symlink to have hubble binary in path
     && ln -s /opt/hubble/hubble usr/bin/hubble \
 #fpm start
     && fpm -s dir -t rpm \
        -n hubblestack \
-       -v ${HUBBLE_SRC_VERSION} \
+       -v ${HUBBLE_VERSION} \
     #todo: get rid of the git dependency with static bin in the future
        -d 'git' \
        --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
        --deb-no-default-config-files \
        etc/hubble etc/osquery etc/init.d opt usr \
 #edit to change iteration number, if necessary
-    && cp hubblestack-${HUBBLE_SRC_VERSION}-1.x86_64.rpm /data/hubblestack_${HUBBLE_SRC_VERSION}-1_centos7_x86_64.rpm" ]
+    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.el7.x86_64.rpm" ]

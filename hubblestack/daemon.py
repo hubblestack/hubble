@@ -308,10 +308,16 @@ def load_config():
     elif __opts__['verbose'] >= 3:
         __opts__['log_level'] = 'debug'
 
-    # Setup module dirs
+    # Setup module/grain/returner dirs
     module_dirs = __opts__.get('module_dirs', [])
-    module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods'))
+    module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'modules'))
     __opts__['module_dirs'] = module_dirs
+    grains_dirs = __opts__.get('grains_dirs', [])
+    grains_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'grains'))
+    __opts__['grains_dirs'] = grains_dirs
+    returner_dirs = __opts__.get('returner_dirs', [])
+    returner_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'returners'))
+    __opts__['returner_dirs'] = returner_dirs
     __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')

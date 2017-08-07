@@ -80,7 +80,7 @@ RUN mkdir -p "$LIBGIT2TEMP" && cd "$LIBGIT2TEMP" \
 #pyinstaller requirements start
 #must be preceded by libgit2 install
 COPY pyinstaller-requirements.txt /
-RUN ldconfig 
+RUN ldconfig
 #default python-pip from yum does not like upgrading itself from pip. looking for better options other than wget.
 RUN wget -c https://bootstrap.pypa.io/get-pip.py \
  && python get-pip.py \
@@ -93,7 +93,7 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_SRC_VERSION=develop
+ENV HUBBLE_SRC_VERSION=2.2.0
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -101,7 +101,7 @@ ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
- && git checkout "$HUBBLE_SRC_VERSION" \
+ && git checkout "v$HUBBLE_SRC_VERSION" \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build
 RUN mkdir /data
 VOLUME /data

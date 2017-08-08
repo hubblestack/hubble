@@ -143,7 +143,7 @@ def returner(ret):
                         # Potentially add metadata fields:
                         fields = {}
                         for item in index_extracted_fields:
-                            if item in payload['event'] and not isinstance(payload['event'], (list, dict, tuple)):
+                            if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
                                 fields[item] = str(payload['event'][item])
                         if fields:
                             payload.update({'fields': fields})

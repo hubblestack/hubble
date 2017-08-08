@@ -38,6 +38,8 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
  && sed -i 's,^\(HOMEBREW_BREW=\).*,\1'ac2cbd2137006ebfe84d8584ccdcb5d78c1130d9',' tools/provision.sh \
  && sed -i 's,^\(LINUXBREW_BREW=\).*,\1'20bcce2c176469cec271b46d523eef1510217436',' tools/provision.sh \
  && make sysprep \
+#have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
+ && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
  && make deps \
  && make \
  && make strip
@@ -45,6 +47,7 @@ USER root
 RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery \
  && chown -R root. /opt/osquery \
  && chmod -R 500 /opt/osquery/* \
+#put augeas lenses into the default directory that we changed earlier
  && mkdir -p /opt/osquery/lenses \
  && cp -r /usr/local/osquery/share/augeas/lenses/dist/* /opt/osquery/lenses \
  && chmod -R 400 /opt/osquery/lenses/*
@@ -64,7 +67,8 @@ ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v0.26.0.tar.gz
 ENV LIBGIT2_SRC_SHA256=4ac70a2bbdf7a304ad2a9fb2c53ad3c8694be0dbec4f1fce0f3cd0cda14fb3b9
 ENV LIBGIT2_SRC_VERSION=0.26.0
 ENV LIBGIT2TEMP=/tmp/libgit2temp
-RUN mkdir -p "$LIBGIT2TEMP" && cd "$LIBGIT2TEMP" \
+RUN mkdir -p "$LIBGIT2TEMP" \
+ && cd "$LIBGIT2TEMP" \
  && wget -q "$LIBGIT2_SRC_URL" -O libgit2.tar.gz \
  && echo "$LIBGIT2_SRC_SHA256  libgit2.tar.gz" | sha256sum -c - \
  && tar xzf libgit2.tar.gz \

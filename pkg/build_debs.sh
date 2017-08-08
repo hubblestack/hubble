@@ -22,14 +22,14 @@ mkdir -p dist
 bash ./init_pkg.sh -y
 cp ../hubble.tar.gz dist/hubble.tar.gz
 mv ../hubble.tar.gz build/hubble.tar.gz
-mkdir build/hubblestack-2.2.0
-tar -xzvf build/hubble.tar.gz -C build/hubblestack-2.2.0
-mkdir -p build/hubblestack-2.2.0/etc/init.d
-cp ./hubble build/hubblestack-2.2.0/etc/init.d
-mkdir -p build/hubblestack-2.2.0/usr/lib/systemd/system
-cp ./hubble.service build/hubblestack-2.2.0/usr/lib/systemd/system
-cp -f ../conf/hubble build/hubblestack-2.2.0/etc/hubble/hubble
-cd build/hubblestack-2.2.0
+mkdir build/hubblestack-2.2.1
+tar -xzvf build/hubble.tar.gz -C build/hubblestack-2.2.1
+mkdir -p build/hubblestack-2.2.1/etc/init.d
+cp ./hubble build/hubblestack-2.2.1/etc/init.d
+mkdir -p build/hubblestack-2.2.1/usr/lib/systemd/system
+cp ./hubble.service build/hubblestack-2.2.1/usr/lib/systemd/system
+cp -f ../conf/hubble build/hubblestack-2.2.1/etc/hubble/hubble
+cd build/hubblestack-2.2.1
 
 sudo apt-get install -y ruby ruby-dev rubygems gcc make
 sudo gem install --no-ri --no-rdoc fpm
@@ -39,9 +39,9 @@ ln -s /opt/osquery/osqueryd usr/bin/osqueryd
 ln -s /opt/osquery/osqueryi usr/bin/osqueryi
 fpm -s dir -t deb \
     -n hubblestack \
-    -v 2.2.0-1 \
+    -v 2.2.1-1 \
     -d 'git' \
     --config-files /etc/hubble/hubble --config-files /etc/osquery/osquery.conf \
     --deb-no-default-config-files \
     etc/hubble etc/osquery etc/init.d opt usr/bin
-cp hubblestack_2.2.0-1_amd64.deb ../../dist/
+cp hubblestack_2.2.1-1_amd64.deb ../../dist/

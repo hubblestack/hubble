@@ -37,6 +37,8 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
  && sed -i 's,^\(HOMEBREW_BREW=\).*,\1'ac2cbd2137006ebfe84d8584ccdcb5d78c1130d9',' tools/provision.sh \
  && sed -i 's,^\(LINUXBREW_BREW=\).*,\1'20bcce2c176469cec271b46d523eef1510217436',' tools/provision.sh \
  && make sysprep \
+#have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
+ && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
  && make deps \
  && make \
  && make strip
@@ -44,6 +46,7 @@ USER root
 RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery \
  && chown -R root. /opt/osquery \
  && chmod -R 500 /opt/osquery/* \
+#put augeas lenses into the default directory that we changed earlier
  && mkdir -p /opt/osquery/lenses \
  && cp -r /usr/local/osquery/share/augeas/lenses/dist/* /opt/osquery/lenses \
  && chmod -R 400 /opt/osquery/lenses/*
@@ -65,7 +68,6 @@ ENV LIBGIT2_SRC_VERSION=0.26.0
 ENV LIBGIT2TEMP=/tmp/libgit2temp
 RUN mkdir -p "$LIBGIT2TEMP" \
  && cd "$LIBGIT2TEMP" \
- && echo "$LIBGIT2_SRC_URL" \
  && wget -q "$LIBGIT2_SRC_URL" -O libgit2.tar.gz \
  && echo "$LIBGIT2_SRC_SHA256  libgit2.tar.gz" | sha256sum -c - \
  && tar xzf libgit2.tar.gz \
@@ -124,8 +126,6 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
     && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
     && cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/ \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system \
-    && cp /hubble_build/pkg/hubble.service /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system/ \
     && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
 #during container run, if a configuration file exists in a /data copy it over the existing one so it would be
 #possile to optionally include a custom one with the package

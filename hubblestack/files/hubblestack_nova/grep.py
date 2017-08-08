@@ -28,6 +28,7 @@ grep:
               pattern: '/tmp'  # grep pattern
               match_output: 'nodev'  # string to check for in output of grep command (optional)
               match_output_regex: True  # whether to use regex when matching output (default: False)
+              match_output_multiline: False  # whether to use multiline flag for regex matching (default: True)
               grep_args:  # extra args to grep
                 - '-E'
                 - '-i'

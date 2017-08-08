@@ -122,8 +122,12 @@ def audit(data_list, tags, debug=False, **kwargs):
                         if tag_data['match_output'] not in grep_ret:
                             found = False
                     else:  # match with regex
-                        if not re.match(tag_data['match_output'], grep_ret):
-                            found = False
+                        if tag_data.get('match_output_multiline', True):
+                            if not re.search(tag_data['match_output'], grep_ret, re.MULTILINE):
+                                found = False
+                        else:
+                            if not re.search(tag_data['match_output'], grep_ret):
+                                found = False
 
                 if not os.path.exists(name) and 'match_on_file_missing' in tag_data:
                     if tag_data['match_on_file_missing']:

@@ -1911,6 +1911,7 @@ class NovaLazyLoader(LazyLoader):
                     data = yaml.safe_load(fh_)
             except Exception as exc:
                 self.__missing_data__[name] = str(exc)
+                log.exception('Error loading yaml {0}'.format(fh_))
                 return False
 
             self.__data__[name] = data

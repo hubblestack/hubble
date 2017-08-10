@@ -51,6 +51,7 @@ import copy
 import re
 import salt.utils
 from salt.ext import six
+from collections import Counter
 
 log = logging.getLogger(__name__)
 
@@ -75,7 +76,6 @@ def audit(data_list, tags, debug=False, **kwargs):
         log.debug(__tags__)
 
     ret = {'Success': [], 'Failure': [], 'Controlled': []}
-
     for tag in __tags__:
         if fnmatch.fnmatch(tag, tags):
             for tag_data in __tags__[tag]:
@@ -171,19 +171,27 @@ def _execute_shell_command(cmd):
     '''
     This function will execute passed command in /bin/shell
     '''
-    return __salt__['cmd.run'](cmd, python_shell=True, shell='/bin/bash')
+    return __salt__['cmd.run'](cmd, python_shell=True, shell='/bin/bash', ignore_retcode=True)
 
 def check_all_ports_firewall_rules(reason=''):
     '''
     Ensure firewall rule for all open ports
     '''
-    end_open_ports = _execute_shell_command('netstat -ln | grep "Active UNIX domain sockets (only servers)" -n  | cut -d ":" -f1')
-    start_open_ports = _execute_shell_command('netstat -ln | grep "Active Internet connections (only servers)" -n | cut -d ":" -f1')
-    open_ports = _execute_shell_command('netstat -ln | awk \'FNR > ' + start_open_ports + ' && FNR < ' + end_open_ports + ' && $6 == "LISTEN" {print $4}\' | sed -e "s/.*://"')
-    firewall_ports = _execute_shell_command('iptables -L INPUT -v -n | awk \'FNR > 2 {print $11}\' | sed -e "s/.*://"')
-    if set(open_ports).issubset(set(firewall_ports)):
+    start_open_ports = (_execute_shell_command('netstat -ln | grep "Active Internet connections (only servers)" -n | cut -d ":" -f1')).strip()
+    end_open_ports = (_execute_shell_command('netstat -ln | grep "Active UNIX domain sockets (only servers)" -n  | cut -d ":" -f1')).strip()
+    open_ports = (_execute_shell_command('netstat -ln | awk \'FNR > ' + start_open_ports + ' && FNR < ' + end_open_ports + ' && $6 == "LISTEN" && $4 !~ /127.0.0.1/ {print $4}\' | sed -e "s/.*://"')).strip()
+    open_ports = open_ports.split('\n') if open_ports != "" else []
+    firewall_ports = (_execute_shell_command('iptables -L INPUT -v -n | awk \'FNR > 2 && $11 != "" && $11 ~ /^dpt:/ {print $11}\' | sed -e "s/.*://"')).strip()
+    firewall_ports = firewall_ports.split('\n') if firewall_ports != "" else []
+    no_firewall_ports = []
+
+    for open_port in open_ports:
+        if open_port not in firewall_ports:
+            no_firewall_ports.append(open_port)
+
+    if len(no_firewall_ports) == 0:
         return True
-    return False
+    return str(no_firewall_ports)
 
 def check_password_fields_not_empty(reason=''):
     '''
@@ -278,6 +286,227 @@ def test_failure_reason(reason):
     '''
     return reason
 
+def test_mount_attrs(mount_name,attribute,check_type='hard'):
+    '''
+    Ensure that a given directory is mounted with appropriate attributes
+    If check_type is soft, then in absence of volume, True will be returned
+    If check_type is hard, then in absence of volume, False will be returned
+    '''
+    #check that the path exists on system
+    command = 'test -e ' + mount_name + ' ; echo $?'
+    output = _execute_shell_command( command)
+    if output.strip() == '1':
+        return True if check_type == "soft" else (mount_name + " folder does not exist")
+
+    #if the path exits, proceed with following code
+    output = _execute_shell_command('mount | grep ' + mount_name)
+    if output.strip() == '':
+	return True if check_type == "soft" else (mount_name + " is not mounted")
+    elif attribute not in output:
+        return str(output)
+    else:
+        return True
+
+def check_time_synchronization():
+    '''
+    Ensure that some service is running to synchronize the system clock
+    '''
+    command = 'systemctl status systemd-timesyncd ntpd | grep "Active: active (running)"'
+    output = _execute_shell_command( command )
+    if output.strip() == '':
+        return "neither ntpd nor timesyncd is running"
+    else:
+        return True
+
+
+def restrict_permissions(path,permission):
+    '''
+    Ensure that the file permissions on path are equal or more strict than the  pemissions given in argument
+    '''
+    path_details = __salt__['file.stats'](path)
+    given_permission = path_details.get('mode')
+    given_permission = given_permission[-3:]
+    max_permission = str(permission)
+    if (_is_permission_in_limit(max_permission[0],given_permission[0]) and _is_permission_in_limit(max_permission[1],given_permission[1]) and _is_permission_in_limit(max_permission[2],given_permission[2])):
+        return True
+    return given_permission
+
+def _is_permission_in_limit(max_permission,given_permission):
+    '''
+    Return true only if given_permission is not more linient that max_permission. In other words, if 
+    r or w or x is present in given_permission but absent in max_permission, it should return False 
+    Takes input two integer values from 0 to 7.
+    '''    
+    max_permission = int(max_permission)
+    given_permission = int(given_permission)
+    allowed_r = False
+    allowed_w = False
+    allowed_x = False
+    given_r = False
+    given_w = False
+    given_x = False
+
+    if max_permission >= 4:
+        allowed_r = True
+        max_permission = max_permission - 4
+    if max_permission >= 2:
+        allowed_w = True
+        max_permission = max_permission - 2
+    if max_permission >= 1:
+        allowed_x = True
+
+    if given_permission >= 4:
+        given_r = True
+        given_permission = given_permission - 4
+    if given_permission >= 2:
+        given_w = True
+        given_permission = given_permission - 2
+    if given_permission >= 1:
+        given_x = True
+
+    if given_r and ( not allowed_r ):
+        return False
+    if given_w and ( not allowed_w ):
+        return False
+    if given_x and ( not allowed_x ):
+        return False
+
+    return True
+        
+
+def check_path_integrity():
+    '''
+    Ensure that system PATH variable is not malformed.
+    ''' 
+
+    script = """
+    if [ "`echo $PATH | grep ::`" != "" ]; then 
+        echo "Empty Directory in PATH (::)" 
+    fi 
+
+    if [ "`echo $PATH | grep :$`" != "" ]; then 
+        echo "Trailing : in PATH" 
+    fi 
+
+    p=`echo $PATH | sed -e 's/::/:/' -e 's/:$//' -e 's/:/ /g'` 
+    set -- $p 
+    while [ "$1" != "" ]; do 
+        if [ "$1" = "." ]; then 
+            echo "PATH contains ." 
+            shift 
+            continue 
+        fi 
+        
+        if [ -d $1 ]; then 
+            dirperm=`ls -ldH $1 | cut -f1 -d" "` 
+            if [ `echo $dirperm | cut -c6` != "-" ]; then 
+                echo "Group Write permission set on directory $1" 
+            fi 
+            if [ `echo $dirperm | cut -c9` != "-" ]; then 
+                echo "Other Write permission set on directory $1" 
+            fi 
+            dirown=`ls -ldH $1 | awk '{print $3}'` 
+            if [ "$dirown" != "root" ] ; then 
+                echo $1 is not owned by root
+            fi 
+            else 
+            echo $1 is not a directory 
+        fi 
+        shift 
+    done
+
+    """
+    output = _execute_shell_command(script)
+    if output.strip() == '':
+        return True
+    else:
+        return output
+
+
+def check_duplicate_uids(reason=''):
+    '''
+    Return False if any duplicate user id exist in /etc/group file, else return True
+    '''
+    uids = _execute_shell_command("cat /etc/passwd | cut -f3 -d\":\"").strip()
+    uids = uids.split('\n') if uids != "" else []
+    duplicate_uids = [k for k,v in Counter(uids).items() if v>1]
+    if duplicate_uids is None or duplicate_uids == []:
+	return True
+
+    return str(duplicate_uids)
+
+
+def check_duplicate_gids(reason=''):
+    '''
+    Return False if any duplicate group id exist in /etc/group file, else return True
+    '''
+    gids = _execute_shell_command("cat /etc/group | cut -f3 -d\":\"").strip()
+    gids = gids.split('\n') if gids != "" else []
+    duplicate_gids = [k for k,v in Counter(gids).items() if v>1]
+    if duplicate_gids is None or duplicate_gids == []:
+	return True
+
+    return str(duplicate_gids)
+
+
+def check_duplicate_unames(reason=''):
+    '''
+    Return False if any duplicate user names exist in /etc/group file, else return True
+    '''
+    unames = _execute_shell_command("cat /etc/passwd | cut -f1 -d\":\"").strip()
+    unames = unames.split('\n') if unames != "" else []
+    duplicate_unames = [k for k,v in Counter(unames).items() if v>1]
+    if duplicate_unames is None or duplicate_unames == []:
+	return True
+
+    return str(duplicate_unames)
+
+
+def check_duplicate_gnames(reason=''):
+    '''
+    Return False if any duplicate group names exist in /etc/group file, else return True
+    '''
+    gnames = _execute_shell_command("cat /etc/group | cut -f1 -d\":\"").strip()
+    gnames = gnames.split('\n') if gnames != "" else []
+    duplicate_gnames = [k for k,v in Counter(gnames).items() if v>1]
+    if duplicate_gnames is None or duplicate_gnames == []:
+	return True
+
+    return str(duplicate_gnames)
+
+
+def check_directory_files_permission(path,permission):
+    '''
+    Check all files permission inside a directory
+    '''
+    files_list = _execute_shell_command("find /var/log -type f").strip()
+    files_list = files_list.split('\n') if files_list != "" else []
+    bad_permission_files = []
+    for file_in_directory in files_list:
+	per = restrict_permissions(file_in_directory, permission)
+	if per is not True:
+		bad_permission_files += [file_in_directory + ": Bad Permission - " + per + ":"]
+
+    if bad_permission_files == []:
+    	return True
+
+    return str(bad_permission_files)
+
+
+def check_core_dumps(reason=''):
+    '''
+    Ensure core dumps are restricted
+    '''
+    hard_core_dump_value = _execute_shell_command("grep -R -E \"hard +core\" /etc/security/limits.conf /etc/security/limits.d/ | awk '{print $4}'").strip()
+    hard_core_dump_value = hard_core_dump_value.split('\n') if hard_core_dump_value != "" else []
+    if '0' in hard_core_dump_value:
+	return True
+    
+    if hard_core_dump_value is None or hard_core_dump_value == [] or hard_core_dump_value == "":
+	return "'hard core' not found in any file"
+
+    return str(hard_core_dump_value)
+
 
 FUNCTION_MAP = {
     'check_all_ports_firewall_rules': check_all_ports_firewall_rules,
@@ -292,4 +521,15 @@ FUNCTION_MAP = {
     'test_success': test_success,
     'test_failure': test_failure,
     'test_failure_reason': test_failure_reason,
+    'test_mount_attrs' : test_mount_attrs,
+    'check_path_integrity' : check_path_integrity,
+    'restrict_permissions' : restrict_permissions,
+    'check_time_synchronization' : check_time_synchronization,
+    'check_core_dumps': check_core_dumps,
+    'check_directory_files_permission': check_directory_files_permission,
+    'check_duplicate_gnames': check_duplicate_gnames,
+    'check_duplicate_unames': check_duplicate_unames, 
+    'check_duplicate_gids': check_duplicate_gids,
+    'check_duplicate_uids': check_duplicate_uids,
 }
+

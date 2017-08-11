@@ -5,7 +5,7 @@
 # in the /data directory. Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 
-FROM debian:8
+FROM debian:7
 
 RUN apt-get update     \
  && apt-get -y upgrade
@@ -57,13 +57,32 @@ RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /hom
 RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
-RUN apt-get -y install  \
+RUN apt-get update \
+ && apt-get -y install  \
                python-dev libffi-dev libssl-dev libyaml-dev \
-               libxml2-dev libxslt1-dev zlib1g-dev cmake python-setuptools \
+               libxml2-dev libxslt1-dev zlib1g-dev python-setuptools \
                gcc wget openssl \
  && apt-get clean
 
+#cmake install start
+#must precede libgit2 due to old version of cmake included with debian7 that has openssl version parsing bug
+#https://cmake.org/gitweb?p=cmake.git;a=commitdiff;h=c5d9a8283cfac15b4a5a07f18d5eb10c1f388505
+ENV CMAKE_SRC_URL=https://cmake.org/files/v3.9/cmake-3.9.1.tar.gz
+ENV CMAKE_SRC_SHA256=d768ee83d217f91bb597b3ca2ac663da7a8603c97e1f1a5184bc01e0ad2b12bb
+ENV CMAKE_SRC_VERSION=3.9.1
+ENV CMAKE_TEMP=/tmp/cmaketemp
+RUN mkdir -p "$CMAKE_TEMP" \
+ && cd "$CMAKE_TEMP" \
+ && wget -q "$CMAKE_SRC_URL" -O cmake.src.tar.gz \
+ && echo "$CMAKE_SRC_SHA256  cmake.src.tar.gz" | sha256sum -c - \
+ && tar xzf cmake.src.tar.gz \
+ && cd cmake-"$CMAKE_SRC_VERSION" \
+ && ./bootstrap \
+ && make \
+ && make install
+
 #libgit2 install start
+#must be preceded by cmake install
 #must precede pyinstaller requirements
 ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v0.26.0.tar.gz
 ENV LIBGIT2_SRC_SHA256=4ac70a2bbdf7a304ad2a9fb2c53ad3c8694be0dbec4f1fce0f3cd0cda14fb3b9
@@ -83,9 +102,9 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 #pyinstaller requirements start
 #must be preceded by libgit2 install
 COPY pyinstaller-requirements.txt /
-#default python-pip from yum does not like upgrading itself from pip. looking for better options other than wget.
 RUN wget -c https://bootstrap.pypa.io/get-pip.py \
  && python get-pip.py \
+ && pip install --upgrade pycparser \
  && pip -v install -r pyinstaller-requirements.txt
 
 #deb package making requirements start
@@ -126,8 +145,6 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
     && cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/ \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system \
-    && cp /hubble_build/pkg/hubble.service /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system/ \
     && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
 #during container run, if a configuration file exists in a /data copy it over the existing one so it would be
 #possile to optionally include a custom one with the package
@@ -145,5 +162,5 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
        --deb-no-default-config-files \
        etc/hubble etc/osquery etc/init.d opt usr \
-    && cp hubblestack_${HUBBLE_VERSION}-1_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-1deb8_amd64.deb" ]
+    && cp hubblestack_${HUBBLE_VERSION}-1_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-1deb7_amd64.deb" ]
 

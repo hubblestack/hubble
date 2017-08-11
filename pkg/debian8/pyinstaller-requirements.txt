@@ -12,5 +12,5 @@ pygit2
 salt-ssh
 gitpython
 pyinotify
-cffi>=1.10.0
+cffi
 azure

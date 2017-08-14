@@ -91,6 +91,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                         ret['Errors'] = []
                     ret['Errors'].append({tag: 'No function {0} found'
                                               .format(tag_data['function'])})
+                    continue
                 args = tag_data.get('args', [])
                 kwargs = tag_data.get('kwargs', {})
 

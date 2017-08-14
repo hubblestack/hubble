@@ -38,7 +38,7 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
  && sed -i 's,^\(LINUXBREW_BREW=\).*,\1'20bcce2c176469cec271b46d523eef1510217436',' tools/provision.sh \
  && make sysprep \
 #have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
-&& sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
+ && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
  && make deps \
  && make \
  && make strip
@@ -54,11 +54,9 @@ RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN yum -y install  \
-               python27-devel libffi-devel openssl-devel \
-               libxml2-devel libxslt-devel libjpeg-devel \
-               zlib-devel make cmake python27-setuptools \
-               python27-python-setuptools gcc python-devel \
-               python-setuptools wget
+               libffi-devel openssl-devel libffi \
+               libxml2-devel libxslt-devel libjpeg-devel zlib-devel \
+               make cmake gcc python-devel python-setuptools wget
 
 #libgit2 install start
 #must precede pyinstaller requirements
@@ -72,8 +70,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && echo "$LIBGIT2_SRC_SHA256  libgit2.tar.gz" | sha256sum -c - \
  && tar xzf libgit2.tar.gz \
  && cd libgit2-"$LIBGIT2_SRC_VERSION"/ \
- && export LIBGIT2=/usr/local/ \
- && cmake . -DCMAKE_INSTALL_PREFIX=$LIBGIT2 \
+ && cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/ \
  && make \
  && make install
 
@@ -85,7 +82,7 @@ RUN wget -c https://bootstrap.pypa.io/get-pip.py \
  && python get-pip.py \
  && pip -v install -r pyinstaller-requirements.txt
 
-#deb package making requirements start
+#fpm package making requirements start
 RUN yum install -y ruby ruby-devel rpmbuild rubygems gcc make \
  && gem install --no-ri --no-rdoc fpm
 
@@ -99,6 +96,7 @@ ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
+ENV LD_LIBRARY_PATH=/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout "$HUBBLE_CHECKOUT" \

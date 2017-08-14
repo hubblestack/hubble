@@ -281,6 +281,38 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
     salt.config.DEFAULT_MINION_OPTS['scheduler_sleep_frequency'] = 0.5
     salt.config.DEFAULT_MINION_OPTS['default_include'] = 'hubble.d/*.conf'
+    salt.config.DEFAULT_MINION_OPTS['disable_modules'] = [
+            'boto3_elasticache',
+            'boto3_route53',
+            'boto_apigateway',
+            'boto_asg',
+            'boto_cfn',
+            'boto_cloudtrail',
+            'boto_cloudwatch_event',
+            'boto_cloudwatch',
+            'boto_cognitoidentity',
+            'boto_datapipeline',
+            'boto_dynamodb',
+            'boto_ec2',
+            'boto_efs',
+            'boto_elasticache',
+            'boto_elasticsearch_domain',
+            'boto_elb',
+            'boto_elbv2',
+            'boto_iam',
+            'boto_iot',
+            'boto_kinesis',
+            'boto_kms',
+            'boto_lambda',
+            'boto_rds',
+            'boto_route53',
+            'boto_s3_bucket',
+            'boto_secgroup',
+            'boto_sns',
+            'boto_sqs',
+            'boto_vpc',
+        ]
+
 
     global __opts__
     global __grains__

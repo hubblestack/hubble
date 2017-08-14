@@ -396,24 +396,26 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
                 dest[k] = upd[k]
         return dest
 
-def top(topfile='/root/myhubblefiles/top.pulsar',
+#TODO:change paths for top.pulsar and config yaml to 'salt://hubblestack_pulsar/top.file'
+
+def top(topfile='/root/myhubblefiles/topfile/top.pulsar',
         debug=None):
 
-    results = []
+    results_pulsar = []
 
-    # Get a list of yaml to run
-    top_data = _get_top_data(topfile)
+    configs = get_top_data(topfile)
 
-    data_by_tag = {}
-    for data in top_data:
-        results.extend(process(configfile=data[0],verbose=False))
+    if not isinstance(configs, list):
+        configs = configs.split(',')
 
-    return results
+    configs = ['/root/myhubblefiles/topfile/' + config + '.yaml'
+               for config in configs]
 
-def _get_top_data(topfile):
-    '''
-    Helper method to retrieve and parse the nova topfile
-    '''
+    results_pulsar.extend(process(configs, verbose=False))
+
+    return results_pulsar
+
+def get_top_data(topfile):
     try:
         with open(topfile) as handle:
             topdata = yaml.safe_load(handle)
@@ -422,11 +424,15 @@ def _get_top_data(topfile):
 
     if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
             not(isinstance(topdata['pulsar'], dict)):
-        raise CommandExecutionError('pulsar topfile not formatted correctly')
+        raise CommandExecutionError('Pulsar topfile not formatted correctly')
 
     topdata = topdata['pulsar']
 
-    ret = topdata.values()
+    ret = []
+
+    for match, data in topdata.iteritems():
+        if __salt__['match.compound'](match):
+            ret.extend(data)
 
     return ret
 

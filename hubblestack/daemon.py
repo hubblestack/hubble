@@ -325,6 +325,7 @@ def load_config():
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')
 
+    # Disable all of salt's boto modules, they give nothing but trouble to the loader
     disable_modules = __opts__.get('disable_modules', [])
     disable_modules.extend([
             'boto3_elasticache',

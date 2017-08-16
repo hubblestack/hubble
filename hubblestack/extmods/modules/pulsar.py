@@ -410,7 +410,7 @@ def top(topfile='salt://hubblestack_pulsar/top.pulsar',
 
 def get_top_data(topfile):
 
-    topfile = __salt['cp.cache_file'](topfile)
+    topfile = __salt__['cp.cache_file'](topfile)
 
     try:
         with open(topfile) as handle:

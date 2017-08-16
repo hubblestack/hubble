@@ -396,20 +396,21 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
                 dest[k] = upd[k]
         return dest
 
-def top(topfile='salt://hubblestack_pulsar/top.file',
+
+def top(topfile='salt://hubblestack_pulsar/top.pulsar',
         verbose=False):
 
     configs = get_top_data(topfile)
 
-    configs = ['salt://hubblestack_pulsar/' + config + '.yaml'
+    configs = ['salt://hubblestack_pulsar/' + config.replace('.', '/') + '.yaml'
                for config in configs]
 
     return process(configs, verbose=verbose)
 
+
 def get_top_data(topfile):
 
-
-    topfile = os.path.join(_hubble_dir()[1], topfile)
+    topfile = __salt['cp.cache_file'](topfile)
 
     try:
         with open(topfile) as handle:

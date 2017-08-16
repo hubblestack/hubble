@@ -547,17 +547,22 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
                 dest[k] = upd[k]
         return dest
 
+
 def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
         verbose=False):
 
     configs = get_top_data(topfile)
 
-    configs = ['salt://hubblestack_pulsar/' + config + '.yaml'
+    configs = ['salt://hubblestack_pulsar/' + config.replace('.','/') + '.yaml'
                for config in configs]
 
     return process(configs, verbose=verbose)
 
+
 def get_top_data(topfile):
+
+    topfile = __salt__['cp.cache_file'](topfile)
+
     try:
         with open(topfile) as handle:
             topdata = yaml.safe_load(handle)

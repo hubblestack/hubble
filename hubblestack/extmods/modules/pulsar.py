@@ -76,7 +76,7 @@ def _get_notifier():
     return __context__['pulsar.notifier']
 
 
-def process(configfile,
+def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
             verbose=False):
     '''
     Watch the configured files
@@ -396,26 +396,21 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
                 dest[k] = upd[k]
         return dest
 
-#TODO:change paths for top.pulsar and config yaml to 'salt://hubblestack_pulsar/top.file'
-
-def top(topfile='/root/myhubblefiles/topfile/top.pulsar',
-        debug=None):
-
-    results_pulsar = []
+def top(topfile='salt://hubblestack_pulsar/top.file',
+        verbose=False):
 
     configs = get_top_data(topfile)
 
-    if not isinstance(configs, list):
-        configs = configs.split(',')
-
-    configs = ['/root/myhubblefiles/topfile/' + config + '.yaml'
+    configs = ['salt://hubblestack_pulsar/' + config + '.yaml'
                for config in configs]
 
-    results_pulsar.extend(process(configs, verbose=False))
-
-    return results_pulsar
+    return process(configs, verbose=verbose)
 
 def get_top_data(topfile):
+
+
+    topfile = os.path.join(_hubble_dir()[1], topfile)
+
     try:
         with open(topfile) as handle:
             topdata = yaml.safe_load(handle)
@@ -435,4 +430,3 @@ def get_top_data(topfile):
             ret.extend(data)
 
     return ret
-

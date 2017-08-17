@@ -59,7 +59,6 @@ log = logging.getLogger(__name__)
 def __virtual__():
     return True
 
-
 def audit(data_list, tags, debug=False, **kwargs):
     '''
     Run the misc audits contained in the data_list
@@ -91,7 +90,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                         ret['Errors'] = []
                     ret['Errors'].append({tag: 'No function {0} found'
                                               .format(tag_data['function'])})
-		    continue
+                    continue
                 args = tag_data.get('args', [])
                 kwargs = tag_data.get('kwargs', {})
 
@@ -342,10 +341,10 @@ def restrict_permissions(path,permission):
 
 def _is_permission_in_limit(max_permission,given_permission):
     '''
-    Return true only if given_permission is not more linient that max_permission. In other words, if 
-    r or w or x is present in given_permission but absent in max_permission, it should return False 
+    Return true only if given_permission is not more linient that max_permission. In other words, if
+    r or w or x is present in given_permission but absent in max_permission, it should return False
     Takes input two integer values from 0 to 7.
-    '''    
+    '''
     max_permission = int(max_permission)
     given_permission = int(given_permission)
     allowed_r = False
@@ -381,47 +380,47 @@ def _is_permission_in_limit(max_permission,given_permission):
         return False
 
     return True
-        
+
 
 def check_path_integrity(reason=''):
     '''
     Ensure that system PATH variable is not malformed.
-    ''' 
+    '''
 
     script = """
-    if [ "`echo $PATH | grep ::`" != "" ]; then 
-        echo "Empty Directory in PATH (::)" 
-    fi 
+    if [ "`echo $PATH | grep ::`" != "" ]; then
+        echo "Empty Directory in PATH (::)"
+    fi
 
-    if [ "`echo $PATH | grep :$`" != "" ]; then 
-        echo "Trailing : in PATH" 
-    fi 
+    if [ "`echo $PATH | grep :$`" != "" ]; then
+        echo "Trailing : in PATH"
+    fi
 
-    p=`echo $PATH | sed -e 's/::/:/' -e 's/:$//' -e 's/:/ /g'` 
-    set -- $p 
-    while [ "$1" != "" ]; do 
-        if [ "$1" = "." ]; then 
-            echo "PATH contains ." 
-            shift 
-            continue 
-        fi 
-        
-        if [ -d $1 ]; then 
-            dirperm=`ls -ldH $1 | cut -f1 -d" "` 
-            if [ `echo $dirperm | cut -c6` != "-" ]; then 
-                echo "Group Write permission set on directory $1" 
-            fi 
-            if [ `echo $dirperm | cut -c9` != "-" ]; then 
-                echo "Other Write permission set on directory $1" 
-            fi 
-            dirown=`ls -ldH $1 | awk '{print $3}'` 
-            if [ "$dirown" != "root" ] ; then 
+    p=`echo $PATH | sed -e 's/::/:/' -e 's/:$//' -e 's/:/ /g'`
+    set -- $p
+    while [ "$1" != "" ]; do
+        if [ "$1" = "." ]; then
+            echo "PATH contains ."
+            shift
+            continue
+        fi
+
+        if [ -d $1 ]; then
+            dirperm=`ls -ldH $1 | cut -f1 -d" "`
+            if [ `echo $dirperm | cut -c6` != "-" ]; then
+                echo "Group Write permission set on directory $1"
+            fi
+            if [ `echo $dirperm | cut -c9` != "-" ]; then
+                echo "Other Write permission set on directory $1"
+            fi
+            dirown=`ls -ldH $1 | awk '{print $3}'`
+            if [ "$dirown" != "root" ] ; then
                 echo $1 is not owned by root
-            fi 
-            else 
-            echo $1 is not a directory 
-        fi 
-        shift 
+            fi
+            else
+            echo $1 is not a directory
+        fi
+        shift
     done
 
     """
@@ -510,7 +509,7 @@ def check_core_dumps(reason=''):
     hard_core_dump_value = hard_core_dump_value.split('\n') if hard_core_dump_value != "" else []
     if '0' in hard_core_dump_value:
 	return True
-    
+
     if hard_core_dump_value is None or hard_core_dump_value == [] or hard_core_dump_value == "":
 	return "'hard core' not found in any file"
 
@@ -771,7 +770,7 @@ def ensure_reverse_path_filtering(reason=''):
     result = int(search_results[0])
     if( result < 1):
         error_list.append( "net.ipv4.conf.all.rp_filter  value set to " + str(result))
-    command = "sysctl net.ipv4.conf.default.rp_filter 2> /dev/null"  
+    command = "sysctl net.ipv4.conf.default.rp_filter 2> /dev/null"
     output = _execute_shell_command(command)
     if output.strip() == '':
         error_list.append( "net.ipv4.conf.default.rp_filter not found")

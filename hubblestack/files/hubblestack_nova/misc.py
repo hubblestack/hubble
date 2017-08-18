@@ -167,10 +167,13 @@ def _get_tags(data):
 # Begin function definitions
 ############################
 
-def _is_valid_home_directory(directory_path):
+def _is_valid_home_directory(directory_path, check_slash_home=False):
     directory_path = None if directory_path is None else directory_path.strip()
-    if directory_path is not None and directory_path != "" and os.path.isdir(directory_path) and directory_path != "/":
-	return True
+    if directory_path is not None and directory_path != "" and os.path.isdir(directory_path):
+        if check_slash_home and directory_path == "/":
+            return False
+        else:
+            return True
 
     return False
 
@@ -252,7 +255,7 @@ def sticky_bit_on_world_writable_dirs(reason=''):
     result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null')
     if result == '':
       return True
-    return result
+    return "There are failures" 
 
 def default_group_for_root(reason=''):
     '''
@@ -594,7 +597,7 @@ def check_all_users_home_directory(max_system_uid):
         if len(user_uid_dir) < 3:
                 user_uid_dir = user_uid_dir + ['']*(3-len(user_uid_dir))
         if user_uid_dir[1].isdigit():
-            if not _is_valid_home_directory(user_uid_dir[2]) and int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] is not "nfsnobody":
+            if not _is_valid_home_directory(user_uid_dir[2], True) and int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] is not "nfsnobody":
                 error += ["Either home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is invalid or does not exist."]
         else:
             error += ["User " + user_uid_dir[0] + " has invalid uid " + user_uid_dir[1]]
@@ -648,7 +651,7 @@ def check_users_own_their_home(max_system_uid):
 		error += ["Either home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is invalid or does not exist."]
             elif int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] is not "nfsnobody":
                 owner = _execute_shell_command("stat -L -c \"%U\" \"" + user_uid_dir[2] + "\"")
-                if owner is not user_uid_dir[0]:
+                if owner != user_uid_dir[0]:
                     error += ["The home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is owned by " + owner]
         else:
             error += ["User " + user_uid_dir[0] + " has invalid uid " + user_uid_dir[1]]
@@ -678,10 +681,12 @@ def check_users_dot_files(reason=''):
             dot_files = dot_files.split('\n') if dot_files != "" else []
             for dot_file in dot_files:
                 if os.path.isfile(dot_file):
-                    file_permission = _execute_shell_command("ls -ld " + dot_file + " | cut -f1 -d\" \"").strip()
-                    if file_permission[5] is "w":
+                    path_details = __salt__['file.stats'](dot_file)
+                    given_permission = path_details.get('mode')
+                    file_permission = given_permission[-3:]
+                    if file_permission[1] in ["2", "3", "6", "7"]:
                         error += ["Group Write permission set on file " + dot_file + " for user " + user_dir[0]]
-                    if file_permission[8] is "w":
+                    if file_permission[2] in ["2", "3", "6", "7"]:
                         error += ["Other Write permission set on file " + dot_file + " for user " + user_dir[0]]
 
     if error == []:
@@ -747,15 +752,17 @@ def check_groups_validity(reason=''):
 
     group_ids_in_passwd = _execute_shell_command("cut -s -d: -f4 /etc/passwd 2>/dev/null").strip()
     group_ids_in_passwd = group_ids_in_passwd.split('\n') if group_ids_in_passwd != "" else []
-    group_ids_in_group = _execute_shell_command("cut -s -d: -f3 /etc/group 2>/dev/null").strip()
-    group_ids_in_group = group_ids_in_group.split('\n') if group_ids_in_group != "" else []
-    invalid_group_ids = list(set(group_ids_in_passwd) - set(group_ids_in_group))
+    group_ids_in_passwd = list(set(group_ids_in_passwd))
+    invalid_groups = []
+    for group_id in group_ids_in_passwd:
+        group_presence_validity = _execute_shell_command("getent group " + group_id + " 2>/dev/null 1>/dev/null; echo $?").strip()
+        if str(group_presence_validity) != "0":
+            invalid_groups += ["Invalid groupid: " + group_id + " in /etc/passwd file"]
 
-    if invalid_group_ids == []:
+    if invalid_groups == []:
         return True
 
-    return "Groups which are referenced by /etc/passwd but does not exist in /etc/group: " + str(invalid_group_ids)
-
+    return str(invalid_groups)
 
 def ensure_reverse_path_filtering(reason=''):
     '''

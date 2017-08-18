@@ -60,106 +60,109 @@ hec = None
 
 
 def returner(ret):
-    opts_list = _get_options()
+    try:
+        opts_list = _get_options()
 
-    # Get cloud details
-    clouds = get_cloud_details()
+        # Get cloud details
+        clouds = get_cloud_details()
 
-    for opts in opts_list:
-        logging.info('Options: %s' % json.dumps(opts))
-        http_event_collector_key = opts['token']
-        http_event_collector_host = opts['indexer']
-        http_event_collector_port = opts['port']
-        hec_ssl = opts['http_event_server_ssl']
-        proxy = opts['proxy']
-        timeout = opts['timeout']
-        custom_fields = opts['custom_fields']
+        for opts in opts_list:
+            logging.info('Options: %s' % json.dumps(opts))
+            http_event_collector_key = opts['token']
+            http_event_collector_host = opts['indexer']
+            http_event_collector_port = opts['port']
+            hec_ssl = opts['http_event_server_ssl']
+            proxy = opts['proxy']
+            timeout = opts['timeout']
+            custom_fields = opts['custom_fields']
 
-        # Set up the fields to be extracted at index time. The field values must be strings.
-        # Note that these fields will also still be available in the event data
-        index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId']
-        try:
-            index_extracted_fields.extend(opts['index_extracted_fields'])
-        except TypeError:
-            pass
+            # Set up the fields to be extracted at index time. The field values must be strings.
+            # Note that these fields will also still be available in the event data
+            index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId']
+            try:
+                index_extracted_fields.extend(opts['index_extracted_fields'])
+            except TypeError:
+                pass
 
-        # Set up the collector
-        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
+            # Set up the collector
+            hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
 
-        # st = 'salt:hubble:nova'
-        data = ret['return']
-        minion_id = ret['id']
-        jid = ret['jid']
-        master = __grains__['master']
-        fqdn = __grains__['fqdn']
-        # Sometimes fqdn is blank. If it is, replace it with minion_id
-        fqdn = fqdn if fqdn else minion_id
-        try:
-            fqdn_ip4 = __grains__['fqdn_ip4'][0]
-        except IndexError:
-            fqdn_ip4 = __grains__['ipv4'][0]
-        if fqdn_ip4.startswith('127.'):
-            for ip4_addr in __grains__['ipv4']:
-                if ip4_addr and not ip4_addr.startswith('127.'):
-                    fqdn_ip4 = ip4_addr
-                    break
+            # st = 'salt:hubble:nova'
+            data = ret['return']
+            minion_id = ret['id']
+            jid = ret['jid']
+            master = __grains__['master']
+            fqdn = __grains__['fqdn']
+            # Sometimes fqdn is blank. If it is, replace it with minion_id
+            fqdn = fqdn if fqdn else minion_id
+            try:
+                fqdn_ip4 = __grains__['fqdn_ip4'][0]
+            except IndexError:
+                fqdn_ip4 = __grains__['ipv4'][0]
+            if fqdn_ip4.startswith('127.'):
+                for ip4_addr in __grains__['ipv4']:
+                    if ip4_addr and not ip4_addr.startswith('127.'):
+                        fqdn_ip4 = ip4_addr
+                        break
 
-        if not data:
-            return
-        else:
-            for query in data:
-                for query_name, query_results in query.iteritems():
-                    for query_result in query_results['data']:
-                        event = {}
-                        payload = {}
-                        event.update(query_result)
-                        event.update({'query': query_name})
-                        event.update({'job_id': jid})
-                        event.update({'master': master})
-                        event.update({'minion_id': minion_id})
-                        event.update({'dest_host': fqdn})
-                        event.update({'dest_ip': fqdn_ip4})
+            if not data:
+                return
+            else:
+                for query in data:
+                    for query_name, query_results in query.iteritems():
+                        for query_result in query_results['data']:
+                            event = {}
+                            payload = {}
+                            event.update(query_result)
+                            event.update({'query': query_name})
+                            event.update({'job_id': jid})
+                            event.update({'master': master})
+                            event.update({'minion_id': minion_id})
+                            event.update({'dest_host': fqdn})
+                            event.update({'dest_ip': fqdn_ip4})
 
-                        for cloud in clouds:
-                            event.update(cloud)
+                            for cloud in clouds:
+                                event.update(cloud)
 
-                        for custom_field in custom_fields:
-                            custom_field_name = 'custom_' + custom_field
-                            custom_field_value = __salt__['config.get'](custom_field, '')
-                            if isinstance(custom_field_value, str):
-                                event.update({custom_field_name: custom_field_value})
-                            elif isinstance(custom_field_value, list):
-                                custom_field_value = ','.join(custom_field_value)
-                                event.update({custom_field_name: custom_field_value})
+                            for custom_field in custom_fields:
+                                custom_field_name = 'custom_' + custom_field
+                                custom_field_value = __salt__['config.get'](custom_field, '')
+                                if isinstance(custom_field_value, str):
+                                    event.update({custom_field_name: custom_field_value})
+                                elif isinstance(custom_field_value, list):
+                                    custom_field_value = ','.join(custom_field_value)
+                                    event.update({custom_field_name: custom_field_value})
 
-                        payload.update({'host': fqdn})
-                        payload.update({'index': opts['index']})
-                        if opts['add_query_to_sourcetype']:
-                            payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], query_name)})
-                        else:
-                            payload.update({'sourcetype': opts['sourcetype']})
-                        payload.update({'event': event})
+                            payload.update({'host': fqdn})
+                            payload.update({'index': opts['index']})
+                            if opts['add_query_to_sourcetype']:
+                                payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], query_name)})
+                            else:
+                                payload.update({'sourcetype': opts['sourcetype']})
+                            payload.update({'event': event})
 
-                        # Potentially add metadata fields:
-                        fields = {}
-                        for item in index_extracted_fields:
-                            if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
-                                fields[item] = str(payload['event'][item])
-                        if fields:
-                            payload.update({'fields': fields})
+                            # Potentially add metadata fields:
+                            fields = {}
+                            for item in index_extracted_fields:
+                                if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
+                                    fields[item] = str(payload['event'][item])
+                            if fields:
+                                payload.update({'fields': fields})
 
-                        # If the osquery query includes a field called 'time' it will be checked.
-                        # If it's within the last year, it will be used as the eventtime.
-                        event_time = query_result.get('time', '')
-                        try:
-                            if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
+                            # If the osquery query includes a field called 'time' it will be checked.
+                            # If it's within the last year, it will be used as the eventtime.
+                            event_time = query_result.get('time', '')
+                            try:
+                                if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
+                                    event_time = ''
+                            except:
                                 event_time = ''
-                        except:
-                            event_time = ''
-                        finally:
-                            hec.batchEvent(payload, eventtime=event_time)
+                            finally:
+                                hec.batchEvent(payload, eventtime=event_time)
 
-        hec.flushBatch()
+            hec.flushBatch()
+    except:
+        log.exception('Error ocurred in splunk_nebula_return')
     return
 
 

@@ -80,7 +80,7 @@ def queries(query_group,
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
         else:
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_queries.yaml'
-    if not salt.utils.which('osqueryi'):
+    if 'osquerybinpath' not in __grains__:
         if query_group == 'day':
             log.warning('osquery not installed on this host. Returning baseline data')
             # Match the formatting of normal osquery results. Not super
@@ -170,7 +170,7 @@ def queries(query_group,
             'result': True,
         }
 
-        cmd = ['osqueryi', '--read_max', MAX_FILE_SIZE, '--json', query_sql]
+        cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
         res = __salt__['cmd.run_all'](cmd)
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
@@ -196,6 +196,28 @@ def queries(query_group,
                         result[key] = json.loads(value[len('__JSONIFY__'):])
 
     return ret
+
+
+def fields(*args):
+    '''
+    Use config.get to retrieve custom data based on the keys in the `*args`
+    list.
+
+    Arguments:
+
+    *args
+        List of keys to retrieve
+    '''
+    ret = {}
+    for field in args:
+        ret['custom_{0}'.format(field)] = __salt__['config.get'](field)
+    # Return it as nebula data
+    if ret:
+        return [{'custom_fields': {
+                     'data': [ret],
+                     'result': True
+                }}]
+    return []
 
 
 def version():

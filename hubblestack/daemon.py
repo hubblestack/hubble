@@ -308,13 +308,57 @@ def load_config():
     elif __opts__['verbose'] >= 3:
         __opts__['log_level'] = 'debug'
 
-    # Setup module dirs
+    # Setup module/grain/returner dirs
     module_dirs = __opts__.get('module_dirs', [])
-    module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods'))
+    module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'modules'))
     __opts__['module_dirs'] = module_dirs
+    grains_dirs = __opts__.get('grains_dirs', [])
+    grains_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'grains'))
+    __opts__['grains_dirs'] = grains_dirs
+    returner_dirs = __opts__.get('returner_dirs', [])
+    returner_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'returners'))
+    __opts__['returner_dirs'] = returner_dirs
+    fileserver_dirs = __opts__.get('fileserver_dirs', [])
+    fileserver_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'fileserver'))
+    __opts__['fileserver_dirs'] = fileserver_dirs
     __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')
+
+    # Disable all of salt's boto modules, they give nothing but trouble to the loader
+    disable_modules = __opts__.get('disable_modules', [])
+    disable_modules.extend([
+            'boto3_elasticache',
+            'boto3_route53',
+            'boto_apigateway',
+            'boto_asg',
+            'boto_cfn',
+            'boto_cloudtrail',
+            'boto_cloudwatch_event',
+            'boto_cloudwatch',
+            'boto_cognitoidentity',
+            'boto_datapipeline',
+            'boto_dynamodb',
+            'boto_ec2',
+            'boto_efs',
+            'boto_elasticache',
+            'boto_elasticsearch_domain',
+            'boto_elb',
+            'boto_elbv2',
+            'boto_iam',
+            'boto_iot',
+            'boto_kinesis',
+            'boto_kms',
+            'boto_lambda',
+            'boto_rds',
+            'boto_route53',
+            'boto_s3_bucket',
+            'boto_secgroup',
+            'boto_sns',
+            'boto_sqs',
+            'boto_vpc',
+        ])
+    __opts__['disable_modules'] = disable_modules
 
     # Setup logging
     salt.log.setup.setup_console_logger(__opts__['log_level'])

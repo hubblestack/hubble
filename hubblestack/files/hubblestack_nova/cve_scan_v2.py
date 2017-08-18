@@ -92,7 +92,7 @@ def __virtual__():
     return not salt.utils.is_windows()
 
 
-def audit(data_list, tags, debug=False):
+def audit(data_list, tags, debug=False, **kwargs):
     '''
     Main audit function. See module docstring for more information on usage.
     '''

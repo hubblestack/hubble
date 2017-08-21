@@ -103,7 +103,6 @@ schedule:
       - cis.centos-7-level-1-scored-v2-1-0
     kwargs:
       verbose: True
-      show_profile: True
     returner: splunk_nova_return
     run_on_start: True
 ```

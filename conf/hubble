@@ -35,7 +35,6 @@ fileserver_backend:
 #    splay: 3600
 #    kwargs:
 #      verbose: True
-#      show_profile: True
 #    returner: splunk_nova_return
 #    run_on_start: False
 #  nebula_fifteen_min:

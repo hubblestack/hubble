@@ -255,7 +255,7 @@ def sticky_bit_on_world_writable_dirs(reason=''):
     result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null')
     if result == '':
       return True
-    return "There are failures" 
+    return "There are failures"
 
 def default_group_for_root(reason=''):
     '''
@@ -674,7 +674,7 @@ def check_users_dot_files(reason=''):
         user_dir = user_dir.split()
         if len(user_dir) < 2:
                 user_dir = user_dir + ['']*(2-len(user_dir))
-        if not _is_valid_home_directory(user_dir[1]):
+        if not _is_valid_home_directory(user_dir[1],True):
             error += ["Either home directory " + user_dir[1] + " of user " + user_dir[0] + " is invalid or does not exist."]
         else:
             dot_files = _execute_shell_command("find " + user_dir[1] + " -name \".*\"").strip()
@@ -710,7 +710,7 @@ def check_users_forward_files(reason=''):
         if not _is_valid_home_directory(user_dir[1]):
             error += ["Either home directory " + user_dir[1] + " of user " + user_dir[0] + " is invalid or does not exist."]
         else:
-            forward_file = _execute_shell_command("find " + user_dir[1] + " -name \".forward\"").strip()
+            forward_file = _execute_shell_command("find " + user_dir[1] + " -maxdepth 1 -name \".forward\"").strip()
             if forward_file is not None and os.path.isfile(forward_file):
                 error += ["Home directory: " + user_dir[1] + ", for user: " + user_dir[0] + " has " + forward_file + " file"]
 
@@ -735,7 +735,7 @@ def check_users_netrc_files(reason=''):
         if not _is_valid_home_directory(user_dir[1]):
             error += ["Either home directory " + user_dir[1] + " of user " + user_dir[0] + " is invalid or does not exist."]
         else:
-            netrc_file = _execute_shell_command("find " + user_dir[1] + " -name \".netrc\"").strip()
+            netrc_file = _execute_shell_command("find " + user_dir[1] + " -maxdepth 1 -name \".netrc\"").strip()
             if netrc_file is not None and os.path.isfile(netrc_file):
                 error += ["Home directory: " + user_dir[1] + ", for user: " + user_dir[0] + " has .netrc file"]
 

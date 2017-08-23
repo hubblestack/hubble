@@ -54,10 +54,8 @@ RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN yum -y install  \
-               python27-devel libffi-devel openssl-devel \
-               libxml2-devel libxslt-devel libjpeg-devel \
-               zlib-devel make cmake python27-setuptools \
-               python27-python-setuptools gcc python-devel \
+               libffi-devel openssl-devel libxml2-devel libxslt-devel \
+               libjpeg-devel zlib-devel python-devel make cmake gcc \
                python-setuptools wget 
 
 #libgit2 install start
@@ -72,8 +70,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && echo "$LIBGIT2_SRC_SHA256  libgit2.tar.gz" | sha256sum -c - \
  && tar xzf libgit2.tar.gz \
  && cd libgit2-"$LIBGIT2_SRC_VERSION"/ \
- && export LIBGIT2=/usr/local/ \
- && cmake . -DCMAKE_INSTALL_PREFIX=$LIBGIT2 \
+ && cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/ \
  && make \
  && make install
 
@@ -95,13 +92,14 @@ RUN yum install -y rpmbuild gcc make rh-ruby23 rh-ruby23-ruby-devel \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.2.1
-ENV HUBBLE_VERSION=2.2.1
+ENV HUBBLE_CHECKOUT=v2.2.2
+ENV HUBBLE_VERSION=2.2.2
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
+ENV LD_LIBRARY_PATH=/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout "$HUBBLE_CHECKOUT" \
@@ -141,7 +139,6 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
                                  #todo: get rid of the git dependency with static bin in the future
                                  -d git \
                                  --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
-                                 --deb-no-default-config-files \
                                  etc/hubble etc/osquery etc/init.d opt usr' \
 #edit to change iteration number, if necessary
     && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.el6.x86_64.rpm" ]

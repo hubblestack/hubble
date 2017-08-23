@@ -42,6 +42,10 @@ cd hubble/pkg
 Package will be in the `hubble/pkg/dist/` directory. There's no guarantee of
 glibc compatibility.
 
+## Using released packages
+
+Various pre-built packages targeting several popular operating systems can be found under [Releases](/hubblestack/hubble/releases).
+
 # Usage
 
 A config template has been placed in `/etc/hubble/hubble`. Modify it to your
@@ -99,7 +103,6 @@ schedule:
       - cis.centos-7-level-1-scored-v2-1-0
     kwargs:
       verbose: True
-      show_profile: True
     returner: splunk_nova_return
     run_on_start: True
 ```

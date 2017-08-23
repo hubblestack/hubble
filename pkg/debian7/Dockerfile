@@ -5,9 +5,10 @@
 # in the /data directory. Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 
-FROM amazonlinux:2016.09
+FROM debian:7
 
-RUN yum -y update
+RUN apt-get update     \
+ && apt-get -y upgrade
 
 #paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery
@@ -19,11 +20,14 @@ RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt
 ENV OSQUERY_SRC_VERSION=2.6.0
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
-RUN yum -y install git make python ruby sudo which
-RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
- && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
+RUN apt-get -y install git make python ruby sudo locales
+RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \
+ && sed -i 's/^%sudo.*/%sudo\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
 RUN mkdir -p /usr/local/osquery/ \
- && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/
+ && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/ \
+ && echo "LC_ALL=en_US.UTF-8" >> /etc/default/locale \
+ && sed -i '/en_US.UTF-8\ UTF-8/s/^#//' /etc/locale.gen \
+ && locale-gen
 USER $OSQUERY_BUILD_USER
 ENV SKIP_TESTS=1
 RUN cd /home/"$OSQUERY_BUILD_USER" \
@@ -53,13 +57,32 @@ RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /hom
 RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
-RUN yum -y install  \
-               python27-devel libffi-devel openssl-devel \
-               libxml2-devel libxslt-devel libjpeg-devel \
-               zlib-devel make cmake python27-setuptools \
-               gcc python-devel python-setuptools wget
+RUN apt-get update \
+ && apt-get -y install  \
+               python-dev libffi-dev libssl-dev libyaml-dev \
+               libxml2-dev libxslt1-dev zlib1g-dev python-setuptools \
+               gcc wget openssl \
+ && apt-get clean
+
+#cmake install start
+#must precede libgit2 due to old version of cmake included with debian7 that has openssl version parsing bug
+#https://cmake.org/gitweb?p=cmake.git;a=commitdiff;h=c5d9a8283cfac15b4a5a07f18d5eb10c1f388505
+ENV CMAKE_SRC_URL=https://cmake.org/files/v3.9/cmake-3.9.1.tar.gz
+ENV CMAKE_SRC_SHA256=d768ee83d217f91bb597b3ca2ac663da7a8603c97e1f1a5184bc01e0ad2b12bb
+ENV CMAKE_SRC_VERSION=3.9.1
+ENV CMAKE_TEMP=/tmp/cmaketemp
+RUN mkdir -p "$CMAKE_TEMP" \
+ && cd "$CMAKE_TEMP" \
+ && wget -q "$CMAKE_SRC_URL" -O cmake.src.tar.gz \
+ && echo "$CMAKE_SRC_SHA256  cmake.src.tar.gz" | sha256sum -c - \
+ && tar xzf cmake.src.tar.gz \
+ && cd cmake-"$CMAKE_SRC_VERSION" \
+ && ./bootstrap \
+ && make \
+ && make install
 
 #libgit2 install start
+#must be preceded by cmake install
 #must precede pyinstaller requirements
 ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v0.26.0.tar.gz
 ENV LIBGIT2_SRC_SHA256=4ac70a2bbdf7a304ad2a9fb2c53ad3c8694be0dbec4f1fce0f3cd0cda14fb3b9
@@ -71,20 +94,21 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && echo "$LIBGIT2_SRC_SHA256  libgit2.tar.gz" | sha256sum -c - \
  && tar xzf libgit2.tar.gz \
  && cd libgit2-"$LIBGIT2_SRC_VERSION"/ \
- && cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+ && export LIBGIT2=/usr/local/ \
+ && cmake . -DCMAKE_INSTALL_PREFIX=$LIBGIT2 \
  && make \
  && make install
 
 #pyinstaller requirements start
 #must be preceded by libgit2 install
 COPY pyinstaller-requirements.txt /
-#default python-pip from yum does not like upgrading itself from pip. looking for better options other than wget.
 RUN wget -c https://bootstrap.pypa.io/get-pip.py \
  && python get-pip.py \
+ && pip install --upgrade pycparser \
  && pip -v install -r pyinstaller-requirements.txt
 
-#fpm package making requirements start
-RUN yum install -y ruby ruby-devel rpmbuild rubygems gcc make \
+#deb package making requirements start
+RUN apt-get install -y ruby ruby-dev rubygems gcc make \
  && gem install --no-ri --no-rdoc fpm
 
 #pyinstaller start
@@ -97,7 +121,6 @@ ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
-ENV LD_LIBRARY_PATH=/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout "$HUBBLE_CHECKOUT" \
@@ -116,14 +139,12 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && ln -s /opt/hubble/hubble-libs/hubble /opt/hubble/hubble \
     # make sure rpm shared libs are taken out to avoid mismatch between rpm database and shared libs that pyinstaller includes
     && rm -rf /opt/hubble/hubble-libs/librpm* \
-#rpm pkg start
+#debian pkg start
     && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
     && cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/ \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system \
-    && cp /hubble_build/pkg/hubble.service /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system/ \
     && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
 #during container run, if a configuration file exists in a /data copy it over the existing one so it would be
 #possile to optionally include a custom one with the package
@@ -133,12 +154,13 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
 #symlink to have hubble binary in path
     && ln -s /opt/hubble/hubble usr/bin/hubble \
 #fpm start
-    && fpm -s dir -t rpm \
+    && fpm -s dir -t deb \
        -n hubblestack \
-       -v ${HUBBLE_VERSION} \
+       -v ${HUBBLE_VERSION}-1 \
     #todo: get rid of the git dependency with static bin in the future
        -d 'git' \
        --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
+       --deb-no-default-config-files \
        etc/hubble etc/osquery etc/init.d opt usr \
-#edit to change iteration number, if necessary
-    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.al1609.x86_64.rpm" ]
+    && cp hubblestack_${HUBBLE_VERSION}-1_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-1deb7_amd64.deb" ]
+

@@ -59,8 +59,7 @@ RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN apt-get -y install  \
                python-dev libffi-dev libssl-dev libyaml-dev \
-               libxml2-dev libxslt1-dev python-cffi \
-               zlib1g-dev cmake python-setuptools  \
+               libxml2-dev libxslt1-dev zlib1g-dev cmake python-setuptools \
                gcc wget openssl \
  && apt-get clean
 
@@ -84,7 +83,6 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 #pyinstaller requirements start
 #must be preceded by libgit2 install
 COPY pyinstaller-requirements.txt /
-RUN ldconfig
 #default python-pip from yum does not like upgrading itself from pip. looking for better options other than wget.
 RUN wget -c https://bootstrap.pypa.io/get-pip.py \
  && python get-pip.py \
@@ -97,8 +95,8 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.2.1
-ENV HUBBLE_VERSION=2.2.1
+ENV HUBBLE_CHECKOUT=v2.2.2
+ENV HUBBLE_VERSION=2.2.2
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"

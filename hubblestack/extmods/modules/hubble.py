@@ -112,7 +112,7 @@ def audit(configs=None,
                    show_success=show_success,
                    show_compliance=show_compliance)
 
-    if __salt__['config.get']('hubblestack:nova:autoload', True):
+    if not called_from_top and __salt__['config.get']('hubblestack:nova:autoload', True):
         load()
     if not __nova__:
         return False, 'No nova modules/data have been loaded.'

@@ -74,12 +74,45 @@ def queries(query_group,
         salt '*' nebula.queries hour verbose=True
         salt '*' nebula.queries hour pillar_key=sec_osqueries
     '''
+    config = []
 
     if isinstance(query_file, list):
-        query_file = _dict_update(query_file,
-                                  yaml.safe_load(f),
-                                  recursive_update=True,
-                                  merge_lists=True)
+        config['paths'] = query_file
+    else:
+        config['paths'] = [query_file]
+
+    config['verbose'] = verbose
+    global CONFIG_STALENESS
+    global CONFIG
+    if config.get('verbose'):
+        log.debug('Nebula beacon called.')
+        log.debug('Nebula beacon config from pillar:\n{0}'.format(config))
+    ret = []
+
+    # Get config(s) from salt fileserver if we don't have them already
+    if CONFIG and CONFIG_STALENESS < config.get('refresh_interval', 300):
+        CONFIG_STALENESS += 1
+        CONFIG.update(config)
+        CONFIG['verbose'] = config.get('verbose')
+        config = CONFIG
+    else:
+            if config.get('verbose'):
+            log.debug('No cached config found for nebula, retrieving fresh from fileserver.')
+        new_config = config
+        if isinstance(config.get('paths'), list):
+            for path in config['paths']:
+                if 'salt://' in path:
+                    path = __salt__['cp.cache_file'](path)
+                if os.path.isfile(path):
+                    with open(path, 'r') as f:
+                        query_file = _dict_update(new_config,
+                                                  yaml.safe_load(f),
+                                                  recursive_update=True,
+                                                  merge_lists=True)
+                else:
+                    log.error('Path {0} does not exist or is not a file'.format(path))
+        else:
+            log.error('Nebula beacon \'paths\' data improperly formatted. Should be list of paths')
 
     if query_file is None:
         if salt.utils.is_windows():
@@ -225,7 +258,6 @@ def top(topfile=None,
         else:
             topfile = 'salt://hubblestack_nebula/top.nebula'
 
-
     configs = get_top_data(topfile)
 
     configs = ['salt://hubblestack_nebula/' + config.replace('.', '/') + '.yaml'
@@ -260,6 +292,7 @@ def get_top_data(topfile):
             ret.extend(data)
 
     return ret
+
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
     '''

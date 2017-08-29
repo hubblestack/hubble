@@ -85,6 +85,7 @@ fileserver_backend:
 #      - token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 #        indexer: splunk-indexer.domain.tld
 #        index: hubble
+#        add_query_to_sourcetype: True  # Separate nebula sourcetype per query
 #        sourcetype_nova: hubble_audit
 #        sourcetype_nebula: hubble_osquery
 #        sourcetype_pulsar: hubble_fim

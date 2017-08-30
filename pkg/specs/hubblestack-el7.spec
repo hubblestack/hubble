@@ -9,7 +9,7 @@
 
 Summary: Hubblestack is a module, open-source security compliance framework
 Name: hubblestack
-Version: 2.2.2
+Version: 2.2.3
 Release: 1
 License: Apache 2.0
 Group: Development/Tools

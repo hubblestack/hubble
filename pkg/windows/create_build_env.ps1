@@ -82,9 +82,9 @@ popd
 # Download PortableGit.  Requirement for Hubble
 $path = (Get-Location).Path
 If (Test-Path "C:\Program Files (x86)") {
-    Invoke-WebRequest -Uri https://github.com/git-for-windows/git/releases/download/v2.12.2.windows.2/PortableGit-2.12.2.2-64-bit.7z.exe -OutFile .\PortableGit.7z.exe
+    Invoke-WebRequest -Uri https://github.com/git-for-windows/git/releases/download/v2.12.2.windows.2/PortableGit-2.12.2.3-64-bit.7z.exe -OutFile .\PortableGit.7z.exe
 } else {
-    Invoke-WebRequest -Uri https://github.com/git-for-windows/git/releases/download/v2.12.2.windows.2/PortableGit-2.12.2.2-32-bit.7z.exe -OutFile .\PortableGit.7z.exe
+    Invoke-WebRequest -Uri https://github.com/git-for-windows/git/releases/download/v2.12.2.windows.2/PortableGit-2.12.2.3-32-bit.7z.exe -OutFile .\PortableGit.7z.exe
 }
 7z x PortableGit.7z.exe -o"$path\hubble\PortableGit" -y
 & "$path\hubble\PortableGit\post-install.bat"

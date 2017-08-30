@@ -188,22 +188,19 @@ def _get_options():
             splunk_opts.append(processed)
         return splunk_opts
     else:
-        try:
-            token = __salt__['config.get']('hubblestack:nebula:returner:splunk:token').strip()
-            indexer = __salt__['config.get']('hubblestack:nebula:returner:splunk:indexer')
-            sourcetype = __salt__['config.get']('hubblestack:nebula:returner:splunk:sourcetype')
-            index = __salt__['config.get']('hubblestack:nebula:returner:splunk:index')
-            custom_fields = __salt__['config.get']('hubblestack:nebula:returner:splunk:custom_fields', [])
-        except:
-            return None
-        splunk_opts = {'token': token, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}
-
-        hec_ssl = __salt__['config.get']('hubblestack:nebula:returner:splunk:hec_ssl', True)
-        splunk_opts['http_event_server_ssl'] = hec_ssl
+        splunk_opts = {}
+        splunk_opts['token'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:token').strip()
+        splunk_opts['indexer'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:indexer')
+        splunk_opts['port'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:port', '8088')
+        splunk_opts['index'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:index')
+        splunk_opts['custom_fields'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:custom_fields', [])
+        splunk_opts['sourcetype'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:sourcetype')
+        splunk_opts['http_event_server_ssl'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:hec_ssl', True)
         splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:proxy', {})
         splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:timeout', 9.05)
         splunk_opts['index_extracted_fields'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:index_extracted_fields', [])
-        splunk_opts['port'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:port', '8088')
+
+        splunk_opts['add_query_to_sourcetype'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:add_query_to_sourcetype', True)
 
         return [splunk_opts]
 

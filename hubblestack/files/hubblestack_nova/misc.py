@@ -311,7 +311,7 @@ def test_mount_attrs(mount_name,attribute,check_type='hard'):
     #if the path exits, proceed with following code
     output = _execute_shell_command('mount | grep ' + mount_name)
     if output.strip() == '':
-	return True if check_type == "soft" else (mount_name + " is not mounted")
+        return True if check_type == "soft" else (mount_name + " is not mounted")
     elif attribute not in output:
         return str(output)
     else:
@@ -442,7 +442,7 @@ def check_duplicate_uids(reason=''):
     uids = uids.split('\n') if uids != "" else []
     duplicate_uids = [k for k,v in Counter(uids).items() if v>1]
     if duplicate_uids is None or duplicate_uids == []:
-	return True
+        return True
 
     return str(duplicate_uids)
 
@@ -455,7 +455,7 @@ def check_duplicate_gids(reason=''):
     gids = gids.split('\n') if gids != "" else []
     duplicate_gids = [k for k,v in Counter(gids).items() if v>1]
     if duplicate_gids is None or duplicate_gids == []:
-	return True
+        return True
 
     return str(duplicate_gids)
 
@@ -468,7 +468,7 @@ def check_duplicate_unames(reason=''):
     unames = unames.split('\n') if unames != "" else []
     duplicate_unames = [k for k,v in Counter(unames).items() if v>1]
     if duplicate_unames is None or duplicate_unames == []:
-	return True
+        return True
 
     return str(duplicate_unames)
 
@@ -481,7 +481,7 @@ def check_duplicate_gnames(reason=''):
     gnames = gnames.split('\n') if gnames != "" else []
     duplicate_gnames = [k for k,v in Counter(gnames).items() if v>1]
     if duplicate_gnames is None or duplicate_gnames == []:
-	return True
+        return True
 
     return str(duplicate_gnames)
 
@@ -494,12 +494,11 @@ def check_directory_files_permission(path,permission):
     files_list = files_list.split('\n') if files_list != "" else []
     bad_permission_files = []
     for file_in_directory in files_list:
-	per = restrict_permissions(file_in_directory, permission)
-	if per is not True:
-		bad_permission_files += [file_in_directory + ": Bad Permission - " + per + ":"]
-
+        per = restrict_permissions(file_in_directory, permission)
+        if per is not True:
+            bad_permission_files += [file_in_directory + ": Bad Permission - " + per + ":"]
     if bad_permission_files == []:
-    	return True
+        return True
 
     return str(bad_permission_files)
 
@@ -511,10 +510,10 @@ def check_core_dumps(reason=''):
     hard_core_dump_value = _execute_shell_command("grep -R -E \"hard +core\" /etc/security/limits.conf /etc/security/limits.d/ | awk '{print $4}'").strip()
     hard_core_dump_value = hard_core_dump_value.split('\n') if hard_core_dump_value != "" else []
     if '0' in hard_core_dump_value:
-	return True
+        return True
 
     if hard_core_dump_value is None or hard_core_dump_value == [] or hard_core_dump_value == "":
-	return "'hard core' not found in any file"
+        return "'hard core' not found in any file"
 
     return str(hard_core_dump_value)
 
@@ -538,13 +537,13 @@ def check_ssh_timeout_config(reason=''):
 
     client_alive_interval = _execute_shell_command("grep \"^ClientAliveInterval\" /etc/ssh/sshd_config | awk '{print $NF}'").strip()
     if client_alive_interval != '' and int(client_alive_interval) <= 300:
-    	client_alive_count_max = _execute_shell_command("grep \"^ClientAliveCountMax\" /etc/ssh/sshd_config | awk '{print $NF}'").strip()
-    	if client_alive_count_max != '' and int(client_alive_count_max) <= 3:
-       	    return True
-    	else:
+        client_alive_count_max = _execute_shell_command("grep \"^ClientAliveCountMax\" /etc/ssh/sshd_config | awk '{print $NF}'").strip()
+        if client_alive_count_max != '' and int(client_alive_count_max) <= 3:
+            return True
+        else:
             return "ClientAliveCountMax value should be less than equal to 3"
     else:
-    	return "ClientAliveInterval value should be less than equal to 300"
+        return "ClientAliveInterval value should be less than equal to 300"
 
 
 def check_unowned_files(reason=''):
@@ -619,9 +618,7 @@ def check_users_home_directory_permissions(reason=''):
         user_dir = user_dir.split(" ")
         if len(user_dir) < 2:
                 user_dir = user_dir + ['']*(2-len(user_dir))
-        if not _is_valid_home_directory(user_dir[1]):
-            error += ["Either home directory " + user_dir[1] + " of user " + user_dir[0] + " is invalid or does not exist."]
-        else:
+        if _is_valid_home_directory(user_dir[1]):
             result = restrict_permissions(user_dir[1], "750")
             if result is not True:
                 error += ["permission on home directory " + user_dir[1]  + " of user " + user_dir[0] + " is wrong: " + result]
@@ -645,10 +642,11 @@ def check_users_own_their_home(max_system_uid):
     for user_data in users_uids_dirs:
         user_uid_dir = user_data.strip().split(" ")
         if len(user_uid_dir) < 3:
-                user_uid_dir = user_uid_dir + ['']*(3-len(user_uid_dir))
+            user_uid_dir = user_uid_dir + ['']*(3-len(user_uid_dir))
         if user_uid_dir[1].isdigit():
-	    if not _is_valid_home_directory(user_uid_dir[2]):
-		error += ["Either home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is invalid or does not exist."]
+            if not _is_valid_home_directory(user_uid_dir[2]):
+                if int(user_uid_dir[1]) >= max_system_uid:
+                    error += ["Either home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is invalid or does not exist."]
             elif int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] is not "nfsnobody":
                 owner = _execute_shell_command("stat -L -c \"%U\" \"" + user_uid_dir[2] + "\"")
                 if owner != user_uid_dir[0]:
@@ -674,9 +672,7 @@ def check_users_dot_files(reason=''):
         user_dir = user_dir.split()
         if len(user_dir) < 2:
                 user_dir = user_dir + ['']*(2-len(user_dir))
-        if not _is_valid_home_directory(user_dir[1],True):
-            error += ["Either home directory " + user_dir[1] + " of user " + user_dir[0] + " is invalid or does not exist."]
-        else:
+        if _is_valid_home_directory(user_dir[1]):
             dot_files = _execute_shell_command("find " + user_dir[1] + " -name \".*\"").strip()
             dot_files = dot_files.split('\n') if dot_files != "" else []
             for dot_file in dot_files:
@@ -707,9 +703,7 @@ def check_users_forward_files(reason=''):
         user_dir = user_dir.split()
         if len(user_dir) < 2:
                 user_dir = user_dir + ['']*(2-len(user_dir))
-        if not _is_valid_home_directory(user_dir[1]):
-            error += ["Either home directory " + user_dir[1] + " of user " + user_dir[0] + " is invalid or does not exist."]
-        else:
+        if _is_valid_home_directory(user_dir[1]):
             forward_file = _execute_shell_command("find " + user_dir[1] + " -maxdepth 1 -name \".forward\"").strip()
             if forward_file is not None and os.path.isfile(forward_file):
                 error += ["Home directory: " + user_dir[1] + ", for user: " + user_dir[0] + " has " + forward_file + " file"]
@@ -732,9 +726,7 @@ def check_users_netrc_files(reason=''):
         user_dir = user_dir.split()
         if len(user_dir) < 2:
                 user_dir = user_dir + ['']*(2-len(user_dir))
-        if not _is_valid_home_directory(user_dir[1]):
-            error += ["Either home directory " + user_dir[1] + " of user " + user_dir[0] + " is invalid or does not exist."]
-        else:
+        if _is_valid_home_directory(user_dir[1]):
             netrc_file = _execute_shell_command("find " + user_dir[1] + " -maxdepth 1 -name \".netrc\"").strip()
             if netrc_file is not None and os.path.isfile(netrc_file):
                 error += ["Home directory: " + user_dir[1] + ", for user: " + user_dir[0] + " has .netrc file"]

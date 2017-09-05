@@ -95,7 +95,7 @@ def queries(query_group,
             with open(fh, 'r') as f:
                 f_data = yaml.safe_load(f)
                 if not isinstance(f_data, dict):
-                    raise CommandExecutionError('Query data is not formed as a dict {0}'
+                    raise CommandExecutionError('File data is not formed as a dict {0}'
                                                 .format(f_data))
                 query_data =  _dict_update(query_data,
                                            f_data,

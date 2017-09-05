@@ -85,15 +85,22 @@ def queries(query_group,
     if not isinstance(query_file, list):
         query_file = [query_file]
 
-    for file in query_file:
-        if 'salt://' in file:
-            file = __salt__['cp.cache_file'](file)
-        if os.path.isfile(file):
-            with open(file, 'r') as f:
+    for fh in query_file:
+        if 'salt://' in fh:
+            fh = __salt__['cp.cache_file'](fh)
+        if fh is None:
+            log.error('Could not find file {0}.'.format(fh))
+            return None
+        if os.path.isfile(fh):
+            with open(fh, 'r') as f:
+                f_data = yaml.safe_load(f)
+                if not isinstance(f_data, dict):
+                    raise CommandExecutionError('Query data is not formed as a dict {0}'
+                                                .format(f_data))
                 query_data =  _dict_update(query_data,
-                                       yaml.safe_load(f),
-                                       recursive_update=True,
-                                       merge_lists=True)
+                                           f_data,
+                                           recursive_update=True,
+                                           merge_lists=True)
 
     if not salt.utils.which('osqueryi'):
         if query_group == 'day':
@@ -153,16 +160,6 @@ def queries(query_group,
                 return ret
             else:
                return None
-
-    orig_filename = query_file
-
-    if query_file is None:
-        log.error('Could not find file {0}.'.format(orig_filename))
-        return None
-
-    if not isinstance(query_data, dict):
-        raise CommandExecutionError('Query data is not formed as a dict {0}'
-                                    .format(query_data))
 
     query_data = query_data.get(query_group, [])
 

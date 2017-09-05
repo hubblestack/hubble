@@ -74,31 +74,26 @@ def queries(query_group,
         salt '*' nebula.queries hour verbose=True
         salt '*' nebula.queries hour pillar_key=sec_osqueries
     '''
-    config = {}
-    if isinstance(query_file, list):
-        for file in query_file:
-            if 'salt://' in file:
-                file = __salt__['cp.cache_file'](file)
-            if os.path.isfile(file):
-                with open(file, 'r') as f:
-                    config = _dict_update(config,
-                                         yaml.safe_load(f),
-                                         recursive_update=True,
-                                         merge_lists=True)
-        if salt.utils.is_windows():
-            query_file = "salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml"
-        else:
-            query_file = 'salt://hubblestack_nebula/hubblestack_nebula_queries.yaml'
-
-        query_file = __salt__['cp.cache_file'](query_file)
-        with open(query_file,'w') as yaml_file:
-            yaml.dump(config, yaml_file, default_flow_style=False)
+    query_data = {}
 
     if query_file is None:
         if salt.utils.is_windows():
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
         else:
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_queries.yaml'
+
+    if not isinstance(query_file, list):
+        query_file = [query_file]
+
+    for file in query_file:
+        if 'salt://' in file:
+            file = __salt__['cp.cache_file'](file)
+        if os.path.isfile(file):
+            with open(file, 'r') as f:
+                query_data =  _dict_update(query_data,
+                                       yaml.safe_load(f),
+                                       recursive_update=True,
+                                       merge_lists=True)
 
     if not salt.utils.which('osqueryi'):
         if query_group == 'day':
@@ -159,14 +154,11 @@ def queries(query_group,
             else:
                return None
 
-
     orig_filename = query_file
-    query_file = __salt__['cp.cache_file'](query_file)
+
     if query_file is None:
         log.error('Could not find file {0}.'.format(orig_filename))
         return None
-    with open(query_file, 'r') as fh:
-        query_data = yaml.safe_load(fh)
 
     if not isinstance(query_data, dict):
         raise CommandExecutionError('Query data is not formed as a dict {0}'

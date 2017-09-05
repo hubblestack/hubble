@@ -87,9 +87,10 @@ def queries(query_group,
 
     for fh in query_file:
         if 'salt://' in fh:
+            orig_fh = fh
             fh = __salt__['cp.cache_file'](fh)
         if fh is None:
-            log.error('Could not find file {0}.'.format(fh))
+            log.error('Could not find file {0}.'.format(orig_fh))
             return None
         if os.path.isfile(fh):
             with open(fh, 'r') as f:

@@ -54,9 +54,6 @@ setup(
         'bdist_rpm': {
             'requires': 'salt python-argparse python-inotify python-pygit2 python-setuptools',
         },
-        'install': {
-            'prefix': '/usr',
-        },
     },
     classifiers=[
         'Development Status :: 4 - Beta',

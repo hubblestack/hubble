@@ -13,3 +13,4 @@ salt-ssh
 gitpython
 pyinotify
 cffi
+azure

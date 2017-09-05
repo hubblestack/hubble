@@ -69,13 +69,14 @@ def returner(ret):
         logging.info('Options: %s' % json.dumps(opts))
         http_event_collector_key = opts['token']
         http_event_collector_host = opts['indexer']
+        http_event_collector_port = opts['port']
         hec_ssl = opts['http_event_server_ssl']
         proxy = opts['proxy']
         timeout = opts['timeout']
         custom_fields = opts['custom_fields']
 
         # Set up the collector
-        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
+        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
 
         # st = 'salt:hubble:nova'
         data = ret['return']
@@ -127,7 +128,10 @@ def returner(ret):
 
                         payload.update({'host': fqdn})
                         payload.update({'index': opts['index']})
-                        payload.update({'sourcetype': opts['sourcetype']})
+                        if opts['add_query_to_sourcetype']:
+                            payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], query_name)})
+                        else:
+                            payload.update({'sourcetype': opts['sourcetype']})
                         payload.update({'event': event})
 
                         # If the osquery query includes a field called 'time' it will be checked.
@@ -155,9 +159,11 @@ def _get_options():
             processed = {}
             processed['token'] = opt.get('token')
             processed['indexer'] = opt.get('indexer')
+            processed['port'] = str(opt.get('port', '8088'))
             processed['index'] = opt.get('index')
             processed['custom_fields'] = opt.get('custom_fields', [])
             processed['sourcetype'] = opt.get('sourcetype_nebula', 'hubble_osquery')
+            processed['add_query_to_sourcetype'] = opt.get('add_query_to_sourcetype', True)
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)

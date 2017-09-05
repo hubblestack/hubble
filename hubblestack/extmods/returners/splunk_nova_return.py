@@ -65,9 +65,10 @@ def returner(ret):
     aws = get_aws_details()
 
     for opts in opts_list:
-        logging.info('Options: %s' % json.dumps(opts))
+        log.info('Options: %s' % json.dumps(opts))
         http_event_collector_key = opts['token']
         http_event_collector_host = opts['indexer']
+        http_event_collector_port = opts['port']
         hec_ssl = opts['http_event_server_ssl']
         proxy = opts['proxy']
         timeout = opts['timeout']
@@ -75,7 +76,7 @@ def returner(ret):
 
 
         # Set up the collector
-        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
+        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
         # st = 'salt:hubble:nova'
         data = ret['return']
         minion_id = ret['id']
@@ -98,6 +99,11 @@ def returner(ret):
             master = __grains__['master']
         else:
             master = socket.gethostname()  # We *are* the master, so use our hostname
+
+        if not isinstance(data, dict):
+            log.error('Data sent to splunk_nova_return was not formed as a '
+                      'dict:\n{0}'.format(data))
+            return
 
         for fai in data.get('Failure', []):
             check_id = fai.keys()[0]
@@ -223,7 +229,7 @@ def event_return(event):
         elif(e['data']['fun'] != 'hubble.audit'):
             continue  # not a call to hubble.audit, so not relevant
         else:
-            logging.debug('Logging event: %s' % str(e))
+            log.debug('Logging event: %s' % str(e))
             returner(e['data'])  # Call the standard returner
     return
 
@@ -238,6 +244,7 @@ def _get_options():
             processed = {}
             processed['token'] = opt.get('token')
             processed['indexer'] = opt.get('indexer')
+            processed['port'] = str(opt.get('port', '8088'))
             processed['index'] = opt.get('index')
             processed['custom_fields'] = opt.get('custom_fields', [])
             processed['sourcetype'] = opt.get('sourcetype_nova', 'hubble_audit')
@@ -283,7 +290,7 @@ def send_splunk(event, index_override=None, sourcetype_override=None):
 
     # Add the event
     payload.update({'event': event})
-    logging.info('Payload: %s' % json.dumps(payload))
+    log.info('Payload: %s' % json.dumps(payload))
 
     # fire it off
     hec.batchEvent(payload)
@@ -356,8 +363,8 @@ class http_event_collector:
 
         # Print debug info if flag set
         if http_event_collector_debug:
-            logger.debug(r.text)
-            logger.debug(data)
+            log.debug(r.text)
+            log.debug(data)
 
     def batchEvent(self, payload, eventtime=''):
         # Method to store the event in a batch to flush later

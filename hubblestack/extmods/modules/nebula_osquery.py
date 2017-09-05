@@ -55,33 +55,26 @@ def queries(query_group,
     '''
     Run the set of queries represented by ``query_group`` from the
     configuration in the file query_file
-
     query_group
         Group of queries to run
-
     query_file
         salt:// file which will be parsed for osquery queries
-
     verbose
         Defaults to False. If set to True, more information (such as the query
         which was run) will be included in the result.
-
     CLI Examples:
-
     .. code_block:: bash
-
         salt '*' nebula.queries day
         salt '*' nebula.queries hour verbose=True
         salt '*' nebula.queries hour pillar_key=sec_osqueries
     '''
     query_data = {}
-
+    MAX_FILE_SIZE = 104857600
     if query_file is None:
         if salt.utils.is_windows():
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
         else:
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_queries.yaml'
-
     if not isinstance(query_file, list):
         query_file = [query_file]
 
@@ -103,7 +96,7 @@ def queries(query_group,
                                            recursive_update=True,
                                            merge_lists=True)
 
-    if not salt.utils.which('osqueryi'):
+    if 'osquerybinpath' not in __grains__:
         if query_group == 'day':
             log.warning('osquery not installed on this host. Returning baseline data')
             # Match the formatting of normal osquery results. Not super
@@ -142,13 +135,14 @@ def queries(query_group,
 
     if salt.utils.is_windows():
         win_version = __grains__['osfullname']
-        if '2012' not in win_version and '2016' not in win_version:
-            log.error('osquery does not run on windows versions earlier than Server 2012 and Windows 8')
+        if '2008' not in win_version and '2012' not in win_version and '2016' not in win_version:
+            log.error('osquery does not run on windows versions earlier than Server 2008 and Windows 7')
             if query_group == 'day':
                 ret = []
                 ret.append(
                         {'fallback_osfinger': {
-                             'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname'))}],
+                             'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
+                                       'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
                              'result': True
                         }}
                 )
@@ -179,13 +173,13 @@ def queries(query_group,
             'result': True,
         }
 
-        cmd = ['osqueryi', '--json', query_sql]
+        cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
         res = __salt__['cmd.run_all'](cmd)
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
-            queury_ret['result'] = False
-            queury_ret['error'] = res['stderr']
+            query_ret['result'] = False
+            query_ret['error'] = res['stderr']
 
         if verbose:
             tmp = copy.deepcopy(query)
@@ -197,7 +191,34 @@ def queries(query_group,
     if query_group == 'day' and report_version_with_day:
         ret.append(hubble_versions())
 
+    for r in ret:
+        for query_name, query_ret in r.iteritems():
+            for result in query_ret['data']:
+                for key, value in result.iteritems():
+                    if value.startswith('__JSONIFY__'):
+                        result[key] = json.loads(value[len('__JSONIFY__'):])
+
     return ret
+
+
+def fields(*args):
+    '''
+    Use config.get to retrieve custom data based on the keys in the `*args`
+    list.
+    Arguments:
+    *args
+        List of keys to retrieve
+    '''
+    ret = {}
+    for field in args:
+        ret['custom_{0}'.format(field)] = __salt__['config.get'](field)
+    # Return it as nebula data
+    if ret:
+        return [{'custom_fields': {
+                     'data': [ret],
+                     'result': True
+                }}]
+    return []
 
 
 def version():

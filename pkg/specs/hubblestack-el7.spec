@@ -16,7 +16,9 @@ Group: Development/Tools
 SOURCE0: %{name}-%{version}.tar.gz
 URL: https://hubblestack.io
 Autoreq: 0
+Autoprov: 0
 Requires: git
+Provides: osquery
 
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 

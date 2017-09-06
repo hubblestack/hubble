@@ -34,6 +34,7 @@ import logging
 import os
 import sys
 import yaml
+import collections
 
 import salt.utils
 from salt.exceptions import CommandExecutionError
@@ -74,12 +75,33 @@ def queries(query_group,
         salt '*' nebula.queries hour verbose=True
         salt '*' nebula.queries hour pillar_key=sec_osqueries
     '''
+    query_data = {}
     MAX_FILE_SIZE = 104857600
     if query_file is None:
         if salt.utils.is_windows():
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
         else:
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_queries.yaml'
+    if not isinstance(query_file, list):
+        query_file = [query_file]
+    for fh in query_file:
+        if 'salt://' in fh:
+            orig_fh = fh
+            fh = __salt__['cp.cache_file'](fh)
+        if fh is None:
+            log.error('Could not find file {0}.'.format(orig_fh))
+            return None
+        if os.path.isfile(fh):
+            with open(fh, 'r') as f:
+                f_data = yaml.safe_load(f)
+                if not isinstance(f_data, dict):
+                    raise CommandExecutionError('File data is not formed as a dict {0}'
+                                                .format(f_data))
+                query_data =  _dict_update(query_data,
+                                           f_data,
+                                           recursive_update=True,
+                                           merge_lists=True)
+
     if 'osquerybinpath' not in __grains__:
         if query_group == 'day':
             log.warning('osquery not installed on this host. Returning baseline data')
@@ -139,19 +161,6 @@ def queries(query_group,
                 return ret
             else:
                return None
-
-
-    orig_filename = query_file
-    query_file = __salt__['cp.cache_file'](query_file)
-    if query_file is None:
-        log.error('Could not find file {0}.'.format(orig_filename))
-        return None
-    with open(query_file, 'r') as fh:
-        query_data = yaml.safe_load(fh)
-
-    if not isinstance(query_data, dict):
-        raise CommandExecutionError('Query data is not formed as a dict {0}'
-                                    .format(query_data))
 
     query_data = query_data.get(query_group, [])
 
@@ -238,3 +247,98 @@ def hubble_versions():
 
     return {'hubble_versions': {'data': [versions],
                                 'result': True}}
+
+
+def top(query_group,
+        topfile='salt://hubblestack_nebula/top.nebula',
+        verbose=False,
+        report_version_with_day=True):
+
+    if salt.utils.is_windows():
+        topfile = 'salt://hubblestack_nebula/win_top.nebula'
+
+    configs = get_top_data(topfile)
+
+    configs = ['salt://hubblestack_nebula/' + config.replace('.', '/') + '.yaml'
+               for config in configs]
+
+    return queries(query_group,
+                   query_file=configs,
+                   verbose=False,
+                   report_version_with_day=True)
+
+
+def get_top_data(topfile):
+
+    topfile = __salt__['cp.cache_file'](topfile)
+
+    try:
+        with open(topfile) as handle:
+            topdata = yaml.safe_load(handle)
+    except Exception as e:
+        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
+
+    if not isinstance(topdata, dict) or 'nebula' not in topdata or \
+            not(isinstance(topdata['nebula'], dict)):
+        raise CommandExecutionError('Nebula topfile not formatted correctly')
+
+    topdata = topdata['nebula']
+
+    ret = []
+
+    for match, data in topdata.iteritems():
+        if __salt__['match.compound'](match):
+            ret.extend(data)
+
+    return ret
+
+
+def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
+    '''
+    Recursive version of the default dict.update
+
+    Merges upd recursively into dest
+
+    If recursive_update=False, will use the classic dict.update, or fall back
+    on a manual merge (helpful for non-dict types like FunctionWrapper)
+
+    If merge_lists=True, will aggregate list object types instead of replace.
+    This behavior is only activated when recursive_update=True. By default
+    merge_lists=False.
+    '''
+    if (not isinstance(dest, collections.Mapping)) \
+            or (not isinstance(upd, collections.Mapping)):
+        raise TypeError('Cannot update using non-dict types in dictupdate.update()')
+    updkeys = list(upd.keys())
+    if not set(list(dest.keys())) & set(updkeys):
+        recursive_update = False
+    if recursive_update:
+        for key in updkeys:
+            val = upd[key]
+            try:
+                dest_subkey = dest.get(key, None)
+            except AttributeError:
+                dest_subkey = None
+            if isinstance(dest_subkey, collections.Mapping) \
+                    and isinstance(val, collections.Mapping):
+                ret = update(dest_subkey, val, merge_lists=merge_lists)
+                dest[key] = ret
+            elif isinstance(dest_subkey, list) \
+                     and isinstance(val, list):
+                if merge_lists:
+                    dest[key] = dest.get(key, []) + val
+                else:
+                    dest[key] = upd[key]
+            else:
+                dest[key] = upd[key]
+        return dest
+    else:
+        try:
+            for k in upd.keys():
+                dest[k] = upd[k]
+        except AttributeError:
+            # this mapping is not a dict
+            for k in upd:
+                dest[k] = upd[k]
+        return dest
+

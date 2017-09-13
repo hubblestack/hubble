@@ -96,9 +96,9 @@ def audit(data_list, tags, debug=False, **kwargs):
     '''
     Main audit function. See module docstring for more information on usage.
     '''
-    os_version = __grains__.get('osmajorrelease', None)
+    os_version = __grains__.get('osrelease', None)
     if os_version is None:
-        os_version = __grains__.get('osrelease', None)
+        os_version = __grains__.get('osmajorrelease', None)
     os_name = __grains__['os'].lower()
 
     log.debug("os_version: %s, os_name: %s", os_version, os_name)

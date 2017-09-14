@@ -465,9 +465,9 @@ def top(topfile='top.nova',
         else:
             if 'Errors' not in results:
                 results['Errors'] = {}
-            error_log = {'error': 'topfile malformed, list entries must be '
-                                  'strings or dicts: {0}'.format(data)}
-            results['Errors'][topfile] = error_log
+            error_log = 'topfile malformed, list entries must be strings or '\
+                        'dicts: {0}'.format(data)
+            results['Errors'][topfile] = {'error': error_log}
             log.error(error_log)
             continue
 

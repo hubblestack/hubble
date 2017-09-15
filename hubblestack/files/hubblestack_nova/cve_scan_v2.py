@@ -67,6 +67,21 @@ The cve data json must be formatted as follows:
 
  ]
 
+Whitelisting packages is also supported through pillar data. Add the following
+to a minion's pillar to whitelist specific packages. Whitelisting a package
+will not perform the vulnerability check on it. The 'whitelist' dict should
+contain the names of the packages as returned in 'affected_pkg' field of
+the vulnerability check.
+
+cve_scan_v2:
+  {% if grains['os_family'] == 'RedHat' %}
+  whitelist:
+    - test_package
+  {%elif grains['os_family'] == 'Debian' %}
+  whitelist:
+    - libruby1.9.1
+  {% endif %}
+
 '''
 from __future__ import absolute_import
 import logging
@@ -96,9 +111,9 @@ def audit(data_list, tags, debug=False, **kwargs):
     '''
     Main audit function. See module docstring for more information on usage.
     '''
-    os_version = __grains__.get('osmajorrelease', None)
+    os_version = __grains__.get('osrelease', None)
     if os_version is None:
-        os_version = __grains__.get('osrelease', None)
+        os_version = __grains__.get('osmajorrelease', None)
     os_name = __grains__['os'].lower()
 
     log.debug("os_version: %s, os_name: %s", os_version, os_name)
@@ -114,6 +129,15 @@ def audit(data_list, tags, debug=False, **kwargs):
 
             ttl = data['cve_scan_v2']['ttl']
             url = data['cve_scan_v2']['url']
+
+            # get whitelist from pillar data if exists
+            whitelist = None
+            cve_scan_v2_pillar = __salt__['config.get']('cve_scan_v2', {})
+            if cve_scan_v2_pillar is not None:
+                whitelist = cve_scan_v2_pillar.get('whitelist', {})
+            if whitelist is None:
+                whitelist = {}
+
             control = data['cve_scan_v2'].get('control', {})
             # Ability to add more controls easily, in control dict
             min_score = float(control.get('score', 0))
@@ -205,23 +229,25 @@ def audit(data_list, tags, debug=False, **kwargs):
         # Check all local packages against cve vulnerablities in affected_pkgs
         for local_pkg in local_pkgs:
             vulnerable = None
-            if local_pkg in affected_pkgs:
-                # There can be multiple versions for a single local package, check all
-                for local_version in local_pkgs[local_pkg]:
-                    # There can be multiple cve announcements for a single package, check against all
-                    for affected_obj in affected_pkgs[local_pkg]:
-                        affected_version = affected_obj.pkg_version
-                        if _is_vulnerable(local_version, affected_version, affected_obj.operator):
-                            # If the local pkg hasn't been found as vulnerable yet, vulnerable is None
-                            if not vulnerable:
-                                affected_obj.oudated_version = local_version
-                                vulnerable = affected_obj
-                            # If local_pkg has already been marked affected, vulnerable is set. We
-                            #   want to report the cve with highest severity
-                            else:
-                                if affected_obj.score > vulnerable.score:
+            if local_pkg not in whitelist:
+                # if the local package is not whitelisted, proceed with vulnerability check
+                if local_pkg in affected_pkgs:
+                    # There can be multiple versions for a single local package, check all
+                    for local_version in local_pkgs[local_pkg]:
+                        # There can be multiple cve announcements for a single package, check against all
+                        for affected_obj in affected_pkgs[local_pkg]:
+                            affected_version = affected_obj.pkg_version
+                            if _is_vulnerable(local_version, affected_version, affected_obj.operator):
+                                # If the local pkg hasn't been found as vulnerable yet, vulnerable is None
+                                if not vulnerable:
                                     affected_obj.oudated_version = local_version
                                     vulnerable = affected_obj
+                                # If local_pkg has already been marked affected, vulnerable is set. We
+                                #   want to report the cve with highest severity
+                                else:
+                                    if affected_obj.score > vulnerable.score:
+                                        affected_obj.oudated_version = local_version
+                                        vulnerable = affected_obj
                 if vulnerable:
                     if vulnerable.score < min_score:
                         ret['Controlled'].append(vulnerable.get_report(profile))
@@ -395,4 +421,3 @@ class VulnerablePkg:
             'description': self.title,
             'nova_profile': profile
         }
-

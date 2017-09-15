@@ -465,9 +465,14 @@ def top(topfile='top.nova',
         else:
             if 'Errors' not in results:
                 results['Errors'] = {}
-            results['Errors'][topfile] = {'error': 'topfile malformed, list '
-                                                   'entries must be strings or dicts'}
-            return results
+            error_log = 'topfile malformed, list entries must be strings or '\
+                        'dicts: {0}'.format(data)
+            results['Errors'][topfile] = {'error': error_log}
+            log.error(error_log)
+            continue
+
+    if not data_by_tag:
+        return results
 
     # Run the audits
     for tag, data in data_by_tag.iteritems():

@@ -156,9 +156,10 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     # Validate ACLs on watched folders/files and add if needed
     if update_acls:
         for path in config:
-            if path == 'win_notify_interval' or path == 'return' or path == 'batch' or path == 'checksum' or path == 'stats':
+            if path in ['win_notify_interval', 'return', 'batch', 'checksum', 'stats', 'paths', 'verbose']:
                 continue
             if not os.path.exists(path):
+                log.info('The folder path {0} does not exist'.format(path))
                 continue
             if isinstance(config[path], dict):
                 mask = config[path].get('mask', DEFAULT_MASK)

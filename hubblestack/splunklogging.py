@@ -183,19 +183,7 @@ def _get_options():
             splunk_opts.append(processed)
         return splunk_opts
     else:
-        splunk_opts = {}
-        splunk_opts['token'] = __salt__['config.get']('hubblestack:nova:returner:splunk:token').strip()
-        splunk_opts['indexer'] = __salt__['config.get']('hubblestack:nova:returner:splunk:indexer')
-        splunk_opts['port'] = __salt__['config.get']('hubblestack:nova:returner:splunk:port', '8088')
-        splunk_opts['index'] = __salt__['config.get']('hubblestack:nova:returner:splunk:index')
-        splunk_opts['custom_fields'] = __salt__['config.get']('hubblestack:nova:returner:splunk:custom_fields', [])
-        splunk_opts['sourcetype'] = __salt__['config.get']('hubblestack:nova:returner:splunk:sourcetype')
-        splunk_opts['http_event_server_ssl'] = __salt__['config.get']('hubblestack:nova:returner:splunk:hec_ssl', True)
-        splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nova:returner:splunk:proxy', {})
-        splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nova:returner:splunk:timeout', 9.05)
-        splunk_opts['index_extracted_fields'] = __salt__['config.get']('hubblestack:nova:returner:splunk:index_extracted_fields', [])
-
-        return [splunk_opts]
+        raise Exception('Cannot find splunk config at `hubblestack:returner:splunk`!')
 
 
 # Thanks to George Starcher for the http_event_collector class (https://github.com/georgestarcher/)

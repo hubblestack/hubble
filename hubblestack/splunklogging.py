@@ -145,7 +145,7 @@ class SplunkHandler(logging.Handler):
             payload = copy.deepcopy(payload)
             event.update(log_entry)
             payload['event'] = event
-            hec.batchEvent(payload)
+            hec.batchEvent(payload, eventtime=time.time())
             hec.flushBatch()
         return True
 

@@ -17,7 +17,7 @@ RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 #to pin to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=2.6.0
+ENV OSQUERY_SRC_VERSION=2.7.0
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 RUN apt-get -y install git make python ruby sudo
@@ -34,7 +34,7 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
 #these homebrew hashes need to be current. hashes in osquery git repo are often out of date for the tags we check out and try to build.
 #this is a problem and they are aware of it. let the magic hashes commence:
  && sed -i 's,^\(HOMEBREW_CORE=\).*,\1'941ca36839ea354031846d73ad538e1e44e673f4',' tools/provision.sh \
- && sed -i 's,^\(LINUXBREW_CORE=\).*,\1'abc5c5782c5850f2deff1f3d463945f90f2feaac',' tools/provision.sh \
+ && sed -i 's,^\(LINUXBREW_CORE=\).*,\1'f54281a496bb7d3dd2f46b2f3067193d05f5013b',' tools/provision.sh \
  && sed -i 's,^\(HOMEBREW_BREW=\).*,\1'ac2cbd2137006ebfe84d8584ccdcb5d78c1130d9',' tools/provision.sh \
  && sed -i 's,^\(LINUXBREW_BREW=\).*,\1'20bcce2c176469cec271b46d523eef1510217436',' tools/provision.sh \
  && make sysprep \
@@ -64,7 +64,8 @@ RUN apt-get -y install  \
 #libgit2 install start
 #must precede pyinstaller requirements
 ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v0.26.0.tar.gz
-ENV LIBGIT2_SRC_SHA256=4ac70a2bbdf7a304ad2a9fb2c53ad3c8694be0dbec4f1fce0f3cd0cda14fb3b9
+#it turns out github provided release files can change. so even though the code hopefully hasn't changed, the hash has.
+ENV LIBGIT2_SRC_SHA256=6a62393e0ceb37d02fe0d5707713f504e7acac9006ef33da1e88960bd78b6eac
 ENV LIBGIT2_SRC_VERSION=0.26.0
 ENV LIBGIT2TEMP=/tmp/libgit2temp
 RUN mkdir -p "$LIBGIT2TEMP" \

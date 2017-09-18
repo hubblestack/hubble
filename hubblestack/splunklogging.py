@@ -60,83 +60,79 @@ class SplunkHandler(logging.Handler):
     Log handler for splunk
     '''
     def __init__(self):
-        try:
-            super(SplunkHandler, self).__init__()
+        super(SplunkHandler, self).__init__()
 
-            self.opts_list = _get_options()
-            self.clouds = get_cloud_details()
-            self.endpoint_list = []
+        self.opts_list = _get_options()
+        self.clouds = get_cloud_details()
+        self.endpoint_list = []
 
-            for opts in self.opts_list:
-                http_event_collector_key = opts['token']
-                http_event_collector_host = opts['indexer']
-                http_event_collector_port = opts['port']
-                hec_ssl = opts['http_event_server_ssl']
-                proxy = opts['proxy']
-                timeout = opts['timeout']
-                custom_fields = opts['custom_fields']
+        for opts in self.opts_list:
+            http_event_collector_key = opts['token']
+            http_event_collector_host = opts['indexer']
+            http_event_collector_port = opts['port']
+            hec_ssl = opts['http_event_server_ssl']
+            proxy = opts['proxy']
+            timeout = opts['timeout']
+            custom_fields = opts['custom_fields']
 
-                # Set up the fields to be extracted at index time. The field values must be strings.
-                # Note that these fields will also still be available in the event data
-                index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId']
-                try:
-                    index_extracted_fields.extend(opts['index_extracted_fields'])
-                except TypeError:
-                    pass
+            # Set up the fields to be extracted at index time. The field values must be strings.
+            # Note that these fields will also still be available in the event data
+            index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId']
+            try:
+                index_extracted_fields.extend(opts['index_extracted_fields'])
+            except TypeError:
+                pass
 
-                # Set up the collector
-                hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
+            # Set up the collector
+            hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
 
-                minion_id = __grains__['id']
-                master = __grains__['master']
-                fqdn = __grains__['fqdn']
-                # Sometimes fqdn is blank. If it is, replace it with minion_id
-                fqdn = fqdn if fqdn else minion_id
-                try:
-                    fqdn_ip4 = __grains__['fqdn_ip4'][0]
-                except IndexError:
-                    fqdn_ip4 = __grains__['ipv4'][0]
-                if fqdn_ip4.startswith('127.'):
-                    for ip4_addr in __grains__['ipv4']:
-                        if ip4_addr and not ip4_addr.startswith('127.'):
-                            fqdn_ip4 = ip4_addr
-                            break
+            minion_id = __grains__['id']
+            master = __grains__['master']
+            fqdn = __grains__['fqdn']
+            # Sometimes fqdn is blank. If it is, replace it with minion_id
+            fqdn = fqdn if fqdn else minion_id
+            try:
+                fqdn_ip4 = __grains__['fqdn_ip4'][0]
+            except IndexError:
+                fqdn_ip4 = __grains__['ipv4'][0]
+            if fqdn_ip4.startswith('127.'):
+                for ip4_addr in __grains__['ipv4']:
+                    if ip4_addr and not ip4_addr.startswith('127.'):
+                        fqdn_ip4 = ip4_addr
+                        break
 
-                event = {}
-                event.update({'master': master})
-                event.update({'minion_id': minion_id})
-                event.update({'dest_host': fqdn})
-                event.update({'dest_ip': fqdn_ip4})
+            event = {}
+            event.update({'master': master})
+            event.update({'minion_id': minion_id})
+            event.update({'dest_host': fqdn})
+            event.update({'dest_ip': fqdn_ip4})
 
-                for cloud in self.clouds:
-                    event.update(cloud)
+            for cloud in self.clouds:
+                event.update(cloud)
 
-                for custom_field in custom_fields:
-                    custom_field_name = 'custom_' + custom_field
-                    custom_field_value = __salt__['config.get'](custom_field, '')
-                    if isinstance(custom_field_value, str):
-                        event.update({custom_field_name: custom_field_value})
-                    elif isinstance(custom_field_value, list):
-                        custom_field_value = ','.join(custom_field_value)
-                        event.update({custom_field_name: custom_field_value})
+            for custom_field in custom_fields:
+                custom_field_name = 'custom_' + custom_field
+                custom_field_value = __salt__['config.get'](custom_field, '')
+                if isinstance(custom_field_value, str):
+                    event.update({custom_field_name: custom_field_value})
+                elif isinstance(custom_field_value, list):
+                    custom_field_value = ','.join(custom_field_value)
+                    event.update({custom_field_name: custom_field_value})
 
-                payload = {}
-                payload.update({'host': fqdn})
-                payload.update({'index': opts['index']})
-                payload.update({'sourcetype': opts['sourcetype']})
+            payload = {}
+            payload.update({'host': fqdn})
+            payload.update({'index': opts['index']})
+            payload.update({'sourcetype': opts['sourcetype']})
 
-                # Potentially add metadata fields:
-                fields = {}
-                for item in index_extracted_fields:
-                    if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
-                        fields[item] = str(payload['event'][item])
-                if fields:
-                    payload.update({'fields': fields})
+            # Potentially add metadata fields:
+            fields = {}
+            for item in index_extracted_fields:
+                if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
+                    fields[item] = str(payload['event'][item])
+            if fields:
+                payload.update({'fields': fields})
 
-                self.endpoint_list.append((hec, event, payload))
-        except Exception as exc:
-            print('Exception was thrown in splunk loghandler setup! {0}'
-                  .format(exc))
+            self.endpoint_list.append((hec, event, payload))
 
     def emit(self, record):
         '''

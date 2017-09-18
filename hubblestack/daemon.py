@@ -18,6 +18,7 @@ import salt.fileclient
 import salt.utils
 import salt.utils.jid
 import salt.log.setup
+import hubblestack.splunklogging
 from hubblestack import __version__
 
 log = logging.getLogger(__name__)
@@ -375,6 +376,14 @@ def load_config():
     __utils__ = salt.loader.utils(__opts__)
     __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
     __returners__ = salt.loader.returners(__opts__, __salt__)
+
+    if __salt__['config.get']('hubblestack:splunklogging', False):
+        hubblestack.splunklogging.__grains__ = __grains__
+        hubblestack.splunklogging.__salt__ = __salt__
+        root_logger = logging.getLogger()
+        handler = hubblestack.splunklogging.SplunkHandler()
+        handler.setLevel(logging.ERROR)
+        root_logger.addHandler(handler)
 
 
 def parse_args():

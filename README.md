@@ -1,3 +1,24 @@
+Table of Contents
+=================
+
+   * [HUBBLE](#hubble)
+      * [Packaging / Installing](#packaging--installing)
+         * [Installing using setup.py](#installing-using-setuppy)
+         * [Building standalone packages (CentOS)](#building-standalone-packages-centos)
+         * [Building standalone packages (Debian)](#building-standalone-packages-debian)
+         * [Buidling Hubble packages through Dockerfile](#buidling-hubble-packages-through-dockerfile)
+      * [Nova](#nova)
+         * [Usage](#usage)
+         * [Configuration](#configuration)
+      * [Nebula](#nebula)
+         * [Usage](#usage-1)
+         * [Configuration](#configuration-1)
+      * [Pulsar](#pulsar)
+         * [Usage](#usage-2)
+         * [Configuration](#configuration-2)
+            * [Excluding Paths](#excluding-paths)
+            * [Pulsar topfile top.pulsar](#pulsar-topfile-toppulsar)
+
 # HUBBLE
 
 Hubble is a modular, open-source, security & compliance auditing framework which is built on SaltStack. It is alternate version of Hubblestack which can be run without an existing SaltStack infrastructure. Hubble provides on-demand profile-based auditing, real-time security event notifications, alerting and reporting. It also reports the security information to Splunk. This document describes installation, configuration and general use of Hubble.
@@ -46,9 +67,9 @@ To run the container
 docker run -it --rm <image_name>
 ```
 
-### Nova
+## Nova
 Nova is Hubble's auditing system.
-#### Usage
+### Usage
 There are four primary functions for Nova module:
 - `hubble.sync` : syncs the `hubblestack_nova_profiles/` and `hubblestack_nova/` directories to the host(s).
 - `hubble.load` : loads the synced audit hosts and their yaml configuration files.
@@ -64,7 +85,7 @@ hubble hubble.top
 # Run all yaml configs and tags under salt://hubblestack_nova_profiles/foo/ and salt://hubblestack_nova_profiles/bar, but only run audits with tags starting with "CIS"
 hubble hubble.audit foo,bar tags='CIS*'
 ```
-#### Configuration
+### Configuration
 For Nova module, configurations can be done via Nova topfiles. Nova topfiles look very similar to saltstack topfiles, except the top-level key is always nova, as nova doesn’t have environments.
 
 **hubblestack/hubblestack_data/top.nova**
@@ -110,12 +131,12 @@ Note that providing a reason for the control is optional. Any of the three forma
 
 Once you have your compensating control config, just target the yaml to the hosts you want to control using your topfile. In this case, all the audits will still run, but if any of the controlled checks fail, they will be removed from Failure and added to Controlled, and will be treated as a Success for the purposes of compliance percentage.
 
-### Nebula 
+## Nebula 
 Nebula is Hubble’s Insight system, which ties into osquery, allowing you to query your infrastructure as if it were a database. This system can be used to take scheduled snapshots of your systems.
 
 Nebula leverages the osquery_nebula execution module which requires the osquery binary to be installed. More information about osquery can be found at `https://osquery.io`.
 
-#### Usage
+### Usage
 
 Nebula queries have been designed to give detailed insight into system activity. The queries can be found in the following file.
 
@@ -149,7 +170,7 @@ hubble nebula.queries day
 hubble nebula.queries hour [verbose=True]
 hubble nebula.queries fifteen-min
 ```
-#### Configuration
+### Configuration
 For Nebula module, configurations can be done via Nebula topfiles. Nebula topfile functionality is similar to Nova topfiles.
 
 **top.nebula topfile**
@@ -169,14 +190,14 @@ hubble nebula.top hour
 hubble nebula.top foo/bar/top.nova hour
 hubble nebula.top fifteen_min verbose=True
 ```
-### Pulsar
+## Pulsar
 
 Pulsar is designed to monitor for file system events, acting as a real-time File Integrity Monitoring (FIM) agent. Pulsar is composed of a custom Salt beacon that watches for these events and hooks into the returner system for alerting and reporting. In other words, you can recieve real-time alerts for unscheduled file system modifications anywhere you want to recieve them. We’ve designed Pulsar to be lightweight and does not affect the system performance. It simply watches for events and directly sends them to one of the Pulsar returner destinations.
 
-#### Usage
+### Usage
 Once Pulsar is configured there isn’t anything you need to do to interact with it. It simply runs quietly in the background and sends you alerts.
 
-#### Configuration
+### Configuration
 The Pulsar configuration can be found at `hubblestack_pulsar_config.yaml` file. Every environment will have different needs and requirements, and we understand that, so we’ve designed Pulsar to be flexible.
 
 **hubblestack_pulsar_config.yaml**
@@ -221,7 +242,7 @@ slack_pulsar:
   channel: channel
   api_key: xoxb-xxxxxxxxxxx-xxxxxxxxxxxxxxxxxxxxxxxx
 ```
-##### Excluding Paths
+#### Excluding Paths
 There may be certain paths that you want to exclude from this real-time FIM tool. This can be done using the exclude: keyword beneath any defined path in `hubblestack_pulsar_config.yaml` file.
 
 /var:
@@ -235,7 +256,7 @@ There may be certain paths that you want to exclude from this real-time FIM tool
 
 For Pulsar module, configurations can be done via Pulsar topfiles when teams needs to add specific configurations or exclusions as discussed above.
 
-##### Pulsar topfile `top.pulsar`
+#### Pulsar topfile `top.pulsar`
 
 For Pulsar module, configurations can be done via Pulsar topfiles
 

@@ -37,24 +37,6 @@ A config template has been placed in `/etc/hubble/hubble`. Modify it to your spe
 
 The first two commands you should run to make sure things are set up correctly are `hubble --version` and `hubble test.ping`.
 
-### Building standalone packages (CentOS)
-```sh
-sudo yum install git -y
-git clone https://github.com/hubblestack/hubble
-cd hubble/pkg
-./build_rpms.sh  # note the lack of sudo, that is important
-```
-Packages will be in the `hubble/pkg/dist/` directory. The only difference between the packages is the inclusion of `/etc/init.d/hubble` for el6 and the inclusion of a systemd unit file for el7. There's no guarantee of glibc compatibility.
-
-### Building standalone packages (Debian)
-```sh
-sudo yum install git -y
-git clone https://github.com/hubblestack/hubble
-cd hubble/pkg
-./build_debs.sh  # note the lack of sudo, that is important
-```
-Package will be in the `hubble/pkg/dist/` directory. There's no guarantee of glibc compatibility.
-
 ### Buidling Hubble packages through Dockerfile
 Dockerfile aims to make building Hubble v2 packages easier. Dockerfiles can be found at `hubblestack/hubble/pkg`. 
 To build an image

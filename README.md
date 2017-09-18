@@ -39,6 +39,7 @@ The first two commands you should run to make sure things are set up correctly a
 
 ### Buidling Hubble packages through Dockerfile
 Dockerfile aims to make building Hubble v2 packages easier. Dockerfiles for the distribution you want to build can be found at the path `hubblestack/hubble/pkg`. For e.g. for centos6 distribution the dockerfile is at the path 'hubblestack/hubble/pkg/centos6/' 
+
 To build an image
 ```sh
 docker build -t <image_name> 

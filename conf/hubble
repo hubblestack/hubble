@@ -9,6 +9,12 @@
 
 gitfs_remotes:
   - https://github.com/hubblestack/hubblestack_data.git
+## To use locally stored hubblestack_data, comment out gitfs_remote section,
+## then uncomment the following
+# file_roots:
+#   base:
+#     - /srv/salt/hubblestack_data
+## In the above example, hubblestack_data is cloned into /srv/salt/.
 fileserver_backend:
   - roots
   - git
@@ -29,7 +35,6 @@ fileserver_backend:
 #    splay: 3600
 #    kwargs:
 #      verbose: True
-#      show_profile: True
 #    returner: splunk_nova_return
 #    run_on_start: False
 #  nebula_fifteen_min:
@@ -61,6 +66,10 @@ fileserver_backend:
 #    seconds: 1
 #    returner: splunk_pulsar_return
 #    run_on_start: True
+#  pulsar_canary:
+#    function: pulsar.canary
+#    seconds: 86400
+#    run_on_start: True
 
 #################################
 ## Returner Config
@@ -76,6 +85,7 @@ fileserver_backend:
 #      - token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
 #        indexer: splunk-indexer.domain.tld
 #        index: hubble
+#        add_query_to_sourcetype: True  # Separate nebula sourcetype per query
 #        sourcetype_nova: hubble_audit
 #        sourcetype_nebula: hubble_osquery
 #        sourcetype_pulsar: hubble_fim

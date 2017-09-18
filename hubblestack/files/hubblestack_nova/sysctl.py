@@ -49,7 +49,7 @@ def __virtual__():
     return True
 
 
-def audit(data_list, tags, debug=False):
+def audit(data_list, tags, debug=False, **kwargs):
     '''
     Run the sysctl audits contained in the YAML files processed by __virtual__
     '''
@@ -68,8 +68,8 @@ def audit(data_list, tags, debug=False):
 
     for tag in __tags__:
         if fnmatch.fnmatch(tag, tags):
-            passed = True
             for tag_data in __tags__[tag]:
+                passed = True
                 if 'control' in tag_data:
                     ret['Controlled'].append(tag_data)
                     continue
@@ -83,10 +83,10 @@ def audit(data_list, tags, debug=False):
                     passed = False
                 if str(salt_ret) != str(match_output):
                     passed = False
-            if passed:
-                ret['Success'].append(tag_data)
-            else:
-                ret['Failure'].append(tag_data)
+                if passed:
+                    ret['Success'].append(tag_data)
+                else:
+                    ret['Failure'].append(tag_data)
 
     return ret
 

@@ -25,7 +25,7 @@ def __virtual__():
     return True
 
 
-def audit(data_list, tags, debug=False):
+def audit(data_list, tags, debug=False, **kwargs):
     '''
     Runs auditpol on the local machine and audits the return data
     with the CIS yaml processed by __virtual__
@@ -67,6 +67,7 @@ def audit(data_list, tags, debug=False):
                 if 'whitelist' in audit_type:
                     if name in __pkgdata__:
                         audit_value = __pkgdata__['name']
+                        tag_data['found_value'] = audit_value
                         secret = _translate_value_type(audit_value, tag_data['value_type'], match_output)
                         if secret:
                             ret['Success'].append(tag_data)

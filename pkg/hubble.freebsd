@@ -1,0 +1,41 @@
+#!/bin/sh
+
+#
+# Hubble Startup Script
+#
+# PROVIDE: hubble
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+
+# Add the following to /etc/rc.conf[.local] to enable this service
+#
+# hubble_enable (bool):       Set to NO by default.
+#               Set it to YES to enable hubble
+# hubble_paths (string):      Set to "/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin:/usr/local/sbin" by default.
+#               Default $PATH for hubble
+# hubble_eggcache (string):   Set to "/tmp" by default.
+#               Allows defining egg cache directory to fix runtime on diskless systems.
+#
+
+. /etc/rc.subr
+
+name=hubble
+rcvar=hubble_enable
+
+load_rc_config ${name}
+
+: ${hubble_enable:=NO}
+: ${hubble_paths=/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/bin:/usr/local/sbin}
+: ${hubble_pidfile:=/var/run/hubble.pid}
+: ${hubble_eggcache=/tmp}
+
+command="/usr/local/bin/hubble"
+command_interpreter="/usr/local/bin/python2.7"
+required_files="/usr/local/etc/hubble/hubble"
+command_args="-c ${required_files} -d"
+pidfile=${hubble_pidfile}
+
+export PATH="${hubble_paths}"
+export PYTHON_EGG_CACHE="${hubble_eggcache}"
+
+run_rc_command "$1"

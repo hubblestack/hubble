@@ -32,8 +32,8 @@ import traceback
 import salt
 import salt.utils
 from salt.exceptions import CommandExecutionError
-from salt.loader import LazyLoader
 from hubblestack import __version__
+from nova_loader import NovaLazyLoader
 
 __nova__ = {}
 
@@ -45,7 +45,8 @@ def audit(configs=None,
           show_compliance=None,
           show_profile=None,
           called_from_top=None,
-          debug=None):
+          debug=None,
+          **kwargs):
     '''
     Primary entry point for audit calls.
 
@@ -94,6 +95,10 @@ def audit(configs=None,
         False. Configurable via `hubblestack:nova:debug` in minion
         config/pillar.
 
+    **kwargs
+        Any parameters & values that are not explicitly defined will be passed
+        directly through to the Nova module(s).
+
     CLI Examples:
 
     .. code-block:: bash
@@ -107,7 +112,7 @@ def audit(configs=None,
                    show_success=show_success,
                    show_compliance=show_compliance)
 
-    if __salt__['config.get']('hubblestack:nova:autoload', True):
+    if not called_from_top and __salt__['config.get']('hubblestack:nova:autoload', True):
         load()
     if not __nova__:
         return False, 'No nova modules/data have been loaded.'
@@ -133,7 +138,19 @@ def audit(configs=None,
     configs = [os.path.join(os.path.sep, os.path.join(*(con.split('.yaml')[0]).split('.')))
                for con in configs]
 
-    ret = _run_audit(configs, tags, debug=debug)
+    # Pass any module parameters through to the Nova module
+    nova_kwargs = {}
+    # Get values from config first (if any) and merge into nova_kwargs
+    nova_kwargs_config =  __salt__['config.get']('hubblestack:nova:nova_kwargs', False)
+    if nova_kwargs_config is not False:
+        nova_kwargs.update(nova_kwargs_config)
+    # Now process arguments from CLI and merge into nova_kwargs_dict
+    if kwargs is not None:
+        nova_kwargs.update(kwargs)
+
+    log.debug('nova_kwargs: ' + str(nova_kwargs))
+
+    ret = _run_audit(configs, tags, debug, **nova_kwargs)
 
     terse_results = {}
     verbose_results = {}
@@ -218,9 +235,14 @@ def audit(configs=None,
     if not called_from_top and not results:
         results['Messages'] = 'No audits matched this host in the specified profiles.'
 
+    for error in ret.get('Errors', []):
+      if not results.has_key('Errors'):
+        results['Errors'] = []
+      results['Errors'].append(error)
+
     return results
 
-def _run_audit(configs, tags, debug):
+def _run_audit(configs, tags, debug, **kwargs):
 
     results = {}
 
@@ -261,7 +283,7 @@ def _run_audit(configs, tags, debug):
     # We can revisit if this ever becomes a big bottleneck
     for key, func in __nova__._dict.iteritems():
         try:
-            ret = func(data_list, tags, debug=debug)
+            ret = func(data_list, tags, **kwargs)
         except Exception as exc:
             log.error('Exception occurred in nova module:')
             log.error(traceback.format_exc())
@@ -443,9 +465,14 @@ def top(topfile='top.nova',
         else:
             if 'Errors' not in results:
                 results['Errors'] = {}
-            results['Errors'][topfile] = {'error': 'topfile malformed, list '
-                                                   'entries must be strings or dicts'}
-            return results
+            error_log = 'topfile malformed, list entries must be strings or '\
+                        'dicts: {0}'.format(data)
+            results['Errors'][topfile] = {'error': error_log}
+            log.error(error_log)
+            continue
+
+    if not data_by_tag:
+        return results
 
     # Run the audits
     for tag, data in data_by_tag.iteritems():
@@ -564,7 +591,7 @@ def load():
     log.debug('loading nova modules')
 
     global __nova__
-    __nova__ = NovaLazyLoader()
+    __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __grains__, __pillar__, __salt__)
 
     ret = {'loaded': __nova__._dict.keys(),
            'missing': __nova__.missing_modules,
@@ -648,229 +675,3 @@ def _get_top_data(topfile):
             ret.extend(data)
 
     return ret
-
-
-class NovaLazyLoader(LazyLoader):
-    '''
-    Leverage the SaltStack LazyLoader so we don't have to reimplement
-    everything. Note that in general, we'll just call _load_all, so this
-    will not actually be a lazy loader, but leveraging the existing code is
-    worth it.
-    '''
-
-    def __init__(self):
-        super(NovaLazyLoader, self).__init__(_hubble_dir(),
-                                             opts=__opts__,
-                                             tag='nova')
-        self.__data__ = {}
-        self.__missing_data__ = {}
-        self._load_all()
-
-    def refresh_file_mapping(self):
-        '''
-        Override the default refresh_file_mapping to look for nova files
-        recursively, rather than only in a top-level directory
-        '''
-        # map of suffix to description for imp
-        self.suffix_map = {}
-        suffix_order = []  # local list to determine precedence of extensions
-        suffix_order.append('.yaml')
-        for (suffix, mode, kind) in imp.get_suffixes():
-            self.suffix_map[suffix] = (suffix, mode, kind)
-            suffix_order.append(suffix)
-
-        # create mapping of filename (without suffix) to (path, suffix)
-        self.file_mapping = {}
-
-        for mod_dir in self.module_dirs:
-            for dirname, dirs, files in os.walk(mod_dir):
-                if '.git' in dirs:
-                    dirs.remove('.git')
-                for filename in files:
-                    try:
-                        if filename.startswith('_'):
-                            # skip private modules
-                            # log messages omitted for obviousness
-                            continue
-                        _, ext = os.path.splitext(filename)
-                        fpath = os.path.join(dirname, filename)
-                        f_withext = fpath.partition(mod_dir)[-1]
-                        # Nova only supports .py and .yaml
-                        if ext not in ['.py', '.yaml']:
-                            continue
-                        # Python only in the modules directory, yaml only
-                        # in the profiles directory. This is hacky but was a
-                        # quick fix.
-                        nova_module_cache, nova_profile_cache = _hubble_dir()
-                        nova_module_cache = os.path.join(nova_module_cache, '')
-                        nova_profile_cache = os.path.join(nova_profile_cache, '')
-                        if ext == '.py' and fpath.startswith(nova_profile_cache):
-                            continue
-                        if ext == '.yaml' and fpath.startswith(nova_module_cache):
-                            continue
-                        if f_withext in self.disabled:
-                            #log.trace(
-                            #    'Skipping {0}, it is disabled by configuration'.format(
-                            #    filename
-                            #    )
-                            #)
-                            continue
-
-                        # if we don't have it, we want it
-                        elif f_withext not in self.file_mapping:
-                            self.file_mapping[f_withext] = (fpath, ext)
-                        # if we do, we want it if we have a higher precidence ext
-                        else:
-                            curr_ext = self.file_mapping[f_withext][1]
-                            #log.debug("****** curr_ext={0} ext={1} suffix_order={2}".format(curr_ext, ext, suffix_order))
-                            if curr_ext and suffix_order.index(ext) < suffix_order.index(curr_ext):
-                                self.file_mapping[f_withext] = (fpath, ext)
-                    except OSError:
-                        continue
-
-    def _load_module(self, name):
-        '''
-        Override the module load code
-        '''
-        mod = None
-        fpath, suffix = self.file_mapping[name]
-        self.loaded_files.add(name)
-        if suffix == '.yaml':
-            try:
-                with open(fpath) as fh_:
-                    data = yaml.safe_load(fh_)
-            except Exception as exc:
-                self.__missing_data__[name] = str(exc)
-                return False
-
-            self.__data__[name] = data
-            return True
-        try:
-            sys.path.append(os.path.dirname(fpath))
-            desc = self.suffix_map[suffix]
-            # if it is a directory, we don't open a file
-            with salt.utils.fopen(fpath, desc[1]) as fn_:
-                mod = imp.load_module(
-                    '{0}.{1}.{2}.{3}'.format(
-                        self.loaded_base_name,
-                        self.mod_type_check(fpath),
-                        self.tag,
-                        name
-                    ), fn_, fpath, desc)
-
-        except IOError:
-            raise
-        except ImportError as error:
-            log.debug(
-                'Failed to import {0} {1}:\n'.format(
-                    self.tag, name
-                ),
-                exc_info=True
-            )
-            self.missing_modules[name] = str(error)
-            return False
-        except Exception as error:
-            log.error(
-                'Failed to import {0} {1}, this is due most likely to a '
-                'syntax error:\n'.format(
-                    self.tag, name
-                ),
-                exc_info=True
-            )
-            self.missing_modules[name] = str(error)
-            return False
-        except SystemExit as error:
-            log.error(
-                'Failed to import {0} {1} as the module called exit()\n'.format(
-                    self.tag, name
-                ),
-                exc_info=True
-            )
-            self.missing_modules[name] = str(error)
-            return False
-        finally:
-            sys.path.pop()
-
-        mod.__grains__ = __grains__
-        mod.__pillar__ = __pillar__
-        mod.__opts__ = __opts__
-        mod.__salt__ = __salt__
-
-        # pack whatever other globals we were asked to
-        for p_name, p_value in six.iteritems(self.pack):
-            setattr(mod, p_name, p_value)
-
-        module_name = name
-
-        # Call a module's initialization method if it exists
-        module_init = getattr(mod, '__init__', None)
-        if inspect.isfunction(module_init):
-            try:
-                module_init(self.opts)
-            except TypeError as e:
-                log.error(e)
-            except Exception:
-                err_string = '__init__ failed'
-                log.debug(
-                    'Error loading {0}.{1}: {2}'.format(
-                        self.tag,
-                        module_name,
-                        err_string),
-                    exc_info=True)
-                self.missing_modules[name] = err_string
-                return False
-
-        # if virtual modules are enabled, we need to look for the
-        # __virtual__() function inside that module and run it.
-        if self.virtual_enable:
-            (virtual_ret, module_name, virtual_err) = self.process_virtual(
-                mod,
-                module_name,
-            )
-            if virtual_err is not None:
-                log.debug('Error loading {0}.{1}: {2}'.format(self.tag,
-                                                              module_name,
-                                                              virtual_err,
-                                                              ))
-
-            # if process_virtual returned a non-True value then we are
-            # supposed to not process this module
-            if virtual_ret is not True:
-                # If a module has information about why it could not be loaded, record it
-                self.missing_modules[name] = virtual_err
-                return False
-
-        # If this is a proxy minion then MOST modules cannot work. Therefore, require that
-        # any module that does work with salt-proxy-minion define __proxyenabled__ as a list
-        # containing the names of the proxy types that the module supports.
-        #
-        # Render modules and state modules are OK though
-        if 'proxy' in self.opts:
-            if self.tag in ['grains', 'proxy']:
-                if not hasattr(mod, '__proxyenabled__') or \
-                        (self.opts['proxy']['proxytype'] not in mod.__proxyenabled__ and
-                            '*' not in mod.__proxyenabled__):
-                    err_string = 'not a proxy_minion enabled module'
-                    self.missing_modules[name] = err_string
-                    return False
-
-        if getattr(mod, '__load__', False) is not False:
-            log.info(
-                'The functions from module {0!r} are being loaded from the '
-                'provided __load__ attribute'.format(
-                    module_name
-                )
-            )
-        mod_dict = salt.utils.odict.OrderedDict()
-        # In nova we only care about the audit() function, and we want to
-        # store it with directory structure in the name.
-        for attr in getattr(mod, '__load__', dir(mod)):
-            if attr != 'audit':
-                continue
-            func = getattr(mod, attr)
-            # Save many references for lookups
-            self._dict[name] = func
-            mod_dict[name] = func
-
-        self.loaded_modules[name] = mod_dict
-        return True

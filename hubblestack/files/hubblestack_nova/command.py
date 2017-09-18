@@ -82,15 +82,17 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.is_windows():
-        return False, 'This audit module only runs on linux'
     return True
 
 
-def audit(data_list, tags, debug=False):
+def audit(data_list, tags, **kwargs):
     '''
     Run the command audits contained in the data_list
     '''
+    # Consume any module_params from kwargs (Setting False as a fallback)
+    debug = kwargs.get('nova_debug',False)
+    cmd_raw = kwargs.get('cmd_raw',False)
+
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -106,7 +108,7 @@ def audit(data_list, tags, debug=False):
 
     if __tags__ and not __salt__['config.get']('hubblestack:nova:enable_command_module',
                                                False):
-        ret['Error'] = ['command module has not been explicitly enabled in '
+        ret['Errors'] = ['command module has not been explicitly enabled in '
                         'config. Please set hubblestack:nova:enable_command_module '
                         'to True in pillar or minion config to allow this module.']
         return ret
@@ -132,6 +134,8 @@ def audit(data_list, tags, debug=False):
 
                         found = False
                         if cmd_ret:
+                            if cmd_raw:
+                                tag_data['raw'] = cmd_ret
                             found = True
 
                         if 'match_output' in command_args:

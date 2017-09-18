@@ -35,7 +35,7 @@ def __virtual__():
     return __virtualname__
 
 
-def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
+def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.yaml',
             verbose=False):
     '''
     Watch the configured files
@@ -156,9 +156,10 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     # Validate ACLs on watched folders/files and add if needed
     if update_acls:
         for path in config:
-            if path == 'win_notify_interval' or path == 'return' or path == 'batch' or path == 'checksum' or path == 'stats':
+            if path in ['win_notify_interval', 'return', 'batch', 'checksum', 'stats', 'paths', 'verbose']:
                 continue
             if not os.path.exists(path):
+                log.info('The folder path {0} does not exist'.format(path))
                 continue
             if isinstance(config[path], dict):
                 mask = config[path].get('mask', DEFAULT_MASK)
@@ -194,6 +195,9 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     for r in ret:
         _append = True
         config_found = False
+        config_path = config['paths'][0]
+        pulsar_config = config_path[config_path.rfind('/')+1:len(config_path)]
+        r['pulsar_config'] = pulsar_config
         for path in config:
             if not r['Object Name'].startswith(path):
                 continue
@@ -216,6 +220,21 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     ret = new_ret
 
     return ret
+
+
+def canary(change_file=None):
+    '''
+    Simple module to change a file to trigger a FIM event (daily, etc)
+
+    THE SPECIFIED FILE WILL BE CREATED AND DELETED
+
+    Defaults to CONF_DIR/fim_canary.tmp, i.e. /etc/hubble/fim_canary.tmp
+    '''
+    if change_file is None:
+        conf_dir = os.path.dirname(__opts__['conf_file'])
+        change_file = os.path.join(conf_dir, 'fim_canary.tmp')
+    __salt__['file.touch'](change_file)
+    __salt__['file.remove'](change_file)
 
 
 def _check_acl(path, mask, wtype, recurse):
@@ -395,9 +414,9 @@ def _remove_acl(path):
 
 def _pull_events(time_frame, checksum):
     events_list = []
-    events_output = __salt__['cmd.run_stdout']('mode con:cols=1000 lines=1000; Get-EventLog -LogName Security '
-                                               '-After ((Get-Date).AddSeconds(-{0})) -InstanceId 4663 | fl'.format(
-                                                time_frame), shell='powershell', python_shell=True)
+    events_output = __salt__['cmd.run_stdout']('mode con:cols=1000 lines=1000; Get-WinEvent -FilterHashTable @{{'
+                                               'LogName = "security"; StartTime = [datetime]::Now.AddSeconds(-30);'
+                                               'Id = 4663}} | fl'.format(time_frame), shell='powershell', python_shell=True)
     events = events_output.split('\r\n\r\n')
     for event in events:
         if event:
@@ -408,12 +427,12 @@ def _pull_events(time_frame, checksum):
                     item.replace('\t', '')
                     k, v = item.split(':', 1)
                     event_dict[k.strip()] = v.strip()
-            event_dict['Accesses'] = _get_access_translation(event_dict['Accesses'])
+            #event_dict['Accesses'] = _get_access_translation(event_dict['Accesses'])
             event_dict['Hash'] = _get_item_hash(event_dict['Object Name'], checksum)
             #needs hostname, checksum, filepath, time stamp, action taken
             # Generate the dictionary without a dictionary comp, for py2.6
             tmpdict = {}
-            for k in ('EntryType', 'Accesses', 'TimeGenerated', 'Object Name', 'Hash'):
+            for k in ('Message', 'Accesses', 'TimeCreated', 'Object Name', 'Hash'):
                 tmpdict[k] = event_dict[k]
             events_list.append(tmpdict)
     return events_list
@@ -546,3 +565,40 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
             for k in upd:
                 dest[k] = upd[k]
         return dest
+
+
+def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
+        verbose=False):
+
+    configs = get_top_data(topfile)
+
+    configs = ['salt://hubblestack_pulsar/' + config.replace('.','/') + '.yaml'
+               for config in configs]
+
+    return process(configs, verbose=verbose)
+
+
+def get_top_data(topfile):
+
+    topfile = __salt__['cp.cache_file'](topfile)
+
+    try:
+        with open(topfile) as handle:
+            topdata = yaml.safe_load(handle)
+    except Exception as e:
+        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
+
+    if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
+            not(isinstance(topdata['pulsar'], dict)):
+        raise CommandExecutionError('Pulsar topfile not formatted correctly')
+
+    topdata = topdata['pulsar']
+
+    ret = []
+
+    for match, data in topdata.iteritems():
+        if __salt__['match.compound'](match):
+            ret.extend(data)
+
+    return ret
+

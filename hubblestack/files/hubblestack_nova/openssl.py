@@ -99,7 +99,7 @@ def __virtual__():
     return True
 
 
-def audit(data_list, tags, debug=True):
+def audit(data_list, tags, debug=True, **kwargs):
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)

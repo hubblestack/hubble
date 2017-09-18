@@ -76,6 +76,12 @@ There are four primary functions for Nova module:
 - `hubble.audit` : audits the minion(s) using the YAML profile(s) you provide as comma-separated arguments. hubble.audit takes two optional arguments. The first is a comma-separated list of paths. These paths can be files or directories within the `hubblestack_nova_profiles` directory. The second argument allows for toggling Nova configuration, such as verbosity, level of detail, etc. If `hubble.audit` is run without targeting any audit configs or directories, it will instead run `hubble.top` with no arguments. `hubble.audit` will return a list of audits which were successful, and a list of audits which failed.
 - `hubble.top` : audits the minion(s) using the top.nova configuration.
 
+## Using released packages
+
+Various pre-built packages targeting several popular operating systems can be found under [Releases](/hubblestack/hubble/releases).
+
+# Usage
+
 Here are some example calls for `hubble.audit`:
 ```sh
 # Run the cve scanner and the CIS profile:
@@ -229,6 +235,15 @@ schedule:
   pulsar_canary:
     function: pulsar.canary
     seconds: 86400
+  job1:
+    function: hubble.audit
+    seconds: 60
+    splay: 30
+    args:
+      - cis.centos-7-level-1-scored-v2-1-0
+    kwargs:
+      verbose: True
+    returner: splunk_nova_return
     run_on_start: True
 ```
 

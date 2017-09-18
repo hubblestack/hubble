@@ -30,7 +30,7 @@ def __virtual__():
     return True
 
 
-def audit(data_list, tags, debug=False):
+def audit(data_list, tags, debug=False, **kwargs):
     '''
     Runs secedit on the local machine and audits the return data
     with the CIS yaml processed by __virtual__
@@ -67,7 +67,7 @@ def audit(data_list, tags, debug=False):
                             ret['Failure'].append(tag_data)
                     else:
                         if name in __secdata__:
-                            secret = _translate_value_type(sec_value, tag_data['value_type'], match_output)
+                            secret = _translate_value_type(__secdata__[name], tag_data['value_type'], tag_data['match_output'])
                             if secret:
                                 ret['Failure'].append(tag_data)
                             else:
@@ -77,10 +77,14 @@ def audit(data_list, tags, debug=False):
                 if audit_type == 'whitelist':
                     if name in __secdata__:
                         sec_value = __secdata__[name]
-                        if 'machine\\' in output:
+                        tag_data['found_value'] = sec_value
+                        if 'MACHINE\\' in name:
                             match_output = _reg_value_translator(tag_data['match_output'])
                         else:
                             match_output = tag_data['match_output']
+                        if ',' in sec_value and '\\' in sec_value:
+                            sec_value = sec_value.split(',')
+                            match_output = match_output.split(',')
                         if 'account' in tag_data['value_type']:
                             secret = _translate_value_type(sec_value, tag_data['value_type'], match_output, __sidaccounts__)
                         else:
@@ -90,6 +94,7 @@ def audit(data_list, tags, debug=False):
                         else:
                             ret['Failure'].append(tag_data)
                     else:
+                        log.error('name {} was not in __secdata__'.format(name))
                         ret['Failure'].append(tag_data)
 
     return ret
@@ -205,7 +210,7 @@ def _get_account_sid():
     '''This helper function will get all the users and groups on the computer
     and return a dictionary'''
     win32 = __salt__['cmd.run']('Get-WmiObject win32_useraccount -Filter "localaccount=\'True\'"'
-                                ' | Format-List -Property Name, SID', shell='powershell', 
+                                ' | Format-List -Property Name, SID', shell='powershell',
                                 python_shell=True)
     win32 += '\n'
     win32 += __salt__['cmd.run']('Get-WmiObject win32_group -Filter "localaccount=\'True\'" | '
@@ -256,7 +261,7 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             current = current.replace('"', '')
         if '"' in evaluator:
             evaluator = evaluator.replace('"', '')
-        if int(current) > int(evaluator):
+        if int(current) >= int(evaluator):
             return True
         else:
             return False
@@ -269,7 +274,7 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             current = current.replace('"', '')
         if '"' in evaluator:
             evaluator = evaluator.replace('"', '')
-        if int(current) < int(evaluator):
+        if int(current) <= int(evaluator):
             if current != '0':
                 return True
             else:
@@ -277,9 +282,20 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
         else:
             return False
     elif 'equal' in value:
-        if ',' not in evaluator:
+        if ',' not in evaluator and type(evaluator) != list:
             evaluator = _evaluator_translator(evaluator)
-
+        if type(current) == list:
+            ret_final = []
+            for item in current:
+                item = item.lower()
+                if item in evaluator:
+                    ret_final.append(True)
+                else:
+                    ret_final.append(False)
+            if False in ret_final:
+                return False
+            else:
+                return True
         if current.lower() == evaluator:
             return True
         else:
@@ -322,7 +338,9 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
 def _evaluator_translator(input_string):
     '''This helper function takes words from the CIS yaml and replaces
     them with what you actually find in the secedit dump'''
-    input_string = input_string.replace(' ','').lower()
+    if type(input_string) == str:
+        input_string = input_string.replace(' ','').lower()
+
     if 'enabled' in input_string:
         return '1'
     elif 'disabled' in input_string:
@@ -333,6 +351,8 @@ def _evaluator_translator(input_string):
         return '2'
     elif input_string == 'success,failure' or input_string == 'failure,success':
         return '3'
+    elif input_string in ['0','1','2','3']:
+        return input_string
     else:
         log.debug('error translating evaluator from enabled/disabled or success/failure.'
                   '  Could have received incorrect string')
@@ -363,7 +383,7 @@ def _account_audit(current, __sidaccounts__):
 
 
 def _reg_value_translator(input_string):
-    input_string.lower()
+    input_string = input_string.lower()
     if input_string == 'enabled':
         return '4,1'
     elif input_string == 'disabled':
@@ -384,13 +404,13 @@ def _reg_value_translator(input_string):
         return '4,5'
     elif input_string == 'negotiate signing':
         return '4,1'
-    elif input_string == 'Require ntlmv2 session security, require 128-bit encryption':
+    elif input_string == 'require ntlmv2 session security, require 128-bit encryption':
         return '4,537395200'
     elif input_string == 'prompt for consent on the secure desktop':
         return '4,2'
     elif input_string == 'automatically deny elevation requests':
         return '4,0'
-    elif input_string == 'Defined (blank)':
+    elif input_string == 'defined (blank)':
         return '7,'
     else:
         return input_string

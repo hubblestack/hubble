@@ -255,10 +255,13 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                             _append = False
 
             if _append:
+                config_path = config['paths'][0]
+                pulsar_config = config_path[config_path.rfind('/')+1:len(config_path)]
                 sub = {'tag': event.path,
                        'path': event.pathname,
                        'change': event.maskname,
-                       'name': event.name}
+                       'name': event.name,
+                       'pulsar_config': pulsar_config}
 
                 if config.get('checksum', False) and os.path.isfile(pathname):
                     sum_type = config['checksum']
@@ -347,6 +350,21 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     return ret
 
 
+def canary(change_file=None):
+    '''
+    Simple module to change a file to trigger a FIM event (daily, etc)
+
+    THE SPECIFIED FILE WILL BE CREATED AND DELETED
+
+    Defaults to CONF_DIR/fim_canary.tmp, i.e. /etc/hubble/fim_canary.tmp
+    '''
+    if change_file is None:
+        conf_dir = os.path.dirname(__opts__['conf_file'])
+        change_file = os.path.join(conf_dir, 'fim_canary.tmp')
+    __salt__['file.touch'](change_file)
+    __salt__['file.remove'](change_file)
+
+
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
     '''
     Recursive version of the default dict.update
@@ -385,6 +403,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
                     dest[key] = upd[key]
             else:
                 dest[key] = upd[key]
+
         return dest
     else:
         try:
@@ -395,3 +414,39 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
             for k in upd:
                 dest[k] = upd[k]
         return dest
+
+
+def top(topfile='salt://hubblestack_pulsar/top.pulsar',
+        verbose=False):
+
+    configs = get_top_data(topfile)
+
+    configs = ['salt://hubblestack_pulsar/' + config.replace('.', '/') + '.yaml'
+               for config in configs]
+
+    return process(configs, verbose=verbose)
+
+
+def get_top_data(topfile):
+
+    topfile = __salt__['cp.cache_file'](topfile)
+
+    try:
+        with open(topfile) as handle:
+            topdata = yaml.safe_load(handle)
+    except Exception as e:
+        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
+
+    if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
+            not(isinstance(topdata['pulsar'], dict)):
+        raise CommandExecutionError('Pulsar topfile not formatted correctly')
+
+    topdata = topdata['pulsar']
+
+    ret = []
+
+    for match, data in topdata.iteritems():
+        if __salt__['match.compound'](match):
+            ret.extend(data)
+
+    return ret

@@ -39,8 +39,8 @@ be skipped:
               - product_group
 '''
 import socket
-# Import AWS details
-from aws_details import get_aws_details
+# Import cloud details
+from cloud_details import get_cloud_details
 
 # Imports for http event forwarder
 import requests
@@ -60,88 +60,109 @@ hec = None
 
 
 def returner(ret):
-    opts_list = _get_options()
+    try:
+        opts_list = _get_options()
 
-    # Get aws details
-    aws = get_aws_details()
+        # Get cloud details
+        clouds = get_cloud_details()
 
-    for opts in opts_list:
-        logging.info('Options: %s' % json.dumps(opts))
-        http_event_collector_key = opts['token']
-        http_event_collector_host = opts['indexer']
-        hec_ssl = opts['http_event_server_ssl']
-        proxy = opts['proxy']
-        timeout = opts['timeout']
-        custom_fields = opts['custom_fields']
+        for opts in opts_list:
+            logging.info('Options: %s' % json.dumps(opts))
+            http_event_collector_key = opts['token']
+            http_event_collector_host = opts['indexer']
+            http_event_collector_port = opts['port']
+            hec_ssl = opts['http_event_server_ssl']
+            proxy = opts['proxy']
+            timeout = opts['timeout']
+            custom_fields = opts['custom_fields']
 
-        # Set up the collector
-        hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
+            # Set up the fields to be extracted at index time. The field values must be strings.
+            # Note that these fields will also still be available in the event data
+            index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId']
+            try:
+                index_extracted_fields.extend(opts['index_extracted_fields'])
+            except TypeError:
+                pass
 
-        # st = 'salt:hubble:nova'
-        data = ret['return']
-        minion_id = ret['id']
-        jid = ret['jid']
-        master = __grains__['master']
-        fqdn = __grains__['fqdn']
-        # Sometimes fqdn is blank. If it is, replace it with minion_id
-        fqdn = fqdn if fqdn else minion_id
-        try:
-            fqdn_ip4 = __grains__['fqdn_ip4'][0]
-        except IndexError:
-            fqdn_ip4 = __grains__['ipv4'][0]
-        if fqdn_ip4.startswith('127.'):
-            for ip4_addr in __grains__['ipv4']:
-                if ip4_addr and not ip4_addr.startswith('127.'):
-                    fqdn_ip4 = ip4_addr
-                    break
+            # Set up the collector
+            hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
 
-        if not data:
-            return
-        else:
-            for query in data:
-                for query_name, query_results in query.iteritems():
-                    for query_result in query_results['data']:
-                        event = {}
-                        payload = {}
-                        event.update(query_result)
-                        event.update({'query': query_name})
-                        event.update({'job_id': jid})
-                        event.update({'master': master})
-                        event.update({'minion_id': minion_id})
-                        event.update({'dest_host': fqdn})
-                        event.update({'dest_ip': fqdn_ip4})
+            # st = 'salt:hubble:nova'
+            data = ret['return']
+            minion_id = ret['id']
+            jid = ret['jid']
+            master = __grains__['master']
+            fqdn = __grains__['fqdn']
+            # Sometimes fqdn is blank. If it is, replace it with minion_id
+            fqdn = fqdn if fqdn else minion_id
+            try:
+                fqdn_ip4 = __grains__['fqdn_ip4'][0]
+            except IndexError:
+                fqdn_ip4 = __grains__['ipv4'][0]
+            if fqdn_ip4.startswith('127.'):
+                for ip4_addr in __grains__['ipv4']:
+                    if ip4_addr and not ip4_addr.startswith('127.'):
+                        fqdn_ip4 = ip4_addr
+                        break
 
-                        if aws['aws_account_id'] is not None:
-                            event.update({'aws_ami_id': aws['aws_ami_id']})
-                            event.update({'aws_instance_id': aws['aws_instance_id']})
-                            event.update({'aws_account_id': aws['aws_account_id']})
+            if not data:
+                return
+            else:
+                for query in data:
+                    for query_name, query_results in query.iteritems():
+                        for query_result in query_results['data']:
+                            event = {}
+                            payload = {}
+                            event.update(query_result)
+                            event.update({'query': query_name})
+                            event.update({'job_id': jid})
+                            event.update({'master': master})
+                            event.update({'minion_id': minion_id})
+                            event.update({'dest_host': fqdn})
+                            event.update({'dest_ip': fqdn_ip4})
 
-                        for custom_field in custom_fields:
-                            custom_field_name = 'custom_' + custom_field
-                            custom_field_value = __salt__['config.get'](custom_field, '')
-                            if isinstance(custom_field_value, str):
-                                event.update({custom_field_name: custom_field_value})
-                            elif isinstance(custom_field_value, list):
-                                custom_field_value = ','.join(custom_field_value)
-                                event.update({custom_field_name: custom_field_value})
+                            for cloud in clouds:
+                                event.update(cloud)
 
-                        payload.update({'host': fqdn})
-                        payload.update({'index': opts['index']})
-                        payload.update({'sourcetype': opts['sourcetype']})
-                        payload.update({'event': event})
+                            for custom_field in custom_fields:
+                                custom_field_name = 'custom_' + custom_field
+                                custom_field_value = __salt__['config.get'](custom_field, '')
+                                if isinstance(custom_field_value, str):
+                                    event.update({custom_field_name: custom_field_value})
+                                elif isinstance(custom_field_value, list):
+                                    custom_field_value = ','.join(custom_field_value)
+                                    event.update({custom_field_name: custom_field_value})
 
-                        # If the osquery query includes a field called 'time' it will be checked.
-                        # If it's within the last year, it will be used as the eventtime.
-                        event_time = query_result.get('time', '')
-                        try:
-                            if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
+                            payload.update({'host': fqdn})
+                            payload.update({'index': opts['index']})
+                            if opts['add_query_to_sourcetype']:
+                                payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], query_name)})
+                            else:
+                                payload.update({'sourcetype': opts['sourcetype']})
+                            payload.update({'event': event})
+
+                            # Potentially add metadata fields:
+                            fields = {}
+                            for item in index_extracted_fields:
+                                if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
+                                    fields[item] = str(payload['event'][item])
+                            if fields:
+                                payload.update({'fields': fields})
+
+                            # If the osquery query includes a field called 'time' it will be checked.
+                            # If it's within the last year, it will be used as the eventtime.
+                            event_time = query_result.get('time', '')
+                            try:
+                                if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
+                                    event_time = ''
+                            except:
                                 event_time = ''
-                        except:
-                            event_time = ''
-                        finally:
-                            hec.batchEvent(payload, eventtime=event_time)
+                            finally:
+                                hec.batchEvent(payload, eventtime=event_time)
 
-        hec.flushBatch()
+            hec.flushBatch()
+    except:
+        log.exception('Error ocurred in splunk_nebula_return')
     return
 
 
@@ -155,29 +176,31 @@ def _get_options():
             processed = {}
             processed['token'] = opt.get('token')
             processed['indexer'] = opt.get('indexer')
+            processed['port'] = str(opt.get('port', '8088'))
             processed['index'] = opt.get('index')
             processed['custom_fields'] = opt.get('custom_fields', [])
             processed['sourcetype'] = opt.get('sourcetype_nebula', 'hubble_osquery')
+            processed['add_query_to_sourcetype'] = opt.get('add_query_to_sourcetype', True)
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
+            processed['index_extracted_fields'] = opt.get('index_extracted_fields', [])
             splunk_opts.append(processed)
         return splunk_opts
     else:
-        try:
-            token = __salt__['config.get']('hubblestack:nebula:returner:splunk:token').strip()
-            indexer = __salt__['config.get']('hubblestack:nebula:returner:splunk:indexer')
-            sourcetype = __salt__['config.get']('hubblestack:nebula:returner:splunk:sourcetype')
-            index = __salt__['config.get']('hubblestack:nebula:returner:splunk:index')
-            custom_fields = __salt__['config.get']('hubblestack:nebula:returner:splunk:custom_fields', [])
-        except:
-            return None
-        splunk_opts = {'token': token, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}
-
-        hec_ssl = __salt__['config.get']('hubblestack:nebula:returner:splunk:hec_ssl', True)
-        splunk_opts['http_event_server_ssl'] = hec_ssl
+        splunk_opts = {}
+        splunk_opts['token'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:token').strip()
+        splunk_opts['indexer'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:indexer')
+        splunk_opts['port'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:port', '8088')
+        splunk_opts['index'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:index')
+        splunk_opts['custom_fields'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:custom_fields', [])
+        splunk_opts['sourcetype'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:sourcetype')
+        splunk_opts['http_event_server_ssl'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:hec_ssl', True)
         splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:proxy', {})
         splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:timeout', 9.05)
+        splunk_opts['index_extracted_fields'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:index_extracted_fields', [])
+
+        splunk_opts['add_query_to_sourcetype'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:add_query_to_sourcetype', True)
 
         return [splunk_opts]
 

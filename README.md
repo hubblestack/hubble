@@ -38,13 +38,13 @@ A config template has been placed in `/etc/hubble/hubble`. Modify it to your spe
 The first two commands you should run to make sure things are set up correctly are `hubble --version` and `hubble test.ping`.
 
 ### Buidling Hubble packages through Dockerfile
-Dockerfile aims to build the Hubble v2 packages easier. Dockerfiles for the distribution you want to build can be found at the path `hubblestack/hubble/pkg`. For e.g. for centos6 distribution the dockerfile is at the path `hubblestack/hubble/pkg/centos6/` 
+Dockerfile aims to build the Hubble v2 packages easier. Dockerfiles for the distribution you want to build can be found at the path `/pkg`. For example, dockerfile for centos6 distribution is at the path `/pkg/centos6/` 
 
 To build an image
 ```sh
 docker build -t <image_name> 
 ```
-To run the container
+To run the container (which will output the package file in your current directory)
 ```sh
 docker run -it --rm -v `pwd`:/data <image_name>
 ```

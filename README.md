@@ -2,9 +2,8 @@
 
 Hubble is a modular, open-source, security & compliance auditing framework which is built on SaltStack. It is alternate version of Hubblestack which can be run without an existing SaltStack infrastructure. Hubble provides on-demand profile-based auditing, real-time security event notifications, alerting and reporting. It also reports the security information to Splunk. This document describes installation, configuration and general use of Hubble.
 
-## Installation
-
-Installing using `setup.py`
+## Packaging / Installing
+### Installing using setup.py
 ```sh
 sudo yum install git -y
 git clone https://github.com/hubblestack/hubble
@@ -12,6 +11,40 @@ cd hubble
 sudo python setup.py install
 ```
 Installs a hubble "binary" into `/usr/bin/`.
+
+A config template has been placed in `/etc/hubble/hubble`. Modify it to your specifications and needs. You can do `hubble -h` to see the available options.
+
+The first two commands you should run to make sure things are set up correctly are `hubble --version` and `hubble test.ping`.
+
+### Building standalone packages (CentOS)
+```sh
+sudo yum install git -y
+git clone https://github.com/hubblestack/hubble
+cd hubble/pkg
+./build_rpms.sh  # note the lack of sudo, that is important
+```
+Packages will be in the `hubble/pkg/dist/` directory. The only difference between the packages is the inclusion of `/etc/init.d/hubble` for el6 and the inclusion of a systemd unit file for el7. There's no guarantee of glibc compatibility.
+
+### Building standalone packages (Debian)
+```sh
+sudo yum install git -y
+git clone https://github.com/hubblestack/hubble
+cd hubble/pkg
+./build_debs.sh  # note the lack of sudo, that is important
+```
+Package will be in the `hubble/pkg/dist/` directory. There's no guarantee of glibc compatibility.
+
+### Buidling Hubble packages through Dockerfile
+Dockerfile aims to make building Hubble v2 packages easier. Dockerfiles can be found at `hubblestack/hubble/pkg`. 
+To build an image
+```sh
+1. copy pkg/scripts/pyinstaller-requirements.txt to directory with this Dockerfile
+2. docker build -t <image_name> 
+```
+To run the container
+```sh
+docker run -it --rm <image_name>
+```
 
 ### Nova
 Nova is Hubble's auditing system.

@@ -75,22 +75,19 @@ def audit(data_list, tags, debug=False, **kwargs):
                     continue
                 name = tag_data['name']
                 audittype = tag_data['type']
-                disabled_states = ["disabled", "not_found", "indirect"]
 
-                status_code, status = _systemctl(name)
+                enabled = __salt__['service.enabled'](name)
                 # Blacklisted service (must not be running or not found)
                 if audittype == 'blacklist':
-                    if status_code == "1" or status in disabled_states:
+                    if not enabled:
                         ret['Success'].append(tag_data)
                     else:
-                        tag_data["failure_reason"] = "Service Status: " + status + ", return code: " + status_code
                         ret['Failure'].append(tag_data)
                 # Whitelisted pattern (must be found and running)
                 elif audittype == 'whitelist':
-                    if status_code == "0":
+                    if enabled:
                         ret['Success'].append(tag_data)
                     else:
-                        tag_data["failure_reason"] = "Service Status: " + status + ", return code: " + status_code
                         ret['Failure'].append(tag_data)
 
     return ret
@@ -164,21 +161,3 @@ def _get_tags(data):
                         ret[tag].append(formatted_data)
 
     return ret
-
-def _execute_shell_command(cmd):
-    '''
-    This function will execute passed command in /bin/shell
-    '''
-    return __salt__['cmd.run'](cmd, python_shell=True, shell='/bin/bash', ignore_retcode=True)
-
-
-def _systemctl(service_name):
-    '''
-    Return service status.
-    Return object will be like ('status_code', 'status') if {service_is_present} else ('status_code',)
-    '''
-    output = _execute_shell_command('systemctl is-enabled ' + service_name + ' 2>/dev/null; echo $?').strip()
-    output = output.split('\n') if output != "" else []
-    if output == []:
-        return False
-    return (output[1], output[0]) if len(output) == 2 else (output[0], "not_found")

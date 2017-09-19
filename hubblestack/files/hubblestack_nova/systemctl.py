@@ -61,11 +61,11 @@ def audit(data_list, tags, debug=False, **kwargs):
     __tags__ = _get_tags(__data__)
 
     if debug:
-	log.debug('systemctl audit __data__:')
+        log.debug('systemctl audit __data__:')
         log.debug(__data__)
         log.debug('systemctl audit __tags__:')
         log.debug(__tags__)
-   
+
     ret = {'Success': [], 'Failure': [], 'Controlled': []}
     for tag in __tags__:
         if fnmatch.fnmatch(tag, tags):
@@ -75,23 +75,23 @@ def audit(data_list, tags, debug=False, **kwargs):
                     continue
                 name = tag_data['name']
                 audittype = tag_data['type']
-		disabled_states = ["disabled", "not_found", "indirect"]
+                disabled_states = ["disabled", "not_found", "indirect"]
 
                 status_code, status = _systemctl(name)
                 # Blacklisted service (must not be running or not found)
                 if audittype == 'blacklist':
-		    if status_code == "1" or status in disabled_states:
-                    	ret['Success'].append(tag_data)
-		    else:
-			tag_data["failure_reason"] = "Service Status: " + status + ", return code: " + status_code
-			ret['Failure'].append(tag_data)
+                    if status_code == "1" or status in disabled_states:
+                        ret['Success'].append(tag_data)
+                    else:
+                        tag_data["failure_reason"] = "Service Status: " + status + ", return code: " + status_code
+                        ret['Failure'].append(tag_data)
                 # Whitelisted pattern (must be found and running)
                 elif audittype == 'whitelist':
-		    if status_code == "0":
-                    	ret['Success'].append(tag_data)
-		    else:
-			tag_data["failure_reason"] = "Service Status: " + status + ", return code: " + status_code
-			ret['Failure'].append(tag_data)
+                    if status_code == "0":
+                        ret['Success'].append(tag_data)
+                    else:
+                        tag_data["failure_reason"] = "Service Status: " + status + ", return code: " + status_code
+                        ret['Failure'].append(tag_data)
 
     return ret
 
@@ -162,7 +162,7 @@ def _get_tags(data):
                         formatted_data.update(audit_data)
                         formatted_data.pop('data')
                         ret[tag].append(formatted_data)
-	
+
     return ret
 
 def _execute_shell_command(cmd):
@@ -180,6 +180,5 @@ def _systemctl(service_name):
     output = _execute_shell_command('systemctl is-enabled ' + service_name + ' 2>/dev/null; echo $?').strip()
     output = output.split('\n') if output != "" else []
     if output == []:
-	return False
+        return False
     return (output[1], output[0]) if len(output) == 2 else (output[0], "not_found")
-

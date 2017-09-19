@@ -76,17 +76,17 @@ def audit(data_list, tags, debug=False, **kwargs):
                 if 'control' in tag_data:
                     ret['Controlled'].append(tag_data)
                     continue
-                
+
 
                 name  = tag_data.get('name')
                 audittype = tag_data.get('type')
-  
+
 
                 if 'attribute' not in tag_data:
                     log.error('No attribute found for mount audit {0}, file {1}'
                               .format(tag,name))
                     tag_data = copy.deepcopy(tag_data)
-                    tag_data['error'] = 'No pattern found'.format(mod) 
+                    tag_data['error'] = 'No pattern found'.format(mod)
                     ret['Failure'].append(tag_data)
                     continue
 
@@ -195,16 +195,16 @@ def _get_tags(data):
 
 def _check_mount_attribute(path,attribute, check_type):
     '''
-    This function checks if the partition at a given path is mounted with a particular attribute or not. 
-    If 'check_type' is 'hard', the function returns False if he specified path does not exist, or if it 
-    is not a mounted partition. If 'check_type' is 'soft', the functions returns True in such cases. 
+    This function checks if the partition at a given path is mounted with a particular attribute or not.
+    If 'check_type' is 'hard', the function returns False if he specified path does not exist, or if it
+    is not a mounted partition. If 'check_type' is 'soft', the functions returns True in such cases.
     '''
 
     if not os.path.exists(path):
         if check_type == 'hard':
             return False
         else:
-            return True   
+            return True
 
 
     mount_object  = __salt__['mount.active']()
@@ -221,5 +221,5 @@ def _check_mount_attribute(path,attribute, check_type):
         if check_type == 'hard':
             return False
         else:
-            return True 
+            return True
 

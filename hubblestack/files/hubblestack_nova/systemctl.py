@@ -3,7 +3,7 @@
 HubbleStack Nova plugin for using systemctl to verify status of a given service.
 
 Supports both blacklisting and whitelisting patterns. Blacklisted services must
-not be running. Whitelisted services must be running.
+not be enabled. Whitelisted services must be enabled.
 
 :maintainer: HubbleStack / basepi
 :maturity: 2017.8.29

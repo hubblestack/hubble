@@ -206,22 +206,65 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
     if config.get('verbose'):
         log.debug('Pulsar beacon config (compiled from config list):\n{0}'.format(config))
-
-    # Read in existing events
+# Read in existing events
     if notifier.check_events(1):
         notifier.read_events()
         notifier.process_events()
         queue = __context__['pulsar.queue']
         if config.get('verbose'):
             log.debug('Pulsar found {0} inotify events.'.format(len(queue)))
+
+        global COUNTER, compiled_regex_list, keeper, _append
+
+        start_time = time.time()
+
         while queue:
+
+            event = queue.popleft()
+            path = event.path
+
+            while path != '/':
+                if path in config:
+                    break
+                path = os.path.dirname(path)
+            try:
+                pathname = event.pathname
+            except NameError:
+                pathname = path
+
+            excludes1 = config[path].get('exclude', '')
+
+            if excludes1 and isinstance(excludes1, list):
+                for exclude1 in excludes1:
+                    if isinstance(exclude1, dict):
+                        if exclude1.values()[0].get('regex', False):
+                           try:
+                               keeper = keeper + 1
+                               compiled_regex_list[keeper] = re.compile(exclude1.keys()[0])
+                           except:
+                               log.warn('error!!')
+                               pass
+                        else:
+                            exclude1 = exclude1.keys()[0]
+                    elif '*' in exclude1:
+                        if fnmatch.fnmatch(event.pathname, exclude1):
+                            _append = False
+                    else:
+                        if event.pathname.startswith(exclude1):
+                            _append = False
+            break
+
+
+        while queue:
+
+            COUNTER = COUNTER + 1
+
             event = queue.popleft()
             if event.maskname == 'IN_Q_OVERFLOW':
                 log.warn('Your inotify queue is overflowing.')
                 log.warn('Fix by increasing /proc/sys/fs/inotify/max_queued_events')
                 continue
 
-            _append = True
             # Find the matching path in config
             path = event.path
             while path != '/':
@@ -234,25 +277,9 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
             except NameError:
                 pathname = path
 
-            excludes = config[path].get('exclude', '')
-            if excludes and isinstance(excludes, list):
-                for exclude in excludes:
-                    if isinstance(exclude, dict):
-                        if exclude.values()[0].get('regex', False):
-                            try:
-                                if re.search(exclude.keys()[0], event.pathname):
-                                    _append = False
-                            except:
-                                log.warn('Failed to compile regex: {0}'.format(exclude.keys()[0]))
-                                pass
-                        else:
-                            exclude = exclude.keys()[0]
-                    elif '*' in exclude:
-                        if fnmatch.fnmatch(event.pathname, exclude):
-                            _append = False
-                    else:
-                        if event.pathname.startswith(exclude):
-                            _append = False
+            for item in compiled_regex_list.values():
+                if item.match(event.pathname):
+                    _append = False
 
             if _append:
                 config_path = config['paths'][0]
@@ -275,6 +302,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                 ret.append(sub)
             else:
                 log.info('Excluding {0} from event for {1}'.format(event.pathname, path))
+
+        print("-------------------------%s time------------------------" % (time.time() - start_time))
 
     if update_watches:
         # Get paths currently being watched

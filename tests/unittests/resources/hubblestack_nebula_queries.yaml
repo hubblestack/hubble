@@ -1,0 +1,42 @@
+fifteen_min:
+  - query_name: running_procs
+    query: SELECT t.unix_time AS query_time, p.name AS process, p.pid AS process_id, p.cmdline, p.cwd, p.on_disk, p.resident_size AS mem_used, p.start_time, p.parent, g.groupname AS 'group', g.gid AS group_id, u.username AS user, u.uid AS user_id, eu.username AS effective_username, eg.groupname AS effective_groupname, p.path, h.md5, h.sha1, h.sha256, '__JSONIFY__'||(SELECT json_group_array(json_object('fd',pof.fd, 'path',pof.path) ) FROM process_open_files AS pof WHERE pof.pid=p.pid GROUP BY pof.pid ) AS open_files, '__JSONIFY__'||(SELECT json_group_array(json_object('variable_name',pe.key, 'value',pe.value)) FROM process_envs AS pe WHERE pe.pid=p.pid GROUP BY pe.pid) AS environment FROM processes AS p LEFT JOIN users AS u ON p.uid=u.uid LEFT JOIN users AS eu ON p.euid=eu.uid LEFT JOIN groups AS g ON p.gid=g.gid LEFT JOIN groups AS eg ON p.gid=eg.gid LEFT JOIN hash AS h ON p.path=h.path LEFT JOIN time AS t WHERE parent IS NOT 2 AND (process NOTNULL OR parent NOTNULL);
+  - query_name: established_outbound
+    query: SELECT t.unix_time AS query_time, pos.family, h.md5, h.sha1, h.sha256, h.directory, ltrim(pos.local_address, ':f') AS src_connection_ip, pos.local_port AS src_connection_port, pos.remote_port AS dest_connection_port, ltrim(remote_address, ':f') AS dest_connection_ip, name, p.path AS file_path, cmdline, pos.protocol FROM process_open_sockets AS pos JOIN processes AS p ON p.pid=pos.pid LEFT JOIN time AS t LEFT JOIN (SELECT * FROM listening_ports) AS lp ON lp.port=pos.local_port AND lp.protocol=pos.protocol LEFT JOIN hash AS h ON h.path=p.path WHERE NOT remote_address='' AND NOT remote_address='::' AND NOT remote_address='0.0.0.0' AND NOT remote_address='127.0.0.1' AND port is NULL;
+  - query_name: listening_procs
+    query: SELECT t.unix_time AS query_time, h.md5 AS md5, p.pid AS process_id, name AS process, ltrim(address, ':f') AS address, port AS dest_port, p.path AS file_path, cmdline, p.on_disk, root, parent, CASE lp.protocol WHEN 6 THEN 'tcp' WHEN 17 THEN 'udp' ELSE lp.protocol END as transport FROM listening_ports AS lp LEFT JOIN processes AS p ON lp.pid=p.pid LEFT JOIN time AS t LEFT JOIN hash AS h ON h.path=p.path;
+  - query_name: shell_history
+    query: SELECT t.unix_time AS query_time, uid, gid, username AS user, groupname AS 'group', command, time, history_file FROM users JOIN groups USING (gid) JOIN shell_history USING (uid) LEFT JOIN time as t WHERE time > strftime('%s', 'now', '-16 minutes');
+hour:
+  - query_name: crontab
+    query: SELECT t.unix_time AS query_time, c.event, c.minute, c.hour, c.day_of_month, c.month, c.day_of_week, c.command, c.path AS cron_file FROM crontab AS c JOIN time AS t;
+  - query_name: login_history
+    query: SELECT t.unix_time AS query_time, l.username AS user, l.tty, l.pid, l.type AS utmp_type, CASE l.type WHEN 1 THEN 'RUN_LVL' WHEN 2 THEN 'BOOT_TIME' WHEN 3 THEN 'NEW_TIME' WHEN 4 THEN 'OLD_TIME' WHEN 5 THEN 'INIT_PROCESS' WHEN 6 THEN 'LOGIN_PROCESS' WHEN 7 THEN 'USER_PROCESS' WHEN 8 THEN 'DEAD_PROCESS' ELSE l.type END AS utmp_type_name, l.host AS src, l.time FROM last AS l LEFT JOIN time AS t WHERE l.time > strftime('%s','now') - 3600;
+day:
+  - query_name: rpm_packages
+    query: SELECT t.unix_time AS query_time, rpm.name, rpm.version, rpm.release, rpm.source AS package_source, rpm.size, rpm.sha1, rpm.arch FROM rpm_packages AS rpm JOIN time AS t;
+  - query_name: deb_packages
+    query: SELECT t.unix_time AS query_time, deb.name, deb.version, deb.revision, deb.source AS package_source, deb.size, deb.arch FROM deb_packages AS deb JOIN time AS t;
+  - query_name: os_info
+    query: SELECT t.unix_time AS query_time, os.* FROM os_version AS os LEFT JOIN time AS t;
+  - query_name: interface_addresses
+    query: SELECT t.unix_time AS query_time, ia.interface, ia.address, id.mac FROM interface_addresses AS ia JOIN interface_details AS id ON ia.interface=id.interface LEFT JOIN time AS t WHERE NOT ia.interface='lo';
+  - query_name: uptime
+    query: SELECT t.unix_time AS query_time, total_seconds AS uptime FROM uptime LEFT JOIN time as t;
+  - query_name: suid_binaries
+    query: SELECT t.unix_time AS query_time, sb.username AS user, sb.groupname AS 'group', sb.permissions, sb.path, f.uid, f.gid, f.mode AS file_acl, h.md5, h.sha1, h.sha256 FROM suid_bin AS sb JOIN time AS t LEFT JOIN hash AS h ON sb.path=h.path LEFT JOIN file AS f on sb.path=f.path;
+  - query_name: ssh_key_files
+    query: SELECT t.unix_time AS query_time, u.username AS user, usk.uid, g.groupname AS 'group', f.gid, usk.path AS file_path, usk.encrypted, f.mode AS file_acl, f.size AS file_size, f.atime AS file_access_time, f.mtime AS file_modify_time, f.ctime AS file_change_time, h.md5, h.sha1, h.sha256 FROM users AS u JOIN user_ssh_keys AS usk ON u.uid=usk.uid LEFT JOIN hash AS h ON h.path=usk.path LEFT JOIN file AS f ON f.path=usk.path LEFT JOIN groups AS g ON g.gid=f.gid LEFT JOIN time AS t;
+  - query_name: ssh_public_keys
+    query: SELECT t.unix_time AS query_time, u.username AS user, ak.uid, ak.key AS ssh_public_key, ak.key_file AS object_path, g.gid, g.groupname AS 'group', f.mode AS file_acl, f.size AS file_size, f.atime AS file_access_time, f.mtime AS file_modify_time, f.ctime AS file_change_time, f.uid AS file_uid, f.gid AS file_gid, h.md5, h.sha1, h.sha256 FROM users AS u JOIN authorized_keys AS ak ON u.uid=ak.uid LEFT JOIN groups AS g ON u.gid=g.gid LEFT JOIN file AS f ON ak.key_file=f.path LEFT JOIN hash AS h ON ak.key_file=h.path LEFT JOIN time AS t;
+  - query_name: mounts
+    query: SELECT t.unix_time AS query_time, m.* FROM mounts AS m LEFT JOIN time AS t;
+  - query_name: iptables_rules
+    query: SELECT t.unix_time AS query_time, ipt.* FROM iptables as ipt LEFT JOIN time AS t;
+  - query_name: sysctl
+    query: SELECT t.unix_time AS query_time, sc.* FROM system_controls AS sc LEFT JOIN time AS t;
+  - query_name: kernel_info
+    query: SELECT t.unix_time AS query_time, ki.version, ki.arguments AS boot_arguments, ki.device AS boot_device, CASE WHEN ki.path<>'' THEN ki.path ELSE 'NOT_AVAILABLE' END AS boot_image, CASE WHEN ki.path<>'' THEN '/boot/'||ltrim(ki.path,'/boot/') ELSE '/boot/vmlinuz-'||ki.version END AS file_path, h.md5, h.sha1, h.sha256, f.filename AS file_name, f.inode, f.uid, u.username AS user, f.gid, g.groupname AS 'group', f.mode AS file_acl, f.size AS file_size, f.atime AS file_access_time, f.mtime AS file_modify_time, f.ctime AS file_change_time, f.hard_links, f.type AS file_type FROM kernel_info AS ki LEFT JOIN hash AS h ON h.path=file_path LEFT JOIN file AS f on f.path=file_path LEFT JOIN users AS u ON u.uid=f.uid LEFT JOIN groups AS g ON g.gid=f.gid LEFT JOIN time AS t;
+  - query_name: local_user_accounts
+    query: SELECT t.unix_time AS query_time, u.uid, u.username AS user, u.description AS name, u.gid, g.groupname AS 'group', ( SELECT group_concat(gs.groupname) FROM user_groups AS ugs LEFT JOIN groups AS gs ON gs.gid=ugs.gid WHERE u.uid=ugs.uid  GROUP BY ugs.uid ) AS all_groups, ( SELECT group_concat(gs.gid) FROM user_groups AS ugs LEFT JOIN groups AS gs ON gs.gid=ugs.gid WHERE u.uid=ugs.uid GROUP BY ugs.uid ) AS all_gids, u.shell AS shell_path, sf.mode AS shell_acl, sf.inode AS shell_inode, sf.uid AS shell_uid, sf.gid AS shell_gid, sf.device AS shell_device, sf.size AS shell_size, sf.atime AS shell_access_time, sf.mtime AS shell_modify_time, sf.ctime AS shell_change_time, sf.hard_links AS shell_hard_links, sh.md5 AS shell_md5, sh.sha1 AS shell_sha1, sh.sha256 AS shell_sha256, u.directory AS home_path, hf.mode AS home_acl, hf.inode AS home_inode, hf.uid AS home_uid, hf.gid AS home_gid, hf.device AS home_device, hf.atime AS home_access_time, hf.mtime AS home_modify_time, hf.ctime AS home_change_time, hf.hard_links AS home_hard_links FROM users AS u LEFT JOIN groups AS g ON u.gid=g.gid LEFT JOIN file AS sf ON sf.path=u.shell LEFT JOIN file AS hf ON hf.path=u.directory LEFT JOIN hash AS sh ON sh.path=u.shell LEFT JOIN time AS t;
+

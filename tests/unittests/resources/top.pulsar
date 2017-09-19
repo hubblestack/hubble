@@ -1,0 +1,7 @@
+pulsar:
+  'team1':
+    - /root/myhubblefiles/data.yaml
+  'team2':
+    - /root/myhubblefiles/data1.yaml
+
+

@@ -85,13 +85,13 @@ def audit(data_list, tags, debug=False, **kwargs):
                     continue
                 name = tag_data['name']
                 expected = {}
-                for e in ['mode', 'user', 'uid', 'group', 'gid','allow_more_strict']:
+                for e in ['mode', 'user', 'uid', 'group', 'gid', 'allow_more_strict']:
                     if e in tag_data:
                         expected[e] = tag_data[e]
 
                 if 'allow_more_strict' in expected.keys() and 'mode' not in expected.keys():
                     reason_dict = {}
-                    reason = "'allow_more_strict' tag can't be specified without mode 'tag'"
+                    reason = "'allow_more_strict' tag can't be specified without 'mode' tag"
                     reason_dict['allow_more_strict'] = reason
                     tag_data['reason'] = reason_dict
                     ret['Failure'].append(tag_data)
@@ -210,7 +210,8 @@ def _get_tags(data):
                     ret[tag].append(formatted_data)
     return ret
 
-def _check_mode(  max_permission , given_permission, allow_more_strict):
+
+def _check_mode(max_permission, given_permission, allow_more_strict):
     '''
     Checks whether a file's permission are equal to a given permission or more restrictive. 
     Permission is a string of 3 digits [0-7]. 'given_permission' is the actual permission on file,
@@ -239,7 +240,7 @@ def _check_mode(  max_permission , given_permission, allow_more_strict):
 
 def _is_permission_in_limit(max_permission,given_permission):
     '''
-    Return true only if given_permission is not more linient that max_permission. In other words, if
+    Return true only if given_permission is not more lenient that max_permission. In other words, if
     r or w or x is present in given_permission but absent in max_permission, it should return False
     Takes input two integer values from 0 to 7.
     '''
@@ -278,6 +279,3 @@ def _is_permission_in_limit(max_permission,given_permission):
         return False
 
     return True
-
-
-

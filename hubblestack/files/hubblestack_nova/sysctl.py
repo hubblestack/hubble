@@ -149,4 +149,3 @@ def _get_tags(data):
                     formatted_data.pop('data')
                     ret[tag].append(formatted_data)
     return ret
-

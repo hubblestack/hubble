@@ -188,7 +188,7 @@ def _is_valid_home_directory(directory_path, check_slash_home=False):
 
 def _is_permission_in_limit(max_permission,given_permission):
     '''
-    Return true only if given_permission is not more linient that max_permission. In other words, if
+    Return true only if given_permission is not more lenient that max_permission. In other words, if
     r or w or x is present in given_permission but absent in max_permission, it should return False
     Takes input two integer values from 0 to 7.
     '''

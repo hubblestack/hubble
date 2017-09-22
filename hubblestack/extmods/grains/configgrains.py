@@ -8,7 +8,7 @@ salt.modules.config.__grains__ = {}
 __salt__ = {'config.get': salt.modules.config.get}
 
 
-def splunkindex():
+def configgrains():
     '''
     Given a list of config values, create custom grains with custom names.
     The list comes from config.
@@ -23,3 +23,4 @@ def splunkindex():
             if grain_value:
                 grains[k] = grain_value
     return grains
+ 

@@ -23,4 +23,3 @@ def configgrains():
             if grain_value:
                 grains[k] = grain_value
     return grains
- 

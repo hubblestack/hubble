@@ -906,7 +906,7 @@ def mail_conf_check(reason=''):
     mail_addresses = mail_addresses.split(',') if mail_addresses != "" else []
     mail_addresses = map(str.strip, mail_addresses)
     invalid_addresses = list(set(mail_addresses) - set(valid_addresses))
-    
+
     return str(invalid_addresses) if invalid_addresses != [] else True
 
 def check_if_any_pkg_installed(args):

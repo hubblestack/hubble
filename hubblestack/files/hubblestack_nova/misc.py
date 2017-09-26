@@ -313,26 +313,29 @@ def root_is_only_uid_0_account(reason=''):
     return True if result.strip() == 'root' else result
 
 
-def test_mount_attrs(mount_name,attribute,check_type='hard'):
+def test_mount_attrs(mount_name, attribute, check_type='hard'):
     '''
     Ensure that a given directory is mounted with appropriate attributes
     If check_type is soft, then in absence of volume, True will be returned
     If check_type is hard, then in absence of volume, False will be returned
     '''
     # check that the path exists on system
-    command = 'test -e ' + mount_name + ' ; echo $?'
-    output = _execute_shell_command( command)
-    if output.strip() == '1':
+    command = 'test -e ' + mount_name
+    results = __salt__['cmd.run_all'](command)
+    output = results['stdout']
+    retcode = results['retcode']
+    if str(retcode) == '1':
         return True if check_type == "soft" else (mount_name + " folder does not exist")
 
     # if the path exits, proceed with following code
-    output = _execute_shell_command('mount | grep ' + mount_name)
-    if output.strip() == '':
+    output = __salt__['cmd.run']('mount') #| grep ' + mount_name)
+    if mount_name not in output:
         return True if check_type == "soft" else (mount_name + " is not mounted")
-    elif attribute not in output:
-        return str(output)
     else:
-        return True
+        for line in output.splitlines():
+            if mount_name in line and attribute not in line:
+                return str(line)
+    return True
 
 
 def check_time_synchronization(reason=''):
@@ -454,7 +457,7 @@ def check_duplicate_gnames(reason=''):
     return str(duplicate_gnames)
 
 
-def check_directory_files_permission(path,permission):
+def check_directory_files_permission(path, permission):
     '''
     Check all files permission inside a directory
     '''
@@ -489,11 +492,11 @@ def check_service_status(service_name, state):
     Return True otherwise
     state can be enabled or disabled.
     '''
-    output = _execute_shell_command('systemctl is-enabled ' + service_name + ' >/dev/null 2>&1; echo $?')
-    if (state == "disabled" and output.strip() == "1") or (state == "enabled" and output.strip() == "0"):
+    output = __salt__['cmd.retcode']('systemctl is-enabled ' + service_name)
+    if (state == "disabled" and str(output) == "1") or (state == "enabled" and str(output) == "0"):
         return True
     else:
-        return _execute_shell_command('systemctl is-enabled ' + service_name + ' 2>/dev/null')
+        return __salt__['cmd.run_stdout']('systemctl is-enabled ' + service_name)
 
 def check_ssh_timeout_config(reason=''):
     '''
@@ -603,7 +606,7 @@ def check_users_own_their_home(max_system_uid):
                 if int(user_uid_dir[1]) >= max_system_uid:
                     error += ["Either home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is invalid or does not exist."]
             elif int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] != "nfsnobody":
-                owner = _execute_shell_command("stat -L -c \"%U\" \"" + user_uid_dir[2] + "\"")
+                owner = __salt__['cmd.run']("stat -L -c \"%U\" \"" + user_uid_dir[2] + "\"")
                 if owner != user_uid_dir[0]:
                     error += ["The home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is owned by " + owner]
         else:
@@ -906,7 +909,7 @@ def mail_conf_check(reason=''):
     mail_addresses = mail_addresses.split(',') if mail_addresses != "" else []
     mail_addresses = map(str.strip, mail_addresses)
     invalid_addresses = list(set(mail_addresses) - set(valid_addresses))
-    
+
     return str(invalid_addresses) if invalid_addresses != [] else True
 
 def check_if_any_pkg_installed(args):

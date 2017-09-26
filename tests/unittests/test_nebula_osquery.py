@@ -8,10 +8,6 @@ class TestNebula():
         var = hubblestack.extmods.modules.nebula_osquery.__virtual__()
         assert var == 'nebula'
 
-    def test_version(self):
-        var = hubblestack.extmods.modules.nebula_osquery.version()
-        assert var == '2.2.4'
-
     def test_hubble_versions(self):
         var = hubblestack.extmods.modules.nebula_osquery.hubble_versions()
         assert ((var.get('hubble_versions')).get('result')) == True

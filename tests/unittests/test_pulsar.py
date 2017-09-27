@@ -1,6 +1,7 @@
 import pytest
 import hubblestack.extmods.modules.pulsar
 import collections
+from salt.exceptions import CommandExecutionError
 
 class TestPulsar():
 
@@ -159,7 +160,7 @@ class TestPulsar():
          try:
              result = hubblestack.extmods.modules.pulsar.get_top_data(topfile)
              hubblestack.extmods.modules.pulsar.__salt__ = {}
-         except NameError:
+         except CommandExecutionError:
              pass
 
 

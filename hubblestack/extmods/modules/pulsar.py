@@ -18,7 +18,7 @@ import fnmatch
 import os
 import re
 import yaml
-
+from salt.exceptions import CommandExecutionError
 # Import salt libs
 import salt.ext.six
 import salt.loader

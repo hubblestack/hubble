@@ -74,7 +74,7 @@ class TestPulsar():
 
 
     def test_process(self):
-        configfile='resources/data.yaml'
+        configfile='tests/unittests/resources/hubblestack_pulsar_config.yaml'
         verbose = False
         def config_get(value, default):
             return default
@@ -86,8 +86,9 @@ class TestPulsar():
         hubblestack.extmods.modules.pulsar.__salt__ = {}
         assert var != 0
 
+
     def test_process_for_regex_exclusion_list(self):
-        configfile='resources/data.yaml'
+        configfile='tests/unittests/resources/hubblestack_pulsar_config.yaml'
         verbose = False
         def config_get(value, default):
             return default
@@ -99,8 +100,9 @@ class TestPulsar():
         hubblestack.extmods.modules.pulsar.__salt__ = {}
         assert hubblestack.extmods.modules.pulsar.CONFIG != 0
 
+
     def test_top(self):
-        topfile = 'resources/top.pulsar'
+        topfile = 'tests/unittests/resources/top.pulsar'
         def config_get(value, default):
             return default
         def cp_cache_file(topfile):
@@ -117,7 +119,7 @@ class TestPulsar():
         assert result != 0
 
     def test_top_result_for_list(self):
-        topfile = 'resources/top.pulsar'
+        topfile = 'tests/unittests/resources/top.pulsar'
         def config_get(value, default):
             return default
         def cp_cache_file(topfile):
@@ -134,9 +136,9 @@ class TestPulsar():
         assert isinstance(result, list)
 
     def test_get_top_data(self):
-        topfile = 'resources/top.pulsar'
-        def cp_cache_file(topfile):
-            return topfile
+        topfile = 'tests/unittests/resources/top.pulsar'
+        def cp_cache_file(default):
+            return default
         def match_compound(value):
             return value
         __salt__ = {}
@@ -148,19 +150,17 @@ class TestPulsar():
         assert result != 0
 
     def test_get_top_data_for_NameError(self):
-         topfile = '/testfile'
-         def cp_cache_file(topfile):
-             return topfile
-         def match_compound(value):
-             return value
-         __salt__ = {}
-         __salt__['cp.cache_file'] = cp_cache_file
-         __salt__['match.compound'] = match_compound
-         hubblestack.extmods.modules.pulsar.__salt__ = __salt__
-         try:
-             result = hubblestack.extmods.modules.pulsar.get_top_data(topfile)
-             hubblestack.extmods.modules.pulsar.__salt__ = {}
-         except CommandExecutionError:
-             pass
-
-
+        topfile = '/testfile'
+        def cp_cache_file(topfile):
+            return topfile
+        def match_compound(value):
+            return value
+        __salt__ = {}
+        __salt__['cp.cache_file'] = cp_cache_file
+        __salt__['match.compound'] = match_compound
+        hubblestack.extmods.modules.pulsar.__salt__ = __salt__
+        try:
+            result = hubblestack.extmods.modules.pulsar.get_top_data(topfile)
+            hubblestack.extmods.modules.pulsar.__salt__ = {}
+        except CommandExecutionError:
+            pass

@@ -2,6 +2,9 @@ import pytest
 import hubblestack.extmods.modules.pulsar
 import collections
 from salt.exceptions import CommandExecutionError
+import sys, os
+myPath = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, myPath + '/../')
 
 class TestPulsar():
 
@@ -137,8 +140,8 @@ class TestPulsar():
 
     def test_get_top_data(self):
         topfile = 'tests/unittests/resources/top.pulsar'
-        def cp_cache_file(default):
-            return default
+        def cp_cache_file(topfile):
+            return topfile
         def match_compound(value):
             return value
         __salt__ = {}

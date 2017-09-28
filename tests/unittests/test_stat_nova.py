@@ -1,6 +1,9 @@
 import hubblestack.files.hubblestack_nova.stat_nova
 import yaml
 import pytest
+import sys, os
+myPath = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, myPath + '/../')
 
 class TestStatNova():
 

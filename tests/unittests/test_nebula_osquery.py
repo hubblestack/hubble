@@ -1,6 +1,9 @@
 import pytest
 import yaml
 import hubblestack.extmods.modules.nebula_osquery
+import sys, os
+myPath = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, myPath + '/../')
 
 class TestNebula():
 

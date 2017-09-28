@@ -93,9 +93,9 @@ RUN yum install -y rpmbuild gcc make rh-ruby23 rh-ruby23-ruby-devel \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=fixup
+ENV HUBBLE_CHECKOUT=v2.2.6
 ENV HUBBLE_VERSION=2.2.6
-ENV HUBBLE_GIT_URL=https://github.com/basepi/hubble.git
+ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"

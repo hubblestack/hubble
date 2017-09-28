@@ -36,7 +36,7 @@ be skipped:
 '''
 import socket
 # Import cloud details
-from hubblestack.extmods.returners.cloud_details import get_cloud_details
+from hubblestack.cloud_details import get_cloud_details
 
 # Imports for http event forwarder
 import requests

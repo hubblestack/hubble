@@ -32,7 +32,7 @@ import time
 import json
 import requests
 from collections import defaultdict
-from cloud_details import get_cloud_details
+from hubblestack.cloud_details import get_cloud_details
 from requests.auth import HTTPBasicAuth
 
 

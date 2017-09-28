@@ -32,7 +32,7 @@ import time
 import socket
 import requests
 from datetime import datetime
-from cloud_details import get_cloud_details
+from hubblestack.cloud_details import get_cloud_details
 from requests.auth import HTTPBasicAuth
 
 

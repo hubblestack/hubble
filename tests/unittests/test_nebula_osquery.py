@@ -17,9 +17,9 @@ class TestNebula():
 
     def test_queries_query_grp_day(self):
         query_group = 'day'
-        query_file = 'resources/hubblestack_nebula_queries.yaml'
+        query_file = 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
         def cp_cache_file(queryFile):
-            return 'resources/hubblestack_nebula_queries.yaml'
+            return 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
         def uptime():
             return {}
         def cmd_run(default):
@@ -42,9 +42,9 @@ class TestNebula():
 
     def test_queries_query_grp_hour(self):
         query_group = 'fifteen_min'
-        query_file = 'resources/hubblestack_nebula_queries.yaml'
+        query_file = 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
         def cp_cache_file(queryFile):
-            return 'resources/hubblestack_nebula_queries.yaml'
+            return 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
         __salt__ = {}
         __salt__['cp.cache_file'] = cp_cache_file
         hubblestack.extmods.modules.nebula_osquery.__salt__ = __salt__
@@ -59,9 +59,9 @@ class TestNebula():
 
     def test_queries_for_report_version_with_day(self):
         query_group = 'day'
-        query_file = 'resources/hubblestack_nebula_queries.yaml'
+        query_file = 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
         def cp_cache_file(queryFile):
-            return 'resources/hubblestack_nebula_queries.yaml'
+            return 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
         def uptime():
             return {}
         def cmd_run(default):
@@ -81,9 +81,9 @@ class TestNebula():
 
     def test_queries_for_report_version_with_day(self):
         query_group = 'day'
-        query_file = 'resources/hubblestack_nebula_queries.yaml'
+        query_file = 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
         def cp_cache_file(queryFile):
-            return 'resources/hubblestack_nebula_queries.yaml'
+            return 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
         def uptime():
             return {}
         def cmd_run(default):
@@ -102,9 +102,9 @@ class TestNebula():
 
     def test_queries_query_grp_hour(self):
         query_group = 'hour'
-        query_file = 'resources/hubblestack_nebula_queries.yaml'
+        query_file = 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
         def cp_cache_file(queryFile):
-            return 'resources/hubblestack_nebula_queries.yaml'
+            return 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
         __salt__ = {}
         __salt__['cp.cache_file'] = cp_cache_file
         hubblestack.extmods.modules.nebula_osquery.__salt__ = __salt__

@@ -201,7 +201,7 @@ def queries(query_group,
         for query_name, query_ret in r.iteritems():
             for result in query_ret['data']:
                 for key, value in result.iteritems():
-                    if value and isinstance(value, str) and value.startswith('__JSONIFY__'):
+                    if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
                         result[key] = json.loads(value[len('__JSONIFY__'):])
 
     return ret

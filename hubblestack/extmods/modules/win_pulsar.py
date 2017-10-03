@@ -545,7 +545,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
                 dest_subkey = None
             if isinstance(dest_subkey, collections.Mapping) \
                     and isinstance(val, collections.Mapping):
-                ret = update(dest_subkey, val, merge_lists=merge_lists)
+                ret = _dict_update(dest_subkey, val, merge_lists=merge_lists)
                 dest[key] = ret
             elif isinstance(dest_subkey, list) \
                      and isinstance(val, list):

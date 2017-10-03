@@ -1,13 +1,9 @@
-# -*- encoding: utf-8 -*-
 '''
-HubbleStack Nebula-to-Splunk returner
+Hubblestack python log handler for splunk
 
-:maintainer: HubbleStack
-:platform: All
-:requires: SaltStack
-
-Deliver HubbleStack Nebula query data into Splunk using the HTTP
-event collector. Required config/pillar settings:
+Uses the same configuration as the rest of the splunk returners, returns to
+the same destination but with an alternate sourcetype (``hubble_log`` by
+default)
 
 .. code-block:: yaml
 
@@ -17,7 +13,7 @@ event collector. Required config/pillar settings:
           - token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
             indexer: splunk-indexer.domain.tld
             index: hubble
-            sourcetype_nebula: hubble_osquery
+            sourcetype_log: hubble_log
 
 You can also add an `custom_fields` argument which is a list of keys to add to events
 with using the results of config.get(<custom_field>). These new keys will be prefixed
@@ -33,7 +29,7 @@ be skipped:
           - token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
             indexer: splunk-indexer.domain.tld
             index: hubble
-            sourcetype_nebula: hubble_osquery
+            sourcetype_log: hubble_log
             custom_fields:
               - site
               - product_group
@@ -48,26 +44,29 @@ import json
 import time
 from datetime import datetime
 
+import copy
+
 import logging
 
 _max_content_bytes = 100000
 http_event_collector_SSL_verify = False
 http_event_collector_debug = False
 
-log = logging.getLogger(__name__)
-
 hec = None
 
 
-def returner(ret):
-    try:
-        opts_list = _get_options()
+class SplunkHandler(logging.Handler):
+    '''
+    Log handler for splunk
+    '''
+    def __init__(self):
+        super(SplunkHandler, self).__init__()
 
-        # Get cloud details
-        clouds = get_cloud_details()
+        self.opts_list = _get_options()
+        self.clouds = get_cloud_details()
+        self.endpoint_list = []
 
-        for opts in opts_list:
-            logging.info('Options: %s' % json.dumps(opts))
+        for opts in self.opts_list:
             http_event_collector_key = opts['token']
             http_event_collector_host = opts['indexer']
             http_event_collector_port = opts['port']
@@ -87,10 +86,7 @@ def returner(ret):
             # Set up the collector
             hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
 
-            # st = 'salt:hubble:nova'
-            data = ret['return']
-            minion_id = ret['id']
-            jid = ret['jid']
+            minion_id = __grains__['id']
             master = __grains__['master']
             fqdn = __grains__['fqdn']
             # Sometimes fqdn is blank. If it is, replace it with minion_id
@@ -105,65 +101,65 @@ def returner(ret):
                         fqdn_ip4 = ip4_addr
                         break
 
-            if not data:
-                return
-            else:
-                for query in data:
-                    for query_name, query_results in query.iteritems():
-                        for query_result in query_results['data']:
-                            event = {}
-                            payload = {}
-                            event.update(query_result)
-                            event.update({'query': query_name})
-                            event.update({'job_id': jid})
-                            event.update({'master': master})
-                            event.update({'minion_id': minion_id})
-                            event.update({'dest_host': fqdn})
-                            event.update({'dest_ip': fqdn_ip4})
+            event = {}
+            event.update({'master': master})
+            event.update({'minion_id': minion_id})
+            event.update({'dest_host': fqdn})
+            event.update({'dest_ip': fqdn_ip4})
 
-                            for cloud in clouds:
-                                event.update(cloud)
+            for cloud in self.clouds:
+                event.update(cloud)
 
-                            for custom_field in custom_fields:
-                                custom_field_name = 'custom_' + custom_field
-                                custom_field_value = __salt__['config.get'](custom_field, '')
-                                if isinstance(custom_field_value, str):
-                                    event.update({custom_field_name: custom_field_value})
-                                elif isinstance(custom_field_value, list):
-                                    custom_field_value = ','.join(custom_field_value)
-                                    event.update({custom_field_name: custom_field_value})
+            for custom_field in custom_fields:
+                custom_field_name = 'custom_' + custom_field
+                custom_field_value = __salt__['config.get'](custom_field, '')
+                if isinstance(custom_field_value, str):
+                    event.update({custom_field_name: custom_field_value})
+                elif isinstance(custom_field_value, list):
+                    custom_field_value = ','.join(custom_field_value)
+                    event.update({custom_field_name: custom_field_value})
 
-                            payload.update({'host': fqdn})
-                            payload.update({'index': opts['index']})
-                            if opts['add_query_to_sourcetype']:
-                                payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], query_name)})
-                            else:
-                                payload.update({'sourcetype': opts['sourcetype']})
-                            payload.update({'event': event})
+            payload = {}
+            payload.update({'host': fqdn})
+            payload.update({'index': opts['index']})
+            payload.update({'sourcetype': opts['sourcetype']})
 
-                            # Potentially add metadata fields:
-                            fields = {}
-                            for item in index_extracted_fields:
-                                if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
-                                    fields[item] = str(payload['event'][item])
-                            if fields:
-                                payload.update({'fields': fields})
+            # Potentially add metadata fields:
+            fields = {}
+            for item in index_extracted_fields:
+                if item in event and not isinstance(event[item], (list, dict, tuple)):
+                    fields[item] = str(event[item])
+            if fields:
+                payload.update({'fields': fields})
 
-                            # If the osquery query includes a field called 'time' it will be checked.
-                            # If it's within the last year, it will be used as the eventtime.
-                            event_time = query_result.get('time', '')
-                            try:
-                                if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
-                                    event_time = ''
-                            except:
-                                event_time = ''
-                            finally:
-                                hec.batchEvent(payload, eventtime=event_time)
+            self.endpoint_list.append((hec, event, payload))
 
+    def emit(self, record):
+        '''
+        Emit a single record using the hec/event template/payload template
+        generated in __init__()
+        '''
+        log_entry = self.format_record(record)
+        for hec, event, payload in self.endpoint_list:
+            event = copy.deepcopy(event)
+            payload = copy.deepcopy(payload)
+            event.update(log_entry)
+            payload['event'] = event
+            hec.batchEvent(payload, eventtime=time.time())
             hec.flushBatch()
-    except:
-        log.exception('Error ocurred in splunk_nebula_return')
-    return
+        return True
+
+    def format_record(self, record):
+        '''
+        Format the log record into a dictionary for easy insertion into a
+        splunk event dictionary
+        '''
+        log_entry = {'message': record.message,
+                     'level': record.levelname,
+                     'timestamp': record.asctime,
+                     'loggername': record.name,
+                     }
+        return log_entry
 
 
 def _get_options():
@@ -179,8 +175,7 @@ def _get_options():
             processed['port'] = str(opt.get('port', '8088'))
             processed['index'] = opt.get('index')
             processed['custom_fields'] = opt.get('custom_fields', [])
-            processed['sourcetype'] = opt.get('sourcetype_nebula', 'hubble_osquery')
-            processed['add_query_to_sourcetype'] = opt.get('add_query_to_sourcetype', True)
+            processed['sourcetype'] = opt.get('sourcetype_log', 'hubble_log')
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
@@ -188,46 +183,7 @@ def _get_options():
             splunk_opts.append(processed)
         return splunk_opts
     else:
-        splunk_opts = {}
-        splunk_opts['token'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:token').strip()
-        splunk_opts['indexer'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:indexer')
-        splunk_opts['port'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:port', '8088')
-        splunk_opts['index'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:index')
-        splunk_opts['custom_fields'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:custom_fields', [])
-        splunk_opts['sourcetype'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:sourcetype')
-        splunk_opts['http_event_server_ssl'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:hec_ssl', True)
-        splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:proxy', {})
-        splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:timeout', 9.05)
-        splunk_opts['index_extracted_fields'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:index_extracted_fields', [])
-
-        splunk_opts['add_query_to_sourcetype'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:add_query_to_sourcetype', True)
-
-        return [splunk_opts]
-
-
-def send_splunk(event, index_override=None, sourcetype_override=None):
-    # Get Splunk Options
-    # init the payload
-    payload = {}
-
-    # Set up the event metadata
-    if index_override is None:
-        payload.update({'index': opts['index']})
-    else:
-        payload.update({'index': index_override})
-
-    if sourcetype_override is None:
-        payload.update({'sourcetype': opts['sourcetype']})
-    else:
-        payload.update({'sourcetype': sourcetype_override})
-
-    # Add the event
-    payload.update({'event': event})
-    logging.info('Payload: %s' % json.dumps(payload))
-
-    # fire it off
-    hec.batchEvent(payload)
-    return True
+        raise Exception('Cannot find splunk config at `hubblestack:returner:splunk`!')
 
 
 # Thanks to George Starcher for the http_event_collector class (https://github.com/georgestarcher/)

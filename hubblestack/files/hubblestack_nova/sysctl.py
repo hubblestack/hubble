@@ -82,6 +82,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                 if str(salt_ret).startswith('error'):
                     passed = False
                 if str(salt_ret) != str(match_output):
+                    tag_data['failure_reason'] = str(salt_ret)
                     passed = False
                 if passed:
                     ret['Success'].append(tag_data)

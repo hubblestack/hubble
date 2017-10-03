@@ -1,24 +1,16 @@
+import sys, os
+myPath = os.path.abspath(os.getcwd())
+sys.path.insert(0, myPath)
 import pytest
 import hubblestack.extmods.modules.pulsar
 import collections
 from salt.exceptions import CommandExecutionError
-import sys, os
-myPath = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, myPath + '/../')
 
 class TestPulsar():
 
     def test_virtual(self):
         var = hubblestack.extmods.modules.pulsar.__virtual__()
         assert var == True
-
-    def test_get_mask(self):
-        mask = 0
-        testValue = hubblestack.extmods.modules.pulsar._get_mask(mask)
-        assert self.mask_value() == testValue
-
-    def mask_value(self):
-        return 0
 
     def test_enqueue(self):
         var = hubblestack.extmods.modules.pulsar._enqueue

@@ -1,0 +1,11 @@
+#
+############# test-requirements.txt ####################
+#
+pytest
+pyyaml
+salt-ssh
+python
+wget
+vi
+GitPython
+#

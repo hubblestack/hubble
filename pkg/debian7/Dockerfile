@@ -162,6 +162,8 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        -d 'git' \
        --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
        --deb-no-default-config-files \
+       --after-install /hubble_build/pkg/debian7/afterinstall.sh \
+       --after-upgrade /hubble_build/pkg/debian7/afterupgrade.sh \
        etc/hubble etc/osquery etc/init.d opt usr \
     && cp hubblestack_${HUBBLE_VERSION}-1_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-1deb7_amd64.deb" ]
 

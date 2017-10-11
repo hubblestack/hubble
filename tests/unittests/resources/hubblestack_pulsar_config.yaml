@@ -1,0 +1,52 @@
+/lib: { recurse: True, auto_add: True }
+/bin: { recurse: True, auto_add: True }
+/sbin: { recurse: True, auto_add: True }
+/boot: { recurse: True, auto_add: True }
+/lib64: { recurse: True, auto_add: True }
+/usr/lib: { recurse: True, auto_add: True }
+/usr/bin: { recurse: True, auto_add: True }
+/usr/sbin: { recurse: True, auto_add: True }
+/usr/lib64: { recurse: True, auto_add: True }
+/usr/local/etc: { recurse: True, auto_add: True }
+/usr/local/bin: { recurse: True, auto_add: True }
+/usr/local/lib: { recurse: True, auto_add: True }
+/usr/local/sbin: { recurse: True, auto_add: True }
+/opt/splunk/etc: { recurse: True, auto_add: True }
+/opt/bin: { recurse: True, auto_add: True }
+/etc:
+  exclude:
+    - /etc/passwd.lock
+    - /etc/shadow.lock
+    - /etc/gshadow.lock
+    - /etc/group.lock
+    - /etc/passwd+
+    - /etc/passwd-
+    - /etc/shadow+
+    - /etc/shadow-
+    - /etc/group+
+    - /etc/group-
+    - /etc/gshadow+
+    - /etc/gshadow-
+    - /etc/cas/timestamp
+    - /etc/resolv.conf.tmp
+    - /etc/pki/nssdb/key4.db-journal
+    - /etc/pki/nssdb/cert9.db-journal
+    - /etc/salt/gpgkeys/random_seed
+    - /etc/blkid/blkid.tab.old
+    - \/etc\/blkid\/blkid\.tab\-\w{6}$:
+        regex: True
+    - \/etc\/passwd\.\d*$:
+        regex: True
+    - \/etc\/group\.\d*$:
+        regex: True
+    - \/etc\/shadow\.\d*$:
+        regex: True
+    - \/etc\/gshadow\.\d*$:
+        regex: True
+  recurse: True
+  auto_add: True
+return: splunk_pulsar_return
+checksum: sha256
+stats: True
+batch: True
+

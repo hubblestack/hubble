@@ -54,14 +54,14 @@ def _get_azure_details():
     # Gather azure information if present
     azure = {}
     azure['azure_vmId'] = None
-
+    azure['azure_subscriptionId'] = None
     azureHeader = {'Metadata': 'true'}
-
     try:
-        r = requests.get('http://169.254.169.254/metadata/instance/compute/vmId?api-version=2017-03-01&format=text',
-                         timeout=1, headers=azureHeader)
-        r.raise_for_status()
-        azure['azure_vmId'] = r.text
+        id = requests.get('http://169.254.169.254/metadata/instance/compute?api-version=2017-08-01',
+                          headers=azureHeader, timeout=1).json()
+        azure['azure_vmId'] = id['vmId']
+        azure['azure_subscriptionId'] = id['subscriptionId']
+
     except (requests.exceptions.RequestException, ValueError):
         # Not on an Azure box
         azure = None

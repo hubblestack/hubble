@@ -283,7 +283,9 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             return False
     elif 'equal' in value:
         if ',' not in evaluator and type(evaluator) != list:
-            evaluator = _evaluator_translator(evaluator)
+            tmp_evaluator = _evaluator_translator(evaluator)
+            if tmp_evaluator != 'undefined':
+                evaluator = tmp_evaluator
         if type(current) == list:
             ret_final = []
             for item in current:
@@ -300,6 +302,21 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             return True
         else:
             return False
+    elif 'contains' in value:
+        if type(evaluator) != list:
+            evaluator = evaluator.split(',')
+            if type(current) != list:
+                current = current.lower().split(',')
+            ret_final = []
+            for item in evaluator:
+                if item in current:
+                    ret_final.append(True)
+                else:
+                    ret_final.append(False)
+            if False in ret_final:
+                return False
+            else:
+                return True
     elif 'account' in value:
         evaluator = _account_audit(evaluator, __sidaccounts__)
         evaluator_list = evaluator.split(',')
@@ -327,7 +344,7 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
     elif 'configured' in value:
         if current == '':
             return False
-        elif current == value:
+        elif current.lower().find(evaluator) != -1:
             return True
         else:
             return False

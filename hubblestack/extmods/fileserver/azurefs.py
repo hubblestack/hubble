@@ -24,7 +24,7 @@ searched in the order they are defined.
 
 You must have either an account_key or a sas_token defined for each container,
 if it is private. If you use a sas_token, it must have READ and LIST
-permissions.
+permissions. Proxy can also be provided in the configuration.
 
 .. code-block:: yaml
 
@@ -32,6 +32,7 @@ permissions.
       - account_name: my_storage
         account_key: 'fNH9cRp0+qVIVYZ+5rnZAhHc9ycOUcJnHtzpfOr0W0sxrtL2KVLuMe1xDfLwmfed+JJInZaEdWVCPHD4d/oqeA=='
         container_name: my_container
+        proxy: 10.10.10.10:8080
       - account_name: my_storage
         sas_token: 'ss=b&sp=&sv=2015-07-08&sig=cohxXabx8FQdXsSEHyUXMjsSfNH2tZ2OB97Ou44pkRE%3D&srt=co&se=2017-04-18T21%3A38%3A01Z'
         container_name: my_dev_container
@@ -362,6 +363,8 @@ def _get_container_service(container):
     else:
         account = azure.storage.CloudStorageAccount(container['account_name'])
     blob_service = account.create_block_blob_service()
+    if 'proxy' in container and len(container['proxy'].split(':'))==2:
+        blob_service.set_proxy(container['proxy'].split(':')[0],container['proxy'].split(':')[1])
     return blob_service
 
 

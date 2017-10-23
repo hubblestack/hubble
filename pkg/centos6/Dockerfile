@@ -56,7 +56,7 @@ RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 RUN yum -y install  \
                libffi-devel openssl-devel libxml2-devel libxslt-devel \
                libjpeg-devel zlib-devel python-devel make cmake gcc \
-               python-setuptools wget 
+               python-setuptools wget
 
 #libgit2 install start
 #must precede pyinstaller requirements
@@ -93,8 +93,8 @@ RUN yum install -y rpmbuild gcc make rh-ruby23 rh-ruby23-ruby-devel \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.2.8
-ENV HUBBLE_VERSION=2.2.8
+ENV HUBBLE_CHECKOUT=v2.2.9
+ENV HUBBLE_VERSION=2.2.9
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -140,6 +140,8 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
                                  #todo: get rid of the git dependency with static bin in the future
                                  -d git \
                                  --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
+                                 --after-install /hubble_build/conf/afterinstall.sh \
+                                 --after-upgrade /hubble_build/conf/afterupgrade.sh \
                                  etc/hubble etc/osquery etc/init.d opt usr' \
 #edit to change iteration number, if necessary
     && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.el6.x86_64.rpm" ]

@@ -346,6 +346,8 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             return False
         elif current.lower().find(evaluator) != -1:
             return True
+        elif current.startswith("7,") and current.lower().find(evaluator.replace(',','","')) != -1:
+            return True
         else:
             return False
     else:

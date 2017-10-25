@@ -346,6 +346,10 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             return False
         elif current.lower().find(evaluator) != -1:
             return True
+        # If a value is stored as REG_MULTI_SZ in registry, all commas are surrounded by double quotes
+        # in the output of 'secedit /export' command. Following elif takes care of this situation.
+        elif current.startswith("7,") and current.lower().find(evaluator.replace(',','","')) != -1:
+            return True
         else:
             return False
     else:

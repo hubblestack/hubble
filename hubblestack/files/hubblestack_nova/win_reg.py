@@ -67,7 +67,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                     current = _find_option_value_in_reg(reg_dict['hive'], reg_dict['key'], reg_dict['value'])
                     if isinstance(current, dict):
                         tag_data['value_found'] = current
-                        if False in current.values():
+                        if any( x is False for x in current.values()):
                             ret['Failure'].append(tag_data)
                         else:
                             answer_list = []
@@ -195,8 +195,8 @@ def _find_option_value_in_reg(reg_hive, reg_key, reg_value):
         for sid in key_list:
             if len(sid) <= 15 or '_Classes' in sid:
                 continue
-            reg_key = reg_key.replace('<SID>', sid)
-            reg_result = __salt__['reg.read_value'](reg_hive, reg_key, reg_value)
+            temp_reg_key = reg_key.replace('<SID>', sid)
+            reg_result = __salt__['reg.read_value'](reg_hive, temp_reg_key, reg_value)
             if reg_result['success']:
                 if reg_result['vdata'] == '(value not set)':
                     ret_dict[sid] = False

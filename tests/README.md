@@ -5,9 +5,8 @@
 Follow the steps to run unit tests for Hubble
 ```
 yum install git wget vim python python-setuptools -y
-git clone https://github.com/rashmip29/hubble
-cd hubble 
-git checkout hubble_unit_tests
+git clone https://github.com/hubblestack/hubble.git
+cd hubble
 pip install -r test-requirements.txt
 py.test (this will run all the test files in /tests/unittests/)
 py.test tests/unittests/test_pulsar.py (this will run the test file mentioned)

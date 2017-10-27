@@ -35,9 +35,9 @@ class TestPkg():
             val = hubblestack.files.hubblestack_nova.pkg._merge_yaml(ret, data, profile)
         assert (len(val['pkg']['blacklist'])) == 2
 
-    def test_audit_for_Success(self):
+    def test_audit_for_success(self):
        val = {}
-       data_list = data_list = [('ubuntu-1604-level-1-scored-v1-0-0',
+       data_list = [('ubuntu-1604-level-1-scored-v1-0-0',
                                  {'pkg':
                                       {'blacklist': {'prelink': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0', 'data': {'Ubuntu-16.04': [{'prelink': 'CIS-4.4'}]}, 'description': 'Disable Prelink'}, 'nis': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0', 'data': {'Ubuntu-16.04': [{'nis': 'CIS-5.1.1'}]}, 'description': 'Ensure NIS is not installed'}},
                                        'whitelist': {'ntp': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0', 'data': {'Ubuntu-16.04': [{'ntp': 'CIS-6.5'}]}, 'description': 'Configure Network Time Protocol (NTP)'}, 'rsyslog': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0', 'data': {'Ubuntu-16.04': [{'rsyslog': 'CIS-8.2.1'}]}, 'description': 'Install the rsyslog package'}}}})]
@@ -50,13 +50,25 @@ class TestPkg():
        hubblestack.files.hubblestack_nova.pkg.__salt__ = __salt__
        val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, debug=False)
        assert len(val['Success']) != 0
+       assert len(val['Failure']) == 0
 
-    def test_audit_for_Failure(self):
+    def test_audit_for_incorrect_input(self):
        val = {}
-       data_list = data_list = [('ubuntu-1604-level-1-scored-v1-0-0',
-                                 {'pkg':
-                                      {'blacklist': {'prelink': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0', 'data': {'Ubuntu-16.04': [{'prelink': 'CIS-4.4'}]}, 'description': 'Disable Prelink'}, 'nis': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0', 'data': {'Ubuntu-16.04': [{'nis': 'CIS-5.1.1'}]}, 'description': 'Ensure NIS is not installed'}},
-                                       'whitelist': {'ntp': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0', 'data': {'Ubuntu-16.04': [{'ntp': 'CIS-6.5'}]}, 'description': 'Configure Network Time Protocol (NTP)'}, 'rsyslog': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0', 'data': {'Ubuntu-16.04': [{'rsyslog': 'CIS-8.2.1'}]}, 'description': 'Install the rsyslog package'}}}})]
+       data_list = []
+       __tags__ = 'wrong_test_data'
+       hubblestack.files.hubblestack_nova.pkg.__grains__ = {'osfinger': 'Ubuntu-16.04'}
+       __salt__ = {}
+       expected_val = {'Failure' : [], 'Controlled' : [], 'Success' : []}
+       def pkg_version(name):
+           return name
+       __salt__['pkg.version'] = pkg_version
+       hubblestack.files.hubblestack_nova.pkg.__salt__ = __salt__
+       val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, debug=False)
+       assert val == expected_val
+
+    def test_audit_for_value_error(self):
+       val = {}
+       data_list = 'wrong_test_data'
        __tags__ = 'CIS-6.5'
        hubblestack.files.hubblestack_nova.pkg.__grains__ = {'osfinger': 'Ubuntu-16.04'}
        __salt__ = {}
@@ -64,8 +76,10 @@ class TestPkg():
            return name
        __salt__['pkg.version'] = pkg_version
        hubblestack.files.hubblestack_nova.pkg.__salt__ = __salt__
-       val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, debug=False)
-       assert len(val['Failure']) == 0
+       try:
+           val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, debug=False)
+       except ValueError:
+           pass
 
     def test_get_tags(self):
         hubblestack.files.hubblestack_nova.pkg.__grains__ = {'osfinger': 'Ubuntu-16.04'}

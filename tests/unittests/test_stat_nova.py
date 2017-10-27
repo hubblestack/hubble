@@ -55,7 +55,7 @@ class TestStatNova():
         ret = hubblestack.files.hubblestack_nova.stat_nova._get_tags(data)
         assert ret == {}
 
-    def test_audit(self):
+    def test_audit_for_success(self):
         val = {}
         data_list = [('ubuntu-1604-level-1-scored-v1-0-0', {'stat':
                                                                 {'passwd_owner_group': {'data': {'Ubuntu-16.04': [{'/etc/passwd': {'gid': 0, 'tag': 'CIS-12.4', 'group': 'root', 'uid': 0, 'user': 'root'}}]},
@@ -68,6 +68,33 @@ class TestStatNova():
         hubblestack.files.hubblestack_nova.stat_nova.__salt__ = __salt__
         val = hubblestack.files.hubblestack_nova.stat_nova.audit(data_list, __tags__, debug=False)
         assert len(val['Success']) != 0
+
+    def test_audit_for_incorrect_input(self):
+        val = {}
+        data_list = []
+        __tags__ = ''
+        __salt__ = {}
+        expected_val = {'Failure' : [], 'Controlled' : [], 'Success' : []}
+        def file_stats(name):
+            return {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0, 'target': '/etc/issue', 'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322, 'ctime': 1491870657.914388}
+        __salt__['file.stats'] = file_stats
+        hubblestack.files.hubblestack_nova.stat_nova.__salt__ = __salt__
+        val = hubblestack.files.hubblestack_nova.stat_nova.audit(data_list, __tags__, debug=False)
+        assert val == expected_val
+
+    def test_audit_for_value_error(self):
+        val = {}
+        data_list = 'wrong_test_data'
+        __tags__ = 'CIS-12.4'
+        __salt__ = {}
+        def file_stats(name):
+            return {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0, 'target': '/etc/issue', 'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322, 'ctime': 1491870657.914388}
+        __salt__['file.stats'] = file_stats
+        hubblestack.files.hubblestack_nova.stat_nova.__salt__ = __salt__
+        try:
+            val = hubblestack.files.hubblestack_nova.stat_nova.audit(data_list, __tags__, debug=False)
+        except ValueError:
+            pass
 
     def test_check_mode_1(self):
         test_data_max_permission = '644'
@@ -108,8 +135,3 @@ class TestStatNova():
         expected_val = False
         result = hubblestack.files.hubblestack_nova.stat_nova._check_mode(test_data_max_permission, test_data_given_permission, test_data_allow_more_strict)
         assert expected_val == result
-
-
-
-
-

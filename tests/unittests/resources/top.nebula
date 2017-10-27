@@ -1,0 +1,3 @@
+nebula:
+  '*':
+    - hubblestack_nebula_queries

@@ -1,0 +1,7 @@
+#
+############# test-requirements.txt ####################
+#
+pytest
+pyyaml
+salt-ssh
+#

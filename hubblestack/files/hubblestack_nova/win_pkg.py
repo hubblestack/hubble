@@ -153,7 +153,6 @@ def _get_tags(data):
 
 
 def _translate_value_type(current, value, evaluator):
-    print ( "Comparing " + str(current) + " vs  " + str(evaluator))
     if 'equal' in value.lower() and LooseVersion(current) == LooseVersion(evaluator):
         return True
     if 'less' in value.lower() and LooseVersion(current) <= LooseVersion(evaluator):

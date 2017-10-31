@@ -234,7 +234,7 @@ def canary(change_file=None):
         conf_dir = os.path.dirname(__opts__['conf_file'])
         change_file = os.path.join(conf_dir, 'fim_canary.tmp')
     __salt__['file.touch'](change_file)
-    __salt__['file.remove'](change_file)
+    os.remove(change_file)
 
 
 def _check_acl(path, mask, wtype, recurse):
@@ -245,6 +245,7 @@ def _check_acl(path, mask, wtype, recurse):
     else:
         wtype = [wtype]
 
+    path = "'" + path + "'"
     audit_acl = __salt__['cmd.run']('(Get-Acl {0} -Audit).Audit | fl'.format(path), shell='powershell',
                                     python_shell=True)
     if not audit_acl:

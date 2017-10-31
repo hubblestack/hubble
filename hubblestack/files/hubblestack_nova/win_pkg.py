@@ -14,6 +14,7 @@ import fnmatch
 import logging
 import salt.utils
 from salt.exceptions import CommandExecutionError
+from distutils.version import LooseVersion
 
 
 log = logging.getLogger(__name__)
@@ -66,7 +67,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                 # Whitelisted audit (must include)
                 if 'whitelist' in audit_type:
                     if name in __pkgdata__:
-                        audit_value = __pkgdata__['name']
+                        audit_value = __pkgdata__[name]
                         tag_data['found_value'] = audit_value
                         secret = _translate_value_type(audit_value, tag_data['value_type'], match_output)
                         if secret:
@@ -152,7 +153,11 @@ def _get_tags(data):
 
 
 def _translate_value_type(current, value, evaluator):
-    if int(current) >= int(evaluator):
+    print ( "Comparing " + str(current) + " vs  " + str(evaluator))
+    if 'equal' in value.lower() and LooseVersion(current) == LooseVersion(evaluator):
         return True
-    else:
-        return False
+    if 'less' in value.lower() and LooseVersion(current) <= LooseVersion(evaluator):
+        return True 
+    if 'more' in value.lower() and LooseVersion(current) >= LooseVersion(evaluator):
+        return True 
+    return False

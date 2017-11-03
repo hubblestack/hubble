@@ -139,6 +139,12 @@ def returner(ret):
                                 payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], query_name)})
                             else:
                                 payload.update({'sourcetype': opts['sourcetype']})
+
+                            # Remove any empty fields from the event payload
+                            remove_keys = [k for k in event if event[k] == ""]
+                            for k in remove_keys:
+                                del event[k]
+
                             payload.update({'event': event})
 
                             # Potentially add metadata fields:

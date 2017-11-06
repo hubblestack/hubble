@@ -150,6 +150,8 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
 #during container run, if a configuration file exists in a /data copy it over the existing one so it would be
 #possile to optionally include a custom one with the package
     && if [ -f /data/hubble ] ; then cp /data/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ ; fi \
+#also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
+    && if [ -d /data/opt ] ; then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/opt/ ; fi \
     && cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p usr/bin \
 #symlink to have hubble binary in path

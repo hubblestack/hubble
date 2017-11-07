@@ -88,8 +88,8 @@ RUN pip install --upgrade pip \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.2.10
-ENV HUBBLE_VERSION=2.2.10
+ENV HUBBLE_CHECKOUT=develop
+ENV HUBBLE_VERSION=2.2.10_develop
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -98,7 +98,8 @@ ENV _INCLUDE_PATH=""
 RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout "$HUBBLE_CHECKOUT" \
- && cp -rf "$HUBBLE_SRC_PATH" /hubble_build
+ && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
+ && echo __version__ = \"`git describe --tags | sed 's/v//'`\" > /hubble_build/hubblestack/__init__.py
 RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build

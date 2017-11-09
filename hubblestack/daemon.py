@@ -408,7 +408,7 @@ def parse_args():
                         help='Whether to daemonize and background the process')
     parser.add_argument('-c', '--configfile',
                         default=None,
-                        help='Pass in an alternative configuration file. Default: %(default)s')
+                        help='Pass in an alternative configuration file. Default: /etc/hubble/hubble')
     parser.add_argument('-p', '--no-pprint',
                         help='Turn off pprint for single-function output',
                         action='store_false')

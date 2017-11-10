@@ -278,9 +278,9 @@ def load_config():
     if salt.utils.is_windows():
         if parsed_args.get('configfile') is None:
             parsed_args['configfile'] = 'C:\Program Files (x86)\Hubble\etc\hubble\hubble.conf'
-        salt.config.DEFAULT_MINION_OPTS['cachedir'] = 'C:\Program Files (x86)\hubble\var\cache'
-        salt.config.DEFAULT_MINION_OPTS['pidfile'] = 'C:\Program Files (x86)\hubble\var\run\hubble.pid'
-        salt.config.DEFAULT_MINION_OPTS['log_file'] = 'C:\Program Files (x86)\hubble\var\log\hubble.log'
+        salt.config.DEFAULT_MINION_OPTS['cachedir'] = 'C:\\Program Files (x86)\\hubble\\var\\cache'
+        salt.config.DEFAULT_MINION_OPTS['pidfile'] = 'C:\\Program Files (x86)\\hubble\\var\\run\\hubble.pid'
+        salt.config.DEFAULT_MINION_OPTS['log_file'] = 'C:\\Program Files (x86)\\hubble\\var\\log\\hubble.log'
 
     else:
         if parsed_args.get('configfile') is None:

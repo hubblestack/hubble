@@ -274,9 +274,21 @@ def load_config():
     # Parse arguments
     parsed_args = parse_args()
 
-    salt.config.DEFAULT_MINION_OPTS['cachedir'] = '/var/cache/hubble'
-    salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
-    salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
+    # Load unique data for Windows or Linux
+    if salt.utils.is_windows():
+        if parsed_args.get('configfile') is None:
+            parsed_args['configfile'] = 'C:\\Program Files (x86)\\Hubble\\etc\\hubble\\hubble.conf'
+        salt.config.DEFAULT_MINION_OPTS['cachedir'] = 'C:\\Program Files (x86)\\hubble\\var\\cache'
+        salt.config.DEFAULT_MINION_OPTS['pidfile'] = 'C:\\Program Files (x86)\\hubble\\var\\run\\hubble.pid'
+        salt.config.DEFAULT_MINION_OPTS['log_file'] = 'C:\\Program Files (x86)\\hubble\\var\\log\\hubble.log'
+
+    else:
+        if parsed_args.get('configfile') is None:
+            parsed_args['configfile'] = '/etc/hubble/hubble'
+        salt.config.DEFAULT_MINION_OPTS['cachedir'] = '/var/cache/hubble'
+        salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
+        salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
+
     salt.config.DEFAULT_MINION_OPTS['log_level'] = None
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
@@ -395,8 +407,8 @@ def parse_args():
                         action='store_true',
                         help='Whether to daemonize and background the process')
     parser.add_argument('-c', '--configfile',
-                        default='/etc/hubble/hubble',
-                        help='Pass in an alternative configuration file. Default: %(default)s')
+                        default=None,
+                        help='Pass in an alternative configuration file. Default: /etc/hubble/hubble')
     parser.add_argument('-p', '--no-pprint',
                         help='Turn off pprint for single-function output',
                         action='store_false')

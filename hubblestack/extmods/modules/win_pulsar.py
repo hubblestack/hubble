@@ -307,11 +307,6 @@ def usnfilter(usn_list, config_paths):
             else:
                 continue
 
-
-
-
-
-
 def canary(change_file=None):
     '''
     Simple module to change a file to trigger a FIM event (daily, etc)
@@ -326,3 +321,87 @@ def canary(change_file=None):
     __salt__['file.touch'](change_file)
     os.remove(change_file)
 
+def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
+    '''
+    Recursive version of the default dict.update
+
+    Merges upd recursively into dest
+
+    If recursive_update=False, will use the classic dict.update, or fall back
+    on a manual merge (helpful for non-dict types like FunctionWrapper)
+
+    If merge_lists=True, will aggregate list object types instead of replace.
+    This behavior is only activated when recursive_update=True. By default
+    merge_lists=False.
+    '''
+    if (not isinstance(dest, collections.Mapping)) \
+            or (not isinstance(upd, collections.Mapping)):
+        raise TypeError('Cannot update using non-dict types in dictupdate.update()')
+    updkeys = list(upd.keys())
+    if not set(list(dest.keys())) & set(updkeys):
+        recursive_update = False
+    if recursive_update:
+        for key in updkeys:
+            val = upd[key]
+            try:
+                dest_subkey = dest.get(key, None)
+            except AttributeError:
+                dest_subkey = None
+            if isinstance(dest_subkey, collections.Mapping) \
+                    and isinstance(val, collections.Mapping):
+                ret = _dict_update(dest_subkey, val, merge_lists=merge_lists)
+                dest[key] = ret
+            elif isinstance(dest_subkey, list) \
+                     and isinstance(val, list):
+                if merge_lists:
+                    dest[key] = dest.get(key, []) + val
+                else:
+                    dest[key] = upd[key]
+            else:
+                dest[key] = upd[key]
+        return dest
+    else:
+        try:
+            for k in upd.keys():
+                dest[k] = upd[k]
+        except AttributeError:
+            # this mapping is not a dict
+            for k in upd:
+                dest[k] = upd[k]
+        return dest
+
+
+def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
+        verbose=False):
+
+    configs = get_top_data(topfile)
+
+    configs = ['salt://hubblestack_pulsar/' + config.replace('.','/') + '.yaml'
+               for config in configs]
+
+    return process(configs, verbose=verbose)
+
+
+def get_top_data(topfile):
+
+    topfile = __salt__['cp.cache_file'](topfile)
+
+    try:
+        with open(topfile) as handle:
+            topdata = yaml.safe_load(handle)
+    except Exception as e:
+        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
+
+    if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
+            not(isinstance(topdata['pulsar'], dict)):
+        raise CommandExecutionError('Pulsar topfile not formatted correctly')
+
+    topdata = topdata['pulsar']
+
+    ret = []
+
+    for match, data in topdata.iteritems():
+        if __salt__['match.compound'](match):
+            ret.extend(data)
+
+    return ret

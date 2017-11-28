@@ -20,9 +20,8 @@ import salt.ext.six
 import salt.loader
 
 log = logging.getLogger(__name__)
-DEFAULT_MASK = ['ExecuteFile', 'Write', 'Delete', 'DeleteSubdirectoriesAndFiles', 'ChangePermissions',
-                'TakeOwnership'] #ExecuteFile Is really chatty
-DEFAULT_TYPE = 'all'
+DEFAULT_MASK = ['File create', 'File delete', 'Hard link change', 'Data extend', 
+                'Data overwrite', 'Data truncation', 'Security change']
 
 __virtualname__ = 'pulsar'
 CONFIG = None
@@ -148,7 +147,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     cache_path = os.path.join(__opts__['cachedir'], 'win_pulsar_usn')
     # if starting point doesn't exist, create one then finish until next run
     if not os.path.isfile(cache_path):
-        queryjournal('C:')
+        qj_dict = queryjournal('C:')
         with open(cache_path, 'w') as f:
             f.write(qj_dict['Next Usn'])
         return ret
@@ -159,7 +158,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     nusn, jitems = readjournal('C:', nusn)
 
     # create new starting point for next run
-    with open(cache_parth, 'w') as f:
+    with open(cache_path, 'w') as f:
         f.write(nusn)
 
     # filter out unrequested changed
@@ -221,6 +220,7 @@ def readjournal(drive, next_usn=0):
     '''
     jdata = (__salt__['cmd.run']('fsutil usn readjournal {0} startusn={1}'.format(drive, next_usn))).split('\r\n\r\n')
     jd_list = []
+    removable = {'File name length', 'Major version', 'Minor version', 'Record length', 'Security ID', 'Source info'}
     if jdata:
         #prime for next delivery
         jinfo = jdata[0].split('\r\n')
@@ -235,13 +235,15 @@ def readjournal(drive, next_usn=0):
                 if item == '':
                     continue
                 dkey, dvalue = item.split(' : ')
+                if dkey.strip() in removable:
+                    continue
                 jd_dict[dkey.strip()] = dvalue.strip()
-            jd_dict['Path'] = getfilepath(jd_dict['File ID'], jd_dict['Parent file ID'], jd_dict['File name'])
+            jd_dict['Full path'] = getfilepath(jd_dict['File ID'], jd_dict['Parent file ID'], jd_dict['File name'], drive)
             jd_list.append(jd_dict)
     return nusn, jd_list
 
 
-def getfilepath(fid, pfid, fname):
+def getfilepath(fid, pfid, fname, drive):
     '''
     Gets file name and path from a File ID
     '''
@@ -257,55 +259,61 @@ def getfilepath(fid, pfid, fname):
         if 'Error:' in jfullpath:
             log.debug('Current usn cannot be queried as file')
             return None
-        retpath = jfullpath.split('\r\n')[1] + fname
+        retpath = jfullpath.split('\r\n')[1] + '\\' + fname
         return retpath
     retpath = jfullpath.split('\r\n')[1]
     return retpath
 
 def usnfilter(usn_list, config_paths):
     ret_usns = []
-    fpath = usn_dict['Path']
-    if fpath is None:
-        log.debug('The following change made was not a file. {0}'.format(usn_dict))
-        return False
     basic_paths = []
-    for path in config_paths:
-        if path in ['win_notify_interval', 'return', 'batch', 'checksum', 'stats', 'paths', 'verbose']:
-            continue
-        if not os.path.exists(path):
-            log.info('the folder path {} does not exist'.format(path))
-            continue
-        
-        if isinstance(config[path], dict):
-            mask = config[path].get('mask', DEFAULT_MASK)
-            recurse = config[path].get('recurse', True)
-            exclude = config[path].get('exclude', False)
 
-        # iterate through usn_list
-        for usn in usn_list:
+    # iterate through usn_list
+    for usn in usn_list:
+        for path in config_paths:
+            if path in {'win_notify_interval', 'return', 'batch', 'checksum', 'stats', 'paths', 'verbose'}:
+                continue
+            if not os.path.exists(path):
+                log.info('the folder path {} does not exist'.format(path))
+                continue
+        
+            if isinstance(config_paths[path], dict):
+                mask = config_paths[path].get('mask', DEFAULT_MASK)
+                recurse = config_paths[path].get('recurse', True)
+                exclude = config_paths[path].get('exclude', False)
+            else:
+                mask = DEFAULT_MASK
+                recurse = True
+                exclude = False
+
             fpath = usn['Path']
             if fpath is None:
-                log.debug('The following change made was not a file. {0}'.format(usn_dict))
+                log.debug('The following change made was not a file. {0}'.format(usn))
                 continue
             # check if base path is in file location
             if path in fpath:
                 #check if mask matches
                 freason = usn['Reason'].split(': ')[1]
+                freason = freason.split('|')[0].strip()
                 if freason in mask:
                     throw_away = False
-                    for p in exclude:
-                        # fnmatch allows for * and ? as wildcards
-                        if fnmatch.fnmatch(fpath, p):
-                            throw_away = True
-                            break
+                    if exclude is not False:
+                        for p in exclude:
+                            # fnmatch allows for * and ? as wildcards
+                            if fnmatch.fnmatch(fpath, p):
+                                throw_away = True
+                                break
                     if throw_away is True:
-                        continue
+                        break
                     else:
                         ret_usns.append(usn)
+                    break
                 else:
                     continue
+                break
             else:
                 continue
+    return ret_usns
 
 def canary(change_file=None):
     '''

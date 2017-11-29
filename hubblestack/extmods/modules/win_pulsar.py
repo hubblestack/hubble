@@ -6,6 +6,7 @@ then scan the ntfs journal for changes to those folders and report when it finds
 
 
 from __future__ import absolute_import
+from time import mktime, strptime
 
 import collections
 import datetime
@@ -220,6 +221,7 @@ def readjournal(drive, next_usn=0):
     '''
     jdata = (__salt__['cmd.run']('fsutil usn readjournal {0} startusn={1}'.format(drive, next_usn))).split('\r\n\r\n')
     jd_list = []
+    pattern = '%m/%d/%Y %H:%M:%S'
     removable = {'File name length', 'Major version', 'Minor version', 'Record length', 'Security ID', 'Source info'}
     if jdata:
         #prime for next delivery
@@ -237,7 +239,11 @@ def readjournal(drive, next_usn=0):
                 dkey, dvalue = item.split(' : ')
                 if dkey.strip() in removable:
                     continue
-                jd_dict[dkey.strip()] = dvalue.strip()
+                if dkey.strip() == 'Time stamp':
+                    dvalue = int(mktime(strptime(dvalue.strip(), pattern)))
+                    jd_dict[dkey.strip()] = dvalue
+                else:
+                    jd_dict[dkey.strip()] = dvalue.strip()
             jd_dict['Full path'] = getfilepath(jd_dict['File ID'], jd_dict['Parent file ID'], jd_dict['File name'], drive)
             del jd_dict['File ID'], jd_dict['Parent file ID']
             jd_list.append(jd_dict)
@@ -249,14 +255,14 @@ def getfilepath(fid, pfid, fname, drive):
     Gets file name and path from a File ID
     '''
     try:
-        jfullpath = (__salt__['cmd.run']('fsutil file queryfilenamebyid {0} 0x{1}'.format(drive, fid))).replace('?\\', '\r\n')
+        jfullpath = (__salt__['cmd.run']('fsutil file queryfilenamebyid {0} 0x{1}'.format(drive, fid), ignore_retcode=True)).replace('?\\', '\r\n')
     except:
         log.debug('Current usn item is not a file')
         return None
     
     if 'Error:' in jfullpath:
         log.debug('Searching for the File ID came back with error.  Trying the parent folder')
-        jfullpath = (__salt__['cmd.run']('fsutil file queryfilenamebyid {0} 0x{1}'.format(drive, pfid))).replace('?\\', '\r\n')
+        jfullpath = (__salt__['cmd.run']('fsutil file queryfilenamebyid {0} 0x{1}'.format(drive, pfid), ignore_retcode=True)).replace('?\\', '\r\n')
         if 'Error:' in jfullpath:
             log.debug('Current usn cannot be queried as file')
             return None

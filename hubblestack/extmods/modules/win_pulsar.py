@@ -6,17 +6,14 @@ then scan the ntfs journal for changes to those folders and report when it finds
 
 
 from __future__ import absolute_import
-from time import mktime, strptime
+from time import mktime, strptime, time
 
 import collections
 import datetime
 import fnmatch
 import logging
 import os
-import time
-import glob
 import yaml
-import re
 
 import salt.ext.six
 import salt.loader
@@ -155,7 +152,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         return ret
 
     # check if file is out of date
-    currentt = time.time()
+    currentt = time()
     file_mtime = os.path.getmtime(cache_path)
     threshold = int(__opts__.get('file_threshold', 900))
     th_check = currentt - threshold
@@ -284,11 +281,15 @@ def getfilepath(fid, pfid, fname, drive):
     return retpath
 
 def usnfilter(usn_list, config_paths):
+    '''
+    Iterates through each change in the list and throws out any change not specified in the win_pulsar.yaml
+    '''
     ret_usns = []
     basic_paths = []
 
-    # iterate through usn_list
+    # iterate through active portion of the NTFS change journal
     for usn in usn_list:
+        # iterate through win_pulsar.yaml (skips all non file paths)
         for path in config_paths:
             if path in {'win_notify_interval', 'return', 'batch', 'checksum', 'stats', 'paths', 'verbose'}:
                 continue
@@ -309,9 +310,9 @@ def usnfilter(usn_list, config_paths):
             if fpath is None:
                 log.debug('The following change made was not a file. {0}'.format(usn))
                 continue
-            # check if base path is in file location
+            # check if base path called out in yaml is in file location called out in actual change
             if path in fpath:
-                #check if mask matches
+                #check if the type of change that happened matches the list in yaml
                 freason = usn['Reason'].split(': ')[1]
                 freason = freason.split('|')[0].strip()
                 if freason in mask:
@@ -321,14 +322,18 @@ def usnfilter(usn_list, config_paths):
                             # fnmatch allows for * and ? as wildcards
                             if fnmatch.fnmatch(fpath, p):
                                 throw_away = True
+                                # if the path matches a path we don't care about, stop iterating through excludes
                                 break
                     if throw_away is True:
+                        # stop iterating through win_pulsar specified paths since throw away flag was set
                         break
                     else:
                         ret_usns.append(usn)
+                    # don't keep checking other paths in yaml since we already found a match
                     break
                 else:
                     continue
+                # don't keep checking other paths in yaml since we already found a match
                 break
             else:
                 continue

@@ -239,6 +239,7 @@ def readjournal(drive, next_usn=0):
                     continue
                 jd_dict[dkey.strip()] = dvalue.strip()
             jd_dict['Full path'] = getfilepath(jd_dict['File ID'], jd_dict['Parent file ID'], jd_dict['File name'], drive)
+            del jd_dict['File ID'], jd_dict['Parent file ID']
             jd_list.append(jd_dict)
     return nusn, jd_list
 
@@ -286,7 +287,7 @@ def usnfilter(usn_list, config_paths):
                 recurse = True
                 exclude = False
 
-            fpath = usn['Path']
+            fpath = usn['Full path']
             if fpath is None:
                 log.debug('The following change made was not a file. {0}'.format(usn))
                 continue

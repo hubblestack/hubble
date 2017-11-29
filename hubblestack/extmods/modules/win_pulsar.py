@@ -13,6 +13,7 @@ import datetime
 import fnmatch
 import logging
 import os
+import time
 import glob
 import yaml
 import re
@@ -148,6 +149,17 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     cache_path = os.path.join(__opts__['cachedir'], 'win_pulsar_usn')
     # if starting point doesn't exist, create one then finish until next run
     if not os.path.isfile(cache_path):
+        qj_dict = queryjournal('C:')
+        with open(cache_path, 'w') as f:
+            f.write(qj_dict['Next Usn'])
+        return ret
+
+    # check if file is out of date
+    currentt = time.time()
+    file_mtime = os.path.getmtime(cache_path)
+    threshold = int(__opts__.get('file_threshold', 900))
+    th_check = currentt - threshold
+    if th_check > file_mtime:
         qj_dict = queryjournal('C:')
         with open(cache_path, 'w') as f:
             f.write(qj_dict['Next Usn'])

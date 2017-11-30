@@ -265,7 +265,8 @@ def update():
             pass
         try:
             hash_cachedir = os.path.join(__opts__['cachedir'], 'azurefs', 'hashes')
-            shutil.rmtree(hash_cachedir)
+            if os.path.exists(hash_cachedir):
+                shutil.rmtree(hash_cachedir)
         except Exception:
             log.exception('Problem occurred trying to invalidate hash cach for azurefs')
 

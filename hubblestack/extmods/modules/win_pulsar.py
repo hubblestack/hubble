@@ -1,4 +1,4 @@
-#win_notify
+# win_notify
 '''
 This will setup your computer to enable auditing for specified folders inputted into a yaml file. It will
 then scan the event log for changes to those folders and report when it finds one.
@@ -8,7 +8,6 @@ then scan the event log for changes to those folders and report when it finds on
 from __future__ import absolute_import
 
 import collections
-import datetime
 import fnmatch
 import logging
 import os
@@ -21,7 +20,7 @@ import salt.loader
 
 log = logging.getLogger(__name__)
 DEFAULT_MASK = ['ExecuteFile', 'Write', 'Delete', 'DeleteSubdirectoriesAndFiles', 'ChangePermissions',
-                'TakeOwnership'] #ExecuteFile Is really chatty
+                'TakeOwnership']  # ExecuteFile Is really chatty
 DEFAULT_TYPE = 'all'
 
 __virtualname__ = 'pulsar'
@@ -110,7 +109,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     sys_check = 0
 
     # Get config(s) from filesystem if we don't have them already
-    update_acls= False
+    update_acls = False
     if CONFIG and CONFIG_STALENESS < config.get('refresh_frequency', 60):
         CONFIG_STALENESS += 1
         CONFIG.update(config)
@@ -148,7 +147,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     global_check = __salt__['cmd.run']('auditpol /get /category:"Object Access" /r | find "File System"',
                                        python_shell=True)
     if global_check:
-        if not 'Success and Failure' in global_check:
+        if 'Success and Failure' not in global_check:
             __salt__['cmd.run']('auditpol /set /subcategory:"file system" /success:enable /failure:enable',
                                 python_shell=True)
             sys_check = 1
@@ -196,7 +195,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         _append = True
         config_found = False
         config_path = config['paths'][0]
-        pulsar_config = config_path[config_path.rfind('/')+1:len(config_path)]
+        pulsar_config = config_path[config_path.rfind('/') + 1:len(config_path)]
         r['pulsar_config'] = pulsar_config
         for path in config:
             if not r['Object Name'].startswith(path):
@@ -251,12 +250,12 @@ def _check_acl(path, mask, wtype, recurse):
     if not audit_acl:
         success = False
         return success
-    audit_acl = audit_acl.replace('\r','').split('\n')
-    newlines= []
+    audit_acl = audit_acl.replace('\r', '').split('\n')
+    newlines = []
     count = 0
     for line in audit_acl:
         if ':' not in line and count > 0:
-            newlines[count-1] += line.strip()
+            newlines[count - 1] += line.strip()
         else:
             newlines.append(line)
             count += 1
@@ -364,7 +363,7 @@ def _add_acl(path, mask, wtype, recurse):
     This calls The function _get_ace_translation() to return the number it needs to set.
     :return:
     '''
-    path = path.replace('\\','\\\\')
+    path = path.replace('\\', '\\\\')
     audit_user = 'Everyone'
     audit_rules = ','.join(mask)
     if recurse:
@@ -393,7 +392,7 @@ def _add_acl(path, mask, wtype, recurse):
                         '$SD.ControlFlags=16;'
                         '$wPrivilege = Get-WmiObject Win32_LogicalFileSecuritySetting -filter "path=\'{3}\'" -EnableAllPrivileges;'
                         '$wPrivilege.setsecuritydescriptor($SD)'.format(audit_user, access_mask, flags, path),
-                         shell='powershell', python_shell=True)
+                        shell='powershell', python_shell=True)
     return 'ACL set up for {0} - with {1} user, {2} access mask, {3} flags'.format(path, audit_user, access_mask, flags)
 
 
@@ -405,12 +404,11 @@ def _remove_acl(path):
     :param item:
     :return:
     '''
-    path = path.replace('\\','\\\\')
+    path = path.replace('\\', '\\\\')
     __salt__['cmd.run']('$SD = ([WMIClass] "Win32_SecurityDescriptor").CreateInstance();'
                         '$SD.ControlFlags=16;'
                         '$wPrivilege = Get-WmiObject Win32_LogicalFileSecuritySetting -filter "path=\'{0}\'" -EnableAllPrivileges;'
                         '$wPrivilege.setsecuritydescriptor($SD)'.format(path), shell='powershell', python_shell=True)
-
 
 
 def _pull_events(time_frame, checksum):
@@ -429,9 +427,9 @@ def _pull_events(time_frame, checksum):
                     item.replace('\t', '')
                     k, v = item.split(':', 1)
                     event_dict[k.strip()] = v.strip()
-            #event_dict['Accesses'] = _get_access_translation(event_dict['Accesses'])
+            # event_dict['Accesses'] = _get_access_translation(event_dict['Accesses'])
             event_dict['Hash'] = _get_item_hash(event_dict['Object Name'], checksum)
-            #needs hostname, checksum, filepath, time stamp, action taken
+            # needs hostname, checksum, filepath, time stamp, action taken
             # Generate the dictionary without a dictionary comp, for py2.6
             tmpdict = {}
             for k in ('Message', 'Accesses', 'TimeCreated', 'Object Name', 'Hash'):
@@ -507,7 +505,7 @@ def _get_access_translation(access):
 
 
 def _get_item_hash(item, checksum):
-    item = item.replace('\\\\','\\')
+    item = item.replace('\\\\', '\\')
     test = os.path.isfile(item)
     if os.path.isfile(item):
         try:
@@ -550,7 +548,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
                 ret = _dict_update(dest_subkey, val, merge_lists=merge_lists)
                 dest[key] = ret
             elif isinstance(dest_subkey, list) \
-                     and isinstance(val, list):
+                    and isinstance(val, list):
                 if merge_lists:
                     dest[key] = dest.get(key, []) + val
                 else:
@@ -574,7 +572,7 @@ def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
 
     configs = get_top_data(topfile)
 
-    configs = ['salt://hubblestack_pulsar/' + config.replace('.','/') + '.yaml'
+    configs = ['salt://hubblestack_pulsar/' + config.replace('.', '/') + '.yaml'
                for config in configs]
 
     return process(configs, verbose=verbose)
@@ -603,4 +601,3 @@ def get_top_data(topfile):
             ret.extend(data)
 
     return ret
-

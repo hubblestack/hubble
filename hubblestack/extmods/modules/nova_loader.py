@@ -87,7 +87,7 @@ LIBCLOUD_FUNCS_NOT_SUPPORTED = (
 pyximport = None
 
 
-## BEGIN salt.utils.lazy
+# BEGIN salt.utils.lazy
 def verify_fun(lazy_obj, fun):
     '''
     Check that the function passed really exists
@@ -191,7 +191,7 @@ class LazyDict(collections.MutableMapping):
         if not self.loaded:
             self._load_all()
         return iter(self._dict)
-## END salt.utils.lazy
+# END salt.utils.lazy
 
 
 def static_loader(
@@ -557,9 +557,9 @@ def thorium(opts, functions, runners):
     '''
     pack = {'__salt__': functions, '__runner__': runners, '__context__': {}}
     ret = LazyLoader(_module_dirs(opts, 'thorium'),
-            opts,
-            tag='thorium',
-            pack=pack)
+                     opts,
+                     tag='thorium',
+                     pack=pack)
     ret.pack['__thorium__'] = ret
     return ret
 
@@ -852,19 +852,19 @@ def grains(opts, force_refresh=False, proxy=None):
     if opts.get('proxy_merge_grains_in_module', False) and proxy:
         try:
             proxytype = proxy.opts['proxy']['proxytype']
-            if proxytype+'.grains' in proxy:
-                if proxytype+'.initialized' in proxy and proxy[proxytype+'.initialized']():
+            if proxytype + '.grains' in proxy:
+                if proxytype + '.initialized' in proxy and proxy[proxytype + '.initialized']():
                     try:
                         proxytype = proxy.opts['proxy']['proxytype']
-                        ret = proxy[proxytype+'.grains']()
+                        ret = proxy[proxytype + '.grains']()
                         if grains_deep_merge:
                             salt.utils.dictupdate.update(grains_data, ret)
                         else:
                             grains_data.update(ret)
                     except Exception:
                         log.critical('Failed to run proxy\'s grains function!',
-                            exc_info=True
-                        )
+                                     exc_info=True
+                                     )
         except KeyError:
             pass
 
@@ -1264,7 +1264,7 @@ class LazyLoader(LazyDict):
                 self.suffix_map['.pyx'] = tuple()
             except ImportError:
                 log.info('Cython is enabled in the options but not present '
-                    'in the system path. Skipping Cython modules.')
+                         'in the system path. Skipping Cython modules.')
         # Allow for zipimport of modules
         if self.opts.get('enable_zip_modules', True) is True:
             self.suffix_map['.zip'] = tuple()
@@ -1294,7 +1294,7 @@ class LazyLoader(LazyDict):
                     if f_noext in self.disabled:
                         log.trace(
                             'Skipping {0}, it is disabled by configuration'.format(
-                            filename
+                                filename
                             )
                         )
                         continue  # Next filename
@@ -1314,7 +1314,7 @@ class LazyLoader(LazyDict):
 
                     if f_noext in self.file_mapping:
                         curr_ext = self.file_mapping[f_noext][1]
-                        #log.debug("****** curr_ext={0} ext={1} suffix_order={2}".format(curr_ext, ext, suffix_order))
+                        # log.debug("****** curr_ext={0} ext={1} suffix_order={2}".format(curr_ext, ext, suffix_order))
                         if '' in (curr_ext, ext) and curr_ext != ext:
                             log.error(
                                 'Module/package collision: \'%s\' and \'%s\'',
@@ -1696,12 +1696,12 @@ class LazyLoader(LazyDict):
                     if self.opts.get('virtual_timer', False):
                         end = time.time() - start
                         msg = 'Virtual function took {0} seconds for {1}'.format(
-                                end, module_name)
+                            end, module_name)
                         log.warning(msg)
                 except Exception as exc:
                     error_reason = ('Exception raised when processing __virtual__ function'
-                              ' for {0}. Module will not be loaded {1}'.format(
-                                  module_name, exc))
+                                    ' for {0}. Module will not be loaded {1}'.format(
+                                        module_name, exc))
                     log.error(error_reason, exc_info_on_loglevel=logging.DEBUG)
                     virtual = None
                 # Get the module's virtual name
@@ -1879,11 +1879,11 @@ class NovaLazyLoader(LazyLoader):
                         if ext == '.yaml' and fpath.startswith(nova_module_cache):
                             continue
                         if f_withext in self.disabled:
-                            #log.trace(
-                            #    'Skipping {0}, it is disabled by configuration'.format(
-                            #    filename
-                            #    )
-                            #)
+                            # log.trace(
+                            #     'Skipping {0}, it is disabled by configuration'.format(
+                            #     filename
+                            #     )
+                            # )
                             continue
 
                         # if we don't have it, we want it
@@ -1892,7 +1892,7 @@ class NovaLazyLoader(LazyLoader):
                         # if we do, we want it if we have a higher precidence ext
                         else:
                             curr_ext = self.file_mapping[f_withext][1]
-                            #log.debug("****** curr_ext={0} ext={1} suffix_order={2}".format(curr_ext, ext, suffix_order))
+                            # log.debug("****** curr_ext={0} ext={1} suffix_order={2}".format(curr_ext, ext, suffix_order))
                             if curr_ext and suffix_order.index(ext) < suffix_order.index(curr_ext):
                                 self.file_mapping[f_withext] = (fpath, ext)
                     except OSError:

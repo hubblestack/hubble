@@ -20,6 +20,7 @@ from distutils.version import LooseVersion
 log = logging.getLogger(__name__)
 __virtualname__ = 'win_pkg'
 
+
 def __virtual__():
     if not salt.utils.is_windows():
         return False, 'This audit module only runs on windows'
@@ -156,7 +157,7 @@ def _translate_value_type(current, value, evaluator):
     if 'equal' in value.lower() and LooseVersion(current) == LooseVersion(evaluator):
         return True
     if 'less' in value.lower() and LooseVersion(current) <= LooseVersion(evaluator):
-        return True 
+        return True
     if 'more' in value.lower() and LooseVersion(current) >= LooseVersion(evaluator):
-        return True 
+        return True
     return False

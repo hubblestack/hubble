@@ -257,7 +257,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
             if _append:
                 config_path = config['paths'][0]
-                pulsar_config = config_path[config_path.rfind('/')+1:len(config_path)]
+                pulsar_config = config_path[config_path.rfind('/') + 1:len(config_path)]
                 sub = {'tag': event.path,
                        'path': event.pathname,
                        'change': event.maskname,
@@ -397,7 +397,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
                 ret = _dict_update(dest_subkey, val, merge_lists=merge_lists)
                 dest[key] = ret
             elif isinstance(dest_subkey, list) \
-                     and isinstance(val, list):
+                    and isinstance(val, list):
                 if merge_lists:
                     dest[key] = dest.get(key, []) + val
                 else:

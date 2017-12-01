@@ -19,6 +19,7 @@ import salt.utils
 log = logging.getLogger(__name__)
 __virtualname__ = 'win_firewall'
 
+
 def __virtual__():
     if not salt.utils.is_windows():
         return False, 'This audit module only runs on windows'
@@ -148,6 +149,7 @@ def _get_tags(data):
                         ret[tag].append(formatted_data)
     return ret
 
+
 def _export_firewall():
     dump = []
     try:
@@ -173,7 +175,8 @@ def _import_firewall():
         for val in vals:
             if val:
                 v = val.split(':')
-                if len(v) < 2: continue
+                if len(v) < 2:
+                    continue
                 temp_vals[v[0].strip()] = v[1].strip()
         dict_return[temp_vals['Name']] = temp_vals
     return dict_return

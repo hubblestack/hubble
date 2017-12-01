@@ -141,7 +141,7 @@ def audit(configs=None,
     # Pass any module parameters through to the Nova module
     nova_kwargs = {}
     # Get values from config first (if any) and merge into nova_kwargs
-    nova_kwargs_config =  __salt__['config.get']('hubblestack:nova:nova_kwargs', False)
+    nova_kwargs_config = __salt__['config.get']('hubblestack:nova:nova_kwargs', False)
     if nova_kwargs_config is not False:
         nova_kwargs.update(nova_kwargs_config)
     # Now process arguments from CLI and merge into nova_kwargs_dict
@@ -236,11 +236,12 @@ def audit(configs=None,
         results['Messages'] = 'No audits matched this host in the specified profiles.'
 
     for error in ret.get('Errors', []):
-      if not results.has_key('Errors'):
-        results['Errors'] = []
-      results['Errors'].append(error)
+        if 'Errors' not in results:
+            results['Errors'] = []
+        results['Errors'].append(error)
 
     return results
+
 
 def _run_audit(configs, tags, debug, **kwargs):
 
@@ -643,7 +644,7 @@ def _calculate_compliance(results):
     total_audits = success + failure + control
 
     if total_audits:
-        compliance = float(success + control)/total_audits
+        compliance = float(success + control) / total_audits
         compliance = int(compliance * 100)
         compliance = '{0}%'.format(compliance)
         return compliance

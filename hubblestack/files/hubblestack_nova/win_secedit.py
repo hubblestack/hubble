@@ -24,6 +24,7 @@ except ImportError:
 log = logging.getLogger(__name__)
 __virtualname__ = 'win_secedit'
 
+
 def __virtual__():
     if not salt.utils.is_windows() or not HAS_WINDOWS_MODULES:
         return False, 'This audit module only runs on windows'
@@ -356,7 +357,7 @@ def _evaluator_translator(input_string):
     '''This helper function takes words from the CIS yaml and replaces
     them with what you actually find in the secedit dump'''
     if type(input_string) == str:
-        input_string = input_string.replace(' ','').lower()
+        input_string = input_string.replace(' ', '').lower()
 
     if 'enabled' in input_string:
         return '1'
@@ -368,7 +369,7 @@ def _evaluator_translator(input_string):
         return '2'
     elif input_string == 'success,failure' or input_string == 'failure,success':
         return '3'
-    elif input_string in ['0','1','2','3']:
+    elif input_string in ['0', '1', '2', '3']:
         return input_string
     else:
         log.debug('error translating evaluator from enabled/disabled or success/failure.'

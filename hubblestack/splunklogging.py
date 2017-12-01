@@ -42,7 +42,6 @@ from hubblestack.cloud_details import get_cloud_details
 import requests
 import json
 import time
-from datetime import datetime
 
 import copy
 

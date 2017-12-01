@@ -90,7 +90,6 @@ import fnmatch
 import hashlib
 import json
 import os
-import re
 import requests
 
 from distutils.version import LooseVersion
@@ -165,9 +164,9 @@ def audit(data_list, tags, debug=False, **kwargs):
 
     for url, cache, cached_json, cached_zip, min_score, profile in endpoints:
         log.debug("url: %s, min_score: %s", url, min_score)
-        if cache: # Valid cached file
+        if cache:  # Valid cached file
             master_json = cache
-        else: # Query the url for cve's
+        else:  # Query the url for cve's
             if url.startswith('http://') or url.startswith('https://'):
                 if 'vulners.com' in url:
                     # Vulners api can only handles http:// requests from request.get
@@ -177,7 +176,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                     if url.endswith('/'):
                         url = url[:-1]
                     url_final = '%s/api/v3/archive/distributive/?os=%s&version=%s' \
-                                                                % (url, os_name, os_version)
+                                % (url, os_name, os_version)
                     log.debug('requesting: %s', url_final)
                     cve_query = requests.get(url_final)
                     # Confirm that the request was valid.
@@ -200,14 +199,14 @@ def audit(data_list, tags, debug=False, **kwargs):
                     except IOError as ioe:
                         log.error('The json zip attachment was not able to be extracted from vulners.')
                         raise ioe
-                else: # Not a vulners request, external source for cve's
+                else:  # Not a vulners request, external source for cve's
                     log.debug('requesting: %s', url)
                     cve_query = requests.get(url)
                     if cve_query.status_code != 200:
                         log.error('URL request was not successful.')
                         raise Exception('The url given is invalid.')
                     master_json = json.loads(cve_query.text)
-                #Cache results.
+                # Cache results.
                 try:
                     with open(cached_json, 'w') as cache_file:
                         json.dump(master_json, cache_file)
@@ -294,10 +293,10 @@ def _get_cve_vulnerabilities(query_results, os_version):
             title = report['_source'].get('title', 'No Title Given')
 
             for pkg in report['_source']['affectedPackage']:
-                #_source:affectedPackages
-                if pkg['OSVersion'] in ['any', str(__grains__.get('osmajorrelease', None)), str(__grains__.get('osrelease', None))]: #Only use matching os
-                    pkg_obj = VulnerablePkg(title, pkg['packageName'], pkg['packageVersion'], \
-                                 score, pkg['operator'], reporter, href, cve_list)
+                # _source:affectedPackages
+                if pkg['OSVersion'] in ['any', str(__grains__.get('osmajorrelease', None)), str(__grains__.get('osrelease', None))]:  # Only use matching os
+                    pkg_obj = VulnerablePkg(title, pkg['packageName'], pkg['packageVersion'],
+                                            score, pkg['operator'], reporter, href, cve_list)
                     if pkg_obj.pkg not in vulnerable_pkgs:
                         vulnerable_pkgs[pkg_obj.pkg] = [pkg_obj]
                     else:
@@ -330,7 +329,7 @@ def _is_vulnerable(local_version, affected_version, operator):
 
     # When salt can't compare, use LooseVersion
     if compare is None:
-        #Compare from higher order to lower order based on '-' split.
+        # Compare from higher order to lower order based on '-' split.
         local_version_split = local_version.split('-')
         affected_version_split = affected_version.split('-')
 
@@ -339,11 +338,11 @@ def _is_vulnerable(local_version, affected_version, operator):
             local_version_obj = LooseVersion(local_version_str)
             affected_version_obj = LooseVersion(affected_version_split[order_index])
 
-            #Check lower order bits if higher order are equal.
+            # Check lower order bits if higher order are equal.
             if local_version == affected_version:
                 continue
 
-            #Return when highest order version is not equal.
+            # Return when highest order version is not equal.
             elif local_version_obj > affected_version_obj:
                 compare = 1
                 break
@@ -403,7 +402,6 @@ class VulnerablePkg:
         self.cve_list = cve_list
         self.reporter = reporter
         self.oudated_version = None
-
 
     def get_report(self, profile):
         '''

@@ -30,6 +30,9 @@ CONFIG_STALENESS = 0
 def __virtual__():
     if not salt.utils.is_windows():
         return False, 'This module only works on windows'
+    win_version = __grains__['osfullname']
+    if '2012' not in win_version and '2016' not in win_version:
+        return False, 'This module only works with Server 2012 (Win8) or higher'
     return __virtualname__
 
 def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.yaml',

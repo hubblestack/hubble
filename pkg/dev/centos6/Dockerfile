@@ -5,7 +5,7 @@
 # in the /data directory. Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 
-FROM amazonlinux:2017.03
+FROM centos:6
 
 RUN yum makecache fast && yum -y update
 
@@ -19,7 +19,7 @@ RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt
 ENV OSQUERY_SRC_VERSION=2.9.2
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
-RUN yum -y install git make python ruby sudo which
+RUN yum -y install git make python ruby sudo which python-argparse
 RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
  && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
 RUN mkdir -p /usr/local/osquery/ \
@@ -54,10 +54,9 @@ RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN yum -y install  \
-               python27-devel libffi-devel openssl-devel \
-               libxml2-devel libxslt-devel libjpeg-devel \
-               zlib-devel make cmake python27-setuptools \
-               gcc python-devel python-setuptools wget
+               libffi-devel openssl-devel libxml2-devel libxslt-devel \
+               libjpeg-devel zlib-devel python-devel make cmake gcc \
+               python-setuptools wget
 
 #libgit2 install start
 #must precede pyinstaller requirements
@@ -81,18 +80,21 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 COPY pyinstaller-requirements.txt /
 #default python-pip from yum does not like upgrading itself from pip. looking for better options other than wget.
 RUN wget -c https://bootstrap.pypa.io/get-pip.py \
- && python get-pip.py \
- && pip -v install -r pyinstaller-requirements.txt
+ && yum -y install centos-release-scl \
+ && yum -y install python27 \
+ && chmod u+x ./get-pip.py \
+ && scl enable python27 "./get-pip.py" \
+ && scl enable python27 "pip -v install -r pyinstaller-requirements.txt"
 
 #fpm package making requirements start
-RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
- && gem install --no-ri --no-rdoc fpm
+RUN yum install -y rpmbuild rpm-build gcc make rh-ruby23 rh-ruby23-ruby-devel \
+ && scl enable rh-ruby23 "gem install --no-ri --no-rdoc fpm"
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.2.11
-ENV HUBBLE_VERSION=2.2.11
+ENV HUBBLE_CHECKOUT=develop
+ENV HUBBLE_VERSION=2.2.11_develop
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -102,12 +104,13 @@ ENV LD_LIBRARY_PATH=/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/li
 RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout "$HUBBLE_CHECKOUT" \
- && cp -rf "$HUBBLE_SRC_PATH" /hubble_build
+ && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
+ && echo __version__ = \"`git describe --tags | sed 's/v//'`\" > /hubble_build/hubblestack/__init__.py
 RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build
 ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
-CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} hubble.py \
+CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} hubble.py' \
     && cp /hubble_build/conf/osquery.conf /etc/osquery/ \
     && cp /hubble_build/conf/osquery.flags /etc/osquery/ \
 # hubble default configuration file
@@ -134,14 +137,14 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
 #symlink to have hubble binary in path
     && ln -s /opt/hubble/hubble usr/bin/hubble \
 #fpm start
-    && fpm -s dir -t rpm \
-       -n hubblestack \
-       -v ${HUBBLE_VERSION} \
-    #todo: get rid of the git dependency with static bin in the future
-       -d 'git' \
-       --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
-       --after-install /hubble_build/conf/afterinstall.sh \
-       --after-upgrade /hubble_build/conf/afterupgrade.sh \
-       etc/hubble etc/osquery etc/init.d opt usr \
+    && scl enable rh-ruby23 'fpm -s dir -t rpm \
+                                 -n hubblestack \
+                                 -v ${HUBBLE_VERSION} \
+                                 #todo: get rid of the git dependency with static bin in the future
+                                 -d git \
+                                 --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
+                                 --after-install /hubble_build/conf/afterinstall.sh \
+                                 --after-upgrade /hubble_build/conf/afterupgrade.sh \
+                                 etc/hubble etc/osquery etc/init.d opt usr' \
 #edit to change iteration number, if necessary
-    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.al1703.x86_64.rpm" ]
+    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.el6.x86_64.rpm" ]

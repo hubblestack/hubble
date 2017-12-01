@@ -88,8 +88,8 @@ RUN pip install --upgrade pip \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.2.10
-ENV HUBBLE_VERSION=2.2.10
+ENV HUBBLE_CHECKOUT=v2.2.11
+ENV HUBBLE_VERSION=2.2.11
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -111,6 +111,8 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
 #during container run, if a configuration file exists in a /data copy it over the existing one so it would be
 #possile to optionally include a custom one with the package
     && if [ -f /data/hubble ] ; then cp /data/hubble /etc/hubble/ ; fi \
+#also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
+    && if [ -d /data/opt ] ; then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/opt/ ; fi \
     && cp -rf /hubble_build/conf/hubble-profile.sh /etc/profile.d/ \
     && cp -pr /hubble_build/dist/hubble /opt/hubble/hubble-libs \
     && ln -s /opt/hubble/hubble-libs/hubble /opt/hubble/hubble \

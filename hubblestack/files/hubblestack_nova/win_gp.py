@@ -158,6 +158,7 @@ def _get_gp_templates():
                                '-Property Name, SID'.format(domain_check), shell='powershell', python_shell=True)
     return list
 
+
 def _translate_value_type(current, value, evaluator):
     if 'equal' in value:
         if current == evaluator:

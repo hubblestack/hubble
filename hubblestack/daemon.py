@@ -4,7 +4,7 @@ Main entry point for the hubble daemon
 '''
 from __future__ import print_function
 
-#import lockfile
+# import lockfile
 import argparse
 import logging
 import time
@@ -341,36 +341,36 @@ def load_config():
     # Disable all of salt's boto modules, they give nothing but trouble to the loader
     disable_modules = __opts__.get('disable_modules', [])
     disable_modules.extend([
-            'boto3_elasticache',
-            'boto3_route53',
-            'boto_apigateway',
-            'boto_asg',
-            'boto_cfn',
-            'boto_cloudtrail',
-            'boto_cloudwatch_event',
-            'boto_cloudwatch',
-            'boto_cognitoidentity',
-            'boto_datapipeline',
-            'boto_dynamodb',
-            'boto_ec2',
-            'boto_efs',
-            'boto_elasticache',
-            'boto_elasticsearch_domain',
-            'boto_elb',
-            'boto_elbv2',
-            'boto_iam',
-            'boto_iot',
-            'boto_kinesis',
-            'boto_kms',
-            'boto_lambda',
-            'boto_rds',
-            'boto_route53',
-            'boto_s3_bucket',
-            'boto_secgroup',
-            'boto_sns',
-            'boto_sqs',
-            'boto_vpc',
-        ])
+        'boto3_elasticache',
+        'boto3_route53',
+        'boto_apigateway',
+        'boto_asg',
+        'boto_cfn',
+        'boto_cloudtrail',
+        'boto_cloudwatch_event',
+        'boto_cloudwatch',
+        'boto_cognitoidentity',
+        'boto_datapipeline',
+        'boto_dynamodb',
+        'boto_ec2',
+        'boto_efs',
+        'boto_elasticache',
+        'boto_elasticsearch_domain',
+        'boto_elb',
+        'boto_elbv2',
+        'boto_iam',
+        'boto_iot',
+        'boto_kinesis',
+        'boto_kms',
+        'boto_lambda',
+        'boto_rds',
+        'boto_route53',
+        'boto_s3_bucket',
+        'boto_secgroup',
+        'boto_sns',
+        'boto_sqs',
+        'boto_vpc',
+    ])
     __opts__['disable_modules'] = disable_modules
 
     # Setup logging

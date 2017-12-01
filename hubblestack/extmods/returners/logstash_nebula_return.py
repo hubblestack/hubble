@@ -29,7 +29,6 @@ plugin. Required config/pillar settings:
 
 import json
 import time
-import socket
 import requests
 from datetime import datetime
 from hubblestack.cloud_details import get_cloud_details
@@ -53,7 +52,7 @@ def returner(ret):
         password = opts['password']
         user = opts['user']
 
-        ## assign all the things
+        # assign all the things
         data = ret['return']
         minion_id = ret['id']
         jid = ret['jid']

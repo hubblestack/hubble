@@ -34,11 +34,9 @@ from __future__ import absolute_import
 import logging
 
 import fnmatch
-import yaml
 import os
 import copy
 import salt.utils
-import re
 
 from distutils.version import LooseVersion
 
@@ -78,13 +76,12 @@ def audit(data_list, tags, debug=False, **kwargs):
                     continue
 
 
-                name  = tag_data.get('name')
+                name = tag_data.get('name')
                 audittype = tag_data.get('type')
-
 
                 if 'attribute' not in tag_data:
                     log.error('No attribute found for mount audit {0}, file {1}'
-                              .format(tag,name))
+                              .format(tag, name))
                     tag_data = copy.deepcopy(tag_data)
                     tag_data['error'] = 'No pattern found'.format(mod)
                     ret['Failure'].append(tag_data)
@@ -96,14 +93,14 @@ def audit(data_list, tags, debug=False, **kwargs):
                 if 'check_type' in tag_data:
                     check_type = tag_data.get('check_type')
 
-                if check_type not in ['hard','soft']:
+                if check_type not in ['hard', 'soft']:
                     log.error('Unrecognized option: ' + check_type)
                     tag_data = copy.deepcopy(tag_data)
                     tag_data['error'] = 'check_type can only be hard or soft'
                     ret['Failure'].append(tag_data)
                     continue
 
-                found = _check_mount_attribute(name,attribute,check_type)
+                found = _check_mount_attribute(name, attribute, check_type)
 
                 if audittype == 'blacklist':
                     if found:
@@ -193,7 +190,8 @@ def _get_tags(data):
                         ret[tag].append(formatted_data)
     return ret
 
-def _check_mount_attribute(path,attribute, check_type):
+
+def _check_mount_attribute(path, attribute, check_type):
     '''
     This function checks if the partition at a given path is mounted with a particular attribute or not.
     If 'check_type' is 'hard', the function returns False if he specified path does not exist, or if it
@@ -206,8 +204,7 @@ def _check_mount_attribute(path,attribute, check_type):
         else:
             return True
 
-
-    mount_object  = __salt__['mount.active']()
+    mount_object = __salt__['mount.active']()
 
     if path in mount_object:
         attributes = mount_object.get(path)
@@ -222,4 +219,3 @@ def _check_mount_attribute(path,attribute, check_type):
             return False
         else:
             return True
-

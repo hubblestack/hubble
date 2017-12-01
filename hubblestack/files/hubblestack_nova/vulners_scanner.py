@@ -51,13 +51,13 @@ def audit(data_list, tags, debug=False, **kwargs):
             vulners_data = _vulners_query(local_packages, os=os_name, version=os_version)
             if vulners_data['result'] == 'ERROR':
                 log.error(vulners_data['data']['error'])
-            vulners_data = _process_vulners(_vulners_query(local_packages, os = os_name, version = os_version))
+            vulners_data = _process_vulners(_vulners_query(local_packages, os=os_name, version=os_version))
 
             total_packages = len(local_packages)
             secure_packages = total_packages - len(vulners_data)
 
             ret['Success'] = [{'tag': 'Secure packages',
-                           'description': '{0} out of {1}'.format(secure_packages, total_packages)}]
+                               'description': '{0} out of {1}'.format(secure_packages, total_packages)}]
             ret['Failure'] = vulners_data
 
     return ret
@@ -106,7 +106,6 @@ def _vulners_query(packages=None, os=None, version=None, url='https://vulners.co
         error['data']['error'] = 'Missing the operating system version.'
         return error
 
-
     headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
@@ -142,4 +141,3 @@ def _process_vulners(vulners):
              'vulnerabilities': packages[pkg],
              'description': ', '.join(packages[pkg].keys())}
             for pkg in packages]
-

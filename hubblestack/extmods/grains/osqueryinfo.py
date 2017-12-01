@@ -3,7 +3,8 @@
 import salt.utils
 import salt.modules.cmdmod
 
-__salt__ = { 'cmd.run': salt.modules.cmdmod._run_quiet }
+__salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet}
+
 
 def osquerygrain():
     '''

@@ -28,7 +28,6 @@ plugin. Required config/pillar settings:
 '''
 
 import os
-import time
 import json
 import requests
 from collections import defaultdict

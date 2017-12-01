@@ -45,9 +45,7 @@ from __future__ import absolute_import
 import logging
 
 import fnmatch
-import yaml
 import os
-import copy
 import re
 import salt.utils
 from salt.ext import six
@@ -58,6 +56,7 @@ log = logging.getLogger(__name__)
 
 def __virtual__():
     return True
+
 
 def audit(data_list, tags, debug=False, **kwargs):
     '''
@@ -89,7 +88,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                     if 'Errors' not in ret:
                         ret['Errors'] = []
                     ret['Errors'].append({tag: 'No function {0} found'
-                                              .format(tag_data['function'])})
+                                         .format(tag_data['function'])})
                     continue
                 args = tag_data.get('args', [])
                 kwargs = tag_data.get('kwargs', {})
@@ -186,7 +185,7 @@ def _is_valid_home_directory(directory_path, check_slash_home=False):
     return False
 
 
-def _is_permission_in_limit(max_permission,given_permission):
+def _is_permission_in_limit(max_permission, given_permission):
     '''
     Return true only if given_permission is not more lenient that max_permission. In other words, if
     r or w or x is present in given_permission but absent in max_permission, it should return False
@@ -219,11 +218,11 @@ def _is_permission_in_limit(max_permission,given_permission):
     if given_permission >= 1:
         given_x = True
 
-    if given_r and ( not allowed_r ):
+    if given_r and (not allowed_r):
         return False
-    if given_w and ( not allowed_w ):
+    if given_w and (not allowed_w):
         return False
-    if given_x and ( not allowed_x ):
+    if given_x and (not allowed_x):
         return False
 
     return True
@@ -343,14 +342,14 @@ def check_time_synchronization(reason=''):
     Ensure that some service is running to synchronize the system clock
     '''
     command = 'systemctl status systemd-timesyncd ntpd | grep "Active: active (running)"'
-    output = _execute_shell_command( command )
+    output = _execute_shell_command(command)
     if output.strip() == '':
         return "neither ntpd nor timesyncd is running"
     else:
         return True
 
 
-def restrict_permissions(path,permission):
+def restrict_permissions(path, permission):
     '''
     Ensure that the file permissions on path are equal or more strict than the  pemissions given in argument
     '''
@@ -358,7 +357,7 @@ def restrict_permissions(path,permission):
     given_permission = path_details.get('mode')
     given_permission = given_permission[-3:]
     max_permission = str(permission)
-    if (_is_permission_in_limit(max_permission[0],given_permission[0]) and _is_permission_in_limit(max_permission[1],given_permission[1]) and _is_permission_in_limit(max_permission[2],given_permission[2])):
+    if (_is_permission_in_limit(max_permission[0], given_permission[0]) and _is_permission_in_limit(max_permission[1], given_permission[1]) and _is_permission_in_limit(max_permission[2], given_permission[2])):
         return True
     return given_permission
 
@@ -415,7 +414,7 @@ def check_duplicate_uids(reason=''):
     '''
     uids = _execute_shell_command("cat /etc/passwd | cut -f3 -d\":\"").strip()
     uids = uids.split('\n') if uids != "" else []
-    duplicate_uids = [k for k,v in Counter(uids).items() if v>1]
+    duplicate_uids = [k for k, v in Counter(uids).items() if v > 1]
     if duplicate_uids is None or duplicate_uids == []:
         return True
     return str(duplicate_uids)
@@ -427,7 +426,7 @@ def check_duplicate_gids(reason=''):
     '''
     gids = _execute_shell_command("cat /etc/group | cut -f3 -d\":\"").strip()
     gids = gids.split('\n') if gids != "" else []
-    duplicate_gids = [k for k,v in Counter(gids).items() if v>1]
+    duplicate_gids = [k for k, v in Counter(gids).items() if v > 1]
     if duplicate_gids is None or duplicate_gids == []:
         return True
     return str(duplicate_gids)
@@ -439,7 +438,7 @@ def check_duplicate_unames(reason=''):
     '''
     unames = _execute_shell_command("cat /etc/passwd | cut -f1 -d\":\"").strip()
     unames = unames.split('\n') if unames != "" else []
-    duplicate_unames = [k for k,v in Counter(unames).items() if v>1]
+    duplicate_unames = [k for k, v in Counter(unames).items() if v > 1]
     if duplicate_unames is None or duplicate_unames == []:
         return True
     return str(duplicate_unames)
@@ -451,7 +450,7 @@ def check_duplicate_gnames(reason=''):
     '''
     gnames = _execute_shell_command("cat /etc/group | cut -f1 -d\":\"").strip()
     gnames = gnames.split('\n') if gnames != "" else []
-    duplicate_gnames = [k for k,v in Counter(gnames).items() if v>1]
+    duplicate_gnames = [k for k, v in Counter(gnames).items() if v > 1]
     if duplicate_gnames is None or duplicate_gnames == []:
         return True
     return str(duplicate_gnames)
@@ -497,6 +496,7 @@ def check_service_status(service_name, state):
         return True
     else:
         return __salt__['cmd.run_stdout']('systemctl is-enabled ' + service_name)
+
 
 def check_ssh_timeout_config(reason=''):
     '''
@@ -558,7 +558,7 @@ def check_all_users_home_directory(max_system_uid):
     for user_data in users_uids_dirs:
         user_uid_dir = user_data.strip().split(" ")
         if len(user_uid_dir) < 3:
-                user_uid_dir = user_uid_dir + ['']*(3-len(user_uid_dir))
+                user_uid_dir = user_uid_dir + [''] * (3 - len(user_uid_dir))
         if user_uid_dir[1].isdigit():
             if not _is_valid_home_directory(user_uid_dir[2], True) and int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] != "nfsnobody":
                 error += ["Either home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is invalid or does not exist."]
@@ -578,11 +578,11 @@ def check_users_home_directory_permissions(reason=''):
     for user_dir in users_dirs:
         user_dir = user_dir.split(" ")
         if len(user_dir) < 2:
-                user_dir = user_dir + ['']*(2-len(user_dir))
+                user_dir = user_dir + [''] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
             result = restrict_permissions(user_dir[1], "750")
             if result is not True:
-                error += ["permission on home directory " + user_dir[1]  + " of user " + user_dir[0] + " is wrong: " + result]
+                error += ["permission on home directory " + user_dir[1] + " of user " + user_dir[0] + " is wrong: " + result]
 
     return True if error == [] else str(error)
 
@@ -600,7 +600,7 @@ def check_users_own_their_home(max_system_uid):
     for user_data in users_uids_dirs:
         user_uid_dir = user_data.strip().split(" ")
         if len(user_uid_dir) < 3:
-            user_uid_dir = user_uid_dir + ['']*(3-len(user_uid_dir))
+            user_uid_dir = user_uid_dir + [''] * (3 - len(user_uid_dir))
         if user_uid_dir[1].isdigit():
             if not _is_valid_home_directory(user_uid_dir[2]):
                 if int(user_uid_dir[1]) >= max_system_uid:
@@ -626,7 +626,7 @@ def check_users_dot_files(reason=''):
     for user_dir in users_dirs:
         user_dir = user_dir.split()
         if len(user_dir) < 2:
-                user_dir = user_dir + ['']*(2-len(user_dir))
+                user_dir = user_dir + [''] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
             dot_files = _execute_shell_command("find " + user_dir[1] + " -name \".*\"").strip()
             dot_files = dot_files.split('\n') if dot_files != "" else []
@@ -654,7 +654,7 @@ def check_users_forward_files(reason=''):
     for user_dir in users_dirs:
         user_dir = user_dir.split()
         if len(user_dir) < 2:
-                user_dir = user_dir + ['']*(2-len(user_dir))
+                user_dir = user_dir + [''] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
             forward_file = _execute_shell_command("find " + user_dir[1] + " -maxdepth 1 -name \".forward\"").strip()
             if forward_file is not None and os.path.isfile(forward_file):
@@ -674,7 +674,7 @@ def check_users_netrc_files(reason=''):
     for user_dir in users_dirs:
         user_dir = user_dir.split()
         if len(user_dir) < 2:
-                user_dir = user_dir + ['']*(2-len(user_dir))
+                user_dir = user_dir + [''] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
             netrc_file = _execute_shell_command("find " + user_dir[1] + " -maxdepth 1 -name \".netrc\"").strip()
             if netrc_file is not None and os.path.isfile(netrc_file):
@@ -708,20 +708,20 @@ def ensure_reverse_path_filtering(reason=''):
     command = "sysctl net.ipv4.conf.all.rp_filter 2> /dev/null"
     output = _execute_shell_command(command)
     if output.strip() == '':
-        error_list.append( "net.ipv4.conf.all.rp_filter not found")
-    search_results = re.findall("rp_filter = (\d+)",output)
+        error_list.append("net.ipv4.conf.all.rp_filter not found")
+    search_results = re.findall("rp_filter = (\d+)", output)
     result = int(search_results[0])
     if result < 1:
-        error_list.append( "net.ipv4.conf.all.rp_filter  value set to " + str(result))
+        error_list.append("net.ipv4.conf.all.rp_filter  value set to " + str(result))
     command = "sysctl net.ipv4.conf.default.rp_filter 2> /dev/null"
     output = _execute_shell_command(command)
     if output.strip() == '':
-        error_list.append( "net.ipv4.conf.default.rp_filter not found")
-    search_results = re.findall("rp_filter = (\d+)",output)
+        error_list.append("net.ipv4.conf.default.rp_filter not found")
+    search_results = re.findall("rp_filter = (\d+)", output)
     result = int(search_results[0])
     if result < 1:
-        error_list.append( "net.ipv4.conf.default.rp_filter  value set to " + str(result))
-    if len(error_list) > 0 :
+        error_list.append("net.ipv4.conf.default.rp_filter  value set to " + str(result))
+    if len(error_list) > 0:
         return str(error_list)
     else:
         return True
@@ -738,7 +738,7 @@ def check_users_rhosts_files(reason=''):
     for user_dir in users_dirs:
         user_dir = user_dir.split()
         if len(user_dir) < 2:
-            user_dir = user_dir + ['']*(2-len(user_dir))
+            user_dir = user_dir + [''] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
             rhosts_file = _execute_shell_command("find " + user_dir[1] + " -maxdepth 1 -name \".rhosts\"").strip()
             if rhosts_file is not None and os.path.isfile(rhosts_file):
@@ -912,6 +912,7 @@ def mail_conf_check(reason=''):
 
     return str(invalid_addresses) if invalid_addresses != [] else True
 
+
 def check_if_any_pkg_installed(args):
     '''
     :param args: Comma separated list of packages those needs to be verified
@@ -959,17 +960,17 @@ FUNCTION_MAP = {
     'test_success': test_success,
     'test_failure': test_failure,
     'test_failure_reason': test_failure_reason,
-    'test_mount_attrs' : test_mount_attrs,
-    'check_path_integrity' : check_path_integrity,
-    'restrict_permissions' : restrict_permissions,
-    'check_time_synchronization' : check_time_synchronization,
+    'test_mount_attrs': test_mount_attrs,
+    'check_path_integrity': check_path_integrity,
+    'restrict_permissions': restrict_permissions,
+    'check_time_synchronization': check_time_synchronization,
     'check_core_dumps': check_core_dumps,
     'check_directory_files_permission': check_directory_files_permission,
     'check_duplicate_gnames': check_duplicate_gnames,
     'check_duplicate_unames': check_duplicate_unames,
     'check_duplicate_gids': check_duplicate_gids,
     'check_duplicate_uids': check_duplicate_uids,
-    'check_service_status' : check_service_status,
+    'check_service_status': check_service_status,
     'check_ssh_timeout_config': check_ssh_timeout_config,
     'check_unowned_files': check_unowned_files,
     'check_ungrouped_files': check_ungrouped_files,
@@ -985,6 +986,6 @@ FUNCTION_MAP = {
     'check_netrc_files_accessibility': check_netrc_files_accessibility,
     'check_list_values': check_list_values,
     'mail_conf_check': mail_conf_check,
-    'check_if_any_pkg_installed':check_if_any_pkg_installed,
+    'check_if_any_pkg_installed': check_if_any_pkg_installed,
 
 }

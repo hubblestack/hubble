@@ -109,27 +109,27 @@ def queries(query_group,
             #   more data
             ret = []
             ret.append(
-                    {'fallback_osfinger': {
-                         'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
-                                   'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
-                         'result': True
-                    }}
+                {'fallback_osfinger': {
+                 'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
+                           'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
+                 'result': True
+                 }}
             )
             if 'pkg.list_pkgs' in __salt__:
                 ret.append(
-                        {'fallback_pkgs': {
-                             'data': [{'name': k, 'version': v} for k, v in __salt__['pkg.list_pkgs']().iteritems()],
-                             'result': True
-                        }}
+                    {'fallback_pkgs': {
+                     'data': [{'name': k, 'version': v} for k, v in __salt__['pkg.list_pkgs']().iteritems()],
+                     'result': True
+                     }}
                 )
             uptime = __salt__['status.uptime']()
             if isinstance(uptime, dict):
                 uptime = uptime.get('seconds', __salt__['cmd.run']('uptime'))
             ret.append(
-                    {'fallback_uptime': {
-                         'data': [{'uptime': uptime}],
-                         'result': True
-                    }}
+                {'fallback_uptime': {
+                 'data': [{'uptime': uptime}],
+                 'result': True
+                 }}
             )
             if report_version_with_day:
                 ret.append(hubble_versions())
@@ -145,17 +145,17 @@ def queries(query_group,
             if query_group == 'day':
                 ret = []
                 ret.append(
-                        {'fallback_osfinger': {
-                             'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
-                                       'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
-                             'result': True
-                        }}
+                    {'fallback_osfinger': {
+                     'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
+                               'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
+                     'result': True
+                     }}
                 )
                 ret.append(
-                        {'fallback_error': {
-                             'data': 'osqueryi is installed but not compatible with this version of windows',
+                    {'fallback_error': {
+                     'data': 'osqueryi is installed but not compatible with this version of windows',
                              'result': True
-                        }}
+                     }}
                 )
                 return ret
             else:
@@ -223,9 +223,9 @@ def fields(*args):
     # Return it as nebula data
     if ret:
         return [{'custom_fields': {
-                'data': [ret],
-                'result': True
-                }}]
+                 'data': [ret],
+                 'result': True
+                 }}]
     return []
 
 

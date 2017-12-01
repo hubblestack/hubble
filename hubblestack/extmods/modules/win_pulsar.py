@@ -415,9 +415,10 @@ def _remove_acl(path):
 
 def _pull_events(time_frame, checksum):
     events_list = []
-    events_output = __salt__['cmd.run_stdout']('mode con:cols=1000 lines=1000; Get-WinEvent -FilterHashTable @{{'
-                                               'LogName = "security"; StartTime = [datetime]::Now.AddSeconds(-30);'
-                                               'Id = 4663}} | fl'.format(time_frame), shell='powershell', python_shell=True)
+    command = 'mode con:cols=1000 lines=1000; Get-WinEvent '\
+              '-FilterHashTable @{{''LogName = "security"; '\
+              'StartTime = [datetime]::Now.AddSeconds(-' + str(time_frame) + ');''Id = 4663}} | fl'
+    events_output = __salt__['cmd.run_stdout'](command.format(time_frame), shell='powershell', python_shell=True)
     events = events_output.split('\r\n\r\n')
     for event in events:
         if event:

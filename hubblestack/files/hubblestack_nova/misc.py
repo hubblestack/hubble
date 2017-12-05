@@ -279,11 +279,11 @@ def world_writable_file(reason=''):
     return True if result == '' else result
 
 
-def system_account_non_login(reason=''):
+def system_account_non_login(non_login_shell="/sbin/nologin"):
     '''
     Ensure system accounts are non-login
     '''
-    result = _execute_shell_command('egrep -v "^\+" /etc/passwd | awk -F: \'($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false") {print}\'')
+    result = _execute_shell_command('egrep -v "^\+" /etc/passwd | awk -F: \'($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="' + non_login_shell + '" && $7!="/bin/false") {print}\'')
     return True if result == '' else result
 
 
@@ -567,12 +567,12 @@ def check_all_users_home_directory(max_system_uid):
     return True if error == [] else str(error)
 
 
-def check_users_home_directory_permissions(reason=''):
+def check_users_home_directory_permissions(non_login_shell='/sbin/nologin'):
     '''
     Ensure users' home directories permissions are 750 or more restrictive
     '''
 
-    users_dirs = _execute_shell_command("cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != \"/sbin/nologin\") {print $1\" \"$6}'").strip()
+    users_dirs = _execute_shell_command("cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != \"" + non_login_shell + "/sbin/nologin\") {print $1\" \"$6}'").strip()
     users_dirs = users_dirs.split('\n') if users_dirs != "" else []
     error = []
     for user_dir in users_dirs:

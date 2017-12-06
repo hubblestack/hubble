@@ -283,8 +283,13 @@ def system_account_non_login(non_login_shell="/sbin/nologin"):
     '''
     Ensure system accounts are non-login
     '''
-    result = _execute_shell_command('egrep -v "^\+" /etc/passwd | awk -F: \'($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="' + non_login_shell + '" && $7!="/bin/false") {print}\'')
-    return True if result == '' else result
+    result = []
+    cmd =  __salt__["cmd.run_all"]('egrep -v "^\+" /etc/passwd ')
+    for line in cmd['stdout'].split('\n'):
+        tokens = line.split(':')
+        if tokens[0] not in ("root","sync","shutdown","halt") and int(tokens[2]) < 500 and tokens[6] not in ( non_login_shell , "/bin/false" ):
+           result.append(line)
+    return True if result == [] else str(result)
 
 
 def sticky_bit_on_world_writable_dirs(reason=''):
@@ -572,17 +577,22 @@ def check_users_home_directory_permissions(non_login_shell='/sbin/nologin'):
     Ensure users' home directories permissions are 750 or more restrictive
     '''
 
-    users_dirs = _execute_shell_command("cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != \"" + non_login_shell + "/sbin/nologin\") {print $1\" \"$6}'").strip()
-    users_dirs = users_dirs.split('\n') if users_dirs != "" else []
+    users_dirs = []
+    cmd = __salt__["cmd.run_all"]("egrep -v '(root|halt|sync|shutdown)' /etc/passwd")
+    for line in cmd['stdout'].split('\n'):
+        print line
+        tokens = line.split(':')
+        if tokens[6] != non_login_shell:
+            users_dirs.append(tokens[0] + " " + tokens[5])
     error = []
     for user_dir in users_dirs:
         user_dir = user_dir.split(" ")
         if len(user_dir) < 2:
-                user_dir = user_dir + [''] * (2 - len(user_dir))
+                user_dir = user_dir + ['']*(2-len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
             result = restrict_permissions(user_dir[1], "750")
             if result is not True:
-                error += ["permission on home directory " + user_dir[1] + " of user " + user_dir[0] + " is wrong: " + result]
+                error += ["permission on home directory " + user_dir[1]  + " of user " + user_dir[0] + " is wrong: " + result]
 
     return True if error == [] else str(error)
 

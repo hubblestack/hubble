@@ -279,13 +279,13 @@ def world_writable_file(reason=''):
     return True if result == '' else result
 
 
-def system_account_non_login(non_login_shell="/sbin/nologin", except_for__users='', max_system_uid='500'):
+def system_account_non_login(non_login_shell="/sbin/nologin", except_for_users='', max_system_uid='500'):
     '''
     Ensure system accounts are non-login
     '''
 
     users_list = ['root','halt','sync','shutdown']
-    for user in except_for__users.split(","):
+    for user in except_for_users.split(","):
         if user.strip() != "":
             users_list.append(user.strip())
     result = []
@@ -577,12 +577,12 @@ def check_all_users_home_directory(max_system_uid):
     return True if error == [] else str(error)
 
 
-def check_users_home_directory_permissions( non_login_shell='/sbin/nologin',except_for__users='', allowed_permission='750' ):
+def check_users_home_directory_permissions( non_login_shell='/sbin/nologin',except_for_users='', allowed_permission='750' ):
     '''
     Ensure users' home directories permissions are 750 or more restrictive
     '''
     users_list = ['root','halt','sync','shutdown']
-    for user in except_for__users.split(","):
+    for user in except_for_users.split(","):
         if user.strip() != "":
             users_list.append(user.strip())
 

@@ -279,20 +279,20 @@ def world_writable_file(reason=''):
     return True if result == '' else result
 
 
-def system_account_non_login(non_login_shell="/sbin/nologin", extra_users=''):
+def system_account_non_login(non_login_shell="/sbin/nologin", except_for__users='', max_system_uid='500'):
     '''
     Ensure system accounts are non-login
     '''
 
     users_list = ['root','halt','sync','shutdown']
-    for user in extra_users.split(","):
+    for user in except_for__users.split(","):
         if user.strip() != "":
             users_list.append(user.strip())
     result = []
     cmd = __salt__["cmd.run_all"]('egrep -v "^\+" /etc/passwd ')
     for line in cmd['stdout'].split('\n'):
         tokens = line.split(':')
-        if tokens[0] not in users_list and int(tokens[2]) < 500 and tokens[6] not in ( non_login_shell , "/bin/false" ):
+        if tokens[0] not in users_list and int(tokens[2]) < int(max_system_uid) and tokens[6] not in ( non_login_shell , "/bin/false" ):
            result.append(line)
     return True if result == [] else str(result)
 
@@ -577,12 +577,12 @@ def check_all_users_home_directory(max_system_uid):
     return True if error == [] else str(error)
 
 
-def check_users_home_directory_permissions( non_login_shell='/sbin/nologin',extra_users='' ):
+def check_users_home_directory_permissions( non_login_shell='/sbin/nologin',except_for__users='', allowed_permission='750' ):
     '''
     Ensure users' home directories permissions are 750 or more restrictive
     '''
     users_list = ['root','halt','sync','shutdown']
-    for user in extra_users.split(","):
+    for user in except_for__users.split(","):
         if user.strip() != "":
             users_list.append(user.strip())
 
@@ -598,7 +598,7 @@ def check_users_home_directory_permissions( non_login_shell='/sbin/nologin',extr
         if len(user_dir) < 2:
                 user_dir = user_dir + ['']*(2-len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
-            result = restrict_permissions(user_dir[1], "750")
+            result = restrict_permissions(user_dir[1], allowed_permission)
             if result is not True:
                 error += ["permission on home directory " + user_dir[1]  + " of user " + user_dir[0] + " is wrong: " + result]
 

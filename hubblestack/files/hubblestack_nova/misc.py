@@ -596,11 +596,11 @@ def check_users_home_directory_permissions( non_login_shell='/sbin/nologin', max
     for user_dir in users_dirs:
         user_dir = user_dir.split(" ")
         if len(user_dir) < 2:
-                user_dir = user_dir + ['']*(2-len(user_dir))
+                user_dir = user_dir + [''] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
             result = restrict_permissions(user_dir[1], max_allowed_permission)
             if result is not True:
-                error += ["permission on home directory " + user_dir[1]  + " of user " + user_dir[0] + " is wrong: " + result]
+                error += ["permission on home directory " + user_dir[1] + " of user " + user_dir[0] + " is wrong: " + result]
 
     return True if error == [] else str(error)
 

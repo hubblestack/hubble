@@ -52,6 +52,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                 name = tag_data['name']
                 audit_type = tag_data['type']
                 match_output = tag_data['match_output'].lower()
+                match_type = tag_data.get('match_type', '=')
 
                 # Blacklisted audit (do not include)
                 if 'blacklist' in audit_type:
@@ -66,7 +67,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                         audit_value = __firewalldata__[tag_data['value_type'].title()]
                         audit_value = audit_value[name].lower()
                         tag_data['found_value'] = audit_value
-                        secret = _translate_value_type(audit_value, tag_data['value_type'], match_output)
+                        secret = _translate_value_type(audit_value, tag_data['value_type'], match_output, match_type)
                         if secret:
                             ret['Success'].append(tag_data)
                         else:
@@ -182,9 +183,15 @@ def _import_firewall():
     return dict_return
 
 
-def _translate_value_type(current, value, evaluator):
+def _translate_value_type(current, value, evaluator, match):
     if value in ('public', 'private', 'domain'):
-        if current == evaluator:
-            return True
-        else:
-            return False
+        if match == '=':
+            if current == evaluator:
+                return True
+        if match == '>':
+            if int(current) > int(evaluator):
+                return True
+        if match == '<':
+            if int(current) < int(evaluator):
+                return True
+       return False

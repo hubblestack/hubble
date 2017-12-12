@@ -279,12 +279,22 @@ def world_writable_file(reason=''):
     return True if result == '' else result
 
 
-def system_account_non_login(reason=''):
+def system_account_non_login(non_login_shell='/sbin/nologin', max_system_uid='500', except_for_users=''):
     '''
     Ensure system accounts are non-login
     '''
-    result = _execute_shell_command('egrep -v "^\+" /etc/passwd | awk -F: \'($1!="root" && $1!="sync" && $1!="shutdown" && $1!="halt" && $3<500 && $7!="/sbin/nologin" && $7!="/bin/false") {print}\'')
-    return True if result == '' else result
+
+    users_list = ['root','halt','sync','shutdown']
+    for user in except_for_users.split(","):
+        if user.strip() != "":
+            users_list.append(user.strip())
+    result = []
+    cmd = __salt__["cmd.run_all"]('egrep -v "^\+" /etc/passwd ')
+    for line in cmd['stdout'].split('\n'):
+        tokens = line.split(':')
+        if tokens[0] not in users_list and int(tokens[2]) < int(max_system_uid) and tokens[6] not in ( non_login_shell , "/bin/false" ):
+           result.append(line)
+    return True if result == [] else str(result)
 
 
 def sticky_bit_on_world_writable_dirs(reason=''):
@@ -567,20 +577,28 @@ def check_all_users_home_directory(max_system_uid):
     return True if error == [] else str(error)
 
 
-def check_users_home_directory_permissions(reason=''):
+def check_users_home_directory_permissions( non_login_shell='/sbin/nologin', max_allowed_permission='750', except_for_users='' ):
     '''
     Ensure users' home directories permissions are 750 or more restrictive
     '''
+    users_list = ['root','halt','sync','shutdown']
+    for user in except_for_users.split(","):
+        if user.strip() != "":
+            users_list.append(user.strip())
 
-    users_dirs = _execute_shell_command("cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != \"/sbin/nologin\") {print $1\" \"$6}'").strip()
-    users_dirs = users_dirs.split('\n') if users_dirs != "" else []
+    users_dirs = []
+    cmd = __salt__["cmd.run_all"]('egrep -v "^\+" /etc/passwd ')
+    for line in cmd['stdout'].split('\n'):
+        tokens = line.split(':')
+        if tokens[0] not in users_list and tokens[6] != non_login_shell:
+            users_dirs.append(tokens[0] + " " + tokens[5])
     error = []
     for user_dir in users_dirs:
         user_dir = user_dir.split(" ")
         if len(user_dir) < 2:
                 user_dir = user_dir + [''] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
-            result = restrict_permissions(user_dir[1], "750")
+            result = restrict_permissions(user_dir[1], max_allowed_permission)
             if result is not True:
                 error += ["permission on home directory " + user_dir[1] + " of user " + user_dir[0] + " is wrong: " + result]
 

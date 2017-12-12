@@ -102,6 +102,7 @@ def returner(ret):
                     if ip4_addr and not ip4_addr.startswith('127.'):
                         fqdn_ip4 = ip4_addr
                         break
+            local_fqdn = __grains__.get('local_fqdn', __grains__['fqdn'])
 
             if __grains__['master']:
                 master = __grains__['master']
@@ -130,6 +131,7 @@ def returner(ret):
                 event.update({'minion_id': minion_id})
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
+                event.update({'dest_fqdn': local_fqdn})
 
                 for cloud in clouds:
                     event.update(cloud)
@@ -175,6 +177,7 @@ def returner(ret):
                 event.update({'minion_id': minion_id})
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
+                event.update({'dest_fqdn': local_fqdn})
 
                 for cloud in clouds:
                     event.update(cloud)
@@ -218,6 +221,7 @@ def returner(ret):
                 event.update({'minion_id': minion_id})
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
+                event.update({'dest_fqdn': local_fqdn})
 
                 for cloud in clouds:
                     event.update(cloud)

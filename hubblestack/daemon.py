@@ -97,6 +97,7 @@ def main():
 
         if time.time() - last_grains_refresh >= __opts__['grains_refresh_frequency']:
             refresh_grains()
+            last_grains_refresh = time.time()
 
         try:
             log.debug('Executing schedule')

@@ -96,6 +96,7 @@ def main():
                 log.exception('Exception thrown trying to update fileclient.')
 
         if time.time() - last_grains_refresh >= __opts__['grains_refresh_frequency']:
+            log.info('Refreshing grains')
             refresh_grains()
             last_grains_refresh = time.time()
 
@@ -427,7 +428,7 @@ def refresh_grains(initial=False):
                 self.asctime = asctime
                 self.name = name
         handler = hubblestack.splunklogging.SplunkHandler()
-        handler.emit(MockRecord(str(__grains__), 'INFO', time.asctime(), __name__))
+        handler.emit(MockRecord(str(__grains__), 'INFO', time.asctime(), 'hubblestack.grains_report'))
 
 
 def parse_args():

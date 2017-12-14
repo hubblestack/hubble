@@ -7,7 +7,7 @@ import logging
 import os
 import uuid
 
-log = logging.get_logger(__name__)
+log = logging.getLogger(__name__)
 
 
 def host_uuid():

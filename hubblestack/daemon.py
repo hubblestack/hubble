@@ -424,7 +424,8 @@ def refresh_grains():
             self.levelname = levelname
             self.asctime = asctime
             self.name = name
-    hubblestack.splunklogging.emit(MockRecord(str(__grains__), 'INFO', time.asctime(), __name__))
+    handler = hubblestack.splunklogging.SplunkHandler()
+    handler.emit(MockRecord(str(__grains__), 'INFO', time.asctime(), __name__))
 
 
 def parse_args():

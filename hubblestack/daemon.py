@@ -83,7 +83,7 @@ def main():
         run_function()
         sys.exit(0)
 
-    last_grains_refresh = time.time()
+    last_grains_refresh = time.time() - __opts__['grains_refresh_frequency']
 
     log.info('Starting main loop')
     while True:
@@ -385,7 +385,7 @@ def load_config():
     os.chmod(__opts__['log_file'], 384)
     os.chmod(parsed_args.get('configfile'), 384)
 
-    refresh_grains()
+    refresh_grains(initial=True)
 
     if __salt__['config.get']('hubblestack:splunklogging', False):
         root_logger = logging.getLogger()
@@ -394,7 +394,7 @@ def load_config():
         root_logger.addHandler(handler)
 
 
-def refresh_grains():
+def refresh_grains(initial=False):
     '''
     Refresh the grains, pillar, utils, modules, and returners
     '''
@@ -418,14 +418,15 @@ def refresh_grains():
     __returners__ = salt.loader.returners(__opts__, __salt__)
     hubblestack.splunklogging.__grains__ = __grains__
     hubblestack.splunklogging.__salt__ = __salt__
-    class MockRecord(object):
-        def __init__(self, message, levelname, asctime, name):
-            self.message = message
-            self.levelname = levelname
-            self.asctime = asctime
-            self.name = name
-    handler = hubblestack.splunklogging.SplunkHandler()
-    handler.emit(MockRecord(str(__grains__), 'INFO', time.asctime(), __name__))
+    if not initial:
+        class MockRecord(object):
+            def __init__(self, message, levelname, asctime, name):
+                self.message = message
+                self.levelname = levelname
+                self.asctime = asctime
+                self.name = name
+        handler = hubblestack.splunklogging.SplunkHandler()
+        handler.emit(MockRecord(str(__grains__), 'INFO', time.asctime(), __name__))
 
 
 def parse_args():

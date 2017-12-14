@@ -13,6 +13,7 @@ import os
 import random
 import signal
 import sys
+import uuid
 
 import salt.fileclient
 import salt.utils
@@ -24,6 +25,8 @@ from hubblestack import __version__
 log = logging.getLogger(__name__)
 
 __opts__ = {}
+# This should work fine until we go to multiprocessing
+SESSION_UUID = uuid.uuid4()
 
 
 def run():
@@ -80,6 +83,8 @@ def main():
         run_function()
         sys.exit(0)
 
+    last_grains_refresh = time.time()
+
     log.info('Starting main loop')
     while True:
         # Check if fileserver needs update
@@ -89,6 +94,9 @@ def main():
                 last_fc_update = time.time()
             except Exception as exc:
                 log.exception('Exception thrown trying to update fileclient.')
+
+        if time.time() - last_grains_refresh >= __opts__['grains_refresh_frequency']:
+            refresh_grains()
 
         try:
             log.debug('Executing schedule')
@@ -292,15 +300,11 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['log_level'] = None
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
+    salt.config.DEFAULT_MINION_OPTS['grains_refresh_frequency'] = 3600  # 12 hours
     salt.config.DEFAULT_MINION_OPTS['scheduler_sleep_frequency'] = 0.5
     salt.config.DEFAULT_MINION_OPTS['default_include'] = 'hubble.d/*.conf'
 
     global __opts__
-    global __grains__
-    global __utils__
-    global __salt__
-    global __pillar__
-    global __returners__
 
     __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
@@ -381,21 +385,44 @@ def load_config():
     os.chmod(__opts__['log_file'], 384)
     os.chmod(parsed_args.get('configfile'), 384)
 
+    refresh_grains()
+
+    if __salt__['config.get']('hubblestack:splunklogging', False):
+        root_logger = logging.getLogger()
+        handler = hubblestack.splunklogging.SplunkHandler()
+        handler.setLevel(logging.ERROR)
+        root_logger.addHandler(handler)
+
+
+def refresh_grains():
+    '''
+    Refresh the grains, pillar, utils, modules, and returners
+    '''
+    global __opts__
+    global __grains__
+    global __utils__
+    global __salt__
+    global __pillar__
+    global __returners__
+    __opts__.pop('grains')
+    __opts__.pop('pillar')
     __grains__ = salt.loader.grains(__opts__)
+    __grains__['session_uuid'] = SESSION_UUID
     __pillar__ = {}
     __opts__['grains'] = __grains__
     __opts__['pillar'] = __pillar__
     __utils__ = salt.loader.utils(__opts__)
     __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
     __returners__ = salt.loader.returners(__opts__, __salt__)
-
-    if __salt__['config.get']('hubblestack:splunklogging', False):
-        hubblestack.splunklogging.__grains__ = __grains__
-        hubblestack.splunklogging.__salt__ = __salt__
-        root_logger = logging.getLogger()
-        handler = hubblestack.splunklogging.SplunkHandler()
-        handler.setLevel(logging.ERROR)
-        root_logger.addHandler(handler)
+    hubblestack.splunklogging.__grains__ = __grains__
+    hubblestack.splunklogging.__salt__ = __salt__
+    class MockRecord(object):
+        def __init__(self, message, levelname, asctime, name):
+            self.message = message
+            self.levelname = levelname
+            self.asctime = asctime
+            self.name = name
+    hubblestack.splunklogging.emit(MockRecord(str(__grains__), 'INFO', time.asctime(), __name__))
 
 
 def parse_args():

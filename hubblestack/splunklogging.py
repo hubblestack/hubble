@@ -298,5 +298,6 @@ class http_event_collector:
                     server[1] = False
                 except Exception as e:
                     #log.error('Request to splunk threw an error: {0}'.format(e))
+                    pass
             self.batchEvents = []
             self.currentByteLength = 0

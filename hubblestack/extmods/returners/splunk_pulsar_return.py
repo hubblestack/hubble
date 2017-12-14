@@ -216,6 +216,8 @@ def returner(ret):
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
                 event.update({'dest_fqdn': local_fqdn})
+                event.update({'host_uuid': __grains__['host_uuid']})
+                event.update({'session_uuid': __grains__['session_uuid']})
 
                 for cloud in clouds:
                     event.update(cloud)

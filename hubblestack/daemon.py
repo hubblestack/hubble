@@ -420,7 +420,7 @@ def refresh_grains(initial=False):
     __returners__ = salt.loader.returners(__opts__, __salt__)
     hubblestack.splunklogging.__grains__ = __grains__
     hubblestack.splunklogging.__salt__ = __salt__
-    if not initial:
+    if not initial and __salt__['config.get']('hubblestack:splunklogging', False):
         class MockRecord(object):
             def __init__(self, message, levelname, asctime, name):
                 self.message = message

@@ -404,8 +404,10 @@ def refresh_grains():
     global __salt__
     global __pillar__
     global __returners__
-    __opts__.pop('grains')
-    __opts__.pop('pillar')
+    if 'grains' in __opts__:
+        __opts__.pop('grains')
+    if 'pillar' in __opts__:
+        __opts__.pop('pillar')
     __grains__ = salt.loader.grains(__opts__)
     __grains__['session_uuid'] = SESSION_UUID
     __pillar__ = {}

@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 
 __opts__ = {}
 # This should work fine until we go to multiprocessing
-SESSION_UUID = uuid.uuid4()
+SESSION_UUID = str(uuid.uuid4())
 
 
 def run():

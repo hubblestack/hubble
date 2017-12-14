@@ -24,5 +24,5 @@ def host_uuid():
         log.exception('Problem retrieving cached host uuid')
     generated = uuid.uuid4()
     with open(cached_uuid, 'w') as f:
-        f.write(cached_uuid)
+        f.write(generated)
     return {'host_uuid': generated}

@@ -24,7 +24,7 @@ DEFAULT_MASK = ['ExecuteFile', 'Write', 'Delete', 'DeleteSubdirectoriesAndFiles'
                 'TakeOwnership'] #ExecuteFile Is really chatty
 DEFAULT_TYPE = 'all'
 
-__virtualname__ = 'pulsar'
+__virtualname__ = 'pulsar_winaudit'
 CONFIG = None
 CONFIG_STALENESS = 0
 

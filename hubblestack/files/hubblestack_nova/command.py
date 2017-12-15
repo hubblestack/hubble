@@ -72,9 +72,6 @@ from __future__ import absolute_import
 import logging
 
 import fnmatch
-import yaml
-import os
-import copy
 import re
 import salt.utils
 
@@ -90,8 +87,8 @@ def audit(data_list, tags, **kwargs):
     Run the command audits contained in the data_list
     '''
     # Consume any module_params from kwargs (Setting False as a fallback)
-    debug = kwargs.get('nova_debug',False)
-    cmd_raw = kwargs.get('cmd_raw',False)
+    debug = kwargs.get('nova_debug', False)
+    cmd_raw = kwargs.get('cmd_raw', False)
 
     __data__ = {}
     for profile, data in data_list:
@@ -109,8 +106,8 @@ def audit(data_list, tags, **kwargs):
     if __tags__ and not __salt__['config.get']('hubblestack:nova:enable_command_module',
                                                False):
         ret['Errors'] = ['command module has not been explicitly enabled in '
-                        'config. Please set hubblestack:nova:enable_command_module '
-                        'to True in pillar or minion config to allow this module.']
+                         'config. Please set hubblestack:nova:enable_command_module '
+                         'to True in pillar or minion config to allow this module.']
         return ret
 
     for tag in __tags__:

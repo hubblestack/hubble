@@ -32,7 +32,6 @@ import copy
 import json
 import logging
 import os
-import sys
 import yaml
 import collections
 
@@ -97,10 +96,10 @@ def queries(query_group,
                 if not isinstance(f_data, dict):
                     raise CommandExecutionError('File data is not formed as a dict {0}'
                                                 .format(f_data))
-                query_data =  _dict_update(query_data,
-                                           f_data,
-                                           recursive_update=True,
-                                           merge_lists=True)
+                query_data = _dict_update(query_data,
+                                          f_data,
+                                          recursive_update=True,
+                                          merge_lists=True)
 
     if 'osquerybinpath' not in __grains__:
         if query_group == 'day':
@@ -110,27 +109,27 @@ def queries(query_group,
             #   more data
             ret = []
             ret.append(
-                    {'fallback_osfinger': {
-                         'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
-                                   'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
-                         'result': True
-                    }}
+                {'fallback_osfinger': {
+                 'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
+                           'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
+                 'result': True
+                 }}
             )
             if 'pkg.list_pkgs' in __salt__:
                 ret.append(
-                        {'fallback_pkgs': {
-                             'data': [{'name': k, 'version': v} for k, v in __salt__['pkg.list_pkgs']().iteritems()],
-                             'result': True
-                        }}
+                    {'fallback_pkgs': {
+                     'data': [{'name': k, 'version': v} for k, v in __salt__['pkg.list_pkgs']().iteritems()],
+                     'result': True
+                     }}
                 )
             uptime = __salt__['status.uptime']()
             if isinstance(uptime, dict):
                 uptime = uptime.get('seconds', __salt__['cmd.run']('uptime'))
             ret.append(
-                    {'fallback_uptime': {
-                         'data': [{'uptime': uptime}],
-                         'result': True
-                    }}
+                {'fallback_uptime': {
+                 'data': [{'uptime': uptime}],
+                 'result': True
+                 }}
             )
             if report_version_with_day:
                 ret.append(hubble_versions())
@@ -146,21 +145,21 @@ def queries(query_group,
             if query_group == 'day':
                 ret = []
                 ret.append(
-                        {'fallback_osfinger': {
-                             'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
-                                       'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
-                             'result': True
-                        }}
+                    {'fallback_osfinger': {
+                     'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
+                               'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
+                     'result': True
+                     }}
                 )
                 ret.append(
-                        {'fallback_error': {
-                             'data': 'osqueryi is installed but not compatible with this version of windows',
+                    {'fallback_error': {
+                     'data': 'osqueryi is installed but not compatible with this version of windows',
                              'result': True
-                        }}
+                     }}
                 )
                 return ret
             else:
-               return None
+                return None
 
     query_data = query_data.get(query_group, [])
 
@@ -224,9 +223,9 @@ def fields(*args):
     # Return it as nebula data
     if ret:
         return [{'custom_fields': {
-                     'data': [ret],
-                     'result': True
-                }}]
+                 'data': [ret],
+                 'result': True
+                 }}]
     return []
 
 
@@ -325,7 +324,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
                 ret = update(dest_subkey, val, merge_lists=merge_lists)
                 dest[key] = ret
             elif isinstance(dest_subkey, list) \
-                     and isinstance(val, list):
+                    and isinstance(val, list):
                 if merge_lists:
                     dest[key] = dest.get(key, []) + val
                 else:
@@ -342,4 +341,3 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
             for k in upd:
                 dest[k] = upd[k]
         return dest
-

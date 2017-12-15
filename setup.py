@@ -8,18 +8,18 @@ if not distro:
 
 # Default to cent7
 data_files = [('/usr/lib/systemd/system', ['pkg/hubble.service']),
-              ('/etc/hubble', ['conf/hubble']),]
+              ('/etc/hubble', ['conf/hubble']), ]
 
 if distro == 'redhat' or distro == 'centos':
     if version.startswith('6'):
         data_files = [('/etc/init.d', ['pkg/hubble']),
-                      ('/etc/hubble', ['conf/hubble']),]
+                      ('/etc/hubble', ['conf/hubble']), ]
     elif version.startswith('7'):
         data_files = [('/usr/lib/systemd/system', ['pkg/hubble.service']),
-                      ('/etc/hubble', ['conf/hubble']),]
+                      ('/etc/hubble', ['conf/hubble']), ]
 elif distro == 'Amazon Linux AMI':
     data_files = [('/etc/init.d', ['pkg/hubble']),
-                  ('/etc/hubble', ['conf/hubble']),]
+                  ('/etc/hubble', ['conf/hubble']), ]
 
 with open('hubblestack/__init__.py', 'r') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
@@ -73,5 +73,5 @@ setup(
         'Topic :: System :: Logging',
         'Topic :: System :: Monitoring',
         'Topic :: System :: Systems Administration',
-        ],
+    ],
 )

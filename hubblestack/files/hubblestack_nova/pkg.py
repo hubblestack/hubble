@@ -63,8 +63,6 @@ from __future__ import absolute_import
 import logging
 
 import fnmatch
-import yaml
-import os
 import copy
 import salt.utils
 

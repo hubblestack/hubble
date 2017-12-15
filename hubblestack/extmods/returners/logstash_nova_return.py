@@ -28,11 +28,11 @@ plugin. Required config/pillar settings:
 '''
 
 import json
-import time
 import socket
 import requests
 from hubblestack.cloud_details import get_cloud_details
 from requests.auth import HTTPBasicAuth
+
 
 def returner(ret):
     '''
@@ -116,7 +116,6 @@ def returner(ret):
             rdy = json.dumps(payload)
             requests.post('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
 
-
         for suc in data.get('Success', []):
             check_id = suc.keys()[0]
             payload = {}
@@ -154,7 +153,6 @@ def returner(ret):
 
             rdy = json.dumps(payload)
             requests.post('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
-
 
         if data.get('Compliance', None):
             payload = {}

@@ -29,7 +29,7 @@ stat:
             tag: 'CIS-1.5.1'
             user: 'root'
             mode: 644
-            allow_more_strict: True # file permissions can be 644 or more strict [default = False ] 
+            allow_more_strict: True # file permissions can be 644 or more strict [default = False ]
             uid: 0
             group: 'root'
             gid: 0
@@ -43,8 +43,6 @@ from __future__ import absolute_import
 import logging
 
 import fnmatch
-import yaml
-import os
 import copy
 import salt.utils
 
@@ -53,6 +51,7 @@ from distutils.version import LooseVersion
 log = logging.getLogger(__name__)
 
 __virtualname__ = 'stat'
+
 
 def __virtual__():
     if salt.utils.is_windows():
@@ -97,7 +96,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                     ret['Failure'].append(tag_data)
                     continue
 
-                #getting the stats using salt
+                # getting the stats using salt
                 salt_ret = __salt__['file.stats'](name)
                 if not salt_ret:
                     if None in expected.values():
@@ -119,7 +118,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                         allow_more_strict = False
                         if 'allow_more_strict' in expected.keys():
                             allow_more_strict = expected['allow_more_strict']
-                        if not isinstance(allow_more_strict, bool ):
+                        if not isinstance(allow_more_strict, bool):
                             passed = False
                             reason = (str(allow_more_strict) + ' is not a valid boolean')
                             reason_dict[e] = reason
@@ -128,16 +127,16 @@ def audit(data_list, tags, debug=False, **kwargs):
                             subcheck_passed = _check_mode(str(expected[e]), str(r), allow_more_strict)
                             if not subcheck_passed:
                                 passed = False
-                                reason = { 'expected': str(expected[e]),
-                                           'allow_more_strict': str(allow_more_strict),
-                                           'current': str(r) }
+                                reason = {'expected': str(expected[e]),
+                                          'allow_more_strict': str(allow_more_strict),
+                                          'current': str(r)}
                                 reason_dict[e] = reason
                     else:
-                        subcheck_passed = (str(expected[e]) == str(r)) 
-                        if not subcheck_passed: 
+                        subcheck_passed = (str(expected[e]) == str(r))
+                        if not subcheck_passed:
                             passed = False
-                            reason = { 'expected': str(expected[e]),
-                                       'current': str(r) }
+                            reason = {'expected': str(expected[e]),
+                                      'current': str(r)}
                             reason_dict[e] = reason
 
                 if reason_dict:
@@ -149,7 +148,6 @@ def audit(data_list, tags, debug=False, **kwargs):
                     ret['Failure'].append(tag_data)
 
     return ret
-
 
 
 def _merge_yaml(ret, data, profile=None):
@@ -213,9 +211,9 @@ def _get_tags(data):
 
 def _check_mode(max_permission, given_permission, allow_more_strict):
     '''
-    Checks whether a file's permission are equal to a given permission or more restrictive. 
+    Checks whether a file's permission are equal to a given permission or more restrictive.
     Permission is a string of 3 digits [0-7]. 'given_permission' is the actual permission on file,
-    'max_permission' is the expected permission on this file. Set 'allow_more_strict' to True, 
+    'max_permission' is the expected permission on this file. Set 'allow_more_strict' to True,
     to allow more restrictive permissions as well. Example:
 
     _check_mode('644', '644', False)        returns         True
@@ -224,7 +222,7 @@ def _check_mode(max_permission, given_permission, allow_more_strict):
     _check_mode('644', '600', True)         returns         True
     _check_mode('644', '655', True)        returns         False
 
-    ''' 
+    '''
 
     if given_permission == '0':
         return True
@@ -232,13 +230,13 @@ def _check_mode(max_permission, given_permission, allow_more_strict):
     if not allow_more_strict:
         return (max_permission == given_permission)
 
-    if (_is_permission_in_limit(max_permission[0],given_permission[0]) and _is_permission_in_limit(max_permission[1],given_permission[1]) and _is_permission_in_limit(max_permission[2],given_permission[2])):
+    if (_is_permission_in_limit(max_permission[0], given_permission[0]) and _is_permission_in_limit(max_permission[1], given_permission[1]) and _is_permission_in_limit(max_permission[2], given_permission[2])):
         return True
 
-    return False 
+    return False
 
 
-def _is_permission_in_limit(max_permission,given_permission):
+def _is_permission_in_limit(max_permission, given_permission):
     '''
     Return true only if given_permission is not more lenient that max_permission. In other words, if
     r or w or x is present in given_permission but absent in max_permission, it should return False
@@ -271,11 +269,11 @@ def _is_permission_in_limit(max_permission,given_permission):
     if given_permission >= 1:
         given_x = True
 
-    if given_r and ( not allowed_r ):
+    if given_r and (not allowed_r):
         return False
-    if given_w and ( not allowed_w ):
+    if given_w and (not allowed_w):
         return False
-    if given_x and ( not allowed_x ):
+    if given_x and (not allowed_x):
         return False
 
     return True

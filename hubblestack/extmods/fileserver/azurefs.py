@@ -265,7 +265,8 @@ def update():
             pass
         try:
             hash_cachedir = os.path.join(__opts__['cachedir'], 'azurefs', 'hashes')
-            shutil.rmtree(hash_cachedir)
+            if os.path.exists(hash_cachedir):
+                shutil.rmtree(hash_cachedir)
         except Exception:
             log.exception('Problem occurred trying to invalidate hash cach for azurefs')
 
@@ -363,8 +364,8 @@ def _get_container_service(container):
     else:
         account = azure.storage.CloudStorageAccount(container['account_name'])
     blob_service = account.create_block_blob_service()
-    if 'proxy' in container and len(container['proxy'].split(':'))==2:
-        blob_service.set_proxy(container['proxy'].split(':')[0],container['proxy'].split(':')[1])
+    if 'proxy' in container and len(container['proxy'].split(':')) == 2:
+        blob_service.set_proxy(container['proxy'].split(':')[0], container['proxy'].split(':')[1])
     return blob_service
 
 

@@ -34,7 +34,7 @@ def audit(data_list, tags, debug=False, **kwargs):
             __tags__ = ['cve_scan']
             if isinstance(data['cve_scan'], str):
                 __feed__.append(data['cve_scan'])
-            else: # assume list
+            else:  # assume list
                 __feed__.extend(data['cve_scan'])
 
     if not __tags__:

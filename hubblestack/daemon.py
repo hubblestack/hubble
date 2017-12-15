@@ -302,7 +302,7 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['log_level'] = None
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
-    salt.config.DEFAULT_MINION_OPTS['grains_refresh_frequency'] = 3600  # 12 hours
+    salt.config.DEFAULT_MINION_OPTS['grains_refresh_frequency'] = 3600  # 1 hour
     salt.config.DEFAULT_MINION_OPTS['scheduler_sleep_frequency'] = 0.5
     salt.config.DEFAULT_MINION_OPTS['default_include'] = 'hubble.d/*.conf'
 
@@ -428,7 +428,7 @@ def refresh_grains(initial=False):
                 self.asctime = asctime
                 self.name = name
         handler = hubblestack.splunklogging.SplunkHandler()
-        handler.emit(MockRecord(str(__grains__), 'INFO', time.asctime(), 'hubblestack.grains_report'))
+        handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
 
 
 def parse_args():

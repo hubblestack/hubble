@@ -26,7 +26,7 @@ Hubble is a modular, open-source, security & compliance auditing framework which
 ## Packaging / Installing
 ### Installing using setup.py
 ```sh
-sudo yum install git -y
+sudo yum install git python-setuptools -y
 git clone https://github.com/hubblestack/hubble
 cd hubble
 sudo python setup.py install
@@ -38,11 +38,11 @@ A config template has been placed in `/etc/hubble/hubble`. Modify it to your spe
 The first two commands you should run to make sure things are set up correctly are `hubble --version` and `hubble test.ping`.
 
 ### Buidling Hubble packages through Dockerfile
-Dockerfile aims to build the Hubble v2 packages easier. Dockerfiles for the distribution you want to build can be found at the path `/pkg`. For example, dockerfile for centos6 distribution is at the path `/pkg/centos6/` 
+Dockerfile aims to build the Hubble v2 packages easier. Dockerfiles for the distribution you want to build can be found at the path `/pkg`. For example, dockerfile for centos6 distribution is at the path `/pkg/centos6/`
 
 To build an image
 ```sh
-docker build -t <image_name> 
+docker build -t <image_name>
 ```
 To run the container (which will output the package file in your current directory)
 ```sh
@@ -119,7 +119,7 @@ Note that providing a reason for the control is optional. Any of the three forma
 
 Once you have your compensating control config, just target the yaml to the hosts you want to control using your topfile. In this case, all the audits will still run, but if any of the controlled checks fail, they will be removed from Failure and added to Controlled, and will be treated as a Success for the purposes of compliance percentage.
 
-## Nebula 
+## Nebula
 Nebula is Hubble’s Insight system, which ties into osquery, allowing you to query your infrastructure as if it were a database. This system can be used to take scheduled snapshots of your systems.
 
 Nebula leverages the osquery_nebula execution module which requires the osquery binary to be installed. More information about osquery can be found at `https://osquery.io`.
@@ -229,7 +229,7 @@ schedule:
     run_on_start: True
 ```
 
-In order to receive Pulsar notifications you’ll need to install the custom returners found in the Quasar repository. 
+In order to receive Pulsar notifications you’ll need to install the custom returners found in the Quasar repository.
 
 Example of using the Slack Pulsar returner to recieve FIM notifications:
 ```sh

@@ -26,6 +26,13 @@ def host_uuid():
                     log.error('host_uuid changed on disk unexpectedly!'
                               '\nPrevious: {0}\nNew: {1}\nKeeping previous.'
                               .format(existing_uuid, cached_uuid))
+                    # Write the previous UUID to the cache file
+                    try:
+                        with open(cached_uuid_path, 'w') as f:
+                            f.write(existing_uuid)
+                    except Exception:
+                        log.exception('Problem writing cached host uuid to file: {0}'
+                                      .format(cached_uuid_path))
                     return {'host_uuid': existing_uuid}
                 return {'host_uuid': cached_uuid}
         elif existing_uuid:

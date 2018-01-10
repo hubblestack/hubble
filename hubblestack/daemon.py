@@ -204,7 +204,7 @@ def schedule():
         # Actually process the job
         run = False
         if 'last_run' not in jobdata:
-            if jobdata.get('run_on_start', False) and splay == 0:
+            if jobdata.get('run_on_start', False):
                 run = True
             jobdata['last_run'] = time.time()
         if 'set_splay' not in jobdata:

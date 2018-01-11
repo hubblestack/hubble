@@ -194,4 +194,4 @@ def _translate_value_type(current, value, evaluator, match):
         if match == '<':
             if int(current) < int(evaluator):
                 return True
-       return False
+    return False

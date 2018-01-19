@@ -142,7 +142,7 @@ def _get_tags(data):
                             ret[tag] = []
                         formatted_data = {'name': name,
                                           'tag': tag,
-                                          'module': 'win_auditpol',
+                                          'module': 'win_firewall',
                                           'type': toplist}
                         formatted_data.update(tag_data)
                         formatted_data.update(audit_data)
@@ -154,7 +154,7 @@ def _get_tags(data):
 def _export_firewall():
     dump = []
     try:
-        temp = __salt__['cmd.run']('Get-NetFirewallProfile -PolicyStore ActiveStore', shell='powershell', python_shell=True)
+        temp = __salt__['cmd.run']('mode con:cols=1000 lines=1000; Get-NetFirewallProfile -PolicyStore ActiveStore', shell='powershell', python_shell=True)
         temp = temp.split('\r\n\r\n')
         if temp:
             for item in temp:
@@ -194,4 +194,4 @@ def _translate_value_type(current, value, evaluator, match):
         if match == '<':
             if int(current) < int(evaluator):
                 return True
-        return False
+    return False

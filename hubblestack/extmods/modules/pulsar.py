@@ -245,10 +245,10 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                                     _append = False
                             except:
                                 log.warn('Failed to compile regex: {0}'.format(exclude.keys()[0]))
-                                pass
+                            continue
                         else:
                             exclude = exclude.keys()[0]
-                    elif '*' in exclude:
+                    if '*' in exclude:
                         if fnmatch.fnmatch(event.pathname, exclude):
                             _append = False
                     else:

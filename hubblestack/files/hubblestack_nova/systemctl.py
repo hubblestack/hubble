@@ -18,7 +18,7 @@ Sample YAML data, with inline comments:
 
 
 systemctl:
-  whitelist: # or blacklist
+  blacklist: # or whitelist
     dhcpd-disabled:  # unique ID
       data:
         CentOS Linux-7:  # osfinger grain

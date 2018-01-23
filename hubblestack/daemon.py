@@ -204,16 +204,17 @@ def schedule():
         # Actually process the job
         run = False
         if 'last_run' not in jobdata:
-            if jobdata.get('run_on_start', False) and splay == 0:
-                run = True
             jobdata['last_run'] = time.time()
         if 'set_splay' not in jobdata:
             jobdata['set_splay'] = random.randint(0, splay)
             jobdata['last_run'] += jobdata['set_splay']
-        if 'set_splay' in jobdata and jobdata['set_splay'] != -1:
-            if jobdata['last_run'] < time.time() - jobdata['set_splay']:
+        if jobdata.get('run_on_start', False):
+            if splay == 0:
                 run = True
-                jobdata['set_splay'] = -1
+            if 'set_splay' in jobdata and jobdata['set_splay'] != -1:
+                if jobdata['last_run'] < time.time() - jobdata['set_splay']:
+                    run = True
+                    jobdata['set_splay'] = -1
         if jobdata['last_run'] < time.time() - seconds:
             run = True
 

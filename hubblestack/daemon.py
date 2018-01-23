@@ -47,6 +47,7 @@ def run():
         sys.exit(0)
 
     if __opts__['daemonize']:
+        check_pidfile()
         salt.utils.daemonize()
         create_pidfile()
 
@@ -420,6 +421,36 @@ def parse_args():
                         help='Any arguments necessary for a single function run')
     return vars(parser.parse_args())
 
+def check_pidfile():
+    '''
+    Check to see if there's already a pidfile. If so, check to see if the
+    indicated process is alive and is Hubble.
+    '''
+    pidfile = __opts__['pidfile']
+    if os.path.isfile(pidfile):
+        with open(pidfile, 'r') as f:
+            xpid = f.readline().strip()
+            try:
+                xpid = int(xpid)
+            except:
+                xpid = 0
+                log.warn('unable to parse pid="{pid}" in pidfile={file}'.format(pid=xpid,file=pidfile))
+            if xpid:
+                log.warn('pidfile={file} exists and contains pid={pid}'.format(file=pidfile, pid=xpid))
+                if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+                    with open("/proc/{pid}/cmdline".format(pid=xpid),'r') as f2:
+                        cmdline = f2.readline().strip().strip('\x00').replace('\x00',' ')
+                        if 'hubble' in cmdline:
+                            log.warn("process seems to still be alive and is hubble, attempting to shutdown")
+                            os.kill(int(xpid), signal.SIGTERM)
+                            time.sleep(1)
+                            if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+                                log.error("failed to shutdown process successfully; abnormal program exit")
+                                exit(1)
+                            else:
+                                log.info("shutdown seems to have succeeded, proceeding with startup")
+                        else:
+                            log.info("process does not appear to be hubble, ignoring")
 
 def create_pidfile():
     '''

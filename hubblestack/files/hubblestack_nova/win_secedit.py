@@ -384,6 +384,12 @@ def _account_audit(current, __sidaccounts__):
     ret_string = ''
     if __sidaccounts__:
         for usr in user_list:
+            if usr.startswith("*S-"):
+                if not ret_string:
+                    ret_string = current
+                else:
+                    ret_string = current
+                return ret_string
             if usr == 'Guest':
                 if not ret_string:
                     ret_string = usr

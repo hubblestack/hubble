@@ -106,6 +106,14 @@ def returner(ret):
                         break
             local_fqdn = __grains__.get('local_fqdn', __grains__['fqdn'])
 
+            # Sometimes fqdn reports a value of localhost. If that happens, try another method.
+            bad_fqdns = ['localhost', 'localhost.localdomain', 'localhost6.localdomain6']
+            if fqdn in bad_fqdns:
+                new_fqdn = socket.gethostname()
+                if '.' not in new_fqdn:
+                    new_fqdn = fqdn_ip4
+                fqdn = new_fqdn
+
             if not data:
                 return
             else:

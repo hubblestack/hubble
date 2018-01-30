@@ -63,7 +63,7 @@ toc_dict = {}
 reall = re.findall('(\d*\.\d*\.\d.+?\(L\d\))(.+?Scored\))', toc)
 # toc_tup = [(x[:-4], y[:-8]) for x, y in reall if '(L2)' not in x]
 for x, y in reall:
-    if '(L2)' not in x:
+    if '(L2)' not in x and '(DC only)' not in x:
         toc_dict[x[0:-4].strip()] = y[0:-8].strip()
 
 
@@ -117,9 +117,7 @@ for toplist, toplevel in hubyaml.iteritems():
                     for audit_key, audit_other in audit_other1.iteritems():
                         # flatenize!
                         stag = audit_other['tag'].replace('CIS-', '')
-                        flat_yaml[stag] = {'value_type': audit_other['value_type'], 'match_output': audit_other['match_output'], 'section': toplist,
-                                           'tlist': audit_dict, 'check_title': audit_title, 'description': audit_description, 'os': audit_osfinger,
-                                           'audit_key': audit_key}
+                        flat_yaml[stag] = {'value_type': audit_other['value_type'], 'match_output': audit_other['match_output'], 'section': toplist, 'tlist': audit_dict, 'check_title': audit_title, 'description': audit_description, 'os': audit_osfinger, 'audit_key': audit_key}
 
 
 # go through each dictionary item and check yaml for tag
@@ -136,8 +134,12 @@ for item in orderedtags:
         if yaml_side == pdf_side:
             print "tag {} exists, and descriptions match!!!".format(item)
             # found verbatim, move into the new yaml
-            if tlist not in new_yaml.get(section, ''):
-                new_yaml[section] = {tlist: {}}
+            test = new_yaml.get(section, '')
+            if tlist not in test:
+                if test == '':
+                    new_yaml[section] = {tlist: {}}
+                else:
+                    new_yaml[section][tlist] = {}
             new_yaml[section][tlist].update(ItemAdder(flat_yaml[item]['check_title'], flat_yaml[item]['os'], flat_yaml[item]['audit_key'], item, flat_yaml[item]['match_output'], flat_yaml[item]['value_type'], toc_dict[item].encode('ascii')))
         else:
             print "tag {} exists, but descriptions do not match".format(item)
@@ -152,8 +154,12 @@ for item in orderedtags:
             if unique_check:
                 print "tag {} exists, and unique part of description matches".format(item)
                 # if not found verbatim, but found partial, change desc to be verbatm and tag name
-                if tlist not in new_yaml.get(section, ''):
-                    new_yaml[section] = {tlist: {}}
+                test = new_yaml.get(section, '')
+                if tlist not in test:
+                    if test == '':
+                        new_yaml[section] = {tlist: {}}
+                    else:
+                        new_yaml[section][tlist] = {}
                 new_yaml[section][tlist].update(ItemAdder(flat_yaml[item]['check_title'], flat_yaml[item]['os'], flat_yaml[item]['audit_key'], item, flat_yaml[item]['match_output'], flat_yaml[item]['value_type'], toc_dict[item].encode('ascii')))
             else:
                 # if not match, check all of yaml for description
@@ -162,11 +168,23 @@ for item in orderedtags:
                     unique_recurse = re.search(unique, yaml_side)
                     if unique_recurse:
                         print "----found description for tag {} in tag {}".format(item, tag)
-                        if tlist not in new_yaml.get(section, ''):
-                            new_yaml[section] = {tlist: {}}
-                        new_yaml[section][tlist].update(ItemAdder(flat_yaml[item]['check_title'], flat_yaml[item]['os'], flat_yaml[item]['audit_key'], item, flat_yaml[item]['match_output'], flat_yaml[item]['value_type'], toc_dict[item].encode('ascii')))
+                        test = new_yaml.get(section, '')
+                        if tlist not in test:
+                            if test == '':
+                                new_yaml[section] = {tlist: {}}
+                            else:
+                                new_yaml[section][tlist] = {}
+                        new_yaml[section][tlist].update(ItemAdder(flat_yaml[tag]['check_title'], flat_yaml[tag]['os'], flat_yaml[tag]['audit_key'], item, flat_yaml[tag]['match_output'], flat_yaml[tag]['value_type'], toc_dict[item].encode('ascii')))
                         break
                 print "didn't find the descriptoin for tag {} anywhere in current yaml".format(item)
+                test = new_yaml.get(section, '')
+                if tlist not in test:
+                    if test == '':
+                        new_yaml[section] = {tlist: {}}
+                    else:
+                        new_yaml[section][tlist] = {}
+                new_yaml[section][tlist].update(ItemAdder(flat_yaml[item]['check_title'], 'zz descs didnt match', flat_yaml[item]['audit_key'], item, flat_yaml[item]['match_output'], flat_yaml[item]['value_type'], toc_dict[item].encode('ascii')))
+
     else:
         print "!!tag {} isn't in current yaml file".format(item)
         # if not found anything, create new space with blanks for important documents
@@ -176,9 +194,13 @@ for item in orderedtags:
         else:
             ctitle = re.search("\s.+?is", cdescription).group(0).strip().replace(' ', '_')
 
-        if tlist not in new_yaml.get(section, ''):
-            new_yaml[section] = {tlist: {}}
-        new_yaml[section][tlist].update(ItemAdder(ctitle, osf, 't', item, 't', 't', cdescription))
+        test = new_yaml.get(section, '')
+        if tlist not in test:
+            if test == '':
+                new_yaml[section] = {tlist: {}}
+            else:
+                new_yaml[section][tlist] = {}
+        new_yaml[section][tlist].update(ItemAdder(ctitle, osf, 'zz', item, 'zz', 'zz', cdescription))
 
 # write new yaml file
 yml_outfile = os.getcwd() + '/new_template.yaml'

@@ -47,10 +47,14 @@ def run():
         sys.exit(0)
 
     if __opts__['daemonize']:
+        # before becoming a daemon, check for other procs and possibly send
+        # then a signal 15 (otherwise refuse to run)
         check_pidfile(kill_other=True)
         salt.utils.daemonize()
         create_pidfile()
-    else:
+    elif not __opts__['function']:
+        # check the pidfile and possibly refuse to run
+        # (assuming this isn't a single function call)
         check_pidfile(kill_other=False)
 
     signal.signal(signal.SIGTERM, clean_up_process)

@@ -387,8 +387,6 @@ def _account_audit(current, __sidaccounts__):
             if usr.startswith("*S-"):
                 if not ret_string:
                     ret_string = current
-                else:
-                    ret_string = current
                 return ret_string
             if usr == 'Guest':
                 if not ret_string:

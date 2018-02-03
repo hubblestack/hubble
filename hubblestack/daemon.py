@@ -50,8 +50,15 @@ def run():
         sys.exit(0)
 
     if __opts__['daemonize']:
+        # before becoming a daemon, check for other procs and possibly send
+        # then a signal 15 (otherwise refuse to run)
+        check_pidfile(kill_other=True)
         salt.utils.daemonize()
         create_pidfile()
+    elif not __opts__['function']:
+        # check the pidfile and possibly refuse to run
+        # (assuming this isn't a single function call)
+        check_pidfile(kill_other=False)
 
     signal.signal(signal.SIGTERM, clean_up_process)
     signal.signal(signal.SIGINT, clean_up_process)
@@ -477,6 +484,45 @@ def parse_args():
                         help='Any arguments necessary for a single function run')
     return vars(parser.parse_args())
 
+def check_pidfile(kill_other=False):
+    '''
+    Check to see if there's already a pidfile. If so, check to see if the
+    indicated process is alive and is Hubble.
+
+    kill_other
+        Default false, if set to true, attempt to kill detected running Hubble
+        processes; otherwise exit with an error.
+
+    '''
+    pidfile = __opts__['pidfile']
+    if os.path.isfile(pidfile):
+        with open(pidfile, 'r') as f:
+            xpid = f.readline().strip()
+            try:
+                xpid = int(xpid)
+            except:
+                xpid = 0
+                log.warn('unable to parse pid="{pid}" in pidfile={file}'.format(pid=xpid,file=pidfile))
+            if xpid:
+                log.warn('pidfile={file} exists and contains pid={pid}'.format(file=pidfile, pid=xpid))
+                if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+                    with open("/proc/{pid}/cmdline".format(pid=xpid),'r') as f2:
+                        cmdline = f2.readline().strip().strip('\x00').replace('\x00',' ')
+                        if 'hubble' in cmdline:
+                            if kill_other:
+                                log.warn("process seems to still be alive and is hubble, attempting to shutdown")
+                                os.kill(int(xpid), signal.SIGTERM)
+                                time.sleep(1)
+                                if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+                                    log.error("failed to shutdown process successfully; abnormal program exit")
+                                    exit(1)
+                                else:
+                                    log.info("shutdown seems to have succeeded, proceeding with startup")
+                            else:
+                                log.error("refusing to run while another hubble instance is running")
+                                exit(1)
+                        else:
+                            log.info("process does not appear to be hubble, ignoring")
 
 def create_pidfile():
     '''

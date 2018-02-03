@@ -15,7 +15,7 @@ if distro == 'redhat' or distro == 'centos':
         data_files = [('/etc/init.d', ['pkg/hubble']),
                       ('/etc/hubble', ['conf/hubble']), ]
     elif version.startswith('7'):
-        data_files = [('/usr/lib/systemd/system', ['pkg/hubble.service']),
+        data_files = [('/usr/lib/systemd/system', ['pkg/centos7/hubble.service']),
                       ('/etc/hubble', ['conf/hubble']), ]
 elif distro == 'Amazon Linux AMI':
     data_files = [('/etc/init.d', ['pkg/hubble']),

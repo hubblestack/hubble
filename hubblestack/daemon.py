@@ -204,12 +204,23 @@ def schedule():
         # Actually process the job
         run = False
         if 'last_run' not in jobdata:
-            if jobdata.get('run_on_start', False) and splay == 0:
-                run = True
-            jobdata['last_run'] = time.time()
-        if 'set_splay' not in jobdata:
-            jobdata['set_splay'] = random.randint(0, splay)
-            jobdata['last_run'] += jobdata['set_splay']
+            if jobdata.get('run_on_start', False):
+                if splay:
+                    # Run `splay` seconds in the future, by telling the scheduler we last ran it
+                    # `seconds - splay` seconds ago.
+                    jobdata['last_run'] = time.time() - (seconds - random.randint(0, splay))
+                else:
+                    # Run now
+                    run = True
+                    jobdata['last_run'] = time.time()
+            else:
+                if splay:
+                    # Run `seconds + splay` seconds in the future by telling the scheduler we last
+                    # ran it at now + `splay` seconds.
+                    jobdata['last_run'] = time.time() + random.randint(0, splay)
+                else:
+                    # Run in `seconds` seconds.
+                    jobdata['last_run'] = time.time()
 
         if jobdata['last_run'] < time.time() - seconds:
             run = True

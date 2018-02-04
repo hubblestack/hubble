@@ -6,7 +6,7 @@ Table of Contents
          * [Installing using setup.py](#installing-using-setuppy)
          * [Building standalone packages (CentOS)](#building-standalone-packages-centos)
          * [Building standalone packages (Debian)](#building-standalone-packages-debian)
-         * [Buidling Hubble packages through Dockerfile](#buidling-hubble-packages-through-dockerfile)
+         * [Building Hubble packages through Dockerfile](#building-hubble-packages-through-dockerfile)
       * [Nova](#nova)
          * [Usage](#usage)
          * [Configuration](#configuration)
@@ -37,7 +37,7 @@ A config template has been placed in `/etc/hubble/hubble`. Modify it to your spe
 
 The first two commands you should run to make sure things are set up correctly are `hubble --version` and `hubble test.ping`.
 
-### Buidling Hubble packages through Dockerfile
+### Building Hubble packages through Dockerfile
 Dockerfile aims to build the Hubble v2 packages easier. Dockerfiles for the distribution you want to build can be found at the path `/pkg`. For example, dockerfile for centos6 distribution is at the path `/pkg/centos6/`
 
 To build an image
@@ -180,7 +180,7 @@ hubble nebula.top fifteen_min verbose=True
 ```
 ## Pulsar
 
-Pulsar is designed to monitor for file system events, acting as a real-time File Integrity Monitoring (FIM) agent. Pulsar is composed of a custom Salt beacon that watches for these events and hooks into the returner system for alerting and reporting. In other words, you can recieve real-time alerts for unscheduled file system modifications anywhere you want to recieve them. We’ve designed Pulsar to be lightweight and does not affect the system performance. It simply watches for events and directly sends them to one of the Pulsar returner destinations.
+Pulsar is designed to monitor for file system events, acting as a real-time File Integrity Monitoring (FIM) agent. Pulsar is composed of a custom Salt beacon that watches for these events and hooks into the returner system for alerting and reporting. In other words, you can receive real-time alerts for unscheduled file system modifications anywhere you want to receive them. We’ve designed Pulsar to be lightweight and does not affect the system performance. It simply watches for events and directly sends them to one of the Pulsar returner destinations.
 
 ### Usage
 Once Pulsar is configured there isn’t anything you need to do to interact with it. It simply runs quietly in the background and sends you alerts.
@@ -204,7 +204,7 @@ stats: True
 batch: False
 ```
 
-Pulsar runs on schdule which can be found at `/etc/hubble/hubble`
+Pulsar runs on schedule which can be found at `/etc/hubble/hubble`
 
 **/etc/hubble/hubble**
 ```sh
@@ -231,7 +231,7 @@ schedule:
 
 In order to receive Pulsar notifications you’ll need to install the custom returners found in the Quasar repository.
 
-Example of using the Slack Pulsar returner to recieve FIM notifications:
+Example of using the Slack Pulsar returner to receive FIM notifications:
 ```sh
 slack_pulsar:
   as_user: true

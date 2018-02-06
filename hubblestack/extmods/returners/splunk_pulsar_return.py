@@ -176,8 +176,10 @@ def returner(ret):
                         event['user'] = stats['user']
                         event['group'] = stats['group']
                         if object_type == 'file':
-                            event['file_hash'] = alert['checksum']
-                            event['file_hash_type'] = alert['checksum_type']
+                            chk = alert.get('checksum')
+                            if chk:
+                                event['file_hash'] = chk
+                                event['file_hash_type'] = alert.get('checksum_type', 'unknown')
 
                 else:  # Windows, win_pulsar
                     change = alert['Accesses']

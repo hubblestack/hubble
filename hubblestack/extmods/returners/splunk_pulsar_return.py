@@ -57,8 +57,6 @@ http_event_collector_debug = False
 
 log = logging.getLogger(__name__)
 
-hec = None
-
 
 def returner(ret):
     try:

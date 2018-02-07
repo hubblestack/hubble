@@ -77,13 +77,26 @@ def main():
     '''
     # Initial fileclient setup
     log.info('Setting up the fileclient/fileserver')
-    try:
-        fc = salt.fileclient.get_file_client(__opts__)
-        fc.channel.fs.update()
-        last_fc_update = time.time()
-    except Exception as exc:
-        log.exception('Exception thrown trying to setup fileclient. Exiting.')
-        sys.exit(1)
+    retry_count = __opts__.get('fileserver_retry_count_on_startup', None)
+    retry_time = __opts__.get('fileserver_retry_rate_on_startup', 30)
+    count = 0
+    while True:
+        try:
+            fc = salt.fileclient.get_file_client(__opts__)
+            fc.channel.fs.update()
+            last_fc_update = time.time()
+            break
+        except Exception as exc:
+            if (retry_count is None or count < retry_count) and not __opts__['function']:
+                log.exception('Exception thrown trying to setup fileclient. '
+                              'Trying again in {0} seconds.'
+                              .format(retry_time))
+                count += 1
+                time.sleep(retry_time)
+                continue
+            else:
+                log.exception('Exception thrown trying to setup fileclient. Exiting.')
+                sys.exit(1)
 
     # Check for single function run
     if __opts__['function']:
@@ -100,7 +113,11 @@ def main():
                 fc.channel.fs.update()
                 last_fc_update = time.time()
             except Exception as exc:
-                log.exception('Exception thrown trying to update fileclient.')
+                retry = __opts__.get('fileserver_retry_rate', 900)
+                last_fc_update += retry
+                log.exception('Exception thrown trying to update fileclient. '
+                              'Trying again in {0} seconds.'
+                              .format(retry))
 
         if time.time() - last_grains_refresh >= __opts__['grains_refresh_frequency']:
             log.info('Refreshing grains')

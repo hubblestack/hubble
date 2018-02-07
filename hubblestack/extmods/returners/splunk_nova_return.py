@@ -55,8 +55,6 @@ http_event_collector_debug = False
 
 log = logging.getLogger(__name__)
 
-hec = None
-
 
 def returner(ret):
     try:
@@ -323,31 +321,6 @@ def _get_options():
         splunk_opts['index_extracted_fields'] = __salt__['config.get']('hubblestack:nova:returner:splunk:index_extracted_fields', [])
 
         return [splunk_opts]
-
-
-def send_splunk(event, index_override=None, sourcetype_override=None):
-    # Get Splunk Options
-    # init the payload
-    payload = {}
-
-    # Set up the event metadata
-    if index_override is None:
-        payload.update({'index': opts['index']})
-    else:
-        payload.update({'index': index_override})
-
-    if sourcetype_override is None:
-        payload.update({'sourcetype': opts['sourcetype']})
-    else:
-        payload.update({'sourcetype': sourcetype_override})
-
-    # Add the event
-    payload.update({'event': event})
-    log.info('Payload: %s' % json.dumps(payload))
-
-    # fire it off
-    hec.batchEvent(payload)
-    return True
 
 
 # Thanks to George Starcher for the http_event_collector class (https://github.com/georgestarcher/)

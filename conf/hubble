@@ -20,6 +20,15 @@ fileserver_backend:
   - roots
   - git
 
+## If the ip_gw grains is defined and False, meaning there is no default
+## gateway defined, fall back to these fileserver backends. This will allow
+## for easy fallback from, for example, azure blob storage to git repos in
+## the data center
+#fallback_fileserver_backend:
+#  - roots
+#  - git
+
+
 #################################
 ## Scheduler Config
 #################################

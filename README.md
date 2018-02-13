@@ -71,7 +71,7 @@ Now, edit the Hubble configuration file `/etc/hubble/hubble`. Uncomment the foll
 #   base:
 #     - /srv/salt/hubblestack_data
 ```
-With the file_root configuration added, run `hubble hubble.audit`. The agent should now only run the network.ssh profile.
+With the file_root configuration added, run `hubble hubble.audit` (Audit will automatically run both sync and load before performing the audit). The agent should now only run the network.ssh profile.
 
 From here, you can now modify your top file to suit your requirements, or add your own profiles and controls. Also note that you can move your hubblestack_data directory anywhere you like. You could even create your own git repository and host your files there if you prefer. You would simply add another gitfs_remote to the configuration file.
 

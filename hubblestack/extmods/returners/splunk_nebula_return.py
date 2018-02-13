@@ -19,11 +19,14 @@ event collector. Required config/pillar settings:
             index: hubble
             sourcetype_nebula: hubble_osquery
 
-You can also add an `custom_fields` argument which is a list of keys to add to events
-with using the results of config.get(<custom_field>). These new keys will be prefixed
-with 'custom_' to prevent conflicts. The values of these keys should be
-strings or lists (will be sent as CSV string), do not choose grains or pillar values with complex values or they will
-be skipped:
+You can also add an `custom_fields` argument which is a list of keys to add to
+events with using the results of config.get(<custom_field>). These new keys
+will be prefixed with 'custom_' to prevent conflicts. The values of these keys
+should be strings or lists (will be sent as CSV string), do not choose grains
+or pillar values with complex values or they will be skipped.
+
+Additionally, you can define a fallback_indexer which will be used if a default
+gateway is not defined.
 
 .. code-block:: yaml
 
@@ -34,6 +37,7 @@ be skipped:
             indexer: splunk-indexer.domain.tld
             index: hubble
             sourcetype_nebula: hubble_osquery
+            fallback_indexer: splunk-indexer.loc.domain.tld
             custom_fields:
               - site
               - product_group
@@ -201,6 +205,9 @@ def _get_options():
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
             processed['index_extracted_fields'] = opt.get('index_extracted_fields', [])
+
+            if 'fallback_indexer' in opt and __grains__.get('ip_gw', None) is False:
+                processed['indexer'] = opt['fallback_indexer']
             splunk_opts.append(processed)
         return splunk_opts
     else:

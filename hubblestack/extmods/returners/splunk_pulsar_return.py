@@ -19,7 +19,7 @@ event collector. Required config/pillar settings:
             index: hubble
             sourcetype_pulsar: hubble_fim
 
-You can also add an `custom_fields` argument which is a list of keys to add to
+You can also add a `custom_fields` argument which is a list of keys to add to
 events with using the results of config.get(<custom_field>). These new keys
 will be prefixed with 'custom_' to prevent conflicts. The values of these keys
 should be strings or lists (will be sent as CSV string), do not choose grains

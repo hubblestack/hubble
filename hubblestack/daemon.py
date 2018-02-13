@@ -78,11 +78,6 @@ def main():
     # Initial fileclient setup
     log.info('Setting up the fileclient/fileserver')
 
-    # Check for default gateway and fall back if necessary
-    if __grains__.get('ip_gw', None) is False and 'fallback_fileserver_backend' in __opts__:
-        log.info('No default gateway detected; using fallback_fileserver_backend.')
-        __opts__['fileserver_backend'] = __opts__['fallback_fileserver_backend']
-
     # Set up fileclient
     retry_count = __opts__.get('fileserver_retry_count_on_startup', None)
     retry_time = __opts__.get('fileserver_retry_rate_on_startup', 30)
@@ -431,6 +426,11 @@ def load_config():
     os.chmod(parsed_args.get('configfile'), 384)
 
     refresh_grains(initial=True)
+
+    # Check for default gateway and fall back if necessary
+    if __grains__.get('ip_gw', None) is False and 'fallback_fileserver_backend' in __opts__:
+        log.info('No default gateway detected; using fallback_fileserver_backend.')
+        __opts__['fileserver_backend'] = __opts__['fallback_fileserver_backend']
 
     if __salt__['config.get']('hubblestack:splunklogging', False):
         root_logger = logging.getLogger()

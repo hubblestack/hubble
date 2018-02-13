@@ -43,7 +43,6 @@ except ImportError:
 __virtualname__ = 'pulsar'
 CONFIG = None
 CONFIG_STALENESS = 0
-FILE_WATCH = dict()
 
 import logging
 log = logging.getLogger(__name__)
@@ -53,7 +52,6 @@ def __virtual__():
     if salt.utils.platform.is_windows():
         return False, 'This module only works on Linux'
     return True
-
 
 def _get_mask(mask):
     '''
@@ -68,6 +66,276 @@ def _enqueue(revent):
     '''
     __context__['pulsar.queue'].append(revent)
 
+class ConfigManager(object):
+    _config = {}
+    _last_update = 0
+
+    @property
+    def config(self):
+        if self.stale():
+            self._update()
+        return self.nc_config
+
+    @property
+    def nc_config(self):
+        return self.__class__._config
+
+    @nc_config.setter
+    def nc_config(self, v):
+        self.__class__._config = v
+
+    @config.setter
+    def config(self, v):
+        return self.nc_config.update(v)
+
+    @property
+    def last_update(self):
+        return self.__class__._last_update
+
+    @last_update.setter
+    def last_update(self, v):
+        self.__class__._last_update = v
+
+    def stale(self):
+        if (time.time() - self.last_update) >= self.nc_config.get('refresh_interval', 300):
+            return True
+        return False
+
+    def path_config(self, path):
+        c = collections.defaultdict(lambda: False)
+        c.update( self.config.get(path, {}) )
+        return c
+
+    def _update(self):
+        config = self.nc_config
+        to_set = __opts__.get('pulsar', {})
+        counter = 0
+        if isinstance(config.get('paths'), (list,tuple)):
+            for path in config['paths']:
+                if 'salt://' in path:
+                    path = __salt__['cp.cache_file'](path)
+                if os.path.isfile(path):
+                    with open(path, 'r') as f:
+                        to_set = _dict_update(to_set, yaml.safe_load(f),
+                            recursive_update=True, merge_lists=True)
+                    counter += 1
+                else:
+                    log.error('Path {0} does not exist or is not a file'.format(path))
+        else:
+            log.error('Pulsar beacon \'paths\' data improperly formatted. Should be list of paths')
+        if config.get('verbose'):
+            log.debug('Pulsar config updated')
+        if counter>0:
+            self.nc_config = to_set
+        self.last_update = time.time()
+
+    def __init__(self, configfile=None, verbose=False):
+        if configfile is not None:
+            if isinstance(configfile, (list,tuple)):
+                self.nc_config['paths'] = configfile
+            else:
+                self.nc_config['paths'] = [configfile]
+        else:
+            self.nc_config['paths'] = []
+        config = self.config
+        config['verbose'] = verbose
+
+class PulsarWatchManager(pyinotify.WatchManager):
+    ''' Subclass of pyinotify.WatchManager for the purposes:
+        * adding dict() based watch_db (for faster lookups)
+        * adding file watches (to notice changes to hardlinks outside the watched locations)
+        * adding various convenience functions
+
+        pyinotify.WatchManager tracks watches internally, but only for directories
+        and only in a list format. Such that many lookups take on a list-within-list
+        O(n^2) complexity (eg):
+
+        .. code-block:: python
+
+            for path in path_list:
+                wd = wm.get_wd(i) # search watch-list in an internal for loop
+    '''
+    def __init__(self, *a, **kw):
+        super(PulsarWatchManager, self).__init__(*a, **kw)
+        self.watch_db = dict()
+        self.file_watch_db = dict()
+
+        self._last_config_update = 0
+        self.update_config()
+
+    def update_config(self):
+        ''' (re)check the config files for inotify_limits:
+            * inotify_limits:update - whether we should try to manage fs.inotify.max_user_watches
+            * inotify_limits:highwater - the highest we should set MUW (default: 1000000)
+            * inotify_limits:increment - the amount we should increase MUW when applicable
+            * inotify_limits:initial   - if given, and if MUW is initially lower at startup: set MUW to this
+        '''
+
+        if not hasattr(self, 'cm'):
+            self.cm = ConfigManager()
+
+        config = self.cm.config.get('inotify_limits', {})
+        self.update_muw = config.get('update', False)
+        self.update_muw_highwater = config.get('highwater', 1000000)
+        self.update_muw_bump = config.get('increment', 1000)
+
+        initial = config.get('initial', 0)
+        if initial > 0:
+            muw = self.max_user_watches
+            if muw < initial:
+                self.max_user_watches = initial
+
+    @property
+    def max_user_watches(self):
+        ''' getter/setter for fs.inotify.max_user_watches
+        '''
+        with open('/proc/sys/fs/inotify/max_user_watches', 'r') as fh:
+            l = fh.readline()
+            muw = int(l.strip())
+        return muw
+
+    @max_user_watches.setter
+    def max_user_watches(self,muwb):
+        log.info("Setting fs.inotify.max_user_watches={0}".format(muwb))
+        with open('/proc/sys/fs/inotify/max_user_watches', 'w') as fh:
+            fh.write('{0}\n'.format(muwb))
+
+    def _add_recursed_file_watch(self, path, mask=pyinotify.IN_MODIFY, **kw):
+        if not os.path.isfile(path):
+            raise Exception("use add_watch for non-file watches")
+        if os.path.islink(path):
+            return
+        path = os.path.abspath(path)
+        up_path = os.path.dirname(path)
+        while (up_path and up_path != '/') and up_path not in self.file_watch_db:
+            up_path = os.path.dirname(up_path)
+        if up_path and up_path in self.file_watch_db:
+            res = self.add_watch(path, pyinotify.IN_MODIFY) 
+            self.file_watch_db[up_path].update(res)
+            return res
+        else:
+            raise Exception("add_file_watch('{0}') must be located in a watched directory")
+
+    def prune(self, *a, **kw):
+        log.debug("TODO: prune()")
+        pass
+
+    def watch(self, path, mask=None, **kw):
+        ''' Automatically select add_watch()/update_watch() and try to do the right thing.
+            Also add 'new_file' argument: add an IN_MODIFY watch for the named filepath and track it
+        '''
+        path     = os.path.abspath(path)
+        new_file = kw.pop('new_file', False)
+
+        if not os.path.exists(path):
+            # log.debug("watch({0}): NOENT (skipping)".format(path))
+            return
+
+        wd = self.watch_db.get(path)
+        if wd:
+            if mask is None:
+                mask = DEFAULT_MASK
+            update = False
+            if self.watches[wd].mask != mask:
+                update = True
+            if self.watches[wd].auto_add != kw.get('auto_add'):
+                update = True
+            if update:
+                kw['mask'] = mask
+                self._update_watch(wd,**kw)
+                log.debug('update-watch wd={0} path={1}'.format(wd,path))
+        else:
+            self.add_watch(path,mask,**kw)
+            log.debug('add-watch wd={0} path={1}'.format(self.watch_db.get(path), path))
+
+        if new_file: # process() says this is a new file
+            self._add_recursed_file_watch(path)
+
+        else: # watch_files if configured to do so
+            pconf = self.cm.path_config(path)
+            if pconf['watch_files']:
+                rec = kw.get('rec')
+                excludes = kw.get('exclude_filter', lambda x: False)
+                if isinstance(excludes, (list,tuple)):
+                    pfft = excludes
+                    excludes = lambda x: x in pfft
+                if path not in self.file_watch_db:
+                    self.file_watch_db[path] = dict()
+                file_track = self.file_watch_db[path]
+                ft_count = 0
+                for wpath,wdirs,wfiles in os.walk(path):
+                    if rec or wpath == path:
+                        for f in wfiles:
+                            wpathname = os.path.join(wpath,f)
+                            if excludes(wpathname):
+                                continue
+                            if os.path.islink(wpathname):
+                                continue
+                            if wpathname in file_track:
+                                continue
+                            file_track.update( self.add_watch(wpathname, pyinotify.IN_MODIFY) )
+                            ft_count += 1
+                if ft_count > 0:
+                    log.debug('recursive file-watch totals for path={0} new-this-loop: {1}'.format(path, ft_count))
+
+
+    def add_watch(self, path, mask, **kw):
+        ''' Curry of pyinotify.WatchManager.add_notify
+            * override - quiet = False
+            * automatic absolute path
+            * implicit retries
+        '''
+        path = os.path.abspath(path)
+        res = {}
+        kw['quiet'] = False
+        retries = 5
+        while retries > 0:
+            retries -= 1
+            try:
+                _res = super(PulsarWatchManager, self).add_watch(path, mask, **kw)
+                if isinstance(_res, dict):
+                    res.update(_res)
+            except pyinotify.WatchManagerError as wme:
+                self._update_config()
+                if isinstance(wme.wmd, dict):
+                    res.update(wme.wmd) # copy over what did work before it broke
+                if self.update_muw:
+                    muw = self.max_user_watches
+                    muwb = muw + self.update_muw_bump
+                    if muwb <= self.update_muw_highwater:
+                        self.max_user_watches = muwb
+                        continue
+                    else:
+                        log.error("during add_watch({0}): max watches reached ({1}). consider "
+                            "increasing the inotify_limits:highwater mark".format(path, muw))
+                        break
+                else:
+                    log.error("during add_watch({0}): max watches reached. "
+                        "consider setting the inotify_limits:udpate".format(path))
+                    break
+            except Exception as e:
+                log.error("exception during add_watch({0}): {1}".format(path, repr(e)))
+                break
+
+        self.watch_db.update(res)
+        return res
+
+
+    def _rm_db(self,*wdl):
+        todo = set()
+        for path in [ k for k,v in self.watch_db if v in wdl ]:
+            del self.watch_db[path]
+            if path in self.file_watch_db:
+                todo.update( self.file_watch_db[path].values() )
+
+    def del_watch(self, wd):
+        super(PulsarWatchManager, self).del_watch(wd)
+        self._rm_db(wd)
+
+    def rm_watch(self, wd, **kw):
+        res = super(PulsarWatchManager, self).rm_watch(wd, **kw)
+        self._rm_db( *res.keys() )
+        return res
 
 def _get_notifier():
     '''
@@ -75,7 +343,8 @@ def _get_notifier():
     '''
     if 'pulsar.notifier' not in __context__:
         __context__['pulsar.queue'] = collections.deque()
-        wm = pyinotify.WatchManager()
+        log.info("creating new watch manager")
+        wm = PulsarWatchManager()
         __context__['pulsar.notifier'] = pyinotify.Notifier(wm, _enqueue)
     return __context__['pulsar.notifier']
 
@@ -233,55 +502,18 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     if not HAS_PYINOTIFY:
         log.debug('Not running beacon pulsar. No python-inotify installed.')
         return []
-    config = __opts__.get('pulsar', {})
-    if isinstance(configfile, list):
-        config['paths'] = configfile
-    else:
-        config['paths'] = [configfile]
-    config['verbose'] = verbose
-    global CONFIG_STALENESS
-    global CONFIG
+
+    cm = ConfigManager(configfile=configfile, verbose=verbose)
+    stale = cm.stale
+    config = cm.config
+
     if config.get('verbose'):
         log.debug('Pulsar beacon called.')
         log.debug('Pulsar beacon config from pillar:\n{0}'.format(config))
     ret = []
     notifier = _get_notifier()
     wm = notifier._watch_manager
-    update_watches = False
-
-    # Get config(s) from salt fileserver if we don't have them already
-    if CONFIG and CONFIG_STALENESS < config.get('refresh_interval', 300):
-        CONFIG_STALENESS += 1
-        CONFIG.update(config)
-        CONFIG['verbose'] = config.get('verbose')
-        config = CONFIG
-    else:
-        if config.get('verbose'):
-            log.debug('No cached config found for pulsar, retrieving fresh from fileserver.')
-        new_config = config
-        if isinstance(config.get('paths'), list):
-            for path in config['paths']:
-                if 'salt://' in path:
-                    path = __salt__['cp.cache_file'](path)
-                if os.path.isfile(path):
-                    with open(path, 'r') as f:
-                        new_config = _dict_update(new_config,
-                                                  yaml.safe_load(f),
-                                                  recursive_update=True,
-                                                  merge_lists=True)
-                else:
-                    log.error('Path {0} does not exist or is not a file'.format(path))
-        else:
-            log.error('Pulsar beacon \'paths\' data improperly formatted. Should be list of paths')
-
-        new_config.update(config)
-        config = new_config
-        CONFIG_STALENESS = 0
-        CONFIG = config
-        update_watches = True
-
-    if config.get('verbose'):
-        log.debug('Pulsar beacon config (compiled from config list):\n{0}'.format(config))
+    update_watches = bool( stale )
 
     dt = delta_t()
 
@@ -330,7 +562,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                         sum_type = 'sha256'
                     sub['checksum'] = __salt__['file.get_hash'](pathname, sum_type)
                     sub['checksum_type'] = sum_type
-                if config.get('stats', False):
+
+                if cm.config.get('stats', False):
                     if os.path.exists(pathname):
                         sub['stats'] = __salt__['file.stats'](pathname)
                     else:
@@ -345,18 +578,15 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                         if watch_this:
                             if not excludes(event.pathname):
                                 log.debug("add file-watch path={0}".format(event.pathname))
-                                FILE_WATCH[path].update(
-                                    wm.add_watch(event.pathname, pyinotify.IN_MODIFY)
-                                )
+                                wm.watch(event.pathname, pyinotify.IN_MODIFY, new_file=True)
+
                     elif event.mask & pyinotify.IN_DELETE:
-                        wd = wm.get_wd(event.pathname)
-                        if wd:
-                            log.debug("remove file-watch path={0}".format(event.pathname))
-                            wm.del_watch(wd)
+                        wm.nowatch(event.pathname)
             else:
                 log.info('Excluding {0} from event for {1}'.format(event.pathname, path))
 
     if update_watches:
+        log.debug("update watches")
         # Update existing watches and add new ones
         # TODO: make the config handle more options
         for path in config:
@@ -384,89 +614,13 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                 mask = r_mask
                 rec = config[path].get('recurse', False)
                 auto_add = config[path].get('auto_add', False)
-                watch_files = config[path].get('watch_files', False)
             else:
                 mask = DEFAULT_MASK
                 rec = False
                 auto_add = False
-                watch_files = False
 
-            wd = wm.get_wd(path)
-            if wd:
-                update = False
-                if wm.watches[wd].mask != mask:
-                    update = True
-                if wm.watches[wd].auto_add != auto_add:
-                    update = True
-                if update:
-                    log.debug("update watch path={p} mask={m}, auto_add={aa}".format(p=path, m=mask, aa=auto_add))
-                    wm.update_watch(wd, mask=mask, rec=rec, auto_add=auto_add)
-            elif os.path.exists(path):
-                log.debug("add watch path={p} mask={m}, auto_add={aa}".format(p=path, m=mask, aa=auto_add))
-                wm.add_watch(path, mask, rec=rec, auto_add=auto_add, exclude_filter=excludes)
-
-            if watch_files and path not in FILE_WATCH:
-                # NOTE: we use FILE_WATCH as a database of 
-                # which dirwatch "owns" the file watches, such that if the
-                # configs on the path change, we know what later to do
-                FILE_WATCH[path] = dict()
-                dt.mark('wrecurse')
-                c_new, c_old = 0,0
-                for wpath,wdirs,wfiles in os.walk(path):
-                    if rec or wpath == path:
-                        for f in wfiles:
-                            wpathname = os.path.join(wpath,f)
-                            if excludes(wpathname):
-                                continue
-                            if os.path.islink(wpathname):
-                                continue
-                            wd = wm.get_wd(wpathname)
-                            if wd:
-                                c_old += 1
-                            else:
-                                c_new += 1
-                                FILE_WATCH[path].update(
-                                    wm.add_watch(wpathname, pyinotify.IN_MODIFY)
-                                )
-
-                log.debug("recursive file-watch totals for path={path}: delta-t: {t:0.1f}; new-this-loop: {n}; "
-                    "previously watched: {p}".format(path=path, t=dt.wrecurse, n=c_new, p=c_old))
-
-        # delete any un-configured watches
-        # * mark any watches that are part of a watch_files setting as OK
-        # * note any watches that are configured
-        # * subtract all OK file watches from that list
-        # * delete what's left and finally,
-        # * update the FILE_WATCH database
-        dt.mark('drecurse')
-        ok_file_watches = set()
-        to_delete = set()
-        def _in_path(ipath):
-            for path in config:
-                if ipath.startswith(path) and os.path.isdir(ipath):
-                    return True
-            return False
-
-        for wd in wm.watches:
-            ipath = wm.watches[wd].path
-            if ipath in config:
-                if config[ipath].get('watch_files') or config[ipath].get('watch_new_files'):
-                    ok_file_watches.update( FILE_WATCH[ipath] )
-            elif _in_path(ipath):
-                pass
-            else:
-                to_delete.add(ipath)
-                if ipath in FILE_WATCH:
-                    del FILE_WATCH[ipath]
-        to_delete -= ok_file_watches
-        dc = 0
-        for dpath in to_delete:
-            wd = wm.get_wd(dpath)
-            wm.del_watch(wd)
-            dc += 1
-        if dc:
-            log.debug("stopped watching files/dirs: count={dc} delta_t={t:0.1f}".format(
-                dc=dc, t=dt.drecurse ))
+            wm.watch(path, mask, rec=rec, auto_add=auto_add, exclude_filter=excludes)
+        wm.prune( [p for p in config] )
 
     if __salt__['config.get']('hubblestack:pulsar:maintenance', False):
         # We're in maintenance mode, throw away findings

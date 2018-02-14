@@ -93,7 +93,7 @@ RUN yum install -y rpmbuild gcc make rh-ruby23 rh-ruby23-ruby-devel \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.2.8
+ENV HUBBLE_CHECKOUT=v2.2.8.1
 ENV HUBBLE_VERSION=2.2.8
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
@@ -142,4 +142,4 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
                                  --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
                                  etc/hubble etc/osquery etc/init.d opt usr' \
 #edit to change iteration number, if necessary
-    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.el6.x86_64.rpm" ]
+    && cp hubblestack-${HUBBLE_VERSION}-2.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-2.el6.x86_64.rpm" ]

@@ -92,7 +92,7 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.2.8
+ENV HUBBLE_CHECKOUT=v2.2.8.1
 ENV HUBBLE_VERSION=2.2.8
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
@@ -136,11 +136,11 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
 #fpm start
     && fpm -s dir -t deb \
        -n hubblestack \
-       -v ${HUBBLE_VERSION}-1 \
+       -v ${HUBBLE_VERSION}-2 \
     #todo: get rid of the git dependency with static bin in the future
        -d 'git' \
        --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
        --deb-no-default-config-files \
        etc/hubble etc/osquery etc/init.d opt usr \
-    && cp hubblestack_${HUBBLE_VERSION}-1_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-1deb9_amd64.deb" ]
+    && cp hubblestack_${HUBBLE_VERSION}-2_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-2deb9_amd64.deb" ]
 

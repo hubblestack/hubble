@@ -1,7 +1,15 @@
 ﻿# Script to install hubble dependencies and create executible
+
+#Setting Paramaters to null
+Param(
+  [string]$default=$false,
+  [string]$repo=$null,
+  [string]$branch="develop"
+)
+
 $chocoVer = "0.10.5"
 $gitVer = "2.12.0"
-
+$portGitVer = "2.16.1.4"
 # Verify you are running with elevated permission mode (administrator token)
 if (!([bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544"))) {
     Write-Error "You must be running powershell with elevated permissions (run as administrator)"
@@ -18,11 +26,11 @@ function reloadEnv() {
 if (!(Test-Path C:\temp)) {
     New-Item -Path C:\temp -ItemType Directory
 }
-cd c:\temp
+set-location c:\temp
 
 # Install\upgrade Chocolatey and Git if not present
 if (!(Test-Path C:\ProgramData\chocolatey)) {
-    iwr https://chocolatey.org/install.ps1 -UseBasicParsing | iex
+    Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-Expression
     reloadEnv
 } else {
     $chocoCur = (choco)[0] -replace "Chocolatey v",""
@@ -51,44 +59,56 @@ if (!($7zip)) {
 if (Test-Path .\Salt-Dev) {
     Remove-Item -Recurse -Force Salt-Dev
 }
-md Salt-Dev
-pushd Salt-Dev
+mkdir Salt-Dev
+Push-Location Salt-Dev
 git clone https://github.com/saltstack/salt
-cd salt\pkg\windows
+Set-Location salt\pkg\windows
 git checkout v2016.11.3
 powershell -file build_env.ps1 -Silent
-popd
-pushd Salt-Dev\salt
+Pop-Location
+Push-Location Salt-Dev\salt
 reloadEnv
 python -m pip install --upgrade pip
 pip install -e .
-popd
+Pop-Location
 
 # Install hubble and dependency
 if (Test-Path .\hubble) {
     Remove-Item -Recurse -Force hubble
 }
-git clone https://github.com/hubblestack/hubble
-pushd hubble\pkg\scripts
-$lines = Get-Content pyinstaller-requirements.txt | Where {$_ -notmatch '^\s+$'} 
+#Checks to see if any paramaters were given for both $repo and $branch.
+if ($default){
+    $repo = "https://github.com/hubblestack/hubble"
+    $ranch = "master"
+}
+#If no default was specified and no paramaters were given in the scrip, it prompts for a repo and branch
+if ($repo -notlike "https*"){
+    $repo = Read-Host "Enter a Repository (full URL only)"
+    $branch = Read-Host "Enter a Branch"
+}
+git clone $repo
+Push-Location hubble
+git checkout $branch
+Push-Location hubble\pkg\scripts
+$lines = Get-Content pyinstaller-requirements.txt | Where-Object {$_ -notmatch '^\s+$'} 
 foreach ($line in $lines) {
     $line = $line -replace "#.+$",""
     if ($line -notlike '*pyinotify*' -and $line -notlike '*salt-ssh*') { #pyinotify and salt-ssh are for linux only
         pip install $line
     }
 }
-popd
+Pop-Location
 
 # Download PortableGit.  Requirement for Hubble
-$path = (Get-Location).Path
-If (Test-Path "C:\Program Files (x86)") {
-    Invoke-WebRequest -Uri https://github.com/git-for-windows/git/releases/download/v2.12.2.windows.2/PortableGit-2.12.2.4-64-bit.7z.exe -OutFile .\PortableGit.7z.exe
+$port_git = choco list --localonly | Where-Object {$_ -like "git.portable *"}
+if (!($port_git)) {
+    choco install git.portable -y
+    reloadEnv
 } else {
-    Invoke-WebRequest -Uri https://github.com/git-for-windows/git/releases/download/v2.12.2.windows.2/PortableGit-2.12.2.4-32-bit.7z.exe -OutFile .\PortableGit.7z.exe
+    if (($port_git -replace "git.portable ","") -lt $portgitVer) {
+        choco upgrade git.portable -y
+    }
 }
-7z x PortableGit.7z.exe -o"$path\hubble\PortableGit" -y
-& "$path\hubble\PortableGit\post-install.bat"
-
 # Install osquery for executible
 if (!(Test-path C:\ProgramData\osquery)) {
 	choco install osquery -y

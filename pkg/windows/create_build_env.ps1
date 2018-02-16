@@ -1,8 +1,8 @@
 ﻿# Script to install hubble dependencies and create executible
 
-#Setting Paramaters to null
+#Declaring Paramaters
 Param(
-  [string]$default=$false,
+  [bool]$default=$false,
   [string]$repo=$null,
   [string]$branch="develop"
 )
@@ -87,9 +87,10 @@ if ($repo -notlike "https*"){
     $branch = Read-Host "Enter a Branch"
 }
 git clone $repo
-Push-Location hubble
-git checkout $branch
 Push-Location hubble\pkg\scripts
+if ($branch -like "\W.+") {
+    git checkout $branch
+}
 $lines = Get-Content pyinstaller-requirements.txt | Where-Object {$_ -notmatch '^\s+$'} 
 foreach ($line in $lines) {
     $line = $line -replace "#.+$",""

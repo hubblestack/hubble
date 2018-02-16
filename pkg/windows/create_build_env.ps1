@@ -79,7 +79,7 @@ if (Test-Path .\hubble) {
 #Checks to see if any paramaters were given for both $repo and $branch.
 if ($default){
     $repo = "https://github.com/hubblestack/hubble"
-    $ranch = "master"
+    $branch = "master"
 }
 #If no default was specified and no paramaters were given in the scrip, it prompts for a repo and branch
 if ($repo -notlike "https*"){

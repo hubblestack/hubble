@@ -94,7 +94,14 @@ def audit(data_list, tags, debug=False, **kwargs):
                 kwargs = tag_data.get('kwargs', {})
 
                 # Call the function
-                result = function(*args, **kwargs)
+                try:
+                    result = function(*args, **kwargs)
+                except Exception as exc:
+                    if 'Errors' not in ret:
+                        ret['Errors'] = []
+                    ret['Errors'].append({tag: 'An error occurred exeuction function {0}: {1}'
+                                         .format(tag_data['function'], str(exc))})
+                    continue
 
                 if result is True:
                     ret['Success'].append(tag_data)

@@ -139,6 +139,7 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
     && scl enable rh-ruby23 'fpm -s dir -t rpm \
                                  -n hubblestack \
                                  -v ${HUBBLE_VERSION} \
+                                 --iteration 3 \
                                  #todo: get rid of the git dependency with static bin in the future
                                  -d git \
                                  --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
@@ -146,4 +147,4 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
                                  --after-upgrade /hubble_build/conf/afterupgrade.sh \
                                  etc/hubble etc/osquery etc/init.d opt usr' \
 #edit to change iteration number, if necessary
-    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.el6.x86_64.rpm" ]
+    && cp hubblestack-${HUBBLE_VERSION}-3.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-3.el6.x86_64.rpm" ]

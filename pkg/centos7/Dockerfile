@@ -136,6 +136,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && fpm -s dir -t rpm \
        -n hubblestack \
        -v ${HUBBLE_VERSION} \
+       --iteration 3 \
     #todo: get rid of the git dependency with static bin in the future
        -d 'git' \
        --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
@@ -143,4 +144,4 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        etc/hubble etc/osquery opt usr \
 #edit to change iteration number, if necessary
-    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.el7.x86_64.rpm" ]
+    && cp hubblestack-${HUBBLE_VERSION}-3.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-3.el7.x86_64.rpm" ]

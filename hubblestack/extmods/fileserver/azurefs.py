@@ -11,8 +11,9 @@ the Master config file.
       - azurefs
 
 Starting in Oxygen, this fileserver requires the standalone Azure Storage SDK
-for Python. Theoretically any version >= v0.20.0 should work, but it was
-developed against the v0.33.0 version.
+for Python. Due to recent changes in the structure of the azure storage SDK,
+we now require the azure base library at 3.0 or higher, with the azure-storage-blob
+and azure-storage-common libraries.
 
 Each storage container will be mapped to an environment. By default, containers
 will be mapped to the ``base`` environment. You can override this behavior with
@@ -60,9 +61,8 @@ import salt.fileserver
 import salt.utils
 
 try:
-    import azure.storage
-    if LooseVersion(azure.storage.__version__) < LooseVersion('0.20.0'):
-        raise ImportError('azure.storage.__version__ must be >= 0.20.0')
+    import azure.storage.common
+    import azure.storage.blob
     HAS_AZURE = True
 except ImportError:
     HAS_AZURE = False
@@ -78,7 +78,7 @@ log = logging.getLogger()
 
 def __virtual__():
     '''
-    Only load if defined in fileserver_backend and azure.storage is present
+    Only load if defined in fileserver_backend and azure.storage.common is present
     '''
     if __virtualname__ not in __opts__['fileserver_backend']:
         return False
@@ -358,11 +358,11 @@ def _get_container_service(container):
     Try account_key, sas_token, and no auth in that order
     '''
     if 'account_key' in container:
-        account = azure.storage.CloudStorageAccount(container['account_name'], account_key=container['account_key'])
+        account = azure.storage.common.CloudStorageAccount(container['account_name'], account_key=container['account_key'])
     elif 'sas_token' in container:
-        account = azure.storage.CloudStorageAccount(container['account_name'], sas_token=container['sas_token'])
+        account = azure.storage.common.CloudStorageAccount(container['account_name'], sas_token=container['sas_token'])
     else:
-        account = azure.storage.CloudStorageAccount(container['account_name'])
+        account = azure.storage.common.CloudStorageAccount(container['account_name'])
     blob_service = account.create_block_blob_service()
     if 'proxy' in container and len(container['proxy'].split(':')) == 2:
         blob_service.set_proxy(container['proxy'].split(':')[0], container['proxy'].split(':')[1])

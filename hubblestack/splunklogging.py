@@ -42,7 +42,6 @@ from hubblestack.cloud_details import get_cloud_details
 import requests
 import json
 import time
-from datetime import datetime
 
 import copy
 
@@ -295,9 +294,10 @@ class http_event_collector:
                     server[1] = True
                     break
                 except requests.exceptions.RequestException:
-                    log.info('Request to splunk server "%s" failed. Marking as bad.' % server[0])
+                    #log.info('Request to splunk server "%s" failed. Marking as bad.' % server[0])
                     server[1] = False
                 except Exception as e:
-                    log.error('Request to splunk threw an error: {0}'.format(e))
+                    #log.error('Request to splunk threw an error: {0}'.format(e))
+                    pass
             self.batchEvents = []
             self.currentByteLength = 0

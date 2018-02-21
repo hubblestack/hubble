@@ -94,7 +94,14 @@ def audit(data_list, tags, debug=False, **kwargs):
                 kwargs = tag_data.get('kwargs', {})
 
                 # Call the function
-                result = function(*args, **kwargs)
+                try:
+                    result = function(*args, **kwargs)
+                except Exception as exc:
+                    if 'Errors' not in ret:
+                        ret['Errors'] = []
+                    ret['Errors'].append({tag: 'An error occurred exeuction function {0}: {1}'
+                                         .format(tag_data['function'], str(exc))})
+                    continue
 
                 if result is True:
                     ret['Success'].append(tag_data)
@@ -259,6 +266,7 @@ def ungrouped_files_or_dir(reason=''):
     '''
     Ensure no ungrouped files or directories exist
     '''
+    raise CommandExecutionError('Module disabled due to performance concerns')
     result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nogroup')
     return True if result == '' else result
 
@@ -267,6 +275,7 @@ def unowned_files_or_dir(reason=''):
     '''
     Ensure no unowned files or directories exist
     '''
+    raise CommandExecutionError('Module disabled due to performance concerns')
     result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nouser')
     return True if result == '' else result
 
@@ -275,6 +284,7 @@ def world_writable_file(reason=''):
     '''
     Ensure no world writable files exist
     '''
+    raise CommandExecutionError('Module disabled due to performance concerns')
     result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type f -perm -0002')
     return True if result == '' else result
 
@@ -301,6 +311,7 @@ def sticky_bit_on_world_writable_dirs(reason=''):
     '''
     Ensure sticky bit is set on all world-writable directories
     '''
+    raise CommandExecutionError('Module disabled due to performance concerns')
     result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null')
     return True if result == '' else "There are failures"
 
@@ -528,7 +539,7 @@ def check_unowned_files(reason=''):
     '''
     Ensure no unowned files or directories exist
     '''
-
+    raise CommandExecutionError('Module disabled due to performance concerns')
     unowned_files = _execute_shell_command("df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nouser 2>/dev/null").strip()
     unowned_files = unowned_files.split('\n') if unowned_files != "" else []
     # The command above only searches local filesystems, there may still be compromised items on network
@@ -544,7 +555,7 @@ def check_ungrouped_files(reason=''):
     '''
     Ensure no ungrouped files or directories exist
     '''
-
+    raise CommandExecutionError('Module disabled due to performance concerns')
     ungrouped_files = _execute_shell_command("df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nogroup 2>/dev/null").strip()
     ungrouped_files = ungrouped_files.split('\n') if ungrouped_files != "" else []
     # The command above only searches local filesystems, there may still be compromised items on network

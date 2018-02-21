@@ -147,7 +147,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         log.debug('Pulsar beacon config (compiled from config list):\n{0}'.format(config))
 
     # Validate Global Auditing with Auditpol
-    global_check = __salt__['cmd.run']('auditpol /get /category:"Object Access" /r | find "File System"',
+    global_check = __salt__['cmd.run']('auditpol /get /category:"Object Access" /r | findstr /C:"File System"',
                                        python_shell=True)
     if global_check:
         if not 'Success and Failure' in global_check:
@@ -391,8 +391,9 @@ def _remove_acl(path):
     :param item:
     :return:
     '''
-    path = path.replace('\\','\\\\')
-    __salt__['cmd.run']('$SD = ([WMIClass] "Win32_SecurityDescriptor").CreateInstance();'
+    if os.path.exists(path):
+        path = path.replace('\\','\\\\')
+        __salt__['cmd.run']('$SD = ([WMIClass] "Win32_SecurityDescriptor").CreateInstance();'
                         '$SD.ControlFlags=16;'
                         '$wPrivilege = Get-WmiObject Win32_LogicalFileSecuritySetting -filter "path=\'{0}\'" -EnableAllPrivileges;'
                         '$wPrivilege.setsecuritydescriptor($SD)'.format(path), shell='powershell', python_shell=True)

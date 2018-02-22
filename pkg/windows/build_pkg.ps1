@@ -1,4 +1,9 @@
 # Script to build the Hubble .msi pkg
+Param(
+    [bool]$default=$false,
+    [string]$confFile=$null,
+    [string]$version=$null
+)
 cd C:\temp
 
 $hooks = ".\pkg\"
@@ -10,8 +15,14 @@ if (Test-Path "C:\Program Files\NSIS\") {
     $nsis = 'C:\Program Files (x86)\NSIS'
 }
 If (!(Test-Path "$nsis\NSIS.exe")) {
-    write-error "NSIS not found in $nsis"
-    break
+
+choco install nsis 
+
+if (Test-Path "C:\Program Files\NSIS\") {
+    $nsis = 'C:\Program Files\NSIS'
+} Else {
+    $nsis = 'C:\Program Files (x86)\NSIS'
+}
 }
 
 # Add NSIS to the Path
@@ -41,12 +52,18 @@ if (!($modified)) {
 # Run pyinstaller
 pyinstaller .\hubble.spec
 
-# Copy hubble.conf to correct location
+# Checks to see if a conf file has been supplied. If not, it prompts the user for a file path then Copies the hubble.conf to correct location
 Start-Sleep -Seconds 5
 if (!(Test-Path '.\dist\hubble\etc\hubble')) {
     New-Item '.\dist\hubble\etc\hubble' -ItemType Directory
 }
-Copy-Item '.\pkg\windows\hubble.conf' -Destination '.\dist\hubble\etc\hubble\'
+if($default){
+    $confFile = .\pkg\windows\hubble.conf
+}
+else{
+    $confFile = read-host "Please specify the full file path to the .conf file you would like to use."
+}
+Copy-Item $confFile -Destination '.\dist\hubble\etc\hubble\'
 
 # Copy PortableGit to correct location
 Copy-Item '.\PortableGit' -Destination '.\dist\hubble\' -Recurse -Force
@@ -67,21 +84,19 @@ $currDIR = $PWD.Path
 $instDIR = $currDIR + "\pkg\windows"
 
 # Get Prereqs vcredist
-If (Test-Path "C:\Program Files (x86)") {
-    Invoke-WebRequest -Uri 'http://repo.saltstack.com/windows/dependencies/64/vcredist_x64_2008_mfc.exe' -OutFile "$instDIR\vcredist.exe"
-} Else {
-    Invoke-WebRequest -Uri 'http://repo.saltstack.com/windows/dependencies/32/vcredist_x86_2008_mfc.exe' -OutFile "$instDIR\vcredist.exe"
-}
-
+choco install vcredist2008 --version 9.0.21022.8 -y
 
 # Build Installer
 if ($version -eq $null) {
 	$gitDesc = git describe
 	if ($gitDesc -eq $null) {
-		$version = 'Beta'
+		$version = read-host "What would you like to name this build?"
 	} else {
 		$version = $gitDesc
-	}
+    }
+    else {
+        continue
+    }
 }
 
 makensis.exe /DHubbleVersion=$version "$instDIR\hubble-Setup.nsi"

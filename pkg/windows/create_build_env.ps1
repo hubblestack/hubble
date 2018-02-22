@@ -81,7 +81,7 @@ if ($default){
     $repo = "https://github.com/hubblestack/hubble"
     $branch = "master"
 }
-#If no default was specified and no paramaters were given in the scrip, it prompts for a repo and branch
+#If no default was specified and no paramaters were given in the script, it prompts for a repo and branch
 if ($repo -notlike "https*"){
     $repo = Read-Host "Enter a Repository (full URL only)"
     $branch = Read-Host "Enter a Branch"
@@ -111,15 +111,22 @@ if (!($port_git)) {
     }
 }
 #Moves Portable Git into the correct location to work with hubble. 
+set-location C:\Temp
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1" -Force;
 $ChocoTools = Get-ToolsLocation
-Move-Item -Path $ChocoTools\git\ -Destination $path\hubble\PortableGit\ 
+if(test-path .\hubble\PortableGit\){
+    Continue
+}
+else{
+    mkdir C:\Temp\hubble\PortableGit\
+}
+Move-Item -Path $ChocoTools\git\ -Destination C:\Temp\hubble\PortableGit\ 
 
 # Install osquery for executible
 if (!(Test-path C:\ProgramData\osquery)) {
 	choco install osquery -y
 } else {
-	choco update osquery -y
+	choco upgrade osquery -y
 }
 reloadEnv
 

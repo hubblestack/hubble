@@ -74,14 +74,6 @@ class SplunkHandler(logging.Handler):
             timeout = opts['timeout']
             custom_fields = opts['custom_fields']
 
-            # Set up the fields to be extracted at index time. The field values must be strings.
-            # Note that these fields will also still be available in the event data
-            index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId', 'azure_subscriptionId']
-            try:
-                index_extracted_fields.extend(opts['index_extracted_fields'])
-            except TypeError:
-                pass
-
             # Set up the collector
             hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
 
@@ -122,14 +114,6 @@ class SplunkHandler(logging.Handler):
             payload.update({'host': fqdn})
             payload.update({'index': opts['index']})
             payload.update({'sourcetype': opts['sourcetype']})
-
-            # Potentially add metadata fields:
-            fields = {}
-            for item in index_extracted_fields:
-                if item in event and not isinstance(event[item], (list, dict, tuple)):
-                    fields[item] = str(event[item])
-            if fields:
-                payload.update({'fields': fields})
 
             self.endpoint_list.append((hec, event, payload))
 
@@ -178,7 +162,6 @@ def _get_options():
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
-            processed['index_extracted_fields'] = opt.get('index_extracted_fields', [])
             splunk_opts.append(processed)
         return splunk_opts
     else:

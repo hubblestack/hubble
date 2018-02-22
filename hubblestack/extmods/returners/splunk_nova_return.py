@@ -73,14 +73,6 @@ def returner(ret):
             timeout = opts['timeout']
             custom_fields = opts['custom_fields']
 
-            # Set up the fields to be extracted at index time. The field values must be strings.
-            # Note that these fields will also still be available in the event data
-            index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId', 'azure_subscriptionId']
-            try:
-                index_extracted_fields.extend(opts['index_extracted_fields'])
-            except TypeError:
-                pass
-
             # Set up the collector
             hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
             # st = 'salt:hubble:nova'
@@ -158,14 +150,6 @@ def returner(ret):
                 payload.update({'sourcetype': opts['sourcetype']})
                 payload.update({'event': event})
 
-                # Potentially add metadata fields:
-                fields = {}
-                for item in index_extracted_fields:
-                    if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
-                        fields[item] = str(payload['event'][item])
-                if fields:
-                    payload.update({'fields': fields})
-
                 hec.batchEvent(payload)
 
             for suc in data.get('Success', []):
@@ -212,14 +196,6 @@ def returner(ret):
 
                 payload.update({'event': event})
 
-                # Potentially add metadata fields:
-                fields = {}
-                for item in index_extracted_fields:
-                    if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
-                        fields[item] = str(payload['event'][item])
-                if fields:
-                    payload.update({'fields': fields})
-
                 hec.batchEvent(payload)
 
             if data.get('Compliance', None):
@@ -251,14 +227,6 @@ def returner(ret):
                 payload.update({'sourcetype': opts['sourcetype']})
                 payload.update({'index': opts['index']})
                 payload.update({'event': event})
-
-                # Potentially add metadata fields:
-                fields = {}
-                for item in index_extracted_fields:
-                    if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
-                        fields[item] = str(payload['event'][item])
-                if fields:
-                    payload.update({'fields': fields})
 
                 hec.batchEvent(payload)
 
@@ -304,7 +272,6 @@ def _get_options():
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
-            processed['index_extracted_fields'] = opt.get('index_extracted_fields', [])
             splunk_opts.append(processed)
         return splunk_opts
     else:
@@ -318,7 +285,6 @@ def _get_options():
         splunk_opts['http_event_server_ssl'] = __salt__['config.get']('hubblestack:nova:returner:splunk:hec_ssl', True)
         splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nova:returner:splunk:proxy', {})
         splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nova:returner:splunk:timeout', 9.05)
-        splunk_opts['index_extracted_fields'] = __salt__['config.get']('hubblestack:nova:returner:splunk:index_extracted_fields', [])
 
         return [splunk_opts]
 

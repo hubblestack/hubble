@@ -110,6 +110,11 @@ if (!($port_git)) {
         choco upgrade git.portable -y
     }
 }
+#Moves Portable Git into the correct location to work with hubble. 
+Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1" -Force;
+$ChocoTools = Get-ToolsLocation
+Move-Item -Path $ChocoTools\git\ -Destination $path\hubble\PortableGit\ 
+
 # Install osquery for executible
 if (!(Test-path C:\ProgramData\osquery)) {
 	choco install osquery -y

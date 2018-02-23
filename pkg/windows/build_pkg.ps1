@@ -58,7 +58,7 @@ if (!(Test-Path '.\dist\hubble\etc\hubble')) {
     New-Item '.\dist\hubble\etc\hubble' -ItemType Directory
 }
 if($default){
-    $confFile = .\pkg\windows\hubble.conf
+    $confFile = C:\temp\hubble\pkg\windows\hubble.conf
 }
 else{
     $confFile = read-host "Please specify the full file path to the .conf file you would like to use."
@@ -72,6 +72,10 @@ Copy-Item '.\PortableGit' -Destination '.\dist\hubble\' -Recurse -Force
 if (Test-Path '..\Salt-Dev\salt\pkg\windows\buildenv\nssm.exe') {
     Copy-Item '..\Salt-Dev\salt\pkg\windows\buildenv\nssm.exe' -Destination '.\dist\hubble\'
 }
+else{
+   $nssmPath = read-host "\Salt-Dev\salt\pkg\windows\buildenv\nssm.exe doesn't exist. Please enter the correct path to nssm.exe."
+   Copy-Item $nssmPath -Destination '.\dist\hubble'
+}
 
 # Check for intalled osquery
 if (!(Test-Path 'C:\ProgramData\osquery\osqueryi.exe')) {
@@ -84,7 +88,11 @@ $currDIR = $PWD.Path
 $instDIR = $currDIR + "\pkg\windows"
 
 # Get Prereqs vcredist
-choco install vcredist2008 --version 9.0.21022.8 -y
+If (Test-Path "C:\Program Files (x86)") {
+    Invoke-WebRequest -Uri 'http://repo.saltstack.com/windows/dependencies/64/vcredist_x64_2008_mfc.exe' -OutFile "$instDIR\vcredist.exe"
+} Else {
+    Invoke-WebRequest -Uri 'http://repo.saltstack.com/windows/dependencies/32/vcredist_x86_2008_mfc.exe' -OutFile "$instDIR\vcredist.exe"
+}
 
 # Build Installer
 if ($version -eq $null) {

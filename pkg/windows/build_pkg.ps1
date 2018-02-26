@@ -4,14 +4,10 @@ Param(
     [string]$confFile=$null,
     [string]$version=$null
 )
-if (test-path "C:\Temp\hubble" -and "C:\Temp\Salt-Dev"){
-
-    Continue
-}
-else{
+if (!(test-path "C:\Temp\hubble" -and "C:\Temp\Salt-Dev")){
 
     write-error "The create_build_env.ps1 script has not been run. Please run the create_build_env.ps1 script and try again."
-    break
+    break 
 }
 
 cd C:\temp

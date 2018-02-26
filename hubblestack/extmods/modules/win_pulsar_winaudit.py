@@ -147,7 +147,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         log.debug('Pulsar beacon config (compiled from config list):\n{0}'.format(config))
 
     # Validate Global Auditing with Auditpol
-    global_check = __salt__['cmd.run']('auditpol /get /category:"Object Access" /r | find "File System"',
+    global_check = __salt__['cmd.run']('auditpol /get /category:"Object Access" /r | findstr /C:"File System"',
                                        python_shell=True)
     if global_check:
         if not 'Success and Failure' in global_check:
@@ -183,7 +183,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
                                 _remove_acl(exclude)
 
     # Read in events since last call.  Time_frame in minutes
-    ret = _pull_events(config['win_notify_interval'], config.get('checksum', 'sha256'))
+    ret = _pull_events(config['win_notify_interval'])
     if sys_check == 1:
         log.error('The ACLs were not setup correctly, or global auditing is not enabled.  This could have '
                   'been remedied, but GP might need to be changed')
@@ -218,11 +218,25 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
                             if leftover.startswith(os.sep):
                                 _append = False
         if _append and config_found:
+            r['Hash'] = _get_item_hash(r['Object Name'], config.get('checksum', 'sha256'))
             new_ret.append(r)
     ret = new_ret
 
     return ret
 
+def canary(change_file=None):
+    '''
+    Simple module to change a file to trigger a FIM event (daily, etc)
+
+    THE SPECIFIED FILE WILL BE CREATED AND DELETED
+
+    Defaults to CONF_DIR/fim_canary.tmp, i.e. /etc/hubble/fim_canary.tmp
+    '''
+    if change_file is None:
+        conf_dir = os.path.dirname(__opts__['conf_file'])
+        change_file = os.path.join(conf_dir, 'fim_canary.tmp')
+    __salt__['file.touch'](change_file)
+    os.remove(change_file)
 
 def _check_acl(path, mask, wtype, recurse):
     audit_dict = {}
@@ -232,6 +246,7 @@ def _check_acl(path, mask, wtype, recurse):
     else:
         wtype = [wtype]
 
+    path = "'" + path + "'"
     audit_acl = __salt__['cmd.run']('(Get-Acl {0} -Audit).Audit | fl'.format(path), shell='powershell',
                                     python_shell=True)
     if not audit_acl:
@@ -391,19 +406,21 @@ def _remove_acl(path):
     :param item:
     :return:
     '''
-    path = path.replace('\\','\\\\')
-    __salt__['cmd.run']('$SD = ([WMIClass] "Win32_SecurityDescriptor").CreateInstance();'
-                        '$SD.ControlFlags=16;'
-                        '$wPrivilege = Get-WmiObject Win32_LogicalFileSecuritySetting -filter "path=\'{0}\'" -EnableAllPrivileges;'
-                        '$wPrivilege.setsecuritydescriptor($SD)'.format(path), shell='powershell', python_shell=True)
+    if os.path.exists(path):
+        path = path.replace('\\','\\\\')
+        __salt__['cmd.run']('$SD = ([WMIClass] "Win32_SecurityDescriptor").CreateInstance();'
+                            '$SD.ControlFlags=16;'
+                            '$wPrivilege = Get-WmiObject Win32_LogicalFileSecuritySetting -filter "path=\'{0}\'" -EnableAllPrivileges;'
+                            '$wPrivilege.setsecuritydescriptor($SD)'.format(path), shell='powershell', python_shell=True)
 
 
 
-def _pull_events(time_frame, checksum):
+def _pull_events(time_frame):
     events_list = []
-    events_output = __salt__['cmd.run_stdout']('mode con:cols=1000 lines=1000; Get-WinEvent -FilterHashTable @{{'
-                                               'LogName = "security"; StartTime = [datetime]::Now.AddSeconds(-30);'
-                                               'Id = 4663}} | fl'.format(time_frame), shell='powershell', python_shell=True)
+    command = 'mode con:cols=1000 lines=1000; Get-WinEvent '\
+              '-FilterHashTable @{{''LogName = "security"; '\
+              'StartTime = [datetime]::Now.AddSeconds(-' + str(time_frame) + ');''Id = 4663}} | fl'
+    events_output = __salt__['cmd.run_stdout'](command.format(time_frame), shell='powershell', python_shell=True)
     events = events_output.split('\r\n\r\n')
     for event in events:
         if event:
@@ -415,11 +432,10 @@ def _pull_events(time_frame, checksum):
                     k, v = item.split(':', 1)
                     event_dict[k.strip()] = v.strip()
             #event_dict['Accesses'] = _get_access_translation(event_dict['Accesses'])
-            event_dict['Hash'] = _get_item_hash(event_dict['Object Name'], checksum)
             #needs hostname, checksum, filepath, time stamp, action taken
             # Generate the dictionary without a dictionary comp, for py2.6
             tmpdict = {}
-            for k in ('Message', 'Accesses', 'TimeCreated', 'Object Name', 'Hash'):
+            for k in ('Message', 'Accesses', 'TimeCreated', 'Object Name'):
                 tmpdict[k] = event_dict[k]
             events_list.append(tmpdict)
     return events_list
@@ -552,3 +568,39 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
             for k in upd:
                 dest[k] = upd[k]
         return dest
+
+def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
+        verbose=False):
+
+    configs = get_top_data(topfile)
+
+    configs = ['salt://hubblestack_pulsar/' + config.replace('.','/') + '.yaml'
+               for config in configs]
+
+    return process(configs, verbose=verbose)
+
+
+def get_top_data(topfile):
+
+    topfile = __salt__['cp.cache_file'](topfile)
+
+    try:
+        with open(topfile) as handle:
+            topdata = yaml.safe_load(handle)
+    except Exception as e:
+        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
+
+    if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
+            not(isinstance(topdata['pulsar'], dict)):
+        raise CommandExecutionError('Pulsar topfile not formatted correctly')
+
+    topdata = topdata['pulsar']
+
+    ret = []
+
+    for match, data in topdata.iteritems():
+        if __salt__['match.compound'](match):
+            ret.extend(data)
+
+    return ret
+

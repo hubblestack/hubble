@@ -253,7 +253,8 @@ def schedule():
             log.debug('Executing scheduled function {0}'.format(func))
             jobdata['last_run'] = time.time()
             ret = __salt__[func](*args, **kwargs)
-            log.debug('Job returned:\n{0}'.format(ret))
+            if __opts__['log_level'] == 'debug':
+                log.debug('Job returned:\n{0}'.format(ret))
             for returner in returners:
                 returner = '{0}.returner'.format(returner)
                 if returner not in __returners__:

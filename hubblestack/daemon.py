@@ -156,6 +156,7 @@ def schedule():
         Whether to run the scheduled job on daemon start. Defaults to False.
         Optional.
     '''
+
     schedule_config = __opts__.get('schedule', {})
     if 'user_schedule' in __opts__ and isinstance(__opts__['user_schedule'], dict):
         schedule_config.update(__opts__['user_schedule'])
@@ -203,12 +204,12 @@ def schedule():
 
         if jobdata['last_run'] < time.time() - seconds:
             run = True
-
         if run:
             log.debug('Executing scheduled function {0}'.format(func))
             jobdata['last_run'] = time.time()
             ret = __salt__[func](*args, **kwargs)
-            log.debug('Job returned:\n{0}'.format(ret))
+            if __opts__['log_level'] == 'debug':
+                log.debug('Job returned:\n{0}'.format(ret))
             for returner in returners:
                 returner = '{0}.returner'.format(returner)
                 if returner not in __returners__:

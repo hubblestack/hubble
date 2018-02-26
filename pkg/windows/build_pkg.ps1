@@ -55,7 +55,8 @@ if (!($modified)) {
 # Run pyinstaller
 pyinstaller .\hubble.spec
 
-# Checks to see if a conf file has been supplied. If not, it prompts the user for a file path then Copies the hubble.conf to correct location
+# Checks to see if a conf file has been supplied. 
+#If not, it prompts the user for a file path then Copies the hubble.conf to correct location
 Start-Sleep -Seconds 5
 if (!(Test-Path '.\dist\hubble\etc\hubble')) {
     New-Item '.\dist\hubble\etc\hubble' -ItemType Directory
@@ -75,7 +76,6 @@ else{
         write-host "The path you suppplied doesn't exists. Please enter a correct path."
         $confFile = read-host
     }
-    
 }
 Copy-Item $confFile -Destination '.\dist\hubble\etc\hubble\'
 
@@ -86,7 +86,7 @@ Copy-Item '.\PortableGit' -Destination '.\dist\hubble\' -Recurse -Force
 if (Test-Path '..\Salt-Dev\salt\pkg\windows\buildenv\nssm.exe') {
     Copy-Item '..\Salt-Dev\salt\pkg\windows\buildenv\nssm.exe' -Destination '.\dist\hubble\'
 }
-else{
+else {
    $nssmPath = read-host "\Salt-Dev\salt\pkg\windows\buildenv\nssm.exe doesn't exist. Please enter the correct path to nssm.exe."
    Copy-Item $nssmPath -Destination '.\dist\hubble'
 }
@@ -109,8 +109,10 @@ If (Test-Path "C:\Program Files (x86)") {
 }
 
 # Build Installer
+if ($default){
+    $version = git tag --sort version:refname | select -last 1
+}
 if ($version -eq $null) {
-	$gitDesc = git describe
 	if ($gitDesc -eq $null) {
 		$version = read-host "What would you like to name this build?"
 	} else {

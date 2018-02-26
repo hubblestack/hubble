@@ -70,8 +70,22 @@ if (!(Test-Path '.\dist\hubble\etc\hubble')) {
 if($default){
     $confFile = C:\temp\hubble\pkg\windows\hubble.conf
 }
+if($confFile){
+    while(!(test-path $confFile)){
+
+        write-host "The path you suppplied doesn't exists. Please enter a correct path."
+        $confFile = read-host
+    
+    }
+}
 else{
     $confFile = read-host "Please specify the full file path to the .conf file you would like to use."
+    while(!(test-path $confile)){
+
+        write-host "The path you suppplied doesn't exists. Please enter a correct path."
+        $confFile = read-host
+    }
+    
 }
 Copy-Item $confFile -Destination '.\dist\hubble\etc\hubble\'
 

@@ -4,6 +4,16 @@ Param(
     [string]$confFile=$null,
     [string]$version=$null
 )
+if (test-path "C:\Temp\hubble" -and "C:\Temp\Salt-Dev"){
+
+    Continue
+}
+else{
+
+    write-error "The create_build_env.ps1 script has not been run. Please run the create_build_env.ps1 script and try again."
+    break
+}
+
 cd C:\temp
 
 $hooks = ".\pkg\"
@@ -16,13 +26,13 @@ if (Test-Path "C:\Program Files\NSIS\") {
 }
 If (!(Test-Path "$nsis\NSIS.exe")) {
 
-choco install nsis 
+    choco install nsis 
 
-if (Test-Path "C:\Program Files\NSIS\") {
-    $nsis = 'C:\Program Files\NSIS'
-} Else {
-    $nsis = 'C:\Program Files (x86)\NSIS'
-}
+    if (Test-Path "C:\Program Files\NSIS\") {
+        $nsis = 'C:\Program Files\NSIS'
+    } Else {
+        $nsis = 'C:\Program Files (x86)\NSIS'
+    }
 }
 
 # Add NSIS to the Path

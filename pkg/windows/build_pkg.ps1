@@ -1,15 +1,21 @@
 # Script to build the Hubble .msi pkg
-Param(
+Param (
     [bool]$default=$false,
     [string]$confFile=$null,
     [string]$version=$null
 )
-if (!(test-path "C:\Temp\hubble" -and "C:\Temp\Salt-Dev")){
+if (!(test-path "C:\Temp\hubble" -and "C:\Temp\Salt-Dev")) {
     write-error "The create_build_env.ps1 script has not been run. Please run the create_build_env.ps1 script and try again."
     break 
 }
 
 cd C:\temp
+#Finds the current OS. If it isn't 2012r2 it breaks.
+#This is a temporary fix until we can find out why it doesn't build on other OS's
+$OS = Get-WmiObject -class Win32_OperatingSystem -Property Version | select Version
+if ($os -ne "6.3*" ) {
+    write-error "Hubble for Windows can currently on be built on Windows Server 2012R2. Please run this script 2012R2."
+}
 
 $hooks = ".\pkg\"
 
@@ -61,18 +67,18 @@ Start-Sleep -Seconds 5
 if (!(Test-Path '.\dist\hubble\etc\hubble')) {
     New-Item '.\dist\hubble\etc\hubble' -ItemType Directory
 }
-if($default){
+if($default) {
     $confFile = C:\temp\hubble\pkg\windows\hubble.conf
 }
-if($confFile){
-    while(!(test-path $confFile)){
+if($confFile) {
+    while(!(test-path $confFile)) {
         write-host "The path you suppplied doesn't exists. Please enter a correct path."
         $confFile = read-host
     }
 }
-else{
+else {
     $confFile = read-host "Please specify the full file path to the .conf file you would like to use."
-    while(!(test-path $confile)){
+    while(!(test-path $confile)) {
         write-host "The path you suppplied doesn't exists. Please enter a correct path."
         $confFile = read-host
     }
@@ -109,18 +115,11 @@ If (Test-Path "C:\Program Files (x86)") {
 }
 
 # Build Installer
-if ($default){
+if ($default) {
     $version = git tag --sort version:refname | select -last 1
 }
 if ($version -eq $null) {
-	if ($gitDesc -eq $null) {
 		$version = read-host "What would you like to name this build?"
-	} else {
-		$version = $gitDesc
-    }
-    else {
-        continue
-    }
 }
 
 makensis.exe /DHubbleVersion=$version "$instDIR\hubble-Setup.nsi"

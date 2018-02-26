@@ -76,12 +76,12 @@ if (Test-Path .\hubble) {
     Remove-Item -Recurse -Force hubble
 }
 #Checks to see if any paramaters were given for both $repo and $branch.
-if ($default){
+if ($default) {
     $repo = "https://github.com/hubblestack/hubble"
     $branch = "master"
 }
 #If no default was specified and no paramaters were given in the script, it prompts for a repo and branch
-if ($repo -notlike "https*"){
+if ($repo -notlike "https*") {
     $repo = Read-Host "Enter a Repository (full URL only)"
     $branch = Read-Host "Enter a Branch"
 }
@@ -113,7 +113,7 @@ if (!($port_git)) {
 set-location C:\Temp
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1" -Force;
 $ChocoTools = Get-ToolsLocation
-if(test-path .\hubble\PortableGit\){
+if(test-path .\hubble\PortableGit\) {
     Continue
 }
 else{

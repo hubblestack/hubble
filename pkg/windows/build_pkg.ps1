@@ -5,7 +5,6 @@ Param(
     [string]$version=$null
 )
 if (!(test-path "C:\Temp\hubble" -and "C:\Temp\Salt-Dev")){
-
     write-error "The create_build_env.ps1 script has not been run. Please run the create_build_env.ps1 script and try again."
     break 
 }
@@ -21,9 +20,7 @@ if (Test-Path "C:\Program Files\NSIS\") {
     $nsis = 'C:\Program Files (x86)\NSIS'
 }
 If (!(Test-Path "$nsis\NSIS.exe")) {
-
     choco install nsis 
-
     if (Test-Path "C:\Program Files\NSIS\") {
         $nsis = 'C:\Program Files\NSIS'
     } Else {
@@ -68,16 +65,13 @@ if($default){
 }
 if($confFile){
     while(!(test-path $confFile)){
-
         write-host "The path you suppplied doesn't exists. Please enter a correct path."
         $confFile = read-host
-    
     }
 }
 else{
     $confFile = read-host "Please specify the full file path to the .conf file you would like to use."
     while(!(test-path $confile)){
-
         write-host "The path you suppplied doesn't exists. Please enter a correct path."
         $confFile = read-host
     }

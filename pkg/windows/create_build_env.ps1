@@ -16,7 +16,6 @@ if (!([bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups 
     break
 }
 
-
 # Function to reload the environment
 function reloadEnv() {
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")

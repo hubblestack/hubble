@@ -341,6 +341,8 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['grains_refresh_frequency'] = 3600  # 1 hour
     salt.config.DEFAULT_MINION_OPTS['scheduler_sleep_frequency'] = 0.5
     salt.config.DEFAULT_MINION_OPTS['default_include'] = 'hubble.d/*.conf'
+    salt.config.DEFAULT_MINION_OPTS['logfile_maxbytes'] = 100000000 # 100MB
+    salt.config.DEFAULT_MINION_OPTS['logfile_backups'] = 1 # maximum rotated logs
 
     global __opts__
 
@@ -418,7 +420,9 @@ def load_config():
     # Setup logging
     salt.log.setup.setup_console_logger(__opts__['log_level'])
     salt.log.setup.setup_logfile_logger(__opts__['log_file'],
-                                        __opts__['log_level'])
+                                        __opts__['log_level'],
+                                        max_bytes=__opts__.get('logfile_maxbytes', 100000000),
+                                        backup_count=__opts__.get('logfile_backups', 1))
     # 384 is 0o600 permissions, written without octal for python 2/3 compat
     os.chmod(__opts__['log_file'], 384)
     os.chmod(parsed_args.get('configfile'), 384)

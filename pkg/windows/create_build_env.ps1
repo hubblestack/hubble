@@ -86,7 +86,7 @@ if ($repo -notlike "https*") {
     $branch = Read-Host "Enter a Branch"
 }
 git clone $repo
-Push-Location hubble\pkg\scripts
+Push-Location hubble\pkg\windows
 if ($branch -like "\W.+") {
     git checkout $branch
 }
@@ -113,11 +113,12 @@ if (!($port_git)) {
 set-location C:\Temp
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1" -Force;
 $ChocoTools = Get-ToolsLocation
-if(test-path .\hubble\PortableGit\) {
-    Continue
-}
-else{
+if(!(test-path .\hubble\PortableGit\)) {
     mkdir C:\Temp\hubble\PortableGit\
+}
+
+if (!(test-path "$ChocoTools\git\git-cmd.exe")) {
+    choco install git.portable -y --force
 }
 Move-Item -Path $ChocoTools\git\ -Destination C:\Temp\hubble\PortableGit\ 
 
@@ -138,10 +139,14 @@ $gitfsFile = Get-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py
 $gitfsFile = $gitfsFile -replace "files.add\(add_mountpoint\(relpath\(repo_path\)\)\)","files.add('/'.join(repo_path.partition('.:\\')[2].split(os.sep)))"
 $gitfsFile | Set-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py -Force
 
-#Remove obligitory c:\salt directory if it was created during script run
+#Remove obligitory c:\salt and c:\tools directory if it was created during script run
 if (Test-Path C:\salt) {
     $empty = Get-ChildItem C:\salt
     if ($empty -eq $null) {
         Remove-Item C:\salt
     }
+}
+
+if (Test-Path C:\tools) {
+    Remove-Item C:\tools -force
 }

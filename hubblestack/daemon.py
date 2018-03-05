@@ -232,7 +232,9 @@ def schedule():
                 if splay:
                     # Run `splay` seconds in the future, by telling the scheduler we last ran it
                     # `seconds - splay` seconds ago.
-                    jobdata['last_run'] = time.time() - (seconds - random.randint(0, splay))
+                    jobdata['last_run'] = time.time() - (seconds - random.randint(200, 200+splay))
+                    log.error('the value of splay id {0}'.format(splay))
+                    log.error('the value of lastRun is {0}'.format(jobdata['last_run']))
                 else:
                     # Run now
                     run = True
@@ -242,7 +244,8 @@ def schedule():
                     # Run `seconds + splay` seconds in the future by telling the scheduler we last
                     # ran it at now + `splay` seconds.
                     log.error('the value of splay id {0}'.format(splay))
-                    jobdata['last_run'] = time.time() + random.randint(0, splay)
+                    jobdata['last_run'] = time.time() + random.randint(200, 200+splay)
+                    log.error('the value of lastRun is {0}'.format(jobdata['last_run']))
                 else:
                     # Run in `seconds` seconds.
                     jobdata['last_run'] = time.time()

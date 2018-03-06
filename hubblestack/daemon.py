@@ -214,6 +214,18 @@ def schedule():
             log.error('Scheduled job {0} has an invalid value for seconds or '
                       'splay.'.format(jobname))
         args = jobdata.get('args', [])
+        if jobdata.get('randomizeSplay',False):
+           min_splay = 0
+        else:
+           if 'buckets' not in jobdata:
+              buckets = int(256)
+           else:
+              buckets = int(jobdata['buckets'])
+           s = socket.gethostbyname(socket.gethostname())
+           ips = s.split('.')
+           sum = int(ips[0])+int(ips[1])+int(ips[2])+int(ips[3])
+           bucketNumber = sum%buckets
+           min_splay = int((seconds/buckets)*bucketNumber)
         if not isinstance(args, list):
             log.error('Scheduled job {0} has args not formed as a list: {1}'
                       .format(jobname, args))
@@ -232,7 +244,7 @@ def schedule():
                 if splay:
                     # Run `splay` seconds in the future, by telling the scheduler we last ran it
                     # `seconds - splay` seconds ago.
-                    jobdata['last_run'] = time.time() - (seconds - random.randint(200, 200+splay))
+                    jobdata['last_run'] = time.time() - (seconds - random.randint(min_splay, min_splay+splay))
                     log.error('the value of splay id {0}'.format(splay))
                     log.error('the value of lastRun is {0}'.format(jobdata['last_run']))
                 else:
@@ -244,7 +256,7 @@ def schedule():
                     # Run `seconds + splay` seconds in the future by telling the scheduler we last
                     # ran it at now + `splay` seconds.
                     log.error('the value of splay id {0}'.format(splay))
-                    jobdata['last_run'] = time.time() + random.randint(200, 200+splay)
+                    jobdata['last_run'] = time.time() + random.randint(min_splay, min_splay+splay)
                     log.error('the value of lastRun is {0}'.format(jobdata['last_run']))
                 else:
                     # Run in `seconds` seconds.

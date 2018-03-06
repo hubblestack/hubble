@@ -446,6 +446,10 @@ def refresh_grains(initial=False):
     global __salt__
     global __pillar__
     global __returners__
+    global __context__
+
+    if initial:
+        __context__ = {}
     if 'grains' in __opts__:
         __opts__.pop('grains')
     if 'pillar' in __opts__:
@@ -457,10 +461,16 @@ def refresh_grains(initial=False):
     __opts__['grains'] = __grains__
     __opts__['pillar'] = __pillar__
     __utils__ = salt.loader.utils(__opts__)
-    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__, context=__context__)
     __returners__ = salt.loader.returners(__opts__, __salt__)
+
+    # the only things that turn up in here (and that get preserved)
+    # are pulsar.queue, pulsar.notifier and cp.fileclient_###########
+    # log.debug('keys in __context__: {}'.format(list(__context__)))
+
     hubblestack.splunklogging.__grains__ = __grains__
     hubblestack.splunklogging.__salt__ = __salt__
+
     if not initial and __salt__['config.get']('hubblestack:splunklogging', False):
         class MockRecord(object):
             def __init__(self, message, levelname, asctime, name):

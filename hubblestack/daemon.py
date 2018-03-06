@@ -226,6 +226,9 @@ def schedule():
            sum = int(ips[0])+int(ips[1])+int(ips[2])+int(ips[3])
            bucketNumber = sum%buckets
            log.error('the value of bucketNumber id {0}'.format(bucketNumber))
+           log.error('the value of seconds id {0}'.format(seconds))
+           log.error('the value of jobdataseconds id {0}'.format(int(jobdata['seconds'])))
+           log.error('the value of buckets id {0}'.format(buckets))
            min_splay = int((seconds/buckets)*bucketNumber)
         else:
            log.error('randomizeSplay if {0}'.format(jobdata['randomizeSplay']))

@@ -80,7 +80,7 @@ def main():
     '''
     # Initial fileclient setup
     # Clear old locks
-    if 'git' in __opts__['fileserver_backend']:
+    if 'gitfs' in __opts__['fileserver_backend'] or 'git' in __opts__['fileserver_backend']:
         git_objects = [
             salt.utils.gitfs.GitFS(
                 __opts__,

@@ -214,9 +214,11 @@ def schedule():
             log.error('Scheduled job {0} has an invalid value for seconds or '
                       'splay.'.format(jobname))
         args = jobdata.get('args', [])
-        if jobdata.get('randomizeSplay',False):
+        if jobdata.get('randomizeSplay', False):
+           log.error('randomizeSplay if false'.format(jobdata['randomizeSplay']))
            min_splay = 0
         else:
+           log.error('randomizeSplay if true'.format(jobdata['randomizeSplay']))
            if 'buckets' not in jobdata:
               buckets = int(256)
            else:

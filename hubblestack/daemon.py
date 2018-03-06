@@ -230,6 +230,7 @@ def schedule():
            log.error('the value of jobdataseconds id {0}'.format(int(jobdata['seconds'])))
            log.error('the value of buckets id {0}'.format(buckets))
            min_splay = int((seconds/buckets)*bucketNumber)
+           log.error('the value of min_splay id {0}'.format(min_splay))
         else:
            log.error('randomizeSplay if {0}'.format(jobdata['randomizeSplay']))
            min_splay = 0
@@ -264,7 +265,7 @@ def schedule():
                     # ran it at now + `splay` seconds.
                     log.error('the value of splay id {0}'.format(splay))
                     jobdata['last_run'] = time.time() + random.randint(min_splay, min_splay+splay)
-                    log.error('the value of min_splay is {0}'.format(min_splay))
+                    log.error('the value of min_splay is {0} and there is a bug'.format(min_splay))
                 else:
                     # Run in `seconds` seconds.
                     jobdata['last_run'] = time.time()

@@ -312,6 +312,14 @@ def run_function():
     else:
         print(ret)
 
+    if(__opts__['outfile']):
+        log.info('Writing output to file {0}'.format(__opts__['outfile']))
+        try:
+            outputfile = open(__opts__['outfile'], "w")
+            outputfile.write(json.dumps(ret))
+        except IOError:
+            log.error("Could not write output to file. Check if file path is valid.")
+
 
 def load_config():
     '''
@@ -500,6 +508,9 @@ def parse_args():
     parser.add_argument('args',
                         nargs='*',
                         help='Any arguments necessary for a single function run')
+    parser.add_argument('-o', '--outfile',
+                        default=None,
+                        help='Optional file path to get the ouput of single-function run')
     return vars(parser.parse_args())
 
 def check_pidfile(kill_other=False):

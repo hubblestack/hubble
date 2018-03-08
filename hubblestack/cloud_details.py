@@ -29,7 +29,7 @@ def get_cloud_details():
 
 def _get_file_details():
     fileData = {}
-    fileData['someData'] = ab
+    fileData['someData'] = int(256)
     return fileData
 
 def _get_aws_details():

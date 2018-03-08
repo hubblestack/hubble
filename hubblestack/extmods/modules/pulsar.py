@@ -271,7 +271,10 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                     sub['checksum'] = __salt__['file.get_hash'](pathname, sum_type)
                     sub['checksum_type'] = sum_type
                 if config.get('stats', False):
-                    sub['stats'] = __salt__['file.stats'](pathname)
+                    if os.path.exists(pathname):
+                        sub['stats'] = __salt__['file.stats'](pathname)
+                    else:
+                        sub['stats'] = {}
 
                 ret.append(sub)
             else:

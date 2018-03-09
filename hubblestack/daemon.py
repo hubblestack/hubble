@@ -14,6 +14,7 @@ import random
 import signal
 import sys
 import uuid
+import json
 
 import salt.fileclient
 import salt.utils
@@ -312,6 +313,15 @@ def run_function():
     else:
         print(ret)
 
+    if(__opts__['outfile']):
+        log.info('Writing output to file {0}'.format(__opts__['outfile']))
+        try:
+            outputfile = open(__opts__['outfile'], "w")
+            outputfile.write(json.dumps(ret))
+            outputfile.close()
+        except IOError:
+            log.error("Error occurred writing output to file (One possible reason: Invalid path).")                   
+
 
 def load_config():
     '''
@@ -514,6 +524,9 @@ def parse_args():
     parser.add_argument('args',
                         nargs='*',
                         help='Any arguments necessary for a single function run')
+    parser.add_argument('-o', '--outfile',
+                        default=None,
+                        help='Optional file path to get the ouput of single-function run')
     return vars(parser.parse_args())
 
 def check_pidfile(kill_other=False):

@@ -185,7 +185,7 @@ def schedule():
         buckets and scheduling the execution of ``function`` one bucket at a time, 
         so that hubble processes run at different time for different buckets. This 
         feature can be switched off by either providing ``randomizeSplay`` as False 
-        or by not providing it at all. 
+        or by not providing it at all. Only supported on IPv4 machines. 
    
     buckets
         Used in conjuction with ``randomizeSplay``. Specifies the number of buckets 

@@ -14,7 +14,3 @@ gitpython
 pyinotify
 cffi
 azure
-pympler
-guppy
-memory_profiler
-objgraph

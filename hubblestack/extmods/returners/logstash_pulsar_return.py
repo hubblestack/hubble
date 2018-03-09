@@ -31,7 +31,6 @@ import os
 import json
 import requests
 from collections import defaultdict
-from hubblestack.cloud_details import get_cloud_details
 from requests.auth import HTTPBasicAuth
 
 
@@ -51,7 +50,8 @@ def returner(ret):
 
     opts_list = _get_options()
 
-    clouds = get_cloud_details()
+    # Get cloud details
+    cloud_details = __grains__.get('cloud_details', {})
 
     for opts in opts_list:
         proxy = opts['proxy']
@@ -179,8 +179,7 @@ def returner(ret):
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})
 
-            for cloud in clouds:
-                event.update(cloud)
+            event.update(cloud_details)
 
             payload.update({'host': fqdn})
             payload.update({'index': opts['index']})

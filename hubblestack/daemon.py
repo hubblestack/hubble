@@ -317,8 +317,9 @@ def run_function():
         try:
             outputfile = open(__opts__['outfile'], "w")
             outputfile.write(json.dumps(ret))
+            outputfile.close()
         except IOError:
-            log.error("Could not write output to file. Check if file path is valid.")
+            log.error("Error occurred writing output to file (One possible reason: Invalid path).")                   
 
 
 def load_config():

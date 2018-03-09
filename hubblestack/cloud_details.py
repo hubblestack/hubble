@@ -65,3 +65,4 @@ def _get_azure_details():
         # Not on an Azure box
         azure = None
     return azure
+

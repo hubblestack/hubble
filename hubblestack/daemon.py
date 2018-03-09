@@ -14,6 +14,7 @@ import random
 import signal
 import sys
 import uuid
+import json
 
 import salt.fileclient
 import salt.utils

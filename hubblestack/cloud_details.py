@@ -16,21 +16,13 @@ def get_cloud_details():
 
     aws = _get_aws_details()
     azure = _get_azure_details()
-    fileData = _get_file_details()
 
     if aws:
         ret.append(aws)
     if azure:
         ret.append(azure)
-    if fileData:
-        ret.append(fileData)
 
     return ret
-
-def _get_file_details():
-    fileData = {}
-    fileData['someData'] = int(256)
-    return fileData
 
 def _get_aws_details():
     # Gather amazon information if present

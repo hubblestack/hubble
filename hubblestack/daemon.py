@@ -216,23 +216,20 @@ def schedule():
                       'splay.'.format(jobname))
         args = jobdata.get('args', [])
         if 'randomizeSplay' in jobdata and jobdata['randomizeSplay']:
-           log.error('randomizeSplay is {0}'.format(jobdata['randomizeSplay']))
-           if 'buckets' not in jobdata:
+           if 'buckets' not in jobdata or int(jobdata['buckets'])<=0:
               buckets = int(256)
            else:
               buckets = int(jobdata['buckets'])
-           s = socket.gethostbyname(socket.gethostname())
-           ips = s.split('.')
-           sum = int(ips[0])+int(ips[1])+int(ips[2])+int(ips[3])
-           bucketNumber = sum%buckets
-           log.error('the value of bucketNumber id {0}'.format(bucketNumber))
-           log.error('the value of seconds id {0}'.format(seconds))
-           log.error('the value of jobdataseconds id {0}'.format(int(jobdata['seconds'])))
-           log.error('the value of buckets id {0}'.format(buckets))
-           min_splay = int((seconds/buckets)*bucketNumber)
-           log.error('the value of min_splay id {0}'.format(min_splay))
+           try:
+              hostname = socket.gethostbyname(socket.gethostname())
+              ipValues = hostname.split('.')
+              ipValueSum = int(ipValues[0])+int(ipValues[1])+int(ipValues[2])+int(ipValues[3])
+              bucketNumber = ipValueSum%buckets
+              min_splay = int((seconds/buckets)*bucketNumber)
+           except:
+              log.exception('exception while fetching hostname')
+              min_splay = 0
         else:
-           log.error('randomizeSplay if {0}'.format(jobdata['randomizeSplay']))
            min_splay = 0
         if not isinstance(args, list):
             log.error('Scheduled job {0} has args not formed as a list: {1}'
@@ -253,8 +250,6 @@ def schedule():
                     # Run `splay` seconds in the future, by telling the scheduler we last ran it
                     # `seconds - splay` seconds ago.
                     jobdata['last_run'] = time.time() - (seconds - random.randint(min_splay, min_splay+splay))
-                    log.error('the value of splay id {0}'.format(splay))
-                    log.error('the value of min_splay is {0}'.format(min_splay))
                 else:
                     # Run now
                     run = True
@@ -263,9 +258,7 @@ def schedule():
                 if splay:
                     # Run `seconds + splay` seconds in the future by telling the scheduler we last
                     # ran it at now + `splay` seconds.
-                    log.error('the value of splay id {0}'.format(splay))
                     jobdata['last_run'] = time.time() + random.randint(min_splay, min_splay+splay)
-                    log.error('the value of min_splay is {0} and there is a bug'.format(min_splay))
                 else:
                     # Run in `seconds` seconds.
                     jobdata['last_run'] = time.time()

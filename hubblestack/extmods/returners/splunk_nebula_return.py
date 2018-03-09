@@ -39,8 +39,6 @@ be skipped:
               - product_group
 '''
 import socket
-# Import cloud details
-from hubblestack.cloud_details import get_cloud_details
 
 # Imports for http event forwarder
 import requests
@@ -60,9 +58,6 @@ log = logging.getLogger(__name__)
 def returner(ret):
     try:
         opts_list = _get_options()
-
-        # Get cloud details
-        clouds = get_cloud_details()
 
         for opts in opts_list:
             logging.info('Options: %s' % json.dumps(opts))
@@ -112,6 +107,9 @@ def returner(ret):
                     new_fqdn = fqdn_ip4
                 fqdn = new_fqdn
 
+            # Get cloud details
+            cloud_details = __grains__.get('cloud_details', {})
+
             if not data:
                 return
             else:
@@ -131,8 +129,7 @@ def returner(ret):
                             event.update({'host_uuid': __grains__['host_uuid']})
                             event.update({'session_uuid': __grains__['session_uuid']})
 
-                            for cloud in clouds:
-                                event.update(cloud)
+                            event.update(cloud_details)
 
                             for custom_field in custom_fields:
                                 custom_field_name = 'custom_' + custom_field

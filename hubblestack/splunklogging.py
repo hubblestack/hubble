@@ -35,8 +35,6 @@ be skipped:
               - product_group
 '''
 import socket
-# Import cloud details
-from hubblestack.cloud_details import get_cloud_details
 
 # Imports for http event forwarder
 import requests
@@ -62,8 +60,10 @@ class SplunkHandler(logging.Handler):
         super(SplunkHandler, self).__init__()
 
         self.opts_list = _get_options()
-        self.clouds = get_cloud_details()
         self.endpoint_list = []
+
+        # Get cloud details
+        cloud_details = __grains__.get('cloud_details', {})
 
         for opts in self.opts_list:
             http_event_collector_key = opts['token']
@@ -106,8 +106,7 @@ class SplunkHandler(logging.Handler):
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})
 
-            for cloud in self.clouds:
-                event.update(cloud)
+            event.update(cloud_details)
 
             for custom_field in custom_fields:
                 custom_field_name = 'custom_' + custom_field

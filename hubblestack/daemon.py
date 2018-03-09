@@ -149,6 +149,8 @@ def schedule():
             function: hubble.audit
             seconds: 3600
             splay: 100
+            randomizeSplay: True
+            buckets: 100
             args:
               - cis.centos-7-level-1-scored-v2-1-0
             kwargs:
@@ -157,9 +159,9 @@ def schedule():
             returner: splunk_nova_return
             run_on_start: True
 
-    Note that ``args``, ``kwargs``, and ``splay`` are all optional. However, a
-    scheduled job must always have a ``function`` and a time in ``seconds`` of
-    how often to run the job.
+    Note that ``args``, ``kwargs``, ``randomizeSplay``, ``buckets`` and ``splay`` 
+    are all optional. However, a scheduled job must always have a ``function`` and 
+    a time in ``seconds`` of how often to run the job.
 
     function
         Function to run in the format ``<module>.<function>``. Technically any
@@ -176,6 +178,20 @@ def schedule():
         <splay> will be chosen and added to the ``seconds`` argument, to decide
         the true frequency. The splay will be chosen on first run, and will
         only change when the daemon is restarted. Optional.
+
+    randomizeSplay
+        Used when multiple VMs are launched that share a common hardware. 
+        Works by creating multiple buckets and placing the machines in different 
+        buckets and scheduling the execution of ``function`` one bucket at a time, 
+        so that hubble processes run at different time for different buckets. This 
+        feature can be switched off by either providing ``randomizeSplay`` as False 
+        or by not providing it at all. 
+   
+    buckets
+        Used in conjuction with ``randomizeSplay``. Specifies the number of buckets 
+        in which the machines need to be divided. Each bucket will run the hubble
+        processes at a different time thereby avoiding spikes on the underlying 
+        common hardware. The default value is 256.
 
     args
         List of arguments for the function. Optional.

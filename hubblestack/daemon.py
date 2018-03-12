@@ -14,6 +14,7 @@ import random
 import signal
 import sys
 import uuid
+import json
 
 import salt.fileclient
 import salt.utils
@@ -307,10 +308,13 @@ def run_function():
             __returners__[returner](returner_ret)
 
     # TODO instantiate the salt outputter system?
-    if(__opts__['no_pprint']):
-        pprint.pprint(ret)
+    if(__opts__['json_print']):
+        print(json.dumps(ret))
     else:
-        print(ret)
+        if(__opts__['no_pprint']):
+            pprint.pprint(ret)
+        else:
+            print(ret)
 
 
 def load_config():
@@ -514,6 +518,9 @@ def parse_args():
     parser.add_argument('args',
                         nargs='*',
                         help='Any arguments necessary for a single function run')
+    parser.add_argument('-j', '--json-print',
+                        action='store_true',
+                        help='Optional argument to print the output of single run function in json format')
     return vars(parser.parse_args())
 
 def check_pidfile(kill_other=False):

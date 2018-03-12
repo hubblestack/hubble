@@ -14,6 +14,7 @@ import random
 import signal
 import sys
 import uuid
+import json
 
 import salt.fileclient
 import salt.utils
@@ -310,7 +311,7 @@ def run_function():
     if(__opts__['no_pprint']):
         pprint.pprint(ret)
     else:
-        print(ret)
+        print(json.dumps(ret))
 
 
 def load_config():

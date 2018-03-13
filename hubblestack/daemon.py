@@ -16,8 +16,11 @@ import sys
 import uuid
 
 import salt.fileclient
+import salt.fileserver
+import salt.fileserver.gitfs
 import salt.utils
 import salt.utils.jid
+import salt.utils.gitfs
 import salt.log.setup
 import hubblestack.splunklogging
 from hubblestack import __version__
@@ -76,6 +79,31 @@ def main():
     Run the main hubble loop
     '''
     # Initial fileclient setup
+    # Clear old locks
+    if 'gitfs' in __opts__['fileserver_backend'] or 'git' in __opts__['fileserver_backend']:
+        git_objects = [
+            salt.utils.gitfs.GitFS(
+                __opts__,
+                __opts__['gitfs_remotes'],
+                per_remote_overrides=salt.fileserver.gitfs.PER_REMOTE_OVERRIDES,
+                per_remote_only=salt.fileserver.gitfs.PER_REMOTE_ONLY
+            )
+        ]
+        ret = {}
+        for obj in git_objects:
+            lock_type = 'update'
+            cleared, errors = salt.fileserver.clear_lock(obj.clear_lock,
+                                                         'gitfs',
+                                                         remote=None,
+                                                         lock_type=lock_type)
+            if cleared:
+                ret.setdefault('cleared', []).extend(cleared)
+            if errors:
+                ret.setdefault('errors', []).extend(errors)
+        if ret:
+            log.info('One or more gitfs locks were removed: {0}'.format(ret))
+
+    # Setup fileclient
     log.info('Setting up the fileclient/fileserver')
     retry_count = __opts__.get('fileserver_retry_count_on_startup', None)
     retry_time = __opts__.get('fileserver_retry_rate_on_startup', 30)

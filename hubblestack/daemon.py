@@ -14,6 +14,7 @@ import random
 import signal
 import sys
 import uuid
+import socket
 
 import salt.fileclient
 import salt.fileserver
@@ -176,6 +177,8 @@ def schedule():
             function: hubble.audit
             seconds: 3600
             splay: 100
+            randomizeSplay: True
+            buckets: 100
             args:
               - cis.centos-7-level-1-scored-v2-1-0
             kwargs:
@@ -184,9 +187,9 @@ def schedule():
             returner: splunk_nova_return
             run_on_start: True
 
-    Note that ``args``, ``kwargs``, and ``splay`` are all optional. However, a
-    scheduled job must always have a ``function`` and a time in ``seconds`` of
-    how often to run the job.
+    Note that ``args``, ``kwargs``, ``randomizeSplay``, ``buckets`` and ``splay`` 
+    are all optional. However, a scheduled job must always have a ``function`` and 
+    a time in ``seconds`` of how often to run the job.
 
     function
         Function to run in the format ``<module>.<function>``. Technically any
@@ -203,6 +206,20 @@ def schedule():
         <splay> will be chosen and added to the ``seconds`` argument, to decide
         the true frequency. The splay will be chosen on first run, and will
         only change when the daemon is restarted. Optional.
+
+    randomizeSplay
+        Used when multiple VMs are launched that share a common hardware. 
+        Works by creating multiple buckets and placing the machines in different 
+        buckets and scheduling the execution of ``function`` one bucket at a time, 
+        so that hubble processes run at different time for different buckets. This 
+        feature can be switched off by either providing ``randomizeSplay`` as False 
+        or by not providing it at all. Only supported on IPv4 machines. 
+   
+    buckets
+        Used in conjuction with ``randomizeSplay``. Specifies the number of buckets 
+        in which the machines need to be divided. Each bucket will run the hubble
+        processes at a different time thereby avoiding spikes on the underlying 
+        common hardware. The default value is 256.
 
     args
         List of arguments for the function. Optional.
@@ -242,6 +259,22 @@ def schedule():
             log.error('Scheduled job {0} has an invalid value for seconds or '
                       'splay.'.format(jobname))
         args = jobdata.get('args', [])
+        if 'randomizeSplay' in jobdata and jobdata['randomizeSplay']:
+           if 'buckets' not in jobdata or int(jobdata['buckets'])<=0:
+              buckets = int(256)
+           else:
+              buckets = int(jobdata['buckets'])
+           try:
+              hostname = socket.gethostbyname(socket.gethostname())
+              ipValues = hostname.split('.')
+              ipValueSum = int(ipValues[0])+int(ipValues[1])+int(ipValues[2])+int(ipValues[3])
+              bucketNumber = ipValueSum%buckets
+              min_splay = int((seconds/buckets)*bucketNumber)
+           except:
+              log.exception('exception while fetching hostname')
+              min_splay = 0
+        else:
+           min_splay = 0
         if not isinstance(args, list):
             log.error('Scheduled job {0} has args not formed as a list: {1}'
                       .format(jobname, args))
@@ -260,7 +293,7 @@ def schedule():
                 if splay:
                     # Run `splay` seconds in the future, by telling the scheduler we last ran it
                     # `seconds - splay` seconds ago.
-                    jobdata['last_run'] = time.time() - (seconds - random.randint(0, splay))
+                    jobdata['last_run'] = time.time() - (seconds - random.randint(min_splay, min_splay+splay))
                 else:
                     # Run now
                     run = True
@@ -269,7 +302,7 @@ def schedule():
                 if splay:
                     # Run `seconds + splay` seconds in the future by telling the scheduler we last
                     # ran it at now + `splay` seconds.
-                    jobdata['last_run'] = time.time() + random.randint(0, splay)
+                    jobdata['last_run'] = time.time() + random.randint(min_splay, min_splay+splay)
                 else:
                     # Run in `seconds` seconds.
                     jobdata['last_run'] = time.time()

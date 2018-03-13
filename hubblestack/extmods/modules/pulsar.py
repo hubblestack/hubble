@@ -73,7 +73,7 @@ class ConfigManager(object):
     @property
     def config(self):
         if self.stale():
-            self._update()
+            self.update()
         return self.nc_config
 
     @property
@@ -109,10 +109,26 @@ class ConfigManager(object):
         c.update( config.get(path, {}) )
         return c
 
-    def _update(self):
+    def _abspathify(self):
+        c = self.nc_config
+        for k in tuple(c):
+            if k.startswith('/'):
+                l = os.path.abspath(k)
+                if k != l:
+                    c[l] = c.pop(k)
+
+    def update(self):
         config = self.nc_config
         to_set = __opts__.get('pulsar', {})
-        counter = 0
+
+        # Is there a better way to tell if __opts__ updated?
+        # Is it worth checking anyway? Seems only to come up in tests/
+        counter = len( set(config).symmetric_difference( set(to_set) ) )
+        if counter == 0:
+            for k in config:
+                if config[k] != to_set[k]:
+                    counter += 1
+
         if isinstance(config.get('paths'), (list,tuple)):
             for path in config['paths']:
                 if 'salt://' in path:
@@ -143,6 +159,7 @@ class ConfigManager(object):
             self.nc_config['paths'] = []
         config = self.config
         config['verbose'] = verbose
+        self._abspathify()
 
 class PulsarWatchManager(pyinotify.WatchManager):
     ''' Subclass of pyinotify.WatchManager for the purposes:
@@ -168,34 +185,41 @@ class PulsarWatchManager(pyinotify.WatchManager):
         self._last_config_update = 0
         self.update_config()
 
-    def _iterate_anything(self, x, discard_none=True):
+    @classmethod
+    def _iterate_anything(cls, x, discard_none=True):
         ''' iterate any amount of list/tuple nesting
         '''
         if isinstance(x, (list,tuple,set,dict)):
             # ∀ item ∈ x: listify(item)
             for list_or_item in x:
-                for i in self._listify_anything(list_or_item):
+                for i in cls._listify_anything(list_or_item):
                     if i is None and discard_none:
                         continue
                     yield i # always a scalar
         elif x is None and discard_none:
             pass
-        yield x # always a scalar
+        else:
+            yield x # always a scalar
 
-    def _listify_anything(self, x, discard_none=True):
+    @classmethod
+    def _listify_anything(cls, x, discard_none=True):
         ''' _iterate_anything, then uniquify and force a list return; because,
             pyinotify's __format_param, checks only isinstance(item,list)
         '''
-        s = set( self._iterate_anything(x, discard_none=discard_none) )
+        s = set( cls._iterate_anything(x, discard_none=discard_none) )
         return list(s)
 
     def _add_db(self, parent, **items):
 	# this assumes bijection, which isn't necessarily true
 	# (we hope it's true though)
         self.watch_db.update(**items)
-        if parent not in self.parent_db:
-            self.parent_db[parent] = set()
-        self.parent_db[parent].update( items.keys() )
+        if parent in items:
+            items = items.copy()
+            del items[parent]
+        if items:
+            if parent not in self.parent_db:
+                self.parent_db[parent] = set()
+            self.parent_db[parent].update( items.keys() )
 
     def _get_wdl(self, *pathlist):
         ''' inverse pathlist and return a flat list of wd's for the paths and their child paths
@@ -204,6 +228,10 @@ class PulsarWatchManager(pyinotify.WatchManager):
         super_list = self._listify_anything(pathlist,
             [ self.parent_db.get(x) for x in self._iterate_anything(pathlist) ])
         return self._listify_anything([ self.watch_db.get(x) for x in super_list ])
+
+    def _get_paths(self, *wdl):
+        wdl = self._listify_anything(wdl)
+        return self._listify_anything([ v for k,v in six.iteritems(self.watch_db) if v in wdl ])
 
     def update_config(self):
         ''' (re)check the config files for inotify_limits:
@@ -215,6 +243,8 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
         if not hasattr(self, 'cm'):
             self.cm = ConfigManager()
+        else:
+            self.cm.update()
 
         config = self.cm.config.get('inotify_limits', {})
         self.update_muw = config.get('update', False)
@@ -248,15 +278,19 @@ class PulsarWatchManager(pyinotify.WatchManager):
         if os.path.islink(path):
             return
         path = os.path.abspath(path)
-        up_path = os.path.dirname(path)
-        while (up_path and up_path != '/') and up_path not in self.file_watch_db:
-            up_path = os.path.dirname(up_path)
-        if up_path and up_path in self.file_watch_db:
-            res = self.add_watch(path, pyinotify.IN_MODIFY) 
-            self._add_db(path, res)
+        up_path = kw.pop('parent', False)
+        if 'parent' in kw:
+            up_path = kw.pop('parent')
+        else:
+            up_path = os.path.dirname(path)
+            while (up_path and up_path != '/') and up_path not in self.watch_db:
+                up_path = os.path.dirname(up_path)
+        if up_path and up_path in self.watch_db:
+            res = self.add_watch(path, pyinotify.IN_MODIFY, no_db=True)
+            self._add_db(up_path, **res)
             return res
         else:
-            raise Exception("add_file_watch('{0}') must be located in a watched directory")
+            raise Exception("_add_recursed_file_watch('{0}') must be located in a watched directory".format(path))
 
     def watch(self, path, mask=None, **kw):
         ''' Automatically select add_watch()/update_watch() and try to do the right thing.
@@ -269,10 +303,11 @@ class PulsarWatchManager(pyinotify.WatchManager):
             # log.debug("watch({0}): NOENT (skipping)".format(path))
             return
 
+        if mask is None:
+            mask = DEFAULT_MASK
+
         wd = self.watch_db.get(path)
         if wd:
-            if mask is None:
-                mask = DEFAULT_MASK
             update = False
             if self.watches[wd].mask != mask:
                 update = True
@@ -280,7 +315,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 update = True
             if update:
                 kw['mask'] = mask
-                self._update_watch(wd,**kw)
+                self.update_watch(wd,**kw)
                 log.debug('update-watch wd={0} path={1}'.format(wd,path))
         else:
             self.add_watch(path,mask,**kw)
@@ -297,9 +332,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 if isinstance(excludes, (list,tuple)):
                     pfft = excludes
                     excludes = lambda x: x in pfft
-                if path not in self.file_watch_db:
-                    self.file_watch_db[path] = dict()
-                file_track = self.file_watch_db[path]
+                file_track = self.parent_db.get(path, {})
                 ft_count = 0
                 for wpath,wdirs,wfiles in os.walk(path):
                     if rec or wpath == path:
@@ -309,9 +342,9 @@ class PulsarWatchManager(pyinotify.WatchManager):
                                 continue
                             if os.path.islink(wpathname):
                                 continue
-                            if wpathname in file_track:
-                                continue
-                            file_track.update( self.add_watch(wpathname, pyinotify.IN_MODIFY) )
+                            if wpathname in file_track: # checking file_track isn't strictly necessary
+                                continue                # but gives a slight speedup
+                            self._add_recursed_file_watch( wpathname )
                             ft_count += 1
                 if ft_count > 0:
                     log.debug('recursive file-watch totals for path={0} new-this-loop: {1}'.format(path, ft_count))
@@ -323,6 +356,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
             * automatic absolute path
             * implicit retries
         '''
+        no_db = kw.pop('no_db', False)
         path = os.path.abspath(path)
         res = {}
         kw['quiet'] = False
@@ -334,7 +368,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 if isinstance(_res, dict):
                     res.update(_res)
             except pyinotify.WatchManagerError as wme:
-                self._update_config()
+                self.update_config()
                 if isinstance(wme.wmd, dict):
                     res.update(wme.wmd) # copy over what did work before it broke
                 if self.update_muw:
@@ -355,7 +389,8 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 log.error("exception during add_watch({0}): {1}".format(path, repr(e)))
                 break
 
-        self._add_db(path, **res)
+        if not no_db: # I think the English of that is funny
+            self._add_db(path, **res)
         return res
 
     def prune(self):

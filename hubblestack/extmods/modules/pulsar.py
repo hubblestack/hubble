@@ -101,9 +101,12 @@ class ConfigManager(object):
             return True
         return False
 
-    def path_config(self, path):
+    def path_config(self, path, falsifyable=False):
+        config = self.nc_config
+        if falsifyable and path not in config:
+            return False
         c = collections.defaultdict(lambda: False)
-        c.update( self.config.get(path, {}) )
+        c.update( config.get(path, {}) )
         return c
 
     def _update(self):
@@ -123,10 +126,11 @@ class ConfigManager(object):
                     log.error('Path {0} does not exist or is not a file'.format(path))
         else:
             log.error('Pulsar beacon \'paths\' data improperly formatted. Should be list of paths')
-        if config.get('verbose'):
-            log.debug('Pulsar config updated')
         if counter>0:
             self.nc_config = to_set
+            self._abspathify()
+            if config.get('verbose'):
+                log.debug('Pulsar config updated')
         self.last_update = time.time()
 
     def __init__(self, configfile=None, verbose=False):
@@ -155,13 +159,51 @@ class PulsarWatchManager(pyinotify.WatchManager):
             for path in path_list:
                 wd = wm.get_wd(i) # search watch-list in an internal for loop
     '''
+
     def __init__(self, *a, **kw):
         super(PulsarWatchManager, self).__init__(*a, **kw)
-        self.watch_db = dict()
-        self.file_watch_db = dict()
+        self.watch_db  = dict()
+        self.parent_db = dict()
 
         self._last_config_update = 0
         self.update_config()
+
+    def _iterate_anything(self, x, discard_none=True):
+        ''' iterate any amount of list/tuple nesting
+        '''
+        if isinstance(x, (list,tuple,set,dict)):
+            # ∀ item ∈ x: listify(item)
+            for list_or_item in x:
+                for i in self._listify_anything(list_or_item):
+                    if i is None and discard_none:
+                        continue
+                    yield i # always a scalar
+        elif x is None and discard_none:
+            pass
+        yield x # always a scalar
+
+    def _listify_anything(self, x, discard_none=True):
+        ''' _iterate_anything, then uniquify and force a list return; because,
+            pyinotify's __format_param, checks only isinstance(item,list)
+        '''
+        s = set( self._iterate_anything(x, discard_none=discard_none) )
+        return list(s)
+
+    def _add_db(self, parent, **items):
+	# this assumes bijection, which isn't necessarily true
+	# (we hope it's true though)
+        self.watch_db.update(**items)
+        if parent not in self.parent_db:
+            self.parent_db[parent] = set()
+        self.parent_db[parent].update( items.keys() )
+
+    def _get_wdl(self, *pathlist):
+        ''' inverse pathlist and return a flat list of wd's for the paths and their child paths
+            probably O( (N+M)^2 ); use sparingly
+        '''
+        super_list = self._listify_anything(pathlist,
+            [ self.parent_db.get(x) for x in self._iterate_anything(pathlist) ])
+        return self._listify_anything([ self.watch_db.get(x) for x in super_list ])
 
     def update_config(self):
         ''' (re)check the config files for inotify_limits:
@@ -211,14 +253,10 @@ class PulsarWatchManager(pyinotify.WatchManager):
             up_path = os.path.dirname(up_path)
         if up_path and up_path in self.file_watch_db:
             res = self.add_watch(path, pyinotify.IN_MODIFY) 
-            self.file_watch_db[up_path].update(res)
+            self._add_db(path, res)
             return res
         else:
             raise Exception("add_file_watch('{0}') must be located in a watched directory")
-
-    def prune(self, *a, **kw):
-        log.debug("TODO: prune()")
-        pass
 
     def watch(self, path, mask=None, **kw):
         ''' Automatically select add_watch()/update_watch() and try to do the right thing.
@@ -317,24 +355,34 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 log.error("exception during add_watch({0}): {1}".format(path, repr(e)))
                 break
 
-        self.watch_db.update(res)
+        self._add_db(path, **res)
         return res
 
+    def prune(self):
+        config = self.cm.nc_config
+        stop_watching = set()
 
-    def _rm_db(self,*wdl):
-        todo = set()
-        for path in [ k for k,v in self.watch_db if v in wdl ]:
-            del self.watch_db[path]
-            if path in self.file_watch_db:
-                todo.update( self.file_watch_db[path].values() )
+        for dirpath in self.parent_db:
+            ok = False
+            if self.cm.path_config(dirpath, falsifyable=True) is not False:
+                continue
+            if dirpath in self.watch_db:
+                stop_watching.add( self.watch_db[dirpath] )
+
+        self.rm_watch(stop_watching)
 
     def del_watch(self, wd):
+        ''' remove a watch from the watchmanager database
+        '''
         super(PulsarWatchManager, self).del_watch(wd)
         self._rm_db(wd)
 
-    def rm_watch(self, wd, **kw):
-        res = super(PulsarWatchManager, self).rm_watch(wd, **kw)
-        self._rm_db( *res.keys() )
+    def rm_watch(self, *wd, **kw):
+        ''' recursively unwatch things
+        '''
+        wdl = self._listify_anything(wd)
+        res = super(PulsarWatchManager, self).rm_watch(wdl, **kw)
+        self._rm_db( wdl )
         return res
 
 def _get_notifier():

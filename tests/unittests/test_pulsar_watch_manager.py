@@ -26,15 +26,14 @@ class TestPulsarWatchManager():
         __salt__['config.get'] = config_get
         pulsar.__salt__ = __salt__
         pulsar.__opts__ = {'pulsar': kw}
+        pulsar.__context__ = c = {}
         self.nuke_tdir()
 
-        self.events = []
-        def _append(revent):
-            self.events.append(revent)
+        pulsar._get_notifier() # sets up the dequeue
 
-        self.wm = pulsar.PulsarWatchManager()
-        self.wm.update_config()
-        self.N  = pyinotify.Notifier(self.wm, _append)
+        self.N = c['pulsar.notifier']
+        self.wm = self.N._watch_manager
+        self.events = []
 
     def nuke_tdir(self):
         if os.path.isdir(self.tdir):
@@ -64,56 +63,51 @@ class TestPulsarWatchManager():
         sla(m, [1,2,5,'one'])
 
     def test_add_watch(self, modality='add-watch'):
-        self.reset()
+        o = {}
+        kw = { self.atdir: o }
+        self.reset(**kw)
+
+        if modality in ('watch_new_files', 'watch_files'):
+            o[modality] = True
 
         # NOTE: without new_files and/or without watch_files parent_db should
         # remain empty, and we shouldn't get a watch on tfile
 
         os.mkdir(self.tdir)
+
         if modality == 'add-watch':
             self.wm.add_watch(self.tdir, pulsar.DEFAULT_MASK)
-        elif modality == 'watch':
+
+        elif modality in ('watch', 'watch_new_files', 'watch_files'):
             self.wm.watch(self.tdir)
+
         else:
             raise Exception("unknown modality")
 
+        self.events.extend( pulsar.process() )
+        assert len(self.events) == 0
         assert self.wm.watch_db.get(self.tdir) is None
         assert self.wm.watch_db.get(self.atdir) > 0
         assert len(self.wm.watch_db) == 1
         assert not isinstance(self.wm.parent_db.get(self.atdir), set)
 
-        if self.N.check_events(1):
-            self.N.read_events()
-            self.N.process_events()
-
-        assert len(self.events) == 0
-
         self.supz() # write supz to tfile
 
-        if self.N.check_events(1):
-            self.N.read_events()
-            self.N.process_events()
+        self.events.extend( pulsar.process() )
+        assert len(self.events) == 1
+        assert self.events[0]['change'] == 'IN_CREATE'
 
-        assert len(self.events) == 2
-        assert self.events[0].maskname == 'IN_CREATE'
-        assert self.events[1].maskname == 'IN_MODIFY'
-        assert len(self.wm.watch_db) == 1
-        assert not isinstance(self.wm.parent_db.get(self.atdir), set)
+        if modality in ('watch_files', 'watch_new_files'):
+            assert len(self.wm.watch_db) == 2
+            assert isinstance(self.wm.parent_db.get(self.atdir), set)
+        else:
+            assert len(self.wm.watch_db) == 1
+            assert not isinstance(self.wm.parent_db.get(self.atdir), set)
 
         self.nuke_tdir()
 
     def test_watch(self):
         self.test_add_watch(modality='watch')
 
-    def test_watch_files(self):
-        kw = { self.atdir: { 'watch_files': True } }
-        self.reset(**kw)
-
-        self.supz() # write supz so tfile
-
-        self.wm.watch(self.tdir)
-
-        assert len(self.wm.watch_db) == 2
-        assert len(self.wm.parent_db[self.atdir]) == 1
-        assert self.atfile in self.wm.watch_db
-        assert self.atfile in self.wm.parent_db[self.atdir]
+    def test_watch_new_files(self):
+        self.test_add_watch(modality='watch_new_files')

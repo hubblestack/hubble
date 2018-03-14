@@ -315,6 +315,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 update = True
             if update:
                 kw['mask'] = mask
+                kw.pop('exclude_filter',None)
                 self.update_watch(wd,**kw)
                 log.debug('update-watch wd={0} path={1}'.format(wd,path))
         else:
@@ -394,6 +395,10 @@ class PulsarWatchManager(pyinotify.WatchManager):
         return res
 
     def prune(self):
+
+        log.error("TODO: prune()")
+        return
+
         config = self.cm.nc_config
         stop_watching = set()
 
@@ -654,8 +659,10 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
                 ret.append(sub)
 
+                log.debug("wtf1(( {} ))".format(config[path]))
                 if not event.mask & pyinotify.IN_ISDIR:
                     if event.mask & pyinotify.IN_CREATE:
+                        log.debug("wtf2(( {} ))".format(config[path]))
                         watch_this = config[path].get('watch_new_files', False) \
                             or config[path].get('watch_files', False)
                         if watch_this:
@@ -703,7 +710,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                 auto_add = False
 
             wm.watch(path, mask, rec=rec, auto_add=auto_add, exclude_filter=excludes)
-        wm.prune( [p for p in config] )
+        wm.prune()
 
     if __salt__['config.get']('hubblestack:pulsar:maintenance', False):
         # We're in maintenance mode, throw away findings

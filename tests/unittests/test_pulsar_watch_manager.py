@@ -31,9 +31,10 @@ class TestPulsarWatchManager():
 
         pulsar._get_notifier() # sets up the dequeue
 
+        self.events = []
         self.N = c['pulsar.notifier']
         self.wm = self.N._watch_manager
-        self.events = []
+        self.wm.update_config()
 
     def nuke_tdir(self):
         if os.path.isdir(self.tdir):

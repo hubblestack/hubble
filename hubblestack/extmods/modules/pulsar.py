@@ -418,9 +418,27 @@ class PulsarWatchManager(pyinotify.WatchManager):
                         yield item
 
     def prune(self):
-        pass
-        #to_rm = self._listify_anything([ self.watch_db[x] for x in self._prune_paths_to_stop_watching() ])
-        #self.rm_watch(to_rm)
+        to_rm = self._listify_anything([ self.watch_db[x] for x in self._prune_paths_to_stop_watching() ])
+        self.rm_watch(to_rm)
+
+    def _rm_db(self, wd):
+        plist = set( self._get_paths(wd) )
+        for dirpath in plist:
+            if dirpath in self.watch_db:
+                del self.watch_db[dirpath]
+            if dirpath in self.parent_db:
+                del self.parent_db[dirpath]
+
+        # in the interests of being really really thourough make sure none of
+        # the parent_db sets contain any of the removed dirpaths
+        # and then make sure there's no empty sets in the parent_db
+        to_fully_delete = set()
+        for d,s in salt.ext.six.iteritems(self.parent_db):
+            s -= plist
+            if not s:
+                to_fully_delete.add(d)
+        for item in to_fully_delete:
+            del self.parent_db[item]
 
     def del_watch(self, wd):
         ''' remove a watch from the watchmanager database

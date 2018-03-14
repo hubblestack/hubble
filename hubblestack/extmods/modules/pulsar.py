@@ -123,6 +123,7 @@ class ConfigManager(object):
 
         # Is there a better way to tell if __opts__ updated?
         # Is it worth checking anyway? Seems only to come up in tests/
+        # todo?: attempt to re-read /etc/hubble/hubble sometimes?
         counter = len( set(config).symmetric_difference( set(to_set) ) )
         if counter == 0:
             for k in config:
@@ -231,7 +232,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
     def _get_paths(self, *wdl):
         wdl = self._listify_anything(wdl)
-        return self._listify_anything([ v for k,v in six.iteritems(self.watch_db) if v in wdl ])
+        return self._listify_anything([ v for k,v in salt.ext.six.iteritems(self.watch_db) if v in wdl ])
 
     def update_config(self):
         ''' (re)check the config files for inotify_limits:
@@ -300,7 +301,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
         new_file = kw.pop('new_file', False)
 
         if not os.path.exists(path):
-            # log.debug("watch({0}): NOENT (skipping)".format(path))
+            log.debug("watch({0}): NOENT (skipping)".format(path))
             return
 
         if mask is None:
@@ -394,22 +395,32 @@ class PulsarWatchManager(pyinotify.WatchManager):
             self._add_db(path, **res)
         return res
 
+    def _prune_paths_to_consider(self):
+        inverse_parent = dict()
+        for dirpath,kids in salt.ext.six.iteritems( self.parent_db ):
+            for p in kids:
+                inverse_parent[p] = dirpath
+        return set([ inverse_parent.get(x,x) if x in inverse_parent else x for x in self.watch_db ])
+
+    def _prune_paths_to_stop_watching(self):
+        for dirpath in self._prune_paths_to_consider():
+            pc = self.cm.path_config(dirpath, falsifyable=True)
+            if pc is False:
+                # there's no config for this dir, so remove it and all its kids
+                if dirpath in self.parent_db:
+                    for item in self.parent_db[dirpath]:
+                        yield item
+                yield dirpath
+            elif pc and not pc['watch_files'] and not pc['new_files']:
+                # there's config for this dir, but it nolonger allows for child watches
+                if dirpath in self.parent_db:
+                    for item in self.parent_db[dirpath]:
+                        yield item
+
     def prune(self):
-
-        log.error("TODO: prune()")
-        return
-
-        config = self.cm.nc_config
-        stop_watching = set()
-
-        for dirpath in self.parent_db:
-            ok = False
-            if self.cm.path_config(dirpath, falsifyable=True) is not False:
-                continue
-            if dirpath in self.watch_db:
-                stop_watching.add( self.watch_db[dirpath] )
-
-        self.rm_watch(stop_watching)
+        pass
+        #to_rm = self._listify_anything([ self.watch_db[x] for x in self._prune_paths_to_stop_watching() ])
+        #self.rm_watch(to_rm)
 
     def del_watch(self, wd):
         ''' remove a watch from the watchmanager database

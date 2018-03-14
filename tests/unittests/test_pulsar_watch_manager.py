@@ -1,6 +1,7 @@
 import os, shutil
 import hubblestack.extmods.modules.pulsar as pulsar
 import pyinotify
+import six
 
 if os.environ.get('DEBUG_WM'):
     import logging
@@ -40,7 +41,7 @@ class TestPulsarWatchManager():
         if os.path.isdir(self.tdir):
             shutil.rmtree(self.tdir)
 
-    def supz(self):
+    def mk_tdir_and_write_tfile(self):
         if not os.path.isdir(self.tdir):
             os.mkdir(self.tdir)
         with open(self.tfile, 'w') as fh:
@@ -66,10 +67,11 @@ class TestPulsarWatchManager():
     def test_add_watch(self, modality='add-watch'):
         o = {}
         kw = { self.atdir: o }
-        self.reset(**kw)
 
         if modality in ('watch_new_files', 'watch_files'):
             o[modality] = True
+
+        self.reset(**kw)
 
         # NOTE: without new_files and/or without watch_files parent_db should
         # remain empty, and we shouldn't get a watch on tfile
@@ -92,7 +94,7 @@ class TestPulsarWatchManager():
         assert len(self.wm.watch_db) == 1
         assert not isinstance(self.wm.parent_db.get(self.atdir), set)
 
-        self.supz() # write supz to tfile
+        self.mk_tdir_and_write_tfile() # write supz to tfile
 
         self.events.extend( pulsar.process() )
         assert len(self.events) == 1
@@ -112,3 +114,39 @@ class TestPulsarWatchManager():
 
     def test_watch_new_files(self):
         self.test_add_watch(modality='watch_new_files')
+
+    def test_pruning_support_methods(self):
+        o = {}
+        kw = { self.atdir: { 'watch_files': True } }
+
+        s0 = set([ self.atdir ])
+
+        self.reset(**kw)
+        self.mk_tdir_and_write_tfile()
+        self.wm.add_watch(self.tdir, pulsar.DEFAULT_MASK)
+        s1 = self.wm._prune_paths_to_consider()
+        assert s1 == s0
+
+        self.reset(**kw)
+        self.mk_tdir_and_write_tfile()
+        self.wm.watch(self.tdir)
+        s1 = self.wm._prune_paths_to_consider()
+        assert s1 == s0
+
+        s1 = set( self.wm.watch_db )
+        assert s1 != s0
+
+        s0 = set()
+        s1 = set( self.wm._prune_paths_to_stop_watching() )
+        assert s1 == s0
+
+        self.wm.cm.nc_config[ self.atdir ]['watch_files'] = False
+        s0 = set([ self.atfile ])
+        s1 = set( self.wm._prune_paths_to_stop_watching() )
+        assert s1 == s0
+
+        del self.wm.cm.nc_config[ self.atdir ]
+        s0 = set( self.wm.watch_db )
+        s1 = set( self.wm._prune_paths_to_stop_watching() )
+        assert s1 == s0
+

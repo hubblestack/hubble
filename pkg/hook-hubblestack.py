@@ -30,6 +30,8 @@ HIDDEN_IMPORTS = [
     'traceback',
     'pygit2',
     'Queue',
+    'azure.storage.common',
+    'azure.storage.blob',
 ]
 DATAS = []
 binaries = []

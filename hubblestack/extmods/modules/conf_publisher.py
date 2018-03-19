@@ -10,14 +10,14 @@ def publish(*args):
 
     '''
     Publishes config to splunk at an interval defined in schedule
-	
-	*args
-	   Tuple of opts to log (keys in __opts__). Only those key-value pairs would be published, keys for which are in *args
-	   If not passed, entire __opts__ (excluding password/token) would be published 
-	
+
+    *args
+       Tuple of opts to log (keys in __opts__). Only those key-value pairs would be published, keys for which are in *args
+       If not passed, entire __opts__ (excluding password/token) would be published
+
     '''
     log.debug('Started publishing config to splunk')
-	
+
     opts_to_log={}
     if not args:
         opts_to_log=copy.deepcopy(__opts__)
@@ -39,12 +39,12 @@ def publish(*args):
 
     handler = hubblestack.splunklogging.SplunkHandler()
     handler.emit(MockRecord(filtered_conf, 'INFO', time.asctime(), 'hubblestack.hubble_config'))
-    log.debug('Published config to splunk')		
-	
+    log.debug('Published config to splunk')
+
 def filter_config(opts_to_log):
     '''
     Filters out keys containing certain patterns to avoid sensitive information being sent to splunk
-    '''   
+    '''
     patterns_to_filter = ["password", "token"]
     filtered_conf = remove_sensitive_info(opts_to_log, patterns_to_filter)
     return filtered_conf

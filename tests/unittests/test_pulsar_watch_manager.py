@@ -41,11 +41,23 @@ class TestPulsarWatchManager():
         if os.path.isdir(self.tdir):
             shutil.rmtree(self.tdir)
 
-    def mk_tdir_and_write_tfile(self):
+    def mk_tdir_and_write_tfile(self, fname=None, to_write='supz\n'):
+        if fname is None:
+            fname = self.tfile
         if not os.path.isdir(self.tdir):
             os.mkdir(self.tdir)
         with open(self.tfile, 'w') as fh:
-            fh.write('supz')
+            fh.write(to_write)
+
+    def more_fname(self, number, base=None):
+        if base is None:
+            base = self.tfile
+        return '{0}_{1}'.format(base, number)
+
+    def mk_more_files(self, count=1, to_write='supz-{0}\n'):
+        for i in range(count):
+            with open(self.more_fname(i), 'w') as fh:
+                fh.write(to_write.format(count))
 
     def test_listify_anything(self):
         la = pulsar.PulsarWatchManager._listify_anything
@@ -115,18 +127,76 @@ class TestPulsarWatchManager():
     def test_watch_new_files(self):
         self.test_add_watch(modality='watch_new_files')
 
-    def test_pruning(self):
-        import os
-        o = {}
-        kw = { self.atdir: { 'watch_files': True } }
-        self.reset(**kw)
+    def config_make_files_watch_process_reconfig(self, config, reconfig=None, mk_files=0):
+        '''
+            create a config (arg0),
+            make tdir and tfile,
+            watch the tdir,
+            store watch_db in s0,
+            make additional files (default: 0),
+            execute process(),
+            store watch_db in s1,
+            reconfigure using reconfig param (named param or arg1) (default: None)
+            execute process(),
+            store watch_db in s2
+            return s0, s1, s2 as a tuple
+        '''
+        self.reset(**config)
         self.mk_tdir_and_write_tfile()
         self.wm.watch(self.tdir)
-        s0 = set([ self.atdir, self.atfile ])
-        assert set(self.wm.watch_db) == s0
+        s0 = set(self.wm.watch_db)
+        if mk_files > 0:
+            self.mk_more_files(count=mk_files)
+        self.events.extend( pulsar.process() )
+        s1 = set(self.wm.watch_db)
+        if reconfig is None:
+            del self.wm.cm.nc_config[ self.atdir ]
+        else:
+            self.wm.cm.nc_config[ self.atdir ] = reconfig
+        self.events.extend( pulsar.process() )
+        s2 = set(self.wm.watch_db)
+        return s0,s1,s2
 
-        del self.wm.cm.nc_config[ self.atdir ]
-        self.wm.prune()
+    def test_pruning_watch_files_false(self):
+        s0,s1,s2 = self.config_make_files_watch_process_reconfig({self.atdir:{}}, None, mk_files=2)
+        assert s0 == set([self.atdir])
+        assert s1 == set([self.atdir])
+        assert s2 == set()
 
-        s1 = set()
-        assert set(self.wm.watch_db) == s1
+    def test_pruning_watch_new_files_then_false(self):
+        c1 = {self.atdir: { 'watch_new_files': True }}
+        c2 = {self.atdir: { 'watch_new_files': False }}
+        s0,s1,s2 = self.config_make_files_watch_process_reconfig(c1,c2, mk_files=2)
+        f1 = self.more_fname(0, base=self.atfile)
+        f2 = self.more_fname(1, base=self.atfile)
+        assert s0 == set([self.atdir])
+        assert s1 == set([self.atdir, f1, f2])
+        assert s2 == set([self.atdir])
+
+    def test_pruning_watch_files_then_false(self):
+        c1 = {self.atdir: { 'watch_files': True }}
+        c2 = {self.atdir: { 'watch_files': False }}
+        s0,s1,s2 = self.config_make_files_watch_process_reconfig(c1,c2, mk_files=2)
+        f1 = self.more_fname(0, base=self.atfile)
+        f2 = self.more_fname(1, base=self.atfile)
+        assert s0 == set([self.atdir, self.atfile])
+        assert s1 == set([self.atdir, self.atfile, f1, f2])
+        assert s2 == set([self.atdir])
+
+    def test_pruning_watch_new_files_then_nothing(self):
+        c1 = {self.atdir: { 'watch_new_files': True }}
+        s0,s1,s2 = self.config_make_files_watch_process_reconfig(c1,None, mk_files=2)
+        f1 = self.more_fname(0, base=self.atfile)
+        f2 = self.more_fname(1, base=self.atfile)
+        assert s0 == set([self.atdir])
+        assert s1 == set([self.atdir, f1, f2])
+        assert s2 == set()
+
+    def test_pruning_watch_files_then_nothing(self):
+        c1 = {self.atdir: { 'watch_files': True }}
+        s0,s1,s2 = self.config_make_files_watch_process_reconfig(c1,None, mk_files=2)
+        f1 = self.more_fname(0, base=self.atfile)
+        f2 = self.more_fname(1, base=self.atfile)
+        assert s0 == set([self.atdir, self.atfile])
+        assert s1 == set([self.atdir, f1, f2, self.atfile])
+        assert s2 == set()

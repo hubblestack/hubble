@@ -1,10 +1,14 @@
-
+# -*- coding: utf-8 -*-
+'''
+Module to send config options to splunk
+'''
 import logging
 import hubblestack.splunklogging
 import copy
 import time
 
 log = logging.getLogger(__name__)
+
 
 def publish(*args):
 
@@ -18,18 +22,19 @@ def publish(*args):
     '''
     log.debug('Started publishing config to splunk')
 
-    opts_to_log={}
+    opts_to_log = {}
     if not args:
-        opts_to_log=copy.deepcopy(__opts__)
+        opts_to_log = copy.deepcopy(__opts__)
     else:
         for arg in args:
             if arg in  __opts__:
-                opts_to_log[arg]=__opts__[arg]
+                opts_to_log[arg] = __opts__[arg]
 
     hubblestack.splunklogging.__grains__ = __grains__
     hubblestack.splunklogging.__salt__ = __salt__
 
-    filtered_conf=filter_config(opts_to_log)
+    filtered_conf = filter_config(opts_to_log)
+
     class MockRecord(object):
             def __init__(self, message, levelname, asctime, name):
                 self.message = message
@@ -41,6 +46,7 @@ def publish(*args):
     handler.emit(MockRecord(filtered_conf, 'INFO', time.asctime(), 'hubblestack.hubble_config'))
     log.debug('Published config to splunk')
 
+
 def filter_config(opts_to_log):
     '''
     Filters out keys containing certain patterns to avoid sensitive information being sent to splunk
@@ -49,7 +55,11 @@ def filter_config(opts_to_log):
     filtered_conf = remove_sensitive_info(opts_to_log, patterns_to_filter)
     return filtered_conf
 
+
 def remove_sensitive_info(obj, patterns_to_filter):
+    '''
+    Filter known sensitive info
+    '''
     if isinstance(obj, dict):
          obj = {
              key: remove_sensitive_info(value, patterns_to_filter)

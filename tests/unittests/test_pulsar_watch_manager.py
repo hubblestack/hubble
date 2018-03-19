@@ -115,38 +115,18 @@ class TestPulsarWatchManager():
     def test_watch_new_files(self):
         self.test_add_watch(modality='watch_new_files')
 
-    def test_pruning_support_methods(self):
+    def test_pruning(self):
+        import os
         o = {}
         kw = { self.atdir: { 'watch_files': True } }
-
-        s0 = set([ self.atdir ])
-
-        self.reset(**kw)
-        self.mk_tdir_and_write_tfile()
-        self.wm.add_watch(self.tdir, pulsar.DEFAULT_MASK)
-        s1 = self.wm._prune_paths_to_consider()
-        assert s1 == s0
-
         self.reset(**kw)
         self.mk_tdir_and_write_tfile()
         self.wm.watch(self.tdir)
-        s1 = self.wm._prune_paths_to_consider()
-        assert s1 == s0
-
-        s1 = set( self.wm.watch_db )
-        assert s1 != s0
-
-        s0 = set()
-        s1 = set( self.wm._prune_paths_to_stop_watching() )
-        assert s1 == s0
-
-        self.wm.cm.nc_config[ self.atdir ]['watch_files'] = False
-        s0 = set([ self.atfile ])
-        s1 = set( self.wm._prune_paths_to_stop_watching() )
-        assert s1 == s0
+        s0 = set([ self.atdir, self.atfile ])
+        assert set(self.wm.watch_db) == s0
 
         del self.wm.cm.nc_config[ self.atdir ]
-        s0 = set( self.wm.watch_db )
-        s1 = set( self.wm._prune_paths_to_stop_watching() )
-        assert s1 == s0
+        self.wm.prune()
 
+        s1 = set()
+        assert set(self.wm.watch_db) == s1

@@ -214,6 +214,8 @@ class PulsarWatchManager(pyinotify.WatchManager):
 	# this assumes bijection, which isn't necessarily true
 	# (we hope it's true though)
         self.watch_db.update(**items)
+        if parent and not items:
+            raise Exception("_add_db(parent, {path: wd, path2: wd2, ...})")
         if parent in items:
             items = items.copy()
             del items[parent]
@@ -232,7 +234,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
     def _get_paths(self, *wdl):
         wdl = self._listify_anything(wdl)
-        return self._listify_anything([ v for k,v in salt.ext.six.iteritems(self.watch_db) if v in wdl ])
+        return self._listify_anything([ k for k,v in salt.ext.six.iteritems(self.watch_db) if v in wdl ])
 
     def update_config(self):
         ''' (re)check the config files for inotify_limits:
@@ -346,7 +348,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
                                 continue
                             if wpathname in file_track: # checking file_track isn't strictly necessary
                                 continue                # but gives a slight speedup
-                            self._add_recursed_file_watch( wpathname )
+                            self._add_recursed_file_watch( wpathname, parent=path )
                             ft_count += 1
                 if ft_count > 0:
                     log.debug('recursive file-watch totals for path={0} new-this-loop: {1}'.format(path, ft_count))
@@ -395,27 +397,28 @@ class PulsarWatchManager(pyinotify.WatchManager):
             self._add_db(path, **res)
         return res
 
-    def _prune_paths_to_consider(self):
-        inverse_parent = dict()
-        for dirpath,kids in salt.ext.six.iteritems( self.parent_db ):
-            for p in kids:
-                inverse_parent[p] = dirpath
-        return set([ inverse_parent.get(x,x) if x in inverse_parent else x for x in self.watch_db ])
-
     def _prune_paths_to_stop_watching(self):
-        for dirpath in self._prune_paths_to_consider():
+        inverse_parent_db = {}
+        for k,v in salt.ext.six.iteritems(self.parent_db):
+            for i in v:
+                inverse_parent_db[i] = k
+        for dirpath in self.watch_db:
             pc = self.cm.path_config(dirpath, falsifyable=True)
             if pc is False:
-                # there's no config for this dir, so remove it and all its kids
                 if dirpath in self.parent_db:
+                    # there's no config for this dir, but it had child watches at one point
+                    # probably this is just nolonger configured
                     for item in self.parent_db[dirpath]:
                         yield item
-                yield dirpath
-            elif pc and not pc['watch_files'] and not pc['new_files']:
+                    yield dirpath
+                elif dirpath not in inverse_parent_db:
+                    # this doesn't seem to be in parent_db or the reverse
+                    # probably nolonger configured
+                    yield dirpath
+            elif not pc['watch_files'] and not pc['watch_new_files'] and dirpath in self.parent_db:
                 # there's config for this dir, but it nolonger allows for child watches
-                if dirpath in self.parent_db:
-                    for item in self.parent_db[dirpath]:
-                        yield item
+                for item in self.parent_db[dirpath]:
+                    yield item
 
     def prune(self):
         to_rm = self._listify_anything([ self.watch_db[x] for x in self._prune_paths_to_stop_watching() ])
@@ -688,10 +691,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
                 ret.append(sub)
 
-                log.debug("wtf1(( {} ))".format(config[path]))
                 if not event.mask & pyinotify.IN_ISDIR:
                     if event.mask & pyinotify.IN_CREATE:
-                        log.debug("wtf2(( {} ))".format(config[path]))
                         watch_this = config[path].get('watch_new_files', False) \
                             or config[path].get('watch_files', False)
                         if watch_this:

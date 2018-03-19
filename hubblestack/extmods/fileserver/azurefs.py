@@ -63,6 +63,7 @@ import salt.utils
 try:
     import azure.storage.common
     import azure.storage.blob
+    from azure.storage.common import AzureHttpError
     HAS_AZURE = True
 except ImportError:
     HAS_AZURE = False
@@ -200,6 +201,25 @@ def update():
             blob_list = blob_service.list_blobs(name)
         except Exception as exc:
             log.exception('Error occurred fetching blob list for azurefs')
+
+            if not __opts__['delete_on_unavailable'] or not "<class 'azure.common.AzureHttpError'>" in type(exc) :
+                continue
+            if '<AuthenticationErrorDetail>Signature did not match.' in exc.message:
+                log.debug('Could not connect to azure container "{0}"'.format(name))
+                if container == __opts__['azurefs'][-1]: 
+                    log.debug('Its the last container in azurefs. So, not deleting its cache.')
+                else:
+                    container_cache_folder = _get_container_path(container) 
+                    print 'Trying to delete the cache of container "{0}"'.format(name)
+                    try:
+                        container_cachedir = os.path.join(__opts__['cachedir'], 'azurefs',container_cache_folder)
+                        container_filelist = container_cachedir + '.list'
+                        if os.path.exists(container_cachedir):
+                            shutil.rmtree(container_cachedir)
+                        if os.path.exists(container_filelist):
+                            os.remove(container_filelist)
+                    except Exception:
+                        log.exception('Problem occurred trying to invalidate cache for container "{0}"'.format(name))
             continue
 
         # Walk the cache directory searching for deletions

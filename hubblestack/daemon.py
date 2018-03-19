@@ -375,6 +375,7 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['default_include'] = 'hubble.d/*.conf'
     salt.config.DEFAULT_MINION_OPTS['logfile_maxbytes'] = 100000000 # 100MB
     salt.config.DEFAULT_MINION_OPTS['logfile_backups'] = 1 # maximum rotated logs
+    salt.config.DEFAULT_MINION_OPTS['delete_on_unavailable'] = False
 
     global __opts__
 

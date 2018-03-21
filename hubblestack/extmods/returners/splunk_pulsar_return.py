@@ -103,7 +103,10 @@ def returner(ret):
             try:
                 fqdn_ip4 = __grains__['fqdn_ip4'][0]
             except IndexError:
-                fqdn_ip4 = __grains__['ipv4'][0]
+                try:
+                    fqdn_ip4 = __grains__['ipv4'][0]
+                except IndexError:
+                    raise Exception('No ipv4 grains found. Is net-tools installed?')
             if fqdn_ip4.startswith('127.'):
                 for ip4_addr in __grains__['ipv4']:
                     if ip4_addr and not ip4_addr.startswith('127.'):

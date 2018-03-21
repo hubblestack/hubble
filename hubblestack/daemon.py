@@ -32,6 +32,11 @@ __opts__ = {}
 # This should work fine until we go to multiprocessing
 SESSION_UUID = str(uuid.uuid4())
 
+_gen_jid = salt.utils.jid.gen_jid
+
+import inspect
+if len(inspect.getargspec( salt.utils.jid.gen_jid ).args) == 1:
+    _gen_jid = lambda: salt.utils.jid.gen_jid(__opts__)
 
 def run():
     '''
@@ -291,9 +296,10 @@ def schedule():
                 if returner not in __returners__:
                     log.error('Could not find {0} returner.'.format(returner))
                     continue
+
                 log.debug('Returning job data to {0}'.format(returner))
                 returner_ret = {'id': __grains__['id'],
-                                'jid': salt.utils.jid.gen_jid(),
+                                'jid': _gen_jid(),
                                 'fun': func,
                                 'fun_args': args + ([kwargs] if kwargs else []),
                                 'return': ret}
@@ -331,7 +337,7 @@ def run_function():
         else:
             log.info('Returning job data to {0}'.format(returner))
             returner_ret = {'id': __grains__['id'],
-                            'jid': salt.utils.jid.gen_jid(),
+                            'jid': _gen_jid(),
                             'fun': __opts__['function'],
                             'fun_args': args + ([kwargs] if kwargs else []),
                             'return': ret}

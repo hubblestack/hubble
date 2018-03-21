@@ -24,6 +24,7 @@ stat:
             uid: 0        #expected uid owner
             group: 'root'  #expected group owner
             gid: 0          #expected gid owner
+            match_on_file_missing: True  # See (1) below
       'CentOS Linux-7':
         - '/etc/grub2/grub.cfg':
             tag: 'CIS-1.5.1'
@@ -37,6 +38,13 @@ stat:
     description: 'Grub must be owned by root'
     alert: email
     trigger: state
+
+(1) If `match_on_file_missing` is ommitted, success/failure will be determined
+entirely based on the grep command and other arguments. If it's set to True and
+the file is missing, then it will be considered a match (success).
+If it's set to False and the file is missing, then it
+will be considered a non-match (failure).
+If the file exists, this setting is ignored.
 '''
 
 from __future__ import absolute_import
@@ -84,7 +92,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                     continue
                 name = tag_data['name']
                 expected = {}
-                for e in ['mode', 'user', 'uid', 'group', 'gid', 'allow_more_strict']:
+                for e in ['mode', 'user', 'uid', 'group', 'gid', 'allow_more_strict', 'match_on_file_missing']:
                     if e in tag_data:
                         expected[e] = tag_data[e]
 
@@ -101,6 +109,8 @@ def audit(data_list, tags, debug=False, **kwargs):
                 if not salt_ret:
                     if None in expected.values():
                         ret['Success'].append(tag_data)
+                    elif 'match_on_file_missing' in expected.keys() and expected['match_on_file_missing']:
+                        ret['Success'].append(tag_data)
                     else:
                         ret['Failure'].append(tag_data)
                     continue
@@ -108,7 +118,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                 passed = True
                 reason_dict = {}
                 for e in expected.keys():
-                    if e == 'allow_more_strict':
+                    if e == 'allow_more_strict' or e == 'match_on_file_missing':
                         continue
                     r = salt_ret[e]
 

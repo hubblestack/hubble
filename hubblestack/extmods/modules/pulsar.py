@@ -276,8 +276,9 @@ class PulsarWatchManager(pyinotify.WatchManager):
             fh.write('{0}\n'.format(muwb))
 
     def _add_recursed_file_watch(self, path, mask=pyinotify.IN_MODIFY, **kw):
-        if not os.path.isfile(path):
-            raise Exception("use add_watch for non-file watches")
+        if os.path.isdir(path):
+            # this used to be if not os.path.isfile(); turns out socket files aren't isfile()s
+            raise Exception("use add_watch() or watch() for directories like path={0}".format(path))
         if os.path.islink(path):
             return
         path = os.path.abspath(path)

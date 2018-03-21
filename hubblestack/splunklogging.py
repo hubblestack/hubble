@@ -46,7 +46,7 @@ import copy
 import logging
 
 _max_content_bytes = 100000
-http_event_collector_SSL_verify = False
+http_event_collector_SSL_verify = True
 http_event_collector_debug = False
 
 hec = None

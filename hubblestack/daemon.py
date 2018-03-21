@@ -457,6 +457,12 @@ def load_config():
                                         __opts__['log_level'],
                                         max_bytes=__opts__.get('logfile_maxbytes', 100000000),
                                         backup_count=__opts__.get('logfile_backups', 1))
+    logging.SPLUNK = 25 # logs below warning, above info
+    logging.addLevelName(logging.SPLUNK, 'SPLUNK')
+    def splunk(self, message, *args, **kwargs):
+        if self.isEnabledFor(logging.SPLUNK):
+            self._log(logging.SPLUNK, message, args, **kwargs)
+    logging.Logger.splunk = splunk
     # 384 is 0o600 permissions, written without octal for python 2/3 compat
     os.chmod(__opts__['log_file'], 384)
     os.chmod(parsed_args.get('configfile'), 384)
@@ -471,7 +477,7 @@ def load_config():
     if __salt__['config.get']('hubblestack:splunklogging', False):
         root_logger = logging.getLogger()
         handler = hubblestack.splunklogging.SplunkHandler()
-        handler.setLevel(logging.ERROR)
+        handler.setLevel(logging.SPLUNK)
         root_logger.addHandler(handler)
 
 

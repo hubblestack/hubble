@@ -20,6 +20,7 @@ import salt.fileclient
 import salt.fileserver
 import salt.fileserver.gitfs
 import salt.utils
+import salt.utils.platform
 import salt.utils.jid
 import salt.utils.gitfs
 import salt.log.setup
@@ -355,7 +356,7 @@ def load_config():
     parsed_args = parse_args()
 
     # Load unique data for Windows or Linux
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         if parsed_args.get('configfile') is None:
             parsed_args['configfile'] = 'C:\\Program Files (x86)\\Hubble\\etc\\hubble\\hubble.conf'
         salt.config.DEFAULT_MINION_OPTS['cachedir'] = 'C:\\Program Files (x86)\\hubble\\var\\cache'

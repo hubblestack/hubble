@@ -37,6 +37,7 @@ import yaml
 import collections
 
 import salt.utils
+import salt.utils.platform
 from salt.exceptions import CommandExecutionError
 from hubblestack import __version__
 
@@ -78,7 +79,7 @@ def queries(query_group,
     query_data = {}
     MAX_FILE_SIZE = 104857600
     if query_file is None:
-        if salt.utils.is_windows():
+        if salt.utils.platform.is_windows():
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
         else:
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_queries.yaml'
@@ -139,7 +140,7 @@ def queries(query_group,
             log.debug('osquery not installed on this host. Skipping.')
             return None
 
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         win_version = __grains__['osfullname']
         if '2008' not in win_version and '2012' not in win_version and '2016' not in win_version:
             log.error('osquery does not run on windows versions earlier than Server 2008 and Windows 7')
@@ -258,7 +259,7 @@ def top(query_group,
         verbose=False,
         report_version_with_day=True):
 
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         topfile = 'salt://hubblestack_nebula/win_top.nebula'
 
     configs = get_top_data(topfile)

@@ -18,6 +18,7 @@ import re
 
 import salt.ext.six
 import salt.loader
+import salt.utils.platform
 
 log = logging.getLogger(__name__)
 DEFAULT_MASK = ['ExecuteFile', 'Write', 'Delete', 'DeleteSubdirectoriesAndFiles', 'ChangePermissions',
@@ -32,7 +33,7 @@ __version__ = 'v2017.8.3'
 
 
 def __virtual__():
-    if not salt.utils.is_windows():
+    if not salt.utils.platform.is_windows():
         return False, 'This module only works on windows'
     return __virtualname__
 

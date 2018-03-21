@@ -14,6 +14,7 @@ import copy
 import fnmatch
 import logging
 import salt.utils
+import salt.utils.platform
 
 
 log = logging.getLogger(__name__)
@@ -21,7 +22,7 @@ __virtualname__ = 'win_firewall'
 
 
 def __virtual__():
-    if not salt.utils.is_windows():
+    if not salt.utils.platform.is_windows():
         return False, 'This audit module only runs on windows'
     if '2008' in __grains__['osfullname']:
         return False, 'The Powershell firewall module only works on 2012 or higher'

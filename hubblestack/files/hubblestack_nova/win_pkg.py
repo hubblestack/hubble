@@ -13,6 +13,7 @@ import copy
 import fnmatch
 import logging
 import salt.utils
+import salt.utils.platform
 from salt.exceptions import CommandExecutionError
 from distutils.version import LooseVersion
 
@@ -22,7 +23,7 @@ __virtualname__ = 'win_pkg'
 
 
 def __virtual__():
-    if not salt.utils.is_windows():
+    if not salt.utils.platform.is_windows():
         return False, 'This audit module only runs on windows'
     return True
 

@@ -53,7 +53,7 @@ from datetime import datetime
 import logging
 
 _max_content_bytes = 100000
-http_event_collector_SSL_verify = False
+http_event_collector_SSL_verify = True
 http_event_collector_debug = False
 
 log = logging.getLogger(__name__)

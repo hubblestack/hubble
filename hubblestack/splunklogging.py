@@ -152,11 +152,17 @@ class SplunkHandler(logging.Handler):
         Format the log record into a dictionary for easy insertion into a
         splunk event dictionary
         '''
-        log_entry = {'message': record.message,
-                     'level': record.levelname,
-                     'timestamp': record.asctime,
-                     'loggername': record.name,
-                     }
+        try:
+            log_entry = {'message': record.message,
+                         'level': record.levelname,
+                         'timestamp': record.asctime,
+                         'loggername': record.name,
+                         }
+        except:
+            log_entry = {'message': record.msg,
+                         'level': record.levelname,
+                         'loggername': record.name,
+                         }
         return log_entry
 
 

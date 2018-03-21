@@ -84,6 +84,7 @@ import logging
 import fnmatch
 import copy
 import salt.utils
+import salt.utils.path
 
 log = logging.getLogger(__name__)
 
@@ -94,7 +95,7 @@ __data__ = None
 def __virtual__():
     if salt.utils.is_windows():
         return False, 'This audit module only runs on linux'
-    if not salt.utils.which('iptables'):
+    if not salt.utils.path.which('iptables'):
         return (False, 'The iptables execution module cannot be loaded: iptables not installed.')
     return True
 

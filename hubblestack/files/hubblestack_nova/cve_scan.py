@@ -10,13 +10,14 @@ HubbleStack Nova plugin for openscap scanning.
 '''
 from __future__ import absolute_import
 import salt.utils
+import salt.utils.path
 import logging
 
 log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.is_linux() and salt.utils.which('oscap'):
+    if salt.utils.is_linux() and salt.utils.path.which('oscap'):
         return True
     return False, 'This module requires Linux and the oscap binary'
 

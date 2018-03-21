@@ -32,6 +32,7 @@ import copy
 import json
 import logging
 import os
+import time
 import yaml
 import collections
 
@@ -179,7 +180,10 @@ def queries(query_group,
         }
 
         cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
+        t0 = time.time()
         res = __salt__['cmd.run_all'](cmd)
+        t1 = time.time()
+        log.splunk('osquery query \'{0}\' took {1}'.format(query_sql, t1-t0))
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:

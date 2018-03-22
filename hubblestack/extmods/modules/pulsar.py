@@ -179,12 +179,20 @@ class PulsarWatchManager(pyinotify.WatchManager):
     '''
 
     def __init__(self, *a, **kw):
-        super(PulsarWatchManager, self).__init__(*a, **kw)
+        # because the salt loader periodically reloads everything,
+        # it becomes necessary to store the super class. Arguably, we
+        # could instead use pyinotify.WatchManager.__init__(self, ...)
+        # but super() lets us work with MRO later iff necessary
+        self.__super = super(PulsarWatchManager, self)
+
+        self.__super.__init__(*a, **kw)
         self.watch_db  = dict()
         self.parent_db = dict()
 
         self._last_config_update = 0
         self.update_config()
+
+
 
     @classmethod
     def _iterate_anything(cls, x, discard_none=True):
@@ -369,7 +377,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
         while retries > 0:
             retries -= 1
             try:
-                _res = super(PulsarWatchManager, self).add_watch(path, mask, **kw)
+                _res = self.__super.add_watch(path, mask, **kw)
                 if isinstance(_res, dict):
                     res.update(_res)
             except pyinotify.WatchManagerError as wme:
@@ -447,14 +455,14 @@ class PulsarWatchManager(pyinotify.WatchManager):
     def del_watch(self, wd):
         ''' remove a watch from the watchmanager database
         '''
-        super(PulsarWatchManager, self).del_watch(wd)
+        self.__super.del_watch(wd)
         self._rm_db(wd)
 
     def rm_watch(self, *wd, **kw):
         ''' recursively unwatch things
         '''
         wdl = self._listify_anything(wd)
-        res = super(PulsarWatchManager, self).rm_watch(wdl, **kw)
+        res = self.__super.rm_watch(wdl, **kw)
         self._rm_db( wdl )
         return res
 

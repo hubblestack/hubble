@@ -230,7 +230,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
         if items:
             if parent not in self.parent_db:
                 self.parent_db[parent] = set()
-            self.parent_db[parent].update( items.keys() )
+            self.parent_db[parent].update( items )
 
     def _get_wdl(self, *pathlist):
         ''' inverse pathlist and return a flat list of wd's for the paths and their child paths
@@ -288,14 +288,12 @@ class PulsarWatchManager(pyinotify.WatchManager):
             # this used to be if not os.path.isfile(); turns out socket files aren't isfile()s
             raise Exception("use add_watch() or watch() for directories like path={0}".format(path))
         if os.path.islink(path):
-            return
+            return {}
         path = os.path.abspath(path)
         up_path = kw.pop('parent', False)
-        if 'parent' in kw:
-            up_path = kw.pop('parent')
-        else:
+        if not up_path:
             up_path = os.path.dirname(path)
-            while (up_path and up_path != '/') and up_path not in self.watch_db:
+            while len(up_path) > 1 and up_path not in self.watch_db:
                 up_path = os.path.dirname(up_path)
         if up_path and up_path in self.watch_db:
             res = self.add_watch(path, pyinotify.IN_MODIFY, no_db=True)
@@ -345,22 +343,24 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 if isinstance(excludes, (list,tuple)):
                     pfft = excludes
                     excludes = lambda x: x in pfft
-                file_track = self.parent_db.get(path, {})
-                ft_count = 0
-                for wpath,wdirs,wfiles in os.walk(path):
-                    if rec or wpath == path:
-                        for f in wfiles:
-                            wpathname = os.path.join(wpath,f)
-                            if excludes(wpathname):
-                                continue
-                            if os.path.islink(wpathname):
-                                continue
-                            if wpathname in file_track: # checking file_track isn't strictly necessary
-                                continue                # but gives a slight speedup
-                            self._add_recursed_file_watch( wpathname, parent=path )
-                            ft_count += 1
-                if ft_count > 0:
-                    log.debug('recursive file-watch totals for path={0} new-this-loop: {1}'.format(path, ft_count))
+                if path not in self.parent_db or pconf['watch_files_obsessively']:
+                    file_track = self.parent_db.get(path, {})
+                    log.debug("os.walk({})".format(path))
+                    pre_count = len(self.watch_db)
+                    for wpath,wdirs,wfiles in os.walk(path):
+                        if rec or wpath == path:
+                            for f in wfiles:
+                                wpathname = os.path.join(wpath,f)
+                                if excludes(wpathname):
+                                    continue
+                                if not os.path.isfile(wpathname):
+                                    continue
+                                if wpathname in file_track: # checking file_track isn't strictly necessary
+                                    continue                # but gives a slight speedup
+                                res = self._add_recursed_file_watch( wpathname, parent=path )
+                    ft_count = len(self.watch_db) - pre_count
+                    if ft_count > 0:
+                        log.debug('recursive file-watch totals for path={0} new-this-loop: {1}'.format(path, ft_count))
 
 
     def add_watch(self, path, mask, **kw):

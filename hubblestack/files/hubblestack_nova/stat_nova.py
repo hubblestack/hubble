@@ -49,7 +49,7 @@ If the file exists, this setting is ignored.
 
 from __future__ import absolute_import
 import logging
-
+import os
 import fnmatch
 import copy
 import salt.utils
@@ -105,9 +105,12 @@ def audit(data_list, tags, debug=False, **kwargs):
                     continue
 
                 # getting the stats using salt
-                salt_ret = __salt__['file.stats'](name)
+                if os.path.exists(name):
+                    salt_ret = __salt__['file.stats'](name)
+                else:
+                    salt_ret = {}
                 if not salt_ret:
-                    if None in expected.values():
+                    if not expected:
                         ret['Success'].append(tag_data)
                     elif 'match_on_file_missing' in expected.keys() and expected['match_on_file_missing']:
                         ret['Success'].append(tag_data)
@@ -237,7 +240,7 @@ def _check_mode(max_permission, given_permission, allow_more_strict):
     if given_permission == '0':
         return True
 
-    if not allow_more_strict:
+    if ((not allow_more_strict) or (max_permission == 'None')):
         return (max_permission == given_permission)
 
     if (_is_permission_in_limit(max_permission[0], given_permission[0]) and _is_permission_in_limit(max_permission[1], given_permission[1]) and _is_permission_in_limit(max_permission[2], given_permission[2])):

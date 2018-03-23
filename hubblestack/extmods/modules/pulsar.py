@@ -337,13 +337,13 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
         else: # watch_files if configured to do so
             pconf = self.cm.path_config(path)
-            if pconf['watch_files']:
-                rec = kw.get('rec')
-                excludes = kw.get('exclude_filter', lambda x: False)
-                if isinstance(excludes, (list,tuple)):
-                    pfft = excludes
-                    excludes = lambda x: x in pfft
+            if pconf['watch_files'] or pconf['watch_files_obsessively']:
                 if path not in self.parent_db or pconf['watch_files_obsessively']:
+                    rec = kw.get('rec')
+                    excludes = kw.get('exclude_filter', lambda x: False)
+                    if isinstance(excludes, (list,tuple)):
+                        pfft = excludes
+                        excludes = lambda x: x in pfft
                     file_track = self.parent_db.get(path, {})
                     log.debug("os.walk({})".format(path))
                     pre_count = len(self.watch_db)
@@ -541,15 +541,17 @@ class delta_t(object):
         return "delta_t({0})".format(self)
 
     def __str__(self):
-        ret = ["delta_t={0:0.1f}".format(self.get())]
+        ret = ["delta_t={0:0.2f}".format(self.get())]
         for i in sorted(self.marks):
             if i in ('top',):
                 continue
-            ret.append("{0}={1:0.1f}".format(i, self.get(i)))
+            ret.append("{0}={1:0.2f}".format(i, self.get(i)))
         return '; '.join(ret)
 
     def fin(self,name=None):
-        if name is None or name == 'top':
+        if name is None:
+            name = self.last_mark
+        if name == 'top':
             return # top doesn't finish
         self.fins[name] = time.time()
 
@@ -560,9 +562,8 @@ class delta_t(object):
         end   = self.fins.get(name, time.time())
         return end - begin
 
-    def mark(self,name=None):
-        if name is None:
-            name = 'top'
+    def mark(self,name):
+        self.last_mark = name
         self.marks[name] = time.time()
 
 
@@ -650,6 +651,10 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     If pillar/grains/minion config key `hubblestack:pulsar:maintenance` is set to
     True, then changes will be discarded.
     '''
+
+    dt = delta_t()
+    dt.mark('read_config')
+
     if not HAS_PYINOTIFY:
         log.debug('Not running beacon pulsar. No python-inotify installed.')
         return []
@@ -666,10 +671,11 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     wm = notifier._watch_manager
     update_watches = bool( stale )
 
-    dt = delta_t()
+    dt.fin()
 
     # Read in existing events
     if notifier.check_events(1):
+        dt.mark('check_events')
         notifier.read_events()
         notifier.process_events()
         queue = __context__['pulsar.queue']
@@ -681,6 +687,9 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                 log.warn('Your inotify queue is overflowing.')
                 log.warn('Fix by increasing /proc/sys/fs/inotify/max_queued_events')
                 continue
+
+            log.debug(("queue< event.path={0.path} event.pathname={0.pathname} event.maskname={0.maskname}"
+                " event.name={0.name} >").format(event))
 
             # Find the matching path in config
             path = event.path
@@ -735,8 +744,10 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                         wm.nowatch(event.pathname)
             else:
                 log.info('Excluding {0} from event for {1}'.format(event.pathname, path))
+        dt.fin()
 
     if update_watches:
+        dt.mark('update_watches')
         log.debug("update watches")
         # Update existing watches and add new ones
         # TODO: make the config handle more options
@@ -771,15 +782,17 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                 auto_add = False
 
             wm.watch(path, mask, rec=rec, auto_add=auto_add, exclude_filter=excludes)
+        dt.fin()
+        dt.mark('prune_watches')
         wm.prune()
+        dt.fin()
 
     if __salt__['config.get']('hubblestack:pulsar:maintenance', False):
         # We're in maintenance mode, throw away findings
         ret = []
 
-    dt = dt.top
-    if dt >= 0.1:
-        log.debug("process sweep delta_t={t:0.1f}".format(t=dt))
+    if dt.get() >= 0.1:
+        log.debug("process sweep delta_t={0}".format(dt))
     return ret
 
 

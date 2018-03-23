@@ -744,7 +744,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                                 wm.watch(event.pathname, pyinotify.IN_MODIFY, new_file=True)
 
                     elif event.mask & pyinotify.IN_DELETE:
-                        wm.nowatch(event.pathname)
+                        wm.rm_watch(event.pathname)
             else:
                 log.info('Excluding {0} from event for {1}'.format(event.pathname, path))
         dt.fin()

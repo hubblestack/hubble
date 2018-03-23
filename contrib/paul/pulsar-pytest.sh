@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 
-export DEBUG_WM=1
+export DEBUG_SHOW_PULSAR_LOGS=1
 export PYTHONPATH=.
 
-pytest --tb=short -xv tests/unittests/test_pulsar_watch_manager.py 
+pytest --tb=short -xv tests/unittests/test_pulsar.py

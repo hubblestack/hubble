@@ -385,6 +385,9 @@ def load_config():
     __opts__.update(parsed_args)
     __opts__['conf_file'] = parsed_args.get('configfile')
 
+    # Optional sleep to wait for network
+    time.sleep(int(__opts__.get('startup_sleep', 0)))
+
     # Convert -vvv to log level
     if __opts__['log_level'] is None:
         # Default to 'error'

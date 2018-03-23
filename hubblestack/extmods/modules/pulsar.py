@@ -795,7 +795,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
         ret = []
 
     if dt.get() >= 0.1:
-        log.debug("process sweep delta_t={0}".format(dt))
+        log.debug("process sweep {0}".format(dt))
     return ret
 
 

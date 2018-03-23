@@ -96,7 +96,7 @@ class ConfigManager(object):
     def last_update(self, v):
         self.__class__._last_update = v
 
-    def really_fresh(self, freshness_limit=2):
+    def freshness(self, freshness_limit=2):
         t = time.time()
         return (t - self.last_update <= freshness_limit)
 
@@ -672,7 +672,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     ret = []
     notifier = _get_notifier()
     wm = notifier._watch_manager
-    update_watches = cm.really_fresh(2)
+    update_watches = cm.freshness(2)
 
     dt.fin()
 

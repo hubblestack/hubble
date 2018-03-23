@@ -533,15 +533,37 @@ def _preprocess_excludes(excludes):
 
 class delta_t(object):
     def __init__(self):
+        self.marks = {}
+        self.fins = {}
         self.mark('top')
 
-    def mark(self,name):
-        if name.startswith('_'):
-            raise Exception("bad mark name")
-        t = time.time()
-        def _x(self):
-            return time.time() - t
-        setattr(type(self),name,property(_x))
+    def __repr__(self):
+        return "delta_t({0})".format(self)
+
+    def __str__(self):
+        ret = ["delta_t={0:0.1f}".format(self.get())]
+        for i in sorted(self.marks):
+            if i in ('top',):
+                continue
+            ret.append("{0}={1:0.1f}".format(i, self.get(i)))
+        return '; '.join(ret)
+
+    def fin(self,name=None):
+        if name is None or name == 'top':
+            return # top doesn't finish
+        self.fins[name] = time.time()
+
+    def get(self,name=None):
+        if name is None:
+            name = 'top'
+        begin = self.marks[name]
+        end   = self.fins.get(name, time.time())
+        return end - begin
+
+    def mark(self,name=None):
+        if name is None:
+            name = 'top'
+        self.marks[name] = time.time()
 
 
 def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',

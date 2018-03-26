@@ -40,6 +40,7 @@ import salt.utils
 import salt.utils.platform
 from salt.exceptions import CommandExecutionError
 from hubblestack import __version__
+import hubblestack.splunklogging
 
 log = logging.getLogger(__name__)
 
@@ -169,6 +170,7 @@ def queries(query_group,
         return None
 
     ret = []
+    timing = {}
     for query in query_data:
         name = query.get('query_name')
         query_sql = query.get('query')
@@ -184,7 +186,7 @@ def queries(query_group,
         t0 = time.time()
         res = __salt__['cmd.run_all'](cmd)
         t1 = time.time()
-        log.splunk('osquery query \'{0}\' took {1}'.format(query_sql, t1-t0))
+        timing[name] = t0 - t1
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
@@ -197,6 +199,13 @@ def queries(query_group,
             ret.append(tmp)
         else:
             ret.append({name: query_ret})
+
+    if __salt__['config.get']('hubblestack:splunklogging', False):
+        log.info('Logging osquery timing data to splunk')
+        hubblestack.splunklogging.__grains__ = __grains__
+        hubblestack.splunklogging.__salt__ = __salt__
+        handler = hubblestack.splunklogging.SplunkHandler()
+        handler.emit_data(timing)
 
     if query_group == 'day' and report_version_with_day:
         ret.append(hubble_versions())

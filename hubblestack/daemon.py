@@ -467,6 +467,12 @@ def load_config():
         if self.isEnabledFor(logging.SPLUNK):
             self._log(logging.SPLUNK, message, args, **kwargs)
     logging.Logger.splunk = splunk
+    if __salt__['config.get']('hubblestack:splunklogging', False):
+        root_logger = logging.getLogger()
+        handler = hubblestack.splunklogging.SplunkHandler()
+        handler.setLevel(logging.SPLUNK)
+        root_logger.addHandler(handler)
+
     # 384 is 0o600 permissions, written without octal for python 2/3 compat
     os.chmod(__opts__['log_file'], 384)
     os.chmod(parsed_args.get('configfile'), 384)
@@ -477,12 +483,6 @@ def load_config():
     if __grains__.get('ip_gw', None) is False and 'fallback_fileserver_backend' in __opts__:
         log.info('No default gateway detected; using fallback_fileserver_backend.')
         __opts__['fileserver_backend'] = __opts__['fallback_fileserver_backend']
-
-    if __salt__['config.get']('hubblestack:splunklogging', False):
-        root_logger = logging.getLogger()
-        handler = hubblestack.splunklogging.SplunkHandler()
-        handler.setLevel(logging.SPLUNK)
-        root_logger.addHandler(handler)
 
 
 def refresh_grains(initial=False):

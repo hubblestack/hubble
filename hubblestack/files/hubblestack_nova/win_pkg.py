@@ -63,6 +63,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                     if name not in __pkgdata__:
                         ret['Success'].append(tag_data)
                     else:
+                        tag_data['failure_reason'] = "Blacklisted package '{0}' is installed on the system".format(name)
                         ret['Failure'].append(tag_data)
 
                 # Whitelisted audit (must include)
@@ -74,8 +75,10 @@ def audit(data_list, tags, debug=False, **kwargs):
                         if secret:
                             ret['Success'].append(tag_data)
                         else:
+                            tag_data['failure_reason'] = "Version '{0}({1}) of the requisite package '{2}' is not installed on the system".format(match_output, tag_data['value_type'], name)
                             ret['Failure'].append(tag_data)
                     else:
+                        tag_data['failure_reason'] = "Version '{0}({1}) of the requisite package '{2}' is not installed on the system".format(match_output, tag_data['value_type'], name)
                         ret['Failure'].append(tag_data)
 
     return ret

@@ -103,6 +103,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                               .format(tag, name))
                     tag_data = copy.deepcopy(tag_data)
                     tag_data['error'] = 'No pattern found'.format(mod)
+                    tag_data['failure_reason'] = 'No pattern found for the test case. Seems like a bug in hubble profile.'
                     ret['Failure'].append(tag_data)
                     continue
 
@@ -115,29 +116,37 @@ def audit(data_list, tags, debug=False, **kwargs):
                                  *grep_args).get('stdout')
 
                 found = False
+                failure_reason = ''
                 if grep_ret:
                     found = True
+                    failure_reason = "Found the blacklisted string '{0}' in file '{1}'.".format(grep_ret,name)
                 if 'match_output' in tag_data:
                     if not tag_data.get('match_output_regex'):
                         if tag_data['match_output'] not in grep_ret:
                             found = False
+                            failure_reason = "Could not find text pattern '{0}' in '{1}'".format(tag_data['match_output'],grep_ret)
                     else:  # match with regex
                         if tag_data.get('match_output_multiline', True):
                             if not re.search(tag_data['match_output'], grep_ret, re.MULTILINE):
                                 found = False
+                                failure_reason = "Could not find multiline regex pattern '{0}' in '{1}'".format(tag_data['match_output'],grep_ret)
                         else:
                             if not re.search(tag_data['match_output'], grep_ret):
                                 found = False
+                                failure_reason = "Could not find regex pattern '{0}' in '{1}'".format(tag_data['match_output'],grep_ret)
 
                 if not os.path.exists(name) and 'match_on_file_missing' in tag_data:
                     if tag_data['match_on_file_missing']:
                         found = True
+                        failure_reason = "Found the file '{0}'. This blaclisted file should not exist.".format(name)
                     else:
                         found = False
+                        failure_reason = "Could not find the required file '{0}'".format(name)
 
                 # Blacklisted pattern (must not be found)
                 if audittype == 'blacklist':
                     if found:
+                        tag_data['failure_reason'] = failure_reason
                         ret['Failure'].append(tag_data)
                     else:
                         ret['Success'].append(tag_data)
@@ -147,6 +156,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                     if found:
                         ret['Success'].append(tag_data)
                     else:
+                        tag_data['failure_reason'] = failure_reason
                         ret['Failure'].append(tag_data)
 
     return ret

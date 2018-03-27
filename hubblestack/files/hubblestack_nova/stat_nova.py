@@ -90,9 +90,9 @@ def audit(data_list, tags, debug=False, **kwargs):
 
                 if 'allow_more_strict' in expected.keys() and 'mode' not in expected.keys():
                     reason_dict = {}
-                    reason = "'allow_more_strict' tag can't be specified without 'mode' tag"
+                    reason = "'allow_more_strict' tag can't be specified without 'mode' tag. Seems like a bug in hubble profile."
                     reason_dict['allow_more_strict'] = reason
-                    tag_data['reason'] = reason_dict
+                    tag_data['failure_reason'] = "For file '{0}': {1}".format(name, reason_dict)
                     ret['Failure'].append(tag_data)
                     continue
 
@@ -102,6 +102,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                     if None in expected.values():
                         ret['Success'].append(tag_data)
                     else:
+                        tag_data['failure_reason'] = "Could not get stats for file '{0}'".format(name)
                         ret['Failure'].append(tag_data)
                     continue
 
@@ -120,7 +121,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                             allow_more_strict = expected['allow_more_strict']
                         if not isinstance(allow_more_strict, bool):
                             passed = False
-                            reason = (str(allow_more_strict) + ' is not a valid boolean')
+                            reason = (str(allow_more_strict) + ' is not a valid boolean. Seems like a bug in hubble profile.')
                             reason_dict[e] = reason
 
                         else:
@@ -140,7 +141,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                             reason_dict[e] = reason
 
                 if reason_dict:
-                    tag_data['reason'] = reason_dict
+                    tag_data['failure_reason'] = "For file '{0}': {1}".format(name, reason_dict)
 
                 if passed:
                     ret['Success'].append(tag_data)

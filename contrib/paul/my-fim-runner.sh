@@ -14,4 +14,4 @@ sudo bash -c 'umask 022
     | grep --line-buffered -vE "(xecuting.schedule|job.data.to.splunk|ob.returned|^\[\])" \
     | hi 'IN_\w+' todo '\w+_CREATE' lime '\w+_DELETE' red WTF todo 'file-watch.totals.*' yellow \
          '\S+ file-watch' magenta 'stopped.watching.*' red home/jettero/bin lime "creating new watch manager" \
-         red "(?i:wtf)" todo
+         red "(?i:wtf)" todo '(?!<[a-z/.])/etc(?:$|[\s,])' violet

@@ -105,6 +105,13 @@ class ConfigManager(object):
             return True
         return False
 
+    def format_path(self, path):
+        path  = os.path.abspath(path)
+        fname = os.path.basename(path)
+        cpath = self.path_of_config(path)
+        dname = path if os.path.isdir(path) else os.path.dirname(path)
+        return cpath, path, dname, fname
+
     def path_config(self, path, falsifyable=False):
         config = self.nc_config
         if falsifyable and path not in config:
@@ -112,6 +119,12 @@ class ConfigManager(object):
         c = collections.defaultdict(lambda: False)
         c.update( config.get(path, {}) )
         return c
+
+    def path_of_config(self, path):
+        ncc = self.nc_config
+        while len(path)>1 and path not in ncc:
+            path = os.path.dirname(path)
+        return path
 
     def _abspathify(self):
         c = self.nc_config
@@ -196,8 +209,6 @@ class PulsarWatchManager(pyinotify.WatchManager):
         self._last_config_update = 0
         self.update_config()
 
-
-
     @classmethod
     def _iterate_anything(cls, x, discard_none=True):
         ''' iterate any amount of list/tuple nesting
@@ -241,8 +252,8 @@ class PulsarWatchManager(pyinotify.WatchManager):
             probably O( (N+M)^2 ); use sparingly
         '''
         super_list = self._listify_anything(pathlist,
-            [ self.parent_db.get(x) for x in self._iterate_anything(pathlist) ])
-        return self._listify_anything([ self.watch_db.get(x) for x in super_list ])
+            [ x if isinstance(x,int) else self.parent_db.get(x) for x in self._iterate_anything(pathlist) ])
+        return self._listify_anything([ x if isinstance(x,int) else self.watch_db.get(x) for x in super_list ])
 
     def _get_paths(self, *wdl):
         wdl = self._listify_anything(wdl)
@@ -287,7 +298,11 @@ class PulsarWatchManager(pyinotify.WatchManager):
         with open('/proc/sys/fs/inotify/max_user_watches', 'w') as fh:
             fh.write('{0}\n'.format(muwb))
 
-    def _add_recursed_file_watch(self, path, mask=pyinotify.IN_MODIFY, **kw):
+    def _add_recursed_file_watch(self, path, mask=None, **kw):
+        if mask is None:
+            # don't simply set this as default above
+            # (it seems to get messed up by the namespace reload during grains refresh)
+            mask = pyinotify.IN_MODIFY
         if os.path.isdir(path):
             # this used to be if not os.path.isfile(); turns out socket files aren't isfile()s
             raise Exception("use add_watch() or watch() for directories like path={0}".format(path))
@@ -300,7 +315,9 @@ class PulsarWatchManager(pyinotify.WatchManager):
             while len(up_path) > 1 and up_path not in self.watch_db:
                 up_path = os.path.dirname(up_path)
         if up_path and up_path in self.watch_db:
-            res = self.add_watch(path, pyinotify.IN_MODIFY, no_db=True)
+            # we already did many of the lookups add_watch would do
+            # so we say no_db=True and manually add the (up_path,**res)
+            res = self.add_watch(path, mask, no_db=True)
             self._add_db(up_path, **res)
             return res
         else:
@@ -320,6 +337,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
         if mask is None:
             mask = DEFAULT_MASK
 
+        pconf = self.cm.path_config(path)
         wd = self.watch_db.get(path)
         if wd:
             update = False
@@ -331,40 +349,39 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 kw['mask'] = mask
                 kw.pop('exclude_filter',None)
                 self.update_watch(wd,**kw)
-                log.debug('update-watch wd={0} path={1}'.format(wd,path))
+                log.debug('update-watch wd={0} path={1} watch_files={2}'.format(
+                    wd, path, pconf['watch_files']))
         else:
             self.add_watch(path,mask,**kw)
-            log.debug('add-watch wd={0} path={1}'.format(self.watch_db.get(path), path))
+            log.debug('add-watch wd={0} path={1} watch_files={2}'.format(
+                self.watch_db.get(path), path, pconf['watch_files']))
 
         if new_file: # process() says this is a new file
             self._add_recursed_file_watch(path)
 
         else: # watch_files if configured to do so
-            pconf = self.cm.path_config(path)
-            if pconf['watch_files'] or pconf['watch_files_obsessively']:
-                if path not in self.parent_db or pconf['watch_files_obsessively']:
-                    rec = kw.get('rec')
-                    excludes = kw.get('exclude_filter', lambda x: False)
-                    if isinstance(excludes, (list,tuple)):
-                        pfft = excludes
-                        excludes = lambda x: x in pfft
-                    file_track = self.parent_db.get(path, {})
-                    log.debug("os.walk({})".format(path))
-                    pre_count = len(self.watch_db)
-                    for wpath,wdirs,wfiles in os.walk(path):
-                        if rec or wpath == path:
-                            for f in wfiles:
-                                wpathname = os.path.join(wpath,f)
-                                if excludes(wpathname):
-                                    continue
-                                if not os.path.isfile(wpathname):
-                                    continue
-                                if wpathname in file_track: # checking file_track isn't strictly necessary
-                                    continue                # but gives a slight speedup
-                                res = self._add_recursed_file_watch( wpathname, parent=path )
-                    ft_count = len(self.watch_db) - pre_count
-                    if ft_count > 0:
-                        log.debug('recursive file-watch totals for path={0} new-this-loop: {1}'.format(path, ft_count))
+            if pconf['watch_files']:
+                rec = kw.get('rec')
+                excludes = kw.get('exclude_filter', lambda x: False)
+                if isinstance(excludes, (list,tuple)):
+                    pfft = excludes
+                    excludes = lambda x: x in pfft
+                file_track = self.parent_db.get(path, {})
+                pre_count = len(self.watch_db)
+                for wpath,wdirs,wfiles in os.walk(path):
+                    if rec or wpath == path:
+                        for f in wfiles:
+                            wpathname = os.path.join(wpath,f)
+                            if excludes(wpathname):
+                                continue
+                            if not os.path.isfile(wpathname):
+                                continue
+                            if wpathname in file_track: # checking file_track isn't strictly necessary
+                                continue                # but gives a slight speedup
+                            self._add_recursed_file_watch( wpathname, parent=path )
+                ft_count = len(self.watch_db) - pre_count
+                if ft_count > 0:
+                    log.debug('recursive file-watch totals for path={0} new-this-loop: {1}'.format(path, ft_count))
 
 
     def add_watch(self, path, mask, **kw):
@@ -385,7 +402,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 if isinstance(_res, dict):
                     res.update(_res)
             except pyinotify.WatchManagerError as wme:
-                self.update_config()
+                self.update_config() # make sure we have the latest settings
                 if isinstance(wme.wmd, dict):
                     res.update(wme.wmd) # copy over what did work before it broke
                 if self.update_muw:
@@ -406,7 +423,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 log.error("exception during add_watch({0}): {1}".format(path, repr(e)))
                 break
 
-        if not no_db: # I think the English of that is funny
+        if not no_db: # (heh)
             self._add_db(path, **res)
         return res
 
@@ -459,15 +476,17 @@ class PulsarWatchManager(pyinotify.WatchManager):
     def del_watch(self, wd):
         ''' remove a watch from the watchmanager database
         '''
+        if not isinstance(wd, int):
+            wd = self._get_wdl(wd)[0]
         self.__super.del_watch(wd)
         self._rm_db(wd)
 
     def rm_watch(self, *wd, **kw):
         ''' recursively unwatch things
         '''
-        wdl = self._listify_anything(wd)
+        wdl = self._get_wdl(wd)
         res = self.__super.rm_watch(wdl, **kw)
-        self._rm_db( wdl )
+        self._rm_db(wdl)
         return res
 
 def _get_notifier():
@@ -674,6 +693,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     wm = notifier._watch_manager
     update_watches = cm.freshness(2)
 
+    recent = set()
+
     dt.fin()
 
     # Read in existing events
@@ -691,33 +712,33 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                 log.warn('Fix by increasing /proc/sys/fs/inotify/max_queued_events')
                 continue
 
-            log.debug(("queue< event.path={0.path} event.pathname={0.pathname} event.maskname={0.maskname}"
-                " event.name={0.name} >").format(event))
+            log.debug("queue {0}".format(event)) # shows mask/name/pathname/wd and other things
+            k = "{0.pathname} {0.maskname}".format(event)
+            if k in recent:
+                log.debug("skipping event")
+                continue
+            recent.add(k)
 
-            # Find the matching path in config
-            path = event.path
-            while path != '/':
-                if path in config:
-                    break
-                path = os.path.dirname(path)
+            pathname = event.pathname
+            cpath, abspath, dirname, basename = cm.format_path(pathname)
+            # cpath              : the path under which the config is specified
+            # abspath            : os.path.abspath() reformatted path
+            # dirname            : the directory of the pathname, or the pathname if
+            #                    : it's a directory
+            # basename           : the os.path.basename() of the path
+            # wpath = event.path : the path of the watch that triggered (not actually populated
+            #                    : in wpath)
 
-            # Get pathname
-            # XXX: we try/except to get the pathname, then ignore pathname and use event.pathname below
-            try:
-                pathname = event.pathname
-            except NameError:
-                pathname = path
-
-            excludes = _preprocess_excludes( config[path].get('exclude') )
+            excludes = _preprocess_excludes( config[cpath].get('exclude') )
             _append = not excludes(pathname)
             if _append:
                 config_path = config['paths'][0]
                 pulsar_config = config_path[config_path.rfind('/') + 1:len(config_path)]
-                sub = {'tag': event.path,
-                       'path': event.pathname,
-                       'change': event.maskname,
-                       'name': event.name,
-                       'pulsar_config': pulsar_config}
+                sub = { 'change': event.maskname,
+                        'path': abspath,  # goes to object_path in splunk
+                        'tag':  dirname,  # goes to file_path in splunk
+                        'name': basename, # goes to file_name in splunk
+                        'pulsar_config': pulsar_config}
 
                 if config.get('checksum', False) and os.path.isfile(pathname):
                     sum_type = config['checksum']
@@ -736,17 +757,17 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
                 if not event.mask & pyinotify.IN_ISDIR:
                     if event.mask & pyinotify.IN_CREATE:
-                        watch_this = config[path].get('watch_new_files', False) \
-                            or config[path].get('watch_files', False)
+                        watch_this = config[cpath].get('watch_new_files', False) \
+                            or config[cpath].get('watch_files', False)
                         if watch_this:
-                            if not excludes(event.pathname):
-                                log.debug("add file-watch path={0}".format(event.pathname))
-                                wm.watch(event.pathname, pyinotify.IN_MODIFY, new_file=True)
+                            if not excludes(pathname):
+                                log.debug("add file-watch path={0}".format(pathname))
+                                wm.watch(pathname, pyinotify.IN_MODIFY, new_file=True)
 
                     elif event.mask & pyinotify.IN_DELETE:
-                        wm.rm_watch(event.pathname)
+                        wm.rm_watch(pathname)
             else:
-                log.info('Excluding {0} from event for {1}'.format(event.pathname, path))
+                log.info('Excluding {0} from event for {1}'.format(pathname, cpath))
         dt.fin()
 
     if update_watches:
@@ -763,10 +784,14 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
             if isinstance(config[path], dict):
                 mask = config[path].get('mask', DEFAULT_MASK)
                 watch_files = config[path].get('watch_files', DEFAULT_MASK)
-                if watch_files:
-                    # we're going to get dup modify events if watch_files is set
-                    # and we still monitor modify for the dir
-                    mask -= mask & pyinotify.IN_MODIFY
+             #  if watch_files:
+             #      # we're going to get dup modify events if watch_files is set
+             #      # and we still monitor modify for the dir
+             #      a = mask & pyinotify.IN_MODIFY
+             #      if a:
+             #          log.debug("mask={0} -= mask & pyinotify.IN_MODIFY={1} ==> {2}".format(
+             #              mask, a, mask-a))
+             #          mask -= mask & pyinotify.IN_MODIFY
                 excludes = _preprocess_excludes( config[path].get('exclude') )
                 if isinstance(mask, list):
                     r_mask = 0

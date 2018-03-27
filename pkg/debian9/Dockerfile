@@ -94,6 +94,7 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #use the following variables to choose the version of hubble
 ENV HUBBLE_CHECKOUT=v2.2.11
 ENV HUBBLE_VERSION=2.2.11
+ENV HUBBLE_ITERATION=1
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -138,7 +139,8 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
 #fpm start
     && fpm -s dir -t deb \
        -n hubblestack \
-       -v ${HUBBLE_VERSION}-1 \
+       -v ${HUBBLE_VERSION} \
+       --iteration ${HUBBLE_ITERATION} \
     #todo: get rid of the git dependency with static bin in the future
        -d 'git' \
        --config-files /etc/osquery/osquery.conf \
@@ -146,6 +148,6 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --after-install /hubble_build/conf/afterinstall.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        etc/hubble etc/osquery etc/init.d opt usr \
-    && cp hubblestack_${HUBBLE_VERSION}-1_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-1deb9_amd64.deb \
-    && openssl dgst -sha256 /data/hubblestack_${HUBBLE_VERSION}-1deb9_amd64.deb \
-                          > /data/hubblestack_${HUBBLE_VERSION}-1deb9_amd64.deb.sha256" ]
+    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb9_amd64.deb \
+    && openssl dgst -sha256 /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb9_amd64.deb \
+                          > /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb9_amd64.deb.sha256" ]

@@ -92,6 +92,7 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
 #use the following variables to choose the version of hubble
 ENV HUBBLE_CHECKOUT=v2.2.11
 ENV HUBBLE_VERSION=2.2.11
+ENV HUBBLE_ITERATION=1
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -136,6 +137,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && fpm -s dir -t rpm \
        -n hubblestack \
        -v ${HUBBLE_VERSION} \
+       --iteration ${HUBBLE_ITERATION} \
     #todo: get rid of the git dependency with static bin in the future
        -d 'git' \
        --config-files /etc/osquery/osquery.conf \
@@ -143,6 +145,6 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        etc/hubble etc/osquery opt usr \
 #edit to change iteration number, if necessary
-    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.el7.x86_64.rpm \
-    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-1.el7.x86_64.rpm \
-                          > /data/hubblestack-${HUBBLE_VERSION}-1.el7.x86_64.rpm.sha256" ]
+    && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm \
+    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm \
+                          > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm.sha256" ]

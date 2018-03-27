@@ -461,7 +461,8 @@ def load_config():
                                         __opts__['log_level'],
                                         max_bytes=__opts__.get('logfile_maxbytes', 100000000),
                                         backup_count=__opts__.get('logfile_backups', 1))
-    logging.SPLUNK = 25 # logs below warning, above info
+    # splunk logs below warning, above info by default
+    logging.SPLUNK = int(__opts__.get('splunk_log_level', 25))
     logging.addLevelName(logging.SPLUNK, 'SPLUNK')
     def splunk(self, message, *args, **kwargs):
         if self.isEnabledFor(logging.SPLUNK):

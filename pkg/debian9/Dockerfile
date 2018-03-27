@@ -141,7 +141,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        -v ${HUBBLE_VERSION}-1 \
     #todo: get rid of the git dependency with static bin in the future
        -d 'git' \
-       --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
+       --config-files /etc/osquery/osquery.conf \
        --deb-no-default-config-files \
        --after-install /hubble_build/conf/afterinstall.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \

@@ -119,5 +119,5 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && ln -s /opt/hubble/hubble-libs/hubble /opt/hubble/hubble \
     # make sure rpm shared libs are taken out to avoid mismatch between rpm database and shared libs that pyinstaller includes
     && rm -rf /opt/hubble/hubble-libs/librpm* \
-    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}-coreos.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh" ]
-
+    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}-coreos.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh \
+    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-coreos.tar.gz > /data/hubblestack-${HUBBLE_VERSION}-coreos.tar.gz.sha256" ]

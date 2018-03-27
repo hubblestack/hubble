@@ -57,7 +57,7 @@ RUN yum -y install  \
                python27-devel libffi-devel openssl-devel \
                libxml2-devel libxslt-devel libjpeg-devel \
                zlib-devel make cmake python27-setuptools \
-               gcc python-devel python-setuptools wget
+               gcc python-devel python-setuptools wget openssl
 
 #libgit2 install start
 #must precede pyinstaller requirements
@@ -144,4 +144,6 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        etc/hubble etc/osquery etc/init.d opt usr \
 #edit to change iteration number, if necessary
-    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.al1703.x86_64.rpm" ]
+    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.al1703.x86_64.rpm \
+    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-1.al1703.x86_64.rpm \
+                          > /data/hubblestack-${HUBBLE_VERSION}-1.al1703.x86_64.rpm.sha256" ]

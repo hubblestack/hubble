@@ -56,7 +56,7 @@ RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 RUN yum -y install  \
                libffi-devel openssl-devel libffi \
                libxml2-devel libxslt-devel libjpeg-devel zlib-devel \
-               make cmake gcc python-devel python-setuptools wget
+               make cmake gcc python-devel python-setuptools wget openssl
 
 #libgit2 install start
 #must precede pyinstaller requirements
@@ -143,4 +143,6 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        etc/hubble etc/osquery opt usr \
 #edit to change iteration number, if necessary
-    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.el7.x86_64.rpm" ]
+    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.el7.x86_64.rpm \
+    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-1.el7.x86_64.rpm \
+                          > /data/hubblestack-${HUBBLE_VERSION}-1.el7.x86_64.rpm.sha256" ]

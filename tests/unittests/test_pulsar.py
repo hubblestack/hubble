@@ -2,13 +2,12 @@ import sys
 import os
 myPath = os.path.abspath(os.getcwd())
 sys.path.insert(0, myPath)
-import hubblestack.extmods.modules.pulsar
+import hubblestack.extmods.modules.pulsar as pulsar
 from salt.exceptions import CommandExecutionError
 
 import shutil
 import six
 import pyinotify
-import hubblestack.extmods.modules.pulsar as pulsar
 
 if os.environ.get('DEBUG_SHOW_PULSAR_LOGS'):
     import logging
@@ -20,38 +19,38 @@ if os.environ.get('DEBUG_SHOW_PULSAR_LOGS'):
 class TestPulsar():
 
     def test_virtual(self):
-        var = hubblestack.extmods.modules.pulsar.__virtual__()
+        var = pulsar.__virtual__()
         assert var is True
 
     def test_enqueue(self):
-        hubblestack.extmods.modules.pulsar.__context__ = {}
-        var = hubblestack.extmods.modules.pulsar._enqueue
+        pulsar.__context__ = {}
+        var = pulsar._enqueue
         assert var != 0
 
     def test_get_notifier(self):
-        hubblestack.extmods.modules.pulsar.__context__ = {}
-        var = hubblestack.extmods.modules.pulsar._get_notifier
+        pulsar.__context__ = {}
+        var = pulsar._get_notifier
         assert var != 0
 
     def test_dict_update_for_merge_dict(self):
         dest = {'key1': 'val1'}
         upd = {'key_2': 'val_2'}
         test_dict = {'key1': 'val1', 'key_2': 'val_2'}
-        var = hubblestack.extmods.modules.pulsar._dict_update(dest, upd, recursive_update=True, merge_lists=False)
+        var = pulsar._dict_update(dest, upd, recursive_update=True, merge_lists=False)
         assert var == test_dict
 
     def test_dict_update_for_classic_dictUpdate(self):
         dest = {'key1': 'val1'}
         upd = {'key_2': 'val_2'}
         test_dict = {'key1': 'val1', 'key_2': 'val_2'}
-        var = hubblestack.extmods.modules.pulsar._dict_update(dest, upd, recursive_update=False, merge_lists=False)
+        var = pulsar._dict_update(dest, upd, recursive_update=False, merge_lists=False)
         assert var == test_dict
 
     def test_dict_update_for_dest_TypeError(self):
         dest = 'TestValue1'
         upd = {'key_1': 'val_1', 'key_2': 'val_2'}
         try:
-            var = hubblestack.extmods.modules.pulsar._dict_update(dest, upd, recursive_update=True, merge_lists=False)
+            var = pulsar._dict_update(dest, upd, recursive_update=True, merge_lists=False)
         except TypeError:
             pass
 
@@ -59,7 +58,7 @@ class TestPulsar():
         dest = {'key_1': 'val_1', 'key_2': 'val_2'}
         upd = 'TestValue2'
         try:
-            var = hubblestack.extmods.modules.pulsar._dict_update(dest, upd, recursive_update=True, merge_lists=False)
+            var = pulsar._dict_update(dest, upd, recursive_update=True, merge_lists=False)
         except TypeError:
             pass
 
@@ -72,7 +71,7 @@ class TestPulsar():
                {'blacklist': {'talk2': {'data': {'Ubuntu-16.04': [{'/etc/inetd.conf': {'pattern': '^talk', 'tag': 'CIS-5.1.4'}}, {'/etc/inetd.conf': {'pattern': '^ntalk', 'tag': 'CIS-5.1.4'}}]}, 'description': 'Ensure talk server is not enabled'}}}}
         data_list = [dest, upd]
         for data in data_list:
-            val = hubblestack.extmods.modules.pulsar._dict_update(dest, data, recursive_update=True, merge_lists=True)
+            val = pulsar._dict_update(dest, data, recursive_update=True, merge_lists=True)
         assert (len(val['data']['blacklist'])) == 2
 
     def test_process(self):
@@ -83,10 +82,10 @@ class TestPulsar():
             return default
         __salt__ = {}
         __salt__['config.get'] = config_get
-        hubblestack.extmods.modules.pulsar.__salt__ = __salt__
-        hubblestack.extmods.modules.pulsar.__opts__ = {}
-        var = hubblestack.extmods.modules.pulsar.process(configfile, verbose)
-        hubblestack.extmods.modules.pulsar.__salt__ = {}
+        pulsar.__salt__ = __salt__
+        pulsar.__opts__ = {}
+        var = pulsar.process(configfile, verbose)
+        pulsar.__salt__ = {}
         assert len(var) == 0
         assert isinstance(var, list)
 
@@ -101,8 +100,8 @@ class TestPulsar():
         __salt__ = {}
         __salt__['cp.cache_file'] = cp_cache_file
         __salt__['match.compound'] = match_compound
-        hubblestack.extmods.modules.pulsar.__salt__ = __salt__
-        get_top_data_config = hubblestack.extmods.modules.pulsar.get_top_data(topfile)
+        pulsar.__salt__ = __salt__
+        get_top_data_config = pulsar.get_top_data(topfile)
         configs = ['salt://hubblestack_pulsar/' + config.replace('.', '/') + '.yaml'
                    for config in get_top_data_config]
         assert configs[0] == 'salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml'
@@ -118,9 +117,9 @@ class TestPulsar():
         __salt__ = {}
         __salt__['cp.cache_file'] = cp_cache_file
         __salt__['match.compound'] = match_compound
-        hubblestack.extmods.modules.pulsar.__salt__ = __salt__
-        result = hubblestack.extmods.modules.pulsar.get_top_data(topfile)
-        hubblestack.extmods.modules.pulsar.__salt__ = {}
+        pulsar.__salt__ = __salt__
+        result = pulsar.get_top_data(topfile)
+        pulsar.__salt__ = {}
         assert isinstance(result, list)
         assert result[0] == 'hubblestack_pulsar_config'
 
@@ -135,10 +134,10 @@ class TestPulsar():
         __salt__ = {}
         __salt__['cp.cache_file'] = cp_cache_file
         __salt__['match.compound'] = match_compound
-        hubblestack.extmods.modules.pulsar.__salt__ = __salt__
+        pulsar.__salt__ = __salt__
         try:
-            result = hubblestack.extmods.modules.pulsar.get_top_data(topfile)
-            hubblestack.extmods.modules.pulsar.__salt__ = {}
+            result = pulsar.get_top_data(topfile)
+            pulsar.__salt__ = {}
         except CommandExecutionError:
             pass
 
@@ -168,6 +167,9 @@ class TestPulsar2():
         self.N = c['pulsar.notifier']
         self.wm = self.N._watch_manager
         self.wm.update_config()
+
+    def process(self):
+        self.events.extend([ "{change}(path)".format(**x) for x in pulsar.process() ])
 
     def nuke_tdir(self):
         if os.path.isdir(self.tdir):
@@ -231,7 +233,7 @@ class TestPulsar2():
         else:
             raise Exception("unknown modality")
 
-        self.events.extend( pulsar.process() )
+        self.process()
         assert len(self.events) == 0
         assert self.wm.watch_db.get(self.tdir) is None
         assert self.wm.watch_db.get(self.atdir) > 0
@@ -240,9 +242,10 @@ class TestPulsar2():
 
         self.mk_tdir_and_write_tfile() # write supz to tfile
 
-        self.events.extend( pulsar.process() )
-        assert len(self.events) == 1
-        assert self.events[0]['change'] == 'IN_CREATE'
+        self.process()
+        assert len(self.events) == 2
+        assert self.events[0].startswith('IN_CREATE')
+        assert self.events[1].startswith('IN_MODIFY')
 
         if modality in ('watch_files', 'watch_new_files'):
             assert len(self.wm.watch_db) == 2
@@ -279,13 +282,13 @@ class TestPulsar2():
         s0 = set(self.wm.watch_db)
         if mk_files > 0:
             self.mk_more_files(count=mk_files)
-        self.events.extend( pulsar.process() )
+        self.process()
         s1 = set(self.wm.watch_db)
         if reconfig is None:
             del self.wm.cm.nc_config[ self.atdir ]
         else:
             self.wm.cm.nc_config[ self.atdir ] = reconfig
-        self.events.extend( pulsar.process() )
+        self.process()
         s2 = set(self.wm.watch_db)
         return s0,s1,s2
 

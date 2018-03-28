@@ -149,8 +149,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                             tag_data = copy.deepcopy(tag_data)
                             # Include an error in the failure
                             tag_data['error'] = 'Invalid modifier {0}'.format(mod)
-                            tag_data['failure_reason'] = 'Invalid modifier in version {0} for pkg {1} audit {2}. Seems like a bug in hubble profile.'
-                                      .format(tag_data['version'], name, tag)
+                            tag_data['failure_reason'] = 'Invalid modifier in version {0} for pkg {1} audit {2}. Seems like a bug in hubble profile.'.format(tag_data['version'], name, tag)
                             ret['Failure'].append(tag_data)
 
                     else:  # No version checking

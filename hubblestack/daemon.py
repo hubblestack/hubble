@@ -469,7 +469,7 @@ def load_config():
         if self.isEnabledFor(logging.SPLUNK):
             self._log(logging.SPLUNK, message, args, **kwargs)
     logging.Logger.splunk = splunk
-    if __salt__['config.get']('hubblestack:splunklogging', False):
+    if __opts__.get('hubblestack', {}).get('splunklogging', False):
         root_logger = logging.getLogger()
         handler = hubblestack.splunklogging.SplunkHandler()
         handler.setLevel(logging.SPLUNK)

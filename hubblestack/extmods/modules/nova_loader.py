@@ -27,6 +27,7 @@ from salt.template import check_render_pipe_str
 from salt.utils.decorators import Depends
 from salt.utils import is_proxy
 import salt.utils.context
+import salt.utils.platform
 import salt.utils.lazy
 import salt.utils.event
 import salt.utils.odict
@@ -873,7 +874,7 @@ def grains(opts, force_refresh=False, proxy=None):
     if opts.get('grains_cache', False):
         cumask = os.umask(0o77)
         try:
-            if salt.utils.is_windows():
+            if salt.utils.platform.is_windows():
                 # Make sure cache file isn't read-only
                 __salt__['cmd.run']('attrib -R "{0}"'.format(cfn))
             with salt.utils.fopen(cfn, 'w+b') as fp_:

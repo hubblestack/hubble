@@ -32,12 +32,15 @@ import copy
 import json
 import logging
 import os
+import time
 import yaml
 import collections
 
 import salt.utils
+import salt.utils.platform
 from salt.exceptions import CommandExecutionError
 from hubblestack import __version__
+import hubblestack.splunklogging
 
 log = logging.getLogger(__name__)
 
@@ -77,7 +80,7 @@ def queries(query_group,
     query_data = {}
     MAX_FILE_SIZE = 104857600
     if query_file is None:
-        if salt.utils.is_windows():
+        if salt.utils.platform.is_windows():
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
         else:
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_queries.yaml'
@@ -138,7 +141,7 @@ def queries(query_group,
             log.debug('osquery not installed on this host. Skipping.')
             return None
 
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         win_version = __grains__['osfullname']
         if '2008' not in win_version and '2012' not in win_version and '2016' not in win_version:
             log.error('osquery does not run on windows versions earlier than Server 2008 and Windows 7')
@@ -167,6 +170,7 @@ def queries(query_group,
         return None
 
     ret = []
+    timing = {}
     for query in query_data:
         name = query.get('query_name')
         query_sql = query.get('query')
@@ -179,7 +183,10 @@ def queries(query_group,
         }
 
         cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
+        t0 = time.time()
         res = __salt__['cmd.run_all'](cmd)
+        t1 = time.time()
+        timing[name] = t0 - t1
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
@@ -192,6 +199,13 @@ def queries(query_group,
             ret.append(tmp)
         else:
             ret.append({name: query_ret})
+
+    if __salt__['config.get']('hubblestack:splunklogging', False):
+        log.info('Logging osquery timing data to splunk')
+        hubblestack.splunklogging.__grains__ = __grains__
+        hubblestack.splunklogging.__salt__ = __salt__
+        handler = hubblestack.splunklogging.SplunkHandler()
+        handler.emit_data(timing)
 
     if query_group == 'day' and report_version_with_day:
         ret.append(hubble_versions())
@@ -254,7 +268,7 @@ def top(query_group,
         verbose=False,
         report_version_with_day=True):
 
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         topfile = 'salt://hubblestack_nebula/win_top.nebula'
 
     configs = get_top_data(topfile)

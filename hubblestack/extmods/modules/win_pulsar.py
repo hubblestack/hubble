@@ -17,6 +17,7 @@ import yaml
 
 import salt.ext.six
 import salt.loader
+import salt.utils.platform
 
 log = logging.getLogger(__name__)
 DEFAULT_MASK = ['File create', 'File delete', 'Hard link change', 'Data extend', 
@@ -28,7 +29,7 @@ CONFIG_STALENESS = 0
 
 
 def __virtual__():
-    if not salt.utils.is_windows():
+    if not salt.utils.platform.is_windows():
         return False, 'This module only works on windows'
     win_version = __grains__['osfullname']
     if '2012' not in win_version and '2016' not in win_version:

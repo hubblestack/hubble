@@ -42,8 +42,8 @@ def host_uuid():
             # TODO: once we figure out how to get a custom log level for
             # non-error splunk logs, we should move this to that log level so
             # it doesn't look like an error.
-            log.error('generating fresh uuid, no cache file found. '
-                      '(probably not a problem)')
+            log.splunk('generating fresh uuid, no cache file found. '
+                       '(probably not a problem)')
     except Exception:
         log.exception('Problem retrieving cached host uuid from file: {0}'
                       .format(cached_uuid_path))

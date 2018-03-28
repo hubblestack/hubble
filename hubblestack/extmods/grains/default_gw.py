@@ -20,6 +20,7 @@ from __future__ import absolute_import
 import logging
 
 import salt.utils
+import salt.utils.path
 
 import salt.modules.cmdmod
 
@@ -46,7 +47,7 @@ def default_gateway():
         ip_gw: True   # True if either of the above is True, False otherwise
     '''
     grains = {}
-    if not salt.utils.which('ip'):
+    if not salt.utils.path.which('ip'):
         return {}
     grains['ip_gw'] = False
     grains['ip4_gw'] = False

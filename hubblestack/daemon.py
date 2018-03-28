@@ -20,6 +20,7 @@ import salt.fileclient
 import salt.fileserver
 import salt.fileserver.gitfs
 import salt.utils
+import salt.utils.platform
 import salt.utils.jid
 import salt.utils.gitfs
 import salt.log.setup
@@ -293,7 +294,7 @@ def schedule():
                     continue
                 log.debug('Returning job data to {0}'.format(returner))
                 returner_ret = {'id': __grains__['id'],
-                                'jid': salt.utils.jid.gen_jid(),
+                                'jid': salt.utils.jid.gen_jid(__opts__),
                                 'fun': func,
                                 'fun_args': args + ([kwargs] if kwargs else []),
                                 'return': ret}
@@ -331,7 +332,7 @@ def run_function():
         else:
             log.info('Returning job data to {0}'.format(returner))
             returner_ret = {'id': __grains__['id'],
-                            'jid': salt.utils.jid.gen_jid(),
+                            'jid': salt.utils.jid.gen_jid(__opts__),
                             'fun': __opts__['function'],
                             'fun_args': args + ([kwargs] if kwargs else []),
                             'return': ret}
@@ -355,7 +356,7 @@ def load_config():
     parsed_args = parse_args()
 
     # Load unique data for Windows or Linux
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         if parsed_args.get('configfile') is None:
             parsed_args['configfile'] = 'C:\\Program Files (x86)\\Hubble\\etc\\hubble\\hubble.conf'
         salt.config.DEFAULT_MINION_OPTS['cachedir'] = 'C:\\Program Files (x86)\\hubble\\var\\cache'
@@ -384,6 +385,9 @@ def load_config():
     __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
     __opts__['conf_file'] = parsed_args.get('configfile')
+
+    # Optional sleep to wait for network
+    time.sleep(int(__opts__.get('startup_sleep', 0)))
 
     # Convert -vvv to log level
     if __opts__['log_level'] is None:
@@ -458,6 +462,19 @@ def load_config():
                                         __opts__['log_level'],
                                         max_bytes=__opts__.get('logfile_maxbytes', 100000000),
                                         backup_count=__opts__.get('logfile_backups', 1))
+    # splunk logs below warning, above info by default
+    logging.SPLUNK = int(__opts__.get('splunk_log_level', 25))
+    logging.addLevelName(logging.SPLUNK, 'SPLUNK')
+    def splunk(self, message, *args, **kwargs):
+        if self.isEnabledFor(logging.SPLUNK):
+            self._log(logging.SPLUNK, message, args, **kwargs)
+    logging.Logger.splunk = splunk
+    if __salt__['config.get']('hubblestack:splunklogging', False):
+        root_logger = logging.getLogger()
+        handler = hubblestack.splunklogging.SplunkHandler()
+        handler.setLevel(logging.SPLUNK)
+        root_logger.addHandler(handler)
+
     # 384 is 0o600 permissions, written without octal for python 2/3 compat
     os.chmod(__opts__['log_file'], 384)
     os.chmod(parsed_args.get('configfile'), 384)
@@ -468,12 +485,6 @@ def load_config():
     if __grains__.get('ip_gw', None) is False and 'fallback_fileserver_backend' in __opts__:
         log.info('No default gateway detected; using fallback_fileserver_backend.')
         __opts__['fileserver_backend'] = __opts__['fallback_fileserver_backend']
-
-    if __salt__['config.get']('hubblestack:splunklogging', False):
-        root_logger = logging.getLogger()
-        handler = hubblestack.splunklogging.SplunkHandler()
-        handler.setLevel(logging.ERROR)
-        root_logger.addHandler(handler)
 
 
 def refresh_grains(initial=False):

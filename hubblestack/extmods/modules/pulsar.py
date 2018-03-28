@@ -23,6 +23,7 @@ from salt.exceptions import CommandExecutionError
 # Import salt libs
 import salt.ext.six
 import salt.loader
+import salt.utils.platform
 
 # Import third party libs
 try:
@@ -47,7 +48,7 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         return False, 'This module only works on Linux'
     return True
 

@@ -73,6 +73,7 @@ import logging
 import fnmatch
 import copy
 import salt.utils
+import salt.utils.platform
 import datetime
 import time
 
@@ -92,7 +93,7 @@ __data__ = None
 
 
 def __virtual__():
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     if not _HAS_OPENSSL:
         return (False, 'The python-OpenSSL library is missing')

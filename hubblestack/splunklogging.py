@@ -46,7 +46,7 @@ import copy
 import logging
 
 _max_content_bytes = 100000
-http_event_collector_SSL_verify = False
+http_event_collector_SSL_verify = True
 http_event_collector_debug = False
 
 hec = None
@@ -93,7 +93,10 @@ class SplunkHandler(logging.Handler):
             try:
                 fqdn_ip4 = __grains__['fqdn_ip4'][0]
             except IndexError:
-                fqdn_ip4 = __grains__['ipv4'][0]
+                try:
+                    fqdn_ip4 = __grains__['ipv4'][0]
+                except IndexError:
+                    raise Exception('No ipv4 grains found. Is net-tools installed?')
             if fqdn_ip4.startswith('127.'):
                 for ip4_addr in __grains__['ipv4']:
                     if ip4_addr and not ip4_addr.startswith('127.'):
@@ -147,16 +150,36 @@ class SplunkHandler(logging.Handler):
             hec.flushBatch()
         return True
 
+    def emit_data(self, data):
+        '''
+        Add the given data (in dict format!) to the event template and emit as
+        usual
+        '''
+        for hec, event, payload in self.endpoint_list:
+            event = copy.deepcopy(event)
+            payload = copy.deepcopy(payload)
+            event.update(data)
+            payload['event'] = event
+            hec.batchEvent(payload, eventtime=time.time())
+            hec.flushBatch()
+        return True
+
     def format_record(self, record):
         '''
         Format the log record into a dictionary for easy insertion into a
         splunk event dictionary
         '''
-        log_entry = {'message': record.message,
-                     'level': record.levelname,
-                     'timestamp': record.asctime,
-                     'loggername': record.name,
-                     }
+        try:
+            log_entry = {'message': record.message,
+                         'level': record.levelname,
+                         'timestamp': record.asctime,
+                         'loggername': record.name,
+                         }
+        except:
+            log_entry = {'message': record.msg,
+                         'level': record.levelname,
+                         'loggername': record.name,
+                         }
         return log_entry
 
 

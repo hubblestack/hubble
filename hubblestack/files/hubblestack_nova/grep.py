@@ -60,6 +60,7 @@ import fnmatch
 import os
 import copy
 import salt.utils
+import salt.utils.platform
 import re
 
 from distutils.version import LooseVersion
@@ -68,7 +69,7 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     return True
 

@@ -462,18 +462,6 @@ def load_config():
                                         __opts__['log_level'],
                                         max_bytes=__opts__.get('logfile_maxbytes', 100000000),
                                         backup_count=__opts__.get('logfile_backups', 1))
-    # splunk logs below warning, above info by default
-    logging.SPLUNK = int(__opts__.get('splunk_log_level', 25))
-    logging.addLevelName(logging.SPLUNK, 'SPLUNK')
-    def splunk(self, message, *args, **kwargs):
-        if self.isEnabledFor(logging.SPLUNK):
-            self._log(logging.SPLUNK, message, args, **kwargs)
-    logging.Logger.splunk = splunk
-    if __opts__.get('hubblestack', {}).get('splunklogging', False):
-        root_logger = logging.getLogger()
-        handler = hubblestack.splunklogging.SplunkHandler()
-        handler.setLevel(logging.SPLUNK)
-        root_logger.addHandler(handler)
 
     # 384 is 0o600 permissions, written without octal for python 2/3 compat
     os.chmod(__opts__['log_file'], 384)
@@ -485,6 +473,19 @@ def load_config():
     if __grains__.get('ip_gw', None) is False and 'fallback_fileserver_backend' in __opts__:
         log.info('No default gateway detected; using fallback_fileserver_backend.')
         __opts__['fileserver_backend'] = __opts__['fallback_fileserver_backend']
+
+    # splunk logs below warning, above info by default
+    logging.SPLUNK = int(__opts__.get('splunk_log_level', 25))
+    logging.addLevelName(logging.SPLUNK, 'SPLUNK')
+    def splunk(self, message, *args, **kwargs):
+        if self.isEnabledFor(logging.SPLUNK):
+            self._log(logging.SPLUNK, message, args, **kwargs)
+    logging.Logger.splunk = splunk
+    if __salt__['config.get']('hubblestack:splunklogging', False):
+        root_logger = logging.getLogger()
+        handler = hubblestack.splunklogging.SplunkHandler()
+        handler.setLevel(logging.SPLUNK)
+        root_logger.addHandler(handler)
 
 
 def refresh_grains(initial=False):

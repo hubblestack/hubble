@@ -39,10 +39,7 @@ def host_uuid():
             log.error('host_uuid was previously generated, but the cached '
                       'file is no longer present: {0}'.format(cached_uuid_path))
         else:
-            # TODO: once we figure out how to get a custom log level for
-            # non-error splunk logs, we should move this to that log level so
-            # it doesn't look like an error.
-            log.splunk('generating fresh uuid, no cache file found. '
+            log.warning('generating fresh uuid, no cache file found. '
                        '(probably not a problem)')
     except Exception:
         log.exception('Problem retrieving cached host uuid from file: {0}'

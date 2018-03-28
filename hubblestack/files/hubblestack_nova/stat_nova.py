@@ -102,7 +102,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                     if None in expected.values():
                         ret['Success'].append(tag_data)
                     else:
-                        tag_data['failure_reason'] = "Could not get stats for file '{0}'".format(name)
+                        tag_data['failure_reason'] = "Could not get access any file at '{0}'. File might not exist, or hubble might not have enough permissions".format(name)
                         ret['Failure'].append(tag_data)
                     continue
 

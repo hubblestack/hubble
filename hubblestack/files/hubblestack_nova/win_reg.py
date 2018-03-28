@@ -77,7 +77,7 @@ def audit(data_list, tags, debug=False, **kwargs):
                                 answer_list.append(_translate_value_type(current[item], tag_data['value_type'], match_output))
 
                             if False in answer_list:
-                                tag_data['failure_reason'] = "Value of registry key '{0}:{1}:{2}' should be set to '{4}({5})'. It is set to some other value of one or more SID(s)".format(reg_dict['hive'], reg_dict['key'], reg_dict['value'], current, match_output, tag_data['value_type'])
+                                tag_data['failure_reason'] = "Value of registry key '{0}:{1}:{2}' should be set to '{4}({5})'. It is set to some other value for one or more SID(s)".format(reg_dict['hive'], reg_dict['key'], reg_dict['value'], current, match_output, tag_data['value_type'])
                                 ret['Failure'].append(tag_data)
                             else:
                                 ret['Success'].append(tag_data)

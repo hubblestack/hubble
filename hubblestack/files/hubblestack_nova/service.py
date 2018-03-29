@@ -98,8 +98,8 @@ def audit(data_list, tags, debug=False, **kwargs):
                 if audittype == 'blacklist':
                     if __salt__['service.status'](name):
                         tag_data['failure_reason'] = "Found blacklisted service '{0}' " \
-                                                    "running on the system" \
-                                                    .format(name)
+                                                     "running on the system" \
+                                                     .format(name)
                         ret['Failure'].append(tag_data)
                     else:
                         ret['Success'].append(tag_data)
@@ -110,8 +110,8 @@ def audit(data_list, tags, debug=False, **kwargs):
                         ret['Success'].append(tag_data)
                     else:
                         tag_data['failure_reason'] = "Could not find requisite service" \
-                                                    " '{0}' running on the system" \
-                                                    .format(name)
+                                                     " '{0}' running on the system" \
+                                                     .format(name)
                         ret['Failure'].append(tag_data)
 
     return ret

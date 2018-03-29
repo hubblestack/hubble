@@ -62,10 +62,10 @@ def audit(data_list, tags, debug=False, **kwargs):
                         ret['Success'].append(tag_data)
                     else:
                         tag_data['failure_reason'] = "Value of blacklisted property '{0}({1})'" \
-                                                    " was found to be set. If should not be " \
-                                                    "configured at all" \
-                                                    .format(name,
-                                                            tag_data['value_type'].title())
+                                                     " was found to be set. If should not be " \
+                                                     "configured at all" \
+                                                     .format(name,
+                                                             tag_data['value_type'].title())
                         ret['Failure'].append(tag_data)
 
                 # Whitelisted audit (must include)
@@ -79,13 +79,13 @@ def audit(data_list, tags, debug=False, **kwargs):
                             ret['Success'].append(tag_data)
                         else:
                             tag_data['failure_reason'] = "Value of property '{0}({1})' is " \
-                                                        "currently set to '{2}'. It should" \
-                                                        " be set to '{3}{4}'" \
-                                                        .format(name,
-                                                                tag_data['value_type'],
-                                                                audit_value,
-                                                                match_type,
-                                                                match_output)
+                                                         "currently set to '{2}'. It should" \
+                                                         " be set to '{3}{4}'" \
+                                                         .format(name,
+                                                                 tag_data['value_type'],
+                                                                 audit_value,
+                                                                 match_type,
+                                                                 match_output)
                             ret['Failure'].append(tag_data)
                     else:
                         log.debug('When trying to audit the firewall section,'

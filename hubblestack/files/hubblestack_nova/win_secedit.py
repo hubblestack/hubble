@@ -66,18 +66,18 @@ def audit(data_list, tags, debug=False, **kwargs):
                             ret['Success'].append(tag_data)
                         else:
                             tag_data['failure_reason'] = "No value/account should be configured " \
-                                                        "under '{0}', but atleast one value/account" \
-                                                        " is configured on the system.".format(name)
+                                                         "under '{0}', but atleast one value/account" \
+                                                         " is configured on the system.".format(name)
                             ret['Failure'].append(tag_data)
                     else:
                         if name in __secdata__:
                             secret = _translate_value_type(__secdata__[name], tag_data['value_type'], tag_data['match_output'])
                             if secret:
                                 tag_data['failure_reason'] = "Value of the key '{0}' is configured to a " \
-                                                            "blacklisted value '{1}({2})'" \
-                                                            .format(name,
-                                                                    tag_data['match_output'],
-                                                                    tag_data['value_type'])
+                                                             "blacklisted value '{1}({2})'" \
+                                                             .format(name,
+                                                                     tag_data['match_output'],
+                                                                     tag_data['value_type'])
                                 ret['Failure'].append(tag_data)
                             else:
                                 ret['Success'].append(tag_data)
@@ -102,19 +102,19 @@ def audit(data_list, tags, debug=False, **kwargs):
                             ret['Success'].append(tag_data)
                         else:
                             tag_data['failure_reason'] = "Value of the key '{0}' is configured to" \
-                                                        " invalid value '{1}'. It should be set to" \
-                                                        " '{2}({3})'".format(name,
-                                                                            sec_value,
-                                                                            match_output,
-                                                                            tag_data['value_type'])
+                                                         " invalid value '{1}'. It should be set to" \
+                                                         " '{2}({3})'".format(name,
+                                                                             sec_value,
+                                                                             match_output,
+                                                                             tag_data['value_type'])
                             ret['Failure'].append(tag_data)
                     else:
                         log.error('name {} was not in __secdata__'.format(name))
                         tag_data['failure_reason'] = "Value of the key '{0}' could not be found in" \
-                                                    " the registry. It should be set to '{1}({2})'" \
-                                                    .format(name,
-                                                            match_output,
-                                                            tag_data['value_type'])
+                                                     " the registry. It should be set to '{1}({2})'" \
+                                                     .format(name,
+                                                             match_output,
+                                                             tag_data['value_type'])
                         ret['Failure'].append(tag_data)
 
     return ret

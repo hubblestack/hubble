@@ -59,8 +59,8 @@ def audit(data_list, tags, debug=False, **kwargs):
                         ret['Success'].append(tag_data)
                     else:
                         tag_data['failure_reason'] = "Value of balcklisted attribute '{0}' is " \
-                                                    "configured on your system. It should not " \
-                                                    "be configured".format(name)
+                                                     "configured on your system. It should not " \
+                                                     "be configured".format(name)
                         ret['Failure'].append(tag_data)
 
                 # Whitelisted audit (must include)
@@ -73,11 +73,11 @@ def audit(data_list, tags, debug=False, **kwargs):
                             ret['Success'].append(tag_data)
                         else:
                             tag_data['failure_reason'] = "Value of attribute '{0}' is currently" \
-                                                        " set as '{1}'. Expected value is '{2}({3})'" \
-                                                        .format(name,
-                                                                audit_value,
-                                                                match_output,
-                                                                tag_data['value_type'])
+                                                         " set as '{1}'. Expected value is '{2}({3})'" \
+                                                         .format(name,
+                                                                 audit_value,
+                                                                 match_output,
+                                                                 tag_data['value_type'])
                             ret['Failure'].append(tag_data)
                     else:
                         log.debug('When trying to audit the advanced auditpol section,'

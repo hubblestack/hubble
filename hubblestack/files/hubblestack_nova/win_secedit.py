@@ -101,18 +101,20 @@ def audit(data_list, tags, debug=False, **kwargs):
                         if secret:
                             ret['Success'].append(tag_data)
                         else:
-                            tag_data['failure_reason'] = "Value of the key '{0}' is configured to invalid value '{1}'." \
-                                                        " It should be set to '{2}({3})'".format(name,
-                                                                                                sec_value,
-                                                                                                match_output,
-                                                                                                tag_data['value_type'])
+                            tag_data['failure_reason'] = "Value of the key '{0}' is configured to" \
+                                                        " invalid value '{1}'. It should be set to" \
+                                                        " '{2}({3})'".format(name,
+                                                                            sec_value,
+                                                                            match_output,
+                                                                            tag_data['value_type'])
                             ret['Failure'].append(tag_data)
                     else:
                         log.error('name {} was not in __secdata__'.format(name))
-                        tag_data['failure_reason'] = "Value of the key '{0}' could not be found in the registry. It" \
-                                                    " should be set to '{1}({2})'".format(name,
-                                                                                        match_output,
-                                                                                        tag_data['value_type'])
+                        tag_data['failure_reason'] = "Value of the key '{0}' could not be found in" \
+                                                    " the registry. It should be set to '{1}({2})'" \
+                                                    .format(name,
+                                                            match_output,
+                                                            tag_data['value_type'])
                         ret['Failure'].append(tag_data)
 
     return ret

@@ -106,6 +106,9 @@ def audit(data_list, tags, debug=False, **kwargs):
                 # Blacklisted packages (must not be installed)
                 if audittype == 'blacklist':
                     if __salt__['pkg.version'](name):
+                        tag_data['failure_reason'] = "Found blacklisted package '{0}'" \
+                                                     " installed on the system" \
+                                                     .format(name)
                         ret['Failure'].append(tag_data)
                     else:
                         ret['Success'].append(tag_data)
@@ -123,6 +126,10 @@ def audit(data_list, tags, debug=False, **kwargs):
                                     LooseVersion(version)):
                                 ret['Success'].append(tag_data)
                             else:
+                                tag_data['failure_reason'] = "Could not find requisite package '{0}' with" \
+                                                             " version less than or equal to '{1}' " \
+                                                             "installed on the system" \
+                                                             .format(name, version)
                                 ret['Failure'].append(tag_data)
 
                         elif mod == '>':
@@ -130,6 +137,10 @@ def audit(data_list, tags, debug=False, **kwargs):
                                     LooseVersion(version)):
                                 ret['Success'].append(tag_data)
                             else:
+                                tag_data['failure_reason'] = "Could not find requisite package '{0}' " \
+                                                             "with version greater than or equal to '{1}'" \
+                                                             " installed on the system" \
+                                                             .format(name, version)
                                 ret['Failure'].append(tag_data)
 
                         elif not mod:
@@ -137,6 +148,9 @@ def audit(data_list, tags, debug=False, **kwargs):
                             if __salt__['pkg.version'](name) == version:
                                 ret['Success'].append(tag_data)
                             else:
+                                tag_data['failure_reason'] = "Could not find the version '{0}' of requisite" \
+                                                             " package '{1}' installed on the system" \
+                                                             .format(version, name)
                                 ret['Failure'].append(tag_data)
 
                         else:
@@ -146,12 +160,17 @@ def audit(data_list, tags, debug=False, **kwargs):
                             tag_data = copy.deepcopy(tag_data)
                             # Include an error in the failure
                             tag_data['error'] = 'Invalid modifier {0}'.format(mod)
+                            tag_data['failure_reason'] = 'Invalid modifier in version {0} for pkg {1} audit' \
+                                                         ' {2}. Seems like a bug in hubble profile.' \
+                                                         .format(tag_data['version'], name, tag)
                             ret['Failure'].append(tag_data)
 
                     else:  # No version checking
                         if __salt__['pkg.version'](name):
                             ret['Success'].append(tag_data)
                         else:
+                            tag_data['failure_reason'] = "Could not find requisite package '{0}' installed" \
+                                                         " on the system".format(name)
                             ret['Failure'].append(tag_data)
 
     return ret

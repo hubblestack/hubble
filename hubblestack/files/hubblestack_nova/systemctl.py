@@ -80,12 +80,18 @@ def audit(data_list, tags, debug=False, **kwargs):
                     if not enabled:
                         ret['Success'].append(tag_data)
                     else:
+                        tag_data['failure_reason'] = "Found blacklisted service '{0}'" \
+                                                     " enabled on the system" \
+                                                     .format(name)
                         ret['Failure'].append(tag_data)
                 # Whitelisted pattern (must be found and running)
                 elif audittype == 'whitelist':
                     if enabled:
                         ret['Success'].append(tag_data)
                     else:
+                        tag_data['failure_reason'] = "Could not find requisite service" \
+                                                     " '{0}'running on the system" \
+                                                     .format(name)
                         ret['Failure'].append(tag_data)
 
     return ret

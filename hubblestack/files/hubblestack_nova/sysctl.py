@@ -77,12 +77,17 @@ def audit(data_list, tags, debug=False, **kwargs):
                 salt_ret = __salt__['sysctl.get'](name)
                 if not salt_ret:
                     passed = False
-                    tag_data['failure_reason'] = "Could not find attribute '{0}' in the kernel".format(name)
+                    tag_data['failure_reason'] = "Could not find attribute '{0}' in" \
+                                                " the kernel".format(name)
                 if str(salt_ret).startswith('error'):
                     passed = False
-                    tag_data['failure_reason'] = "An error occured while reading the value of kernel attribute '{0}'".format(name)
+                    tag_data['failure_reason'] = "An error occured while reading the" \
+                                                " value of kernel attribute '{0}'" \
+                                                .format(name)
                 if str(salt_ret) != str(match_output):
-                    tag_data['failure_reason'] = "Current value of kernel attribute '{0}' is '{1}'. It should be set to '{2}'".format(name,salt_ret,match_output)
+                    tag_data['failure_reason'] = "Current value of kernel attribute " \
+                                                "'{0}' is '{1}'. It should be set to '{2}'" \
+                                                .format(name, salt_ret, match_output)
                     passed = False
                 if passed:
                     ret['Success'].append(tag_data)

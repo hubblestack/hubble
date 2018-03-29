@@ -59,7 +59,12 @@ def audit(data_list, tags, debug=False, **kwargs):
                 if 'blacklist' in audit_type:
                     secret = _find_option_value_in_reg(reg_dict['hive'], reg_dict['key'], reg_dict['value'])
                     if secret:
-                        tag_data['failure_reason'] = "Value of blacklisted registry key '{0}:{1}:{2}' is set to value '{3}'. It should not be configured.".format(reg_dict['hive'], reg_dict['key'], reg_dict['value'], secret)
+                        tag_data['failure_reason'] = "Value of blacklisted registry key '{0}:{1}:{2}' " \
+                                                    "is set to value '{3}'. It should not be configured." \
+                                                    .format(reg_dict['hive'],
+                                                            reg_dict['key'],
+                                                            reg_dict['value'],
+                                                            secret)
                         ret['Failure'].append(tag_data)
                     else:
                         ret['Success'].append(tag_data)
@@ -77,7 +82,15 @@ def audit(data_list, tags, debug=False, **kwargs):
                                 answer_list.append(_translate_value_type(current[item], tag_data['value_type'], match_output))
 
                             if False in answer_list:
-                                tag_data['failure_reason'] = "Value of registry key '{0}:{1}:{2}' should be set to '{4}({5})'. It is set to some other value for one or more SID(s)".format(reg_dict['hive'], reg_dict['key'], reg_dict['value'], current, match_output, tag_data['value_type'])
+                                tag_data['failure_reason'] = "Value of registry key '{0}:{1}:{2}' should" \
+                                                            " be set to '{4}({5})'. It is set to some other" \
+                                                            " value for one or more SID(s)". \
+                                                            format(reg_dict['hive'],
+                                                                    reg_dict['key'],
+                                                                    reg_dict['value'],
+                                                                    current,
+                                                                    match_output,
+                                                                    tag_data['value_type'])
                                 ret['Failure'].append(tag_data)
                             else:
                                 ret['Success'].append(tag_data)
@@ -88,13 +101,26 @@ def audit(data_list, tags, debug=False, **kwargs):
                                 tag_data['value_found'] = current
                                 ret['Success'].append(tag_data)
                             else:
-                                tag_data['failure_reason'] = "Value of registry key '{0}:{1}:{2}' is set to value '{3}'. It should be set to '{4}({5})'.".format(reg_dict['hive'], reg_dict['key'], reg_dict['value'], current, match_output, tag_data['value_type'])
+                                tag_data['failure_reason'] = "Value of registry key '{0}:{1}:{2}' is set to " \
+                                                            "value '{3}'. It should be set to '{4}({5})'." \
+                                                            .format(reg_dict['hive'],
+                                                                    reg_dict['key'],
+                                                                    reg_dict['value'],
+                                                                    current,
+                                                                    match_output,
+                                                                    tag_data['value_type'])
                                 tag_data['value_found'] = current
                                 ret['Failure'].append(tag_data)
 
                         else:
                             tag_data['value_found'] = None
-                            tag_data['failure_reason'] = "Value of registry key '{0}:{1}:{2}' could not be found. It should be set to '{3}({4})'.".format(reg_dict['hive'], reg_dict['key'], reg_dict['value'], match_output, tag_data['value_type'])
+                            tag_data['failure_reason'] = "Value of registry key '{0}:{1}:{2}' could not be " \
+                                                        "found. It should be set to '{3}({4})'." \
+                                                        .format(reg_dict['hive'],
+                                                                reg_dict['key'],
+                                                                reg_dict['value'],
+                                                                match_output,
+                                                                tag_data['value_type'])
                             ret['Failure'].append(tag_data)
 
     return ret

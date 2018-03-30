@@ -229,8 +229,8 @@ class PulsarWatchManager(pyinotify.WatchManager):
         return list(s)
 
     def _add_db(self, parent, **items):
-	# this assumes bijection, which isn't necessarily true
-	# (we hope it's true though)
+        # this assumes bijection, which isn't necessarily true
+        # (we hope it's true though)
         self.watch_db.update(**items)
         if parent and not items:
             raise Exception("_add_db(parent, {path: wd, path2: wd2, ...})")

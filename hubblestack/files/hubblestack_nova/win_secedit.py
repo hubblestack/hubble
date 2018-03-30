@@ -339,7 +339,8 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             else:
                 return True
     elif 'account' in value:
-        evaluator = _account_audit(evaluator, __sidaccounts__)
+        if "*S-" not in evaluator:
+            evaluator = _account_audit(evaluator, __sidaccounts__)
         evaluator_list = evaluator.split(',')
         current_list = current.split(',')
         list_match = False

@@ -757,9 +757,9 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                         try:
                             with open(abspath, 'r') as f:
                                 sub['contents'] = f.read()
-                        except:
-                            log.debug('Could not get file contents for {0}'
-                                      .format(abspath))
+                        except Exception as e:
+                            log.debug('Could not get file contents for {0}: {1}'
+                                      .format(abspath, e))
 
 
                 ret.append(sub)

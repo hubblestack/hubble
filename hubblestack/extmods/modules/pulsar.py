@@ -622,6 +622,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
         checksum: sha256
         stats: True
         batch: True
+        contents_size: 20480
+        checksum_size: 104857600
 
     Note that if `batch: True`, the configured returner must support receiving
     a list of events, rather than single one-off events.
@@ -662,6 +664,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     exclude:
       Exclude directories or files from triggering events in the watched directory.
       Can use regex if regex is set to True
+    contents:
+      Retrieve the contents of changed files based on checksums (which must be enabled)
 
     If pillar/grains/minion config key `hubblestack:pulsar:maintenance` is set to
     True, then changes will be discarded.
@@ -793,9 +797,9 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
         # TODO: make the config handle more options
         for path in config:
             excludes = lambda x: False
-            if path == 'return' or path == 'checksum' or path == 'stats' \
-                    or path == 'batch' or path == 'verbose' or path == 'paths' \
-                    or path == 'refresh_interval':
+            if path in ['return', 'checksum', 'stats', 'batch', 'verbose',
+                        'paths', 'refresh_interval', 'contents_size',
+                        'checksum_size']:
                 continue
             if isinstance(config[path], dict):
                 mask = config[path].get('mask', DEFAULT_MASK)

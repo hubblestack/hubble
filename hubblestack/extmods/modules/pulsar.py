@@ -41,8 +41,6 @@ except ImportError:
     DEFAULT_MASK = None
 
 __virtualname__ = 'pulsar'
-CONFIG = None
-CONFIG_STALENESS = 0
 
 import logging
 log = logging.getLogger(__name__)
@@ -735,31 +733,40 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                         'pulsar_config': pulsar_config}
 
                 if config.get('checksum', False) and os.path.isfile(pathname):
+                    if 'pulsar_checksums' not in __context__:
+                        __context__['pulsar_checksums'] = {}
                     # Don't checksum any file over 100MB
-                    if os.path.isfile(abspath) and os.path.getsize(abspath) < config.get('checksum_size', 104857600):
+                    if os.path.getsize(pathname) < config.get('checksum_size', 104857600):
                         sum_type = config['checksum']
                         if not isinstance(sum_type, salt.ext.six.string_types):
                             sum_type = 'sha256'
-                        sub['checksum'] = __salt__['file.get_hash'](pathname, sum_type)
+                        old_checksum = __context__['pulsar_checksums'].get(pathname)
+                        new_checksum = __salt__['file.get_hash'](pathname, sum_type)
+                        __context__['pulsar_checksums'][pathname] = new_checksum
+                        sub['checksum'] = __context__['pulsar_checksums'][pathname]
                         sub['checksum_type'] = sum_type
+
+                        # File contents? Don't fetch contents for any file over
+                        # 20KB or where the checksum is unchanged
+                        if (pathname in config['cpath'].get('contents', []) or
+                                os.path.dirname(pathname) in config['cpath'].get('contents', [])) \
+                                and os.path.getsize(pathname) < config.get('contents_size', 20480) \
+                                and old_checksum != new_checksum:
+                            try:
+                                with open(pathname, 'r') as f:
+                                    sub['contents'] = f.read()
+                            except Exception as e:
+                                log.debug('Could not get file contents for {0}: {1}'
+                                          .format(pathname, e))
 
                 if cm.config.get('stats', False):
                     if os.path.exists(pathname):
                         sub['stats'] = __salt__['file.stats'](pathname)
                     else:
                         sub['stats'] = {}
-                    if os.path.isfile(abspath):
-                        sub['size'] = os.path.getsize(abspath)
+                    if os.path.isfile(pathname):
+                        sub['size'] = os.path.getsize(pathname)
 
-                if abspath in config['cpath'].get('contents', []):
-                    # Don't fetch contents for any file over 20KB
-                    if os.path.isfile(abspath) and os.path.getsize(abspath) < config.get('contents_size', 20480):
-                        try:
-                            with open(abspath, 'r') as f:
-                                sub['contents'] = f.read()
-                        except Exception as e:
-                            log.debug('Could not get file contents for {0}: {1}'
-                                      .format(abspath, e))
 
 
                 ret.append(sub)

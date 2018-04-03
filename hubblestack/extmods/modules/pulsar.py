@@ -752,8 +752,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
                         # File contents? Don't fetch contents for any file over
                         # 20KB or where the checksum is unchanged
-                        if (pathname in config['cpath'].get('contents', []) or
-                                os.path.dirname(pathname) in config['cpath'].get('contents', [])) \
+                        if (pathname in config[cpath].get('contents', []) or
+                                os.path.dirname(pathname) in config[cpath].get('contents', [])) \
                                 and os.path.getsize(pathname) < config.get('contents_size', 20480) \
                                 and old_checksum != new_checksum:
                             try:

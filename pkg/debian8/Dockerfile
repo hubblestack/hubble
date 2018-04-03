@@ -13,14 +13,30 @@ RUN apt-get update     \
 #paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery
 
+#patchelf build start
+#must precent osquery as at the moment, osquery won't build without patchelf
+ENV PATCHELF_GIT_URL=https://github.com/NixOS/patchelf.git
+ENV PATCHELF_TEMP=/tmp/patchelf
+RUN apt-get -y install autoconf git make g++
+RUN mkdir -p "$PATCHELF_TEMP" \
+ && cd "$PATCHELF_TEMP" \
+ && git clone "$PATCHELF_GIT_URL" \
+ && cd patchelf \
+ && sed -i 's/serial-tests/parallel-tests/' configure.ac \
+ && ./bootstrap.sh \
+ && ./configure \
+ && make \
+ && make install
+
+
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 #to pin to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=2.9.2
+ENV OSQUERY_SRC_VERSION=2.11.2
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
-RUN apt-get -y install git make python ruby sudo locales
+RUN apt-get -y install git make python ruby sudo locales curl
 RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \
  && sed -i 's/^%sudo.*/%sudo\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
 RUN mkdir -p /usr/local/osquery/ \
@@ -96,7 +112,7 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.2.11
+ENV HUBBLE_CHECKOUT=v2.2.11.3
 ENV HUBBLE_VERSION=2.2.11
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
@@ -142,7 +158,8 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
 #fpm start
     && fpm -s dir -t deb \
        -n hubblestack \
-       -v ${HUBBLE_VERSION}-1 \
+       -v ${HUBBLE_VERSION} \
+       --iteration 3 \
     #todo: get rid of the git dependency with static bin in the future
        -d 'git' \
        --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
@@ -150,5 +167,5 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --after-install /hubble_build/conf/afterinstall.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        etc/hubble etc/osquery etc/init.d opt usr \
-    && cp hubblestack_${HUBBLE_VERSION}-1_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-1deb8_amd64.deb" ]
+    && cp hubblestack_${HUBBLE_VERSION}-3_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-3deb8_amd64.deb" ]
 

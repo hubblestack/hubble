@@ -80,6 +80,11 @@ fileserver_backend:
 #    function: pulsar.canary
 #    seconds: 86400
 #    run_on_start: True
+#  conf_publisher:
+#    function: conf_publisher.publish
+#    seconds: 86400
+#    splay: 3600
+#    run_on_start: False
 
 #################################
 ## Returner Config

@@ -735,17 +735,32 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                         'pulsar_config': pulsar_config}
 
                 if config.get('checksum', False) and os.path.isfile(pathname):
-                    sum_type = config['checksum']
-                    if not isinstance(sum_type, salt.ext.six.string_types):
-                        sum_type = 'sha256'
-                    sub['checksum'] = __salt__['file.get_hash'](pathname, sum_type)
-                    sub['checksum_type'] = sum_type
+                    # Don't checksum any file over 100MB
+                    if os.path.isfile(abspath) and os.path.getsize(abspath) < config.get('checksum_size', 104857600):
+                        sum_type = config['checksum']
+                        if not isinstance(sum_type, salt.ext.six.string_types):
+                            sum_type = 'sha256'
+                        sub['checksum'] = __salt__['file.get_hash'](pathname, sum_type)
+                        sub['checksum_type'] = sum_type
 
                 if cm.config.get('stats', False):
                     if os.path.exists(pathname):
                         sub['stats'] = __salt__['file.stats'](pathname)
                     else:
                         sub['stats'] = {}
+                    if os.path.isfile(abspath):
+                        sub['size'] = os.path.getsize(abspath)
+
+                if abspath in config['cpath'].get('contents', []):
+                    # Don't fetch contents for any file over 20KB
+                    if os.path.isfile(abspath) and os.path.getsize(abspath) < config.get('contents_size', 20480):
+                        try:
+                            with open(abspath, 'r') as f:
+                                sub['contents'] = f.read()
+                        except:
+                            log.debug('Could not get file contents for {0}'
+                                      .format(abspath))
+
 
                 ret.append(sub)
 

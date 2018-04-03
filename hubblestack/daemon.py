@@ -15,6 +15,8 @@ import signal
 import sys
 import uuid
 import json
+import socket
+import math
 
 import salt.fileclient
 import salt.fileserver
@@ -259,6 +261,35 @@ def schedule():
         # Actually process the job
         run = False
         if 'last_run' not in jobdata:
+            if 'buckets' in jobdata:
+                buckets = int(jobdata['buckets']) if int(jobdata['buckets'])!=0 else 256
+                s = socket.gethostbyname(socket.gethostname())
+                ips = s.split('.')
+                sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2]*256))+int(ips[3])
+                bucket = sum%buckets
+                log.error('Bucket number is {0}.'.format(bucket))
+                current_time = time.time()
+                log.error('current_time is {0}.'.format(current_time))
+                base_time = seconds*(math.floor(current_time/seconds))
+                log.error('base_time is {0}.'.format(base_time))
+                splay = seconds/buckets
+                seconds_between_buckets = splay
+                log.error('seconds_between_buckets is {0}.'.format(seconds_between_buckets))
+                if splay !=0:
+                    randomInt = random.randint(0,splay-1)
+                else:
+                    randomInt = 0 
+                bucket_execution_time = base_time+(seconds_between_buckets*bucket)+randomInt
+                log.error('bucket_execution_time is {0}.'.format(bucket_execution_time))
+                c = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(bucket_execution_time))
+                log.error('bucket_execution_time is {0}.'.format(c))
+                if bucket_execution_time < current_time:
+                    jobdata['last_run'] = bucket_execution_time
+                else:
+                    jobdata['last_run'] = bucket_execution_time - seconds
+                log.error('lasr_run is {0}.'.format(jobdata['last_run']))
+                d = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(jobdata['last_run']))
+                log.error('last_run is {0}.'.format(d))
             if jobdata.get('run_on_start', False):
                 if splay:
                     # Run `splay` seconds in the future, by telling the scheduler we last ran it

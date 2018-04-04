@@ -138,7 +138,14 @@ class ConfigManager(object):
         config = self.nc_config
         to_set = __opts__.get('pulsar', {})
 
-        counter = 0
+        # Is there a better way to tell if __opts__ updated?
+        # Is it worth checking anyway? Seems only to come up in tests/
+        # todo?: attempt to re-read /etc/hubble/hubble sometimes?
+        counter = len( set(config).symmetric_difference( set(to_set) ) )
+        if counter == 0:
+            for k in config:
+                if config[k] != to_set[k]:
+                    counter += 1
 
         if isinstance(config.get('paths'), (list,tuple)):
             for path in config['paths']:

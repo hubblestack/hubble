@@ -216,7 +216,7 @@ def schedule():
                     continue
                 log.debug('Returning job data to {0}'.format(returner))
                 returner_ret = {'id': __grains__['id'],
-                                'jid': salt.utils.jid.gen_jid(),
+                                'jid': salt.utils.jid.gen_jid(__opts__),
                                 'fun': func,
                                 'fun_args': args + ([kwargs] if kwargs else []),
                                 'return': ret}
@@ -254,7 +254,7 @@ def run_function():
         else:
             log.info('Returning job data to {0}'.format(returner))
             returner_ret = {'id': __grains__['id'],
-                            'jid': salt.utils.jid.gen_jid(),
+                            'jid': salt.utils.jid.gen_jid(__opts__),
                             'fun': __opts__['function'],
                             'fun_args': args + ([kwargs] if kwargs else []),
                             'return': ret}

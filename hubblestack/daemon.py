@@ -265,7 +265,7 @@ def schedule():
                 buckets = int(jobdata['buckets']) if int(jobdata['buckets'])!=0 else 256
                 s = socket.gethostbyname(socket.gethostname())
                 ips = s.split('.')
-                sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2]*256))+int(ips[3])
+                sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2])*256)+int(ips[3])
                 bucket = sum%buckets
                 log.error('Bucket number is {0}.'.format(bucket))
                 current_time = time.time()
@@ -275,10 +275,7 @@ def schedule():
                 splay = seconds/buckets
                 seconds_between_buckets = splay
                 log.error('seconds_between_buckets is {0}.'.format(seconds_between_buckets))
-                if splay !=0:
-                    randomInt = random.randint(0,splay-1)
-                else:
-                    randomInt = 0 
+                randomInt = random.randint(0,splay-1) if splay !=0 else 0
                 bucket_execution_time = base_time+(seconds_between_buckets*bucket)+randomInt
                 log.error('bucket_execution_time is {0}.'.format(bucket_execution_time))
                 c = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(bucket_execution_time))

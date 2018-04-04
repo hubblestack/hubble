@@ -183,6 +183,30 @@ class TestPulsar2():
         with open(self.tfile, 'w') as fh:
             fh.write(to_write)
 
+    def mk_subdir_files(self, *f, **kw):
+        if len(f) == 1 and isinstance(f[0], (list,tuple)):
+            f = f[0]
+        for _f in f:
+            _f = _f if _f.startswith(self.tdir + '/') else os.path.join(self.tdir, _f)
+            s = _f.split('/')
+            if s:
+                fn = s.pop()
+                b = ''
+                for i in s:
+                    b = os.path.join(b,i)
+                    if not os.path.isdir(i):
+                        os.mkdir(b)
+                k = ('{}_out', 'out_{}', '{}_to_write', 'to_write')
+                for _k in k:
+                    to_write = kw.get(_k.format(fn))
+                    if to_write is not None:
+                        break
+                if to_write is None:
+                    to_write = 'supz\n'
+                fn = os.path.join(b, fn)
+                with open(fn, 'a') as fh:
+                    fh.write(to_write if to_write is not None else 'supz\n')
+
     def more_fname(self, number, base=None):
         if base is None:
             base = self.tfile
@@ -261,6 +285,29 @@ class TestPulsar2():
 
     def test_watch_new_files(self):
         self.test_add_watch(modality='watch_new_files')
+
+    def test_recurse_without_watch_files(self):
+        c1 = {self.atdir: { 'recurse': False }}
+        c2 = {self.atdir: { 'recurse': True  }}
+
+        self.reset(**c1)
+        self.mk_subdir_files('blah1','a/b/c/blah2')
+        self.wm.watch(self.tdir)
+        s1 = set(self.wm.watch_db)
+
+        self.reset(**c2)
+        self.mk_subdir_files('blah1','a/b/c/blah2')
+        self.wm.watch(self.tdir)
+        s2 = set(self.wm.watch_db)
+
+        s0a = set([self.atdir])
+        s0b = [self.atdir]
+        for i in 'abc':
+            s0b.append( os.path.join(s0b[-1], i) )
+        s0b = set(s0b)
+
+        assert s1 == s0a
+        assert s2 == s0b
 
     def config_make_files_watch_process_reconfig(self, config, reconfig=None, mk_files=0):
         '''

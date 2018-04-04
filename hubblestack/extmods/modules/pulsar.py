@@ -138,8 +138,6 @@ class ConfigManager(object):
         config = self.nc_config
         to_set = __opts__.get('pulsar', {})
 
-        counter = 0
-
         if isinstance(config.get('paths'), (list,tuple)):
             for path in config['paths']:
                 if 'salt://' in path:
@@ -148,17 +146,15 @@ class ConfigManager(object):
                     with open(path, 'r') as f:
                         to_set = _dict_update(to_set, yaml.safe_load(f),
                             recursive_update=True, merge_lists=True)
-                    counter += 1
                 else:
                     log.error('Path {0} does not exist or is not a file'.format(path))
         else:
             log.error('Pulsar beacon \'paths\' data improperly formatted. Should be list of paths')
 
-        if counter>0:
-            self.nc_config = to_set
-            self._abspathify()
-            if config.get('verbose'):
-                log.debug('Pulsar config updated')
+        self.nc_config = to_set
+        self._abspathify()
+        if config.get('verbose'):
+            log.debug('Pulsar config updated')
 
         self.last_update = time.time()
 
@@ -344,12 +340,17 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 kw['mask'] = mask
                 kw.pop('exclude_filter',None)
                 self.update_watch(wd,**kw)
-                log.debug('update-watch wd={0} path={1} watch_files={2}'.format(
-                    wd, path, pconf['watch_files']))
+                log.debug('update-watch wd={0} path={1} watch_files={2} recurse={3}'.format(
+                    wd, path, pconf['watch_files'], pconf['recurse']))
         else:
+            if 'recurse' in kw:
+                kw['rec'] = kw.pop('recurse')
+            kw['rec'] = kw.get('rec')
+            if kw['rec'] is None:
+                kw['rec'] = pconf['recurse']
             self.add_watch(path,mask,**kw)
-            log.debug('add-watch wd={0} path={1} watch_files={2}'.format(
-                self.watch_db.get(path), path, pconf['watch_files']))
+            log.debug('add-watch wd={0} path={1} watch_files={2} recurse={3}'.format(
+                self.watch_db.get(path), path, pconf['watch_files'], kw['rec']))
 
         if new_file: # process() says this is a new file
             self._add_recursed_file_watch(path)

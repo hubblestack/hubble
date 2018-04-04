@@ -36,6 +36,9 @@ stat:
             gid: 0
     # The rest of these attributes are optional, and currently not used
     description: 'Grub must be owned by root'
+    labels:
+      - critical
+      - raiseticket
     alert: email
     trigger: state
 
@@ -67,6 +70,16 @@ def __virtual__():
         return False, 'This audit module only runs on linux'
     return True
 
+def apply_labels(__data__, labels):
+    if labels:
+        labelled_test_cases=[]
+        for test_case in __data__.get('stat', []):
+            # each test case is a dictionary with just one key-val pair. key=test name, val=test data, description etc
+            if isinstance(test_case, dict) and test_case:
+                test_case_body = test_case.get(next(iter(test_case)))
+                if set(labels).issubset(set(test_case_body.get('labels',[]))):
+                    labelled_test_cases.append(test_case)
+        __data__['stat']=labelled_test_cases
 
 def audit(data_list, tags, debug=False, **kwargs):
     '''
@@ -75,6 +88,7 @@ def audit(data_list, tags, debug=False, **kwargs):
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
+    apply_labels(__data__, labels)
     __tags__ = _get_tags(__data__)
 
     if debug:

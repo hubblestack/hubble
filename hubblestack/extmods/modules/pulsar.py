@@ -42,6 +42,9 @@ except ImportError:
     DEFAULT_MASK = None
 
 __virtualname__ = 'pulsar'
+CONFIG = None
+CONFIG_STALENESS = 0
+SPAM_TIME = 0 # track spammy status message times
 
 import logging
 log = logging.getLogger(__name__)
@@ -688,10 +691,12 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     if config.get('verbose'):
         log.debug('Pulsar beacon called.')
         log.debug('Pulsar beacon config from pillar:\n{0}'.format(config))
+
     ret = []
     notifier = _get_notifier()
     wm = notifier._watch_manager
     update_watches = cm.freshness(2)
+    initial_count = len(wm.watch_db)
 
     recent = set()
 
@@ -843,8 +848,25 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
         # We're in maintenance mode, throw away findings
         ret = []
 
-    if dt.get() >= 0.1:
-        log.debug("process sweep {0}".format(dt))
+    global SPAM_TIME
+    now_t = time.time()
+    spam_dt = now_t - SPAM_TIME
+    current_count = len(wm.watch_db)
+    delta_c = current_count - initial_count
+
+    if dt.get() >= 0.1 or abs(delta_c)>0 or spam_dt >= 60:
+        SPAM_TIME = now_t
+        log.info("process() sweep {0}; watch count: {1} (delta: {2})".format(dt, current_count, delta_c))
+        if 'DUMP_WATCH_DB' in os.environ:
+            import json
+            f = os.path.basename(os.environ['DUMP_WATCH_DB'])
+            if f.lower() in ('1', 'true', 'yes'):
+                f = 'pulsar-watch.db'
+            f = '/tmp/{}'.format(f)
+            with open(f, 'w') as fh:
+                json.dump(wm.watch_db, fh)
+            log.debug("wrote watch_db to {}".format(f))
+
     return ret
 
 

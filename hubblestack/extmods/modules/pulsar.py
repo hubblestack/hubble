@@ -393,6 +393,8 @@ class PulsarWatchManager(pyinotify.WatchManager):
         while retries > 0:
             retries -= 1
             try:
+                # this is a super noisy debug, but can be useful
+                # log.debug("super.add_watch({0},{1},rec={rec})".format(path,mask,**kw))
                 _res = self.__super.add_watch(path, mask, **kw)
                 if isinstance(_res, dict):
                     res.update(_res)

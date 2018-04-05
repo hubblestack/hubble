@@ -82,7 +82,7 @@ def __virtual__():
     return True
 
 
-def audit(data_list, tags, **kwargs):
+def audit(data_list, tags, labels, **kwargs):
     '''
     Run the command audits contained in the data_list
     '''

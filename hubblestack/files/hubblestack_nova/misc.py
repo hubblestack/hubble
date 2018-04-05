@@ -27,7 +27,9 @@ misc:
         kwargs: # optional
           first_kwarg: value
           second_kwarg: value
-
+    labels:
+      - critical
+      - raiseticket
       # Catch-all, if no other osfinger match was found
       '*':
         tag: generic_tag
@@ -57,14 +59,32 @@ log = logging.getLogger(__name__)
 def __virtual__():
     return True
 
+def apply_labels(__data__, labels):
+    '''
+    Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
+    '''
+    ret={}
+    if labels:
+        labelled_test_cases=[]
+        for test_case in __data__.get('misc', []):
+            # each test case is a dictionary with just one key-val pair. key=test name, val=test data, description etc
+            if isinstance(test_case, dict) and test_case:
+                test_case_body = test_case.get(next(iter(test_case)))
+                if test_case_body.get('labels') and set(labels).issubset(set(test_case_body.get('labels',[]))):
+                    labelled_test_cases.append(test_case)
+        ret['misc']=labelled_test_cases
+    else:
+        ret=__data__
+    return ret
 
-def audit(data_list, tags, debug=False, **kwargs):
+def audit(data_list, tags, labels, debug=False, **kwargs):
     '''
     Run the misc audits contained in the data_list
     '''
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
+    __data__ = apply_labels(__data__, labels)
     __tags__ = _get_tags(__data__)
 
     if debug:
@@ -112,7 +132,6 @@ def audit(data_list, tags, debug=False, **kwargs):
                     ret['Failure'].append(tag_data)
 
     return ret
-
 
 def _merge_yaml(ret, data, profile=None):
     '''

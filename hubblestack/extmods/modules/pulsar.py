@@ -13,6 +13,7 @@ Watch files and translate the changes into salt events
 '''
 # Import Python libs
 from __future__ import absolute_import
+import base64
 import collections
 import fnmatch
 import os
@@ -41,8 +42,6 @@ except ImportError:
     DEFAULT_MASK = None
 
 __virtualname__ = 'pulsar'
-CONFIG = None
-CONFIG_STALENESS = 0
 
 import logging
 log = logging.getLogger(__name__)
@@ -625,6 +624,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
         checksum: sha256
         stats: True
         batch: True
+        contents_size: 20480
+        checksum_size: 104857600
 
     Note that if `batch: True`, the configured returner must support receiving
     a list of events, rather than single one-off events.
@@ -665,6 +666,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     exclude:
       Exclude directories or files from triggering events in the watched directory.
       Can use regex if regex is set to True
+    contents:
+      Retrieve the contents of changed files based on checksums (which must be enabled)
 
     If pillar/grains/minion config key `hubblestack:pulsar:maintenance` is set to
     True, then changes will be discarded.
@@ -736,17 +739,41 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                         'pulsar_config': pulsar_config}
 
                 if config.get('checksum', False) and os.path.isfile(pathname):
-                    sum_type = config['checksum']
-                    if not isinstance(sum_type, salt.ext.six.string_types):
-                        sum_type = 'sha256'
-                    sub['checksum'] = __salt__['file.get_hash'](pathname, sum_type)
-                    sub['checksum_type'] = sum_type
+                    if 'pulsar_checksums' not in __context__:
+                        __context__['pulsar_checksums'] = {}
+                    # Don't checksum any file over 100MB
+                    if os.path.getsize(pathname) < config.get('checksum_size', 104857600):
+                        sum_type = config['checksum']
+                        if not isinstance(sum_type, salt.ext.six.string_types):
+                            sum_type = 'sha256'
+                        old_checksum = __context__['pulsar_checksums'].get(pathname)
+                        new_checksum = __salt__['file.get_hash'](pathname, sum_type)
+                        __context__['pulsar_checksums'][pathname] = new_checksum
+                        sub['checksum'] = __context__['pulsar_checksums'][pathname]
+                        sub['checksum_type'] = sum_type
+
+                        # File contents? Don't fetch contents for any file over
+                        # 20KB or where the checksum is unchanged
+                        if (pathname in config[cpath].get('contents', []) or
+                                os.path.dirname(pathname) in config[cpath].get('contents', [])) \
+                                and os.path.getsize(pathname) < config.get('contents_size', 20480) \
+                                and old_checksum != new_checksum:
+                            try:
+                                with open(pathname, 'r') as f:
+                                    sub['contents'] = base64.b64encode(f.read())
+                            except Exception as e:
+                                log.debug('Could not get file contents for {0}: {1}'
+                                          .format(pathname, e))
 
                 if cm.config.get('stats', False):
                     if os.path.exists(pathname):
                         sub['stats'] = __salt__['file.stats'](pathname)
                     else:
                         sub['stats'] = {}
+                    if os.path.isfile(pathname):
+                        sub['size'] = os.path.getsize(pathname)
+
+
 
                 ret.append(sub)
 
@@ -762,7 +789,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                     elif event.mask & pyinotify.IN_DELETE:
                         wm.rm_watch(pathname)
             else:
-                log.info('Excluding {0} from event for {1}'.format(pathname, cpath))
+                log.debug('Excluding {0} from event for {1}'.format(pathname, cpath))
         dt.fin()
 
     if update_watches:
@@ -772,9 +799,9 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
         # TODO: make the config handle more options
         for path in config:
             excludes = lambda x: False
-            if path == 'return' or path == 'checksum' or path == 'stats' \
-                    or path == 'batch' or path == 'verbose' or path == 'paths' \
-                    or path == 'refresh_interval':
+            if path in ['return', 'checksum', 'stats', 'batch', 'verbose',
+                        'paths', 'refresh_interval', 'contents_size',
+                        'checksum_size']:
                 continue
             if isinstance(config[path], dict):
                 mask = config[path].get('mask', DEFAULT_MASK)

@@ -289,7 +289,7 @@ def usnfilter(usn_list, config_paths):
     Iterates through each change in the list and throws out any change not specified in the win_pulsar.yaml
     '''
     ret_usns = []
-    basic_paths = []
+    basic_paths = [] 
 
     # iterate through active portion of the NTFS change journal
     for usn in usn_list:
@@ -305,6 +305,7 @@ def usnfilter(usn_list, config_paths):
                 mask = config_paths[path].get('mask', DEFAULT_MASK)
                 recurse = config_paths[path].get('recurse', True)
                 exclude = config_paths[path].get('exclude', False)
+                sum_type = config_paths[path].get('checksum', 'sha256')
             else:
                 mask = DEFAULT_MASK
                 recurse = True
@@ -332,6 +333,9 @@ def usnfilter(usn_list, config_paths):
                         # stop iterating through win_pulsar specified paths since throw away flag was set
                         break
                     else:
+                        usn['checksum'] = get_file_hash(fpath, sum_type)
+                        usn['checksum_type'] = sum_type
+                        usn['tag'], _ = os.path.split(fpath)
                         ret_usns.append(usn)
                     # don't keep checking other paths in yaml since we already found a match
                     break
@@ -342,6 +346,16 @@ def usnfilter(usn_list, config_paths):
             else:
                 continue
     return ret_usns
+
+def get_file_hash(usn_file, checksum):
+    '''
+    Simple function to grab the hash for each file that has been flagged
+    '''
+    try:
+        hashy = __salt__['file.get_hash']('{0}'.format(usn_file), form=checksum)
+        return hashy
+    except:
+        return ''
 
 def canary(change_file=None):
     '''

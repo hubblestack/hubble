@@ -35,7 +35,7 @@ def __virtual__():
     return not sys.platform.startswith('win')
 
 
-def audit(data_list, tags, debug=False, **kwargs):
+def audit(data_list, tags, labels, debug=False, **kwargs):
     os_name = __grains__.get('os').lower()
     os_version = __grains__.get('osmajorrelease')
 

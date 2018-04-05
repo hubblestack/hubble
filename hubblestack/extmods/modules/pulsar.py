@@ -13,6 +13,7 @@ Watch files and translate the changes into salt events
 '''
 # Import Python libs
 from __future__ import absolute_import
+import base64
 import collections
 import fnmatch
 import os
@@ -758,7 +759,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                                 and old_checksum != new_checksum:
                             try:
                                 with open(pathname, 'r') as f:
-                                    sub['contents'] = f.read()
+                                    sub['contents'] = base64.b64encode(f.read())
                             except Exception as e:
                                 log.debug('Could not get file contents for {0}: {1}'
                                           .format(pathname, e))

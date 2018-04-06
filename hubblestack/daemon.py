@@ -165,6 +165,10 @@ def main():
         time.sleep(__opts__.get('scheduler_sleep_frequency', 0.5))
 
 def getLastRunByBuckets(buckets, seconds):
+    '''
+    this function will use the host's ip to place the host in a bucket
+    where each bucket executes hubble processes at a different time
+    '''
     buckets = int(buckets) if int(buckets)!=0 else 256
     host_ip = socket.gethostbyname(socket.gethostname())
     ips = host_ip.split('.')

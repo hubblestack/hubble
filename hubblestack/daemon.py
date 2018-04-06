@@ -164,6 +164,23 @@ def main():
             log.exception('Error executing schedule')
         time.sleep(__opts__.get('scheduler_sleep_frequency', 0.5))
 
+def getLastRunByBuckets(buckets, seconds):
+    buckets = int(buckets) if int(buckets)!=0 else 256
+    host_ip = socket.gethostbyname(socket.gethostname())
+    ips = host_ip.split('.')
+    sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2])*256)+int(ips[3])
+    bucket = sum%buckets
+    current_time = time.time()
+    base_time = seconds*(math.floor(current_time/seconds))
+    splay = seconds/buckets
+    seconds_between_buckets = splay
+    randomInt = random.randint(0,splay-1) if splay !=0 else 0
+    bucket_execution_time = base_time+(seconds_between_buckets*bucket)+randomInt
+    if bucket_execution_time < current_time:
+        last_run = bucket_execution_time
+    else:
+        last_run = bucket_execution_time - seconds
+    return last_run
 
 def schedule():
     '''
@@ -277,21 +294,7 @@ def schedule():
                     jobdata['last_run'] = time.time() + random.randint(0, splay)
                 elif 'buckets' in jobdata:
                     # Place the host in a bucket and fix the execution time.
-                    buckets = int(jobdata['buckets']) if int(jobdata['buckets'])!=0 else 256
-                    host_ip = socket.gethostbyname(socket.gethostname())
-                    ips = host_ip.split('.')
-                    sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2])*256)+int(ips[3])
-                    bucket = sum%buckets
-                    current_time = time.time()
-                    base_time = seconds*(math.floor(current_time/seconds))
-                    splay = seconds/buckets
-                    seconds_between_buckets = splay
-                    randomInt = random.randint(0,splay-1) if splay !=0 else 0
-                    bucket_execution_time = base_time+(seconds_between_buckets*bucket)+randomInt
-                    if bucket_execution_time < current_time:
-                        jobdata['last_run'] = bucket_execution_time
-                    else:
-                        jobdata['last_run'] = bucket_execution_time - seconds
+                    jobdata['last_run'] = getLastRunByBuckets(jobdata['buckets'], seconds)
                 else:
                     # Run in `seconds` seconds.
                     jobdata['last_run'] = time.time()

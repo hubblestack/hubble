@@ -231,7 +231,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
         # (we hope it's true though)
         self.watch_db.update(**items)
         if parent and not items:
-            raise Exception("_add_db(parent, {path: wd, path2: wd2, ...})")
+            return
         if parent in items:
             items = items.copy()
             del items[parent]

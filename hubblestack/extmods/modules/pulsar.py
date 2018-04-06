@@ -401,6 +401,9 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 _res = self.__super.add_watch(path, mask, **kw)
                 if isinstance(_res, dict):
                     res.update(_res)
+                    break
+                else:
+                    raise Exception("pyinotify.WatchManager.add_watch() failed to return a dict")
             except pyinotify.WatchManagerError as wme:
                 self.update_config() # make sure we have the latest settings
                 if isinstance(wme.wmd, dict):

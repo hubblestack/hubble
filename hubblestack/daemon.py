@@ -164,7 +164,7 @@ def main():
             log.exception('Error executing schedule')
         time.sleep(__opts__.get('scheduler_sleep_frequency', 0.5))
 
-def getLastRunByBuckets(buckets, seconds):
+def getlastrunbybuckets(buckets, seconds):
     '''
     this function will use the host's ip to place the host in a bucket
     where each bucket executes hubble processes at a different time
@@ -178,8 +178,8 @@ def getLastRunByBuckets(buckets, seconds):
     base_time = seconds*(math.floor(current_time/seconds))
     splay = seconds/buckets
     seconds_between_buckets = splay
-    randomInt = random.randint(0,splay-1) if splay !=0 else 0
-    bucket_execution_time = base_time+(seconds_between_buckets*bucket)+randomInt
+    random_int = random.randint(0,splay-1) if splay !=0 else 0
+    bucket_execution_time = base_time+(seconds_between_buckets*bucket)+random_int
     if bucket_execution_time < current_time:
         last_run = bucket_execution_time
     else:
@@ -298,7 +298,7 @@ def schedule():
                     jobdata['last_run'] = time.time() + random.randint(0, splay)
                 elif 'buckets' in jobdata:
                     # Place the host in a bucket and fix the execution time.
-                    jobdata['last_run'] = getLastRunByBuckets(jobdata['buckets'], seconds)
+                    jobdata['last_run'] = getlastrunbybuckets(jobdata['buckets'], seconds)
                 else:
                     # Run in `seconds` seconds.
                     jobdata['last_run'] = time.time()

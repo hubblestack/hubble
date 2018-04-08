@@ -447,10 +447,15 @@ class PulsarWatchManager(pyinotify.WatchManager):
                     # this doesn't seem to be in parent_db or the reverse
                     # probably nolonger configured
                     yield dirpath
-            elif not pc['watch_files'] and not pc['watch_new_files'] and dirpath in self.parent_db:
-                # there's config for this dir, but it nolonger allows for child watches
+            elif dirpath in self.parent_db:
                 for item in self.parent_db[dirpath]:
-                    yield item
+                    if os.path.isdir(item):
+                        if not pc['recurse']:
+                            # there's config for this dir, but it nolonger recurses
+                            yield item
+                    elif not pc['watch_files'] and not pc['watch_new_files']:
+                        # there's config for this dir, but it nolonger watches files
+                        yield item
 
     def prune(self):
         def _wd(l):

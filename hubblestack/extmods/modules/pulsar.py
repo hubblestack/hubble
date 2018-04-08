@@ -455,7 +455,11 @@ class PulsarWatchManager(pyinotify.WatchManager):
                     yield item
 
     def prune(self):
-        to_rm = self._listify_anything([ self.watch_db[x] for x in self._prune_paths_to_stop_watching() ])
+        def _wd(l):
+            for item in l:
+                yield self.watch_db[x]
+        to_stop = self._prune_paths_to_stop_watching()
+        to_rm = self._listify_anything( _wd(to_stop) )
         self.rm_watch(to_rm)
 
     def _rm_db(self, wd):

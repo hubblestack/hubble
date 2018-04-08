@@ -13,6 +13,7 @@ Watch files and translate the changes into salt events
 '''
 # Import Python libs
 from __future__ import absolute_import
+import types
 import base64
 import collections
 import fnmatch
@@ -206,7 +207,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
     def _iterate_anything(cls, x, discard_none=True):
         ''' iterate any amount of list/tuple nesting
         '''
-        if isinstance(x, (list,tuple,set,dict)):
+        if isinstance(x, (types.GeneratorType,list,tuple,set,dict)):
             # ∀ item ∈ x: listify(item)
             for list_or_item in x:
                 for i in cls._listify_anything(list_or_item):

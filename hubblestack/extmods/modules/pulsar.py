@@ -226,19 +226,20 @@ class PulsarWatchManager(pyinotify.WatchManager):
         s = set( cls._iterate_anything(x, discard_none=discard_none) )
         return list(s)
 
-    def _add_db(self, parent, **items):
-        # this assumes bijection, which isn't necessarily true
-        # (we hope it's true though)
-        self.watch_db.update(**items)
+    def _add_db(self, parent, items):
         if parent and not items:
             return
-        if parent in items:
-            items = items.copy()
-            del items[parent]
-        if items:
+        todo = {}
+        for i in items:
+            if items[i] > 0:
+                todo[i] = items[i]
+        self.watch_db.update(todo)
+        if parent in todo:
+            del todo[parent]
+        if todo:
             if parent not in self.parent_db:
                 self.parent_db[parent] = set()
-            self.parent_db[parent].update( items )
+            self.parent_db[parent].update(todo)
 
     def _get_wdl(self, *pathlist):
         ''' inverse pathlist and return a flat list of wd's for the paths and their child paths
@@ -311,7 +312,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
             # we already did many of the lookups add_watch would do
             # so we say no_db=True and manually add the (up_path,**res)
             res = self.add_watch(path, mask, no_db=True)
-            self._add_db(up_path, **res)
+            self._add_db(up_path, res)
             return res
         else:
             raise Exception("_add_recursed_file_watch('{0}') must be located in a watched directory".format(path))
@@ -427,7 +428,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 break
 
         if not no_db: # (heh)
-            self._add_db(path, **res)
+            self._add_db(path, res)
         return res
 
     def _prune_paths_to_stop_watching(self):

@@ -973,6 +973,46 @@ def check_if_any_pkg_installed(args):
             break
     return result
 
+def ensure_max_password_expiration(allow_max_days, except_for_users=''):
+    '''
+    Ensure max password expiration days is set to the value less than or equal to that given in args
+    '''
+    grep_args = []
+    pass_max_days_output = _grep('/etc/login.defs', '^PASS_MAX_DAYS', *grep_args).get('stdout')
+    if not pass_max_days_output:
+        return "PASS_MAX_DAYS must be set"
+    system_pass_max_days = pass_max_days_output.split()[1]
+    
+    if not _is_int(system_pass_max_days):
+        return "PASS_MAX_DAYS must be set properly"
+    if int(system_pass_max_days) > allow_max_days:
+        return "PASS_MAX_DAYS must be less than or equal to " + str(allow_max_days)
+        
+    #fetch all users with passwords
+    grep_args.append('-E')
+    all_users = _grep('/etc/shadow', '^[^:]+:[^\!*]', *grep_args).get('stdout')
+
+    except_for_users_list=[]
+    for user in except_for_users.split(","):
+        if user.strip() != "":
+            except_for_users_list.append(user.strip())
+    result = []
+    for line in all_users.split('\n'):
+        user = line.split(':')[0]
+        #As per CIS doc, 5th field is the password max expiry days
+        user_passwd_expiry = line.split(':')[4] 
+        if not user in except_for_users_list and _is_int(user_passwd_expiry) and int(user_passwd_expiry) > allow_max_days:
+            log.info(user)
+            result.append('User ' + user + ' has max password expiry days ' + user_passwd_expiry + ', which is more than ' + str(allow_max_days))
+            
+    return True if result == [] else str(result)
+            
+def _is_int(input):
+  try:
+    num = int(input)
+  except ValueError:
+    return False
+  return True
 
 def test_success():
     '''
@@ -1035,5 +1075,6 @@ FUNCTION_MAP = {
     'check_list_values': check_list_values,
     'mail_conf_check': mail_conf_check,
     'check_if_any_pkg_installed': check_if_any_pkg_installed,
+    'ensure_max_password_expiration': ensure_max_password_expiration,
 
 }

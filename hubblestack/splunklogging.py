@@ -77,7 +77,6 @@ class SplunkHandler(logging.Handler):
             # Set up the fields to be extracted at index time. The field values must be strings.
             # Note that these fields will also still be available in the event data
             index_extracted_fields = []
-            # nixed defaults 4/2/18 # ['aws_instance_id', 'aws_account_id', 'azure_vmId', 'azure_subscriptionId']
             try:
                 index_extracted_fields.extend(opts['index_extracted_fields'])
             except TypeError:

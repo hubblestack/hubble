@@ -176,10 +176,13 @@ def getlastrunbycron(cron_exp):
     next_datetime  = iter.get_next(datetime)
     log.error('next date is {0}'.format(next_datetime))
     epoch_datetime = time.mktime(next_datetime.timetuple())
+    log.error('epoch date is {0}'.format(epoch_datetime))
     current_time = time.time()
+    log.error('current time is {0}'.format(current_time))
     while epoch_datetime<current_time:
         next_datetime  = iter.get_next(datetime)
         epoch_datetime = time.mktime(next_datetime.timetuple())
+    log.error('out of while loop')
     prev = iter.get_prev(datetime)
     log.error('prev is {0}'.format(prev))
     epoch_prev = time.mktime(prev.timetuple())

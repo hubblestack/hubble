@@ -174,14 +174,17 @@ def getlastrunbycron(cron_exp):
     base = datetime(2018, 1, 1, 0, 0)
     iter = croniter(cron_exp, base)
     next_datetime  = iter.get_next(datetime)
+    log.error('next date is {0}'.format(next_datetime))
     epoch_datetime = time.mktime(next_datetime.timetuple())
     current_time = time.time()
     while epoch_datetime<current_time:
         next_datetime  = iter.get_next(datetime)
         epoch_datetime = time.mktime(next_datetime.timetuple())
     prev = iter.get_prev(datetime)
+    log.error('prev is {0}'.format(prev))
     epoch_prev = time.mktime(prev.timetuple())
     last_run = epoch_prev
+    log.error('last run is {0}'.format(last_run))
     return last_run
 
 def getlastrunbybuckets(buckets, seconds):

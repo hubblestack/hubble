@@ -55,17 +55,15 @@ if (!($7zip)) {
 }
 
 # Install salt and dependencies - including python
-if (Test-Path .\Salt-Dev) {
-    Remove-Item -Recurse -Force Salt-Dev
+if (Test-Path .\salt) {
+    Remove-Item -Recurse -Force salt
 }
-mkdir Salt-Dev
-Push-Location Salt-Dev
 git clone https://github.com/saltstack/salt
 Set-Location salt\pkg\windows
-git checkout v2016.11.3
-powershell -file build_env.ps1 -Silent
+git checkout v2018.3.0
+powershell -file build_env_2.ps1 -Silent
 Pop-Location
-Push-Location Salt-Dev\salt
+Push-Location salt
 reloadEnv
 python -m pip install --upgrade pip
 pip install -e .
@@ -83,7 +81,9 @@ if ($default) {
 #If no default was specified and no paramaters were given in the script, it prompts for a repo and branch
 if ($repo -notlike "https*") {
     $repo = Read-Host "Enter a Repository (full URL only)"
-    $branch = Read-Host "Enter a Branch"
+    if (!($branch)) {
+        $branch = Read-Host "Enter a Branch"
+    }
 }
 git clone $repo
 Push-Location hubble\pkg\windows
@@ -132,7 +132,7 @@ reloadEnv
 
 # Modify gitfs fix for incorrect path variables until fix has been upstreamed
 if (!(Test-Path C:\Python27\Lib\site-packages\salt)) {
-    Copy-Item .\Salt-Dev\salt\salt -Destination C:\Python27\Lib\site-packages\ -Recurse -Force
+    Copy-Item .\salt\salt -Destination C:\Python27\Lib\site-packages\ -Recurse -Force
 }
 
 $gitfsFile = Get-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py

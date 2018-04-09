@@ -10,7 +10,7 @@ import uuid
 log = logging.getLogger(__name__)
 
 
-def hhubble_uuid():
+def hubble_uuid():
     '''
     Generate a unique uuid for this host, storing it on disk so it persists
     across restarts

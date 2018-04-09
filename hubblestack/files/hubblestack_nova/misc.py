@@ -1002,7 +1002,6 @@ def ensure_max_password_expiration(allow_max_days, except_for_users=''):
         #As per CIS doc, 5th field is the password max expiry days
         user_passwd_expiry = line.split(':')[4] 
         if not user in except_for_users_list and _is_int(user_passwd_expiry) and int(user_passwd_expiry) > allow_max_days:
-            log.info(user)
             result.append('User ' + user + ' has max password expiry days ' + user_passwd_expiry + ', which is more than ' + str(allow_max_days))
             
     return True if result == [] else str(result)

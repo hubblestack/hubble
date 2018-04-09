@@ -27,6 +27,8 @@ import salt.utils.gitfs
 import salt.log.setup
 import hubblestack.splunklogging
 from hubblestack import __version__
+from croniter import croniter
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 
@@ -164,6 +166,24 @@ def main():
             log.exception('Error executing schedule')
         time.sleep(__opts__.get('scheduler_sleep_frequency', 0.5))
 
+def getlastrunbycron(cron_exp):
+    '''
+    this function will use the cron_exp provided in the hubble config to
+    execute the hubble processes as per the scheduled cron time
+    '''
+    base = datetime(2018, 1, 1, 0, 0)
+    iter = croniter(cron_exp, base)
+    next_datetime  = iter.get_next(datetime)
+    epoch_datetime = time.mktime(next_datetime.timetuple())
+    current_time = time.time()
+    while epoch_datetime<current_time:
+        next_datetime  = iter.get_next(datetime)
+        epoch_datetime = time.mktime(next_datetime.timetuple())
+    prev = iter.get_prev(datetime)
+    epoch_prev = time.mktime(prev.timetuple())
+    last_run = epoch_prev
+    return last_run
+
 def getlastrunbybuckets(buckets, seconds):
     '''
     this function will use the host's ip to place the host in a bucket
@@ -299,6 +319,9 @@ def schedule():
                 elif 'buckets' in jobdata:
                     # Place the host in a bucket and fix the execution time.
                     jobdata['last_run'] = getlastrunbybuckets(jobdata['buckets'], seconds)
+                elif 'cron' in jobdata:
+                    # execute the hubble process based on cron expression
+                    jobdata['last_run'] = getlastrunbycron(jobdata['cron'])
                 else:
                     # Run in `seconds` seconds.
                     jobdata['last_run'] = time.time()

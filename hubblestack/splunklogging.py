@@ -78,7 +78,7 @@ class SplunkHandler(logging.Handler):
             # Note that these fields will also still be available in the event data
             index_extracted_fields = []
             try:
-                index_extracted_fields.extend(opts['index_extracted_fields'])
+                index_extracted_fields.extend(__opts__get('splunk_index_extracted_fields', []))
             except TypeError:
                 pass
 

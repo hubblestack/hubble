@@ -74,9 +74,9 @@ def returner(ret):
 
             # Set up the fields to be extracted at index time. The field values must be strings.
             # Note that these fields will also still be available in the event data
-            index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId', 'azure_subscriptionId']
+            index_extracted_fields = []
             try:
-                index_extracted_fields.extend(opts['index_extracted_fields'])
+                index_extracted_fields.extend(__opts__get('splunk_index_extracted_fields', []))
             except TypeError:
                 pass
 

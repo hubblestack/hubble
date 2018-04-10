@@ -69,7 +69,7 @@ def returner(ret):
         opts_list = _get_options()
 
         for opts in opts_list:
-            logging.info('Options: %s' % json.dumps(opts))
+            logging.debug('Options: %s' % json.dumps(opts))
             http_event_collector_key = opts['token']
             http_event_collector_host = opts['indexer']
             http_event_collector_port = opts['port']

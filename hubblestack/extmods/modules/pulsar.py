@@ -13,6 +13,7 @@ Watch files and translate the changes into salt events
 '''
 # Import Python libs
 from __future__ import absolute_import
+import types
 import base64
 import collections
 import fnmatch
@@ -42,6 +43,7 @@ except ImportError:
     DEFAULT_MASK = None
 
 __virtualname__ = 'pulsar'
+SPAM_TIME = 0 # track spammy status message times
 
 import logging
 log = logging.getLogger(__name__)
@@ -203,7 +205,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
     def _iterate_anything(cls, x, discard_none=True):
         ''' iterate any amount of list/tuple nesting
         '''
-        if isinstance(x, (list,tuple,set,dict)):
+        if isinstance(x, (types.GeneratorType,list,tuple,set,dict)):
             # ∀ item ∈ x: listify(item)
             for list_or_item in x:
                 for i in cls._listify_anything(list_or_item):
@@ -223,19 +225,20 @@ class PulsarWatchManager(pyinotify.WatchManager):
         s = set( cls._iterate_anything(x, discard_none=discard_none) )
         return list(s)
 
-    def _add_db(self, parent, **items):
-        # this assumes bijection, which isn't necessarily true
-        # (we hope it's true though)
-        self.watch_db.update(**items)
+    def _add_db(self, parent, items):
         if parent and not items:
-            raise Exception("_add_db(parent, {path: wd, path2: wd2, ...})")
-        if parent in items:
-            items = items.copy()
-            del items[parent]
-        if items:
+            return
+        todo = {}
+        for i in items:
+            if items[i] > 0:
+                todo[i] = items[i]
+        self.watch_db.update(todo)
+        if parent in todo:
+            del todo[parent]
+        if todo:
             if parent not in self.parent_db:
                 self.parent_db[parent] = set()
-            self.parent_db[parent].update( items )
+            self.parent_db[parent].update(todo)
 
     def _get_wdl(self, *pathlist):
         ''' inverse pathlist and return a flat list of wd's for the paths and their child paths
@@ -308,7 +311,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
             # we already did many of the lookups add_watch would do
             # so we say no_db=True and manually add the (up_path,**res)
             res = self.add_watch(path, mask, no_db=True)
-            self._add_db(up_path, **res)
+            self._add_db(up_path, res)
             return res
         else:
             raise Exception("_add_recursed_file_watch('{0}') must be located in a watched directory".format(path))
@@ -396,6 +399,9 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 _res = self.__super.add_watch(path, mask, **kw)
                 if isinstance(_res, dict):
                     res.update(_res)
+                    break
+                else:
+                    raise Exception("pyinotify.WatchManager.add_watch() failed to return a dict")
             except pyinotify.WatchManagerError as wme:
                 self.update_config() # make sure we have the latest settings
                 if isinstance(wme.wmd, dict):
@@ -419,7 +425,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 break
 
         if not no_db: # (heh)
-            self._add_db(path, **res)
+            self._add_db(path, res)
         return res
 
     def _prune_paths_to_stop_watching(self):
@@ -440,13 +446,22 @@ class PulsarWatchManager(pyinotify.WatchManager):
                     # this doesn't seem to be in parent_db or the reverse
                     # probably nolonger configured
                     yield dirpath
-            elif not pc['watch_files'] and not pc['watch_new_files'] and dirpath in self.parent_db:
-                # there's config for this dir, but it nolonger allows for child watches
+            elif dirpath in self.parent_db:
                 for item in self.parent_db[dirpath]:
-                    yield item
+                    if os.path.isdir(item):
+                        if not pc['recurse']:
+                            # there's config for this dir, but it nolonger recurses
+                            yield item
+                    elif not pc['watch_files'] and not pc['watch_new_files']:
+                        # there's config for this dir, but it nolonger watches files
+                        yield item
 
     def prune(self):
-        to_rm = self._listify_anything([ self.watch_db[x] for x in self._prune_paths_to_stop_watching() ])
+        def _wd(l):
+            for item in l:
+                yield self.watch_db[item]
+        to_stop = self._prune_paths_to_stop_watching()
+        to_rm = self._listify_anything( _wd(to_stop) )
         self.rm_watch(to_rm)
 
     def _rm_db(self, wd):
@@ -686,10 +701,12 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     if config.get('verbose'):
         log.debug('Pulsar beacon called.')
         log.debug('Pulsar beacon config from pillar:\n{0}'.format(config))
+
     ret = []
     notifier = _get_notifier()
     wm = notifier._watch_manager
     update_watches = cm.freshness(2)
+    initial_count = len(wm.watch_db)
 
     recent = set()
 
@@ -841,8 +858,25 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
         # We're in maintenance mode, throw away findings
         ret = []
 
-    if dt.get() >= 0.1:
-        log.debug("process sweep {0}".format(dt))
+    global SPAM_TIME
+    now_t = time.time()
+    spam_dt = now_t - SPAM_TIME
+    current_count = len(wm.watch_db)
+    delta_c = current_count - initial_count
+
+    if dt.get() >= 0.1 or abs(delta_c)>0 or spam_dt >= 60:
+        SPAM_TIME = now_t
+        log.info("process() sweep {0}; watch count: {1} (delta: {2})".format(dt, current_count, delta_c))
+        if 'DUMP_WATCH_DB' in os.environ:
+            import json
+            f = os.path.basename(os.environ['DUMP_WATCH_DB'])
+            if f.lower() in ('1', 'true', 'yes'):
+                f = 'pulsar-watch.db'
+            f = '/tmp/{}'.format(f)
+            with open(f, 'w') as fh:
+                json.dump(wm.watch_db, fh)
+            log.debug("wrote watch_db to {}".format(f))
+
     return ret
 
 

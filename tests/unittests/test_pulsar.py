@@ -293,11 +293,13 @@ class TestPulsar2():
         self.reset(**c1)
         self.mk_subdir_files('blah1','a/b/c/blah2')
         self.wm.watch(self.tdir)
+        self.wm.prune()
         s1 = set(self.wm.watch_db)
 
         self.reset(**c2)
         self.mk_subdir_files('blah1','a/b/c/blah2')
         self.wm.watch(self.tdir)
+        self.wm.prune()
         s2 = set(self.wm.watch_db)
 
         s0a = set([self.atdir])

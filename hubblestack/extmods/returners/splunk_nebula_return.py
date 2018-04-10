@@ -164,7 +164,7 @@ def returner(ret):
                             fields = {}
                             for item in index_extracted_fields:
                                 if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
-                                    fields[item] = str(payload['event'][item])
+                                    fields[item] = str(payload['event'].pop(item))
                             if fields:
                                 payload.update({'fields': fields})
 
@@ -174,13 +174,13 @@ def returner(ret):
                             try:
                                 if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
                                     event_time = ''
-                            except:
+                            except Exception:
                                 event_time = ''
                             finally:
                                 hec.batchEvent(payload, eventtime=event_time)
 
             hec.flushBatch()
-    except:
+    except Exception:
         log.exception('Error ocurred in splunk_nebula_return')
     return
 

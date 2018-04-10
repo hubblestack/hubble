@@ -31,7 +31,6 @@ def _get_aws_details():
     # Gather amazon information if present
     ret = {}
     aws = {}
-    aws['aws_ami_id'] = None
     aws['cloud_instance_id'] = None
     aws['cloud_account_id'] = None
     aws['cloud_type'] = 'aws'
@@ -44,8 +43,6 @@ def _get_aws_details():
         # Else it will throw an Exception
         aws['cloud_account_id'] = int(aws['cloud_account_id'])
 
-        aws['aws_ami_id'] = requests.get('http://169.254.169.254/latest/meta-data/ami-id',
-                                         timeout=1).text
         aws['cloud_instance_id'] = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
                                                 timeout=1).text
     except (requests.exceptions.RequestException, ValueError):

@@ -68,8 +68,6 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.platform.is_windows():
-        return False, 'This audit module only runs on linux'
     return True
 
 def apply_labels(__data__, labels):
@@ -121,7 +119,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
                 # Blacklisted packages (must not be installed)
                 if audittype == 'blacklist':
-                    if __salt__['service.status'](name):
+                    if __salt__['service.available'](name) and __salt__['service.status'](name):
                         tag_data['failure_reason'] = "Found blacklisted service '{0}' " \
                                                      "running on the system" \
                                                      .format(name)
@@ -131,7 +129,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
                 # Whitelisted packages (must be installed)
                 elif audittype == 'whitelist':
-                    if __salt__['service.status'](name):
+                    if __salt__['service.available'](name) and __salt__['service.status'](name):
                         ret['Success'].append(tag_data)
                     else:
                         tag_data['failure_reason'] = "Could not find requisite service" \

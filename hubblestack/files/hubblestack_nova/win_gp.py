@@ -72,7 +72,6 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                     continue
                 name = tag_data['name']
                 audit_type = tag_data['type']
-                match_output = tag_data['match_output'].lower()
 
                 # Blacklisted audit (do not include)
                 if 'blacklist' in audit_type:
@@ -84,16 +83,9 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 # Whitelisted audit (must include)
                 if 'whitelist' in audit_type:
                     if name in __gpdata__:
-                        audit_value = True
-                        tag_data['found_value'] = audit_value
-                        secret = _translate_value_type(audit_value, tag_data['value_type'], match_output)
-                        if secret:
-                            ret['Success'].append(tag_data)
-                        else:
-                            ret['Failure'].append(tag_data)
+                        ret['Success'].append(tag_data)
                     else:
-                        log.debug('When trying to audit the firewall section,'
-                                  ' the yaml contained incorrect data for the key')
+                        ret['Failure'].append(tag_data)
 
     return ret
 
@@ -121,7 +113,7 @@ def _get_tags(data):
     Retrieve all the tags for this distro from the yaml
     '''
     ret = {}
-    distro = __grains__.get('osfullname')
+    distro = __grains__.get('osfinger')
     for toplist, toplevel in data.get(__virtualname__, {}).iteritems():
         # secedit:whitelist
         for audit_dict in toplevel:
@@ -161,7 +153,7 @@ def _get_tags(data):
                             ret[tag] = []
                         formatted_data = {'name': name,
                                           'tag': tag,
-                                          'module': 'win_auditpol',
+                                          'module': 'win_gp',
                                           'type': toplist}
                         formatted_data.update(tag_data)
                         formatted_data.update(audit_data)
@@ -173,11 +165,11 @@ def _get_tags(data):
 def _get_gp_templates():
     domain_check = __salt__['system.get_domain_workgroup']()
     if 'Workgroup' in domain_check:
-        return False
-    else:
-        domain_check = domain_check['Domain']
+        return []
+
     list = __salt__['cmd.run']('Get-ChildItem //{0}/SYSVOL/{0}/Policies/PolicyDefinitions | Format-List '
-                               '-Property Name, SID'.format(domain_check), shell='powershell', python_shell=True)
+                               '-Property Name, SID'.format(domain_check['Domain']),
+                               shell='powershell', python_shell=True)
     return list
 
 

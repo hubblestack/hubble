@@ -298,7 +298,7 @@ def schedule():
                 seconds = getsecondsbycronexpression(base, jobdata['cron'])
             else:
                 seconds = int(jobdata['seconds'])
-                splay = int(jobdata.get('splay', 0))
+            splay = int(jobdata.get('splay', 0))
         except ValueError:
             log.error('Scheduled job {0} has an invalid value for seconds or '
                       'splay.'.format(jobname))

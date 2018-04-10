@@ -534,7 +534,7 @@ def refresh_grains(initial=False):
         __opts__.pop('pillar')
     __grains__ = salt.loader.grains(__opts__)
     __grains__['session_uuid'] = SESSION_UUID
-    __opts__['host_uuid'] = __grains__.get('host_uuid', None)
+    __opts__['hubble_uuid'] = __grains__.get('hubble_uuid', None)
     __pillar__ = {}
     __opts__['grains'] = __grains__
     __opts__['pillar'] = __pillar__

@@ -43,8 +43,6 @@ except ImportError:
     DEFAULT_MASK = None
 
 __virtualname__ = 'pulsar'
-CONFIG = None
-CONFIG_STALENESS = 0
 SPAM_TIME = 0 # track spammy status message times
 
 import logging

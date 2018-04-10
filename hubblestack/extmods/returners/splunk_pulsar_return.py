@@ -69,7 +69,7 @@ def returner(ret):
         opts_list = _get_options()
 
         for opts in opts_list:
-            logging.info('Options: %s' % json.dumps(opts))
+            logging.debug('Options: %s' % json.dumps(opts))
             http_event_collector_key = opts['token']
             http_event_collector_host = opts['indexer']
             http_event_collector_port = opts['port']
@@ -79,10 +79,9 @@ def returner(ret):
             custom_fields = opts['custom_fields']
 
             # Set up the fields to be extracted at index time. The field values must be strings.
-            # Note that these fields will also still be available in the event data
-            index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId', 'azure_subscriptionId']
+            index_extracted_fields = []
             try:
-                index_extracted_fields.extend(opts['index_extracted_fields'])
+                index_extracted_fields.extend(__opts__get('splunk_index_extracted_fields', []))
             except TypeError:
                 pass
 
@@ -230,7 +229,7 @@ def returner(ret):
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
                 event.update({'dest_fqdn': local_fqdn})
-                event.update({'system_uuid': __grains__['system_uuid']})
+                event.update({'system_uuid': __grains__.get('system_uuid')})
 
                 event.update(cloud_details)
 

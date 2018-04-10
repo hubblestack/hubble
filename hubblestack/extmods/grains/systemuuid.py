@@ -19,6 +19,7 @@ def get_system_uuid():
 
     # Prefer our /opt/osquery/osqueryi if present
     osqueryipaths = ('/opt/osquery/osqueryi', 'osqueryi', '/usr/bin/osqueryi')
+    grains = {}
     for path in osqueryipaths:
         if salt.utils.path.which(path):
             out = __salt__['cmd.run']('{0} {1}'.format(path, options))

@@ -171,6 +171,7 @@ def queries(query_group,
 
     ret = []
     timing = {}
+    schedule_time = time.time()
     for query in query_data:
         name = query.get('query_name')
         query_sql = query.get('query')
@@ -186,7 +187,7 @@ def queries(query_group,
         t0 = time.time()
         res = __salt__['cmd.run_all'](cmd)
         t1 = time.time()
-        timing[name] = t0 - t1
+        timing[name] = t1-t0
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
@@ -205,7 +206,9 @@ def queries(query_group,
         hubblestack.splunklogging.__grains__ = __grains__
         hubblestack.splunklogging.__salt__ = __salt__
         handler = hubblestack.splunklogging.SplunkHandler()
-        handler.emit_data(timing)
+        timing_data = {'query_run_length': timing,
+                       'schedule_time' : schedule_time}
+        handler.emit_data(timing_data)
 
     if query_group == 'day' and report_version_with_day:
         ret.append(hubble_versions())

@@ -174,8 +174,10 @@ def getlastrunbycron(cron_exp):
     base = datetime(2018, 1, 1, 0, 0)
     iter = croniter(cron_exp, base)
     next_datetime  = iter.get_next(datetime)
+    epoch_base_datetime = time.mktime(base.timetuple())
     log.error('next date is {0}'.format(next_datetime))
     epoch_datetime = time.mktime(next_datetime.timetuple())
+    seconds = int(epoch_datetime) - int(epoch_base_datetime)
     log.error('epoch date is {0}'.format(epoch_datetime))
     current_time = time.time()
     log.error('current time is {0}'.format(current_time))
@@ -188,7 +190,10 @@ def getlastrunbycron(cron_exp):
     epoch_prev = time.mktime(prev.timetuple())
     last_run = epoch_prev
     log.error('last run is {0}'.format(last_run))
-    return last_run
+    data = {}
+    data['seconds'] = seconds
+    data['last_run'] = last_run
+    return data
 
 def getlastrunbybuckets(buckets, seconds):
     '''
@@ -327,7 +332,9 @@ def schedule():
                     jobdata['last_run'] = getlastrunbybuckets(jobdata['buckets'], seconds)
                 elif 'cron' in jobdata:
                     # execute the hubble process based on cron expression
-                    jobdata['last_run'] = getlastrunbycron(jobdata['cron'])
+                    data = getlastrunbycron(jobdata['cron'])
+                    jobdata['last_run'] = data['last_run']
+                    seconds = data['seconds']
                 else:
                     # Run in `seconds` seconds.
                     jobdata['last_run'] = time.time()

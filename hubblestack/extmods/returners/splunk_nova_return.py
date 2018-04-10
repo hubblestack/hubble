@@ -143,7 +143,7 @@ def returner(ret):
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
                 event.update({'dest_fqdn': local_fqdn})
-                event.update({'system_uuid': __grains__['system_uuid']})
+                event.update({'system_uuid': __grains__.get('system_uuid')})
 
                 event.update(cloud_details)
 
@@ -189,7 +189,7 @@ def returner(ret):
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
                 event.update({'dest_fqdn': local_fqdn})
-                event.update({'system_uuid': __grains__['system_uuid']})
+                event.update({'system_uuid': __grains__.get('system_uuid')})
 
                 event.update(cloud_details)
 
@@ -233,7 +233,7 @@ def returner(ret):
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
                 event.update({'dest_fqdn': local_fqdn})
-                event.update({'system_uuid': __grains__['system_uuid']})
+                event.update({'system_uuid': __grains__.get('system_uuid')})
 
                 event.update(cloud_details)
 

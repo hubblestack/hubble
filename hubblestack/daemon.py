@@ -512,6 +512,13 @@ def load_config():
         handler = hubblestack.splunklogging.SplunkHandler()
         handler.setLevel(logging.SPLUNK)
         root_logger.addHandler(handler)
+        class MockRecord(object):
+            def __init__(self, message, levelname, asctime, name):
+                self.message = message
+                self.levelname = levelname
+                self.asctime = asctime
+                self.name = name
+        handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
 
 
 def refresh_grains(initial=False):

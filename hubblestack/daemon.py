@@ -335,10 +335,13 @@ def schedule():
                     data = getlastrunbycron(jobdata['cron'])
                     jobdata['last_run'] = data['last_run']
                     seconds = data['seconds']
+                    log.debug('last_run is now {0}'.format(jobdata['last_run']))
+                    log.debug('seconds is now {0}'.format(seconds))
                 else:
                     # Run in `seconds` seconds.
                     jobdata['last_run'] = time.time()
 
+        log.debug('time remaining is {0}'.format(time.time() - seconds - jobdata['last_run']))
         if jobdata['last_run'] < time.time() - seconds:
             run = True
 

@@ -1007,11 +1007,11 @@ def ensure_max_password_expiration(allow_max_days, except_for_users=''):
     return True if result == [] else str(result)
             
 def _is_int(input):
-  try:
-    num = int(input)
-  except ValueError:
-    return False
-  return True
+    try:
+        num = int(input)
+    except ValueError:
+        return False
+    return True
 
 def test_success():
     '''

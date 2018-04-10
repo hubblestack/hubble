@@ -16,7 +16,7 @@ RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 #to pin to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=2.9.2
+ENV OSQUERY_SRC_VERSION=d27787e84f031ed17d0b20fb3165c1c49f125b5c
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 RUN yum -y install git make python ruby sudo which
@@ -32,10 +32,10 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
  && git checkout "$OSQUERY_SRC_VERSION" \
 #these homebrew hashes need to be current. hashes in osquery git repo are often out of date for the tags we check out and try to build.
 #this is a problem and they are aware of it. let the magic hashes commence:
- && sed -i 's,^\(HOMEBREW_CORE=\).*,\1'941ca36839ea354031846d73ad538e1e44e673f4',' tools/provision.sh \
- && sed -i 's,^\(LINUXBREW_CORE=\).*,\1'f54281a496bb7d3dd2f46b2f3067193d05f5013b',' tools/provision.sh \
- && sed -i 's,^\(HOMEBREW_BREW=\).*,\1'ac2cbd2137006ebfe84d8584ccdcb5d78c1130d9',' tools/provision.sh \
- && sed -i 's,^\(LINUXBREW_BREW=\).*,\1'20bcce2c176469cec271b46d523eef1510217436',' tools/provision.sh \
+# && sed -i 's,^\(HOMEBREW_CORE=\).*,\1'941ca36839ea354031846d73ad538e1e44e673f4',' tools/provision.sh \
+# && sed -i 's,^\(LINUXBREW_CORE=\).*,\1'f54281a496bb7d3dd2f46b2f3067193d05f5013b',' tools/provision.sh \
+# && sed -i 's,^\(HOMEBREW_BREW=\).*,\1'ac2cbd2137006ebfe84d8584ccdcb5d78c1130d9',' tools/provision.sh \
+# && sed -i 's,^\(LINUXBREW_BREW=\).*,\1'20bcce2c176469cec271b46d523eef1510217436',' tools/provision.sh \
  && make sysprep \
 #have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
  && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \

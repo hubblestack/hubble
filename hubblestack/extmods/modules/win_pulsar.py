@@ -19,6 +19,9 @@ import salt.ext.six
 import salt.loader
 import salt.utils.platform
 
+if 'win_pulsar_file_map' not in __context__:
+    __context__['win_pulsar_file_map'] = {}
+
 log = logging.getLogger(__name__)
 DEFAULT_MASK = ['File create', 'File delete', 'Hard link change', 'Data extend', 
                 'Data overwrite', 'Data truncation', 'Security change']
@@ -267,6 +270,10 @@ def getfilepath(fid, pfid, fname, drive):
     '''
     Gets file name and path from a File ID
     '''
+    if fid in __context__['win_pulsar_file_map']:
+        return __context__['win_pulsar_file_map'][fid]
+
+	
     try:
         jfullpath = (__salt__['cmd.run']('fsutil file queryfilenamebyid {0} 0x{1}'.format(drive, fid), ignore_retcode=True)).replace('?\\', '\r\n')
     except:
@@ -282,6 +289,7 @@ def getfilepath(fid, pfid, fname, drive):
         retpath = jfullpath.split('\r\n')[1] + '\\' + fname
         return retpath
     retpath = jfullpath.split('\r\n')[1]
+    __context__['win_pulsar_file_map'][fid] = retpath
     return retpath
 
 def usnfilter(usn_list, config_paths):

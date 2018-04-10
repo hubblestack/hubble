@@ -75,7 +75,7 @@ def returner(ret):
             # Set up the fields to be extracted at index time. The field values must be strings.
             index_extracted_fields = []
             try:
-                index_extracted_fields.extend(__opts__get('splunk_index_extracted_fields', []))
+                index_extracted_fields.extend(__opts__.get('splunk_index_extracted_fields', []))
             except TypeError:
                 pass
 

@@ -28,6 +28,16 @@ fileserver_backend:
 #  - roots
 #  - git
 
+##############################################
+## For fetching custom garins and pillar info
+##############################################
+
+#custom_grains_pillar:
+#      grains:
+#        - selinux: selinux:enabled
+#        - release: osrelease
+#      pillar:
+#        - ntpserver: network_services:ntpserver
 
 #################################
 ## Scheduler Config

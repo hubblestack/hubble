@@ -48,9 +48,28 @@ RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN yum -y install  \
-               libffi-devel openssl-devel libffi \
+               libffi-devel openssl-devel libffi libcurl-devel autoconf \
                libxml2-devel libxslt-devel libjpeg-devel zlib-devel \
                make cmake gcc python-devel python-setuptools wget openssl
+
+#git install start
+#install git so that git package won't be a requirement
+#requires make git libcurl-devel autoconf zlib-devel gcc
+ENV GIT_SRC_URL=https://github.com/git/git.git
+ENV GIT_SRC_VERSION=v2.16.3
+ENV GITTEMP=/tmp/gittemp
+RUN mkdir -p "$GITTEMP" \
+ && cd "$GITTEMP" \
+ && git clone "$GIT_SRC_URL" \
+ && cd git \
+ && git checkout "$GIT_SRC_VERSION" \
+ && make configure \
+ && ./configure --prefix=/opt/hubble --with-tcltk=no --with-expat=no --with-curl=no --with-python=no \
+ && echo "NO_TCLTK=YesPlease" >> config.mak.autogen \
+ && echo "NO_PERL=YesPlease" >> config.mak.autogen \
+ && sed -i '0,/^NO_GETTEXT/s/^NO_GETTEXT.*/NO_GETTEXT=YesPlease/' config.mak.autogen \
+ && make \
+ && make install
 
 #libgit2 install start
 #must precede pyinstaller requirements
@@ -134,7 +153,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        -v ${HUBBLE_VERSION} \
        --iteration ${HUBBLE_ITERATION} \
     #todo: get rid of the git dependency with static bin in the future
-       -d 'git' \
+    #  -d 'git' \
        --config-files /etc/osquery/osquery.conf \
        --after-install /hubble_build/conf/afterinstall-systemd.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \

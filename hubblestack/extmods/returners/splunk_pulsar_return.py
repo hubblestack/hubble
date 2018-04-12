@@ -186,10 +186,14 @@ def returner(ret):
                                 event['file_hash_type'] = alert.get('checksum_type', 'unknown')
 
                 else:  # Windows, win_pulsar
-                    change = alert['Accesses']
-                    if alert['Hash'] == 'Item is a directory':
-                        object_type = 'directory'
+                    if alert.get('Accesses', None):
+                        change = alert['Accesses']
+                        if alert['Hash'] == 'Item is a directory':
+                            object_type = 'directory'
+                        else:
+                            object_type = 'file'
                     else:
+                        change = alert['Reason']
                         object_type = 'file'
 
                     actions = defaultdict(lambda: 'unknown')
@@ -214,16 +218,41 @@ def returner(ret):
                     actions['Notify About Changes to Keys'] = 'read'
                     actions['Create Link'] = 'created'
                     actions['Print'] = 'read'
+                    actions['Basic info change'] = 'modified'
+                    actions['Compression change'] = 'modified'
+                    actions['Data extend'] = 'modified'
+                    actions['EA change'] = 'modified'
+                    actions['File create'] = 'created'
+                    actions['File delete'] = 'deleted'
 
-                    event['action'] = actions[change]
-                    event['change_type'] = 'filesystem'
-                    event['object_category'] = object_type
-                    event['object_path'] = alert['Object Name']
-                    event['file_name'] = os.path.basename(alert['Object Name'])
-                    event['file_path'] = os.path.dirname(alert['Object Name'])
-                    event['file_path'] = alert['pulsar_config']
-                    # TODO: Should we be reporting 'EntryType' or 'TimeGenerated?
-                    #   EntryType reports whether attempt to change was successful.
+                    if alert.get('Accesses', None):
+                        event['action'] = actions[change]
+                        event['change_type'] = 'filesystem'
+                        event['object_category'] = object_type
+                        event['object_path'] = alert['Object Name']
+                        event['file_name'] = os.path.basename(alert['Object Name'])
+                        event['file_path'] = os.path.dirname(alert['Object Name'])
+                        event['pulsar_config'] = alert['pulsar_config']
+                        # TODO: Should we be reporting 'EntryType' or 'TimeGenerated?
+                        #   EntryType reports whether attempt to change was successful.
+                    else:
+                        for c in change:
+                            if not event.get('action', None):
+                                event['action'] = actions.get(c, c)
+                            else:
+                                event['action'] += ', ' + actions.get(c, c)
+                        event['change_type'] = 'filesystem'
+                        event['object_category'] = object_type
+                        event['object_path'] = alert['Full path']
+                        event['file_name'] = alert['File name']
+                        event['file_path'] = alert['tag']
+                        event['pulsar_config'] = alert.get('pulsar_config',
+                                                           'hubblestack_pulsar_win_config.yaml')
+                        event['TimeGenerated'] = alert['Time stamp']
+                        chk = alert.get('checksum')
+                        if chk:
+                            event['file_hash'] = chk
+                            event['file_hash_type'] = alert.get('checksum_type', 'unknown')
 
                 event.update({'master': master})
                 event.update({'minion_id': minion_id})

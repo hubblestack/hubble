@@ -19,9 +19,6 @@ import salt.ext.six
 import salt.loader
 import salt.utils.platform
 
-if 'win_pulsar_file_map' not in __context__:
-    __context__['win_pulsar_file_map'] = {}
-
 log = logging.getLogger(__name__)
 DEFAULT_MASK = ['File create', 'File delete', 'Hard link change', 'Data extend', 
                 'Data overwrite', 'Data truncation', 'Security change']
@@ -29,7 +26,6 @@ DEFAULT_MASK = ['File create', 'File delete', 'Hard link change', 'Data extend',
 __virtualname__ = 'pulsar'
 CONFIG = None
 CONFIG_STALENESS = 0
-
 
 def __virtual__():
     if not salt.utils.platform.is_windows():
@@ -110,12 +106,12 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     config['verbose'] = verbose
     global CONFIG_STALENESS
     global CONFIG
+    
     if config.get('verbose'):
         log.debug('Pulsar module called.')
         log.debug('Pulsar module config from pillar:\n{0}'.format(config))
     ret = []
     sys_check = 0
-
     # Get config(s) from filesystem if we don't have them already
     if CONFIG and CONFIG_STALENESS < config.get('refresh_frequency', 60):
         CONFIG_STALENESS += 1
@@ -145,9 +141,11 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         config = new_config
         CONFIG_STALENESS = 0
         CONFIG = config
-
     if config.get('verbose'):
         log.debug('Pulsar beacon config (compiled from config list):\n{0}'.format(config))
+    
+    if 'win_pulsar_file_map' not in __context__:
+        __context__['win_pulsar_file_map'] = {}
 
     # check if cache path contails starting point for 'fsutil usn readjournal'
     cache_path = os.path.join(__opts__['cachedir'], 'win_pulsar_usn')
@@ -157,7 +155,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         with open(cache_path, 'w') as f:
             f.write(qj_dict['Next Usn'])
         return ret
-
+    
     # check if file is out of date
     currentt = time()
     file_mtime = os.path.getmtime(cache_path)
@@ -247,6 +245,9 @@ def readjournal(drive, next_usn=0):
         jdata.pop(0)
         #format into dictionary
         for dlist in jdata:
+            if '| Close' not in dlist:
+                if 'Rename: old name' not in dlist:
+                    continue
             jd_dict = {}
             i_list = dlist.split('\r\n')
             for item in i_list:
@@ -255,48 +256,55 @@ def readjournal(drive, next_usn=0):
                 dkey, dvalue = item.split(' : ')
                 if dkey.strip() in removable:
                     continue
-                if dkey.strip() == 'Time stamp':
+                elif dkey.strip() == 'Time stamp':
                     dvalue = int(mktime(strptime(dvalue.strip(), pattern)))
+                    jd_dict[dkey.strip()] = dvalue
+                elif dkey.strip() == 'Reason':
+                    rvalues = dvalue.split(': ')
+                    if len(rvalues) > 1:
+                        rvalues = rvalues[1]
+                    rvalues = rvalues.split(' | ')
+                    dvalue = []
+                    for v in rvalues:
+                        if 'Close' in v:
+                            continue
+                        dvalue.append(v)
                     jd_dict[dkey.strip()] = dvalue
                 else:
                     jd_dict[dkey.strip()] = dvalue.strip()
-            jd_dict['Full path'] = getfilepath(jd_dict['File ID'], jd_dict['Parent file ID'], jd_dict['File name'], drive)
+            jd_dict['Full path'] = getfilepath(jd_dict['Parent file ID'], jd_dict['File name'], drive)
             del jd_dict['File ID'], jd_dict['Parent file ID']
             jd_list.append(jd_dict)
     return nusn, jd_list
 
 
-def getfilepath(fid, pfid, fname, drive):
+def getfilepath(pfid, fname, drive):
     '''
     Gets file name and path from a File ID
     '''
-    if fid in __context__['win_pulsar_file_map']:
-        return __context__['win_pulsar_file_map'][fid]
-
-	
+    if pfid in __context__['win_pulsar_file_map']:
+        retpath = __context__['win_pulsar_file_map'][pfid] + '\\' + fname
+        return retpath
     try:
-        jfullpath = (__salt__['cmd.run']('fsutil file queryfilenamebyid {0} 0x{1}'.format(drive, fid), ignore_retcode=True)).replace('?\\', '\r\n')
-    except:
-        log.debug('Current usn item is not a file')
-        return None
-    
-    if 'Error:' in jfullpath:
-        log.debug('Searching for the File ID came back with error.  Trying the parent folder')
         jfullpath = (__salt__['cmd.run']('fsutil file queryfilenamebyid {0} 0x{1}'.format(drive, pfid), ignore_retcode=True)).replace('?\\', '\r\n')
         if 'Error:' in jfullpath:
             log.debug('Current usn cannot be queried as file')
             return None
-        retpath = jfullpath.split('\r\n')[1] + '\\' + fname
+        __context__['win_pulsar_file_map'][pfid] = jfullpath.split('\r\n')[1]
+        retpath = __context__['win_pulsar_file_map'][pfid] + '\\' + fname
         return retpath
-    retpath = jfullpath.split('\r\n')[1]
-    __context__['win_pulsar_file_map'][fid] = retpath
-    return retpath
+    except:
+        log.debug('Current usn item is not a file')
+        return None
+    
+
 
 def usnfilter(usn_list, config_paths):
     '''
     Iterates through each change in the list and throws out any change not specified in the win_pulsar.yaml
     '''
     ret_usns = []
+    basic_paths = [] 
 
     # iterate through active portion of the NTFS change journal
     for usn in usn_list:
@@ -325,8 +333,7 @@ def usnfilter(usn_list, config_paths):
             # check if base path called out in yaml is in file location called out in actual change
             if path in fpath:
                 #check if the type of change that happened matches the list in yaml
-                freason = usn['Reason'].split(': ')[1]
-                freason = freason.split('|')[0].strip()
+                freason = usn['Reason'][0]
                 if freason in mask:
                     throw_away = False
                     if exclude is not False:

@@ -37,7 +37,7 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
  && make \
  && make strip
 USER root
-RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery \
+RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt/osquery \
  && chown -R root. /opt/osquery \
  && chmod -R 500 /opt/osquery/* \
 #put augeas lenses into the default directory that we changed earlier

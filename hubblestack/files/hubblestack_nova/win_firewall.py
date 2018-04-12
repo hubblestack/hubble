@@ -14,18 +14,42 @@ import copy
 import fnmatch
 import logging
 import salt.utils
+import salt.utils.platform
 
 
 log = logging.getLogger(__name__)
 __virtualname__ = 'win_firewall'
 
+
 def __virtual__():
-    if not salt.utils.is_windows():
+    if not salt.utils.platform.is_windows():
         return False, 'This audit module only runs on windows'
+    if '2008' in __grains__['osfullname']:
+        return False, 'The Powershell firewall module only works on 2012 or higher'
     return True
 
+def apply_labels(__data__, labels):
+    '''
+    Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
+    '''
+    labelled_data = {}
+    if labels:
+        labelled_data[__virtualname__] = {}
+        for topkey in ('blacklist', 'whitelist'):
+            if topkey in __data__.get(__virtualname__, {}):
+                labelled_test_cases=[]
+                for test_case in __data__[__virtualname__].get(topkey, []):
+                    # each test case is a dictionary with just one key-val pair. key=test name, val=test data, description etc
+                    if isinstance(test_case, dict) and test_case:
+                        test_case_body = test_case.get(next(iter(test_case)))
+                        if set(labels).issubset(set(test_case_body.get('labels',[]))):
+                            labelled_test_cases.append(test_case)
+                labelled_data[__virtualname__][topkey]=labelled_test_cases
+    else:
+        labelled_data = __data__
+    return labelled_data
 
-def audit(data_list, tags, debug=False, **kwargs):
+def audit(data_list, tags, labels, debug=False, **kwargs):
     '''
     Runs auditpol on the local machine and audits the return data
     with the CIS yaml processed by __virtual__
@@ -34,6 +58,7 @@ def audit(data_list, tags, debug=False, **kwargs):
     __firewalldata__ = _import_firewall()
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
+    __data__ = apply_labels(__data__, labels)
     __tags__ = _get_tags(__data__)
     if debug:
         log.debug('firewall audit __data__:')
@@ -51,12 +76,18 @@ def audit(data_list, tags, debug=False, **kwargs):
                 name = tag_data['name']
                 audit_type = tag_data['type']
                 match_output = tag_data['match_output'].lower()
+                match_type = tag_data.get('match_type', '=')
 
                 # Blacklisted audit (do not include)
                 if 'blacklist' in audit_type:
                     if name not in __firewalldata__[tag_data['value_type'].title()]:
                         ret['Success'].append(tag_data)
                     else:
+                        tag_data['failure_reason'] = "Value of blacklisted property '{0}({1})'" \
+                                                     " was found to be set. If should not be " \
+                                                     "configured at all" \
+                                                     .format(name,
+                                                             tag_data['value_type'].title())
                         ret['Failure'].append(tag_data)
 
                 # Whitelisted audit (must include)
@@ -65,10 +96,18 @@ def audit(data_list, tags, debug=False, **kwargs):
                         audit_value = __firewalldata__[tag_data['value_type'].title()]
                         audit_value = audit_value[name].lower()
                         tag_data['found_value'] = audit_value
-                        secret = _translate_value_type(audit_value, tag_data['value_type'], match_output)
+                        secret = _translate_value_type(audit_value, tag_data['value_type'], match_output, match_type)
                         if secret:
                             ret['Success'].append(tag_data)
                         else:
+                            tag_data['failure_reason'] = "Value of property '{0}({1})' is " \
+                                                         "currently set to '{2}'. It should" \
+                                                         " be set to '{3}{4}'" \
+                                                         .format(name,
+                                                                 tag_data['value_type'],
+                                                                 audit_value,
+                                                                 match_type,
+                                                                 match_output)
                             ret['Failure'].append(tag_data)
                     else:
                         log.debug('When trying to audit the firewall section,'
@@ -140,7 +179,7 @@ def _get_tags(data):
                             ret[tag] = []
                         formatted_data = {'name': name,
                                           'tag': tag,
-                                          'module': 'win_auditpol',
+                                          'module': 'win_firewall',
                                           'type': toplist}
                         formatted_data.update(tag_data)
                         formatted_data.update(audit_data)
@@ -148,10 +187,11 @@ def _get_tags(data):
                         ret[tag].append(formatted_data)
     return ret
 
+
 def _export_firewall():
     dump = []
     try:
-        temp = __salt__['cmd.run']('Get-NetFirewallProfile -PolicyStore ActiveStore', shell='powershell', python_shell=True)
+        temp = __salt__['cmd.run']('mode con:cols=1000 lines=1000; Get-NetFirewallProfile -PolicyStore ActiveStore', shell='powershell', python_shell=True)
         temp = temp.split('\r\n\r\n')
         if temp:
             for item in temp:
@@ -173,15 +213,22 @@ def _import_firewall():
         for val in vals:
             if val:
                 v = val.split(':')
-                if len(v) < 2: continue
+                if len(v) < 2:
+                    continue
                 temp_vals[v[0].strip()] = v[1].strip()
         dict_return[temp_vals['Name']] = temp_vals
     return dict_return
 
 
-def _translate_value_type(current, value, evaluator):
+def _translate_value_type(current, value, evaluator, match):
     if value in ('public', 'private', 'domain'):
-        if current == evaluator:
-            return True
-        else:
-            return False
+        if match == '=':
+            if current == evaluator:
+                return True
+        if match == '>':
+            if int(current) > int(evaluator):
+                return True
+        if match == '<':
+            if int(current) < int(evaluator):
+                return True
+    return False

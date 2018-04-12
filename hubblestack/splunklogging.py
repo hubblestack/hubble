@@ -35,21 +35,18 @@ be skipped:
               - product_group
 '''
 import socket
-# Import cloud details
-from hubblestack.cloud_details import get_cloud_details
 
 # Imports for http event forwarder
 import requests
 import json
 import time
-from datetime import datetime
 
 import copy
 
 import logging
 
 _max_content_bytes = 100000
-http_event_collector_SSL_verify = False
+http_event_collector_SSL_verify = True
 http_event_collector_debug = False
 
 hec = None
@@ -63,8 +60,10 @@ class SplunkHandler(logging.Handler):
         super(SplunkHandler, self).__init__()
 
         self.opts_list = _get_options()
-        self.clouds = get_cloud_details()
         self.endpoint_list = []
+
+        # Get cloud details
+        cloud_details = __grains__.get('cloud_details', {})
 
         for opts in self.opts_list:
             http_event_collector_key = opts['token']
@@ -77,9 +76,9 @@ class SplunkHandler(logging.Handler):
 
             # Set up the fields to be extracted at index time. The field values must be strings.
             # Note that these fields will also still be available in the event data
-            index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId', 'azure_subscriptionId']
+            index_extracted_fields = []
             try:
-                index_extracted_fields.extend(opts['index_extracted_fields'])
+                index_extracted_fields.extend(__opts__.get('splunk_index_extracted_fields', []))
             except TypeError:
                 pass
 
@@ -94,12 +93,23 @@ class SplunkHandler(logging.Handler):
             try:
                 fqdn_ip4 = __grains__['fqdn_ip4'][0]
             except IndexError:
-                fqdn_ip4 = __grains__['ipv4'][0]
+                try:
+                    fqdn_ip4 = __grains__['ipv4'][0]
+                except IndexError:
+                    raise Exception('No ipv4 grains found. Is net-tools installed?')
             if fqdn_ip4.startswith('127.'):
                 for ip4_addr in __grains__['ipv4']:
                     if ip4_addr and not ip4_addr.startswith('127.'):
                         fqdn_ip4 = ip4_addr
                         break
+
+            # Sometimes fqdn reports a value of localhost. If that happens, try another method.
+            bad_fqdns = ['localhost', 'localhost.localdomain', 'localhost6.localdomain6']
+            if fqdn in bad_fqdns:
+                new_fqdn = socket.gethostname()
+                if '.' not in new_fqdn or new_fqdn in bad_fqdns:
+                    new_fqdn = fqdn_ip4
+                fqdn = new_fqdn
 
             event = {}
             event.update({'master': master})
@@ -107,8 +117,7 @@ class SplunkHandler(logging.Handler):
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})
 
-            for cloud in self.clouds:
-                event.update(cloud)
+            event.update(cloud_details)
 
             for custom_field in custom_fields:
                 custom_field_name = 'custom_' + custom_field
@@ -149,16 +158,36 @@ class SplunkHandler(logging.Handler):
             hec.flushBatch()
         return True
 
+    def emit_data(self, data):
+        '''
+        Add the given data (in dict format!) to the event template and emit as
+        usual
+        '''
+        for hec, event, payload in self.endpoint_list:
+            event = copy.deepcopy(event)
+            payload = copy.deepcopy(payload)
+            event.update(data)
+            payload['event'] = event
+            hec.batchEvent(payload, eventtime=time.time())
+            hec.flushBatch()
+        return True
+
     def format_record(self, record):
         '''
         Format the log record into a dictionary for easy insertion into a
         splunk event dictionary
         '''
-        log_entry = {'message': record.message,
-                     'level': record.levelname,
-                     'timestamp': record.asctime,
-                     'loggername': record.name,
-                     }
+        try:
+            log_entry = {'message': record.message,
+                         'level': record.levelname,
+                         'timestamp': record.asctime,
+                         'loggername': record.name,
+                         }
+        except:
+            log_entry = {'message': record.msg,
+                         'level': record.levelname,
+                         'loggername': record.name,
+                         }
         return log_entry
 
 
@@ -295,9 +324,10 @@ class http_event_collector:
                     server[1] = True
                     break
                 except requests.exceptions.RequestException:
-                    log.info('Request to splunk server "%s" failed. Marking as bad.' % server[0])
+                    #log.info('Request to splunk server "%s" failed. Marking as bad.' % server[0])
                     server[1] = False
                 except Exception as e:
-                    log.error('Request to splunk threw an error: {0}'.format(e))
+                    #log.error('Request to splunk threw an error: {0}'.format(e))
+                    pass
             self.batchEvents = []
             self.currentByteLength = 0

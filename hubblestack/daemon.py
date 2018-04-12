@@ -4,7 +4,7 @@ Main entry point for the hubble daemon
 '''
 from __future__ import print_function
 
-#import lockfile
+# import lockfile
 import argparse
 import logging
 import time
@@ -13,10 +13,18 @@ import os
 import random
 import signal
 import sys
+import uuid
+import json
+import socket
+import math
 
 import salt.fileclient
+import salt.fileserver
+import salt.fileserver.gitfs
 import salt.utils
+import salt.utils.platform
 import salt.utils.jid
+import salt.utils.gitfs
 import salt.log.setup
 import hubblestack.splunklogging
 from hubblestack import __version__
@@ -24,6 +32,8 @@ from hubblestack import __version__
 log = logging.getLogger(__name__)
 
 __opts__ = {}
+# This should work fine until we go to multiprocessing
+SESSION_UUID = str(uuid.uuid4())
 
 
 def run():
@@ -47,8 +57,15 @@ def run():
         sys.exit(0)
 
     if __opts__['daemonize']:
+        # before becoming a daemon, check for other procs and possibly send
+        # then a signal 15 (otherwise refuse to run)
+        check_pidfile(kill_other=True)
         salt.utils.daemonize()
         create_pidfile()
+    elif not __opts__['function']:
+        # check the pidfile and possibly refuse to run
+        # (assuming this isn't a single function call)
+        check_pidfile(kill_other=False)
 
     signal.signal(signal.SIGTERM, clean_up_process)
     signal.signal(signal.SIGINT, clean_up_process)
@@ -66,19 +83,61 @@ def main():
     Run the main hubble loop
     '''
     # Initial fileclient setup
+    # Clear old locks
+    if 'gitfs' in __opts__['fileserver_backend'] or 'git' in __opts__['fileserver_backend']:
+        git_objects = [
+            salt.utils.gitfs.GitFS(
+                __opts__,
+                __opts__['gitfs_remotes'],
+                per_remote_overrides=salt.fileserver.gitfs.PER_REMOTE_OVERRIDES,
+                per_remote_only=salt.fileserver.gitfs.PER_REMOTE_ONLY
+            )
+        ]
+        ret = {}
+        for obj in git_objects:
+            lock_type = 'update'
+            cleared, errors = salt.fileserver.clear_lock(obj.clear_lock,
+                                                         'gitfs',
+                                                         remote=None,
+                                                         lock_type=lock_type)
+            if cleared:
+                ret.setdefault('cleared', []).extend(cleared)
+            if errors:
+                ret.setdefault('errors', []).extend(errors)
+        if ret:
+            log.info('One or more gitfs locks were removed: {0}'.format(ret))
+
+    # Setup fileclient
     log.info('Setting up the fileclient/fileserver')
-    try:
-        fc = salt.fileclient.get_file_client(__opts__)
-        fc.channel.fs.update()
-        last_fc_update = time.time()
-    except Exception as exc:
-        log.exception('Exception thrown trying to setup fileclient. Exiting.')
-        sys.exit(1)
+
+    # Set up fileclient
+    retry_count = __opts__.get('fileserver_retry_count_on_startup', None)
+    retry_time = __opts__.get('fileserver_retry_rate_on_startup', 30)
+    count = 0
+    while True:
+        try:
+            fc = salt.fileclient.get_file_client(__opts__)
+            fc.channel.fs.update()
+            last_fc_update = time.time()
+            break
+        except Exception as exc:
+            if (retry_count is None or count < retry_count) and not __opts__['function']:
+                log.exception('Exception thrown trying to setup fileclient. '
+                              'Trying again in {0} seconds.'
+                              .format(retry_time))
+                count += 1
+                time.sleep(retry_time)
+                continue
+            else:
+                log.exception('Exception thrown trying to setup fileclient. Exiting.')
+                sys.exit(1)
 
     # Check for single function run
     if __opts__['function']:
         run_function()
         sys.exit(0)
+
+    last_grains_refresh = time.time() - __opts__['grains_refresh_frequency']
 
     log.info('Starting main loop')
     while True:
@@ -88,7 +147,16 @@ def main():
                 fc.channel.fs.update()
                 last_fc_update = time.time()
             except Exception as exc:
-                log.exception('Exception thrown trying to update fileclient.')
+                retry = __opts__.get('fileserver_retry_rate', 900)
+                last_fc_update += retry
+                log.exception('Exception thrown trying to update fileclient. '
+                              'Trying again in {0} seconds.'
+                              .format(retry))
+
+        if time.time() - last_grains_refresh >= __opts__['grains_refresh_frequency']:
+            log.info('Refreshing grains')
+            refresh_grains()
+            last_grains_refresh = time.time()
 
         try:
             log.debug('Executing schedule')
@@ -97,6 +165,27 @@ def main():
             log.exception('Error executing schedule')
         time.sleep(__opts__.get('scheduler_sleep_frequency', 0.5))
 
+def getlastrunbybuckets(buckets, seconds):
+    '''
+    this function will use the host's ip to place the host in a bucket
+    where each bucket executes hubble processes at a different time
+    '''
+    buckets = int(buckets) if int(buckets)!=0 else 256
+    host_ip = socket.gethostbyname(socket.gethostname())
+    ips = host_ip.split('.')
+    sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2])*256)+int(ips[3])
+    bucket = sum%buckets
+    current_time = time.time()
+    base_time = seconds*(math.floor(current_time/seconds))
+    splay = seconds/buckets
+    seconds_between_buckets = splay
+    random_int = random.randint(0,splay-1) if splay !=0 else 0
+    bucket_execution_time = base_time+(seconds_between_buckets*bucket)+random_int
+    if bucket_execution_time < current_time:
+        last_run = bucket_execution_time
+    else:
+        last_run = bucket_execution_time - seconds
+    return last_run
 
 def schedule():
     '''
@@ -194,12 +283,26 @@ def schedule():
         # Actually process the job
         run = False
         if 'last_run' not in jobdata:
-            if jobdata.get('run_on_start', False) and splay == 0:
-                run = True
-            jobdata['last_run'] = time.time()
-        if 'set_splay' not in jobdata:
-            jobdata['set_splay'] = random.randint(0, splay)
-            jobdata['last_run'] += jobdata['set_splay']
+            if jobdata.get('run_on_start', False):
+                if splay:
+                    # Run `splay` seconds in the future, by telling the scheduler we last ran it
+                    # `seconds - splay` seconds ago.
+                    jobdata['last_run'] = time.time() - (seconds - random.randint(0, splay))
+                else:
+                    # Run now
+                    run = True
+                    jobdata['last_run'] = time.time()
+            else:
+                if splay:
+                    # Run `seconds + splay` seconds in the future by telling the scheduler we last
+                    # ran it at now + `splay` seconds.
+                    jobdata['last_run'] = time.time() + random.randint(0, splay)
+                elif 'buckets' in jobdata:
+                    # Place the host in a bucket and fix the execution time.
+                    jobdata['last_run'] = getlastrunbybuckets(jobdata['buckets'], seconds)
+                else:
+                    # Run in `seconds` seconds.
+                    jobdata['last_run'] = time.time()
 
         if jobdata['last_run'] < time.time() - seconds:
             run = True
@@ -208,7 +311,8 @@ def schedule():
             log.debug('Executing scheduled function {0}'.format(func))
             jobdata['last_run'] = time.time()
             ret = __salt__[func](*args, **kwargs)
-            log.debug('Job returned:\n{0}'.format(ret))
+            if __opts__['log_level'] == 'debug':
+                log.debug('Job returned:\n{0}'.format(ret))
             for returner in returners:
                 returner = '{0}.returner'.format(returner)
                 if returner not in __returners__:
@@ -216,7 +320,7 @@ def schedule():
                     continue
                 log.debug('Returning job data to {0}'.format(returner))
                 returner_ret = {'id': __grains__['id'],
-                                'jid': salt.utils.jid.gen_jid(),
+                                'jid': salt.utils.jid.gen_jid(__opts__),
                                 'fun': func,
                                 'fun_args': args + ([kwargs] if kwargs else []),
                                 'return': ret}
@@ -254,17 +358,20 @@ def run_function():
         else:
             log.info('Returning job data to {0}'.format(returner))
             returner_ret = {'id': __grains__['id'],
-                            'jid': salt.utils.jid.gen_jid(),
+                            'jid': salt.utils.jid.gen_jid(__opts__),
                             'fun': __opts__['function'],
                             'fun_args': args + ([kwargs] if kwargs else []),
                             'return': ret}
             __returners__[returner](returner_ret)
 
     # TODO instantiate the salt outputter system?
-    if(__opts__['no_pprint']):
-        pprint.pprint(ret)
+    if(__opts__['json_print']):
+        print(json.dumps(ret))
     else:
-        print(ret)
+        if(__opts__['no_pprint']):
+            pprint.pprint(ret)
+        else:
+            print(ret)
 
 
 def load_config():
@@ -275,7 +382,7 @@ def load_config():
     parsed_args = parse_args()
 
     # Load unique data for Windows or Linux
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         if parsed_args.get('configfile') is None:
             parsed_args['configfile'] = 'C:\\Program Files (x86)\\Hubble\\etc\\hubble\\hubble.conf'
         salt.config.DEFAULT_MINION_OPTS['cachedir'] = 'C:\\Program Files (x86)\\hubble\\var\\cache'
@@ -292,19 +399,21 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['log_level'] = None
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
+    salt.config.DEFAULT_MINION_OPTS['grains_refresh_frequency'] = 3600  # 1 hour
     salt.config.DEFAULT_MINION_OPTS['scheduler_sleep_frequency'] = 0.5
     salt.config.DEFAULT_MINION_OPTS['default_include'] = 'hubble.d/*.conf'
+    salt.config.DEFAULT_MINION_OPTS['logfile_maxbytes'] = 100000000 # 100MB
+    salt.config.DEFAULT_MINION_OPTS['logfile_backups'] = 1 # maximum rotated logs
+    salt.config.DEFAULT_MINION_OPTS['delete_inaccessible_azure_containers'] = False
 
     global __opts__
-    global __grains__
-    global __utils__
-    global __salt__
-    global __pillar__
-    global __returners__
 
     __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
     __opts__['conf_file'] = parsed_args.get('configfile')
+
+    # Optional sleep to wait for network
+    time.sleep(int(__opts__.get('startup_sleep', 0)))
 
     # Convert -vvv to log level
     if __opts__['log_level'] is None:
@@ -341,61 +450,122 @@ def load_config():
     # Disable all of salt's boto modules, they give nothing but trouble to the loader
     disable_modules = __opts__.get('disable_modules', [])
     disable_modules.extend([
-            'boto3_elasticache',
-            'boto3_route53',
-            'boto_apigateway',
-            'boto_asg',
-            'boto_cfn',
-            'boto_cloudtrail',
-            'boto_cloudwatch_event',
-            'boto_cloudwatch',
-            'boto_cognitoidentity',
-            'boto_datapipeline',
-            'boto_dynamodb',
-            'boto_ec2',
-            'boto_efs',
-            'boto_elasticache',
-            'boto_elasticsearch_domain',
-            'boto_elb',
-            'boto_elbv2',
-            'boto_iam',
-            'boto_iot',
-            'boto_kinesis',
-            'boto_kms',
-            'boto_lambda',
-            'boto_rds',
-            'boto_route53',
-            'boto_s3_bucket',
-            'boto_secgroup',
-            'boto_sns',
-            'boto_sqs',
-            'boto_vpc',
-        ])
+        'boto3_elasticache',
+        'boto3_route53',
+        'boto_apigateway',
+        'boto_asg',
+        'boto_cfn',
+        'boto_cloudtrail',
+        'boto_cloudwatch_event',
+        'boto_cloudwatch',
+        'boto_cognitoidentity',
+        'boto_datapipeline',
+        'boto_dynamodb',
+        'boto_ec2',
+        'boto_efs',
+        'boto_elasticache',
+        'boto_elasticsearch_domain',
+        'boto_elb',
+        'boto_elbv2',
+        'boto_iam',
+        'boto_iot',
+        'boto_kinesis',
+        'boto_kms',
+        'boto_lambda',
+        'boto_rds',
+        'boto_route53',
+        'boto_s3_bucket',
+        'boto_secgroup',
+        'boto_sns',
+        'boto_sqs',
+        'boto_vpc',
+    ])
     __opts__['disable_modules'] = disable_modules
 
     # Setup logging
     salt.log.setup.setup_console_logger(__opts__['log_level'])
     salt.log.setup.setup_logfile_logger(__opts__['log_file'],
-                                        __opts__['log_level'])
+                                        __opts__['log_level'],
+                                        max_bytes=__opts__.get('logfile_maxbytes', 100000000),
+                                        backup_count=__opts__.get('logfile_backups', 1))
+
     # 384 is 0o600 permissions, written without octal for python 2/3 compat
     os.chmod(__opts__['log_file'], 384)
     os.chmod(parsed_args.get('configfile'), 384)
 
+    refresh_grains(initial=True)
+
+    # Check for default gateway and fall back if necessary
+    if __grains__.get('ip_gw', None) is False and 'fallback_fileserver_backend' in __opts__:
+        log.info('No default gateway detected; using fallback_fileserver_backend.')
+        __opts__['fileserver_backend'] = __opts__['fallback_fileserver_backend']
+
+    # splunk logs below warning, above info by default
+    logging.SPLUNK = int(__opts__.get('splunk_log_level', 25))
+    logging.addLevelName(logging.SPLUNK, 'SPLUNK')
+    def splunk(self, message, *args, **kwargs):
+        if self.isEnabledFor(logging.SPLUNK):
+            self._log(logging.SPLUNK, message, args, **kwargs)
+    logging.Logger.splunk = splunk
+    if __salt__['config.get']('hubblestack:splunklogging', False):
+        root_logger = logging.getLogger()
+        handler = hubblestack.splunklogging.SplunkHandler()
+        handler.setLevel(logging.SPLUNK)
+        root_logger.addHandler(handler)
+        class MockRecord(object):
+            def __init__(self, message, levelname, asctime, name):
+                self.message = message
+                self.levelname = levelname
+                self.asctime = asctime
+                self.name = name
+        handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
+
+
+def refresh_grains(initial=False):
+    '''
+    Refresh the grains, pillar, utils, modules, and returners
+    '''
+    global __opts__
+    global __grains__
+    global __utils__
+    global __salt__
+    global __pillar__
+    global __returners__
+    global __context__
+
+    if initial:
+        __context__ = {}
+    if 'grains' in __opts__:
+        __opts__.pop('grains')
+    if 'pillar' in __opts__:
+        __opts__.pop('pillar')
     __grains__ = salt.loader.grains(__opts__)
+    __grains__['session_uuid'] = SESSION_UUID
+    __opts__['hubble_uuid'] = __grains__.get('hubble_uuid', None)
     __pillar__ = {}
     __opts__['grains'] = __grains__
     __opts__['pillar'] = __pillar__
     __utils__ = salt.loader.utils(__opts__)
-    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__, context=__context__)
     __returners__ = salt.loader.returners(__opts__, __salt__)
 
-    if __salt__['config.get']('hubblestack:splunklogging', False):
-        hubblestack.splunklogging.__grains__ = __grains__
-        hubblestack.splunklogging.__salt__ = __salt__
-        root_logger = logging.getLogger()
+    # the only things that turn up in here (and that get preserved)
+    # are pulsar.queue, pulsar.notifier and cp.fileclient_###########
+    # log.debug('keys in __context__: {}'.format(list(__context__)))
+
+    hubblestack.splunklogging.__grains__ = __grains__
+    hubblestack.splunklogging.__salt__ = __salt__
+    hubblestack.splunklogging.__opts__ = __opts__
+
+    if not initial and __salt__['config.get']('hubblestack:splunklogging', False):
+        class MockRecord(object):
+            def __init__(self, message, levelname, asctime, name):
+                self.message = message
+                self.levelname = levelname
+                self.asctime = asctime
+                self.name = name
         handler = hubblestack.splunklogging.SplunkHandler()
-        handler.setLevel(logging.ERROR)
-        root_logger.addHandler(handler)
+        handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
 
 
 def parse_args():
@@ -430,8 +600,50 @@ def parse_args():
     parser.add_argument('args',
                         nargs='*',
                         help='Any arguments necessary for a single function run')
+    parser.add_argument('-j', '--json-print',
+                        action='store_true',
+                        help='Optional argument to print the output of single run function in json format')
     return vars(parser.parse_args())
 
+def check_pidfile(kill_other=False):
+    '''
+    Check to see if there's already a pidfile. If so, check to see if the
+    indicated process is alive and is Hubble.
+
+    kill_other
+        Default false, if set to true, attempt to kill detected running Hubble
+        processes; otherwise exit with an error.
+
+    '''
+    pidfile = __opts__['pidfile']
+    if os.path.isfile(pidfile):
+        with open(pidfile, 'r') as f:
+            xpid = f.readline().strip()
+            try:
+                xpid = int(xpid)
+            except:
+                xpid = 0
+                log.warn('unable to parse pid="{pid}" in pidfile={file}'.format(pid=xpid,file=pidfile))
+            if xpid:
+                log.warn('pidfile={file} exists and contains pid={pid}'.format(file=pidfile, pid=xpid))
+                if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+                    with open("/proc/{pid}/cmdline".format(pid=xpid),'r') as f2:
+                        cmdline = f2.readline().strip().strip('\x00').replace('\x00',' ')
+                        if 'hubble' in cmdline:
+                            if kill_other:
+                                log.warn("process seems to still be alive and is hubble, attempting to shutdown")
+                                os.kill(int(xpid), signal.SIGTERM)
+                                time.sleep(1)
+                                if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+                                    log.error("failed to shutdown process successfully; abnormal program exit")
+                                    exit(1)
+                                else:
+                                    log.info("shutdown seems to have succeeded, proceeding with startup")
+                            else:
+                                log.error("refusing to run while another hubble instance is running")
+                                exit(1)
+                        else:
+                            log.info("process does not appear to be hubble, ignoring")
 
 def create_pidfile():
     '''

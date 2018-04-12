@@ -29,6 +29,8 @@ pkg:
           - 'telnet': 'telnet-bad'
       # description/alert/trigger are currently ignored, but may be used in the future
       description: 'Telnet is evil'
+      labels:
+        - critical
       alert: email
       trigger: state
   # Must be installed, no version checking (yet)
@@ -63,10 +65,9 @@ from __future__ import absolute_import
 import logging
 
 import fnmatch
-import yaml
-import os
 import copy
 import salt.utils
+import salt.utils.platform
 
 from distutils.version import LooseVersion
 
@@ -74,18 +75,39 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     return True
 
+def apply_labels(__data__, labels):
+    '''
+    Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
+    '''
+    labelled_data = {}
+    if labels:
+        labelled_data['pkg'] = {}
+        for topkey in ('blacklist', 'whitelist'):
+            if topkey in __data__.get('pkg', {}):
+                labelled_test_cases=[]
+                for test_case in __data__['pkg'].get(topkey, []):
+                    # each test case is a dictionary with just one key-val pair. key=test name, val=test data, description etc
+                    if isinstance(test_case, dict) and test_case:
+                        test_case_body = test_case.get(next(iter(test_case)))
+                        if set(labels).issubset(set(test_case_body.get('labels',[]))):
+                            labelled_test_cases.append(test_case)
+                labelled_data['pkg'][topkey]=labelled_test_cases
+    else:
+        labelled_data = __data__
+    return labelled_data
 
-def audit(data_list, tags, debug=False, **kwargs):
+def audit(data_list, tags, labels, debug=False, **kwargs):
     '''
     Run the pkg audits contained in the YAML files processed by __virtual__
     '''
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
+    __data__ = apply_labels(__data__, labels)
     __tags__ = _get_tags(__data__)
 
     if debug:
@@ -107,6 +129,9 @@ def audit(data_list, tags, debug=False, **kwargs):
                 # Blacklisted packages (must not be installed)
                 if audittype == 'blacklist':
                     if __salt__['pkg.version'](name):
+                        tag_data['failure_reason'] = "Found blacklisted package '{0}'" \
+                                                     " installed on the system" \
+                                                     .format(name)
                         ret['Failure'].append(tag_data)
                     else:
                         ret['Success'].append(tag_data)
@@ -124,6 +149,10 @@ def audit(data_list, tags, debug=False, **kwargs):
                                     LooseVersion(version)):
                                 ret['Success'].append(tag_data)
                             else:
+                                tag_data['failure_reason'] = "Could not find requisite package '{0}' with" \
+                                                             " version less than or equal to '{1}' " \
+                                                             "installed on the system" \
+                                                             .format(name, version)
                                 ret['Failure'].append(tag_data)
 
                         elif mod == '>':
@@ -131,6 +160,10 @@ def audit(data_list, tags, debug=False, **kwargs):
                                     LooseVersion(version)):
                                 ret['Success'].append(tag_data)
                             else:
+                                tag_data['failure_reason'] = "Could not find requisite package '{0}' " \
+                                                             "with version greater than or equal to '{1}'" \
+                                                             " installed on the system" \
+                                                             .format(name, version)
                                 ret['Failure'].append(tag_data)
 
                         elif not mod:
@@ -138,6 +171,9 @@ def audit(data_list, tags, debug=False, **kwargs):
                             if __salt__['pkg.version'](name) == version:
                                 ret['Success'].append(tag_data)
                             else:
+                                tag_data['failure_reason'] = "Could not find the version '{0}' of requisite" \
+                                                             " package '{1}' installed on the system" \
+                                                             .format(version, name)
                                 ret['Failure'].append(tag_data)
 
                         else:
@@ -147,12 +183,17 @@ def audit(data_list, tags, debug=False, **kwargs):
                             tag_data = copy.deepcopy(tag_data)
                             # Include an error in the failure
                             tag_data['error'] = 'Invalid modifier {0}'.format(mod)
+                            tag_data['failure_reason'] = 'Invalid modifier in version {0} for pkg {1} audit' \
+                                                         ' {2}. Seems like a bug in hubble profile.' \
+                                                         .format(tag_data['version'], name, tag)
                             ret['Failure'].append(tag_data)
 
                     else:  # No version checking
                         if __salt__['pkg.version'](name):
                             ret['Success'].append(tag_data)
                         else:
+                            tag_data['failure_reason'] = "Could not find requisite package '{0}' installed" \
+                                                         " on the system".format(name)
                             ret['Failure'].append(tag_data)
 
     return ret

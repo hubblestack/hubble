@@ -23,6 +23,9 @@ openssl:
       not_before: 2                      # optional
       fail_if_not_before: False         # optional
     description: 'google certificate'
+    labels:
+      - critical
+      - raiseticket
 
 Some words about the elements in the data dictionary:
     - tag: this is the tag of the check
@@ -73,6 +76,7 @@ import logging
 import fnmatch
 import copy
 import salt.utils
+import salt.utils.platform
 import datetime
 import time
 
@@ -92,17 +96,35 @@ __data__ = None
 
 
 def __virtual__():
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     if not _HAS_OPENSSL:
         return (False, 'The python-OpenSSL library is missing')
     return True
 
+def apply_labels(__data__, labels):
+    '''
+    Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
+    '''
+    ret={}
+    if labels:
+        labelled_test_cases=[]
+        for test_case in __data__.get('openssl', []):
+            # each test case is a dictionary with just one key-val pair. key=test name, val=test data, description etc
+            if isinstance(test_case, dict) and test_case:
+                test_case_body = test_case.get(next(iter(test_case)))
+                if test_case_body.get('labels') and set(labels).issubset(set(test_case_body.get('labels',[]))):
+                    labelled_test_cases.append(test_case)
+        ret['openssl']=labelled_test_cases
+    else:
+        ret=__data__
+    return ret
 
-def audit(data_list, tags, debug=True, **kwargs):
+def audit(data_list, tags, labels, debug=True, **kwargs):
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
+    __data__ = apply_labels(__data__, labels)
     __tags__ = _get_tags(__data__)
 
     if debug:

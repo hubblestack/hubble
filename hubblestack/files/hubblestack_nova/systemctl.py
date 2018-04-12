@@ -18,13 +18,15 @@ Sample YAML data, with inline comments:
 
 
 systemctl:
-  whitelist: # or blacklist
+  blacklist: # or whitelist
     dhcpd-disabled:  # unique ID
       data:
         CentOS Linux-7:  # osfinger grain
          tag: 'CIS-1.1.1'  # audit tag
          service: dhcpd    # mandatory field.
       description: Ensure DHCP Server is not enabled
+      labels:
+        - critical
       alert: email
       trigger: state
 
@@ -34,11 +36,9 @@ from __future__ import absolute_import
 import logging
 
 import fnmatch
-import yaml
-import os
 import copy
 import salt.utils
-import re
+import salt.utils.platform
 
 from distutils.version import LooseVersion
 
@@ -46,18 +46,36 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     return True
 
+def apply_labels(__data__, labels):
+    labelled_data = {}
+    if labels:
+        labelled_data['systemctl'] = {}
+        for topkey in ('blacklist', 'whitelist'):
+            if topkey in __data__.get('systemctl', {}):
+                labelled_test_cases=[]
+                for test_case in __data__['systemctl'].get(topkey, []):
+                    # each test case is a dictionary with just one key-val pair. key=test name, val=test data, description etc
+                    if isinstance(test_case, dict) and test_case:
+                        test_case_body = test_case.get(next(iter(test_case)))
+                        if set(labels).issubset(set(test_case_body.get('labels',[]))):
+                            labelled_test_cases.append(test_case)
+                labelled_data['systemctl'][topkey]=labelled_test_cases
+    else:
+        labelled_data = __data__
+    return labelled_data
 
-def audit(data_list, tags, debug=False, **kwargs):
+def audit(data_list, tags, labels, debug=False, **kwargs):
     '''
     Run the systemctl audits contained in the YAML files processed by __virtual__
     '''
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
+    __data__ = apply_labels(__data__, labels)
     __tags__ = _get_tags(__data__)
 
     if debug:
@@ -82,12 +100,18 @@ def audit(data_list, tags, debug=False, **kwargs):
                     if not enabled:
                         ret['Success'].append(tag_data)
                     else:
+                        tag_data['failure_reason'] = "Found blacklisted service '{0}'" \
+                                                     " enabled on the system" \
+                                                     .format(name)
                         ret['Failure'].append(tag_data)
                 # Whitelisted pattern (must be found and running)
                 elif audittype == 'whitelist':
                     if enabled:
                         ret['Success'].append(tag_data)
                     else:
+                        tag_data['failure_reason'] = "Could not find requisite service" \
+                                                     " '{0}'running on the system" \
+                                                     .format(name)
                         ret['Failure'].append(tag_data)
 
     return ret

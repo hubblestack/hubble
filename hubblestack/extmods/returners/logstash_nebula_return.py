@@ -29,10 +29,8 @@ plugin. Required config/pillar settings:
 
 import json
 import time
-import socket
 import requests
 from datetime import datetime
-from hubblestack.cloud_details import get_cloud_details
 from requests.auth import HTTPBasicAuth
 
 
@@ -41,7 +39,8 @@ def returner(ret):
     '''
     opts_list = _get_options()
 
-    clouds = get_cloud_details()
+    # Get cloud details
+    cloud_details = __grains__.get('cloud_details', {})
 
     for opts in opts_list:
         proxy = opts['proxy']
@@ -53,7 +52,7 @@ def returner(ret):
         password = opts['password']
         user = opts['user']
 
-        ## assign all the things
+        # assign all the things
         data = ret['return']
         minion_id = ret['id']
         jid = ret['jid']
@@ -86,8 +85,7 @@ def returner(ret):
                         event.update({'dest_host': fqdn})
                         event.update({'dest_ip': fqdn_ip4})
 
-                        for cloud in clouds:
-                            event.update(cloud)
+                        event.update(cloud_details)
 
                         for custom_field in custom_fields:
                             custom_field_name = 'custom_' + custom_field

@@ -13,6 +13,7 @@ import copy
 import fnmatch
 import logging
 import salt.utils
+import salt.utils.platform
 from salt.exceptions import CommandExecutionError
 from distutils.version import LooseVersion
 
@@ -20,13 +21,34 @@ from distutils.version import LooseVersion
 log = logging.getLogger(__name__)
 __virtualname__ = 'win_pkg'
 
+
 def __virtual__():
-    if not salt.utils.is_windows():
+    if not salt.utils.platform.is_windows():
         return False, 'This audit module only runs on windows'
     return True
 
+def apply_labels(__data__, labels):
+    '''
+    Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
+    '''
+    labelled_data = {}
+    if labels:
+        labelled_data[__virtualname__] = {}
+        for topkey in ('blacklist', 'whitelist'):
+            if topkey in __data__.get(__virtualname__, {}):
+                labelled_test_cases=[]
+                for test_case in __data__[__virtualname__].get(topkey, []):
+                    # each test case is a dictionary with just one key-val pair. key=test name, val=test data, description etc
+                    if isinstance(test_case, dict) and test_case:
+                        test_case_body = test_case.get(next(iter(test_case)))
+                        if set(labels).issubset(set(test_case_body.get('labels',[]))):
+                            labelled_test_cases.append(test_case)
+                labelled_data[__virtualname__][topkey]=labelled_test_cases
+    else:
+        labelled_data = __data__
+    return labelled_data
 
-def audit(data_list, tags, debug=False, **kwargs):
+def audit(data_list, tags, labels, debug=False, **kwargs):
     '''
     Runs auditpol on the local machine and audits the return data
     with the CIS yaml processed by __virtual__
@@ -39,6 +61,7 @@ def audit(data_list, tags, debug=False, **kwargs):
         __pkgdata__ = __salt__['pkg.list_pkgs']()
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
+    __data__ = apply_labels(__data__, labels)
     __tags__ = _get_tags(__data__)
     if debug:
         log.debug('package audit __data__:')
@@ -62,6 +85,8 @@ def audit(data_list, tags, debug=False, **kwargs):
                     if name not in __pkgdata__:
                         ret['Success'].append(tag_data)
                     else:
+                        tag_data['failure_reason'] = "Blacklisted package '{0}' is installed " \
+                                                     "on the system".format(name)
                         ret['Failure'].append(tag_data)
 
                 # Whitelisted audit (must include)
@@ -73,8 +98,16 @@ def audit(data_list, tags, debug=False, **kwargs):
                         if secret:
                             ret['Success'].append(tag_data)
                         else:
+                            tag_data['failure_reason'] = "Version '{0}({1}) of the requisite" \
+                                                         " package '{2}' is not installed on" \
+                                                         " the system".format(match_output,
+                                                                             tag_data['value_type'],
+                                                                             name)
                             ret['Failure'].append(tag_data)
                     else:
+                        tag_data['failure_reason'] = "Version '{0}({1}) of the requisite package" \
+                                                     " '{2}' is not installed on the system" \
+                                                     .format(match_output, tag_data['value_type'], name)
                         ret['Failure'].append(tag_data)
 
     return ret
@@ -156,7 +189,7 @@ def _translate_value_type(current, value, evaluator):
     if 'equal' in value.lower() and LooseVersion(current) == LooseVersion(evaluator):
         return True
     if 'less' in value.lower() and LooseVersion(current) <= LooseVersion(evaluator):
-        return True 
+        return True
     if 'more' in value.lower() and LooseVersion(current) >= LooseVersion(evaluator):
-        return True 
+        return True
     return False

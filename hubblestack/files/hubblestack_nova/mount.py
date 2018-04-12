@@ -29,16 +29,17 @@ mount:
               check_type: soft  # if 'hard', the check fails if the path doesn't exist or
                                 # if it is not a mounted partition. If 'soft', the test passes
                                 # for such cases  (default: hard)
+      labels:
+        - critical
 '''
 from __future__ import absolute_import
 import logging
 
 import fnmatch
-import yaml
 import os
 import copy
 import salt.utils
-import re
+import salt.utils.platform
 
 from distutils.version import LooseVersion
 
@@ -46,12 +47,32 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     return True
 
+def apply_labels(__data__, labels):
+    '''
+    Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
+    '''
+    labelled_data = {}
+    if labels:
+        labelled_data['mount'] = {}
+        for topkey in ('blacklist', 'whitelist'):
+            if topkey in __data__.get('mount', {}):
+                labelled_test_cases=[]
+                for test_case in __data__['mount'].get(topkey, []):
+                    # each test case is a dictionary with just one key-val pair. key=test name, val=test data, description etc
+                    if isinstance(test_case, dict) and test_case:
+                        test_case_body = test_case.get(next(iter(test_case)))
+                        if set(labels).issubset(set(test_case_body.get('labels',[]))):
+                            labelled_test_cases.append(test_case)
+                labelled_data['mount'][topkey]=labelled_test_cases
+    else:
+        labelled_data = __data__
+    return labelled_data
 
-def audit(data_list, tags, debug=False, **kwargs):
+def audit(data_list, tags, labels, debug=False, **kwargs):
     '''
     Run the mount audits contained in the YAML files processed by __virtual__
     '''
@@ -60,7 +81,7 @@ def audit(data_list, tags, debug=False, **kwargs):
 
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
-
+    __data__ = apply_labels(__data__, labels)
     __tags__ = _get_tags(__data__)
 
     if debug:
@@ -78,13 +99,12 @@ def audit(data_list, tags, debug=False, **kwargs):
                     continue
 
 
-                name  = tag_data.get('name')
+                name = tag_data.get('name')
                 audittype = tag_data.get('type')
-
 
                 if 'attribute' not in tag_data:
                     log.error('No attribute found for mount audit {0}, file {1}'
-                              .format(tag,name))
+                              .format(tag, name))
                     tag_data = copy.deepcopy(tag_data)
                     tag_data['error'] = 'No pattern found'.format(mod)
                     ret['Failure'].append(tag_data)
@@ -96,14 +116,14 @@ def audit(data_list, tags, debug=False, **kwargs):
                 if 'check_type' in tag_data:
                     check_type = tag_data.get('check_type')
 
-                if check_type not in ['hard','soft']:
+                if check_type not in ['hard', 'soft']:
                     log.error('Unrecognized option: ' + check_type)
                     tag_data = copy.deepcopy(tag_data)
                     tag_data['error'] = 'check_type can only be hard or soft'
                     ret['Failure'].append(tag_data)
                     continue
 
-                found = _check_mount_attribute(name,attribute,check_type)
+                found = _check_mount_attribute(name, attribute, check_type)
 
                 if audittype == 'blacklist':
                     if found:
@@ -193,7 +213,8 @@ def _get_tags(data):
                         ret[tag].append(formatted_data)
     return ret
 
-def _check_mount_attribute(path,attribute, check_type):
+
+def _check_mount_attribute(path, attribute, check_type):
     '''
     This function checks if the partition at a given path is mounted with a particular attribute or not.
     If 'check_type' is 'hard', the function returns False if he specified path does not exist, or if it
@@ -206,8 +227,7 @@ def _check_mount_attribute(path,attribute, check_type):
         else:
             return True
 
-
-    mount_object  = __salt__['mount.active']()
+    mount_object = __salt__['mount.active']()
 
     if path in mount_object:
         attributes = mount_object.get(path)
@@ -222,4 +242,3 @@ def _check_mount_attribute(path,attribute, check_type):
             return False
         else:
             return True
-

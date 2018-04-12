@@ -46,6 +46,7 @@ def audit(configs=None,
           show_profile=None,
           called_from_top=None,
           debug=None,
+          labels=None,
           **kwargs):
     '''
     Primary entry point for audit calls.
@@ -94,7 +95,11 @@ def audit(configs=None,
         Whether to log additional information to help debug nova. Defaults to
         False. Configurable via `hubblestack:nova:debug` in minion
         config/pillar.
-
+        
+    labels
+        Tests with matching labels are executed. If multiple labels are passed,
+        then tests which have all those labels are executed.
+        
     **kwargs
         Any parameters & values that are not explicitly defined will be passed
         directly through to the Nova module(s).
@@ -111,7 +116,9 @@ def audit(configs=None,
         return top(verbose=verbose,
                    show_success=show_success,
                    show_compliance=show_compliance)
-
+    if labels is not None:
+        if not isinstance(labels, list):
+            labels=labels.split(',')
     if not called_from_top and __salt__['config.get']('hubblestack:nova:autoload', True):
         load()
     if not __nova__:
@@ -141,7 +148,7 @@ def audit(configs=None,
     # Pass any module parameters through to the Nova module
     nova_kwargs = {}
     # Get values from config first (if any) and merge into nova_kwargs
-    nova_kwargs_config =  __salt__['config.get']('hubblestack:nova:nova_kwargs', False)
+    nova_kwargs_config = __salt__['config.get']('hubblestack:nova:nova_kwargs', False)
     if nova_kwargs_config is not False:
         nova_kwargs.update(nova_kwargs_config)
     # Now process arguments from CLI and merge into nova_kwargs_dict
@@ -150,7 +157,7 @@ def audit(configs=None,
 
     log.debug('nova_kwargs: ' + str(nova_kwargs))
 
-    ret = _run_audit(configs, tags, debug, **nova_kwargs)
+    ret = _run_audit(configs, tags, debug, labels, **nova_kwargs)
 
     terse_results = {}
     verbose_results = {}
@@ -236,13 +243,14 @@ def audit(configs=None,
         results['Messages'] = 'No audits matched this host in the specified profiles.'
 
     for error in ret.get('Errors', []):
-      if not results.has_key('Errors'):
-        results['Errors'] = []
-      results['Errors'].append(error)
+        if 'Errors' not in results:
+            results['Errors'] = []
+        results['Errors'].append(error)
 
     return results
 
-def _run_audit(configs, tags, debug, **kwargs):
+
+def _run_audit(configs, tags, debug, labels, **kwargs):
 
     results = {}
 
@@ -283,7 +291,7 @@ def _run_audit(configs, tags, debug, **kwargs):
     # We can revisit if this ever becomes a big bottleneck
     for key, func in __nova__._dict.iteritems():
         try:
-            ret = func(data_list, tags, **kwargs)
+            ret = func(data_list, tags, labels, **kwargs)
         except Exception as exc:
             log.error('Exception occurred in nova module:')
             log.error(traceback.format_exc())
@@ -643,7 +651,7 @@ def _calculate_compliance(results):
     total_audits = success + failure + control
 
     if total_audits:
-        compliance = float(success + control)/total_audits
+        compliance = float(success + control) / total_audits
         compliance = int(compliance * 100)
         compliance = '{0}%'.format(compliance)
         return compliance

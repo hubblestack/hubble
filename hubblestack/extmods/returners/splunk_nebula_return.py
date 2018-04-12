@@ -19,11 +19,14 @@ event collector. Required config/pillar settings:
             index: hubble
             sourcetype_nebula: hubble_osquery
 
-You can also add an `custom_fields` argument which is a list of keys to add to events
-with using the results of config.get(<custom_field>). These new keys will be prefixed
-with 'custom_' to prevent conflicts. The values of these keys should be
-strings or lists (will be sent as CSV string), do not choose grains or pillar values with complex values or they will
-be skipped:
+You can also add a `custom_fields` argument which is a list of keys to add to
+events with using the results of config.get(<custom_field>). These new keys
+will be prefixed with 'custom_' to prevent conflicts. The values of these keys
+should be strings or lists (will be sent as CSV string), do not choose grains
+or pillar values with complex values or they will be skipped.
+
+Additionally, you can define a fallback_indexer which will be used if a default
+gateway is not defined.
 
 .. code-block:: yaml
 
@@ -34,13 +37,12 @@ be skipped:
             indexer: splunk-indexer.domain.tld
             index: hubble
             sourcetype_nebula: hubble_osquery
+            fallback_indexer: splunk-indexer.loc.domain.tld
             custom_fields:
               - site
               - product_group
 '''
 import socket
-# Import cloud details
-from hubblestack.cloud_details import get_cloud_details
 
 # Imports for http event forwarder
 import requests
@@ -51,23 +53,18 @@ from datetime import datetime
 import logging
 
 _max_content_bytes = 100000
-http_event_collector_SSL_verify = False
+http_event_collector_SSL_verify = True
 http_event_collector_debug = False
 
 log = logging.getLogger(__name__)
-
-hec = None
 
 
 def returner(ret):
     try:
         opts_list = _get_options()
 
-        # Get cloud details
-        clouds = get_cloud_details()
-
         for opts in opts_list:
-            logging.info('Options: %s' % json.dumps(opts))
+            logging.debug('Options: %s' % json.dumps(opts))
             http_event_collector_key = opts['token']
             http_event_collector_host = opts['indexer']
             http_event_collector_port = opts['port']
@@ -78,9 +75,9 @@ def returner(ret):
 
             # Set up the fields to be extracted at index time. The field values must be strings.
             # Note that these fields will also still be available in the event data
-            index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId', 'azure_subscriptionId']
+            index_extracted_fields = []
             try:
-                index_extracted_fields.extend(opts['index_extracted_fields'])
+                index_extracted_fields.extend(__opts__.get('splunk_index_extracted_fields', []))
             except TypeError:
                 pass
 
@@ -98,12 +95,27 @@ def returner(ret):
             try:
                 fqdn_ip4 = __grains__['fqdn_ip4'][0]
             except IndexError:
-                fqdn_ip4 = __grains__['ipv4'][0]
+                try:
+                    fqdn_ip4 = __grains__['ipv4'][0]
+                except IndexError:
+                    raise Exception('No ipv4 grains found. Is net-tools installed?')
             if fqdn_ip4.startswith('127.'):
                 for ip4_addr in __grains__['ipv4']:
                     if ip4_addr and not ip4_addr.startswith('127.'):
                         fqdn_ip4 = ip4_addr
                         break
+            local_fqdn = __grains__.get('local_fqdn', __grains__['fqdn'])
+
+            # Sometimes fqdn reports a value of localhost. If that happens, try another method.
+            bad_fqdns = ['localhost', 'localhost.localdomain', 'localhost6.localdomain6']
+            if fqdn in bad_fqdns:
+                new_fqdn = socket.gethostname()
+                if '.' not in new_fqdn or new_fqdn in bad_fqdns:
+                    new_fqdn = fqdn_ip4
+                fqdn = new_fqdn
+
+            # Get cloud details
+            cloud_details = __grains__.get('cloud_details', {})
 
             if not data:
                 return
@@ -120,9 +132,10 @@ def returner(ret):
                             event.update({'minion_id': minion_id})
                             event.update({'dest_host': fqdn})
                             event.update({'dest_ip': fqdn_ip4})
+                            event.update({'dest_fqdn': local_fqdn})
+                            event.update({'system_uuid': __grains__.get('system_uuid')})
 
-                            for cloud in clouds:
-                                event.update(cloud)
+                            event.update(cloud_details)
 
                             for custom_field in custom_fields:
                                 custom_field_name = 'custom_' + custom_field
@@ -161,13 +174,13 @@ def returner(ret):
                             try:
                                 if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
                                     event_time = ''
-                            except:
+                            except Exception:
                                 event_time = ''
                             finally:
                                 hec.batchEvent(payload, eventtime=event_time)
 
             hec.flushBatch()
-    except:
+    except Exception:
         log.exception('Error ocurred in splunk_nebula_return')
     return
 
@@ -190,7 +203,9 @@ def _get_options():
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
-            processed['index_extracted_fields'] = opt.get('index_extracted_fields', [])
+
+            if 'fallback_indexer' in opt and __grains__.get('ip_gw', None) is False:
+                processed['indexer'] = opt['fallback_indexer']
             splunk_opts.append(processed)
         return splunk_opts
     else:
@@ -204,36 +219,10 @@ def _get_options():
         splunk_opts['http_event_server_ssl'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:hec_ssl', True)
         splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:proxy', {})
         splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:timeout', 9.05)
-        splunk_opts['index_extracted_fields'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:index_extracted_fields', [])
 
         splunk_opts['add_query_to_sourcetype'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:add_query_to_sourcetype', True)
 
         return [splunk_opts]
-
-
-def send_splunk(event, index_override=None, sourcetype_override=None):
-    # Get Splunk Options
-    # init the payload
-    payload = {}
-
-    # Set up the event metadata
-    if index_override is None:
-        payload.update({'index': opts['index']})
-    else:
-        payload.update({'index': index_override})
-
-    if sourcetype_override is None:
-        payload.update({'sourcetype': opts['sourcetype']})
-    else:
-        payload.update({'sourcetype': sourcetype_override})
-
-    # Add the event
-    payload.update({'event': event})
-    logging.info('Payload: %s' % json.dumps(payload))
-
-    # fire it off
-    hec.batchEvent(payload)
-    return True
 
 
 # Thanks to George Starcher for the http_event_collector class (https://github.com/georgestarcher/)

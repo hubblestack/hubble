@@ -19,11 +19,14 @@ event collector. Required config/pillar settings:
             index: hubble
             sourcetype_pulsar: hubble_fim
 
-You can also add an `custom_fields` argument which is a list of keys to add to events
-with using the results of config.get(<custom_field>). These new keys will be prefixed
-with 'custom_' to prevent conflicts. The values of these keys should be
-strings, do not choose grains or pillar values with complex values or they will
-be skipped:
+You can also add a `custom_fields` argument which is a list of keys to add to
+events with using the results of config.get(<custom_field>). These new keys
+will be prefixed with 'custom_' to prevent conflicts. The values of these keys
+should be strings or lists (will be sent as CSV string), do not choose grains
+or pillar values with complex values or they will be skipped.
+
+Additionally, you can define a fallback_indexer which will be used if a default
+gateway is not defined.
 
 .. code-block:: yaml
 
@@ -34,13 +37,12 @@ be skipped:
             indexer: splunk-indexer.domain.tld
             index: hubble
             sourcetype_pulsar: hubble_fim
+            fallback_indexer: splunk-indexer.loc.domain.tld
             custom_fields:
               - site
               - product_group
 '''
 import socket
-# Import cloud details
-from hubblestack.cloud_details import get_cloud_details
 
 # Imports for http event forwarder
 import requests
@@ -52,12 +54,10 @@ from collections import defaultdict
 import logging
 
 _max_content_bytes = 100000
-http_event_collector_SSL_verify = False
+http_event_collector_SSL_verify = True
 http_event_collector_debug = False
 
 log = logging.getLogger(__name__)
-
-hec = None
 
 
 def returner(ret):
@@ -67,11 +67,9 @@ def returner(ret):
             return
 
         opts_list = _get_options()
-        # Get cloud details
-        clouds = get_cloud_details()
 
         for opts in opts_list:
-            logging.info('Options: %s' % json.dumps(opts))
+            logging.debug('Options: %s' % json.dumps(opts))
             http_event_collector_key = opts['token']
             http_event_collector_host = opts['indexer']
             http_event_collector_port = opts['port']
@@ -82,9 +80,9 @@ def returner(ret):
 
             # Set up the fields to be extracted at index time. The field values must be strings.
             # Note that these fields will also still be available in the event data
-            index_extracted_fields = ['aws_instance_id', 'aws_account_id', 'azure_vmId', 'azure_subscriptionId']
+            index_extracted_fields = []
             try:
-                index_extracted_fields.extend(opts['index_extracted_fields'])
+                index_extracted_fields.extend(__opts__.get('splunk_index_extracted_fields', []))
             except TypeError:
                 pass
 
@@ -105,12 +103,27 @@ def returner(ret):
             try:
                 fqdn_ip4 = __grains__['fqdn_ip4'][0]
             except IndexError:
-                fqdn_ip4 = __grains__['ipv4'][0]
+                try:
+                    fqdn_ip4 = __grains__['ipv4'][0]
+                except IndexError:
+                    raise Exception('No ipv4 grains found. Is net-tools installed?')
             if fqdn_ip4.startswith('127.'):
                 for ip4_addr in __grains__['ipv4']:
                     if ip4_addr and not ip4_addr.startswith('127.'):
                         fqdn_ip4 = ip4_addr
                         break
+            local_fqdn = __grains__.get('local_fqdn', __grains__['fqdn'])
+
+            # Sometimes fqdn reports a value of localhost. If that happens, try another method.
+            bad_fqdns = ['localhost', 'localhost.localdomain', 'localhost6.localdomain6']
+            if fqdn in bad_fqdns:
+                new_fqdn = socket.gethostname()
+                if '.' not in new_fqdn or new_fqdn in bad_fqdns:
+                    new_fqdn = fqdn_ip4
+                fqdn = new_fqdn
+
+            # Get cloud details
+            cloud_details = __grains__.get('cloud_details', {})
 
             alerts = []
             for item in data:
@@ -167,14 +180,20 @@ def returner(ret):
                         event['user'] = stats['user']
                         event['group'] = stats['group']
                         if object_type == 'file':
-                            event['file_hash'] = alert['checksum']
-                            event['file_hash_type'] = alert['checksum_type']
+                            chk = alert.get('checksum')
+                            if chk:
+                                event['file_hash'] = chk
+                                event['file_hash_type'] = alert.get('checksum_type', 'unknown')
 
                 else:  # Windows, win_pulsar
-                    change = alert['Accesses']
-                    if alert['Hash'] == 'Item is a directory':
-                        object_type = 'directory'
+                    if alert.get('Accesses', None):
+                        change = alert['Accesses']
+                        if alert['Hash'] == 'Item is a directory':
+                            object_type = 'directory'
+                        else:
+                            object_type = 'file'
                     else:
+                        change = alert['Reason']
                         object_type = 'file'
 
                     actions = defaultdict(lambda: 'unknown')
@@ -199,24 +218,50 @@ def returner(ret):
                     actions['Notify About Changes to Keys'] = 'read'
                     actions['Create Link'] = 'created'
                     actions['Print'] = 'read'
+                    actions['Basic info change'] = 'modified'
+                    actions['Compression change'] = 'modified'
+                    actions['Data extend'] = 'modified'
+                    actions['EA change'] = 'modified'
+                    actions['File create'] = 'created'
+                    actions['File delete'] = 'deleted'
 
-                    event['action'] = actions[change]
-                    event['change_type'] = 'filesystem'
-                    event['object_category'] = object_type
-                    event['object_path'] = alert['Object Name']
-                    event['file_name'] = os.path.basename(alert['Object Name'])
-                    event['file_path'] = os.path.dirname(alert['Object Name'])
-                    event['file_path'] = alert['pulsar_config']
-                    # TODO: Should we be reporting 'EntryType' or 'TimeGenerated?
-                    #   EntryType reports whether attempt to change was successful.
+                    if alert.get('Accesses', None):
+                        event['action'] = actions[change]
+                        event['change_type'] = 'filesystem'
+                        event['object_category'] = object_type
+                        event['object_path'] = alert['Object Name']
+                        event['file_name'] = os.path.basename(alert['Object Name'])
+                        event['file_path'] = os.path.dirname(alert['Object Name'])
+                        event['pulsar_config'] = alert['pulsar_config']
+                        # TODO: Should we be reporting 'EntryType' or 'TimeGenerated?
+                        #   EntryType reports whether attempt to change was successful.
+                    else:
+                        for c in change:
+                            if not event.get('action', None):
+                                event['action'] = actions.get(c, c)
+                            else:
+                                event['action'] += ', ' + actions.get(c, c)
+                        event['change_type'] = 'filesystem'
+                        event['object_category'] = object_type
+                        event['object_path'] = alert['Full path']
+                        event['file_name'] = alert['File name']
+                        event['file_path'] = alert['tag']
+                        event['pulsar_config'] = alert.get('pulsar_config',
+                                                           'hubblestack_pulsar_win_config.yaml')
+                        event['TimeGenerated'] = alert['Time stamp']
+                        chk = alert.get('checksum')
+                        if chk:
+                            event['file_hash'] = chk
+                            event['file_hash_type'] = alert.get('checksum_type', 'unknown')
 
                 event.update({'master': master})
                 event.update({'minion_id': minion_id})
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
+                event.update({'dest_fqdn': local_fqdn})
+                event.update({'system_uuid': __grains__.get('system_uuid')})
 
-                for cloud in clouds:
-                    event.update(cloud)
+                event.update(cloud_details)
 
                 for custom_field in custom_fields:
                     custom_field_name = 'custom_' + custom_field
@@ -243,13 +288,14 @@ def returner(ret):
                 for item in index_extracted_fields:
                     if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
                         fields[item] = str(payload['event'][item])
+
                 if fields:
                     payload.update({'fields': fields})
 
                 hec.batchEvent(payload)
 
             hec.flushBatch()
-    except:
+    except Exception:
         log.exception('Error ocurred in splunk_pulsar_return')
     return
 
@@ -279,7 +325,9 @@ def _get_options():
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
-            processed['index_extracted_fields'] = opt.get('index_extracted_fields', [])
+
+            if 'fallback_indexer' in opt and __grains__.get('ip_gw', None) is False:
+                processed['indexer'] = opt['fallback_indexer']
             splunk_opts.append(processed)
         return splunk_opts
     else:
@@ -293,7 +341,6 @@ def _get_options():
         splunk_opts['http_event_server_ssl'] = __salt__['config.get']('hubblestack:pulsar:returner:splunk:hec_ssl', True)
         splunk_opts['proxy'] = __salt__['config.get']('hubblestack:pulsar:returner:splunk:proxy', {})
         splunk_opts['timeout'] = __salt__['config.get']('hubblestack:pulsar:returner:splunk:timeout', 9.05)
-        splunk_opts['index_extracted_fields'] = __salt__['config.get']('hubblestack:pulsar:returner:splunk:index_extracted_fields', [])
 
         return [splunk_opts]
 

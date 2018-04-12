@@ -20,7 +20,7 @@ def __virtual__():
     return True
 
 
-def audit(data_list, tags, debug=False, **kwargs):
+def audit(data_list, tags, labels, debug=False, **kwargs):
     '''
     Run the pkg.audit command
     '''

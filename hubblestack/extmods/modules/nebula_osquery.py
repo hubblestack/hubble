@@ -32,13 +32,15 @@ import copy
 import json
 import logging
 import os
-import sys
+import time
 import yaml
 import collections
 
 import salt.utils
+import salt.utils.platform
 from salt.exceptions import CommandExecutionError
 from hubblestack import __version__
+import hubblestack.splunklogging
 
 log = logging.getLogger(__name__)
 
@@ -78,7 +80,7 @@ def queries(query_group,
     query_data = {}
     MAX_FILE_SIZE = 104857600
     if query_file is None:
-        if salt.utils.is_windows():
+        if salt.utils.platform.is_windows():
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
         else:
             query_file = 'salt://hubblestack_nebula/hubblestack_nebula_queries.yaml'
@@ -97,10 +99,10 @@ def queries(query_group,
                 if not isinstance(f_data, dict):
                     raise CommandExecutionError('File data is not formed as a dict {0}'
                                                 .format(f_data))
-                query_data =  _dict_update(query_data,
-                                           f_data,
-                                           recursive_update=True,
-                                           merge_lists=True)
+                query_data = _dict_update(query_data,
+                                          f_data,
+                                          recursive_update=True,
+                                          merge_lists=True)
 
     if 'osquerybinpath' not in __grains__:
         if query_group == 'day':
@@ -110,27 +112,27 @@ def queries(query_group,
             #   more data
             ret = []
             ret.append(
-                    {'fallback_osfinger': {
-                         'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
-                                   'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
-                         'result': True
-                    }}
+                {'fallback_osfinger': {
+                 'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
+                           'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
+                 'result': True
+                 }}
             )
             if 'pkg.list_pkgs' in __salt__:
                 ret.append(
-                        {'fallback_pkgs': {
-                             'data': [{'name': k, 'version': v} for k, v in __salt__['pkg.list_pkgs']().iteritems()],
-                             'result': True
-                        }}
+                    {'fallback_pkgs': {
+                     'data': [{'name': k, 'version': v} for k, v in __salt__['pkg.list_pkgs']().iteritems()],
+                     'result': True
+                     }}
                 )
             uptime = __salt__['status.uptime']()
             if isinstance(uptime, dict):
                 uptime = uptime.get('seconds', __salt__['cmd.run']('uptime'))
             ret.append(
-                    {'fallback_uptime': {
-                         'data': [{'uptime': uptime}],
-                         'result': True
-                    }}
+                {'fallback_uptime': {
+                 'data': [{'uptime': uptime}],
+                 'result': True
+                 }}
             )
             if report_version_with_day:
                 ret.append(hubble_versions())
@@ -139,28 +141,28 @@ def queries(query_group,
             log.debug('osquery not installed on this host. Skipping.')
             return None
 
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         win_version = __grains__['osfullname']
         if '2008' not in win_version and '2012' not in win_version and '2016' not in win_version:
             log.error('osquery does not run on windows versions earlier than Server 2008 and Windows 7')
             if query_group == 'day':
                 ret = []
                 ret.append(
-                        {'fallback_osfinger': {
-                             'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
-                                       'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
-                             'result': True
-                        }}
+                    {'fallback_osfinger': {
+                     'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
+                               'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
+                     'result': True
+                     }}
                 )
                 ret.append(
-                        {'fallback_error': {
-                             'data': 'osqueryi is installed but not compatible with this version of windows',
+                    {'fallback_error': {
+                     'data': 'osqueryi is installed but not compatible with this version of windows',
                              'result': True
-                        }}
+                     }}
                 )
                 return ret
             else:
-               return None
+                return None
 
     query_data = query_data.get(query_group, [])
 
@@ -168,6 +170,8 @@ def queries(query_group,
         return None
 
     ret = []
+    timing = {}
+    schedule_time = time.time()
     for query in query_data:
         name = query.get('query_name')
         query_sql = query.get('query')
@@ -180,7 +184,10 @@ def queries(query_group,
         }
 
         cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
+        t0 = time.time()
         res = __salt__['cmd.run_all'](cmd)
+        t1 = time.time()
+        timing[name] = t1-t0
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
@@ -193,6 +200,16 @@ def queries(query_group,
             ret.append(tmp)
         else:
             ret.append({name: query_ret})
+
+    if __salt__['config.get']('hubblestack:splunklogging', False):
+        log.info('Logging osquery timing data to splunk')
+        hubblestack.splunklogging.__grains__ = __grains__
+        hubblestack.splunklogging.__salt__ = __salt__
+        hubblestack.splunklogging.__opts__ = __opts__
+        handler = hubblestack.splunklogging.SplunkHandler()
+        timing_data = {'query_run_length': timing,
+                       'schedule_time' : schedule_time}
+        handler.emit_data(timing_data)
 
     if query_group == 'day' and report_version_with_day:
         ret.append(hubble_versions())
@@ -224,9 +241,9 @@ def fields(*args):
     # Return it as nebula data
     if ret:
         return [{'custom_fields': {
-                     'data': [ret],
-                     'result': True
-                }}]
+                 'data': [ret],
+                 'result': True
+                 }}]
     return []
 
 
@@ -255,7 +272,7 @@ def top(query_group,
         verbose=False,
         report_version_with_day=True):
 
-    if salt.utils.is_windows():
+    if salt.utils.platform.is_windows():
         topfile = 'salt://hubblestack_nebula/win_top.nebula'
 
     configs = get_top_data(topfile)
@@ -325,7 +342,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
                 ret = update(dest_subkey, val, merge_lists=merge_lists)
                 dest[key] = ret
             elif isinstance(dest_subkey, list) \
-                     and isinstance(val, list):
+                    and isinstance(val, list):
                 if merge_lists:
                     dest[key] = dest.get(key, []) + val
                 else:
@@ -342,4 +359,3 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
             for k in upd:
                 dest[k] = upd[k]
         return dest
-

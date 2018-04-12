@@ -4,9 +4,9 @@ Table of Contents
    * [HUBBLE](#hubble)
       * [Packaging / Installing](#packaging--installing)
          * [Installing using setup.py](#installing-using-setuppy)
-         * [Building standalone packages (CentOS)](#building-standalone-packages-centos)
-         * [Building standalone packages (Debian)](#building-standalone-packages-debian)
-         * [Buidling Hubble packages through Dockerfile](#buidling-hubble-packages-through-dockerfile)
+         * [Building Hubble packages through Dockerfile](#building-hubble-packages-through-dockerfile)
+         * [Using released packages](#using-released-packages)
+      * [Getting Started](#getting-started)
       * [Nova](#nova)
          * [Usage](#usage)
          * [Configuration](#configuration)
@@ -26,7 +26,7 @@ Hubble is a modular, open-source, security & compliance auditing framework which
 ## Packaging / Installing
 ### Installing using setup.py
 ```sh
-sudo yum install git -y
+sudo yum install git python-setuptools -y
 git clone https://github.com/hubblestack/hubble
 cd hubble
 sudo python setup.py install
@@ -37,32 +37,52 @@ A config template has been placed in `/etc/hubble/hubble`. Modify it to your spe
 
 The first two commands you should run to make sure things are set up correctly are `hubble --version` and `hubble test.ping`.
 
-### Buidling Hubble packages through Dockerfile
-Dockerfile aims to build the Hubble v2 packages easier. Dockerfiles for the distribution you want to build can be found at the path `/pkg`. For example, dockerfile for centos6 distribution is at the path `/pkg/centos6/` 
+### Building Hubble packages through Dockerfile
+Dockerfile aims to build the Hubble v2 packages easier. Dockerfiles for the distribution you want to build can be found at the path `/pkg`. For example, dockerfile for centos6 distribution is at the path `/pkg/centos6/`
 
 To build an image
 ```sh
-docker build -t <image_name> 
+docker build -t <image_name>
 ```
 To run the container (which will output the package file in your current directory)
 ```sh
 docker run -it --rm -v `pwd`:/data <image_name>
 ```
 
+### Using released packages
+Various pre-built packages targeting several popular operating systems can be found under [Releases](/hubblestack/hubble/releases).
+
+## Getting Started
+Hubble runs as a standalone agent on each server you wish to monitor. There are no masters or minions. To get started, install Hubble using one of the above installation options. Once Hubble is installed, check that everything is working correctly:
+1. Run `hubble test.ping`. This should return true.
+1. Run `hubble hubble.sync`. In a default installation, this will sync the latest version of [hubblestack_data](https://github.com/hubblestack/hubblestack_data) to the agent.
+1. Run `hubble hubble.load`. This loads the synced files into Hubble.
+1. Run `hubble hubble.audit`. You should see the results of the default audit configuration run against the agent.
+
+The next step will likely be to switch to your own top file. Create a file `/srv/salt/hubblestack_data/hubblestack_nova_profiles/top.nova` with the contents:
+```
+nova:
+  '*':
+    - network.ssh
+```
+Now, edit the Hubble configuration file `/etc/hubble/hubble`. Uncomment the following lines:
+```
+# file_roots:
+#   base:
+#     - /srv/salt/hubblestack_data
+```
+With the file_root configuration added, run `hubble hubble.audit` (Audit will automatically run both sync and load before performing the audit). The agent should now only run the network.ssh profile.
+
+From here, you can now modify your top file to suit your requirements, or add your own profiles and controls. Also note that you can move your hubblestack_data directory anywhere you like. You could even create your own git repository and host your files there if you prefer. You would simply add another gitfs_remote to the configuration file.
+
 ## Nova
 Nova is Hubble's auditing system.
 ### Usage
 There are four primary functions for Nova module:
 - `hubble.sync` : syncs the `hubblestack_nova_profiles/` and `hubblestack_nova/` directories to the host(s).
-- `hubble.load` : loads the synced audit hosts and their yaml configuration files.
-- `hubble.audit` : audits the minion(s) using the YAML profile(s) you provide as comma-separated arguments. hubble.audit takes two optional arguments. The first is a comma-separated list of paths. These paths can be files or directories within the `hubblestack_nova_profiles` directory. The second argument allows for toggling Nova configuration, such as verbosity, level of detail, etc. If `hubble.audit` is run without targeting any audit configs or directories, it will instead run `hubble.top` with no arguments. `hubble.audit` will return a list of audits which were successful, and a list of audits which failed.
-- `hubble.top` : audits the minion(s) using the top.nova configuration.
-
-## Using released packages
-
-Various pre-built packages targeting several popular operating systems can be found under [Releases](/hubblestack/hubble/releases).
-
-# Usage
+- `hubble.load` : loads the synced configuration files.
+- `hubble.audit` : audits the agent using the YAML profile(s) you provide as comma-separated arguments. hubble.audit takes two optional arguments. The first is a comma-separated list of paths. These paths can be files or directories within the `hubblestack_nova_profiles` directory. The second argument allows for toggling Nova configuration, such as verbosity, level of detail, etc. If `hubble.audit` is run without targeting any audit configs or directories, it will instead run `hubble.top` with no arguments. `hubble.audit` will return a list of audits which were successful, and a list of audits which failed.
+- `hubble.top` : audits the agent using the top.nova configuration.
 
 Here are some example calls for `hubble.audit`:
 ```sh
@@ -76,7 +96,7 @@ hubble hubble.audit foo,bar tags='CIS*'
 ### Configuration
 For Nova module, configurations can be done via Nova topfiles. Nova topfiles look very similar to saltstack topfiles, except the top-level key is always nova, as nova doesn’t have environments.
 
-**hubblestack/hubblestack_data/top.nova**
+**hubblestack_data/hubblestack_nova_profiles/top.nova**
 ```sh
 nova:
   '*':
@@ -108,6 +128,7 @@ Nova also supports separate control profiles, for more fine-grained control usin
 For these separate control configs, the audits will always run, whether they are controlled or not. However, controlled audits which fail will be converted from Failure to Controlled in a post-processing operation.
 
 The control config syntax is as follows:
+**hubblestack_data/hubblestack_nova_profiles/example_control/example.yaml**
 ```sh
 control:
   - CIS-2.1.4: This is the reason we control the check
@@ -118,8 +139,14 @@ control:
 Note that providing a reason for the control is optional. Any of the three formats shown in the yaml list above will work.
 
 Once you have your compensating control config, just target the yaml to the hosts you want to control using your topfile. In this case, all the audits will still run, but if any of the controlled checks fail, they will be removed from Failure and added to Controlled, and will be treated as a Success for the purposes of compliance percentage.
+To use the above control, you would add the following to your top.nova file:
+```sh
+nova:
+  '*':
+    - example_control.example
+```
 
-## Nebula 
+## Nebula
 Nebula is Hubble’s Insight system, which ties into osquery, allowing you to query your infrastructure as if it were a database. This system can be used to take scheduled snapshots of your systems.
 
 Nebula leverages the osquery_nebula execution module which requires the osquery binary to be installed. More information about osquery can be found at `https://osquery.io`.
@@ -128,7 +155,7 @@ Nebula leverages the osquery_nebula execution module which requires the osquery 
 
 Nebula queries have been designed to give detailed insight into system activity. The queries can be found in the following file.
 
-**hubblestack_nebula/hubblestack_nebula_queries.yaml**
+**hubblestack_data/hubblestack_nebula/hubblestack_nebula_queries.yaml**
 ```sh
 fifteen_min:
   - query_name: running_procs
@@ -170,7 +197,7 @@ nebula:
   'sample_team':
     - sample_team_nebula_queries
 ```
-Nebula topfile, `nebula.top` by default has `hubblestack_nebula_queries.yaml` which consists queries as explained in the above usage section and if specific queries are required by teams then those queries can be added in a another yaml file and include it in `nebula.top` topfile. Place this new yaml file at the path `hubblestack/hubblestack_data/hubblestack_nebula`
+Nebula topfile, `nebula.top` by default has `hubblestack_nebula_queries.yaml` which consists queries as explained in the above usage section and if specific queries are required by teams then those queries can be added in a another yaml file and include it in `nebula.top` topfile. Place this new yaml file at the path `hubblestack_data/hubblestack_nebula`
 
 Examples for running `nebula.top`:
 ```sh
@@ -180,7 +207,7 @@ hubble nebula.top fifteen_min verbose=True
 ```
 ## Pulsar
 
-Pulsar is designed to monitor for file system events, acting as a real-time File Integrity Monitoring (FIM) agent. Pulsar is composed of a custom Salt beacon that watches for these events and hooks into the returner system for alerting and reporting. In other words, you can recieve real-time alerts for unscheduled file system modifications anywhere you want to recieve them. We’ve designed Pulsar to be lightweight and does not affect the system performance. It simply watches for events and directly sends them to one of the Pulsar returner destinations.
+Pulsar is designed to monitor for file system events, acting as a real-time File Integrity Monitoring (FIM) agent. Pulsar is composed of a custom Salt beacon that watches for these events and hooks into the returner system for alerting and reporting. In other words, you can receive real-time alerts for unscheduled file system modifications anywhere you want to receive them. We’ve designed Pulsar to be lightweight and does not affect the system performance. It simply watches for events and directly sends them to one of the Pulsar returner destinations.
 
 ### Usage
 Once Pulsar is configured there isn’t anything you need to do to interact with it. It simply runs quietly in the background and sends you alerts.
@@ -204,7 +231,7 @@ stats: True
 batch: False
 ```
 
-Pulsar runs on schdule which can be found at `/etc/hubble/hubble`
+Pulsar runs on schedule which can be found at `/etc/hubble/hubble`
 
 **/etc/hubble/hubble**
 ```sh
@@ -229,9 +256,9 @@ schedule:
     run_on_start: True
 ```
 
-In order to receive Pulsar notifications you’ll need to install the custom returners found in the Quasar repository. 
+In order to receive Pulsar notifications you’ll need to install the custom returners found in the Quasar repository.
 
-Example of using the Slack Pulsar returner to recieve FIM notifications:
+Example of using the Slack Pulsar returner to receive FIM notifications:
 ```sh
 slack_pulsar:
   as_user: true

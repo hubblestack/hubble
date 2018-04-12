@@ -1,12 +1,10 @@
 [Unit]
 Description=Hubblestack
-Requires=network-online.target
-After=network-online.target
 
 [Service]
 Type=forking
 PIDFile=/var/run/hubble.pid
-ExecStart=/opt/hubble/hubble -d
+ExecStart=/usr/bin/hubble -d
 
 [Install]
 WantedBy=multi-user.target

@@ -57,7 +57,7 @@ RUN yum -y install  \
                python27-devel libffi-devel openssl-devel \
                libxml2-devel libxslt-devel libjpeg-devel \
                zlib-devel make cmake python27-setuptools \
-               gcc python-devel python-setuptools wget
+               gcc python-devel python-setuptools wget openssl
 
 #libgit2 install start
 #must precede pyinstaller requirements
@@ -92,7 +92,8 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
 ENV HUBBLE_CHECKOUT=develop
-ENV HUBBLE_VERSION=2.2.11_develop
+ENV HUBBLE_VERSION=2.3.0_develop
+ENV HUBBLE_ITERATION=1
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -138,11 +139,14 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && fpm -s dir -t rpm \
        -n hubblestack \
        -v ${HUBBLE_VERSION} \
+       --iteration ${HUBBLE_ITERATION} \
     #todo: get rid of the git dependency with static bin in the future
        -d 'git' \
-       --config-files /etc/hubble --config-files /etc/osquery/osquery.conf \
+       --config-files /etc/osquery/osquery.conf \
        --after-install /hubble_build/conf/afterinstall.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        etc/hubble etc/osquery etc/init.d opt usr \
 #edit to change iteration number, if necessary
-    && cp hubblestack-${HUBBLE_VERSION}-1.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-1.al1609.x86_64.rpm" ]
+    && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.al1609.x86_64.rpm \
+    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.al1609.x86_64.rpm \
+                          > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.al1609.x86_64.rpm.sha256" ]

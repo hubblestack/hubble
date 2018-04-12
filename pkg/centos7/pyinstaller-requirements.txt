@@ -1,4 +1,4 @@
-pyinstaller==3.2 # currently 3.2.1 version is not supported because of botocore exception
+pyinstaller==3.3.1 # currently 3.2.1 version is not supported because of botocore exception
 Crypto
 pyopenssl>=16.2.0
 argparse
@@ -8,9 +8,11 @@ pprint
 daemon
 boto3
 botocore
-pygit2
+pygit2<0.27.0
 salt-ssh
 gitpython
 pyinotify
 cffi
 azure
+azure-storage-common
+azure-storage-blob

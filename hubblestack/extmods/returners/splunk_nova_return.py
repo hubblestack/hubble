@@ -108,7 +108,7 @@ def returner(ret):
             bad_fqdns = ['localhost', 'localhost.localdomain', 'localhost6.localdomain6']
             if fqdn in bad_fqdns:
                 new_fqdn = socket.gethostname()
-                if '.' not in new_fqdn:
+                if '.' not in new_fqdn or new_fqdn in bad_fqdns:
                     new_fqdn = fqdn_ip4
                 fqdn = new_fqdn
 

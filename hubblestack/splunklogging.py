@@ -103,6 +103,14 @@ class SplunkHandler(logging.Handler):
                         fqdn_ip4 = ip4_addr
                         break
 
+            # Sometimes fqdn reports a value of localhost. If that happens, try another method.
+            bad_fqdns = ['localhost', 'localhost.localdomain', 'localhost6.localdomain6']
+            if fqdn in bad_fqdns:
+                new_fqdn = socket.gethostname()
+                if '.' not in new_fqdn or new_fqdn in bad_fqdns:
+                    new_fqdn = fqdn_ip4
+                fqdn = new_fqdn
+
             event = {}
             event.update({'master': master})
             event.update({'minion_id': minion_id})

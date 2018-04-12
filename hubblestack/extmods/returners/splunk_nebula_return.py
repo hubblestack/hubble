@@ -74,6 +74,7 @@ def returner(ret):
             custom_fields = opts['custom_fields']
 
             # Set up the fields to be extracted at index time. The field values must be strings.
+            # Note that these fields will also still be available in the event data
             index_extracted_fields = []
             try:
                 index_extracted_fields.extend(__opts__.get('splunk_index_extracted_fields', []))

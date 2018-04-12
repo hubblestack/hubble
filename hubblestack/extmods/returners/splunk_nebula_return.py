@@ -163,7 +163,7 @@ def returner(ret):
                             fields = {}
                             for item in index_extracted_fields:
                                 if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
-                                    fields[item] = str(payload['event'].pop(item))
+                                    fields[item] = str(payload['event'][item])
                             if fields:
                                 payload.update({'fields': fields})
 
@@ -202,7 +202,6 @@ def _get_options():
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
-            processed['index_extracted_fields'] = opt.get('index_extracted_fields', [])
 
             if 'fallback_indexer' in opt and __grains__.get('ip_gw', None) is False:
                 processed['indexer'] = opt['fallback_indexer']
@@ -219,7 +218,6 @@ def _get_options():
         splunk_opts['http_event_server_ssl'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:hec_ssl', True)
         splunk_opts['proxy'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:proxy', {})
         splunk_opts['timeout'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:timeout', 9.05)
-        splunk_opts['index_extracted_fields'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:index_extracted_fields', [])
 
         splunk_opts['add_query_to_sourcetype'] = __salt__['config.get']('hubblestack:nebula:returner:splunk:add_query_to_sourcetype', True)
 

@@ -5,6 +5,7 @@ After=network-online.target
 
 [Service]
 Type=forking
+Environment=PATH=/opt/hubble/bin:/opt/hubble/libexec:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/root/bin
 PIDFile=/var/run/hubble.pid
 ExecStart=/opt/hubble/hubble -d
 

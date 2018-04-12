@@ -48,9 +48,26 @@ RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN yum -y install  \
-               libffi-devel openssl-devel libffi libcurl-devel autoconf \
-               libxml2-devel libxslt-devel libjpeg-devel zlib-devel \
+               libffi-devel openssl-devel libffi libcurl-devel autoconf automake libtool \
+               libxml2-devel libxslt-devel libjpeg-devel zlib-devel libssh2-devel \
                make cmake gcc python-devel python-setuptools wget openssl
+
+#libcurl install start
+#install libcurl to avoid depending on hosts version
+#requires autoconf libtool libssh2-devel zlib-devel autoconf
+ENV LIBCURL_SRC_URL=https://github.com/curl/curl.git
+ENV LIBCURL_SRC_VERSION=curl-7_59_0
+ENV LIBCURL_TEMP=/tmp/libcurl
+ENV PATH=/opt/hubble/bin/:/opt/hubble/include:/opt/hubble/lib:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+RUN mkdir -p "$LIBCURL_TEMP" \
+ && cd "$LIBCURL_TEMP" \
+ && git clone "$LIBCURL_SRC_URL" \
+ && cd curl \
+ && git checkout "$LIBCURL_SRC_VERSION" \
+ && ./buildconf \
+ && ./configure --prefix=/opt/hubble --disable-ldap --without-nss --disable-manual --disable-gopher --disable-smtp --disable-smb --disable-imap --disable-pop3 --disable-tftp --disable-telnet --disable-dict --disable-ldaps --disable-ldap --disable-rtsp --with-libssh2 \
+ && make \
+ && make install
 
 #git install start
 #install git so that git package won't be a requirement
@@ -64,7 +81,7 @@ RUN mkdir -p "$GITTEMP" \
  && cd git \
  && git checkout "$GIT_SRC_VERSION" \
  && make configure \
- && ./configure --prefix=/opt/hubble --with-tcltk=no --with-expat=no --with-curl=no --with-python=no \
+ && ./configure --prefix=/opt/hubble --with-tcltk=no --with-expat=no --with-python=no  --with-curl=/opt/hubble/ \
  && echo "NO_TCLTK=YesPlease" >> config.mak.autogen \
  && echo "NO_PERL=YesPlease" >> config.mak.autogen \
  && sed -i '0,/^NO_GETTEXT/s/^NO_GETTEXT.*/NO_GETTEXT=YesPlease/' config.mak.autogen \

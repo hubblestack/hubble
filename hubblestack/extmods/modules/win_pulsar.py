@@ -156,7 +156,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         with open(cache_path, 'w') as f:
             f.write(qj_dict['Next Usn'])
         return ret
-    
+
     # check if file is out of date
     currentt = time()
     file_mtime = os.path.getmtime(cache_path)
@@ -246,9 +246,8 @@ def readjournal(drive, next_usn=0):
         jdata.pop(0)
         #format into dictionary
         for dlist in jdata:
-            if '| Close' not in dlist:
-                if 'Rename: old name' not in dlist:
-                    continue
+            if '| Close' not in dlist and 'Rename: old name' not in dlist:
+                continue
             jd_dict = {}
             i_list = dlist.split('\r\n')
             for item in i_list:

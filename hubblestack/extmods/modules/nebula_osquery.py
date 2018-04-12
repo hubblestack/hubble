@@ -205,6 +205,7 @@ def queries(query_group,
         log.info('Logging osquery timing data to splunk')
         hubblestack.splunklogging.__grains__ = __grains__
         hubblestack.splunklogging.__salt__ = __salt__
+        hubblestack.splunklogging.__opts__ = __opts__
         handler = hubblestack.splunklogging.SplunkHandler()
         timing_data = {'query_run_length': timing,
                        'schedule_time' : schedule_time}

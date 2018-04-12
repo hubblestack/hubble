@@ -32,6 +32,7 @@ def publish(*args):
 
     hubblestack.splunklogging.__grains__ = __grains__
     hubblestack.splunklogging.__salt__ = __salt__
+    hubblestack.splunklogging.__opts__ = __opts__
 
     filtered_conf = filter_config(opts_to_log)
 

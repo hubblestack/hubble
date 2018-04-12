@@ -287,7 +287,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
     @max_user_watches.setter
     def max_user_watches(self,muwb):
-        log.info("Setting fs.inotify.max_user_watches={0}".format(muwb))
+        log.splunk("Setting fs.inotify.max_user_watches={0}".format(muwb))
         with open('/proc/sys/fs/inotify/max_user_watches', 'w') as fh:
             fh.write('{0}\n'.format(muwb))
 

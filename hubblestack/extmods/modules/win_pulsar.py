@@ -304,7 +304,6 @@ def usnfilter(usn_list, config_paths):
     Iterates through each change in the list and throws out any change not specified in the win_pulsar.yaml
     '''
     ret_usns = []
-    basic_paths = [] 
 
     # iterate through active portion of the NTFS change journal
     for usn in usn_list:

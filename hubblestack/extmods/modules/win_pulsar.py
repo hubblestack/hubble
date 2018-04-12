@@ -21,7 +21,8 @@ import salt.utils.platform
 
 log = logging.getLogger(__name__)
 DEFAULT_MASK = ['File create', 'File delete', 'Hard link change', 'Data extend', 
-                'Data overwrite', 'Data truncation', 'Security change']
+                'Data overwrite', 'Data truncation', 'Security change', 'Rename: old name',
+                'Rename: new name']
 
 __virtualname__ = 'pulsar'
 CONFIG = None

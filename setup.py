@@ -43,6 +43,7 @@ setup(
     },
     install_requires=[
         'salt-ssh >= 2015.8.0',
+        'croniter',
         'gitpython',
         'pyinotify',
     ],

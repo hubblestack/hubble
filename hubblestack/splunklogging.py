@@ -116,6 +116,7 @@ class SplunkHandler(logging.Handler):
             event.update({'minion_id': minion_id})
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})
+            event.update({'system_uuid': __grains__.get('system_uuid')})
 
             event.update(cloud_details)
 

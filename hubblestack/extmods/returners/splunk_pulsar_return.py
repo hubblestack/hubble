@@ -309,6 +309,7 @@ def _dedupList(l):
 
 
 def _get_options():
+    global http_event_collector_SSL_verify
     if __salt__['config.get']('hubblestack:returner:splunk'):
         splunk_opts = []
         returner_opts = __salt__['config.get']('hubblestack:returner:splunk')
@@ -329,6 +330,8 @@ def _get_options():
             if 'fallback_indexer' in opt and __grains__.get('ip_gw', None) is False:
                 processed['indexer'] = opt['fallback_indexer']
             splunk_opts.append(processed)
+            if opt.get('http_event_collector_SSL_verify', None) is False:
+                http_event_collector_SSL_verify = False
         return splunk_opts
     else:
         splunk_opts = {}
@@ -341,7 +344,8 @@ def _get_options():
         splunk_opts['http_event_server_ssl'] = __salt__['config.get']('hubblestack:pulsar:returner:splunk:hec_ssl', True)
         splunk_opts['proxy'] = __salt__['config.get']('hubblestack:pulsar:returner:splunk:proxy', {})
         splunk_opts['timeout'] = __salt__['config.get']('hubblestack:pulsar:returner:splunk:timeout', 9.05)
-
+        if __salt__['config.get']('hubblestack:pulsar:returner:splunk:http_event_collector_SSL_verify', None) is False:
+            http_event_collector_SSL_verify = False
         return [splunk_opts]
 
 

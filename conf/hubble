@@ -107,6 +107,9 @@ fileserver_backend:
 #  splunklogging: True
 #splunk_index_extracted_fields: []
 
+#config_to_grains:
+#  - splunkindex: "hubblestack:returner:splunk:0:index"
+
 ## If you are instead using the slack returner, you'll need a block similar to
 ## this:
 
@@ -126,4 +129,3 @@ fileserver_backend:
 #    - release: osrelease
 #  pillar:
 #    - ntpserver: network_services:ntpserver
-

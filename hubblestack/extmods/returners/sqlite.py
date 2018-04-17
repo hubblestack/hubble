@@ -7,6 +7,12 @@ from __future__ import absolute_import
 import salt.returners
 import logging
 import os
+import json
+try:
+    import sqlite3
+    GOT_SQLI = True
+except:
+    GOT_SQLI = False
 
 __virtualname__ = 'sqlite'
 
@@ -20,26 +26,9 @@ def __virtual__():
 
     :return: The virtual name of the module.
     '''
-    global json
-    global sqlite3
-    try:
-        import json
-        GOT_JSON = True
-    except:
-        pass
-    try:
-        import sqlite3
-        GOT_SQLI = True
-    except:
-        pass
-    if GOT_JSON and GOT_SQLI:
+    if GOT_SQLI:
         return __virtualname__
-    msgs = []
-    if not GOT_JSON:
-        msgs.append("json module is missing")
-    if not GOT_SQLI:
-        msgs.append("sqlite3 module is missing")
-    return False, ', '.join(msgs)
+    return False, "sqlite3 module is missing"
 
 def _get_options(ret=None):
     '''

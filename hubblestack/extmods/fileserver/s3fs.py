@@ -151,6 +151,9 @@ def find_file(path, saltenv='base', **kwargs):
                 fnd['bucket'] = bucket_name
                 fnd['path'] = path
                 break
+        else:
+            continue # only executes if we didn't break
+        break
 
     if not fnd['path'] or not fnd['bucket']:
         return fnd
@@ -424,7 +427,7 @@ def _refresh_buckets_cache_file(cache_file):
         for saltenv, buckets in six.iteritems(_get_buckets()):
             bucket_files_list = []
             for bucket_name in buckets:
-                buckest_files = {}
+                bucket_files = {}
                 s3_meta = __get_s3_meta(bucket_name)
 
                 # s3 query returned nothing

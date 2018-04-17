@@ -201,7 +201,7 @@ def queries(query_group,
         else:
             ret.append({name: query_ret})
 
-    if __salt__['config.get']('hubblestack:splunklogging', False):
+    if __salt__['config.get']('splunklogging', False):
         log.info('Logging osquery timing data to splunk')
         hubblestack.splunklogging.__grains__ = __grains__
         hubblestack.splunklogging.__salt__ = __salt__

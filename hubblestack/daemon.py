@@ -507,7 +507,7 @@ def load_config():
         if self.isEnabledFor(logging.SPLUNK):
             self._log(logging.SPLUNK, message, args, **kwargs)
     logging.Logger.splunk = splunk
-    if __salt__['config.get']('hubblestack:splunklogging', False):
+    if __salt__['config.get']('splunklogging', False):
         root_logger = logging.getLogger()
         handler = hubblestack.splunklogging.SplunkHandler()
         handler.setLevel(logging.SPLUNK)
@@ -557,7 +557,7 @@ def refresh_grains(initial=False):
     hubblestack.splunklogging.__salt__ = __salt__
     hubblestack.splunklogging.__opts__ = __opts__
 
-    if not initial and __salt__['config.get']('hubblestack:splunklogging', False):
+    if not initial and __salt__['config.get']('splunklogging', False):
         class MockRecord(object):
             def __init__(self, message, levelname, asctime, name):
                 self.message = message

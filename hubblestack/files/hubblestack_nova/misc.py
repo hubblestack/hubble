@@ -954,6 +954,7 @@ def mail_conf_check(reason=''):
     '''
     valid_addresses = ["localhost", "127.0.0.1", "::1"]
     mail_addresses = _execute_shell_command("grep '^[[:blank:]]*inet_interfaces' /etc/postfix/main.cf | awk -F'=' '{print $2}'").strip()
+    mail_addresses = str(mail_addresses)
     mail_addresses = mail_addresses.split(',') if mail_addresses != "" else []
     mail_addresses = map(str.strip, mail_addresses)
     invalid_addresses = list(set(mail_addresses) - set(valid_addresses))

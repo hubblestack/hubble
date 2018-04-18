@@ -50,6 +50,8 @@ import json
 import os
 import time
 from collections import defaultdict
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 import logging
 

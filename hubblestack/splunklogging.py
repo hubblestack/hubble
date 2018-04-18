@@ -40,13 +40,13 @@ import socket
 import requests
 import json
 import time
-
 import copy
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 import logging
 
 _max_content_bytes = 100000
-http_event_collector_SSL_verify = True
 http_event_collector_debug = False
 
 hec = None
@@ -73,6 +73,7 @@ class SplunkHandler(logging.Handler):
             proxy = opts['proxy']
             timeout = opts['timeout']
             custom_fields = opts['custom_fields']
+            http_event_collector_ssl_verify = opts['http_event_collector_ssl_verify']
 
             # Set up the fields to be extracted at index time. The field values must be strings.
             # Note that these fields will also still be available in the event data
@@ -83,7 +84,10 @@ class SplunkHandler(logging.Handler):
                 pass
 
             # Set up the collector
-            hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
+            hec = http_event_collector(http_event_collector_key, http_event_collector_host,
+                                       http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl,
+                                       http_event_collector_ssl_verify=http_event_collector_ssl_verify,
+                                       proxy=proxy, timeout=timeout)
 
             minion_id = __grains__['id']
             master = __grains__['master']
@@ -209,6 +213,7 @@ def _get_options():
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
             processed['index_extracted_fields'] = opt.get('index_extracted_fields', [])
+            processed['http_event_collector_ssl_verify'] = opt.get('http_event_collector_ssl_verify', True)
             splunk_opts.append(processed)
         return splunk_opts
     else:
@@ -222,13 +227,16 @@ def _get_options():
 
 class http_event_collector:
 
-    def __init__(self, token, http_event_server, host='', http_event_port='8088', http_event_server_ssl=True, max_bytes=_max_content_bytes, proxy=None, timeout=9.05):
+    def __init__(self, token, http_event_server, host='', http_event_port='8088',
+                 http_event_server_ssl=True, http_event_collector_ssl_verify=True,
+                 max_bytes=_max_content_bytes, proxy=None, timeout=9.05):
         self.timeout = timeout
         self.token = token
         self.batchEvents = []
         self.maxByteLength = max_bytes
         self.currentByteLength = 0
         self.server_uri = []
+        self.http_event_collector_ssl_verify = http_event_collector_ssl_verify
         if proxy and http_event_server_ssl:
             self.proxy = {'https': 'https://{0}'.format(proxy)}
         elif proxy:
@@ -277,7 +285,8 @@ class http_event_collector:
         data.update(payload)
 
         # send event to http event collector
-        r = requests.post(self.server_uri, data=json.dumps(data), headers=headers, verify=http_event_collector_SSL_verify, proxies=self.proxy)
+        r = requests.post(self.server_uri, data=json.dumps(data), headers=headers,
+                          verify=self.http_event_collector_ssl_verify, proxies=self.proxy)
 
         # Print debug info if flag set
         if http_event_collector_debug:
@@ -319,7 +328,9 @@ class http_event_collector:
             self.server_uri = [x for x in self.server_uri if x[1] is not False]
             for server in self.server_uri:
                 try:
-                    r = requests.post(server[0], data=' '.join(self.batchEvents), headers=headers, verify=http_event_collector_SSL_verify, proxies=self.proxy, timeout=self.timeout)
+                    r = requests.post(server[0], data=' '.join(self.batchEvents), headers=headers,
+                                      verify=self.http_event_collector_ssl_verify,
+                                      proxies=self.proxy, timeout=self.timeout)
                     r.raise_for_status()
                     server[1] = True
                     break

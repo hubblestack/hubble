@@ -157,6 +157,8 @@ def returner(ret):
                     custom_field_value = __salt__['config.get'](custom_field, '')
                     if isinstance(custom_field_value, str):
                         event.update({custom_field_name: custom_field_value})
+                    elif isinstance(custom_field_value, unicode):
+                        event.update({custom_field_name: custom_field_value})
                     elif isinstance(custom_field_value, list):
                         custom_field_value = ','.join(custom_field_value)
                         event.update({custom_field_name: custom_field_value})

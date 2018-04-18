@@ -500,7 +500,7 @@ def check_directory_files_permission(path, permission):
     '''
     Check all files permission inside a directory
     '''
-    files_list = _execute_shell_command("find /var/log -type f").strip()
+    files_list = _execute_shell_command("find {0} -type f".format(path)).strip()
     files_list = files_list.split('\n') if files_list != "" else []
     bad_permission_files = []
     for file_in_directory in files_list:

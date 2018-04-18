@@ -592,22 +592,23 @@ def check_all_users_home_directory(max_system_uid):
     '''
 
     max_system_uid = int(max_system_uid)
-    users_uids_dirs = _execute_shell_command("cat /etc/passwd | awk -F: '{ print $1 \" \" $3 \" \" $6 }'", python_shell=True).strip()
-    users_uids_dirs = users_uids_dirs.split('\n') if users_uids_dirs != "" else []
+    users_uids_dirs = _execute_shell_command("cat /etc/passwd | awk -F: '{ print $1 \" \" $3 \" \" $6 \" \" $7}'", python_shell=True).strip()
+    users_uids_dirs = users_uids_dirs.split('\n') if users_uids_dirs else []
     error = []
     for user_data in users_uids_dirs:
         user_uid_dir = user_data.strip().split(" ")
-        if len(user_uid_dir) < 3:
-                user_uid_dir = user_uid_dir + [''] * (3 - len(user_uid_dir))
+        if len(user_uid_dir) < 4:
+                user_uid_dir = user_uid_dir + [''] * (4 - len(user_uid_dir))
         if user_uid_dir[1].isdigit():
-            if not _is_valid_home_directory(user_uid_dir[2], True) and int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] != "nfsnobody":
+            if not _is_valid_home_directory(user_uid_dir[2], True) and int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] != "nfsnobody" \
+                    and 'nologin' not in user_uid_dir[3] and 'false' not in user_uid_dir[3]:
                 error += ["Either home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is invalid or does not exist."]
         else:
             error += ["User " + user_uid_dir[0] + " has invalid uid " + user_uid_dir[1]]
-    return True if error == [] else str(error)
+    return True if not error else str(error)
 
 
-def check_users_home_directory_permissions( non_login_shell='/sbin/nologin', max_allowed_permission='750', except_for_users='' ):
+def check_users_home_directory_permissions(max_allowed_permission='750', except_for_users=''):
     '''
     Ensure users' home directories permissions are 750 or more restrictive
     '''
@@ -620,7 +621,7 @@ def check_users_home_directory_permissions( non_login_shell='/sbin/nologin', max
     cmd = __salt__["cmd.run_all"]('egrep -v "^\+" /etc/passwd ')
     for line in cmd['stdout'].split('\n'):
         tokens = line.split(':')
-        if tokens[0] not in users_list and tokens[6] != non_login_shell:
+        if tokens[0] not in users_list and 'nologin' not in tokens[6] and 'false' not in tokens[6]:
             users_dirs.append(tokens[0] + " " + tokens[5])
     error = []
     for user_dir in users_dirs:
@@ -642,25 +643,26 @@ def check_users_own_their_home(max_system_uid):
 
     max_system_uid = int(max_system_uid)
 
-    users_uids_dirs = _execute_shell_command("cat /etc/passwd | awk -F: '{ print $1 \" \" $3 \" \" $6 }'", python_shell=True).strip()
+    users_uids_dirs = _execute_shell_command("cat /etc/passwd | awk -F: '{ print $1 \" \" $3 \" \" $6 \" \" $7}'", python_shell=True).strip()
     users_uids_dirs = users_uids_dirs.split('\n') if users_uids_dirs != "" else []
     error = []
     for user_data in users_uids_dirs:
         user_uid_dir = user_data.strip().split(" ")
-        if len(user_uid_dir) < 3:
-            user_uid_dir = user_uid_dir + [''] * (3 - len(user_uid_dir))
+        if len(user_uid_dir) < 4:
+            user_uid_dir = user_uid_dir + [''] * (4 - len(user_uid_dir))
         if user_uid_dir[1].isdigit():
             if not _is_valid_home_directory(user_uid_dir[2]):
-                if int(user_uid_dir[1]) >= max_system_uid:
+                if int(user_uid_dir[1]) >= max_system_uid and 'nologin' not in user_uid_dir[3] and 'false' not in user_uid_dir[3]:
                     error += ["Either home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is invalid or does not exist."]
-            elif int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] != "nfsnobody":
+            elif int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] != "nfsnobody" and 'nologin' not in user_uid_dir[3] \
+                    and 'false' not in user_uid_dir[3]:
                 owner = __salt__['cmd.run']("stat -L -c \"%U\" \"" + user_uid_dir[2] + "\"")
                 if owner != user_uid_dir[0]:
                     error += ["The home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is owned by " + owner]
         else:
             error += ["User " + user_uid_dir[0] + " has invalid uid " + user_uid_dir[1]]
 
-    return True if error == [] else str(error)
+    return True if not error else str(error)
 
 
 def check_users_dot_files(reason=''):

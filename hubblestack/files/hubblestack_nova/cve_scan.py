@@ -17,7 +17,7 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.is_linux() and salt.utils.path.which('oscap'):
+    if salt.utils.platform.is_linux() and salt.utils.path.which('oscap'):
         return True
     return False, 'This module requires Linux and the oscap binary'
 

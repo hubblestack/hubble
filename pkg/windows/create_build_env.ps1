@@ -58,6 +58,7 @@ if (!($7zip)) {
 if (Test-Path .\salt) {
     Remove-Item -Recurse -Force salt
 }
+Push-Location
 git clone https://github.com/saltstack/salt
 Set-Location salt\pkg\windows
 git checkout v2018.3.0
@@ -85,6 +86,8 @@ if ($repo -notlike "https*") {
         $branch = Read-Host "Enter a Branch"
     }
 }
+Write-Error "---------------will be cloning1 : $repo"
+Write-Error "---------------will be cloning2 : $branch"
 git clone $repo
 Push-Location hubble\pkg\windows
 if ($branch -like "\W.+") {
@@ -113,6 +116,11 @@ if (!($port_git)) {
 set-location C:\Temp
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1" -Force;
 $ChocoTools = Get-ToolsLocation
+
+if ([string]::IsNullOrEmpty($ChocoTools)) {
+    $ChocoTools = [System.Environment]::GetEnvironmentVariable("ChocolateyToolsLocation","User")
+}
+
 if(!(test-path .\hubble\PortableGit\)) {
     mkdir C:\Temp\hubble\PortableGit\
 }

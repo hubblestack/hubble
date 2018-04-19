@@ -86,6 +86,8 @@ if ($repo -notlike "https*") {
         $branch = Read-Host "Enter a Branch"
     }
 }
+Write-Error "---------------will be cloning1 : $repo"
+Write-Error "---------------will be cloning2 : $branch"
 git clone $repo
 Push-Location hubble\pkg\windows
 if ($branch -like "\W.+") {

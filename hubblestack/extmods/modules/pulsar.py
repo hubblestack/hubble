@@ -143,7 +143,7 @@ class ConfigManager(object):
             for path in config['paths']:
                 if 'salt://' in path:
                     path = __salt__['cp.cache_file'](path)
-                if os.path.isfile(path):
+                if path and os.path.isfile(path):
                     with open(path, 'r') as f:
                         to_set = _dict_update(to_set, yaml.safe_load(f),
                             recursive_update=True, merge_lists=True)

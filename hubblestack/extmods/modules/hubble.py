@@ -115,8 +115,9 @@ def audit(configs=None,
     if configs is None:
         return top(verbose=verbose,
                    show_success=show_success,
-                   show_compliance=show_compliance)
-    if labels is not None:
+                   show_compliance=show_compliance,
+                   labels=labels)
+    if labels:
         if not isinstance(labels, list):
             labels=labels.split(',')
     if not called_from_top and __salt__['config.get']('hubblestack:nova:autoload', True):
@@ -362,7 +363,8 @@ def top(topfile='top.nova',
         show_success=None,
         show_compliance=None,
         show_profile=None,
-        debug=None):
+        debug=None,
+        labels=None):
     '''
     Compile and run all yaml data from the specified nova topfile.
 
@@ -489,7 +491,8 @@ def top(topfile='top.nova',
                     verbose=verbose,
                     show_success=True,
                     show_compliance=False,
-                    called_from_top=True)
+                    called_from_top=True,
+                    labels=labels)
 
         # Merge in the results
         for key, val in ret.iteritems():

@@ -436,7 +436,22 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
 
 def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
         verbose=False):
+    '''
+    Execute pulsar using a top.pulsar file to decide which configs to use for
+    this host.
 
+    The topfile should be formatted like this:
+
+    .. code-block:: yaml
+
+        pulsar:
+          '<salt compound match identifying host(s)>':
+            - list.of.paths
+            - using.dots.as.directory.separators
+
+    Paths in the topfile should be relative to `salt://hubblestack_pulsar`, and
+    the .yaml should not be included.
+    '''
     configs = get_top_data(topfile)
 
     configs = ['salt://hubblestack_pulsar/' + config.replace('.','/') + '.yaml'
@@ -446,7 +461,9 @@ def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
 
 
 def get_top_data(topfile):
-
+    '''
+    Cache the topfile and process the list of configs this host should use.
+    '''
     topfile = __salt__['cp.cache_file'](topfile)
 
     try:

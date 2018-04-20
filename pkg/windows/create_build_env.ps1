@@ -58,9 +58,8 @@ if (!($7zip)) {
 if (Test-Path .\salt) {
     Remove-Item -Recurse -Force salt
 }
-Push-Location
 git clone https://github.com/saltstack/salt
-Set-Location salt\pkg\windows
+Push-Location salt\pkg\windows
 git checkout v2018.3.0
 powershell -file build_env_2.ps1 -Silent
 Pop-Location

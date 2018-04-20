@@ -61,13 +61,15 @@ def run():
     if __opts__['daemonize']:
         # before becoming a daemon, check for other procs and possibly send
         # then a signal 15 (otherwise refuse to run)
-        check_pidfile(kill_other=True)
+        if not __opts__.get('ignore_running', False):
+            check_pidfile(kill_other=True)
         salt.utils.daemonize()
         create_pidfile()
     elif not __opts__['function']:
         # check the pidfile and possibly refuse to run
         # (assuming this isn't a single function call)
-        check_pidfile(kill_other=False)
+        if not __opts__.get('ignore_running', False):
+            check_pidfile(kill_other=False)
 
     signal.signal(signal.SIGTERM, clean_up_process)
     signal.signal(signal.SIGINT, clean_up_process)
@@ -637,6 +639,9 @@ def parse_args():
     parser.add_argument('-j', '--json-print',
                         action='store_true',
                         help='Optional argument to print the output of single run function in json format')
+    parser.add_argument('--ignore_running',
+                        action='store_true',
+                        help='Ignore any running hubble processes. This disables the pidfile.')
     return vars(parser.parse_args())
 
 def check_pidfile(kill_other=False):
@@ -683,16 +688,18 @@ def create_pidfile():
     '''
     Create a pidfile after daemonizing
     '''
-    pid = os.getpid()
-    with open(__opts__['pidfile'], 'w') as f:
-        f.write(str(pid))
+    if not __opts__.get('ignore_running', False):
+        pid = os.getpid()
+        with open(__opts__['pidfile'], 'w') as f:
+            f.write(str(pid))
 
 
 def clean_up_process(signal, frame):
     '''
     Clean up pidfile and anything else that needs to be cleaned up
     '''
-    if __opts__['daemonize']:
-        if os.path.isfile(__opts__['pidfile']):
-            os.remove(__opts__['pidfile'])
+    if not __opts__.get('ignore_running', False):
+        if __opts__['daemonize']:
+            if os.path.isfile(__opts__['pidfile']):
+                os.remove(__opts__['pidfile'])
     sys.exit(0)

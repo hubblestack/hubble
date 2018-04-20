@@ -41,6 +41,8 @@ try:
 except ImportError:
     HAS_PYINOTIFY = False
     DEFAULT_MASK = None
+    class pyinotify:
+        WatchManager = object
 
 __virtualname__ = 'pulsar'
 SPAM_TIME = 0 # track spammy status message times

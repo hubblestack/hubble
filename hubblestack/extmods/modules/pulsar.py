@@ -981,6 +981,8 @@ def get_top_data(topfile):
     Cache the topfile and process the list of configs this host should use.
     '''
     # Get topdata from filesystem if we don't have them already
+    global TOP
+    global TOP_STALENESS
     if TOP and TOP_STALENESS < 60:
         TOP_STALENESS += 1
         topdata = TOP

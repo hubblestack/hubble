@@ -44,6 +44,8 @@ except ImportError:
 
 __virtualname__ = 'pulsar'
 SPAM_TIME = 0 # track spammy status message times
+TOP = None
+TOP_STALENESS = 0
 
 import logging
 log = logging.getLogger(__name__)
@@ -976,19 +978,25 @@ def get_top_data(topfile):
     '''
     Cache the topfile and process the list of configs this host should use.
     '''
-    topfile = __salt__['cp.cache_file'](topfile)
+    # Get topdata from filesystem if we don't have them already
+    if TOP and TOP_STALENESS < 60:
+        TOP_STALENESS += 1
+        topdata = TOP
+    else:
+        log.debug('Missing/stale cached topdata found for pulsar, retrieving fresh from fileserver.')
+        topfile = __salt__['cp.cache_file'](topfile)
+        try:
+            with open(topfile) as handle:
+                topdata = yaml.safe_load(handle)
+        except Exception as e:
+            raise CommandExecutionError('Could not load topfile: {0}'.format(e))
 
-    try:
-        with open(topfile) as handle:
-            topdata = yaml.safe_load(handle)
-    except Exception as e:
-        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
+        if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
+                not(isinstance(topdata['pulsar'], dict)):
+            raise CommandExecutionError('Pulsar topfile not formatted correctly')
 
-    if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
-            not(isinstance(topdata['pulsar'], dict)):
-        raise CommandExecutionError('Pulsar topfile not formatted correctly')
-
-    topdata = topdata['pulsar']
+        topdata = topdata['pulsar']
+        TOP = topdata
 
     ret = []
 

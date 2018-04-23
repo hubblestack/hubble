@@ -203,7 +203,7 @@ def update():
 
             if not __opts__['delete_inaccessible_azure_containers'] or not "<class 'azure.common.AzureHttpError'>" in str(type(exc)) :
                 continue
-            if '<AuthenticationErrorDetail>Signature did not match.' in str(exc):
+            if '<Code>AuthenticationFailed</Code>' in str(exc) or '<Code>AuthorizationPermissionMismatch</Code>' in str(exc):
                 log.debug('Could not connect to azure container "{0}"'.format(name))
                 container_cache_folder = _get_container_path(container) 
                 log.debug('Trying to delete the cache of container "{0}"'.format(name))
@@ -259,11 +259,25 @@ def update():
                     blob_service.get_blob_to_path(name, blob.name, fname)
                 except Exception as exc:
                     log.exception('Error occurred fetching blob from azurefs')
+
+                    if not __opts__['delete_inaccessible_azure_containers'] or not "<class 'azure.common.AzureHttpError'>" in str(type(exc)) :
+                        continue
+                    if '<Code>AuthenticationFailed</Code>' in str(exc) or '<Code>AuthorizationPermissionMismatch</Code>' in str(exc):
+                        log.debug('Could not update the file "{0}" from azure blob.'.format(fname))
+                        container_cache_folder = _get_container_path(container) 
+                        log.debug('Trying to delete the corrupt file "{0}"'.format(fname))
+                        try:
+                            if os.path.exists(fname):
+                                os.remove(fname)
+                                os.remove(lk_fn)
+                        except Exception:
+                            log.exception('Problem occurred trying to delete the corrupt file "{0}"'.format(fname))
                     continue
 
                 # Unlock writes
                 try:
-                    os.unlink(lk_fn)
+                    if os.path.exists(lk_fn):
+                        os.unlink(lk_fn)
                 except Exception:
                     pass
 

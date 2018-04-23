@@ -95,7 +95,9 @@ class SplunkHandler(logging.Handler):
             # Sometimes fqdn is blank. If it is, replace it with minion_id
             fqdn = fqdn if fqdn else minion_id
             try:
-                fqdn_ip4 = __grains__['fqdn_ip4'][0]
+                fqdn_ip4 = __grains__.get('local_ip4')
+                if not fqdn_ip4:
+                    fqdn_ip4 = __grains__['fqdn_ip4'][0]
             except IndexError:
                 try:
                     fqdn_ip4 = __grains__['ipv4'][0]

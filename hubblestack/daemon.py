@@ -569,6 +569,11 @@ def refresh_grains(initial=False):
     global __returners__
     global __context__
 
+    persist = {}
+    for grain in __opts__.get('grains_persist', []):
+        if grain in __grains__:
+            persist[grain] = __grains__[grain]
+
     if initial:
         __context__ = {}
     if 'grains' in __opts__:
@@ -576,6 +581,7 @@ def refresh_grains(initial=False):
     if 'pillar' in __opts__:
         __opts__.pop('pillar')
     __grains__ = salt.loader.grains(__opts__)
+    __grains__.update(persist)
     __grains__['session_uuid'] = SESSION_UUID
     __opts__['hubble_uuid'] = __grains__.get('hubble_uuid', None)
     __pillar__ = {}

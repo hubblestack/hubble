@@ -35,7 +35,7 @@ def dest_ip():
     various IPs due to round robin DNS.
     '''
     grains = {}
-    interfaces = salt.grains.core.ip4_interfaces()
+    interfaces = salt.grains.core.ip4_interfaces()['ip4_interfaces']
     try:
         ret = __salt__['cmd.run_all']('ip route show to 0/0')
         if ret['retcode'] == 0:

@@ -8,8 +8,8 @@ import salt.utils
 import salt.utils.platform
 import socket
 
-__salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet}
-__salt__ = {'cmd.run_all': salt.modules.cmdmod.run_all}
+__salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet,
+            'cmd.run_all': salt.modules.cmdmod.run_all}
 
 
 def fqdn():
@@ -36,17 +36,20 @@ def dest_ip():
     '''
     grains = {}
     interfaces = salt.grains.core.ip4_interfaces()
-    ret = __salt__['cmd.run_all']('ip route show to 0/0')
-    if ret['retcode'] == 0:
-        interface = None
-        try:
-            interface = ret['stdout'].split(' ')[4]
-        except:
-            pass
-        if interface and interface in interfaces and interfaces[interface]:
-            for ip in interfaces[interface]:
-                if ip != '127.0.0.1':
-                    return {'local_ip4', ip}
+    try:
+        ret = __salt__['cmd.run_all']('ip route show to 0/0')
+        if ret['retcode'] == 0:
+            interface = None
+            try:
+                interface = ret['stdout'].split(' ')[4]
+            except:
+                pass
+            if interface and interface in interfaces and interfaces[interface]:
+                for ip in interfaces[interface]:
+                    if ip != '127.0.0.1':
+                        return {'local_ip4', ip}
+    except:
+        pass
 
     # Fallback to "best guess"
     filtered_interfaces = {}

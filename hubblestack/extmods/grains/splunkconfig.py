@@ -21,7 +21,7 @@ def splunkconfig():
         for root, dirs, files in os.walk(configdir):
             for f in files:
                 if f.endswith('.conf'):
-                    fpath = os.path.join(root, fpath)
+                    fpath = os.path.join(root, f)
                     try:
                         with open(fpath, 'r') as fh:
                             config = yaml.safe_load(fh)

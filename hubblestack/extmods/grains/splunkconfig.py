@@ -29,4 +29,6 @@ def splunkconfig():
                             ret = {'hubblestack': config['hubblestack']}
                     except:
                         pass
+    except:
+        pass
     return ret

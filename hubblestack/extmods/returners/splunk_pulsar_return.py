@@ -174,6 +174,8 @@ def returner(ret):
                     event['file_name'] = alert['name']
                     event['file_path'] = alert['tag']
                     event['pulsar_config'] = alert['pulsar_config']
+                    if 'contents' in alert:
+                        event['contents'] = alert['contents']
 
                     if alert['stats']:  # Gather more data if the change wasn't a delete
                         stats = alert['stats']

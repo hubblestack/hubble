@@ -20,13 +20,15 @@ import salt.loader
 import salt.utils.platform
 
 log = logging.getLogger(__name__)
-DEFAULT_MASK = ['File create', 'File delete', 'Hard link change', 'Data extend', 
+DEFAULT_MASK = ['File create', 'File delete', 'Hard link change', 'Data extend',
                 'Data overwrite', 'Data truncation', 'Security change', 'Rename: old name',
                 'Rename: new name']
 
 __virtualname__ = 'pulsar'
 CONFIG = None
 CONFIG_STALENESS = 0
+TOP = None
+TOP_STALENESS = 0
 
 def __virtual__():
     if not salt.utils.platform.is_windows():
@@ -66,28 +68,28 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         4.  Data Extend                      The file or directory is extended (added to)
         5.  Data Overwrite                   The data in the file or directory is overwritten
         6.  Data Truncation                  The file or directory is truncated
-        7.  EA Change                        A user made a change to the extended attributes of a file or directory (These NTFS 
+        7.  EA Change                        A user made a change to the extended attributes of a file or directory (These NTFS
                                                     file system attributes are not accessible to Windows-based applications)
         8.  Encryption Change                The file or directory is encrypted or decrypted
         9.  File Create                      The file or directory is created for the first time
         10. File Delete                      The file or directory is deleted
         11. Hard Link Change                 An NTFS file system hard link is added to or removed from the file or directory
-        12. Indexable Change                 A user changes the FILE_ATTRIBUTE_NOT_CONTENT_INDEXED attribute (changes the file 
-                                                    or directory from one where content can be indexed to one where content cannot 
+        12. Indexable Change                 A user changes the FILE_ATTRIBUTE_NOT_CONTENT_INDEXED attribute (changes the file
+                                                    or directory from one where content can be indexed to one where content cannot
                                                     be indexed, or vice versa)
-        13. Integrity Change                 A user changed the state of the FILE_ATTRIBUTE_INTEGRITY_STREAM attribute for the given 
-                                                    stream (On the ReFS file system, integrity streams maintain a checksum of all 
-                                                    data for that stream, so that the contents of the file can be validated during 
+        13. Integrity Change                 A user changed the state of the FILE_ATTRIBUTE_INTEGRITY_STREAM attribute for the given
+                                                    stream (On the ReFS file system, integrity streams maintain a checksum of all
+                                                    data for that stream, so that the contents of the file can be validated during
                                                     read or write operations)
         14. Named Data Extend                The one or more named data streams for a file are extended (added to)
         15. Named Data Overwrite             The data in one or more named data streams for a file is overwritten
         16. Named Data truncation            The one or more named data streams for a file is truncated
         17. Object ID Change                 The object identifier of a file or directory is changed
-        18. Rename New Name                  A file or directory is renamed, and the file name in the USN_RECORD_V2 structure is the 
+        18. Rename New Name                  A file or directory is renamed, and the file name in the USN_RECORD_V2 structure is the
                                                     new name
         19. Rename Old Name                  The file or directory is renamed, and the file name in the USN_RECORD_V2 structure is
                                                     the previous name
-        20. Reparse Point Change             The reparse point that is contained in a file or directory is changed, or a reparse 
+        20. Reparse Point Change             The reparse point that is contained in a file or directory is changed, or a reparse
                                                     point is added to or deleted from a file or directory
         21. Security Change                  A change is made in the access rights to a file or directory
         22. Stream Change                    A named stream is added to or removed from a file, or a named stream is renamed
@@ -96,7 +98,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     exclude:
         Exclude directories or files from triggering events in the watched directory. **Note that the directory excludes shoud
         not have a trailing slash**
-    
+
     :return:
     '''
     config = __salt__['config.get']('hubblestack_pulsar' , {})
@@ -107,7 +109,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     config['verbose'] = verbose
     global CONFIG_STALENESS
     global CONFIG
-    
+
     if config.get('verbose'):
         log.debug('Pulsar module called.')
         log.debug('Pulsar module config from pillar:\n{0}'.format(config))
@@ -144,7 +146,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         CONFIG = config
     if config.get('verbose'):
         log.debug('Pulsar beacon config (compiled from config list):\n{0}'.format(config))
-    
+
     if 'win_pulsar_file_map' not in __context__:
         __context__['win_pulsar_file_map'] = {}
 
@@ -182,8 +184,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
 
     # return list of dictionaries
     return ret_list
-    
-        
+
+
 def queryjournal(drive):
     '''
     Gets information on the journal prosiding on the drive passed into the method
@@ -191,7 +193,7 @@ def queryjournal(drive):
       USN Journal ID
       First USN of the journal
       Next USN to be written to the journal
-      Lowest Valid USN of the journal since the biginning of the volume (this will most likely 
+      Lowest Valid USN of the journal since the biginning of the volume (this will most likely
                                   not be in the current journal since it only keeys a few days)
       Max USN of the journal (the highest number reachable for a single Journal)
       Maximum Size
@@ -213,12 +215,12 @@ def queryjournal(drive):
 
 def readjournal(drive, next_usn=0):
     '''
-    Reads the data inside the journal.  Default is to start from the beginning, 
+    Reads the data inside the journal.  Default is to start from the beginning,
     but you can pass an argument to start from whichever usn you want
     Returns a list of dictionaries with the following information
       list:
         Individual events
-    
+
       dictionary:
         Usn Journal ID (event number)
         File Name
@@ -296,7 +298,7 @@ def getfilepath(pfid, fname, drive):
     except:
         log.debug('Current usn item is not a file')
         return None
-    
+
 
 
 def usnfilter(usn_list, config_paths):
@@ -314,7 +316,7 @@ def usnfilter(usn_list, config_paths):
             if not os.path.exists(path):
                 log.info('the folder path {} does not exist'.format(path))
                 continue
-        
+
             if isinstance(config_paths[path], dict):
                 mask = config_paths[path].get('mask', DEFAULT_MASK)
                 recurse = config_paths[path].get('recurse', True)
@@ -436,7 +438,22 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
 
 def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
         verbose=False):
+    '''
+    Execute pulsar using a top.pulsar file to decide which configs to use for
+    this host.
 
+    The topfile should be formatted like this:
+
+    .. code-block:: yaml
+
+        pulsar:
+          '<salt compound match identifying host(s)>':
+            - list.of.paths
+            - using.dots.as.directory.separators
+
+    Paths in the topfile should be relative to `salt://hubblestack_pulsar`, and
+    the .yaml should not be included.
+    '''
     configs = get_top_data(topfile)
 
     configs = ['salt://hubblestack_pulsar/' + config.replace('.','/') + '.yaml'
@@ -446,20 +463,30 @@ def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
 
 
 def get_top_data(topfile):
+    '''
+    Cache the topfile and process the list of configs this host should use.
+    '''
+    # Get topdata from filesystem if we don't have them already
+    global TOP
+    global TOP_STALENESS
+    if TOP and TOP_STALENESS < 60:
+        TOP_STALENESS += 1
+        topdata = TOP
+    else:
+        log.debug('Missing/stale cached topdata found for pulsar, retrieving fresh from fileserver.')
+        topfile = __salt__['cp.cache_file'](topfile)
+        try:
+            with open(topfile) as handle:
+                topdata = yaml.safe_load(handle)
+        except Exception as e:
+            raise CommandExecutionError('Could not load topfile: {0}'.format(e))
 
-    topfile = __salt__['cp.cache_file'](topfile)
+        if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
+                not(isinstance(topdata['pulsar'], dict)):
+            raise CommandExecutionError('Pulsar topfile not formatted correctly')
 
-    try:
-        with open(topfile) as handle:
-            topdata = yaml.safe_load(handle)
-    except Exception as e:
-        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
-
-    if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
-            not(isinstance(topdata['pulsar'], dict)):
-        raise CommandExecutionError('Pulsar topfile not formatted correctly')
-
-    topdata = topdata['pulsar']
+        topdata = topdata['pulsar']
+        TOP = topdata
 
     ret = []
 

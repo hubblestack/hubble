@@ -65,12 +65,12 @@ def dest_ip():
     # Use .*0 if present
     for interface, ips in filtered_interfaces.iteritems():
         if '0' in interface:
-            for ip in ips
+            for ip in ips:
                 if ip != '127.0.0.1':
                     return {'local_ip4', ip}
     # Use whatever isn't 127.0.0.1
     for interface, ips in filtered_interfaces.iteritems():
-        for ip in ips
+        for ip in ips:
             if ip != '127.0.0.1':
                 return {'local_ip4', ip}
     # Give up

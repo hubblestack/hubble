@@ -47,7 +47,7 @@ def dest_ip():
             if interface and interface in interfaces and interfaces[interface]:
                 for ip in interfaces[interface]:
                     if ip != '127.0.0.1':
-                        return {'local_ip4', ip}
+                        return {'local_ip4': ip}
     except:
         pass
 
@@ -64,17 +64,17 @@ def dest_ip():
     if 'eth0' in filtered_interfaces:
         for ip in filtered_interfaces['eth0']:
             if ip != '127.0.0.1':
-                return {'local_ip4', ip}
+                return {'local_ip4': ip}
     # Use .*0 if present
     for interface, ips in filtered_interfaces.iteritems():
         if '0' in interface:
             for ip in ips:
                 if ip != '127.0.0.1':
-                    return {'local_ip4', ip}
+                    return {'local_ip4': ip}
     # Use whatever isn't 127.0.0.1
     for interface, ips in filtered_interfaces.iteritems():
         for ip in ips:
             if ip != '127.0.0.1':
-                return {'local_ip4', ip}
+                return {'local_ip4': ip}
     # Give up
     return {'local_ip4', ''}

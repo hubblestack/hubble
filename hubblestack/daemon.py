@@ -675,12 +675,12 @@ def check_pidfile(kill_other=False):
                                 time.sleep(1)
                                 if os.path.isdir("/proc/{pid}".format(pid=xpid)):
                                     log.error("failed to shutdown process successfully; abnormal program exit")
-                                    exit(1)
+                                    sys.exit(1)
                                 else:
                                     log.info("shutdown seems to have succeeded, proceeding with startup")
                             else:
                                 log.error("refusing to run while another hubble instance is running")
-                                exit(1)
+                                sys.exit(1)
                         else:
                             log.info("process does not appear to be hubble, ignoring")
 

@@ -91,6 +91,7 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
+RUN ls
 ARG GIT_PATH=https://github.com/hubblestack/hubble.git
 ARG GIT_BRANCH=v2.3.0
 ENV HUBBLE_CHECKOUT=${GIT_BRANCH}

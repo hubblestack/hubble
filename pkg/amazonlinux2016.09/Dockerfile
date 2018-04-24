@@ -91,10 +91,12 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.3.0
+ARG GIT_PATH=https://github.com/hubblestack/hubble.git
+ARG GIT_BRANCH=v2.3.0
+ENV HUBBLE_CHECKOUT=${GIT_BRANCH}
 ENV HUBBLE_VERSION=2.3.0
 ENV HUBBLE_ITERATION=1
-ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
+ENV HUBBLE_GIT_URL=${GIT_PATH}
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
@@ -141,7 +143,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --iteration ${HUBBLE_ITERATION} \
     #todo: get rid of the git dependency with static bin in the future
        -d 'git' \
-       --config-files --config-files /etc/osquery/osquery.conf \
+       --config-files /etc/osquery/osquery.conf \
        --after-install /hubble_build/conf/afterinstall.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        etc/hubble etc/osquery etc/init.d opt usr \

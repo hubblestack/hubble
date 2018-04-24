@@ -264,20 +264,18 @@ def update():
                         continue
                     if '<Code>AuthenticationFailed</Code>' in str(exc) or '<Code>AuthorizationPermissionMismatch</Code>' in str(exc):
                         log.debug('Could not update the file "{0}" from azure blob.'.format(fname))
-                        container_cache_folder = _get_container_path(container) 
                         log.debug('Trying to delete the corrupt file "{0}"'.format(fname))
                         try:
                             if os.path.exists(fname):
                                 os.remove(fname)
-                                os.remove(lk_fn)
+                                os.unlink(lk_fn)
                         except Exception:
                             log.exception('Problem occurred trying to delete the corrupt file "{0}"'.format(fname))
                     continue
 
                 # Unlock writes
                 try:
-                    if os.path.exists(lk_fn):
-                        os.unlink(lk_fn)
+                    os.unlink(lk_fn)
                 except Exception:
                     pass
 

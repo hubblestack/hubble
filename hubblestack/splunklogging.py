@@ -199,7 +199,27 @@ class SplunkHandler(logging.Handler):
 
 
 def _get_options():
-    if __salt__['config.get']('hubblestack:returner:splunk'):
+    if __salt__['grains.get']('hubblestack:returner:splunk'):
+        splunk_opts = []
+        returner_opts = __salt__['grains.get']('hubblestack:returner:splunk')
+        if not isinstance(returner_opts, list):
+            returner_opts = [returner_opts]
+        for opt in returner_opts:
+            processed = {}
+            processed['token'] = opt.get('token')
+            processed['indexer'] = opt.get('indexer')
+            processed['port'] = str(opt.get('port', '8088'))
+            processed['index'] = opt.get('index')
+            processed['custom_fields'] = opt.get('custom_fields', [])
+            processed['sourcetype'] = opt.get('sourcetype_log', 'hubble_log')
+            processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
+            processed['proxy'] = opt.get('proxy', {})
+            processed['timeout'] = opt.get('timeout', 9.05)
+            processed['index_extracted_fields'] = opt.get('index_extracted_fields', [])
+            processed['http_event_collector_ssl_verify'] = opt.get('http_event_collector_ssl_verify', True)
+            splunk_opts.append(processed)
+        return splunk_opts
+    elif __salt__['config.get']('hubblestack:returner:splunk'):
         splunk_opts = []
         returner_opts = __salt__['config.get']('hubblestack:returner:splunk')
         if not isinstance(returner_opts, list):

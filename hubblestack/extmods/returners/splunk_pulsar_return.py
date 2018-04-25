@@ -50,11 +50,12 @@ import json
 import os
 import time
 from collections import defaultdict
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 import logging
 
 _max_content_bytes = 100000
-http_event_collector_SSL_verify = True
 http_event_collector_debug = False
 
 log = logging.getLogger(__name__)
@@ -77,6 +78,7 @@ def returner(ret):
             proxy = opts['proxy']
             timeout = opts['timeout']
             custom_fields = opts['custom_fields']
+            http_event_collector_ssl_verify = opts['http_event_collector_ssl_verify']
 
             # Set up the fields to be extracted at index time. The field values must be strings.
             # Note that these fields will also still be available in the event data
@@ -87,7 +89,10 @@ def returner(ret):
                 pass
 
             # Set up the collector
-            hec = http_event_collector(http_event_collector_key, http_event_collector_host, http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl, proxy=proxy, timeout=timeout)
+            hec = http_event_collector(http_event_collector_key, http_event_collector_host,
+                                       http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl,
+                                       http_event_collector_ssl_verify=http_event_collector_ssl_verify,
+                                       proxy=proxy, timeout=timeout)
             # Check whether or not data is batched:
             if isinstance(ret, dict):  # Batching is disabled
                 data = [ret]
@@ -101,7 +106,9 @@ def returner(ret):
             fqdn = fqdn if fqdn else minion_id
             master = __grains__['master']
             try:
-                fqdn_ip4 = __grains__['fqdn_ip4'][0]
+                fqdn_ip4 = __grains__.get('local_ip4')
+                if not fqdn_ip4:
+                    fqdn_ip4 = __grains__['fqdn_ip4'][0]
             except IndexError:
                 try:
                     fqdn_ip4 = __grains__['ipv4'][0]
@@ -169,6 +176,8 @@ def returner(ret):
                     event['file_name'] = alert['name']
                     event['file_path'] = alert['tag']
                     event['pulsar_config'] = alert['pulsar_config']
+                    if 'contents' in alert:
+                        event['contents'] = alert['contents']
 
                     if alert['stats']:  # Gather more data if the change wasn't a delete
                         stats = alert['stats']
@@ -266,7 +275,7 @@ def returner(ret):
                 for custom_field in custom_fields:
                     custom_field_name = 'custom_' + custom_field
                     custom_field_value = __salt__['config.get'](custom_field, '')
-                    if isinstance(custom_field_value, str):
+                    if isinstance(custom_field_value, (str, unicode)):
                         event.update({custom_field_name: custom_field_value})
                     elif isinstance(custom_field_value, list):
                         custom_field_value = ','.join(custom_field_value)
@@ -309,7 +318,28 @@ def _dedupList(l):
 
 
 def _get_options():
-    if __salt__['config.get']('hubblestack:returner:splunk'):
+    if __salt__['grains.get']('hubblestack:returner:splunk'):
+        splunk_opts = []
+        returner_opts = __salt__['grains.get']('hubblestack:returner:splunk')
+        if not isinstance(returner_opts, list):
+            returner_opts = [returner_opts]
+        for opt in returner_opts:
+            processed = {}
+            processed['token'] = opt.get('token')
+            processed['indexer'] = opt.get('indexer')
+            processed['port'] = str(opt.get('port', '8088'))
+            processed['index'] = opt.get('index')
+            processed['custom_fields'] = opt.get('custom_fields', [])
+            processed['sourcetype'] = opt.get('sourcetype_pulsar', 'hubble_fim')
+            processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
+            processed['proxy'] = opt.get('proxy', {})
+            processed['timeout'] = opt.get('timeout', 9.05)
+            processed['http_event_collector_ssl_verify'] = opt.get('http_event_collector_ssl_verify', True)
+            if 'fallback_indexer' in opt and __grains__.get('ip_gw', None) is False:
+                processed['indexer'] = opt['fallback_indexer']
+            splunk_opts.append(processed)
+        return splunk_opts
+    elif __salt__['config.get']('hubblestack:returner:splunk'):
         splunk_opts = []
         returner_opts = __salt__['config.get']('hubblestack:returner:splunk')
         if not isinstance(returner_opts, list):
@@ -325,7 +355,7 @@ def _get_options():
             processed['http_event_server_ssl'] = opt.get('hec_ssl', True)
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
-
+            processed['http_event_collector_ssl_verify'] = opt.get('http_event_collector_ssl_verify', True)
             if 'fallback_indexer' in opt and __grains__.get('ip_gw', None) is False:
                 processed['indexer'] = opt['fallback_indexer']
             splunk_opts.append(processed)
@@ -341,7 +371,8 @@ def _get_options():
         splunk_opts['http_event_server_ssl'] = __salt__['config.get']('hubblestack:pulsar:returner:splunk:hec_ssl', True)
         splunk_opts['proxy'] = __salt__['config.get']('hubblestack:pulsar:returner:splunk:proxy', {})
         splunk_opts['timeout'] = __salt__['config.get']('hubblestack:pulsar:returner:splunk:timeout', 9.05)
-
+        splunk_opts['http_event_collector_ssl_verify'] = \
+                       __salt__['config.get']('hubblestack:pulsar:returner:splunk:http_event_collector_ssl_verify', True)
         return [splunk_opts]
 
 
@@ -352,13 +383,16 @@ def _get_options():
 
 class http_event_collector:
 
-    def __init__(self, token, http_event_server, host='', http_event_port='8088', http_event_server_ssl=True, max_bytes=_max_content_bytes, proxy=None, timeout=9.05):
+    def __init__(self, token, http_event_server, host='', http_event_port='8088',
+                 http_event_server_ssl=True, http_event_collector_ssl_verify=True,
+                 max_bytes=_max_content_bytes, proxy=None, timeout=9.05):
         self.timeout = timeout
         self.token = token
         self.batchEvents = []
         self.maxByteLength = max_bytes
         self.currentByteLength = 0
         self.server_uri = []
+        self.http_event_collector_ssl_verify = http_event_collector_ssl_verify
         if proxy and http_event_server_ssl:
             self.proxy = {'https': 'https://{0}'.format(proxy)}
         elif proxy:
@@ -407,7 +441,8 @@ class http_event_collector:
         data.update(payload)
 
         # send event to http event collector
-        r = requests.post(self.server_uri, data=json.dumps(data), headers=headers, verify=http_event_collector_SSL_verify, proxies=self.proxy)
+        r = requests.post(self.server_uri, data=json.dumps(data), headers=headers,
+                          verify=self.http_event_collector_ssl_verify, proxies=self.proxy)
 
         # Print debug info if flag set
         if http_event_collector_debug:
@@ -447,7 +482,8 @@ class http_event_collector:
             self.server_uri = [x for x in self.server_uri if x[1] is not False]
             for server in self.server_uri:
                 try:
-                    r = requests.post(server[0], data=' '.join(self.batchEvents), headers=headers, verify=http_event_collector_SSL_verify, proxies=self.proxy, timeout=self.timeout)
+                    r = requests.post(server[0], data=' '.join(self.batchEvents), headers=headers,
+                                      verify=self.http_event_collector_ssl_verify, proxies=self.proxy, timeout=self.timeout)
                     r.raise_for_status()
                     server[1] = True
                     break

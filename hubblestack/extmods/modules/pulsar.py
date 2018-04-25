@@ -41,9 +41,13 @@ try:
 except ImportError:
     HAS_PYINOTIFY = False
     DEFAULT_MASK = None
+    class pyinotify:
+        WatchManager = object
 
 __virtualname__ = 'pulsar'
 SPAM_TIME = 0 # track spammy status message times
+TOP = None
+TOP_STALENESS = 0
 
 import logging
 log = logging.getLogger(__name__)
@@ -143,7 +147,7 @@ class ConfigManager(object):
             for path in config['paths']:
                 if 'salt://' in path:
                     path = __salt__['cp.cache_file'](path)
-                if os.path.isfile(path):
+                if path and os.path.isfile(path):
                     with open(path, 'r') as f:
                         to_set = _dict_update(to_set, yaml.safe_load(f),
                             recursive_update=True, merge_lists=True)
@@ -948,7 +952,22 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
 
 def top(topfile='salt://hubblestack_pulsar/top.pulsar',
         verbose=False):
+    '''
+    Execute pulsar using a top.pulsar file to decide which configs to use for
+    this host.
 
+    The topfile should be formatted like this:
+
+    .. code-block:: yaml
+
+        pulsar:
+          '<salt compound match identifying host(s)>':
+            - list.of.paths
+            - using.dots.as.directory.separators
+
+    Paths in the topfile should be relative to `salt://hubblestack_pulsar`, and
+    the .yaml should not be included.
+    '''
     configs = get_top_data(topfile)
 
     configs = ['salt://hubblestack_pulsar/' + config.replace('.', '/') + '.yaml'
@@ -958,20 +977,30 @@ def top(topfile='salt://hubblestack_pulsar/top.pulsar',
 
 
 def get_top_data(topfile):
+    '''
+    Cache the topfile and process the list of configs this host should use.
+    '''
+    # Get topdata from filesystem if we don't have them already
+    global TOP
+    global TOP_STALENESS
+    if TOP and TOP_STALENESS < 60:
+        TOP_STALENESS += 1
+        topdata = TOP
+    else:
+        log.debug('Missing/stale cached topdata found for pulsar, retrieving fresh from fileserver.')
+        topfile = __salt__['cp.cache_file'](topfile)
+        try:
+            with open(topfile) as handle:
+                topdata = yaml.safe_load(handle)
+        except Exception as e:
+            raise CommandExecutionError('Could not load topfile: {0}'.format(e))
 
-    topfile = __salt__['cp.cache_file'](topfile)
+        if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
+                not(isinstance(topdata['pulsar'], dict)):
+            raise CommandExecutionError('Pulsar topfile not formatted correctly')
 
-    try:
-        with open(topfile) as handle:
-            topdata = yaml.safe_load(handle)
-    except Exception as e:
-        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
-
-    if not isinstance(topdata, dict) or 'pulsar' not in topdata or \
-            not(isinstance(topdata['pulsar'], dict)):
-        raise CommandExecutionError('Pulsar topfile not formatted correctly')
-
-    topdata = topdata['pulsar']
+        topdata = topdata['pulsar']
+        TOP = topdata
 
     ret = []
 

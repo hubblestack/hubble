@@ -59,7 +59,7 @@ if (Test-Path .\salt) {
     Remove-Item -Recurse -Force salt
 }
 git clone https://github.com/saltstack/salt
-Set-Location salt\pkg\windows
+Push-Location salt\pkg\windows
 git checkout v2018.3.0
 powershell -file build_env_2.ps1 -Silent
 Pop-Location
@@ -113,6 +113,11 @@ if (!($port_git)) {
 set-location C:\Temp
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1" -Force;
 $ChocoTools = Get-ToolsLocation
+
+if ([string]::IsNullOrEmpty($ChocoTools)) {
+    $ChocoTools = [System.Environment]::GetEnvironmentVariable("ChocolateyToolsLocation","User")
+}
+
 if(!(test-path .\hubble\PortableGit\)) {
     mkdir C:\Temp\hubble\PortableGit\
 }

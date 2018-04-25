@@ -32,6 +32,7 @@ HIDDEN_IMPORTS = [
     'Queue',
     'azure.storage.common',
     'azure.storage.blob',
+    'croniter',
 ]
 DATAS = []
 binaries = []

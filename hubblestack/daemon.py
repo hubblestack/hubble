@@ -28,6 +28,8 @@ import salt.utils.gitfs
 import salt.log.setup
 import hubblestack.splunklogging
 from hubblestack import __version__
+from croniter import croniter
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 
@@ -59,13 +61,15 @@ def run():
     if __opts__['daemonize']:
         # before becoming a daemon, check for other procs and possibly send
         # then a signal 15 (otherwise refuse to run)
-        check_pidfile(kill_other=True)
+        if not __opts__.get('ignore_running', False):
+            check_pidfile(kill_other=True)
         salt.utils.daemonize()
         create_pidfile()
     elif not __opts__['function']:
         # check the pidfile and possibly refuse to run
         # (assuming this isn't a single function call)
-        check_pidfile(kill_other=False)
+        if not __opts__.get('ignore_running', False):
+            check_pidfile(kill_other=False)
 
     signal.signal(signal.SIGTERM, clean_up_process)
     signal.signal(signal.SIGINT, clean_up_process)
@@ -165,6 +169,31 @@ def main():
             log.exception('Error executing schedule')
         time.sleep(__opts__.get('scheduler_sleep_frequency', 0.5))
 
+def getsecondsbycronexpression(base, cron_exp):
+    '''
+    this function will return the seconds according to the cron
+    expression provided in the hubble config
+    '''
+    iter = croniter(cron_exp, base)
+    next_datetime  = iter.get_next(datetime)
+    epoch_base_datetime = time.mktime(base.timetuple())
+    epoch_datetime = time.mktime(next_datetime.timetuple())
+    seconds = int(epoch_datetime) - int(epoch_base_datetime)
+    return seconds
+
+def getlastrunbycron(base, seconds):
+    '''
+    this function will use the cron_exp provided in the hubble config to
+    execute the hubble processes as per the scheduled cron time
+    '''
+    epoch_base_datetime = time.mktime(base.timetuple())
+    epoch_datetime = epoch_base_datetime
+    current_time = time.time()
+    while (epoch_datetime + seconds) < current_time:
+        epoch_datetime = epoch_datetime + seconds
+    last_run = epoch_datetime
+    return last_run
+
 def getlastrunbybuckets(buckets, seconds):
     '''
     this function will use the host's ip to place the host in a bucket
@@ -245,6 +274,7 @@ def schedule():
         Whether to run the scheduled job on daemon start. Defaults to False.
         Optional.
     '''
+    base = datetime(2018, 1, 1, 0, 0)
     schedule_config = __opts__.get('schedule', {})
     if 'user_schedule' in __opts__ and isinstance(__opts__['user_schedule'], dict):
         schedule_config.update(__opts__['user_schedule'])
@@ -263,7 +293,10 @@ def schedule():
                       'be found.'.format(jobname, func))
             continue
         try:
-            seconds = int(jobdata['seconds'])
+            if 'cron' in jobdata:
+                seconds = getsecondsbycronexpression(base, jobdata['cron'])
+            else:
+                seconds = int(jobdata['seconds'])
             splay = int(jobdata.get('splay', 0))
         except ValueError:
             log.error('Scheduled job {0} has an invalid value for seconds or '
@@ -300,6 +333,9 @@ def schedule():
                 elif 'buckets' in jobdata:
                     # Place the host in a bucket and fix the execution time.
                     jobdata['last_run'] = getlastrunbybuckets(jobdata['buckets'], seconds)
+                elif 'cron' in jobdata:
+                    # execute the hubble process based on cron expression
+                    jobdata['last_run'] = getlastrunbycron(base, seconds)
                 else:
                     # Run in `seconds` seconds.
                     jobdata['last_run'] = time.time()
@@ -507,7 +543,7 @@ def load_config():
         if self.isEnabledFor(logging.SPLUNK):
             self._log(logging.SPLUNK, message, args, **kwargs)
     logging.Logger.splunk = splunk
-    if __salt__['config.get']('hubblestack:splunklogging', False):
+    if __salt__['config.get']('splunklogging', False):
         root_logger = logging.getLogger()
         handler = hubblestack.splunklogging.SplunkHandler()
         handler.setLevel(logging.SPLUNK)
@@ -533,6 +569,11 @@ def refresh_grains(initial=False):
     global __returners__
     global __context__
 
+    persist = {}
+    for grain in __opts__.get('grains_persist', []):
+        if grain in __grains__:
+            persist[grain] = __grains__[grain]
+
     if initial:
         __context__ = {}
     if 'grains' in __opts__:
@@ -540,6 +581,7 @@ def refresh_grains(initial=False):
     if 'pillar' in __opts__:
         __opts__.pop('pillar')
     __grains__ = salt.loader.grains(__opts__)
+    __grains__.update(persist)
     __grains__['session_uuid'] = SESSION_UUID
     __opts__['hubble_uuid'] = __grains__.get('hubble_uuid', None)
     __pillar__ = {}
@@ -557,7 +599,7 @@ def refresh_grains(initial=False):
     hubblestack.splunklogging.__salt__ = __salt__
     hubblestack.splunklogging.__opts__ = __opts__
 
-    if not initial and __salt__['config.get']('hubblestack:splunklogging', False):
+    if not initial and __salt__['config.get']('splunklogging', False):
         class MockRecord(object):
             def __init__(self, message, levelname, asctime, name):
                 self.message = message
@@ -603,6 +645,9 @@ def parse_args():
     parser.add_argument('-j', '--json-print',
                         action='store_true',
                         help='Optional argument to print the output of single run function in json format')
+    parser.add_argument('--ignore_running',
+                        action='store_true',
+                        help='Ignore any running hubble processes. This disables the pidfile.')
     return vars(parser.parse_args())
 
 def check_pidfile(kill_other=False):
@@ -636,12 +681,12 @@ def check_pidfile(kill_other=False):
                                 time.sleep(1)
                                 if os.path.isdir("/proc/{pid}".format(pid=xpid)):
                                     log.error("failed to shutdown process successfully; abnormal program exit")
-                                    exit(1)
+                                    sys.exit(1)
                                 else:
                                     log.info("shutdown seems to have succeeded, proceeding with startup")
                             else:
                                 log.error("refusing to run while another hubble instance is running")
-                                exit(1)
+                                sys.exit(1)
                         else:
                             log.info("process does not appear to be hubble, ignoring")
 
@@ -649,16 +694,18 @@ def create_pidfile():
     '''
     Create a pidfile after daemonizing
     '''
-    pid = os.getpid()
-    with open(__opts__['pidfile'], 'w') as f:
-        f.write(str(pid))
+    if not __opts__.get('ignore_running', False):
+        pid = os.getpid()
+        with open(__opts__['pidfile'], 'w') as f:
+            f.write(str(pid))
 
 
 def clean_up_process(signal, frame):
     '''
     Clean up pidfile and anything else that needs to be cleaned up
     '''
-    if __opts__['daemonize']:
-        if os.path.isfile(__opts__['pidfile']):
-            os.remove(__opts__['pidfile'])
+    if not __opts__.get('ignore_running', False):
+        if __opts__['daemonize']:
+            if os.path.isfile(__opts__['pidfile']):
+                os.remove(__opts__['pidfile'])
     sys.exit(0)

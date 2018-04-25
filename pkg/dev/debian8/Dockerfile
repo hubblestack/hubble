@@ -149,7 +149,7 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=devel
+ARG HUBBLE_CHECKOUT=develop
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_VERSION=2.3.0
 ENV HUBBLE_ITERATION=1

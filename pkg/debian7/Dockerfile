@@ -178,8 +178,7 @@ ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/l
 RUN git clone ${HUBBLE_GIT_URL} "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout ${HUBBLE_CHECKOUT} \
- && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
- && echo __version__ = \"`git describe --tags | sed 's/v//'`\" > /hubble_build/hubblestack/__init__.py
+ && cp -rf "$HUBBLE_SRC_PATH" /hubble_build
 RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build

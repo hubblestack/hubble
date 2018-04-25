@@ -1,6 +1,7 @@
 # This Dockerfile aims to make building Hubble v2 packages easier.
 # To build an image: 1. copy pkg/scripts/pyinstaller-requirements.txt to directory with this Dockerfile
-#                    2. docker build -t <image_name> .
+#                    2. docker build -t <image_name> . --build-arg=HUBBLE_GIT_URL=<git_repo_url>
+#                                                      --build-arg=HUBBLE_CHECKOUT=<branch/tag/commit>
 # The resulting image is ready to run the pyinstaller on container start and drop hubble<version>-coreos.tar.gz
 # in the /data directory. Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
@@ -49,6 +50,9 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
  && make sysprep \
 #have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
  && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
+#temporary workaround for osquery issue 4284 (broken yum_sources table)
+ && echo "e13f6ddc78f7190a16b995cd95e1f0298358e7e64ad24d63c807f03acc5a88c6 osquery/tables/system/posix/yum_sources.cpp" | sha256sum -c - \
+ && sed -i 's/\.list/\.repo/g' osquery/tables/system/posix/yum_sources.cpp \
  && make deps \
  && make \
  && make strip

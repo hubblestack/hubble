@@ -16,7 +16,7 @@ RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 #to pin to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=d27787e84f031ed17d0b20fb3165c1c49f125b5c
+ENV OSQUERY_SRC_VERSION=44c0b037021eb5c222c37c6736a1b2974f285329
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 RUN yum -y install xz git make python ruby sudo which python-argparse
@@ -33,11 +33,14 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
  && make sysprep \
 #have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
  && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
+#temporary workaround for osquery issue 4284 (broken yum_sources table)
+ && echo "e13f6ddc78f7190a16b995cd95e1f0298358e7e64ad24d63c807f03acc5a88c6 osquery/tables/system/posix/yum_sources.cpp" | sha256sum -c - \
+ && sed -i 's/\.list/\.repo/g' osquery/tables/system/posix/yum_sources.cpp \
  && make deps \
  && make \
  && make strip
 USER root
-RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery \
+RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt/osquery \
  && chown -R root. /opt/osquery \
  && chmod -R 500 /opt/osquery/* \
 #put augeas lenses into the default directory that we changed earlier
@@ -48,9 +51,49 @@ RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN yum -y install  \
-               libffi-devel openssl-devel libxml2-devel libxslt-devel \
+               libffi-devel openssl-devel libxml2-devel libxslt-devel libffi libssh2-devel autoconf automake libtool \
                libjpeg-devel zlib-devel python-devel make cmake gcc \
                python-setuptools wget openssl
+
+#libcurl install start
+#install libcurl to avoid depending on host version
+#requires autoconf libtool libssh2-devel zlib-devel autoconf
+ENV LIBCURL_SRC_URL=https://github.com/curl/curl.git
+ENV LIBCURL_SRC_VERSION=curl-7_59_0
+ENV LIBCURL_TEMP=/tmp/libcurl
+ENV PATH=/opt/hubble/bin/:/opt/hubble/include:/opt/hubble/lib:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+RUN mkdir -p "$LIBCURL_TEMP" \
+ && cd "$LIBCURL_TEMP" \
+ && git clone "$LIBCURL_SRC_URL" \
+ && cd curl \
+ && git checkout "$LIBCURL_SRC_VERSION" \
+ && ./buildconf \
+ && ./configure --prefix=/opt/hubble --disable-ldap --without-nss --disable-manual --disable-gopher --disable-smtp --disable-smb --disable-imap --disable-pop3 --disable-tftp --disable-telnet --disable-dict --disable-ldaps --disable-ldap --disable-rtsp --with-libssh2 \
+ && make \
+ && make install
+
+#git install start
+#install git so that git package won't be a package dependency
+#requires make git libcurl-devel autoconf zlib-devel gcc
+ENV GIT_SRC_URL=https://github.com/git/git.git
+ENV GIT_SRC_VERSION=v2.16.3
+ENV GITTEMP=/tmp/gittemp
+RUN mkdir -p "$GITTEMP" \
+ && cd "$GITTEMP" \
+ && git clone "$GIT_SRC_URL" \
+ && cd git \
+ && git checkout "$GIT_SRC_VERSION" \
+ && make configure \
+ && ./configure --prefix=/opt/hubble --with-tcltk=no --with-expat=no --with-python=no  --with-curl=/opt/hubble \
+ && echo "NO_TCLTK=YesPlease" >> config.mak.autogen \
+ && echo "NO_PERL=YesPlease" >> config.mak.autogen \
+ && sed -i '0,/^NO_GETTEXT/s/^NO_GETTEXT.*/NO_GETTEXT=YesPlease/' config.mak.autogen \
+ && make \
+ && make install
+
+#clean up of /opt/hubble
+RUN rm /opt/hubble/bin/curl* \
+ && rm -rf /opt/hubble/include /opt/hubble/share
 
 #libgit2 install start
 #must precede pyinstaller requirements
@@ -95,7 +138,7 @@ ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
-ENV LD_LIBRARY_PATH=/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
+ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout "$HUBBLE_CHECKOUT" \
@@ -104,7 +147,7 @@ RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build
 ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
-CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} hubble.py' \
+CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py' \
     && cp /hubble_build/conf/osquery.conf /etc/osquery/ \
     && cp /hubble_build/conf/osquery.flags /etc/osquery/ \
 # hubble default configuration file
@@ -135,8 +178,6 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
                                  -n hubblestack \
                                  -v ${HUBBLE_VERSION} \
                                  --iteration ${HUBBLE_ITERATION} \
-                                 #todo: get rid of the git dependency with static bin in the future
-                                 -d git \
                                  --config-files /etc/osquery/osquery.conf \
                                  --after-install /hubble_build/conf/afterinstall.sh \
                                  --after-upgrade /hubble_build/conf/afterupgrade.sh \

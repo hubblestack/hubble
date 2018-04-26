@@ -34,7 +34,7 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
 #have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
  && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
 #temporary workaround for osquery issue 4284 (broken yum_sources table)
- && echo "e13f6ddc78f7190a16b995cd95e1f0298358e7e64ad24d63c807f03acc5a88c6 osquery/tables/system/posix/yum_sources.cpp" | sha256sum -c - \
+ && echo "e13f6ddc78f7190a16b995cd95e1f0298358e7e64ad24d63c807f03acc5a88c6  osquery/tables/system/posix/yum_sources.cpp" | sha256sum -c - \
  && sed -i 's/\.list/\.repo/g' osquery/tables/system/posix/yum_sources.cpp \
  && make deps \
  && make \
@@ -128,8 +128,8 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.3.1
-ENV HUBBLE_VERSION=2.3.1
+ENV HUBBLE_CHECKOUT=v2.3.2
+ENV HUBBLE_VERSION=2.3.2
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src

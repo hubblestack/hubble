@@ -78,10 +78,10 @@ def _get_conn():
 ##  u'id': u'hostname.here',
 ##  u'jid': u'20180117091736565184',
 ##  u'return': {u'Compliance': u'0%',
-##   u'Failure': [{u'ruby2.3-2.3.1-2~16.04.5': u'Ruby vulnerabilities'},
+##   u'Failure': [{u'ruby2.3-2.3.2-2~16.04.5': u'Ruby vulnerabilities'},
 ##    {u'libjavascriptcoregtk-4.0-18-2.18.5-0ubuntu0.16.04.1': u'WebKitGTK+ vulnerabilities'},
 ##    {u'libwebkit2gtk-4.0-37-2.18.5-0ubuntu0.16.04.1': u'WebKitGTK+ vulnerabilities'},
-##    {u'libruby2.3-2.3.1-2~16.04.5': u'Ruby vulnerabilities'},
+##    {u'libruby2.3-2.3.2-2~16.04.5': u'Ruby vulnerabilities'},
 ##    {u'linux-image-generic-4.4.0.109.114': u'Linux kernel regression'},
 ##    {u'libgdk-pixbuf2.0-0-2.32.2-1ubuntu1.4': u'GDK-PixBuf vulnerabilities'}],
 ##   u'Success': []}}

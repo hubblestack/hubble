@@ -570,9 +570,10 @@ def refresh_grains(initial=False):
     global __context__
 
     persist = {}
-    for grain in __opts__.get('grains_persist', []):
-        if grain in __grains__:
-            persist[grain] = __grains__[grain]
+    if not initial:
+        for grain in __opts__.get('grains_persist', []):
+            if grain in __grains__:
+                persist[grain] = __grains__[grain]
 
     if initial:
         __context__ = {}

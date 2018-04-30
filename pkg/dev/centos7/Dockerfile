@@ -179,7 +179,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --iteration ${HUBBLE_ITERATION} \
        --config-files /etc/osquery/osquery.conf \
        --after-install /hubble_build/conf/afterinstall-systemd.sh \
-       --after-upgrade /hubble_build/conf/afterupgrade.sh \
+       --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
        etc/hubble etc/osquery opt usr \
 #edit to change iteration number, if necessary
     && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm \

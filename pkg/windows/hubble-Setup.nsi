@@ -54,7 +54,7 @@ ${StrStrAdv}
 ;General
   ;Name and File
   Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
-  OutFile "Hubble-${PRODUCT_VERSION}-${CPUARCH}-Setup.exe"
+  OutFile "Hubble-${PRODUCT_VERSION}-Setup.exe"
   
   ;Default Installation folder
   InstallDir "C:\${PFILES}\Hubble"
@@ -252,8 +252,11 @@ ${StrStrAdv}
     SetOutPath "$INSTDIR\"
     SetOverwrite ifdiff 
 	CreateDirectory $INSTDIR\var
+    CreateDirectory $INSTDIR\opt
+    CreateDirectory $INSTDIR\etc\hubble
     File /r "..\..\dist\hubble\"
-	File "..\osqueryi.exe"
+	File "osqueryi.exe"
+    File "hubble.conf"
 
   SectionEnd
   
@@ -397,7 +400,7 @@ ${StrStrAdv}
 
   Function .onInit
 
-    Call getHubbleConfig
+    Call makeHubbleConfig
 
     Call parseCommandLineSwitches
 
@@ -750,45 +753,37 @@ ${StrStrAdv}
 ;--------------------------------
 ;Specialty Fuctions
 
-  Function getHubbleConfig
+  Function makeHubbleConfig
   
     confFind:
-	IfFileExists "$INSTDIR\etc\hubble\hubble.conf" confFound confNotFound
+	IfFileExists "$INSTDIR\etc\hubble\hubble.d\user.conf" confFound confNotFound
 
     confNotFound:
-    ${If} $INSTDIR == "c:\salt\bin\Scripts"
-        StrCpy $INSTDIR "C:\${PFILES}\hubble\"
-        goto confFind
+    ClearErrors
+    FileOpen $0 "$INSTDIR\etc\hubble\hubble.d\user.conf" r$\n
+    IfErrors confReallyNotFound
+        goto confLoop
     ${Else}
         goto confReallyNotFound
     ${EndIf}
 
     confFound:
-    FileOpen $0 "$INSTDIR\etc\hubble\hubble.conf" r
+    Delete "$INSTDIR\etc\hubble\hubble.d\user.conf"
+        goto confFind
 
     confLoop:
-        FileRead $0 $1
-        IfErrors EndOfFile
-        ${StrLoc} $2 $1 "token:" ">"
-        ${If} $2 == 0
-          ${StrStrAdv} $2 $1 "token: " ">" ">" "0" "0" "0"
-          ${Trim} $2 $2
-            StrCpy $HECToken_State $2
-        ${EndIf}
-
-        ${StrLoc} $2 $1 "index:" ">"
-        ${If} $2 == 0
-          ${StrStrAdv} $2 $1 "index: " ">" ">" "0" "0" "0"
-          ${Trim} $2 $2
-            StrCpy $IndexName_State $2
-        ${EndIf}
-		
-		${StrLoc} $2 $1 "indexer:" ">"
-        ${If} $2 == 0
-          ${StrStrAdv} $2 $1 "indexer: " ">" ">" "0" "0" "0"
-          ${Trim} $2 $2
-            StrCpy $HECToken_State $2
-        ${EndIf}
+    
+        FileWrite $0 "hubblestack:"
+        FileWrite $0 "  returner:"
+        FileWrite $0 "    splunk:"
+        FileWrite $0 "      - token: $HECToken_State"
+        FileWrite $0 "        indexer: $IndexName_State"
+        FileWrite $0 "        index: $IndexName_State"
+        FileWrite $0 "        sourcetype_nova: hubble_audit"
+        FileWrite $0 "        sourcetype_nebula: hubble_osquery"
+        FileWrite $0 "        sourcetype_pulsar: hubble_fim"
+        FileWrite $0 "        sourcetype_log: hubble_log"
+        FileClose $0
 
     Goto confLoop
 

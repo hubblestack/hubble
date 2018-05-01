@@ -1004,6 +1004,7 @@ def get_top_data(topfile):
 
         topdata = topdata['pulsar']
         TOP = topdata
+        TOP_STALENESS = 0
 
     ret = []
 

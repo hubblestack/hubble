@@ -292,8 +292,11 @@ class PulsarWatchManager(pyinotify.WatchManager):
     @max_user_watches.setter
     def max_user_watches(self,muwb):
         log.splunk("Setting fs.inotify.max_user_watches={0}".format(muwb))
-        with open('/proc/sys/fs/inotify/max_user_watches', 'w') as fh:
-            fh.write('{0}\n'.format(muwb))
+        try:
+            with open('/proc/sys/fs/inotify/max_user_watches', 'w') as fh:
+                fh.write('{0}\n'.format(muwb))
+        except IOError as e:
+            log.error("Error updating sys.fs.inotify.max_user_watches: %s", e)
 
     def _add_recursed_file_watch(self, path, mask=None, **kw):
         if mask is None:

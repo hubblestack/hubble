@@ -108,7 +108,7 @@ else {
 if (!(Test-Path 'C:\ProgramData\osquery\osqueryi.exe')) {
 	choco install osquery
 }
-Copy-Item C:\ProgramData\osquery\osqueryi.exe .\pkg\
+Copy-Item C:\ProgramData\osquery\osqueryi.exe .\pkg\windows\
 
 # Add needed variables
 $currDIR = $PWD.Path

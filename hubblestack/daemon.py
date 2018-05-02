@@ -531,11 +531,6 @@ def load_config():
 
     refresh_grains(initial=True)
 
-    # Check for default gateway and fall back if necessary
-    if __grains__.get('ip_gw', None) is False and 'fallback_fileserver_backend' in __opts__:
-        log.info('No default gateway detected; using fallback_fileserver_backend.')
-        __opts__['fileserver_backend'] = __opts__['fallback_fileserver_backend']
-
     # splunk logs below warning, above info by default
     logging.SPLUNK = int(__opts__.get('splunk_log_level', 25))
     logging.addLevelName(logging.SPLUNK, 'SPLUNK')
@@ -584,6 +579,12 @@ def refresh_grains(initial=False):
     __grains__ = salt.loader.grains(__opts__)
     __grains__.update(persist)
     __grains__['session_uuid'] = SESSION_UUID
+
+    # Check for default gateway and fall back if necessary
+    if __grains__.get('ip_gw', None) is False and 'fallback_fileserver_backend' in __opts__:
+        log.info('No default gateway detected; using fallback_fileserver_backend.')
+        __opts__['fileserver_backend'] = __opts__['fallback_fileserver_backend']
+
     __opts__['hubble_uuid'] = __grains__.get('hubble_uuid', None)
     __pillar__ = {}
     __opts__['grains'] = __grains__

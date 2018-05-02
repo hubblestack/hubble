@@ -4,7 +4,7 @@ sudo chown -R $USER. temp
 cd temp
 git clone https://github.com/facebook/osquery.git
 cd osquery
-git checkout 2.3.2
+git checkout 2.3.3
 make sysprep
 make deps
 /usr/local/osquery/bin/brew untap homebrew/dupes

@@ -7,9 +7,9 @@ Param(
   [string]$branch="develop"
 )
 
-$chocoVer = "0.10.5"
-$gitVer = "2.12.0"
-$portGitVer = "2.16.1.4"
+[System.Version]$chocoVer = "0.10.5"
+[System.Version]$gitVer = "2.12.0"
+[System.Version]$portGitVer = "2.16.1.4"
 # Verify you are running with elevated permission mode (administrator token)
 if (!([bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544"))) {
     Write-Error "You must be running powershell with elevated permissions (run as administrator)"
@@ -32,7 +32,7 @@ if (!(Test-Path C:\ProgramData\chocolatey)) {
     Invoke-WebRequest https://chocolatey.org/install.ps1 -UseBasicParsing | Invoke-Expression
     reloadEnv
 } else {
-    $chocoCur = (choco)[0] -replace "Chocolatey v",""
+    [System.Version]$chocoCur = (choco)[0] -replace "Chocolatey v",""
     if ($chocoCur -lt $chocoVer) {
         choco upgrade chocolatey -y
     }
@@ -43,7 +43,7 @@ if (!($git)) {
     choco install git -y
     reloadEnv
 } else {
-    if (($git -replace "git ","") -lt $gitVer) {
+    if ([System.Version]($git -replace "git ","") -lt $gitVer) {
         choco upgrade git -y
     }
 }
@@ -87,9 +87,11 @@ if ($repo -notlike "https*") {
 }
 git clone $repo
 Push-Location hubble\pkg\windows
-if ($branch -like "\W.+") {
+if ($branch) {
     git checkout $branch
-}
+} else {
+    git checkout develop
+}        
 $lines = Get-Content pyinstaller-requirements.txt | Where-Object {$_ -notmatch '^\s+$'} 
 foreach ($line in $lines) {
     $line = $line -replace "#.+$",""
@@ -105,7 +107,7 @@ if (!($port_git)) {
     choco install git.portable -y
     reloadEnv
 } else {
-    if (($port_git -replace "git.portable ","") -lt $portgitVer) {
+    if ([System.Version]($port_git -replace "git.portable ","") -lt $portgitVer) {
         choco upgrade git.portable -y
     }
 }
@@ -114,18 +116,15 @@ set-location C:\Temp
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1" -Force;
 $ChocoTools = Get-ToolsLocation
 
-if ([string]::IsNullOrEmpty($ChocoTools)) {
-    $ChocoTools = [System.Environment]::GetEnvironmentVariable("ChocolateyToolsLocation","User")
+if (!($ChocoTools)) {
+    $ChocoTools = $env:ChocolateyToolsLocation
 }
 
 if(!(test-path .\hubble\PortableGit\)) {
     mkdir C:\Temp\hubble\PortableGit\
 }
 
-if (!(test-path "$ChocoTools\git\git-cmd.exe")) {
-    choco install git.portable -y --force
-}
-Move-Item -Path $ChocoTools\git\ -Destination C:\Temp\hubble\PortableGit\ 
+Copy-Item -Path $ChocoTools\git\* -Destination C:\Temp\hubble\PortableGit\ 
 
 # Install osquery for executible
 if (!(Test-path C:\ProgramData\osquery)) {
@@ -150,8 +149,4 @@ if (Test-Path C:\salt) {
     if ($empty -eq $null) {
         Remove-Item C:\salt
     }
-}
-
-if (Test-Path C:\tools) {
-    Remove-Item C:\tools -force
 }

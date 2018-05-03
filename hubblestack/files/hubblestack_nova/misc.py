@@ -360,15 +360,14 @@ def test_mount_attrs(mount_name, attribute, check_type='hard'):
     '''
     # check that the path exists on system
     command = 'test -e ' + mount_name
-    results = __salt__['cmd.run_all'](command)
-    output = results['stdout']
+    results = __salt__['cmd.run_all'](command, ignore_retcode=True)
     retcode = results['retcode']
     if str(retcode) == '1':
         return True if check_type == "soft" else (mount_name + " folder does not exist")
 
     # if the path exits, proceed with following code
-    output = __salt__['cmd.run']('mount') #| grep ' + mount_name)
-    if mount_name not in output:
+    output = __salt__['cmd.run']('cat /proc/mounts')
+    if not re.search(mount_name, output, re.M):
         return True if check_type == "soft" else (mount_name + " is not mounted")
     else:
         for line in output.splitlines():
@@ -531,11 +530,18 @@ def check_service_status(service_name, state):
     Return True otherwise
     state can be enabled or disabled.
     '''
-    output = __salt__['cmd.retcode']('systemctl is-enabled ' + service_name)
-    if (state == "disabled" and str(output) == "1") or (state == "enabled" and str(output) == "0"):
-        return True
+    all_services = __salt__['cmd.run']('systemctl list-unit-files')
+    if re.search(service_name, all_services, re.M):
+        output = __salt__['cmd.retcode']('systemctl is-enabled ' + service_name, ignore_retcode=True)
+        if (state == "disabled" and str(output) == "1") or (state == "enabled" and str(output) == "0"):
+            return True
+        else:
+            return __salt__['cmd.run_stdout']('systemctl is-enabled ' + service_name, ignore_retcode=True)
     else:
-        return __salt__['cmd.run_stdout']('systemctl is-enabled ' + service_name)
+        if state == "disabled":
+            return True
+        else:
+            return 'Looks like ' + service_name + ' does not exists. Please check.'
 
 
 def check_ssh_timeout_config(reason=''):
@@ -985,12 +991,12 @@ def ensure_max_password_expiration(allow_max_days, except_for_users=''):
     if not pass_max_days_output:
         return "PASS_MAX_DAYS must be set"
     system_pass_max_days = pass_max_days_output.split()[1]
-    
+
     if not _is_int(system_pass_max_days):
         return "PASS_MAX_DAYS must be set properly"
     if int(system_pass_max_days) > allow_max_days:
         return "PASS_MAX_DAYS must be less than or equal to " + str(allow_max_days)
-        
+
     #fetch all users with passwords
     grep_args.append('-E')
     all_users = _grep('/etc/shadow', '^[^:]+:[^\!*]', *grep_args).get('stdout')
@@ -1003,18 +1009,71 @@ def ensure_max_password_expiration(allow_max_days, except_for_users=''):
     for line in all_users.split('\n'):
         user = line.split(':')[0]
         #As per CIS doc, 5th field is the password max expiry days
-        user_passwd_expiry = line.split(':')[4] 
+        user_passwd_expiry = line.split(':')[4]
         if not user in except_for_users_list and _is_int(user_passwd_expiry) and int(user_passwd_expiry) > allow_max_days:
             result.append('User ' + user + ' has max password expiry days ' + user_passwd_expiry + ', which is more than ' + str(allow_max_days))
-            
+
     return True if result == [] else str(result)
-            
+
 def _is_int(input):
     try:
         num = int(input)
     except ValueError:
         return False
     return True
+
+def check_sshd_paramters(pattern, values=None, comparetype='regex'):
+    '''
+    This function will check if any pattern passed is present in ssh service
+    User can also check for the values for that pattern
+    To check for values in any order, then use comparetype as 'only'
+    Example:
+    1) To check for INFO for LogLevel
+        check_log_level:
+            data:
+              '*':
+               tag: CIS-1.1.1
+               function: check_sshd_paramters
+               args:
+                 - '^LogLevel\s+INFO'
+            description: Ensure SSH LogLevel is set to INFO
+    2) To check for only approved ciphers in any order
+    sshd_approved_cipher:
+      data:
+        '*':
+         tag: CIS-1.1.2
+         function: check_sshd_paramters
+         args:
+           - '^Ciphers'
+         kwargs:
+           values: aes256-ctr,aes192-ctr,aes128-ctr
+           comparetype: only
+      description: Ensure only approved ciphers are used
+    '''
+    output = __salt__['cmd.run']('sshd -T')
+    if comparetype == 'only':
+        if not values:
+            return "You need to provide values for comparetype 'only'."
+        else:
+            for line in output.splitlines():
+                if re.match(pattern, line, re.I):
+                    expected_values = values.split(',')
+                    found_values = line[len(pattern):].strip().split(',')
+                    for found_value in found_values:
+                        if found_value in expected_values:
+                            continue
+                        else:
+                            return "Allowed values for pattern: " + pattern + " are " + values
+                    return True
+            return "Looks like pattern i.e. " + pattern + " not found in sshd -T. Please check."
+    elif comparetype == 'regex':
+        if re.search(pattern, output, re.M | re.I):
+            return True
+        else:
+            return "Looks like pattern i.e. " + pattern + " not found in sshd -T. Please check."
+    else:
+        return "The comparetype: " + comparetype + " not found. It can be 'regex' or 'only'. Please check."
+
 
 def test_success():
     '''
@@ -1078,5 +1137,5 @@ FUNCTION_MAP = {
     'mail_conf_check': mail_conf_check,
     'check_if_any_pkg_installed': check_if_any_pkg_installed,
     'ensure_max_password_expiration': ensure_max_password_expiration,
-
+    'check_sshd_paramters': check_sshd_paramters,
 }

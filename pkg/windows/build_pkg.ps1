@@ -86,7 +86,7 @@ else {
 Copy-Item $confFile -Destination '.\dist\hubble\etc\hubble\'
 
 # Copy PortableGit to correct location
-Copy-Item '.\PortableGit' -Destination '.\dist\hubble\' -Recurse -Force
+Move-Item '.\PortableGit' -Destination '.\dist\hubble\' -Force
 
 # Copy nssm.exe to correct location
 if (Test-Path '..\salt\pkg\windows\buildenv\nssm.exe') {
@@ -108,7 +108,7 @@ else {
 if (!(Test-Path 'C:\ProgramData\osquery\osqueryi.exe')) {
 	choco install osquery
 }
-Copy-Item C:\ProgramData\osquery\osqueryi.exe .\pkg\windows\
+Copy-Item C:\ProgramData\osquery\osqueryi.exe .\dist\hubble\
 
 # Add needed variables
 $currDIR = $PWD.Path

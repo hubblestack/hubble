@@ -3,7 +3,6 @@ Crypto
 pyopenssl>=16.2.0
 argparse
 requests>=2.13.0
-logging
 pprint
 daemon
 boto3

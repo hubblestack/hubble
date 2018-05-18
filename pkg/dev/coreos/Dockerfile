@@ -140,7 +140,7 @@ RUN pip -v install -r pyinstaller-requirements.txt
 ARG HUBBLE_CHECKOUT=develop
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_VERSION=2.3.4_develop
-ENV HUBBLE_ITERATION=2
+ENV HUBBLE_ITERATION=1
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"

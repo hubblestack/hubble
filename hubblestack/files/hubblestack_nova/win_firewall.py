@@ -24,8 +24,8 @@ __virtualname__ = 'win_firewall'
 def __virtual__():
     if not salt.utils.platform.is_windows():
         return False, 'This audit module only runs on windows'
-    if '2008' in __grains__['osfullname']:
-        return False, 'The Powershell firewall module only works on 2012 or higher'
+    if not salt.utils.powershell.module_exists('NetSecurity'):
+        return False, 'This audit module requires the NetSecurity module'
     return True
 
 def apply_labels(__data__, labels):

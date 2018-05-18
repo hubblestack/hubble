@@ -3,12 +3,11 @@ Crypto
 pyopenssl>=16.2.0
 argparse
 requests>=2.13.0
-logging
 pprint
 daemon
 boto3
 botocore
-pygit2
+pygit2<0.27.0
 salt-ssh
 gitpython
 pyinotify

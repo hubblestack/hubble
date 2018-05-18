@@ -141,29 +141,6 @@ def queries(query_group,
             log.debug('osquery not installed on this host. Skipping.')
             return None
 
-    if salt.utils.platform.is_windows():
-        win_version = __grains__['osfullname']
-        if '2008' not in win_version and '2012' not in win_version and '2016' not in win_version:
-            log.error('osquery does not run on windows versions earlier than Server 2008 and Windows 7')
-            if query_group == 'day':
-                ret = []
-                ret.append(
-                    {'fallback_osfinger': {
-                     'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
-                               'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
-                     'result': True
-                     }}
-                )
-                ret.append(
-                    {'fallback_error': {
-                     'data': 'osqueryi is installed but not compatible with this version of windows',
-                             'result': True
-                     }}
-                )
-                return ret
-            else:
-                return None
-
     query_data = query_data.get(query_group, [])
 
     if not query_data:
@@ -172,6 +149,7 @@ def queries(query_group,
     ret = []
     timing = {}
     schedule_time = time.time()
+    success = True
     for query in query_data:
         name = query.get('query_name')
         query_sql = query.get('query')
@@ -191,6 +169,7 @@ def queries(query_group,
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
+            success = False
             query_ret['result'] = False
             query_ret['error'] = res['stderr']
 
@@ -200,6 +179,27 @@ def queries(query_group,
             ret.append(tmp)
         else:
             ret.append({name: query_ret})
+
+    if success is False and salt.utils.platform.is_windows():
+        log.error('osquery does not run on windows versions earlier than Server 2008 and Windows 7')
+        if query_group == 'day':
+            ret = []
+            ret.append(
+                {'fallback_osfinger': {
+                 'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
+                           'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
+                 'result': True
+                 }}
+            )
+            ret.append(
+                {'fallback_error': {
+                 'data': 'osqueryi is installed but not compatible with this version of windows',
+                         'result': True
+                 }}
+            )
+            return ret
+        else:
+            return None
 
     if __salt__['config.get']('splunklogging', False):
         log.info('Logging osquery timing data to splunk')

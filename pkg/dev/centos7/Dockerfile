@@ -165,6 +165,8 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && if [ -f /data/hubble ] ; then cp /data/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ ; fi \
 #also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
     && if [ -d /data/opt ] ; then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/opt/ ; fi \
+#overwrite the contents of __init__.py if CUSTOM_HUBBLE_VERSION has been provided via environment variables
+    && if [ ! -z `echo $CUSTOM_HUBBLE_VERSION` ] ; then echo  __version__ = ${CUSTOM_HUBBLE_VERSION}  > /hubble_build/hubblestack/__init__.py ; fi \
     && cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p usr/bin \
 #symlink to have hubble binary in path

@@ -143,7 +143,9 @@ RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build
 ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
-CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py \
+#overwrite the contents of __init__.py if CUSTOM_HUBBLE_VERSION has been provided via environment variables
+CMD [ "if [ ! -z `echo $CUSTOM_HUBBLE_VERSION` ] ; then echo  __version__ = ${CUSTOM_HUBBLE_VERSION}  > /hubble_build/hubblestack/__init__.py ; fi \
+    && pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py \
     && cp /hubble_build/conf/osquery.conf /etc/osquery/ \
     && cp /hubble_build/conf/osquery.flags /etc/osquery/ \
 # hubble default configuration file
@@ -165,8 +167,6 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && if [ -f /data/hubble ] ; then cp /data/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ ; fi \
 #also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
     && if [ -d /data/opt ] ; then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/opt/ ; fi \
-#overwrite the contents of __init__.py if CUSTOM_HUBBLE_VERSION has been provided via environment variables
-    && if [ ! -z `echo $CUSTOM_HUBBLE_VERSION` ] ; then echo  __version__ = ${CUSTOM_HUBBLE_VERSION}  > /hubble_build/hubblestack/__init__.py ; fi \
     && cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p usr/bin \
 #symlink to have hubble binary in path

@@ -12,16 +12,14 @@ import requests
 def get_cloud_details():
     # Gather all cloud details and return them, along with the fieldnames
 
-    grains = {'cloud_host': False}
+    grains = {}
 
     aws = _get_aws_details()
     azure = _get_azure_details()
 
     if aws['cloud_details']:
-        grains['cloud_host'] = True
         grains.update(aws)
     if azure['cloud_details']:
-        grains['cloud_host'] = True
         grains.update(azure)
 
     return grains
@@ -37,14 +35,14 @@ def _get_aws_details():
 
     try:
         aws['cloud_account_id'] = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
-                                               timeout=1).json().get('accountId', 'unknown')
+                                               timeout=3).json().get('accountId', 'unknown')
         # AWS account id is always an integer number
         # So if it's an aws machine it must be a valid integer number
         # Else it will throw an Exception
         aws['cloud_account_id'] = int(aws['cloud_account_id'])
 
         aws['cloud_instance_id'] = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
-                                                timeout=1).text
+                                                timeout=3).text
     except (requests.exceptions.RequestException, ValueError):
         # Not on an AWS box
         aws = None
@@ -63,7 +61,7 @@ def _get_azure_details():
     azureHeader = {'Metadata': 'true'}
     try:
         id = requests.get('http://169.254.169.254/metadata/instance/compute?api-version=2017-08-01',
-                          headers=azureHeader, timeout=1).json()
+                          headers=azureHeader, timeout=3).json()
         azure['cloud_instance_id'] = id['vmId']
         azure['cloud_account_id'] = id['subscriptionId']
 

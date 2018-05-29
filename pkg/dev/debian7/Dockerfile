@@ -167,7 +167,7 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 ARG HUBBLE_CHECKOUT=develop
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_VERSION=2.3.4
-ENV HUBBLE_ITERATION=1
+ENV HUBBLE_ITERATION=3
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"

@@ -127,7 +127,7 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
 #use the following variables to choose the version of hubble
 ENV HUBBLE_CHECKOUT=v2.3.4
 ENV HUBBLE_VERSION=2.3.4
-ENV HUBBLE_ITERATION=1
+ENV HUBBLE_ITERATION=3
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"

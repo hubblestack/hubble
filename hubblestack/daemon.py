@@ -417,6 +417,14 @@ def load_config():
     # Parse arguments
     parsed_args = parse_args()
 
+    # Let's find out the path of this module
+    if 'SETUP_DIRNAME' in globals():
+        # This is from the exec() call in Salt's setup.py
+        this_file = os.path.join(SETUP_DIRNAME, 'salt', 'syspaths.py')  # pylint: disable=E0602
+    else:
+        this_file = __file__
+    install_dir = os.path.dirname(os.path.realpath(this_file))
+
     # Load unique data for Windows or Linux
     if salt.utils.platform.is_windows():
         if parsed_args.get('configfile') is None:
@@ -447,6 +455,7 @@ def load_config():
     __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
     __opts__['conf_file'] = parsed_args.get('configfile')
+    __opts__['install_dir'] = install_dir
 
     # Optional sleep to wait for network
     time.sleep(int(__opts__.get('startup_sleep', 0)))

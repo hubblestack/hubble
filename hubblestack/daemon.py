@@ -637,6 +637,9 @@ def parse_args():
     parser.add_argument('--version',
                         action='store_true',
                         help='Show version information')
+    parser.add_argument('--buildinfo',
+                        action='store_true',
+                        help='Show build information')
     parser.add_argument('function',
                         nargs='?',
                         default=None,

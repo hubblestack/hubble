@@ -58,6 +58,15 @@ def run():
         clean_up_process(None, None)
         sys.exit(0)
 
+    if __opts__['buildinfo']:
+        try:
+            from hubblestack import __buildinfo__
+        except ImportError:
+            __buildinfo__ = 'NOT SET'
+        print(__buildinfo__)
+        clean_up_process(None, None)
+        sys.exit(0)
+
     if __opts__['daemonize']:
         # before becoming a daemon, check for other procs and possibly send
         # then a signal 15 (otherwise refuse to run)

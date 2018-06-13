@@ -58,6 +58,15 @@ def run():
         clean_up_process(None, None)
         sys.exit(0)
 
+    if __opts__['buildinfo']:
+        try:
+            from hubblestack import __buildinfo__
+        except ImportError:
+            __buildinfo__ = 'NOT SET'
+        print(__buildinfo__)
+        clean_up_process(None, None)
+        sys.exit(0)
+
     if __opts__['daemonize']:
         # before becoming a daemon, check for other procs and possibly send
         # then a signal 15 (otherwise refuse to run)
@@ -637,6 +646,9 @@ def parse_args():
     parser.add_argument('--version',
                         action='store_true',
                         help='Show version information')
+    parser.add_argument('--buildinfo',
+                        action='store_true',
+                        help='Show build information')
     parser.add_argument('function',
                         nargs='?',
                         default=None,

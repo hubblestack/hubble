@@ -371,8 +371,14 @@ class http_event_collector:
                     r.raise_for_status()
                     server[1] = True
                     break
-                except requests.exceptions.RequestException:
-                    log.info('Request to splunk server "%s" failed. Marking as bad.' % server[0])
+                except requests.exceptions.Timeout as timeout_err:
+                    log.info('Connection timed out to splunk server {0}: {1}'.format(unicode(server[0]), unicode(timeout_err)))
+                except requests.exceptions.ConnectionError as connect_err:
+                    log.info('Error establishing connection to splunk server {0}: {1}'.format(unicode(server[0]), unicode(connect_err)))
+                except requests.exceptions.HTTPError as http_err:
+                    log.info('HTTP Error received while connecting to splunk server {0}: {1}'.format(unicode(server[0]), unicode(http_err)))
+                except requests.exceptions.RequestException as gen_err:
+                    log.info('Request to splunk server {0} failed: {1}'.format(unicode(server[0]), unicode(gen_err)))
                     server[1] = False
                 except Exception as e:
                     log.error('Request to splunk threw an error: {0}'.format(e))

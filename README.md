@@ -37,6 +37,20 @@ A config template has been placed in `/etc/hubble/hubble`. Modify it to your spe
 
 The first two commands you should run to make sure things are set up correctly are `hubble --version` and `hubble test.ping`.
 
+### Quickstart Docker container
+Get up and running with any supported distribution by installing net-tools in a running docker container.  
+`docker run -it {distro:tag} sh` the desired agent, then use the appropriate package manager to install net-tools:
+
+To run centos:7 container
+```sh
+docker run -it centos:7 sh
+```
+To install net-tools
+```sh
+yum install net-tools
+```
+Follow instructions above in _Installing using setup.py_
+
 ### Building Hubble packages through Dockerfile
 Dockerfile aims to build the Hubble v2 packages easier. Dockerfiles for the distribution you want to build can be found at the path `/pkg`. For example, dockerfile for centos6 distribution is at the path `/pkg/centos6/`
 

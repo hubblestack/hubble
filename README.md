@@ -64,7 +64,7 @@ docker run -it --rm -v `pwd`:/data <image_name>
 ```
 
 ### Using released packages
-Various pre-built packages targeting several popular operating systems can be found under [Releases](/hubblestack/hubble/releases).
+Various pre-built packages targeting several popular operating systems can be found under [Releases](https://github.com/hubblestack/hubble/releases).
 
 ## Getting Started
 Hubble runs as a standalone agent on each server you wish to monitor. There are no masters or minions. To get started, install Hubble using one of the above installation options. Once Hubble is installed, check that everything is working correctly:

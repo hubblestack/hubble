@@ -81,9 +81,9 @@ def queries(query_group,
     MAX_FILE_SIZE = 104857600
     if query_file is None:
         if salt.utils.platform.is_windows():
-            query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
+            query_file = 'salt://hubblestack_nebula_v2/hubblestack_nebula_win_queries.yaml'
         else:
-            query_file = 'salt://hubblestack_nebula/hubblestack_nebula_queries.yaml'
+            query_file = 'salt://hubblestack_nebula_v2/hubblestack_nebula_queries.yaml'
     if not isinstance(query_file, list):
         query_file = [query_file]
     for fh in query_file:
@@ -141,7 +141,7 @@ def queries(query_group,
             log.debug('osquery not installed on this host. Skipping.')
             return None
 
-    query_data = query_data.get(query_group, [])
+    query_data = query_data.get(query_group, {})
 
     if not query_data:
         return None
@@ -150,8 +150,8 @@ def queries(query_group,
     timing = {}
     schedule_time = time.time()
     success = True
-    for query in query_data:
-        name = query.get('query_name')
+    for name, query in query_data:
+        query['query_name'] = name
         query_sql = query.get('query')
         if not query_sql:
             continue
@@ -268,16 +268,16 @@ def hubble_versions():
 
 
 def top(query_group,
-        topfile='salt://hubblestack_nebula/top.nebula',
+        topfile='salt://hubblestack_nebula_v2/top.nebula',
         verbose=False,
         report_version_with_day=True):
 
     if salt.utils.platform.is_windows():
-        topfile = 'salt://hubblestack_nebula/win_top.nebula'
+        topfile = 'salt://hubblestack_nebula_v2/win_top.nebula'
 
     configs = get_top_data(topfile)
 
-    configs = ['salt://hubblestack_nebula/' + config.replace('.', '/') + '.yaml'
+    configs = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml'
                for config in configs]
 
     return queries(query_group,

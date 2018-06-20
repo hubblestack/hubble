@@ -27,6 +27,7 @@ import salt.utils.jid
 import salt.utils.gitfs
 import salt.log.setup
 import hubblestack.splunklogging
+from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime
 
@@ -53,17 +54,7 @@ def run():
         os.makedirs(__opts__['cachedir'])
 
     if __opts__['version']:
-        try:
-            from hubblestack import __buildinfo__
-        except ImportError:
-            __buildinfo__ = {}
-
-        if '__version__' in __buildinfo__:
-            print(__buildinfo__['__version__'])
-        else:
-            from hubblestack import __version__
-            print(__version__)
-
+        print(__version__)
         clean_up_process(None, None)
         sys.exit(0)
 

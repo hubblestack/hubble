@@ -146,7 +146,8 @@ RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build
 ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
-CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py' \
+CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubblestack/__init__.py ; cat /data/hubble_buildinfo >> /hubble_build/hubblestack/__init__.py; fi \
+    && scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py' \
     && cp /hubble_build/conf/osquery.conf /etc/osquery/ \
     && cp /hubble_build/conf/osquery.flags /etc/osquery/ \
 # hubble default configuration file

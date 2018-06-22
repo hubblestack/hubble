@@ -201,7 +201,7 @@ def getlastrunbybuckets(buckets, seconds):
     ips = host_ip.split('.')
     sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2])*256)+int(ips[3])
     bucket = sum%buckets
-    log.debug('bucket number is {0}'.format(bucket))
+    log.debug('bucket number is {0} out of {1}'.format(bucket, buckets))
     current_time = time.time()
     base_time = seconds*(math.floor(current_time/seconds))
     splay = seconds/buckets

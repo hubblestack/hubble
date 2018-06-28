@@ -101,7 +101,8 @@ def returner(ret):
 
             payload.update({'host': fqdn})
             payload.update({'_sourcetype': opts['sourcetype']})
-            payload.update({'full_message': event})
+            payload.update({'short_message': 'hubblestack'})
+            payload.update({'hubblemsg': event})
 
             rdy = json.dumps(payload)
             requests.post('{}:{}/gelf'.format(gelfhttp, port), rdy)
@@ -137,7 +138,8 @@ def returner(ret):
 
             payload.update({'host': fqdn})
             payload.update({'_sourcetype': opts['sourcetype']})
-            payload.update({'full_message': event})
+            payload.update({'short_message': 'hubblestack'})
+            payload.update({'hubblemsg': event})
 
             rdy = json.dumps(payload)
             requests.post('{}:{}/gelf'.format(gelfhttp, port), rdy)
@@ -165,7 +167,8 @@ def returner(ret):
 
             payload.update({'host': fqdn})
             payload.update({'_sourcetype': opts['sourcetype']})
-            payload.update({'full_message': event})
+            payload.update({'short_message': 'hubblestack'})
+            payload.update({'hubblemsg': event})
 
             rdy = json.dumps(payload)
             requests.post('{}:{}/gelf'.format(gelfhttp, port), rdy)

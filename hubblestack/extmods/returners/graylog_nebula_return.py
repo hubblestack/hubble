@@ -90,7 +90,8 @@ def returner(ret):
 
                         payload.update({'host': fqdn})
                         payload.update({'_sourcetype': opts['sourcetype']})
-                        payload.update({'full_message': event})
+                        payload.update({'short_message': 'hubblestack'})
+                        payload.update({'hubblemsg': event})
 
                         # If the osquery query includes a field called 'time' it will be checked.
                         # If it's within the last year, it will be used as the eventtime.

@@ -18,7 +18,10 @@ hubblestack:
         proxy: {}
         timeout: 10
         gelfhttp_ssl: True
+        sourcetype_nebula: hubble_osquery
+        sourcetype_pulsar: hubble_fim
         sourcetype_nova: hubble_audit
+        http_event_collector_ssl_verify: True
         gelfhttp: http://graylog-gelf-http-input-addr
 
 '''

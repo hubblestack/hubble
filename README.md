@@ -31,6 +31,15 @@ git clone https://github.com/hubblestack/hubble
 cd hubble
 sudo python setup.py install
 ```
+
+If there are errors installing, it may mean that your setuptools is out of
+date. Try this:
+
+```sh
+easy_install pip
+pip install -U setuptools
+```
+
 Installs a hubble "binary" into `/usr/bin/`.
 
 A config template has been placed in `/etc/hubble/hubble`. Modify it to your specifications and needs. You can do `hubble -h` to see the available options.

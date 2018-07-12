@@ -15,6 +15,11 @@ def test_basic():
     except HangTime as ht:
         bang.add(ht.id)
 
+    # if we forget to clear the remaining timer
+    # we'll alarmclock sys.exit here
+    # not a real test, but the tests won't pass if we sys.exit
+    time.sleep(1)
+
     assert bang == set()
     assert signal.getsignal(signal.SIGALRM) == signal.SIG_DFL
 
@@ -76,7 +81,7 @@ def test_outer_timeout():
     except HangTime as ht:
         bang.add(ht.id)
 
-    assert bang == {10,12}
+    assert bang == {10, 12}
     assert signal.getsignal(signal.SIGALRM) == signal.SIG_DFL
 
 def test_wrapper():
@@ -105,7 +110,7 @@ def test_wrapper():
 def test_fake_refresh_grains():
     t1 = time.time()
 
-    @hangtime_wrapper(timeout=1, repeats=True)
+    @hangtime_wrapper(timeout=0.25, repeats=True)
     def fake_refresh_grains(a,b):
         x = 0
         for i in range(a):
@@ -116,8 +121,9 @@ def test_fake_refresh_grains():
         return x
 
     x = fake_refresh_grains(5, 2) # five two second sleeps
+    target_time = 0.25 * 5 # but each should time out after 0.25s
 
     t2 = time.time()
     dt = t2-t1
-    assert dt == pytest.approx(5)
     assert x == 5
+    assert dt == pytest.approx(target_time, rel=1e-1)

@@ -31,6 +31,7 @@ import hubblestack.splunklogging
 from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime
+from hubblestack.hangtime import hangtime_wrapper
 
 log = logging.getLogger(__name__)
 
@@ -575,7 +576,7 @@ def load_config():
                 self.name = name
         handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
 
-
+@hangtime_wrapper(timeout=15, repeats=True, id=1337)
 def refresh_grains(initial=False):
     '''
     Refresh the grains, pillar, utils, modules, and returners

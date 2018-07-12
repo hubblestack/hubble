@@ -163,7 +163,7 @@ def queries(query_group,
 
         cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
         t0 = time.time()
-        res = __salt__['cmd.run_all'](cmd, timeout=90)
+        res = __salt__['cmd.run_all'](cmd, timeout=10000)
         t1 = time.time()
         timing[name] = t1-t0
         if res['retcode'] == 0:

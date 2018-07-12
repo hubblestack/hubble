@@ -1,5 +1,5 @@
 
-from hubblestack.hangtime import HangTime
+from hubblestack.hangtime import HangTime, hangtime_wrapper
 import time
 import signal
 
@@ -77,3 +77,15 @@ def test_outer_timeout():
 
     assert bang == {10,12}
     assert signal.getsignal(signal.SIGALRM) == signal.SIG_DFL
+
+def test_wrapper():
+    @hangtime_wrapper(timeout=1)
+    def blah(a):
+        try:
+            time.sleep(a)
+        except:
+            return "timed out"
+        return "did not time out"
+
+    assert blah(0.5) == "did not time out"
+    assert blah(1.5) == "timed out"

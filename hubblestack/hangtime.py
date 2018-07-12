@@ -3,6 +3,9 @@ from collections import namedtuple
 import signal
 import time
 
+import logging
+log = logging.getLogger('hangtime')
+
 class HangTime(Exception):
     # NOTE: this will break completely in multithreading
     # it should work just fine in multiprocessing
@@ -24,6 +27,7 @@ class HangTime(Exception):
         raise self
 
     def __enter__(self):
+        log.info("watching for process hangs (%s, %s)", self.timeout, self.id)
         self.prev.append( self.pitem(self.started, self.timeout, signal.getsignal(signal.SIGALRM)) )
         signal.signal(signal.SIGALRM, self.fire_timer)
         self.started = time.time()
@@ -31,6 +35,7 @@ class HangTime(Exception):
         return self
 
     def __exit__(self, e_type, e_obj, e_tb):
+        log.info("nolonger watching for process hangs (%s, %s)", self.timeout, self.id)
         self.restore()
         if self.prev:
             p = self.prev[-1]
@@ -39,3 +44,11 @@ class HangTime(Exception):
             if tr > 0:
                 signal.setitimer(signal.ITIMER_REAL, dt)
                 return True # meaning we handled this exception internally
+
+def hangtime_wrapper(timeout=1000):
+    def _decorator(actual):
+        def _frobnicator(*a, **kw):
+            with HangTime(timeout=timeout):
+                return actual(*a, **kw)
+        return _frobnicator
+    return _decorator

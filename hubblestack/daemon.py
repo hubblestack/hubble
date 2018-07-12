@@ -576,7 +576,21 @@ def load_config():
                 self.name = name
         handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
 
-@hangtime_wrapper(timeout=15, repeats=True, id=1337)
+# 600s is a long time to get stuck loading grains and *not* be doing things
+# like nova/pulsar. The SIGALRM will get caught by salt.loader.raw_mod as an
+# error in a grain -- probably whichever is broken/hung.
+#
+# The grain will simply be missing, but the next refresh_grains will try to
+# pick it up again.  If the hang is transient, the grain will populate
+# normally.
+#
+# repeats=True meaning: restart the signal itimer after firing the timeout
+# exception, which salt catches. In this way, we can catch multiple hangs with
+# a single timer. Each timer restart is a new 600s timeout.
+#
+# id=1337 will appear in the logs to differentiate this from other
+# hangtime_wrapper timers (if any), 0x67 is 'g', 0x72 is 'r' (grains refresh)
+@hangtime_wrapper(timeout=600, repeats=True, id=0x6772)
 def refresh_grains(initial=False):
     '''
     Refresh the grains, pillar, utils, modules, and returners

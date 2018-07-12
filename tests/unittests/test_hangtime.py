@@ -2,6 +2,7 @@
 from hubblestack.hangtime import HangTime, hangtime_wrapper
 import time
 import signal
+import pytest
 
 def test_basic():
     bang = set()
@@ -89,3 +90,34 @@ def test_wrapper():
 
     assert blah(0.5) == "did not time out"
     assert blah(1.5) == "timed out"
+
+
+# Salt ends up catching the HangTime exceptions during the grains refreshes.  Any
+# attempt to catch them with try/except with wrappers in hubblestack.daemon will
+# fail.  This presents two problems:
+#
+# 1. The grains will appear to die due to a HangTime and will be missing after
+#    the refresh
+#
+# 2. After the HangTime presents an exception, any other hanging grains will
+#    continue to hang
+#
+def test_fake_refresh_grains():
+    t1 = time.time()
+
+    @hangtime_wrapper(timeout=1, repeats=True)
+    def fake_refresh_grains(a,b):
+        x = 0
+        for i in range(a):
+            try:
+                time.sleep(b)
+            except:
+                x += 1
+        return x
+
+    x = fake_refresh_grains(5, 2) # five two second sleeps
+
+    t2 = time.time()
+    dt = t2-t1
+    assert dt == pytest.approx(5)
+    assert x == 5

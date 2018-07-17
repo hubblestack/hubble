@@ -23,6 +23,8 @@ def get_system_uuid():
     for path in osqueryipaths:
         if salt.utils.path.which(path):
             out = __salt__['cmd.run']('{0} {1}'.format(path, options))
-            grains = {"system_uuid": str(out)}
+            out = str(out).upper()
+            if len(out) == 36:
+                grains = {"system_uuid": out}
             break
     return grains

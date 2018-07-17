@@ -6,6 +6,7 @@ from __future__ import print_function
 
 # import lockfile
 import argparse
+import copy
 import logging
 import time
 import pprint
@@ -586,6 +587,7 @@ def refresh_grains(initial=False):
 
     persist = {}
     if not initial:
+        old_grains = copy.deepcopy(__grains__)
         for grain in __opts__.get('grains_persist', []):
             if grain in __grains__:
                 persist[grain] = __grains__[grain]
@@ -599,6 +601,8 @@ def refresh_grains(initial=False):
     __grains__ = salt.loader.grains(__opts__)
     __grains__.update(persist)
     __grains__['session_uuid'] = SESSION_UUID
+    old_grains.update(__grains__)
+    __grains__ = old_grains
 
     # Check for default gateway and fall back if necessary
     if __grains__.get('ip_gw', None) is False and 'fallback_fileserver_backend' in __opts__:

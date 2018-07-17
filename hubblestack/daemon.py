@@ -500,6 +500,9 @@ def load_config():
     fileserver_dirs = __opts__.get('fileserver_dirs', [])
     fileserver_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'fileserver'))
     __opts__['fileserver_dirs'] = fileserver_dirs
+    utils_dirs = __opts__.get('utils_dirs', [])
+    utils_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'utils'))
+    __opts__['utils_dirs'] = utils_dirs
     __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')

@@ -586,6 +586,7 @@ def refresh_grains(initial=False):
     global __context__
 
     persist = {}
+    old_grains = {}
     if not initial:
         old_grains = copy.deepcopy(__grains__)
         for grain in __opts__.get('grains_persist', []):

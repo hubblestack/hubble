@@ -76,10 +76,20 @@ class HangTime(Exception):
         if not self.prev:
             log.debug("nolonger watching for process hangs %s", repr(self))
 
+
 def hangtime_wrapper(**ht_kw):
+    callback = ht_kw.pop('callback', None)
     def _decorator(actual):
         def _frobnicator(*a, **kw):
-            with HangTime(**ht_kw):
-                return actual(*a, **kw)
+            try:
+                with HangTime(**ht_kw):
+                    return actual(*a, **kw)
+            except HangTime as ht:
+                res = False
+                if callback:
+                    try: res = callback(ht)
+                    except: pass
+                if not res:
+                    log.error(ht, exc_info=True)
         return _frobnicator
     return _decorator

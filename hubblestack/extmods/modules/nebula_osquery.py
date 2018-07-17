@@ -150,7 +150,7 @@ def queries(query_group,
     timing = {}
     schedule_time = time.time()
     success = True
-    for name, query in query_data:
+    for name, query in query_data.iteritems():
         query['query_name'] = name
         query_sql = query.get('query')
         if not query_sql:

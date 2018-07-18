@@ -129,6 +129,8 @@ def returner(ret):
             else:
                 for query in data:
                     for query_name, query_results in query.iteritems():
+                        if 'data' not in query_results:
+                            query_results['data'] = [{'error': 'result missing'}]
                         for query_result in query_results['data']:
                             event = {}
                             payload = {}

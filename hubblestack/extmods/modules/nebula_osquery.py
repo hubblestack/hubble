@@ -169,6 +169,9 @@ def queries(query_group,
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
+            if "Timed out" in res['stdout']:
+                # this is really the best way to tell without getting fancy
+                log.error("TIMEOUT during osqueryi execution name=%s", name)
             success = False
             query_ret['result'] = False
             query_ret['error'] = res['stderr']

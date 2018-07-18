@@ -68,22 +68,6 @@ def run():
         clean_up_process(None, None)
         sys.exit(0)
 
-    if __opts__['daemonize']:
-        # before becoming a daemon, check for other procs and possibly send
-        # then a signal 15 (otherwise refuse to run)
-        if not __opts__.get('ignore_running', False):
-            check_pidfile(kill_other=True)
-        salt.utils.daemonize()
-        create_pidfile()
-    elif not __opts__['function']:
-        # check the pidfile and possibly refuse to run
-        # (assuming this isn't a single function call)
-        if not __opts__.get('ignore_running', False):
-            check_pidfile(kill_other=False)
-
-    signal.signal(signal.SIGTERM, clean_up_process)
-    signal.signal(signal.SIGINT, clean_up_process)
-
     try:
         main()
     except KeyboardInterrupt:
@@ -468,6 +452,22 @@ def load_config():
     __opts__.update(parsed_args)
     __opts__['conf_file'] = parsed_args.get('configfile')
     __opts__['install_dir'] = install_dir
+
+    if __opts__['daemonize']:
+        # before becoming a daemon, check for other procs and possibly send
+        # then a signal 15 (otherwise refuse to run)
+        if not __opts__.get('ignore_running', False):
+            check_pidfile(kill_other=True)
+        salt.utils.daemonize()
+        create_pidfile()
+    elif not __opts__['function']:
+        # check the pidfile and possibly refuse to run
+        # (assuming this isn't a single function call)
+        if not __opts__.get('ignore_running', False):
+            check_pidfile(kill_other=False)
+
+    signal.signal(signal.SIGTERM, clean_up_process)
+    signal.signal(signal.SIGINT, clean_up_process)
 
     # Optional sleep to wait for network
     time.sleep(int(__opts__.get('startup_sleep', 0)))

@@ -31,6 +31,7 @@ import hubblestack.splunklogging
 from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime
+from hubblestack.hangtime import hangtime_wrapper
 
 log = logging.getLogger(__name__)
 
@@ -575,7 +576,21 @@ def load_config():
                 self.name = name
         handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
 
-
+# 600s is a long time to get stuck loading grains and *not* be doing things
+# like nova/pulsar. The SIGALRM will get caught by salt.loader.raw_mod as an
+# error in a grain -- probably whichever is broken/hung.
+#
+# The grain will simply be missing, but the next refresh_grains will try to
+# pick it up again.  If the hang is transient, the grain will populate
+# normally.
+#
+# repeats=True meaning: restart the signal itimer after firing the timeout
+# exception, which salt catches. In this way, we can catch multiple hangs with
+# a single timer. Each timer restart is a new 600s timeout.
+#
+# tag='hubble:rg' will appear in the logs to differentiate this from other
+# hangtime_wrapper timers (if any)
+@hangtime_wrapper(timeout=600, repeats=True, tag='hubble:rg')
 def refresh_grains(initial=False):
     '''
     Refresh the grains, pillar, utils, modules, and returners

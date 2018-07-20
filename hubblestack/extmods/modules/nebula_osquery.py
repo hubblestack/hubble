@@ -163,12 +163,15 @@ def queries(query_group,
 
         cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
         t0 = time.time()
-        res = __salt__['cmd.run_all'](cmd)
+        res = __salt__['cmd.run_all'](cmd, timeout=10000)
         t1 = time.time()
         timing[name] = t1-t0
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
+            if "Timed out" in res['stdout']:
+                # this is really the best way to tell without getting fancy
+                log.error("TIMEOUT during osqueryi execution name=%s", name)
             success = False
             query_ret['result'] = False
             query_ret['error'] = res['stderr']

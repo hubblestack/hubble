@@ -15,21 +15,21 @@ class HangTime(Exception):
 
     prev = list()
 
-    def __init__(self, msg="hang timeout detected", timeout=300, id=0, repeats=False, decay=1.0):
+    def __init__(self, msg="hang timeout detected", timeout=300, tag=None, repeats=False, decay=1.0):
         ''' HangTime wraps code via with block.
 
         ... code-block:: python
             try:
-                with HangTime(timeout=1, id=1):
+                with HangTime(timeout=1, tag=1):
                     do_things_that_may_timeout()
                 except HangTime as ht:
-                    if ht.id == 1:
+                    if ht.tag == 1:
                         log.error("something bad happened (code-1):", ht) # w/o traceback
                         log.error(ht) # with traceback
 
         :param int timeout: timeout in seconds, default 300s
 
-        :param int id: a tag for differentiating (eg nested) timeouts, default 0
+        :param any tag: a tag for differentiating (eg nested) timeouts, default None
 
         :param bool repeats: by default, HangTime simply raises itself as an
           exception when a timeout is reached and then clears the related timer
@@ -70,13 +70,13 @@ class HangTime(Exception):
         '''
         self.timeout = timeout
         self.started = 0
-        self.id = id
+        self.tag = tag
         self.repeats = repeats
         self.decay = float(decay)
         super(HangTime, self).__init__(repr(self))
 
     def __repr__(self):
-        return "HT({:0.2f}s, id={})".format(self.timeout, self.id)
+        return "HT({:0.2f}s, tag={})".format(self.timeout, self.tag)
 
     def restore(self, ended=False):
         ''' this method restores the original alarm signal handler, or sets up

@@ -588,9 +588,9 @@ def load_config():
 # exception, which salt catches. In this way, we can catch multiple hangs with
 # a single timer. Each timer restart is a new 600s timeout.
 #
-# id=1337 will appear in the logs to differentiate this from other
-# hangtime_wrapper timers (if any), 0x67 is 'g', 0x72 is 'r' (grains refresh)
-@hangtime_wrapper(timeout=600, repeats=True, id=0x6772)
+# tag='hubble:rg' will appear in the logs to differentiate this from other
+# hangtime_wrapper timers (if any)
+@hangtime_wrapper(timeout=600, repeats=True, tag='hubble:rg')
 def refresh_grains(initial=False):
     '''
     Refresh the grains, pillar, utils, modules, and returners

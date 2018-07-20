@@ -10,10 +10,10 @@ def test_basic():
     assert signal.getsignal(signal.SIGALRM) == signal.SIG_DFL
 
     try:
-        with HangTime(timeout=1, id=10):
+        with HangTime(timeout=1, tag=10):
             time.sleep(0.5)
     except HangTime as ht:
-        bang.add(ht.id)
+        bang.add(ht.tag)
 
     # if we forget to clear the remaining timer
     # we'll alarmclock sys.exit here
@@ -24,10 +24,10 @@ def test_basic():
     assert signal.getsignal(signal.SIGALRM) == signal.SIG_DFL
 
     try:
-        with HangTime(timeout=1, id=13):
+        with HangTime(timeout=1, tag=13):
             time.sleep(1.5)
     except HangTime as ht:
-        bang.add(ht.id)
+        bang.add(ht.tag)
 
     assert bang == {13,}
     assert signal.getsignal(signal.SIGALRM) == signal.SIG_DFL
@@ -38,21 +38,21 @@ def test_inner_timeout():
     assert signal.getsignal(signal.SIGALRM) == signal.SIG_DFL
 
     try:
-        with HangTime(timeout=2, id=10):
-            with HangTime(timeout=1, id=11):
+        with HangTime(timeout=2, tag=10):
+            with HangTime(timeout=1, tag=11):
                 time.sleep(1.5)
     except HangTime as ht:
-        bang.add(ht.id)
+        bang.add(ht.tag)
 
     try:
-        with HangTime(timeout=2, id=12):
+        with HangTime(timeout=2, tag=12):
             try:
-                with HangTime(timeout=1, id=13):
+                with HangTime(timeout=1, tag=13):
                     time.sleep(1.5)
             except HangTime as ht:
-                bang.add(ht.id)
+                bang.add(ht.tag)
     except HangTime as ht:
-        bang.add(ht.id)
+        bang.add(ht.tag)
 
     assert bang == {11,13}
     assert signal.getsignal(signal.SIGALRM) == signal.SIG_DFL
@@ -63,25 +63,25 @@ def test_outer_timeout():
     assert signal.getsignal(signal.SIGALRM) == signal.SIG_DFL
 
     try:
-        with HangTime(timeout=1, id=10):
-            with HangTime(timeout=0.7, id=11):
+        with HangTime(timeout=1, tag='this-is-tag'):
+            with HangTime(timeout=0.7, tag=11):
                 time.sleep(0.2)
             time.sleep(1)
     except HangTime as ht:
-        bang.add(ht.id)
+        bang.add(ht.tag)
 
     try:
-        with HangTime(timeout=1, id=12):
+        with HangTime(timeout=1, tag=12):
             try:
-                with HangTime(timeout=0.7, id=13):
+                with HangTime(timeout=0.7, tag=13):
                     time.sleep(0.2)
             except HangTime as ht:
-                bang.add(ht.id)
+                bang.add(ht.tag)
             time.sleep(1)
     except HangTime as ht:
-        bang.add(ht.id)
+        bang.add(ht.tag)
 
-    assert bang == {10, 12}
+    assert bang == {'this-is-tag', 12}
     assert signal.getsignal(signal.SIGALRM) == signal.SIG_DFL
 
 def test_wrapper():

@@ -226,7 +226,7 @@ def queries(query_group,
                         if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
                             result[key] = json.loads(value[len('__JSONIFY__'):])
 
-    return ret
+    return mask_passwords(ret)
 
 
 def fields(*args):

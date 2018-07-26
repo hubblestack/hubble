@@ -308,6 +308,7 @@ def schedule():
         returners = jobdata.get('returner', [])
         if not isinstance(returners, list):
             returners = [returners]
+        returner_retry = jobdata.get('returner_retry', False)
 
         # Actually process the job
         run = False
@@ -356,7 +357,8 @@ def schedule():
                                 'jid': salt.utils.jid.gen_jid(__opts__),
                                 'fun': func,
                                 'fun_args': args + ([kwargs] if kwargs else []),
-                                'return': ret}
+                                'return': ret,
+                                'retry': returner_retry}
                 __returners__[returner](returner_ret)
 
 

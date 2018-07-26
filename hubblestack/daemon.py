@@ -396,7 +396,10 @@ def run_function():
                             'jid': salt.utils.jid.gen_jid(__opts__),
                             'fun': __opts__['function'],
                             'fun_args': args + ([kwargs] if kwargs else []),
-                            'return': ret}
+                            'return': ret,
+                            'retry': False}
+            if __opts__.get('returner_retry', False):
+                returner_ret['retry'] = True
             __returners__[returner](returner_ret)
 
     # TODO instantiate the salt outputter system?
@@ -698,6 +701,9 @@ def parse_args():
     parser.add_argument('--ignore_running',
                         action='store_true',
                         help='Ignore any running hubble processes. This disables the pidfile.')
+    parser.add_argument('--returner_retry',
+                        action='store_true',
+                        help='Enable retry on the returner for one-off jobs')
     return vars(parser.parse_args())
 
 def check_pidfile(kill_other=False):

@@ -339,7 +339,6 @@ def mask_passwords(unmasked_object):
                                     key == blacklisted_string['column']:
                                         for pattern in blacklisted_string['blacklisted_patterns']:
                                             value = re.sub(pattern + "()",r"\1" + mask_by + r"\3", value)
-                                        #print("string  masking : {0} : {1}".format(result[key],value))
                                         result[key] = value
                             else:
                                 # handle like [json]
@@ -365,7 +364,6 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_by):
         for key in blacklisted_object['attributes_to_mask']:
             if key in object_to_mask:
                 object_to_mask[key] = mask_by
-                print(" masking : {0}".format(object_to_mask[key]))
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):

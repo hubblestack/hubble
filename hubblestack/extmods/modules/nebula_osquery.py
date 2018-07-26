@@ -361,7 +361,7 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_by):
         for child in object_to_mask:
             _recursively_mask_objects(child, blacklisted_object, mask_by)
     elif blacklisted_object['attribute_to_check'] in object_to_mask and \
-         object_to_mask[blacklisted_object['attribute_to_check']] in blacklisted_object['balcklisted_patterns']:
+         object_to_mask[blacklisted_object['attribute_to_check']] in blacklisted_object['blacklisted_patterns']:
         for key in blacklisted_object['attributes_to_mask']:
             if key in object_to_mask:
                 object_to_mask[key] = mask_by

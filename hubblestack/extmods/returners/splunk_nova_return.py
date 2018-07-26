@@ -475,6 +475,7 @@ class http_event_collector:
                 while retries < max_retries:
                     retries += 1
                     if retries != 0:
+                        log.info('RETRYING in {0} seconds'.format(retry_sleep))
                         time.sleep(retry_sleep)
                     try:
                         r = requests.post(server[0], data=' '.join(self.batchEvents), headers=headers,

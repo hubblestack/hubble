@@ -324,7 +324,8 @@ def mask_passwords(unmasked_object):
     masked_object = copy.deepcopy(unmasked_object)
 
     try:
-        mask = yaml.load(open('salt://mask.yaml'))
+        mask_file  = __salt__['cp.cache_file']('salt://mask.yaml')
+        mask = yaml.safe_load(open(mask_file))
         mask_by = mask.get('mask_by','******')
         for r in masked_object:
             for query_name, query_ret in r.iteritems():

@@ -32,6 +32,7 @@ import copy
 import json
 import logging
 import os
+import re
 import time
 import yaml
 import collections
@@ -316,6 +317,54 @@ def get_top_data(topfile):
                 ret.extend(data)
 
     return ret
+
+
+def mask_passwords(unmasked_object):
+
+    masked_object = copy.deepcopy(unmasked_object)
+
+    try:
+        mask = yaml.load(open('mask.yaml'))
+        mask_by = mask.get('mask_by','******')
+        for r in masked_object:
+            for query_name, query_ret in r.iteritems():
+                if 'data' in query_ret:
+                    for result in query_ret['data']:
+                        for key, value in result.iteritems():
+                            if isinstance(value,basestring):
+                                # handle like string
+                                for blacklisted_string in mask.get("blacklisted_strings",[]):
+                                    if blacklisted_string['query_name'] in ('*', query_name) and \
+                                    key == blacklisted_string['column']:
+                                        for pattern in blacklisted_string['blacklisted_patterns']:
+                                            value = re.sub(pattern + "()",r"\1" + mask_by + r"\3", value)
+                                        #print("string  masking : {0} : {1}".format(result[key],value))
+                                        result[key] = value
+                            else:
+                                # handle like [json]
+                                for blacklisted_object in mask.get('blacklisted_objects',[]):
+                                    if blacklisted_object['query_name'] in ('*', query_name) and \
+                                    key == blacklisted_object['column']:
+                                        _recursively_mask_objects(value, blacklisted_object, mask_by)
+
+        return masked_object
+
+    except Exception as e:
+        print("An error occured while masking the passwords: {}".format(e))
+        return unmasked_object
+
+
+def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_by):
+
+    if isinstance(object_to_mask, list):
+        for child in object_to_mask:
+            _recursively_mask_objects(child, blacklisted_object, mask_by)
+    elif blacklisted_object['attribute_to_check'] in object_to_mask and \
+         object_to_mask[blacklisted_object['attribute_to_check']] in blacklisted_object['balcklisted_patterns']:
+        for key in blacklisted_object['attributes_to_mask']:
+            if key in object_to_mask:
+                object_to_mask[key] = mask_by
+                print(" masking : {0}".format(object_to_mask[key]))
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):

@@ -55,7 +55,8 @@ def __virtual__():
 def queries(query_group,
             query_file=None,
             verbose=False,
-            report_version_with_day=True):
+            report_version_with_day=True,
+            mask_passwords=False):
     '''
     Run the set of queries represented by ``query_group`` from the
     configuration in the file query_file
@@ -226,7 +227,7 @@ def queries(query_group,
                         if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
                             result[key] = json.loads(value[len('__JSONIFY__'):])
 
-    return mask_passwords(ret)
+    return mask_passwords(ret) if mask_passwords else ret
 
 
 def fields(*args):
@@ -274,7 +275,8 @@ def hubble_versions():
 def top(query_group,
         topfile='salt://hubblestack_nebula_v2/top.nebula',
         verbose=False,
-        report_version_with_day=True):
+        report_version_with_day=True,
+        mask_passwords=False):
 
     if salt.utils.platform.is_windows():
         topfile = 'salt://hubblestack_nebula_v2/win_top.nebula'
@@ -287,7 +289,8 @@ def top(query_group,
     return queries(query_group,
                    query_file=configs,
                    verbose=False,
-                   report_version_with_day=True)
+                   report_version_with_day=True,
+                   mask_passwords=mask_passwords)
 
 
 def get_top_data(topfile):
@@ -319,39 +322,38 @@ def get_top_data(topfile):
     return ret
 
 
-def mask_passwords(unmasked_object):
-
-    masked_object = copy.deepcopy(unmasked_object)
+def mask_passwords(object_to_be_masked):
 
     try:
-        mask_file  = __salt__['cp.cache_file']('salt://mask.yaml')
+        mask_file  = __salt__['cp.cache_file']('salt://hubblestack_nebula_v2/mask.yaml')
+        if not mask_file:
+          return
         mask = yaml.safe_load(open(mask_file))
         mask_by = mask.get('mask_by','******')
-        for r in masked_object:
+        for r in object_to_be_masked:
             for query_name, query_ret in r.iteritems():
                 if 'data' in query_ret:
                     for result in query_ret['data']:
                         for key, value in result.iteritems():
-                            if isinstance(value,basestring):
+                            if isinstance(value, basestring):
                                 # handle like string
-                                for blacklisted_string in mask.get("blacklisted_strings",[]):
+                                for blacklisted_string in mask.get("blacklisted_strings", []):
                                     if blacklisted_string['query_name'] in ('*', query_name) and \
                                     key == blacklisted_string['column']:
                                         for pattern in blacklisted_string['blacklisted_patterns']:
-                                            value = re.sub(pattern + "()",r"\1" + mask_by + r"\3", value)
+                                            value = re.sub(pattern + "()", r"\1" + mask_by + r"\3", value)
                                         result[key] = value
                             else:
                                 # handle like [json]
-                                for blacklisted_object in mask.get('blacklisted_objects',[]):
+                                for blacklisted_object in mask.get('blacklisted_objects', []):
                                     if blacklisted_object['query_name'] in ('*', query_name) and \
                                     key == blacklisted_object['column']:
                                         _recursively_mask_objects(value, blacklisted_object, mask_by)
-
-        return masked_object
-
+                                        
+        # successfully masked the object. No need to return anything
+        
     except Exception as e:
-        print("An error occured while masking the passwords: {}".format(e))
-        return unmasked_object
+        log.exception("An error occured while masking the passwords: {}".format(e))
 
 
 def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_by):

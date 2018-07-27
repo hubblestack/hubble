@@ -71,6 +71,10 @@ def queries(query_group,
         Defaults to False. If set to True, more information (such as the query
         which was run) will be included in the result.
 
+    mask_passwords
+        Defaults to False. If set to True, passwords mentioned in the 
+        return object are masked.
+        
     CLI Examples:
 
     .. code_block:: bash
@@ -325,7 +329,11 @@ def get_top_data(topfile):
 
 
 def mask_passwords_inplace(object_to_be_masked):
-
+    '''
+    It masks the passwords present in 'object_to_be_masked'. Uses "mask.yaml" as
+    a reference to find out the list of blacklisted strings or objects.
+    Note that this method alters "object_to_be_masked".
+    '''
     try:
         mask_file  = __salt__['cp.cache_file']('salt://hubblestack_nebula_v2/mask.yaml')
         if not mask_file:
@@ -359,7 +367,24 @@ def mask_passwords_inplace(object_to_be_masked):
 
 
 def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_by):
-
+    '''
+    This function is used by "mask_passwords_inplace" to mask passwords contained in
+    json objects or json arrays. If the "object_to_mask" is a json array, then this 
+    function is called recursively on the individual members of the array.
+ 
+     object_to_mask
+        Json object/array whose elements are to masked recursively
+        
+     blacklisted_object
+        This parameters contains info about which queries are to be masked, which 
+        attributes are to be masked, based upon the value of which attribute.
+        See hubblestack_nebula_v2/mask.yaml for exact format.
+        
+    mask_by
+        If a password string is detected, it is replaced by the value of "mask_by" 
+        parameter.
+        
+    '''
     if isinstance(object_to_mask, list):
         for child in object_to_mask:
             _recursively_mask_objects(child, blacklisted_object, mask_by)

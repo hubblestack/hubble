@@ -227,7 +227,9 @@ def queries(query_group,
                         if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
                             result[key] = json.loads(value[len('__JSONIFY__'):])
 
-    return mask_passwords(ret) if mask_passwords else ret
+    if mask_passwords:
+        mask_passwords_inplace(ret)
+    return ret
 
 
 def fields(*args):
@@ -322,7 +324,7 @@ def get_top_data(topfile):
     return ret
 
 
-def mask_passwords(object_to_be_masked):
+def mask_passwords_inplace(object_to_be_masked):
 
     try:
         mask_file  = __salt__['cp.cache_file']('salt://hubblestack_nebula_v2/mask.yaml')

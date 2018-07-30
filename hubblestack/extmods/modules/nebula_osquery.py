@@ -327,7 +327,6 @@ def get_top_data(topfile):
 
     return ret
 
-
 def mask_passwords_inplace(object_to_be_masked):
     '''
     It masks the passwords present in 'object_to_be_masked'. Uses "mask.yaml" as
@@ -360,21 +359,19 @@ def mask_passwords_inplace(object_to_be_masked):
                                                     .format(f_data))
                     mask = _dict_update(mask, f_data, recursive_update=True, merge_lists=True)
 
-
-        mask_by = mask.get('mask_by','******')
-
+        log.debug("Using the mask: {}".format(mask))
+        mask_by = mask.get('mask_by', '******')
 
         for blacklisted_string in mask.get("blacklisted_strings", []):
             query_name = blacklisted_string['query_name']
             column = blacklisted_string['column']
             if query_name != '*':
                 for r in object_to_be_masked:
-                    for query_result in r.get(query_name,{'data':[]})['data']:
+                    for query_result in r.get(query_name, {'data':[]})['data']:
                         if column not in query_result or not isinstance(query_result[column], basestring):
                             # if the column in not present in one data-object, it will 
                             # not be present in others as well. Break in that case.
                             # This will happen only if mask.yaml is malformed
-                            print("string", query_name, query_result, column)
                             break
                         value = query_result[column]
                         for pattern in blacklisted_string['blacklisted_patterns']:
@@ -385,7 +382,6 @@ def mask_passwords_inplace(object_to_be_masked):
                     for query_name, query_ret in r.iteritems():
                         for query_result in query_ret['data']:
                             if column not in query_result or not isinstance(query_result[column], basestring):
-                                print("string", query_name, query_result, column)
                                 break
                             value = query_result[column]
                             for pattern in blacklisted_string['blacklisted_patterns']:
@@ -398,10 +394,9 @@ def mask_passwords_inplace(object_to_be_masked):
             column = blacklisted_object['column']
             if query_name != '*':
                 for r in object_to_be_masked:
-                    for query_result in r.get(query_name,{'data':[]})['data']:
+                    for query_result in r.get(query_name, {'data':[]})['data']:
                         if column not in query_result or \
-                        ( isinstance(query_result[column], basestring) and query_result[column].strip() != '' ):
-                            print("object", query_name, query_result, column)
+                        (isinstance(query_result[column], basestring) and query_result[column].strip() != '' ):
                             break
                         _recursively_mask_objects(query_result[column], blacklisted_object, mask_by)
             else:
@@ -409,17 +404,14 @@ def mask_passwords_inplace(object_to_be_masked):
                     for query_name, query_ret in r.iteritems():
                         for query_result in query_ret['data']:
                             if column not in query_result or \
-                            ( isinstance(query_result[column], basestring) and query_result[column].strip() != '' ):
-                                print("object", query_name, query_result, column)
+                            (isinstance(query_result[column], basestring) and query_result[column].strip() != '' ):
                                 break
                             _recursively_mask_objects(query_result[column], blacklisted_object, mask_by)
-
                                             
             # successfully masked the object. No need to return anything
         
     except Exception as e:
         log.exception("An error occured while masking the passwords: {}".format(e))
-
 
 def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_by):
     '''

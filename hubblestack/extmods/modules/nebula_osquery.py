@@ -335,32 +335,87 @@ def mask_passwords_inplace(object_to_be_masked):
     Note that this method alters "object_to_be_masked".
     '''
     try:
-        mask_file  = __salt__['cp.cache_file']('salt://hubblestack_nebula_v2/mask.yaml')
-        if not mask_file:
-          return
-        mask = yaml.safe_load(open(mask_file))
+
+        mask = {}
+        topfile = 'salt://hubblestack_nebula_v2/top.mask'
+        mask_files = get_top_data(topfile)
+        mask_files = ['salt://hubblestack_nebula_v2/' + mask_file.replace('.', '/') + '.yaml'
+                   for mask_file in mask_files]
+        if mask_files is None:
+            mask_files = 'salt://hubblestack_nebula_v2/mask.yaml'
+        if not isinstance(mask_files, list):
+            mask_files = [mask_files]
+        for fh in mask_files:
+            if 'salt://' in fh:
+                orig_fh = fh
+                fh = __salt__['cp.cache_file'](fh)
+            if fh is None:
+                log.error('Could not find file {0}.'.format(orig_fh))
+                return None
+            if os.path.isfile(fh):
+                with open(fh, 'r') as f:
+                    f_data = yaml.safe_load(f)
+                    if not isinstance(f_data, dict):
+                        raise CommandExecutionError('File data is not formed as a dict {0}'
+                                                    .format(f_data))
+                    mask = _dict_update(mask, f_data, recursive_update=True, merge_lists=True)
+
+
         mask_by = mask.get('mask_by','******')
-        for r in object_to_be_masked:
-            for query_name, query_ret in r.iteritems():
-                if 'data' in query_ret:
-                    for result in query_ret['data']:
-                        for key, value in result.iteritems():
-                            if isinstance(value, basestring):
-                                # handle like string
-                                for blacklisted_string in mask.get("blacklisted_strings", []):
-                                    if blacklisted_string['query_name'] in ('*', query_name) and \
-                                    key == blacklisted_string['column']:
-                                        for pattern in blacklisted_string['blacklisted_patterns']:
-                                            value = re.sub(pattern + "()", r"\1" + mask_by + r"\3", value)
-                                        result[key] = value
-                            else:
-                                # handle like [json]
-                                for blacklisted_object in mask.get('blacklisted_objects', []):
-                                    if blacklisted_object['query_name'] in ('*', query_name) and \
-                                    key == blacklisted_object['column']:
-                                        _recursively_mask_objects(value, blacklisted_object, mask_by)
-                                        
-        # successfully masked the object. No need to return anything
+
+
+        for blacklisted_string in mask.get("blacklisted_strings", []):
+            query_name = blacklisted_string['query_name']
+            column = blacklisted_string['column']
+            if query_name != '*':
+                for r in object_to_be_masked:
+                    for query_result in r.get(query_name,{'data':[]})['data']:
+                        if column not in query_result or not isinstance(query_result[column], basestring):
+                            # if the column in not present in one data-object, it will 
+                            # not be present in others as well. Break in that case.
+                            # This will happen only if mask.yaml is malformed
+                            print("string", query_name, query_result, column)
+                            break
+                        value = query_result[column]
+                        for pattern in blacklisted_string['blacklisted_patterns']:
+                            value = re.sub(pattern + "()", r"\1" + mask_by + r"\3", value)
+                        query_result[column] = value
+            else:
+                for r in object_to_be_masked:
+                    for query_name, query_ret in r.iteritems():
+                        for query_result in query_ret['data']:
+                            if column not in query_result or not isinstance(query_result[column], basestring):
+                                print("string", query_name, query_result, column)
+                                break
+                            value = query_result[column]
+                            for pattern in blacklisted_string['blacklisted_patterns']:
+                                value = re.sub(pattern + "()", r"\1" + mask_by + r"\3", value)
+                            query_result[column] = value
+
+
+        for blacklisted_object in mask.get("blacklisted_objects", []):
+            query_name = blacklisted_object['query_name']
+            column = blacklisted_object['column']
+            if query_name != '*':
+                for r in object_to_be_masked:
+                    for query_result in r.get(query_name,{'data':[]})['data']:
+                        if column not in query_result or \
+                        ( isinstance(query_result[column], basestring) and query_result[column].strip() != '' ):
+                            print("object", query_name, query_result, column)
+                            break
+                        _recursively_mask_objects(query_result[column], blacklisted_object, mask_by)
+            else:
+                for r in object_to_be_masked:
+                    for query_name, query_ret in r.iteritems():
+                        for query_result in query_ret['data']:
+                            if column not in query_result or \
+                            ( isinstance(query_result[column], basestring) and query_result[column].strip() != '' ):
+                                print("object", query_name, query_result, column)
+                                break
+                            _recursively_mask_objects(query_result[column], blacklisted_object, mask_by)
+
+                                            
+            # successfully masked the object. No need to return anything
         
     except Exception as e:
         log.exception("An error occured while masking the passwords: {}".format(e))

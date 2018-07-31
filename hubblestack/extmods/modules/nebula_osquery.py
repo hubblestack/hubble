@@ -56,6 +56,7 @@ def queries(query_group,
             query_file=None,
             verbose=False,
             report_version_with_day=True,
+            topfile_for_mask=None,
             mask_passwords=False):
     '''
     Run the set of queries represented by ``query_group`` from the
@@ -71,6 +72,10 @@ def queries(query_group,
         Defaults to False. If set to True, more information (such as the query
         which was run) will be included in the result.
 
+    topfile_for_mask
+        This is the location of the top file from which the masking information 
+        will be extracted.
+        
     mask_passwords
         Defaults to False. If set to True, passwords mentioned in the 
         return object are masked.
@@ -232,7 +237,7 @@ def queries(query_group,
                             result[key] = json.loads(value[len('__JSONIFY__'):])
 
     if mask_passwords:
-        mask_passwords_inplace(ret)
+        mask_passwords_inplace(ret, topfile_for_mask)
     return ret
 
 
@@ -280,6 +285,7 @@ def hubble_versions():
 
 def top(query_group,
         topfile='salt://hubblestack_nebula_v2/top.nebula',
+        topfile_for_mask=None,
         verbose=False,
         report_version_with_day=True,
         mask_passwords=False):
@@ -296,6 +302,7 @@ def top(query_group,
                    query_file=configs,
                    verbose=False,
                    report_version_with_day=True,
+                   topfile_for_mask=topfile_for_mask,
                    mask_passwords=mask_passwords)
 
 
@@ -327,16 +334,20 @@ def get_top_data(topfile):
 
     return ret
 
-def mask_passwords_inplace(object_to_be_masked):
+def mask_passwords_inplace(object_to_be_masked, topfile):
     '''
-    It masks the passwords present in 'object_to_be_masked'. Uses "mask.yaml" as
-    a reference to find out the list of blacklisted strings or objects.
+    It masks the passwords present in 'object_to_be_masked'. Uses mask configuration
+    file as a reference to find out the list of blacklisted strings or objects.
     Note that this method alters "object_to_be_masked".
+    
+    The path to the mask configuration file can be specified in the "topfile" 
+    argument.
     '''
     try:
 
         mask = {}
-        topfile = 'salt://hubblestack_nebula_v2/top.mask'
+        if topfile is None:
+            topfile = 'salt://hubblestack_nebula_v2/top.mask'
         mask_files = get_top_data(topfile)
         mask_files = ['salt://hubblestack_nebula_v2/' + mask_file.replace('.', '/') + '.yaml'
                    for mask_file in mask_files]

@@ -95,11 +95,11 @@ def audit(configs=None,
         Whether to log additional information to help debug nova. Defaults to
         False. Configurable via `hubblestack:nova:debug` in minion
         config/pillar.
-        
+
     labels
         Tests with matching labels are executed. If multiple labels are passed,
         then tests which have all those labels are executed.
-        
+
     **kwargs
         Any parameters & values that are not explicitly defined will be passed
         directly through to the Nova module(s).
@@ -550,41 +550,38 @@ def sync(clean=False):
     log.debug('syncing nova modules')
     nova_profile_dir = __salt__['config.get']('hubblestack:nova:profile_dir',
                                               'salt://hubblestack_nova_profiles')
-    nova_module_dir = __salt__['config.get']('hubblestack:nova:module_dir',
-                                             'salt://hubblestack_nova')
+    nova_module_dir, cached_profile_dir = _hubble_dir()
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
 
     # Clean previously synced files
     if clean:
-        for nova_dir in _hubble_dir():
-            __salt__['file.remove'](nova_dir)
+        __salt__['file.remove'](cached_profile_dir)
 
     synced = []
-    for i, nova_dir in enumerate((nova_module_dir, nova_profile_dir)):
-        # Support optional salt:// in config
-        if 'salt://' in nova_dir:
-            path = nova_dir
-            _, _, nova_dir = nova_dir.partition('salt://')
-        else:
-            path = 'salt://{0}'.format(nova_dir)
+    # Support optional salt:// in config
+    if 'salt://' in nova_profile_dir:
+        path = nova_profile_dir
+        _, _, nova_profile_dir = nova_profile_dir.partition('salt://')
+    else:
+        path = 'salt://{0}'.format(nova_profile_dir)
 
-        # Sync the files
-        cached = __salt__['cp.cache_dir'](path, saltenv=saltenv)
+    # Sync the files
+    cached = __salt__['cp.cache_dir'](path, saltenv=saltenv)
 
-        if cached and isinstance(cached, list):
-            # Success! Trim the paths
-            cachedir = os.path.dirname(_hubble_dir()[i])
-            ret = [relative.partition(cachedir)[2] for relative in cached]
-            synced.extend(ret)
+    if cached and isinstance(cached, list):
+        # Success! Trim the paths
+        cachedir = os.path.dirname(cached_profile_dir)
+        ret = [relative.partition(cachedir)[2] for relative in cached]
+        synced.extend(ret)
+    else:
+        if isinstance(cached, list):
+            # Nothing was found
+            synced.extend(cached)
         else:
-            if isinstance(cached, list):
-                # Nothing was found
-                synced.extend(cached)
-            else:
-                # Something went wrong, there's likely a stacktrace in the output
-                # of cache_dir
-                raise CommandExecutionError('An error occurred while syncing: {0}'
-                                            .format(cached))
+            # Something went wrong, there's likely a stacktrace in the output
+            # of cache_dir
+            raise CommandExecutionError('An error occurred while syncing: {0}'
+                                        .format(cached))
     return synced
 
 
@@ -628,19 +625,16 @@ def _hubble_dir():
     '''
     nova_profile_dir = __salt__['config.get']('hubblestack:nova:profile_dir',
                                               'salt://hubblestack_nova_profiles')
-    nova_module_dir = __salt__['config.get']('hubblestack:nova:module_dir',
-                                             'salt://hubblestack_nova')
-    dirs = []
+    nova_module_dir = os.path.join(__opts__['install_dir'], 'files', 'hubblestack_nova')
     # Support optional salt:// in config
-    for nova_dir in (nova_module_dir, nova_profile_dir):
-        if 'salt://' in nova_dir:
-            _, _, nova_dir = nova_dir.partition('salt://')
-        saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
-        cachedir = os.path.join(__opts__.get('cachedir'),
-                                'files',
-                                saltenv,
-                                nova_dir)
-        dirs.append(cachedir)
+    if 'salt://' in nova_profile_dir:
+        _, _, nova_profile_dir = nova_profile_dir.partition('salt://')
+    saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
+    cachedir = os.path.join(__opts__.get('cachedir'),
+                            'files',
+                            saltenv,
+                            nova_profile_dir)
+    dirs = [nova_module_dir, cachedir]
     return tuple(dirs)
 
 

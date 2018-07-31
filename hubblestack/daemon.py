@@ -6,6 +6,7 @@ from __future__ import print_function
 
 # import lockfile
 import argparse
+import copy
 import logging
 import time
 import pprint
@@ -30,6 +31,7 @@ import hubblestack.splunklogging
 from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime
+from hubblestack.hangtime import hangtime_wrapper
 
 log = logging.getLogger(__name__)
 
@@ -58,21 +60,14 @@ def run():
         clean_up_process(None, None)
         sys.exit(0)
 
-    if __opts__['daemonize']:
-        # before becoming a daemon, check for other procs and possibly send
-        # then a signal 15 (otherwise refuse to run)
-        if not __opts__.get('ignore_running', False):
-            check_pidfile(kill_other=True)
-        salt.utils.daemonize()
-        create_pidfile()
-    elif not __opts__['function']:
-        # check the pidfile and possibly refuse to run
-        # (assuming this isn't a single function call)
-        if not __opts__.get('ignore_running', False):
-            check_pidfile(kill_other=False)
-
-    signal.signal(signal.SIGTERM, clean_up_process)
-    signal.signal(signal.SIGINT, clean_up_process)
+    if __opts__['buildinfo']:
+        try:
+            from hubblestack import __buildinfo__
+        except ImportError:
+            __buildinfo__ = 'NOT SET'
+        print(__buildinfo__)
+        clean_up_process(None, None)
+        sys.exit(0)
 
     try:
         main()
@@ -204,6 +199,7 @@ def getlastrunbybuckets(buckets, seconds):
     ips = host_ip.split('.')
     sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2])*256)+int(ips[3])
     bucket = sum%buckets
+    log.debug('bucket number is {0} out of {1}'.format(bucket, buckets))
     current_time = time.time()
     base_time = seconds*(math.floor(current_time/seconds))
     splay = seconds/buckets
@@ -312,6 +308,7 @@ def schedule():
         returners = jobdata.get('returner', [])
         if not isinstance(returners, list):
             returners = [returners]
+        returner_retry = jobdata.get('returner_retry', False)
 
         # Actually process the job
         run = False
@@ -333,6 +330,7 @@ def schedule():
                 elif 'buckets' in jobdata:
                     # Place the host in a bucket and fix the execution time.
                     jobdata['last_run'] = getlastrunbybuckets(jobdata['buckets'], seconds)
+                    log.debug('last_run according to bucket is {0}'.format(jobdata['last_run']))
                 elif 'cron' in jobdata:
                     # execute the hubble process based on cron expression
                     jobdata['last_run'] = getlastrunbycron(base, seconds)
@@ -359,7 +357,8 @@ def schedule():
                                 'jid': salt.utils.jid.gen_jid(__opts__),
                                 'fun': func,
                                 'fun_args': args + ([kwargs] if kwargs else []),
-                                'return': ret}
+                                'return': ret,
+                                'retry': returner_retry}
                 __returners__[returner](returner_ret)
 
 
@@ -397,7 +396,10 @@ def run_function():
                             'jid': salt.utils.jid.gen_jid(__opts__),
                             'fun': __opts__['function'],
                             'fun_args': args + ([kwargs] if kwargs else []),
-                            'return': ret}
+                            'return': ret,
+                            'retry': False}
+            if __opts__.get('returner_retry', False):
+                returner_ret['retry'] = True
             __returners__[returner](returner_ret)
 
     # TODO instantiate the salt outputter system?
@@ -417,6 +419,14 @@ def load_config():
     # Parse arguments
     parsed_args = parse_args()
 
+    # Let's find out the path of this module
+    if 'SETUP_DIRNAME' in globals():
+        # This is from the exec() call in Salt's setup.py
+        this_file = os.path.join(SETUP_DIRNAME, 'salt', 'syspaths.py')  # pylint: disable=E0602
+    else:
+        this_file = __file__
+    install_dir = os.path.dirname(os.path.realpath(this_file))
+
     # Load unique data for Windows or Linux
     if salt.utils.platform.is_windows():
         if parsed_args.get('configfile') is None:
@@ -432,6 +442,7 @@ def load_config():
         salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
         salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
 
+    salt.config.DEFAULT_MINION_OPTS['file_roots'] = {'base': []}
     salt.config.DEFAULT_MINION_OPTS['log_level'] = None
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
@@ -447,6 +458,23 @@ def load_config():
     __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
     __opts__['conf_file'] = parsed_args.get('configfile')
+    __opts__['install_dir'] = install_dir
+
+    if __opts__['daemonize']:
+        # before becoming a daemon, check for other procs and possibly send
+        # then a signal 15 (otherwise refuse to run)
+        if not __opts__.get('ignore_running', False):
+            check_pidfile(kill_other=True)
+        salt.utils.daemonize()
+        create_pidfile()
+    elif not __opts__['function']:
+        # check the pidfile and possibly refuse to run
+        # (assuming this isn't a single function call)
+        if not __opts__.get('ignore_running', False):
+            check_pidfile(kill_other=False)
+
+    signal.signal(signal.SIGTERM, clean_up_process)
+    signal.signal(signal.SIGINT, clean_up_process)
 
     # Optional sleep to wait for network
     time.sleep(int(__opts__.get('startup_sleep', 0)))
@@ -479,6 +507,9 @@ def load_config():
     fileserver_dirs = __opts__.get('fileserver_dirs', [])
     fileserver_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'fileserver'))
     __opts__['fileserver_dirs'] = fileserver_dirs
+    utils_dirs = __opts__.get('utils_dirs', [])
+    utils_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'utils'))
+    __opts__['utils_dirs'] = utils_dirs
     __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')
@@ -551,7 +582,21 @@ def load_config():
                 self.name = name
         handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
 
-
+# 600s is a long time to get stuck loading grains and *not* be doing things
+# like nova/pulsar. The SIGALRM will get caught by salt.loader.raw_mod as an
+# error in a grain -- probably whichever is broken/hung.
+#
+# The grain will simply be missing, but the next refresh_grains will try to
+# pick it up again.  If the hang is transient, the grain will populate
+# normally.
+#
+# repeats=True meaning: restart the signal itimer after firing the timeout
+# exception, which salt catches. In this way, we can catch multiple hangs with
+# a single timer. Each timer restart is a new 600s timeout.
+#
+# tag='hubble:rg' will appear in the logs to differentiate this from other
+# hangtime_wrapper timers (if any)
+@hangtime_wrapper(timeout=600, repeats=True, tag='hubble:rg')
 def refresh_grains(initial=False):
     '''
     Refresh the grains, pillar, utils, modules, and returners
@@ -565,7 +610,9 @@ def refresh_grains(initial=False):
     global __context__
 
     persist = {}
+    old_grains = {}
     if not initial:
+        old_grains = copy.deepcopy(__grains__)
         for grain in __opts__.get('grains_persist', []):
             if grain in __grains__:
                 persist[grain] = __grains__[grain]
@@ -579,6 +626,8 @@ def refresh_grains(initial=False):
     __grains__ = salt.loader.grains(__opts__)
     __grains__.update(persist)
     __grains__['session_uuid'] = SESSION_UUID
+    old_grains.update(__grains__)
+    __grains__ = old_grains
 
     # Check for default gateway and fall back if necessary
     if __grains__.get('ip_gw', None) is False and 'fallback_fileserver_backend' in __opts__:
@@ -637,6 +686,9 @@ def parse_args():
     parser.add_argument('--version',
                         action='store_true',
                         help='Show version information')
+    parser.add_argument('--buildinfo',
+                        action='store_true',
+                        help='Show build information')
     parser.add_argument('function',
                         nargs='?',
                         default=None,
@@ -650,6 +702,9 @@ def parse_args():
     parser.add_argument('--ignore_running',
                         action='store_true',
                         help='Ignore any running hubble processes. This disables the pidfile.')
+    parser.add_argument('--returner_retry',
+                        action='store_true',
+                        help='Enable retry on the returner for one-off jobs')
     return vars(parser.parse_args())
 
 def check_pidfile(kill_other=False):

@@ -117,7 +117,7 @@
   Function pageHubbleConfig
 
     # Set Page Title and Description
-    !insertmacro MUI_HEADER_TEXT "Hubble Settings" "Set the Token and Index for Splunk"
+    !insertmacro MUI_HEADER_TEXT "Hubble Settings" "Set the Token and Index for Splunk (Click Next to Skip)"
     nsDialogs::Create 1018
     Pop $Dialog
 
@@ -287,8 +287,11 @@
 
     RMDir /R "$INSTDIR\var\cache" ; removing cache from old version
 
-    Call makeUserConfig
-
+    ${if} $HECToken_State != "xxxxx-xxx-xxx-xxx-xxxxxx"
+	${AndIf} $HECToken_State != ""
+        Call makeUserConfig
+    ${endif}
+	
     Push "C:\${PFILES}\Hubble"
     Call AddToPath
 

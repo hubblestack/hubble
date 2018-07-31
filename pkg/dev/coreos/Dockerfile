@@ -15,7 +15,7 @@ RUN apt-get update     \
 RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery
 
 #patchelf build start
-#must precent osquery as at the moment, osquery won't build without patchelf
+#must precede osquery as at the moment, osquery won't build without patchelf
 ENV PATCHELF_GIT_URL=https://github.com/NixOS/patchelf.git
 ENV PATCHELF_TEMP=/tmp/patchelf
 RUN apt-get -y install autoconf git make g++
@@ -33,7 +33,7 @@ RUN mkdir -p "$PATCHELF_TEMP" \
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 #to pin to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=a338c86170947344ddd23e80e4e3f636ff8eb5ab
+ENV OSQUERY_SRC_VERSION=1ed050147ac88a7314c172e15e86f8886206dd06
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 RUN apt-get -y install git make python ruby sudo curl
@@ -75,7 +75,7 @@ RUN apt-get -y install  \
 #install libcurl to avoid depending on host version
 #requires autoconf libtool libssh2-devel zlib-devel autoconf
 ENV LIBCURL_SRC_URL=https://github.com/curl/curl.git
-ENV LIBCURL_SRC_VERSION=curl-7_60_0
+ENV LIBCURL_SRC_VERSION=curl-7_61_0
 ENV LIBCURL_TEMP=/tmp/libcurl
 ENV PATH=/opt/hubble/bin/:/opt/hubble/include:/opt/hubble/lib:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 RUN mkdir -p "$LIBCURL_TEMP" \
@@ -92,7 +92,7 @@ RUN mkdir -p "$LIBCURL_TEMP" \
 #install git so that git package won't be a package dependency
 #requires make git libcurl-devel autoconf zlib-devel gcc
 ENV GIT_SRC_URL=https://github.com/git/git.git
-ENV GIT_SRC_VERSION=v2.16.3
+ENV GIT_SRC_VERSION=v2.16.4
 ENV GITTEMP=/tmp/gittemp
 RUN mkdir -p "$GITTEMP" \
  && cd "$GITTEMP" \
@@ -113,10 +113,10 @@ RUN rm /opt/hubble/bin/curl* \
 
 #libgit2 install start
 #must precede pyinstaller requirements
-ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v0.26.3.tar.gz
+ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v0.26.5.tar.gz
 #it turns out github provided release files can change. so even though the code hopefully hasn't changed, the hash has.
-ENV LIBGIT2_SRC_SHA256=0da4e211dfb63c22e5f43f2a4a5373e86a140afa88a25ca6ba3cc2cae58263d2
-ENV LIBGIT2_SRC_VERSION=0.26.3
+ENV LIBGIT2_SRC_SHA256=52e28a5166564bc4365a2e4112f5e5c6e334708dbf13596241b2fd34efc1b0a9
+ENV LIBGIT2_SRC_VERSION=0.26.5
 ENV LIBGIT2TEMP=/tmp/libgit2temp
 RUN mkdir -p "$LIBGIT2TEMP" \
  && cd "$LIBGIT2TEMP" \
@@ -139,7 +139,7 @@ RUN pip -v install -r pyinstaller-requirements.txt
 #use the following variables to choose the version of hubble
 ARG HUBBLE_CHECKOUT=develop
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=2.3.4_develop
+ENV HUBBLE_VERSION=2.4.0_develop
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -154,7 +154,8 @@ RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build
 ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
-CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py \
+CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubblestack/__init__.py ; cat /data/hubble_buildinfo >> /hubble_build/hubblestack/__init__.py; fi \
+    && pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py \
     && cp /hubble_build/conf/osquery.conf /etc/osquery/ \
     && cp /hubble_build/conf/osquery.flags /etc/osquery/ \
 # hubble default configuration file

@@ -31,11 +31,34 @@ git clone https://github.com/hubblestack/hubble
 cd hubble
 sudo python setup.py install
 ```
+
+If there are errors installing, it may mean that your setuptools is out of
+date. Try this:
+
+```sh
+easy_install pip
+pip install -U setuptools
+```
+
 Installs a hubble "binary" into `/usr/bin/`.
 
 A config template has been placed in `/etc/hubble/hubble`. Modify it to your specifications and needs. You can do `hubble -h` to see the available options.
 
 The first two commands you should run to make sure things are set up correctly are `hubble --version` and `hubble test.ping`.
+
+### Quickstart Docker container
+Get up and running with any supported distribution by installing net-tools in a running docker container.  
+`docker run -it {distro:tag} sh` the desired agent, then use the appropriate package manager to install net-tools:
+
+To run centos:7 container
+```sh
+docker run -it centos:7 sh
+```
+To install net-tools
+```sh
+yum install net-tools
+```
+Follow instructions above in _Installing using setup.py_
 
 ### Building Hubble packages through Dockerfile
 Dockerfile aims to build the Hubble v2 packages easier. Dockerfiles for the distribution you want to build can be found at the path `/pkg`. For example, dockerfile for centos6 distribution is at the path `/pkg/centos6/`
@@ -50,7 +73,7 @@ docker run -it --rm -v `pwd`:/data <image_name>
 ```
 
 ### Using released packages
-Various pre-built packages targeting several popular operating systems can be found under [Releases](/hubblestack/hubble/releases).
+Various pre-built packages targeting several popular operating systems can be found under [Releases](https://github.com/hubblestack/hubble/releases).
 
 ## Getting Started
 Hubble runs as a standalone agent on each server you wish to monitor. There are no masters or minions. To get started, install Hubble using one of the above installation options. Once Hubble is installed, check that everything is working correctly:

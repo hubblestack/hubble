@@ -56,6 +56,7 @@ import logging
 
 _max_content_bytes = 100000
 http_event_collector_debug = False
+RETRY = False
 
 log = logging.getLogger(__name__)
 
@@ -93,6 +94,8 @@ def returner(ret):
             data = ret['return']
             minion_id = ret['id']
             jid = ret['jid']
+            global RETRY
+            RETRY = ret['retry']
             master = __grains__['master']
             fqdn = __grains__['fqdn']
             # Sometimes fqdn is blank. If it is, replace it with minion_id
@@ -129,6 +132,8 @@ def returner(ret):
             else:
                 for query in data:
                     for query_name, query_results in query.iteritems():
+                        if 'data' not in query_results:
+                            query_results['data'] = [{'error': 'result missing'}]
                         for query_result in query_results['data']:
                             event = {}
                             payload = {}
@@ -364,17 +369,38 @@ class http_event_collector:
         if len(self.batchEvents) > 0:
             headers = {'Authorization': 'Splunk ' + self.token}
             self.server_uri = [x for x in self.server_uri if x[1] is not False]
+            success = False
             for server in self.server_uri:
-                try:
-                    r = requests.post(server[0], data=' '.join(self.batchEvents), headers=headers,
-                                      verify=self.http_event_collector_ssl_verify, proxies=self.proxy, timeout=self.timeout)
-                    r.raise_for_status()
-                    server[1] = True
+                retries = -1
+                max_retries = 0
+                retry_sleep = 15
+                if RETRY:
+                    max_retries = __salt__['config.get']('returner_retry_max', 3)
+                    retry_sleep = __salt__['config.get']('returner_retry_sleep', 15)
+                while retries < max_retries:
+                    retries += 1
+                    if retries != 0:
+                        log.info('RETRYING in {0} seconds'.format(retry_sleep))
+                        time.sleep(retry_sleep)
+                    try:
+                        r = requests.post(server[0], data=' '.join(self.batchEvents), headers=headers,
+                                          verify=self.http_event_collector_ssl_verify, proxies=self.proxy, timeout=self.timeout)
+                        r.raise_for_status()
+                        server[1] = True
+                        success = True
+                        break
+                    except requests.exceptions.Timeout as timeout_err:
+                        log.info('Connection timed out to splunk server {0}: {1}'.format(unicode(server[0]), unicode(timeout_err)))
+                    except requests.exceptions.ConnectionError as connect_err:
+                        log.info('Error establishing connection to splunk server {0}: {1}'.format(unicode(server[0]), unicode(connect_err)))
+                    except requests.exceptions.HTTPError as http_err:
+                        log.info('HTTP Error received while connecting to splunk server {0}: {1}'.format(unicode(server[0]), unicode(http_err)))
+                    except requests.exceptions.RequestException as gen_err:
+                        log.info('Request to splunk server {0} failed: {1}'.format(unicode(server[0]), unicode(gen_err)))
+                        server[1] = False
+                    except Exception as e:
+                        log.error('Request to splunk threw an error: {0}'.format(e))
+                if success:
                     break
-                except requests.exceptions.RequestException:
-                    log.info('Request to splunk server "%s" failed. Marking as bad.' % server[0])
-                    server[1] = False
-                except Exception as e:
-                    log.error('Request to splunk threw an error: {0}'.format(e))
             self.batchEvents = []
             self.currentByteLength = 0

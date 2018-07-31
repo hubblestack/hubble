@@ -45,6 +45,7 @@ fileserver_backend:
 #    kwargs:
 #      verbose: True
 #    returner: splunk_nova_return
+#    returner_retry: True # only works on splunk returners for now
 #    run_on_start: False
 #  nebula_fifteen_min:
 #    function: nebula.queries
@@ -69,6 +70,7 @@ fileserver_backend:
 #    args:
 #      - day
 #    returner: splunk_nebula_return
+#    returner_retry: True # only works on splunk returners for now
 #    run_on_start: False
 #  pulsar:
 #    function: pulsar.process

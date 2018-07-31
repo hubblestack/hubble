@@ -81,9 +81,9 @@ def queries(query_group,
     MAX_FILE_SIZE = 104857600
     if query_file is None:
         if salt.utils.platform.is_windows():
-            query_file = 'salt://hubblestack_nebula/hubblestack_nebula_win_queries.yaml'
+            query_file = 'salt://hubblestack_nebula_v2/hubblestack_nebula_win_queries.yaml'
         else:
-            query_file = 'salt://hubblestack_nebula/hubblestack_nebula_queries.yaml'
+            query_file = 'salt://hubblestack_nebula_v2/hubblestack_nebula_queries.yaml'
     if not isinstance(query_file, list):
         query_file = [query_file]
     for fh in query_file:
@@ -141,7 +141,7 @@ def queries(query_group,
             log.debug('osquery not installed on this host. Skipping.')
             return None
 
-    query_data = query_data.get(query_group, [])
+    query_data = query_data.get(query_group, {})
 
     if not query_data:
         return None
@@ -150,8 +150,8 @@ def queries(query_group,
     timing = {}
     schedule_time = time.time()
     success = True
-    for query in query_data:
-        name = query.get('query_name')
+    for name, query in query_data.iteritems():
+        query['query_name'] = name
         query_sql = query.get('query')
         if not query_sql:
             continue
@@ -163,12 +163,15 @@ def queries(query_group,
 
         cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
         t0 = time.time()
-        res = __salt__['cmd.run_all'](cmd)
+        res = __salt__['cmd.run_all'](cmd, timeout=10000)
         t1 = time.time()
         timing[name] = t1-t0
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
+            if "Timed out" in res['stdout']:
+                # this is really the best way to tell without getting fancy
+                log.error("TIMEOUT during osqueryi execution name=%s", name)
             success = False
             query_ret['result'] = False
             query_ret['error'] = res['stderr']
@@ -268,16 +271,16 @@ def hubble_versions():
 
 
 def top(query_group,
-        topfile='salt://hubblestack_nebula/top.nebula',
+        topfile='salt://hubblestack_nebula_v2/top.nebula',
         verbose=False,
         report_version_with_day=True):
 
     if salt.utils.platform.is_windows():
-        topfile = 'salt://hubblestack_nebula/win_top.nebula'
+        topfile = 'salt://hubblestack_nebula_v2/win_top.nebula'
 
     configs = get_top_data(topfile)
 
-    configs = ['salt://hubblestack_nebula/' + config.replace('.', '/') + '.yaml'
+    configs = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml'
                for config in configs]
 
     return queries(query_group,
@@ -297,16 +300,20 @@ def get_top_data(topfile):
         raise CommandExecutionError('Could not load topfile: {0}'.format(e))
 
     if not isinstance(topdata, dict) or 'nebula' not in topdata or \
-            not(isinstance(topdata['nebula'], dict)):
-        raise CommandExecutionError('Nebula topfile not formatted correctly')
+            not(isinstance(topdata['nebula'], list)):
+        raise CommandExecutionError('Nebula topfile not formatted correctly. '
+                                    'Note that under the "nebula" key the data '
+                                    'should now be formatted as a list of '
+                                    'single-key dicts.')
 
     topdata = topdata['nebula']
 
     ret = []
 
-    for match, data in topdata.iteritems():
-        if __salt__['match.compound'](match):
-            ret.extend(data)
+    for topmatch in topdata:
+        for match, data in topmatch.iteritems():
+            if __salt__['match.compound'](match):
+                ret.extend(data)
 
     return ret
 

@@ -442,6 +442,7 @@ def load_config():
         salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
         salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
 
+    salt.config.DEFAULT_MINION_OPTS['file_roots'] = {'base': []}
     salt.config.DEFAULT_MINION_OPTS['log_level'] = None
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours

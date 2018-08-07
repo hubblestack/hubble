@@ -8,15 +8,16 @@ alerting and reporting. It also reports the security information to Splunk,
 Logstash, or other endpoints. HubbleStack is a free and open source
 project made possible by Adobe.
 
+Table of Contents:
+^^^^^^^^^^^^^^^^^^
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
    contents/gettingstarted
 
-Indices and tables
-==================
+Indices and Tables:
+^^^^^^^^^^^^^^^^^^^
 
 * :ref:`genindex`
 * :ref:`modindex`

@@ -34,7 +34,7 @@ directory)::
 Installing using setup.py
 """""""""""""""""""""""""
 
-.. code-block::
+::
 
     sudo yum install git python-setuptools -y
     git clone https://github.com/hubblestack/hubble

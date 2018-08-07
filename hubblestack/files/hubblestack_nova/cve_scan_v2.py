@@ -7,11 +7,6 @@ is vulnerable to a known cve. The cve vunlerablities are gathered via the url in
 the yaml profile, and that data cached at the path
 /var/cache/salt/minion/cve_scan_cache/<os_name>_<version>.json
 
-:maintainer: HubbleStack / jaredhanson11
-:maturity: 2016.7.0
-:platform: Linux
-:requires: SaltStack
-
 This audit module requires yaml data to execute. It will search the local
 directory for any .yaml files, and if it finds a top-level 'cve_scan_v2' key, it
 will use that data.

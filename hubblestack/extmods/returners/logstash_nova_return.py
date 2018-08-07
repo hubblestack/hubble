@@ -2,10 +2,6 @@
 '''
 HubbleStack Nova-to-Logstash (http input) returner
 
-:maintainer: HubbleStack
-:platform: All
-:requires: HubbleStack
-
 Deliver HubbleStack Nova data into Logstash using the HTTP input
 plugin. Required config/pillar settings:
 

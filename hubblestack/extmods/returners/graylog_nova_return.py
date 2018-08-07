@@ -2,10 +2,6 @@
 '''
 HubbleStack Nova-to-graylog (http input) returner
 
-:maintainer: HubbleStack
-:platform: All
-:requires: HubbleStack
-
 Deliver HubbleStack Nova data into graylog using the HTTP input
 plugin. Required config/pillar settings:
 

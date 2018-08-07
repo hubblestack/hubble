@@ -8,11 +8,6 @@ config via the hubblestack:nova:enable_command_module (should be set to True
 to enable this module). This allows nova to run arbitrary commands via yaml
 profiles.
 
-:maintainer: HubbleStack / basepi
-:maturity: 2016.7.0
-:platform: All
-:requires: SaltStack
-
 Sample YAML data, with inline comments:
 
 # Top level key lets the module know it should look at this data

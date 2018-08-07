@@ -93,3 +93,5 @@ ENV/
 
 # Visual Studio Code settings
 .vscode
+
+doc/_build

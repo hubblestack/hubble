@@ -4,11 +4,6 @@ Hubble Nova plugin for running miscellaneous one-off python functions to
 run more complex nova audits without allowing arbitrary command execution
 from within the yaml profiles.
 
-:maintainer: HubbleStack / basepi
-:maturity: 2016.7.2
-:platform: All
-:requires: SaltStack
-
 Sample YAML data, with inline comments:
 
 # Top level key lets the module know it should look at this data

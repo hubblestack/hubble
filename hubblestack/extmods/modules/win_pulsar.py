@@ -46,6 +46,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     Example yaml config on fileserver (targeted by configfile option)
 
     .. code-block:: yaml
+
         C:\Users: {}
         C:\Windows:
           mask:

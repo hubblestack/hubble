@@ -77,7 +77,7 @@ def queries(query_group,
         
     CLI Examples:
 
-    .. code_block:: bash
+    .. code-block:: bash
 
         salt '*' nebula.queries day
         salt '*' nebula.queries hour verbose=True

@@ -4,6 +4,11 @@ Auditing (Nova)
 Hubble supports success/fail auditing via a number of included modules. The
 codename for the audit piece of hubble is "Nova".
 
+Module Documentation
+--------------------
+
+:doc:`modules/nova`
+
 Usage
 -----
 

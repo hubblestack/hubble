@@ -16,6 +16,9 @@ Table of Contents:
 
    contents/gettingstarted
    contents/auditing_nova
+   contents/insight_nebula
+   contents/fim_pulsar
+   contents/fim_win_pulsar
    contents/module_documentation
 
 Indices and Tables:

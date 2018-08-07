@@ -1,11 +1,6 @@
 # -*- encoding: utf-8 -*-
 '''
-
-:maintainer: HubbleStack
-:maturity: 2016.7.0
-:platform: Windows
-:requires: SaltStack
-
+Windows package audit module
 '''
 from __future__ import absolute_import
 

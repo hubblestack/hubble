@@ -2,11 +2,6 @@
 '''
 osquery wrapper for HubbleStack Nebula
 
-:maintainer: basepi
-:maturity: 2016.10.2
-:platform: All
-:requires: SaltStack, osquery
-
 Designed to run sets of osquery queries defined in pillar. These sets will have
 a unique identifier, and be targeted by identifier. Usually, this identifier
 will be a frequency. ('15 minutes', '1 day', etc). Identifiers are

@@ -2,11 +2,6 @@
 '''
 HubbleStack Nova module for auditing SSL certificates.
 
-:maintainer: HubbleStack / avb76
-:maturity: 2016.7.0
-:platform: Linux
-:requires: SaltStack, python-OpenSSL
-
 This audit module requires YAML data to execute. It will search the yaml data
 received for the topkey 'openssl'.
 

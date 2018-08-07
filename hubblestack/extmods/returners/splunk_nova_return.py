@@ -2,10 +2,6 @@
 '''
 HubbleStack Nova-to-Splunk returner
 
-:maintainer: HubbleStack
-:platform: All
-:requires: SaltStack
-
 Deliver HubbleStack Nova result data into Splunk using the HTTP
 event collector. Required config/pillar settings:
 

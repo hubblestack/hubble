@@ -2,10 +2,6 @@
 '''
 HubbleStack Nebula-to-Splunk returner
 
-:maintainer: HubbleStack
-:platform: All
-:requires: SaltStack
-
 Deliver HubbleStack Nebula query data into Splunk using the HTTP
 event collector. Required config/pillar settings:
 

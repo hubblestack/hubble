@@ -6,11 +6,6 @@ Supports both blacklisting and whitelisting patterns. Blacklisted patterns must
 not be found in the specified file. Whitelisted patterns must be found in the
 specified file.
 
-:maintainer: HubbleStack / basepi
-:maturity: 2016.7.0
-:platform: All
-:requires: SaltStack
-
 This audit module requires yaml data to execute. It will search the local
 directory for any .yaml files, and if it finds a top-level 'grep' key, it will
 use that data.

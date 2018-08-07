@@ -3,10 +3,6 @@ HubbleStack Custom Grains and Pillar
 
 Allows for fetching custom grain and pillar data from a local salt-minion via
 salt-call
-
-:maintainer: HubbleStack
-:platform: All
-:requires: SaltStack
 '''
 
 import re

@@ -1,9 +1,5 @@
 '''
 HubbleStack Cloud Details Grain
-
-:maintainer: HubbleStack
-:platform: All
-:requires: SaltStack
 '''
 
 import requests

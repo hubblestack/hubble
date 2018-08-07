@@ -6,11 +6,6 @@ Supports both blacklisting and whitelisting pacakges. Blacklisted packages
 must not be installed. Whitelisted packages must be installed, with options for
 requiring a specific version or a minimum or maximum version.
 
-:maintainer: HubbleStack / basepi
-:maturity: 2016.7.0
-:platform: All
-:requires: SaltStack
-
 Sample YAML data, with inline comments:
 
 pkg:

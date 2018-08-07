@@ -2,10 +2,6 @@
 '''
 HubbleStack Pulsar-to-graylog (http input) returner
 
-:maintainer: HubbleStack
-:platform: All
-:requires: HubbleStack
-
 Deliver HubbleStack Pulsar event data into graylog using the HTTP input
 plugin. Required config/pillar settings:
 

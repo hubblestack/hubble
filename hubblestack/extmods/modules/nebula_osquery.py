@@ -166,6 +166,11 @@ def queries(query_group,
         query_sql = query.get('query')
         if not query_sql:
             continue
+        if 'attach' in query_sql.lower() or 'curl' in query_sql.lower():
+            log.critical('Skipping potentially malicious osquery query \'{0}\' '
+                         'which contains either \'attach\' or \'curl\': {1}'
+                         .format(name, query_sql))
+            continue
 
         # Run the osqueryi query
         query_ret = {

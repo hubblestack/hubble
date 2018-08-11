@@ -11,10 +11,8 @@ Development
 ===========
 Below are sample instructions to setup a dev environment:
 
-```
-  virtualenv myvirtualenv
-  source myvirtualenv/bin/activate
-  pip install -r requirements.txt
-  sudo python setup.py develop
-  sudo hubble hubble.audit
-```
+1. virtualenv myvirtualenv
+2. source myvirtualenv/bin/activate
+3. pip install -r requirements.txt
+4. sudo python setup.py develop
+5. sudo hubble hubble.audit

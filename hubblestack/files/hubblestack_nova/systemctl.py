@@ -5,11 +5,6 @@ HubbleStack Nova plugin for using systemctl to verify status of a given service.
 Supports both blacklisting and whitelisting patterns. Blacklisted services must
 not be enabled. Whitelisted services must be enabled.
 
-:maintainer: HubbleStack / basepi
-:maturity: 2017.8.29
-:platform: All
-:requires: SaltStack
-
 This audit module requires yaml data to execute. It will search the local
 directory for any .yaml files, and if it finds a top-level 'systemctl' key, it will
 use that data.

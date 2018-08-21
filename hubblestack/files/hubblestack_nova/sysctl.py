@@ -2,11 +2,6 @@
 '''
 HubbleStack Nova module for using sysctl to verify sysctl parameter.
 
-:maintainer: HubbleStack / avb76
-:maturity: 2016.7.0
-:platform: Linux
-:requires: SaltStack
-
 This audit module requires yaml data to execute. It will search the local
 directory for any .yaml files, and if it finds a top-level 'sysctl' key, it will
 use that data.

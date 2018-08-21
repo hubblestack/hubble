@@ -2,11 +2,6 @@
 '''
 osquery wrapper for HubbleStack Nebula
 
-:maintainer: basepi
-:maturity: 2016.10.2
-:platform: All
-:requires: SaltStack, osquery
-
 Designed to run sets of osquery queries defined in pillar. These sets will have
 a unique identifier, and be targeted by identifier. Usually, this identifier
 will be a frequency. ('15 minutes', '1 day', etc). Identifiers are
@@ -32,6 +27,7 @@ import copy
 import json
 import logging
 import os
+import re
 import time
 import yaml
 import collections
@@ -54,7 +50,9 @@ def __virtual__():
 def queries(query_group,
             query_file=None,
             verbose=False,
-            report_version_with_day=True):
+            report_version_with_day=True,
+            topfile_for_mask=None,
+            mask_passwords=False):
     '''
     Run the set of queries represented by ``query_group`` from the
     configuration in the file query_file
@@ -69,9 +67,17 @@ def queries(query_group,
         Defaults to False. If set to True, more information (such as the query
         which was run) will be included in the result.
 
+    topfile_for_mask
+        This is the location of the top file from which the masking information 
+        will be extracted.
+        
+    mask_passwords
+        Defaults to False. If set to True, passwords mentioned in the 
+        return object are masked.
+        
     CLI Examples:
 
-    .. code_block:: bash
+    .. code-block:: bash
 
         salt '*' nebula.queries day
         salt '*' nebula.queries hour verbose=True
@@ -225,6 +231,8 @@ def queries(query_group,
                         if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
                             result[key] = json.loads(value[len('__JSONIFY__'):])
 
+    if mask_passwords:
+        mask_passwords_inplace(ret, topfile_for_mask)
     return ret
 
 
@@ -272,8 +280,10 @@ def hubble_versions():
 
 def top(query_group,
         topfile='salt://hubblestack_nebula_v2/top.nebula',
+        topfile_for_mask=None,
         verbose=False,
-        report_version_with_day=True):
+        report_version_with_day=True,
+        mask_passwords=False):
 
     if salt.utils.platform.is_windows():
         topfile = 'salt://hubblestack_nebula_v2/win_top.nebula'
@@ -286,7 +296,9 @@ def top(query_group,
     return queries(query_group,
                    query_file=configs,
                    verbose=False,
-                   report_version_with_day=True)
+                   report_version_with_day=True,
+                   topfile_for_mask=topfile_for_mask,
+                   mask_passwords=mask_passwords)
 
 
 def get_top_data(topfile):
@@ -316,6 +328,124 @@ def get_top_data(topfile):
                 ret.extend(data)
 
     return ret
+
+def mask_passwords_inplace(object_to_be_masked, topfile):
+    '''
+    It masks the passwords present in 'object_to_be_masked'. Uses mask configuration
+    file as a reference to find out the list of blacklisted strings or objects.
+    Note that this method alters "object_to_be_masked".
+    
+    The path to the mask configuration file can be specified in the "topfile" 
+    argument.
+    '''
+    try:
+
+        mask = {}
+        if topfile is None:
+            topfile = 'salt://hubblestack_nebula_v2/top.mask'
+        mask_files = get_top_data(topfile)
+        mask_files = ['salt://hubblestack_nebula_v2/' + mask_file.replace('.', '/') + '.yaml'
+                   for mask_file in mask_files]
+        if mask_files is None:
+            mask_files = 'salt://hubblestack_nebula_v2/mask.yaml'
+        if not isinstance(mask_files, list):
+            mask_files = [mask_files]
+        for fh in mask_files:
+            if 'salt://' in fh:
+                orig_fh = fh
+                fh = __salt__['cp.cache_file'](fh)
+            if fh is None:
+                log.error('Could not find file {0}.'.format(orig_fh))
+                return None
+            if os.path.isfile(fh):
+                with open(fh, 'r') as f:
+                    f_data = yaml.safe_load(f)
+                    if not isinstance(f_data, dict):
+                        raise CommandExecutionError('File data is not formed as a dict {0}'
+                                                    .format(f_data))
+                    mask = _dict_update(mask, f_data, recursive_update=True, merge_lists=True)
+
+        log.debug("Using the mask: {}".format(mask))
+        mask_by = mask.get('mask_by', '******')
+
+        for blacklisted_string in mask.get("blacklisted_strings", []):
+            query_name = blacklisted_string['query_name']
+            column = blacklisted_string['column']
+            if query_name != '*':
+                for r in object_to_be_masked:
+                    for query_result in r.get(query_name, {'data':[]})['data']:
+                        if column not in query_result or not isinstance(query_result[column], basestring):
+                            # if the column in not present in one data-object, it will 
+                            # not be present in others as well. Break in that case.
+                            # This will happen only if mask.yaml is malformed
+                            break
+                        value = query_result[column]
+                        for pattern in blacklisted_string['blacklisted_patterns']:
+                            value = re.sub(pattern + "()", r"\1" + mask_by + r"\3", value)
+                        query_result[column] = value
+            else:
+                for r in object_to_be_masked:
+                    for query_name, query_ret in r.iteritems():
+                        for query_result in query_ret['data']:
+                            if column not in query_result or not isinstance(query_result[column], basestring):
+                                break
+                            value = query_result[column]
+                            for pattern in blacklisted_string['blacklisted_patterns']:
+                                value = re.sub(pattern + "()", r"\1" + mask_by + r"\3", value)
+                            query_result[column] = value
+
+
+        for blacklisted_object in mask.get("blacklisted_objects", []):
+            query_name = blacklisted_object['query_name']
+            column = blacklisted_object['column']
+            if query_name != '*':
+                for r in object_to_be_masked:
+                    for query_result in r.get(query_name, {'data':[]})['data']:
+                        if column not in query_result or \
+                        (isinstance(query_result[column], basestring) and query_result[column].strip() != '' ):
+                            break
+                        _recursively_mask_objects(query_result[column], blacklisted_object, mask_by)
+            else:
+                for r in object_to_be_masked:
+                    for query_name, query_ret in r.iteritems():
+                        for query_result in query_ret['data']:
+                            if column not in query_result or \
+                            (isinstance(query_result[column], basestring) and query_result[column].strip() != '' ):
+                                break
+                            _recursively_mask_objects(query_result[column], blacklisted_object, mask_by)
+                                            
+            # successfully masked the object. No need to return anything
+        
+    except Exception as e:
+        log.exception("An error occured while masking the passwords: {}".format(e))
+
+def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_by):
+    '''
+    This function is used by "mask_passwords_inplace" to mask passwords contained in
+    json objects or json arrays. If the "object_to_mask" is a json array, then this 
+    function is called recursively on the individual members of the array.
+ 
+     object_to_mask
+        Json object/array whose elements are to masked recursively
+        
+     blacklisted_object
+        This parameters contains info about which queries are to be masked, which 
+        attributes are to be masked, based upon the value of which attribute.
+        See hubblestack_nebula_v2/mask.yaml for exact format.
+        
+    mask_by
+        If a password string is detected, it is replaced by the value of "mask_by" 
+        parameter.
+        
+    '''
+    if isinstance(object_to_mask, list):
+        for child in object_to_mask:
+            _recursively_mask_objects(child, blacklisted_object, mask_by)
+    elif blacklisted_object['attribute_to_check'] in object_to_mask and \
+         object_to_mask[blacklisted_object['attribute_to_check']] in blacklisted_object['blacklisted_patterns']:
+        for key in blacklisted_object['attributes_to_mask']:
+            if key in object_to_mask:
+                object_to_mask[key] = mask_by
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):

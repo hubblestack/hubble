@@ -2,11 +2,6 @@
 '''
 Hubble Nova plugin for using iptables to verify firewall rules
 
-:maintainer: HubbleStack / avb76
-:maturity: 2016.7.0
-:platform: Linux
-:requires: SaltStack
-
 This audit module requires yaml data to execute. Running hubble.audit will
 search the local directory for any .yaml files and it will pass all the data to
 this module.  If this module find a top-level 'firewall' key, it will use the

@@ -7,11 +7,6 @@ the Vulners.com Linux Vulnerability Audit API.
 The API is described at the link below:
     https://blog.vulners.com/linux-vulnerability-audit-in-vulners/
 
-:maintainer: HubbleStack / avb76
-:maturity: 3/26/2017 (TODO: change the format when the release date is established)
-:platform: Linux
-:requires: SaltStack
-
 This audit module requires a YAML file inside the hubblestack_nova_profiles directory.
 The file should have the following format:
 

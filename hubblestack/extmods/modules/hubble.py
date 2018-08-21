@@ -2,11 +2,6 @@
 '''
 Loader and primary interface for nova modules
 
-:maintainer: HubbleStack / basepi
-:maturity: 2016.10.2
-:platform: All
-:requires: SaltStack
-
 See README for documentation
 
 Configuration:
@@ -33,7 +28,7 @@ import salt
 import salt.utils
 from salt.exceptions import CommandExecutionError
 from hubblestack import __version__
-from nova_loader import NovaLazyLoader
+from hubblestack.extmods.modules.nova_loader import NovaLazyLoader
 
 __nova__ = {}
 
@@ -104,9 +99,7 @@ def audit(configs=None,
         Any parameters & values that are not explicitly defined will be passed
         directly through to the Nova module(s).
 
-    CLI Examples:
-
-    .. code-block:: bash
+    CLI Examples::
 
         salt '*' hubble.audit foo
         salt '*' hubble.audit foo,bar tags='CIS*'

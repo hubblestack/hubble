@@ -2,10 +2,6 @@
 '''
 HubbleStack Pulsar-to-Splunk returner
 
-:maintainer: HubbleStack
-:platform: All
-:requires: SaltStack
-
 Deliver HubbleStack Pulsar event data into Splunk using the HTTP
 event collector. Required config/pillar settings:
 

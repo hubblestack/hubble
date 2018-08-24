@@ -68,13 +68,13 @@ def queries(query_group,
         which was run) will be included in the result.
 
     topfile_for_mask
-        This is the location of the top file from which the masking information 
+        This is the location of the top file from which the masking information
         will be extracted.
-        
+
     mask_passwords
-        Defaults to False. If set to True, passwords mentioned in the 
+        Defaults to False. If set to True, passwords mentioned in the
         return object are masked.
-        
+
     CLI Examples:
 
     .. code-block:: bash
@@ -334,8 +334,8 @@ def mask_passwords_inplace(object_to_be_masked, topfile):
     It masks the passwords present in 'object_to_be_masked'. Uses mask configuration
     file as a reference to find out the list of blacklisted strings or objects.
     Note that this method alters "object_to_be_masked".
-    
-    The path to the mask configuration file can be specified in the "topfile" 
+
+    The path to the mask configuration file can be specified in the "topfile"
     argument.
     '''
     try:
@@ -375,7 +375,7 @@ def mask_passwords_inplace(object_to_be_masked, topfile):
                 for r in object_to_be_masked:
                     for query_result in r.get(query_name, {'data':[]})['data']:
                         if column not in query_result or not isinstance(query_result[column], basestring):
-                            # if the column in not present in one data-object, it will 
+                            # if the column in not present in one data-object, it will
                             # not be present in others as well. Break in that case.
                             # This will happen only if mask.yaml is malformed
                             break
@@ -413,30 +413,30 @@ def mask_passwords_inplace(object_to_be_masked, topfile):
                             (isinstance(query_result[column], basestring) and query_result[column].strip() != '' ):
                                 break
                             _recursively_mask_objects(query_result[column], blacklisted_object, mask_by)
-                                            
+
             # successfully masked the object. No need to return anything
-        
+
     except Exception as e:
         log.exception("An error occured while masking the passwords: {}".format(e))
 
 def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_by):
     '''
     This function is used by "mask_passwords_inplace" to mask passwords contained in
-    json objects or json arrays. If the "object_to_mask" is a json array, then this 
+    json objects or json arrays. If the "object_to_mask" is a json array, then this
     function is called recursively on the individual members of the array.
- 
+
      object_to_mask
         Json object/array whose elements are to masked recursively
-        
+
      blacklisted_object
-        This parameters contains info about which queries are to be masked, which 
+        This parameters contains info about which queries are to be masked, which
         attributes are to be masked, based upon the value of which attribute.
         See hubblestack_nebula_v2/mask.yaml for exact format.
-        
+
     mask_by
-        If a password string is detected, it is replaced by the value of "mask_by" 
+        If a password string is detected, it is replaced by the value of "mask_by"
         parameter.
-        
+
     '''
     if isinstance(object_to_mask, list):
         for child in object_to_mask:

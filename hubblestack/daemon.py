@@ -676,6 +676,10 @@ def refresh_grains(initial=False):
     hubblestack.hec.opt.__salt__ = __salt__
     hubblestack.hec.opt.__opts__ = __opts__
 
+    hubblestack.splunklogging.__grains__ = __grains__
+    hubblestack.splunklogging.__salt__ = __salt__
+    hubblestack.splunklogging.__opts__ = __opts__
+
     if not initial and __salt__['config.get']('splunklogging', False):
         class MockRecord(object):
             def __init__(self, message, levelname, asctime, name):

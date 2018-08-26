@@ -45,8 +45,6 @@ from hubblestack.hec import http_event_collector, get_splunk_options
 
 import logging
 
-hec = None
-
 class SplunkHandler(logging.Handler):
     '''
     Log handler for splunk

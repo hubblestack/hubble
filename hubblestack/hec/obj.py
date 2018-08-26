@@ -1,4 +1,6 @@
 
+from collections import Counter
+
 import socket
 import json
 import time
@@ -17,7 +19,6 @@ __version__ = '1.0'
 log = logging.getLogger('hubblestack.hec')
 
 _max_content_bytes = 100000
-http_event_collector_SSL_verify = True
 http_event_collector_debug = False
 
 class Payload(object):
@@ -106,10 +107,9 @@ class Payload(object):
 # occur if next event payload will exceed limit
 
 class HEC(object):
-
     def __init__(self, token, http_event_server, host='', http_event_port='8088',
-        http_event_server_ssl=True, max_bytes=_max_content_bytes, proxy=None, timeout=9.05,
-        log_http_exceptions=False, log_other_exceptions=False):
+                 http_event_server_ssl=True, http_event_collector_ssl_verify=True,
+                 max_bytes=_max_content_bytes, proxy=None, timeout=9.05):
 
         self.payload_retry_before_fail =  5
         self.queue_overflow_msg_delay = 10
@@ -122,8 +122,6 @@ class HEC(object):
         self.maxByteLength = max_bytes
         self.currentByteLength = 0
         self.server_uri = []
-        self.log_http_exceptions = log_http_exceptions
-        self.log_other_exceptions = log_other_exceptions
 
         if proxy and http_event_server_ssl:
             self.proxy = {'https': 'https://{0}'.format(proxy)}
@@ -176,7 +174,7 @@ class HEC(object):
                 respect_retry_after_header=True)
         }
 
-        if http_event_collector_SSL_verify:
+        if http_event_collector_ssl_verify:
             pm_kw.update({'cert_reqs': 'CERT_REQUIRED', 'ca_certs': certifi.where()})
         else:
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -228,15 +226,11 @@ class HEC(object):
                 server[1] = False
                 continue
             except Exception as e:
-                if self.log_other_exceptions:
-                    log.error('Request to splunk threw an error: {0}'.format(e))
                 server[1] = False
                 continue
             if r.status >= 400:
                 server_maybe_bad = self._requeue(payload, server[0])
                 if server_maybe_bad:
-                    if self.log_http_exceptions:
-                        log.info('Request to splunk server "%s" failed. Marking as bad.' % server[0])
                     server[1] = False
                 #self._requeue(self, payload, 'blah')
             else:

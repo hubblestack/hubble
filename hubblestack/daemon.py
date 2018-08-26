@@ -28,6 +28,7 @@ import salt.utils.jid
 import salt.utils.gitfs
 import salt.log.setup
 import hubblestack.splunklogging
+import hubblestack.hec.opt
 from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime
@@ -671,9 +672,9 @@ def refresh_grains(initial=False):
     # are pulsar.queue, pulsar.notifier and cp.fileclient_###########
     # log.debug('keys in __context__: {}'.format(list(__context__)))
 
-    hubblestack.splunklogging.__grains__ = __grains__
-    hubblestack.splunklogging.__salt__ = __salt__
-    hubblestack.splunklogging.__opts__ = __opts__
+    hubblestack.hec.opt.__grains__ = __grains__
+    hubblestack.hec.opt.__salt__ = __salt__
+    hubblestack.hec.opt.__opts__ = __opts__
 
     if not initial and __salt__['config.get']('splunklogging', False):
         class MockRecord(object):

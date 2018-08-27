@@ -187,13 +187,14 @@ class SplunkHandler(logging.Handler):
         try:
             log_entry = {'message': record.message,
                          'level': record.levelname,
-                         'timestamp': record.asctime,
+                         'timestamp': int(time.time()),
                          'loggername': record.name,
                          }
         except:
             log_entry = {'message': record.msg,
                          'level': record.levelname,
                          'loggername': record.name,
+                         'timestamp': int(time.time()),
                          }
         return log_entry
 

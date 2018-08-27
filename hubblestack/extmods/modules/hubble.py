@@ -28,7 +28,10 @@ import salt
 import salt.utils
 from salt.exceptions import CommandExecutionError
 from hubblestack import __version__
-from hubblestack.extmods.modules.nova_loader import NovaLazyLoader
+try:
+    from nova_loader import NovaLazyLoader
+except ImportError:
+    pass  # This is here to make the sphinx import of this module work
 
 __nova__ = {}
 

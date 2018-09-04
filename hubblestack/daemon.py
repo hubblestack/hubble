@@ -139,6 +139,9 @@ def main():
     last_grains_refresh = time.time() - __opts__['grains_refresh_frequency']
 
     log.info('Starting main loop')
+    pidfile_count = 0
+    # pidfile_refresh in seconds, our scheduler deals in half-seconds
+    pidfile_refresh = int(__opts__.get('pidfile_refresh', 60)) * 2
     while True:
         # Check if fileserver needs update
         if time.time() - last_fc_update >= __opts__['fileserver_update_frequency']:
@@ -151,6 +154,11 @@ def main():
                 log.exception('Exception thrown trying to update fileclient. '
                               'Trying again in {0} seconds.'
                               .format(retry))
+
+        pidfile_count += 1
+        if pidfile_count > pidfile_refresh:
+            pidfile_count = 0
+            create_pidfile()
 
         if time.time() - last_grains_refresh >= __opts__['grains_refresh_frequency']:
             log.info('Refreshing grains')

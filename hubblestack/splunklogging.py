@@ -154,7 +154,8 @@ class SplunkHandler(logging.Handler):
             payload = copy.deepcopy(payload)
             event.update(log_entry)
             payload['event'] = event
-            hec.batchEvent(payload, eventtime=time.time())
+            # no_queue tells the hec never to queue the data to disk
+            hec.batchEvent(payload, eventtime=time.time(), no_queue=True)
             hec.flushBatch()
         return True
 
@@ -168,7 +169,8 @@ class SplunkHandler(logging.Handler):
             payload = copy.deepcopy(payload)
             event.update(data)
             payload['event'] = event
-            hec.batchEvent(payload, eventtime=time.time())
+            # no_queue tells the hec never to queue the data to disk
+            hec.batchEvent(payload, eventtime=time.time(), no_queue=True)
             hec.flushBatch()
         return True
 

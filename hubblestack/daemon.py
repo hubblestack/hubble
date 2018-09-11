@@ -169,8 +169,8 @@ def getsecondsbycronexpression(base, cron_exp):
     this function will return the seconds according to the cron
     expression provided in the hubble config
     '''
-    iter = croniter(cron_exp, base)
-    next_datetime  = iter.get_next(datetime)
+    cron_iter = croniter(cron_exp, base)
+    next_datetime  = cron_iter.get_next(datetime)
     epoch_base_datetime = time.mktime(base.timetuple())
     epoch_datetime = time.mktime(next_datetime.timetuple())
     seconds = int(epoch_datetime) - int(epoch_base_datetime)
@@ -197,8 +197,8 @@ def getlastrunbybuckets(buckets, seconds):
     buckets = int(buckets) if int(buckets)!=0 else 256
     host_ip = socket.gethostbyname(socket.gethostname())
     ips = host_ip.split('.')
-    sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2])*256)+int(ips[3])
-    bucket = sum%buckets
+    bucket_sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2])*256)+int(ips[3])
+    bucket = bucket_sum%buckets
     log.debug('bucket number is {0} out of {1}'.format(bucket, buckets))
     current_time = time.time()
     base_time = seconds*(math.floor(current_time/seconds))

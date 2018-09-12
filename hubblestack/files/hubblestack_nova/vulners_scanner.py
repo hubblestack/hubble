@@ -11,6 +11,7 @@ This audit module requires a YAML file inside the hubblestack_nova_profiles dire
 The file should have the following format:
 
 vulners_scanner: <random data>
+vulners_api_key: REDACTED
 
 It does not matter what `<random data>` is, as long as the top key of the file is named `vulners_scanner`.
 This allows the module to run under a certain profile, as all of the other Nova modules do.
@@ -21,6 +22,7 @@ import logging
 
 import sys
 import requests
+import vulners
 
 
 log = logging.getLogger(__name__)
@@ -43,8 +45,8 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
         if 'vulners_scanner' in data:
 
             local_packages = _get_local_packages()
-            vulners_data = _vulners_query(local_packages, os=os_name, version=os_version)
-            if vulners_data['result'] == 'ERROR':
+            vulners_data = _vulners_query(local_packages, os=os_name, version=os_version, api_key=data['vulners_api_key'])
+            if 'result' in vulners_data and vulners_data['result'] == 'ERROR':
                 log.error(vulners_data['data']['error'])
             vulners_data = _process_vulners(_vulners_query(local_packages, os=os_name, version=os_version))
 
@@ -69,7 +71,7 @@ def _get_local_packages():
     return ['{0}-{1}'.format(pkg, local_packages[pkg]) for pkg in local_packages]
 
 
-def _vulners_query(packages=None, os=None, version=None, url='https://vulners.com/api/v3/audit/audit/'):
+def _vulners_query(packages=None, os=None, version=None, api_key=None):
     '''
     Query the Vulners.com Linux Vulnerability Audit API for the provided packages.
 
@@ -101,24 +103,8 @@ def _vulners_query(packages=None, os=None, version=None, url='https://vulners.co
         error['data']['error'] = 'Missing the operating system version.'
         return error
 
-    headers = {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-    }
-
-    data = {
-        "os": os,
-        "package": packages,
-        "version": version
-    }
-
-    try:
-        response = requests.post(url=url, headers=headers, json=data)
-        return response.json()
-    except requests.Timeout:
-        error['data']['error'] = 'Request to {0} timed out'.format(url)
-        return error
-
+    vulners_api = vulners.Vulners(api_key=api_key)
+    return vulners_api.audit(str(os), str(version), packages)
 
 def _process_vulners(vulners):
     '''

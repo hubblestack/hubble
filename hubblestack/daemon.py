@@ -294,6 +294,7 @@ def schedule():
             else:
                 seconds = int(jobdata['seconds'])
             splay = int(jobdata.get('splay', 0))
+            min_splay = int(jobdata.get('min_splay', 0))
         except ValueError:
             log.error('Scheduled job {0} has an invalid value for seconds or '
                       'splay.'.format(jobname))
@@ -317,7 +318,7 @@ def schedule():
                 if splay:
                     # Run `splay` seconds in the future, by telling the scheduler we last ran it
                     # `seconds - splay` seconds ago.
-                    jobdata['last_run'] = time.time() - (seconds - random.randint(0, splay))
+                    jobdata['last_run'] = time.time() - (seconds - random.randint(min_splay, splay))
                 else:
                     # Run now
                     run = True
@@ -326,7 +327,7 @@ def schedule():
                 if splay:
                     # Run `seconds + splay` seconds in the future by telling the scheduler we last
                     # ran it at now + `splay` seconds.
-                    jobdata['last_run'] = time.time() + random.randint(0, splay)
+                    jobdata['last_run'] = time.time() + random.randint(min_splay, splay)
                 elif 'buckets' in jobdata:
                     # Place the host in a bucket and fix the execution time.
                     jobdata['last_run'] = getlastrunbybuckets(jobdata['buckets'], seconds)

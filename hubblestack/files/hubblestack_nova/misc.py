@@ -46,6 +46,7 @@ import os
 import re
 import salt.utils
 from salt.ext import six
+from salt.exceptions import CommandExecutionError
 from collections import Counter
 
 log = logging.getLogger(__name__)

@@ -228,6 +228,7 @@ def schedule():
             function: hubble.audit
             seconds: 3600
             splay: 100
+            min_splay: 50
             args:
               - cis.centos-7-level-1-scored-v2-1-0
             kwargs:
@@ -236,7 +237,7 @@ def schedule():
             returner: splunk_nova_return
             run_on_start: True
 
-    Note that ``args``, ``kwargs``, and ``splay`` are all optional. However, a
+    Note that ``args``, ``kwargs``,``min_splay`` and ``splay`` are all optional. However, a
     scheduled job must always have a ``function`` and a time in ``seconds`` of
     how often to run the job.
 
@@ -251,10 +252,15 @@ def schedule():
         Frequency with which the job should be run, in seconds
 
     splay
-        Randomized splay for the job, in seconds. A random number between 0 and
+        Randomized splay for the job, in seconds. A random number between <min_splay> and
         <splay> will be chosen and added to the ``seconds`` argument, to decide
         the true frequency. The splay will be chosen on first run, and will
         only change when the daemon is restarted. Optional.
+
+    min_splay
+        This parameters works in conjunction with <splay>. If a <min_splay> is provided, and random
+        between <min_splay> and <splay> is chosen. If <min_splay> is not provided, it 
+        defaults to zero. Optional.
 
     args
         List of arguments for the function. Optional.

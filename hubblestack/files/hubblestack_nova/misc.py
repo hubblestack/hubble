@@ -496,7 +496,7 @@ def check_directory_files_permission(path, permission):
     Check all files permission inside a directory
     '''
     blacklisted_characters = '[^a-zA-Z0-9-_/]'
-    if re.findall(blacklisted_characters, path):
+    if "-exec" in path or re.findall(blacklisted_characters, path):
       raise CommandExecutionError("Profile parameter '{0}' not a safe pattern".format(path))
     files_list = _execute_shell_command("find {0} -type f".format(path)).strip()
     files_list = files_list.split('\n') if files_list != "" else []

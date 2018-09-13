@@ -549,8 +549,15 @@ def load_config():
     ])
     __opts__['disable_modules'] = disable_modules
 
+    # Console logging is probably the same, but can be different
+    console_logging_opts = {
+        'log_level': __opts__.get('console_log_level', __opts__['log_level']),
+        'log_format': __opts__.get('console_log_format'),
+        'date_format': __opts__.get('console_log_date_format'),
+    }
+
     # Setup logging
-    salt.log.setup.setup_console_logger(__opts__['log_level'])
+    salt.log.setup.setup_console_logger(**console_logging_opts)
     salt.log.setup.setup_logfile_logger(__opts__['log_file'],
                                         __opts__['log_level'],
                                         max_bytes=__opts__.get('logfile_maxbytes', 100000000),

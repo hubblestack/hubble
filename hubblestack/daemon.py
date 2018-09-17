@@ -169,8 +169,8 @@ def getsecondsbycronexpression(base, cron_exp):
     this function will return the seconds according to the cron
     expression provided in the hubble config
     '''
-    iter = croniter(cron_exp, base)
-    next_datetime  = iter.get_next(datetime)
+    cron_iter = croniter(cron_exp, base)
+    next_datetime  = cron_iter.get_next(datetime)
     epoch_base_datetime = time.mktime(base.timetuple())
     epoch_datetime = time.mktime(next_datetime.timetuple())
     seconds = int(epoch_datetime) - int(epoch_base_datetime)
@@ -197,8 +197,8 @@ def getlastrunbybuckets(buckets, seconds):
     buckets = int(buckets) if int(buckets)!=0 else 256
     host_ip = socket.gethostbyname(socket.gethostname())
     ips = host_ip.split('.')
-    sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2])*256)+int(ips[3])
-    bucket = sum%buckets
+    bucket_sum = (int(ips[0])*256*256*256)+(int(ips[1])*256*256)+(int(ips[2])*256)+int(ips[3])
+    bucket = bucket_sum%buckets
     log.debug('bucket number is {0} out of {1}'.format(bucket, buckets))
     current_time = time.time()
     base_time = seconds*(math.floor(current_time/seconds))
@@ -228,6 +228,7 @@ def schedule():
             function: hubble.audit
             seconds: 3600
             splay: 100
+            min_splay: 50
             args:
               - cis.centos-7-level-1-scored-v2-1-0
             kwargs:
@@ -236,7 +237,7 @@ def schedule():
             returner: splunk_nova_return
             run_on_start: True
 
-    Note that ``args``, ``kwargs``, and ``splay`` are all optional. However, a
+    Note that ``args``, ``kwargs``,``min_splay`` and ``splay`` are all optional. However, a
     scheduled job must always have a ``function`` and a time in ``seconds`` of
     how often to run the job.
 
@@ -251,10 +252,15 @@ def schedule():
         Frequency with which the job should be run, in seconds
 
     splay
-        Randomized splay for the job, in seconds. A random number between 0 and
+        Randomized splay for the job, in seconds. A random number between <min_splay> and
         <splay> will be chosen and added to the ``seconds`` argument, to decide
         the true frequency. The splay will be chosen on first run, and will
         only change when the daemon is restarted. Optional.
+
+    min_splay
+        This parameters works in conjunction with <splay>. If a <min_splay> is provided, and random
+        between <min_splay> and <splay> is chosen. If <min_splay> is not provided, it 
+        defaults to zero. Optional.
 
     args
         List of arguments for the function. Optional.
@@ -294,6 +300,7 @@ def schedule():
             else:
                 seconds = int(jobdata['seconds'])
             splay = int(jobdata.get('splay', 0))
+            min_splay = int(jobdata.get('min_splay', 0))
         except ValueError:
             log.error('Scheduled job {0} has an invalid value for seconds or '
                       'splay.'.format(jobname))
@@ -317,7 +324,7 @@ def schedule():
                 if splay:
                     # Run `splay` seconds in the future, by telling the scheduler we last ran it
                     # `seconds - splay` seconds ago.
-                    jobdata['last_run'] = time.time() - (seconds - random.randint(0, splay))
+                    jobdata['last_run'] = time.time() - (seconds - random.randint(min_splay, splay))
                 else:
                     # Run now
                     run = True
@@ -326,7 +333,7 @@ def schedule():
                 if splay:
                     # Run `seconds + splay` seconds in the future by telling the scheduler we last
                     # ran it at now + `splay` seconds.
-                    jobdata['last_run'] = time.time() + random.randint(0, splay)
+                    jobdata['last_run'] = time.time() + random.randint(min_splay, splay)
                 elif 'buckets' in jobdata:
                     # Place the host in a bucket and fix the execution time.
                     jobdata['last_run'] = getlastrunbybuckets(jobdata['buckets'], seconds)

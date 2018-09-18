@@ -79,6 +79,7 @@ CMD powershell.exe -Command Push-Location C:/temp/hubble; \
   Move-Item 'hubble/PortableGit' -Destination './hubble/dist/hubble/' -Force; \
   Move-Item 'C:/ProgramData/chocolatey/lib/NSSM/tools/nssm.exe' -Destination './hubble/dist/hubble/' -Force; \
   Move-Item 'C:/ProgramData/osquery/osqueryi.exe' -Destination './hubble/pkg/' -Force; \
+  If (Test-Path C:/data/opt) {Copy-Item  C:/data/opt -Destination './hubble/pkg/' -Recurse -Force};
 #Build the installer
   Push-Location 'C:/Program Files (x86)/NSIS'; \
   ./makensis.exe /DHubbleVersion="$env:HUBBLE_CHECKOUT" 'C:/temp/hubble/pkg/windows/hubble-Setup.nsi'; \

@@ -13,7 +13,7 @@ ENV CHOCO_URL=https://chocolatey.org/install.ps1
 #All the variables used for salt
 ENV SALT_SRC_PATH='C:/temp/salt/'
 ENV SALT_GIT_URL=https://github.com/saltstack/salt
-ENV SALT_CHECKOUT=v2018.3.0
+ENV SALT_CHECKOUT=v2018.11
 #All the variables used for hubble
 ENV HUBBLE_CHECKOUT=v2.4.4
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git

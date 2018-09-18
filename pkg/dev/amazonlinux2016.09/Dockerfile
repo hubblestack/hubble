@@ -128,7 +128,7 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
 #use the following variables to choose the version of hubble
 ARG HUBBLE_CHECKOUT=develop
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=2.4.3_develop
+ENV HUBBLE_VERSION=2.4.4_develop
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -179,6 +179,7 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --config-files /etc/osquery/osquery.conf \
        --after-install /hubble_build/conf/afterinstall.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
+       --before-remove /hubble_build/conf/beforeremove.sh \
        etc/hubble etc/osquery etc/init.d opt usr \
 #edit to change iteration number, if necessary
     && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.al1609.x86_64.rpm \

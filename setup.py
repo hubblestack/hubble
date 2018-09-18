@@ -46,6 +46,7 @@ setup(
         'croniter',
         'gitpython',
         'pyinotify',
+        'vulners == 1.3.0'
     ],
     data_files=data_files,
     options={

@@ -41,7 +41,8 @@ fileserver_backend:
 #  audit_daily:
 #    function: hubble.audit
 #    seconds: 86400
-#    splay: 3600
+#    min_splay: 1800   # due to this min_splay, audit will run 30 to 60 minutes
+#    splay: 3600       # after hubble service starts                    
 #    kwargs:
 #      verbose: True
 #    returner: splunk_nova_return

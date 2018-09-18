@@ -84,7 +84,7 @@ CMD powershell.exe -Command Push-Location C:/temp/hubble; \
 #Build the installer
   Push-Location 'C:/Program Files (x86)/NSIS'; \
   ./makensis.exe /DHubbleVersion="$env:HUBBLE_CHECKOUT" 'C:/temp/hubble/pkg/windows/hubble-Setup.nsi'; \
-  Get-FileHash -Path C:/temp/hubble/pkg/windows/Hubble*exe -Algorithm SHA256 | Select  Hash > hubble_windows.sha256; \
+  Get-FileHash -Path C:/temp/hubble/pkg/windows/Hubble*exe -Algorithm SHA256 > hubble_windows.sha256; \
   Copy-Item C:/temp/hubble/pkg/windows/Hubble*exe -Destination C:/data/; \
   Copy-Item C:/temp/hubble/pkg/windows/hubble_windows.sha256 -Destination C:/data/; 
   

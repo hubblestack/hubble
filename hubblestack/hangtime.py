@@ -12,6 +12,11 @@ def hangtime_wrapper(**ht_kw):
     ''' stopit has a wrapper for this sort of thing
         but in the interests of being able to customize its behavior for hubble purposes
         ... here's a wrapper of our own
+
+        Note that the linux itimers/signals/SIGALRM method of timeouts was a
+        heckuvalot more time accurate. the timeout here is more like a loose
+        suggestions than an actual timeout in the sense that timeout=600s is
+        really more like 600±20s -- this is noted in the stopit docs too.
     '''
     callback = ht_kw.get('callback', None)
     timeout = ht_kw.get('timeout', 90)

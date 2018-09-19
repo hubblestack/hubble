@@ -12,6 +12,7 @@ log = logging.getLogger('hangtime')
 class HangTime(Exception):
     # NOTE: this will break completely in multithreading
     # it should work just fine in multiprocessing
+    # NOTE: this code will not work in windows... *sigh*
 
     prev = list()
 

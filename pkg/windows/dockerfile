@@ -56,7 +56,7 @@ RUN powershell.exe -Command pip install -r pyinstaller-requirements.txt;
   
 #Move portable git to a new location
 RUN powershell.exe -Command New-Item C:/temp/hubble/PortableGit -ItemType Directory; \
-  Copy-Item -Path C:/tools/git/* -Destination C:/temp/hubble/PortableGit -Recurse;
+  Copy-Item -Path C:/tools/git/* -Destination C:/temp/hubble/PortableGit/ -Recurse;
   
 # Modify gitfs fix for incorrect path variables until fix has been upstreamed
 RUN powershell.exe -Command If (!(Test-Path C:/Python27/Lib/site-packages/salt)) {Copy-Item C:/temp/salt/salt -Destination C:/Python27/Lib/site-packages/ -Recurse -Force}; \

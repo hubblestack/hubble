@@ -3,8 +3,10 @@
 # To build an image: 1. copy pkg/windows/pyinstaller-requirements.txt &  to directory with this Dockerfile
 #                    2. docker build -t <image_name> .
 # The resulting image is ready to run the pyinstaller on container start and drop hubble<version>.exe
-# in a local directory. Mount /data volume into a directory on the host to access the package.
-# To run the container:  docker run -it --rm -v <host folder>:c:\data <image_name>
+# in a local directory. Mount c:\data volume into a directory on the host to access the package.
+# To run the container:  
+#                    3. Copy over any other items you want to include with hubble and place them in <host folder>/opt
+#                    4. docker run -it --rm -v <host folder>:c:\data <image_name>
 #build docker image from windowscore
 FROM microsoft/windowsservercore
 #Needed to just work
@@ -13,9 +15,9 @@ ENV CHOCO_URL=https://chocolatey.org/install.ps1
 #All the variables used for salt
 ENV SALT_SRC_PATH='C:/temp/salt/'
 ENV SALT_GIT_URL=https://github.com/saltstack/salt
-ENV SALT_CHECKOUT=v2018.3.0
+ENV SALT_CHECKOUT=v2018.11
 #All the variables used for hubble
-ENV HUBBLE_CHECKOUT=v2.2.4-2
+ENV HUBBLE_CHECKOUT=v2.4.4
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 ENV _HOOK_DIR='./pkg/'
@@ -54,7 +56,7 @@ RUN powershell.exe -Command pip install -r pyinstaller-requirements.txt;
   
 #Move portable git to a new location
 RUN powershell.exe -Command New-Item C:/temp/hubble/PortableGit -ItemType Directory; \
-  Copy-Item -Path C:/tools/git -Destination C:/temp/hubble/PortableGit -Recurse;
+  Copy-Item -Path C:/tools/git/* -Destination C:/temp/hubble/PortableGit/ -Recurse;
   
 # Modify gitfs fix for incorrect path variables until fix has been upstreamed
 RUN powershell.exe -Command If (!(Test-Path C:/Python27/Lib/site-packages/salt)) {Copy-Item C:/temp/salt/salt -Destination C:/Python27/Lib/site-packages/ -Recurse -Force}; \
@@ -79,7 +81,12 @@ CMD powershell.exe -Command Push-Location C:/temp/hubble; \
   Move-Item 'hubble/PortableGit' -Destination './hubble/dist/hubble/' -Force; \
   Move-Item 'C:/ProgramData/chocolatey/lib/NSSM/tools/nssm.exe' -Destination './hubble/dist/hubble/' -Force; \
   Move-Item 'C:/ProgramData/osquery/osqueryi.exe' -Destination './hubble/pkg/' -Force; \
+  If (Test-Path C:/data/hubble.conf) {Copy-Item  C:/data/hubble.conf -Destination ./hubble/dist/hubble/etc/hubble/ -Force}; \
+  If (Test-Path C:/data/opt) {Copy-Item  C:/data/opt -Destination './hubble/dist/hubble/' -Recurse -Force}; \
 #Build the installer
   Push-Location 'C:/Program Files (x86)/NSIS'; \
   ./makensis.exe /DHubbleVersion="$env:HUBBLE_CHECKOUT" 'C:/temp/hubble/pkg/windows/hubble-Setup.nsi'; \
-  Copy-Item C:/temp/hubble/pkg/windows/Hubble*exe -Destination C:/data/
+  Get-FileHash -Path C:/temp/hubble/pkg/windows/Hubble*exe -Algorithm SHA256 ^| Out-File C:/temp/hubble/pkg/windows/hubble_windows.sha256; \
+  Copy-Item C:/temp/hubble/pkg/windows/Hubble*exe -Destination C:/data/; \
+  Copy-Item C:/temp/hubble/pkg/windows/hubble_windows.sha256 -Destination C:/data/; 
+  

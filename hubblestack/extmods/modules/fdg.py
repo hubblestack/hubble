@@ -14,29 +14,35 @@ Data might look something like this::
 
     main:
         return: splunk_nova_return
-        module_name.function:
+        module: module_name.function
+        args:
+            - foo
+            - bar
+        kwargs:
             arg1: blah
             arg2: blah
         pipe:
             unique_id
 
     unique_id:
-        module_name.function:
-            arg1: test
-            arg2: test
-            *args:
-                - arg1
-                - arg2
+        module: module_name.function
+        args:
+            - foo
+            - bar
+        kwargs:
+            arg1: blah
+            arg2: blah
         xpipe:
             unique_id2
 
     unique_id2:
-        module_name.function:
+        module: module_name.function:
+        args:
+            - foo
+            - bar
+        kwargs:
             arg1: test
             arg2: test
-            *args:
-                - arg1
-                - arg2
 
 Each .yaml file contains a single fdg routine. ``main`` is a reserved id for
 the entrypoint of the fdg routine. Chaining keywords such as ``pipe`` and
@@ -51,10 +57,13 @@ Here's a sample snippet with "names" for each of the parts::
             <keyword_arg_for_module>: <argument_value>
         <chaining_keyword>: <id>
 
-In general, ``return`` should only be used on the ``main`` block, as you want
-to return the value when you're finished processing. However, ``return`` can
-technically be used in any block, and when all chained blocks under that block
-are done processing, the intermediate value will be returned.
+In general, ``return`` should not be used, as returners can be handled in the
+hubble scheduler. However, in some cases returners can be used within fdg
+files. In this case, ``return`` is generally only be used on the ``main``
+block, as you want to return the value when you're finished processing.
+However, ``return`` can technically be used in any block, and when all chained
+blocks under that block are done processing, the intermediate value will be
+returned.
 
 The ``<module_name>.<function>`` piece refers to fdg modules and the functions
 within those modules. All public functions from fdg modules are available.
@@ -87,7 +96,7 @@ chain.
 
 ``pipe`` chaining keywords send the whole value to the referenced fdg block.
 The value is sent to the ``chained`` kwarg of the called module.function. All
-public fgd module functions must accept this keyword arg.
+public fdg module functions must accept this keyword arg.
 
 ``xpipe`` is similar to pipe, except that is expects an iterable value (usually
 a list) and iterates over that value, calling the chained fdg block for each
@@ -103,3 +112,58 @@ from __future__ import absolute_import
 import logging
 
 log = logging.getLogger(__name__)
+__fdg__ = None
+
+
+def fdg(fdg_file):
+    '''
+    Given an fdg file (usually a salt:// file, but can also be the absolute
+    path to a file on the system), execute that fdg file, starting with the
+    ``main`` block
+    '''
+    if fdg_file and fdg_file.startswith('salt://'):
+        cached = __salt__['cp.cache_file'](fdg_file)
+    else:
+        cached = fdg_file
+    if not cached:
+        raise CommandExecutionError('There was a problem caching the fdg_file: {0}'
+                                    .format(fdg_file))
+
+    try:
+        with open(cached) as handle:
+            data = yaml.safe_load(handle)
+    except Exception as exc:
+        raise CommandExecutionError('Could not load fdg_file: {0}'.format(e))
+
+    if not isinstance(data, dict):
+        raise CommandExecutionError('fdg data not formed as a dict: {0}'.format(data))
+    elif 'main' not in data:
+        raise CommandExecutionError('fdg data : {0}'.format(data))
+
+    # TODO instantiate returners
+    returners = {}
+
+    # TODO instantiate fdg modules
+    global __fdg__
+    __fdg__ = {}
+
+    # Recursive execution of the blocks
+    _, ret = _fdg_execute('main', data)
+    return ret
+
+
+def _fdg_execute(block_id, data):
+    '''
+    Recursive function which executes a block and any blocks chained by that
+    block (by calling itself).
+    '''
+    block = data.get(block_id)
+    if not block:
+        raise CommandExecutionError('Could not execute block \'{0}\', as it is not found.'
+                                    .format(block_id))
+    if 'module' not in block:
+        raise CommandExecutionError('Could not execute block \'{0}\': no \'module\' found.'
+                                    .format(block_id))
+
+    # Status is used for the conditional chaining keywords
+    status, ret = __fdg__(*block.get('args', []), **block.get('kwargs', {}))

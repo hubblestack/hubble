@@ -55,11 +55,6 @@ def run():
     if not os.path.isdir(__opts__['cachedir']):
         os.makedirs(__opts__['cachedir'])
 
-    if __opts__['version']:
-        print(__version__)
-        clean_up_process(None, None)
-        sys.exit(0)
-
     if __opts__['buildinfo']:
         try:
             from hubblestack import __buildinfo__
@@ -474,6 +469,11 @@ def load_config():
     __opts__.update(parsed_args)
     __opts__['conf_file'] = parsed_args.get('configfile')
     __opts__['install_dir'] = install_dir
+
+    if __opts__['version']:
+        print(__version__)
+        clean_up_process(None, None)
+        sys.exit(0)
 
     if __opts__['daemonize']:
         # before becoming a daemon, check for other procs and possibly send

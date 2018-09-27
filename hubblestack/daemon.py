@@ -474,7 +474,7 @@ def load_config():
             check_pidfile(kill_other=True)
         salt.utils.daemonize()
         create_pidfile()
-    elif not __opts__['function']:
+    elif not __opts__['function'] and not __opts__['version']:
         # check the pidfile and possibly refuse to run
         # (assuming this isn't a single function call)
         if not __opts__.get('ignore_running', False):

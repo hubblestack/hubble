@@ -55,11 +55,6 @@ def run():
     if not os.path.isdir(__opts__['cachedir']):
         os.makedirs(__opts__['cachedir'])
 
-    if __opts__['version']:
-        print(__version__)
-        clean_up_process(None, None)
-        sys.exit(0)
-
     if __opts__['buildinfo']:
         try:
             from hubblestack import __buildinfo__
@@ -139,6 +134,9 @@ def main():
     last_grains_refresh = time.time() - __opts__['grains_refresh_frequency']
 
     log.info('Starting main loop')
+    pidfile_count = 0
+    # pidfile_refresh in seconds, our scheduler deals in half-seconds
+    pidfile_refresh = int(__opts__.get('pidfile_refresh', 60)) * 2
     while True:
         # Check if fileserver needs update
         if time.time() - last_fc_update >= __opts__['fileserver_update_frequency']:
@@ -151,6 +149,11 @@ def main():
                 log.exception('Exception thrown trying to update fileclient. '
                               'Trying again in {0} seconds.'
                               .format(retry))
+
+        pidfile_count += 1
+        if pidfile_count > pidfile_refresh:
+            pidfile_count = 0
+            create_pidfile()
 
         if time.time() - last_grains_refresh >= __opts__['grains_refresh_frequency']:
             log.info('Refreshing grains')
@@ -467,6 +470,11 @@ def load_config():
     __opts__['conf_file'] = parsed_args.get('configfile')
     __opts__['install_dir'] = install_dir
 
+    if __opts__['version']:
+        print(__version__)
+        clean_up_process(None, None)
+        sys.exit(0)
+
     if __opts__['daemonize']:
         # before becoming a daemon, check for other procs and possibly send
         # then a signal 15 (otherwise refuse to run)
@@ -474,7 +482,7 @@ def load_config():
             check_pidfile(kill_other=True)
         salt.utils.daemonize()
         create_pidfile()
-    elif not __opts__['function']:
+    elif not __opts__['function'] and not __opts__['version']:
         # check the pidfile and possibly refuse to run
         # (assuming this isn't a single function call)
         if not __opts__.get('ignore_running', False):

@@ -71,15 +71,17 @@ class DiskQueue(object):
         log.debug('q.size = %d', s)
         return s
 
-    def _drop_for_size(self, q):
+    def _drop_for_items(self):
         if self.max_items and self.max_items > 0:
             log.debug('_drop_for_size .max_items %d', self.max_items)
-            while q.count > self.max_items:
-                q.pop()
+            while self.eventcount > self.max_items:
+                self.pop()
+
+    def _drop_for_size(self):
         if self.max_size and self.max_size >= 1000:
             log.debug('_drop_for_size .max_size %d', self.max_size)
-            while self.disksize > self.max_size:
-                self.q.pop()
+            while self.disksize > self.max_size and self.eventcount > 0:
+                self.pop()
 
     def push(self, item):
         log.debug('pushing item to diskqueue')
@@ -87,7 +89,8 @@ class DiskQueue(object):
             raise DataFormatError("items in this queue must be of type {0}".format(self.restrict_to))
         q = self.q
         q.append(item)
-        self._drop_for_size(q)
+        self._drop_for_items()
+        self._drop_for_size()
         self.last_put = time.time()
     put = push
 
@@ -115,11 +118,10 @@ class DiskQueue(object):
         return self.q.__iter__()
 
     def __getitem__(self, idx):
-        return self.q.__getitem__(idx)
+        return self.q[idx]
 
     def __contains__(self, thing):
-        return self.q.__contains__(thing)
+        return thing in self.q
 
     def clear(self):
         self.q.clear()
-

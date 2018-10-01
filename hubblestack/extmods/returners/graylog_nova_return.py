@@ -18,7 +18,7 @@ hubblestack:
         sourcetype_pulsar: hubble_fim
         sourcetype_nova: hubble_audit
         http_event_collector_ssl_verify: True
-        gelfhttp: http://graylog-gelf-http-input-addr
+        gelfhttp: https://graylog-gelf-http-input-addr
 
 '''
 

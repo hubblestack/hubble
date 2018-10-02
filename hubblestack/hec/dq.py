@@ -9,7 +9,7 @@ import glob
 # fakelogging goes to a file iff specified in environment
 # and otherwise does nothing (for debugging)
 import fakelogging as logging
-log = logging.getLogger('dq')
+log = logging.getLogger(__name__)
 
 class DataFormatError(ValueError):
     pass

@@ -68,6 +68,12 @@ returned.
 The ``<module_name>.<function>`` piece refers to fdg modules and the functions
 within those modules. All public functions from fdg modules are available.
 
+The fdg module functions must return a tuple of length two, with the first
+value being the "status" of the run (which can be used by conditional chaining
+keywords, see below) and the second value being the actual return value, which
+will either be passed to chained blocks or returned back up the chain to the
+calling block.
+
 ``<chaining_keywords>`` are the real flow control for the fdg routine. While
 multiple chaining keywords can be used, only one will ever execute. Here is a
 list of the supported chaining keywords, in order of precedence::
@@ -81,11 +87,11 @@ list of the supported chaining keywords, in order of precedence::
 
 Chaining keywords lower on the list take precedence over chaining keywords
 higher on the list. Note that there are some exceptions -- for example,
-chaining keywords ending in ``_on_true`` will only take precedence if the value
-returned from the module.function resolves to True in python. ``_on_false``
-works similarly, though it works based on whether the value resolves to False.
-Otherwise it will be ignored, and the next precedence chaining keyword will be
-executed.
+chaining keywords ending in ``_on_true`` will only take precedence if the first
+value returned from the module.function resolves to True in python.
+``_on_false`` works similarly, though it works based on whether the value
+resolves to False.  Otherwise it will be ignored, and the next precedence
+chaining keyword will be executed.
 
 You may have times where you want to use True/False conditionals to control
 piping, but want to pass a value that's not restricted to True/False to the
@@ -110,9 +116,12 @@ call chain.
 '''
 from __future__ import absolute_import
 import logging
+import salt.loader
+import salt.utils
 
 log = logging.getLogger(__name__)
 __fdg__ = None
+__returners__ = None
 
 
 def fdg(fdg_file):
@@ -140,9 +149,6 @@ def fdg(fdg_file):
     elif 'main' not in data:
         raise CommandExecutionError('fdg data : {0}'.format(data))
 
-    # TODO instantiate returners
-    returners = {}
-
     # TODO instantiate fdg modules
     global __fdg__
     __fdg__ = {}
@@ -152,7 +158,7 @@ def fdg(fdg_file):
     return ret
 
 
-def _fdg_execute(block_id, data):
+def _fdg_execute(block_id, data, passthrough=None):
     '''
     Recursive function which executes a block and any blocks chained by that
     block (by calling itself).
@@ -166,4 +172,80 @@ def _fdg_execute(block_id, data):
                                     .format(block_id))
 
     # Status is used for the conditional chaining keywords
-    status, ret = __fdg__(*block.get('args', []), **block.get('kwargs', {}))
+    status, ret = __fdg__[block['module']](*block.get('args', []), **block.get('kwargs', {}))
+
+    if 'return' in block:
+        returner = block['return']
+    else:
+        returner = None
+
+    if 'xpipe_on_true' in block and status:
+        return _xpipe(ret, block['xpipe_on_true'], returner)
+    elif 'xpipe_on_false' in block and not status:
+        return _xpipe(ret, block['xpipe_on_false'], returner)
+    elif 'pipe_on_true' in block and status:
+        return _pipe(ret, block['pipe_on_true'], returner)
+    elif 'pipe_on_false' in block and not status:
+        return _pipe(ret, block['pipe_on_false'], returner)
+    elif 'xpipe' in block:
+        return _xpipe(ret, block['xpipe'], returner)
+    elif 'pipe' in block:
+        return _pipe(ret, block['pipe'], returner)
+    else:
+        # TODO add returner here
+        return ret
+
+
+def _xpipe(ret, block_id, returner=None):
+    '''
+    Iterate over the given value and for each iteration, call the given fdg
+    block by id with the iteration value as the passthrough.
+
+    The results will be returned as a list.
+    '''
+    # TODO
+    pass
+
+
+def _pipe(ret, block_id, returner=None):
+    '''
+    Call the given fdg block by id with the given value as the passthrough and
+    return the result
+    '''
+    # TODO
+    pass
+
+
+def _return(data, returner, returner_retry=False):
+    '''
+    Return data using the returner system
+    '''
+    # JIT load the returners, since most returns will be handled by the daemon
+    global __returners__
+    if not __returners__:
+        __returners__ = salt.loader.returners(__opts__, __salt__)
+
+    if returner not in __returners__:
+        log.error('Could not find {0} returner.'.format(returner))
+        continue
+    log.debug('Returning job data to {0}'.format(returner))
+    returner_ret = {'id': __grains__['id'],
+                    'jid': salt.utils.jid.gen_jid(__opts__),
+                    'fun': 'fdg.fdg',
+                    'fun_args': [],
+                    'return': data,
+                    'retry': returner_retry}
+    __returners__[returner](returner_ret)
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 
 # NOTE: this module receives __salt__, __grains__, etc from daemon.py during refresh_grains
 

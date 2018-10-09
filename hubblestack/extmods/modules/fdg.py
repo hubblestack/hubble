@@ -180,40 +180,47 @@ def _fdg_execute(block_id, data, passthrough=None):
         returner = None
 
     if 'xpipe_on_true' in block and status:
-        return _xpipe(ret, block['xpipe_on_true'], returner)
+        return _xpipe(ret, block_data, block['xpipe_on_true'], returner)
     elif 'xpipe_on_false' in block and not status:
-        return _xpipe(ret, block['xpipe_on_false'], returner)
+        return _xpipe(ret, block_data, block['xpipe_on_false'], returner)
     elif 'pipe_on_true' in block and status:
-        return _pipe(ret, block['pipe_on_true'], returner)
+        return _pipe(ret, block_data, block['pipe_on_true'], returner)
     elif 'pipe_on_false' in block and not status:
-        return _pipe(ret, block['pipe_on_false'], returner)
+        return _pipe(ret, block_data, block['pipe_on_false'], returner)
     elif 'xpipe' in block:
-        return _xpipe(ret, block['xpipe'], returner)
+        return _xpipe(ret, block_data, block['xpipe'], returner)
     elif 'pipe' in block:
-        return _pipe(ret, block['pipe'], returner)
+        return _pipe(ret, block_data, block['pipe'], returner)
     else:
-        # TODO add returner here
+        if returner:
+            _return(ret, returner)
         return ret
 
 
-def _xpipe(ret, block_id, returner=None):
+def _xpipe(chained, block_data, block_id, returner=None):
     '''
     Iterate over the given value and for each iteration, call the given fdg
     block by id with the iteration value as the passthrough.
 
     The results will be returned as a list.
     '''
-    # TODO
-    pass
+    ret = []
+    for value in chained:
+        ret.append(_fdg_execute(block_id, block_data, chained))
+    if returner:
+        _return(ret, returner)
+    return ret
 
 
-def _pipe(ret, block_id, returner=None):
+def _pipe(chained, block_data, block_id, returner=None):
     '''
     Call the given fdg block by id with the given value as the passthrough and
     return the result
     '''
-    # TODO
-    pass
+    ret = _fdg_execute(block_id, block_data, chained)
+    if returner:
+        _return(ret, returner)
+    return ret
 
 
 def _return(data, returner, returner_retry=False):

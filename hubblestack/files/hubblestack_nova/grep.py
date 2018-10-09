@@ -62,6 +62,7 @@ import salt.utils.platform
 import re
 
 from distutils.version import LooseVersion
+from salt.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

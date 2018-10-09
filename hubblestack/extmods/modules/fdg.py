@@ -223,7 +223,7 @@ def _pipe(chained, block_data, block_id, returner=None):
     return ret
 
 
-def _return(data, returner, returner_retry=False):
+def _return(data, returner, returner_retry=None):
     '''
     Return data using the returner system
     '''
@@ -231,7 +231,10 @@ def _return(data, returner, returner_retry=False):
     global __returners__
     if not __returners__:
         __returners__ = salt.loader.returners(__opts__, __salt__)
+    if returner_retry is None:
+        returner_retry = __opts__.get(returner_retry, False)
 
+    returner += '.returner'
     if returner not in __returners__:
         log.error('Could not find {0} returner.'.format(returner))
         continue
@@ -243,16 +246,3 @@ def _return(data, returner, returner_retry=False):
                     'return': data,
                     'retry': returner_retry}
     __returners__[returner](returner_ret)
-
-
-
-
-
-
-
-
-
-
-
-
-

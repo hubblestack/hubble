@@ -140,30 +140,30 @@ def fdg(fdg_file):
 
     try:
         with open(cached) as handle:
-            data = yaml.safe_load(handle)
+            block_data = yaml.safe_load(handle)
     except Exception as exc:
         raise CommandExecutionError('Could not load fdg_file: {0}'.format(e))
 
-    if not isinstance(data, dict):
-        raise CommandExecutionError('fdg data not formed as a dict: {0}'.format(data))
-    elif 'main' not in data:
-        raise CommandExecutionError('fdg data : {0}'.format(data))
+    if not isinstance(block_data, dict):
+        raise CommandExecutionError('fdg block_data not formed as a dict: {0}'.format(block_data))
+    elif 'main' not in block_data:
+        raise CommandExecutionError('fdg block_data : {0}'.format(block_data))
 
     # TODO instantiate fdg modules
     global __fdg__
     __fdg__ = {}
 
     # Recursive execution of the blocks
-    _, ret = _fdg_execute('main', data)
+    _, ret = _fdg_execute('main', block_data)
     return ret
 
 
-def _fdg_execute(block_id, data, passthrough=None):
+def _fdg_execute(block_id, block_data, chained=None):
     '''
     Recursive function which executes a block and any blocks chained by that
     block (by calling itself).
     '''
-    block = data.get(block_id)
+    block = block_data.get(block_id)
     if not block:
         raise CommandExecutionError('Could not execute block \'{0}\', as it is not found.'
                                     .format(block_id))
@@ -172,7 +172,7 @@ def _fdg_execute(block_id, data, passthrough=None):
                                     .format(block_id))
 
     # Status is used for the conditional chaining keywords
-    status, ret = __fdg__[block['module']](*block.get('args', []), **block.get('kwargs', {}))
+    status, ret = __fdg__[block['module']](*block.get('args', []), chained=chained, **block.get('kwargs', {}))
 
     if 'return' in block:
         returner = block['return']

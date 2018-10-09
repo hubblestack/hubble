@@ -149,9 +149,13 @@ def fdg(fdg_file):
     elif 'main' not in block_data:
         raise CommandExecutionError('fdg block_data : {0}'.format(block_data))
 
-    # TODO instantiate fdg modules
+    # Instantiate fdg modules
     global __fdg__
-    __fdg__ = {}
+    __fdg__ = salt.loader.LazyLoader(salt.loader._module_dirs(opts, 'fdg'),
+                                                              opts,
+                                                              tag='fdg',
+                                                              pack={'__salt__': __salt__,
+                                                                    '__grains__': __grains__})
 
     # Recursive execution of the blocks
     _, ret = _fdg_execute('main', block_data)

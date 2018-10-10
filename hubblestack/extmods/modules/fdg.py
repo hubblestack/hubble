@@ -118,6 +118,7 @@ from __future__ import absolute_import
 import logging
 import salt.loader
 import salt.utils
+import yaml
 
 from salt.exceptions import CommandExecutionError
 
@@ -144,7 +145,7 @@ def fdg(fdg_file):
         with open(cached) as handle:
             block_data = yaml.safe_load(handle)
     except Exception as exc:
-        raise CommandExecutionError('Could not load fdg_file: {0}'.format(e))
+        raise CommandExecutionError('Could not load fdg_file: {0}'.format(exc))
 
     if not isinstance(block_data, dict):
         raise CommandExecutionError('fdg block_data not formed as a dict: {0}'.format(block_data))
@@ -153,8 +154,8 @@ def fdg(fdg_file):
 
     # Instantiate fdg modules
     global __fdg__
-    __fdg__ = salt.loader.LazyLoader(salt.loader._module_dirs(opts, 'fdg'),
-                                                              opts,
+    __fdg__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'fdg'),
+                                                              __opts__,
                                                               tag='fdg',
                                                               pack={'__salt__': __salt__,
                                                                     '__grains__': __grains__})
@@ -243,7 +244,7 @@ def _return(data, returner, returner_retry=None):
     returner += '.returner'
     if returner not in __returners__:
         log.error('Could not find {0} returner.'.format(returner))
-        continue
+        return False
     log.debug('Returning job data to {0}'.format(returner))
     returner_ret = {'id': __grains__['id'],
                     'jid': salt.utils.jid.gen_jid(__opts__),

@@ -161,7 +161,7 @@ def fdg(fdg_file):
                                                                     '__grains__': __grains__})
 
     # Recursive execution of the blocks
-    _, ret = _fdg_execute('main', block_data)
+    ret = _fdg_execute('main', block_data)
     return ret
 
 

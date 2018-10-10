@@ -171,12 +171,8 @@ def _fdg_execute(block_id, block_data, chained=None):
     block (by calling itself).
     '''
     block = block_data.get(block_id)
-    if not block:
-        raise CommandExecutionError('Could not execute block \'{0}\', as it is not found.'
-                                    .format(block_id))
-    if 'module' not in block:
-        raise CommandExecutionError('Could not execute block \'{0}\': no \'module\' found.'
-                                    .format(block_id))
+
+    _check_block(block, block_id)
 
     # Status is used for the conditional chaining keywords
     status, ret = __fdg__[block['module']](*block.get('args', []), chained=chained, **block.get('kwargs', {}))
@@ -253,3 +249,33 @@ def _return(data, returner, returner_retry=None):
                     'return': data,
                     'retry': returner_retry}
     __returners__[returner](returner_ret)
+
+
+def _check_block(block, block_id):
+    '''
+    Check if a block is valid
+    '''
+    if not block:
+        raise CommandExecutionError('Could not execute block \'{0}\', as it is not found.'
+                                    .format(block_id))
+    if 'module' not in block:
+        raise CommandExecutionError('Could not execute block \'{0}\': no \'module\' found.'
+                                    .format(block_id))
+    acceptable_block_args = {
+            'return',
+            'module',
+            'xpipe_on_true',
+            'xpipe_on_false',
+            'xpipe',
+            'pipe',
+            'pipe_on_true',
+            'pipe_on_false',
+            'args',
+            'kwargs',
+    }
+    for key in block:
+        if key not in acceptable_block_args:
+            raise CommandExecutionError('Could not execute block \'{0}\': '
+                                        '\'{1}\' is not a valid block key'
+                                        .format(block_id, key))
+    return True

@@ -80,7 +80,7 @@ def _grep(path,
     path = os.path.expanduser(path)
 
     options = []
-    if args and not isinstance(args, list):
+    if args and not isinstance(args, (list, tuple)):
         args = [args]
     for arg in args:
         options += arg.split()

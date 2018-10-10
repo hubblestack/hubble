@@ -60,11 +60,10 @@ def _grep(path,
     pattern
         Pattern to match. For example: ``test``, or ``a[0-5]``
 
-    opts
+    args
         Additional command-line flags to pass to the grep command. For example:
-        ``-v``, or ``-i -B2``
-
-        .. note::
+        ``-v`` or ``-i`` or ``-B2``
+.. note::
             The options should come after a double-dash (as shown in the
             examples below) to keep Salt's own argument parser from
             interpreting them.
@@ -80,18 +79,12 @@ def _grep(path,
     '''
     path = os.path.expanduser(path)
 
-    if args:
-        options = ' '.join(args)
-    else:
-        options = ''
-    cmd = (
-        r'''grep  {options} {pattern} {path}'''
-        .format(
-            options=options,
-            pattern=pattern,
-            path=path,
-        )
-    )
+    options = []
+    if args and not isinstance(args, list):
+        args = [args]
+    for arg in args:
+        options += arg.split()
+    cmd = ['grep'] + options + [pattern] + [path]
 
     try:
         ret = __salt__['cmd.run_stdout'](cmd, python_shell=False, ignore_retcode=True)

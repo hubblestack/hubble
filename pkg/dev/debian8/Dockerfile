@@ -201,7 +201,7 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --iteration ${HUBBLE_ITERATION} \
        --config-files /etc/osquery/osquery.conf \
        --deb-no-default-config-files \
-       --after-install /hubble_build/conf/afterinstall.sh \
+       --after-install /hubble_build/conf/afterinstall-systemd.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
        etc/hubble etc/osquery etc/init.d opt usr \

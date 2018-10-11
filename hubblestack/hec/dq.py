@@ -6,9 +6,7 @@ from sqlite3 import DatabaseError as SQLiteDBError
 import shutil, os
 import glob
 
-# fakelogging goes to a file iff specified in environment
-# and otherwise does nothing (for debugging)
-import fakelogging as logging
+import logging
 log = logging.getLogger(__name__)
 
 class DataFormatError(ValueError):

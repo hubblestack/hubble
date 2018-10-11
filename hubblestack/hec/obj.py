@@ -12,9 +12,7 @@ import urllib3
 
 from . dq import DiskQueue
 
-# fakelogging goes to a file iff specified in environment
-# and otherwise does nothing (for debugging)
-import fakelogging as logging
+import logging
 log = logging.getLogger(__name__)
 
 __version__ = '1.0'

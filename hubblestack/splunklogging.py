@@ -163,9 +163,6 @@ class SplunkHandler(logging.Handler):
             if i in rpn:
                 return
 
-        log = logging.getLogger(__name__)
-        log.error("WTF <---- this mark should not be logged")
-
         log_entry = self.format_record(record)
         for hec, event, payload in self.endpoint_list:
             event = copy.deepcopy(event)

@@ -337,8 +337,6 @@ class PulsarWatchManager(pyinotify.WatchManager):
         if mask is None:
             mask = DEFAULT_MASK
 
-        log.error("WTF <--- this mark should be logged")
-
         pconf = self.cm.path_config(path)
         wd = self.watch_db.get(path)
         if wd:

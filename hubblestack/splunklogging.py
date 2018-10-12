@@ -148,6 +148,24 @@ class SplunkHandler(logging.Handler):
         Emit a single record using the hec/event template/payload template
         generated in __init__()
         '''
+
+        # NOTE: poor man's filtering ... goal: prevent logging loops and
+        # various objects from logging to splunk in an infinite spiral of spam.
+        # This might be more stylish as a logging.Filter, but that would need
+        # to be re-added everywhere SplunkHandler is added to the logging tree.
+        # Also, we don't wish to filter the logging, only to filter it from
+        # splunk; so any logging.Filter would need to be very carefully added
+        # to work right.
+
+        rpn = getattr(record, 'pathname', '')
+        filtered = ('hubblestack/splunklogging', 'hubblestack/hec/')
+        for i in filtered:
+            if i in rpn:
+                return
+
+        log = logging.getLogger(__name__)
+        log.error("WTF <---- this mark should not be logged")
+
         log_entry = self.format_record(record)
         for hec, event, payload in self.endpoint_list:
             event = copy.deepcopy(event)

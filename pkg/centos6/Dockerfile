@@ -160,6 +160,7 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
     && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
     && cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/ \
+    && cp /hubble_build/pkg/hubblectl.sh /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
     && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
 #during container run, if a configuration file exists in a /data copy it over the existing one so it would be
 #possile to optionally include a custom one with the package

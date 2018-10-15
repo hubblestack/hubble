@@ -237,7 +237,7 @@ def queries(query_group,
                             result[key] = json.loads(value[len('__JSONIFY__'):])
 
     if mask_passwords:
-        mask_passwords_inplace(ret, topfile_for_mask)
+        _mask_object(ret, topfile_for_mask)
     return ret
 
 
@@ -334,7 +334,7 @@ def _get_top_data(topfile):
 
     return ret
 
-def mask_passwords_inplace(object_to_be_masked, topfile):
+def _mask_object(object_to_be_masked, topfile):
     '''
     It masks the passwords present in 'object_to_be_masked'. Uses mask configuration
     file as a reference to find out the list of blacklisted strings or objects.
@@ -426,7 +426,7 @@ def mask_passwords_inplace(object_to_be_masked, topfile):
 
 def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_by):
     '''
-    This function is used by "mask_passwords_inplace" to mask passwords contained in
+    This function is used by ``_mask_object()`` to mask passwords contained in
     json objects or json arrays. If the "object_to_mask" is a json array, then this
     function is called recursively on the individual members of the array.
 

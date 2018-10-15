@@ -293,7 +293,7 @@ def top(query_group,
     if salt.utils.platform.is_windows():
         topfile = 'salt://hubblestack_nebula_v2/win_top.nebula'
 
-    configs = get_top_data(topfile)
+    configs = _get_top_data(topfile)
 
     configs = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml'
                for config in configs]
@@ -306,7 +306,7 @@ def top(query_group,
                    mask_passwords=mask_passwords)
 
 
-def get_top_data(topfile):
+def _get_top_data(topfile):
 
     topfile = __salt__['cp.cache_file'](topfile)
 
@@ -348,7 +348,7 @@ def mask_passwords_inplace(object_to_be_masked, topfile):
         mask = {}
         if topfile is None:
             topfile = 'salt://hubblestack_nebula_v2/top.mask'
-        mask_files = get_top_data(topfile)
+        mask_files = _get_top_data(topfile)
         mask_files = ['salt://hubblestack_nebula_v2/' + mask_file.replace('.', '/') + '.yaml'
                    for mask_file in mask_files]
         if mask_files is None:

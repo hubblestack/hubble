@@ -17,7 +17,7 @@ hubblestack:
         sourcetype_nebula: hubble_osquery
         sourcetype_pulsar: hubble_fim
         sourcetype_nova: hubble_audit
-        gelfhttp: http://graylog-gelf-http-input-addr
+        gelfhttp: https://graylog-gelf-http-input-addr
 
 '''
 

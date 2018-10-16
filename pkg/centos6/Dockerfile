@@ -159,6 +159,7 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
+    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/cron.d \
     && cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/ \
     && cp /hubble_build/pkg/hubble-autostart /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/cron.d/ \
     && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
@@ -180,7 +181,7 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
                                  --after-install /hubble_build/conf/afterinstall.sh \
                                  --after-upgrade /hubble_build/conf/afterupgrade.sh \
                                  --before-remove /hubble_build/conf/beforeremove.sh \
-                                 etc/hubble etc/osquery etc/init.d opt usr' \
+                                 etc/hubble etc/osquery etc/init.d etc/cron.d opt usr' \
 #edit to change iteration number, if necessary
     && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el6.x86_64.rpm \
     && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el6.x86_64.rpm \

@@ -197,6 +197,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
+    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/cron.d \
     && cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/ \
     && cp /hubble_build/pkg/hubble-autostart /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/cron.d/ \
     && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
@@ -219,7 +220,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --after-install /hubble_build/conf/afterinstall.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
-       etc/hubble etc/osquery etc/init.d opt usr \
+       etc/hubble etc/osquery etc/init.d etc/cron.d  opt usr \
     && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb7_amd64.deb \
     && openssl dgst -sha256 /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb7_amd64.deb \
                           > /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb7_amd64.deb.sha256" ]

@@ -180,9 +180,9 @@ def queries(query_group,
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
-            if "Timed out" in res['stdout']:
+            if 'Timed out' in res['stdout']:
                 # this is really the best way to tell without getting fancy
-                log.error("TIMEOUT during osqueryi execution name=%s", name)
+                log.error('TIMEOUT during osqueryi execution name=%s', name)
             success = False
             query_ret['result'] = False
             query_ret['error'] = res['stderr']
@@ -336,25 +336,94 @@ def _get_top_data(topfile):
 
 def _mask_object(object_to_be_masked, topfile):
     '''
-    It masks the passwords present in 'object_to_be_masked'. Uses mask configuration
-    file as a reference to find out the list of blacklisted strings or objects.
-    Note that this method alters "object_to_be_masked".
+    Given an object with potential secrets (or other data that should not be
+    returned), mask the contents of that object as configured in the mask
+    configuration file. The mask configuration file used is defined by the
+    top data in the ``topfile`` argument.
 
-    The path to the mask configuration file can be specified in the "topfile"
-    argument.
+    If multiple mask.yaml files are matched in the topfile, the data within
+    them will be recursively merged.
+
+    If no matching mask_files are found in the top.mask file, no masking will
+    happen.
+
+    Note that this function has side effects: alterations to
+    ``object_to_be_masked`` will be made in place.
+
+    Sample mask.yaml data (with inline documentation):
+
+    .. code-block:: yaml
+
+        # Pattern that will replace whatever is masked
+        mask_with: '***masked*by*hubble***'
+
+        # Target and mask strings based on regex patterns
+        # Can limit search specific queries and columns
+        blacklisted_strings:
+            - query_name: 'running_procs'  # Name of the osquery to be masked.
+                                           # Put '*' to match all queries. Note
+                                           # that query_name doesn't support
+                                           # full globbing. '*' is just given
+                                           # special treatment.
+              column: 'command_line'  # Column name in the osquery to be masked. No regex or glob support
+              # See below for documentation of these blacklisted patterns
+              blacklisted_patterns:
+                  - '(prefix)(password)(suffix)'
+
+
+        # Some osquery results are formed as lists of dicts. We can mask
+        # based on variable names within these dicts.
+        blacklisted_objects:
+
+            - query_name: 'running_procs'  # Name of the osquery to be masked.
+                                           # Put '*' to match all queries. Note
+                                           # that query_name doesn't support
+                                           # full globbing. '*' is just given
+                                           # special treatment.
+              column: 'environment'  # Column name in the osquery to be masked. No regex or glob support
+              attribute_to_check: 'value' # In the inner dict, this is the key
+                                          # to check for blacklisted_patterns
+              attributes_to_mask: # Values under these keys in the dict will be
+                - 'env_var_name'  # masked, assuming one of the blacklisted_patterns
+                                  # is found under attribute_to_check in the same dict
+              blacklisted_patterns:  # Strings to look for under attribute_to_check. No regex support.
+                - 'ETCDCTL_READ_PASSWORD'
+                - 'ETCDCTL_WRITE_PASSWORD'
+
+    blacklisted_patterns (for blacklisted_strings)
+
+        Blacklisted patterns are regular expressions, and have a prefix, a
+        secret, and a suffix. Nebula uses regex groups to maintain the prefix
+        and suffix, *which are not masked*. Only the password is masked.
+
+        If you don't need a suffix or a prefix, leave those sets of parenthesis
+        blank. Do not remove any parenthesis, or else your password could
+        remain unmasked!
+
+        blacklisted_patterns is formed as a list. These patterns are processed
+        (and substituted) in order.
+
+    blacklisted_patterns (for blacklisted_objects)
+
+        For objects, the pattern applies to the variable name, and doesn't
+        support regex. For example, you might have data formed like this::
+
+            [{ value: 'SOME_PASSWORD', variable_name: 'ETCDCTL_READ_PASSWORD' }]
+
+        The attribute_to_check would be ``variable_name`` and the pattern would
+        be ``ETCDCTL_READ_PASSWORD``. The attribute_to_mask would be ``value``.
+        All dicts with ``variable_name`` in the list of blacklisted_patterns
+        would have the value under their ``value`` key masked.
     '''
     try:
-
         mask = {}
         if topfile is None:
             topfile = 'salt://hubblestack_nebula_v2/top.mask'
         mask_files = _get_top_data(topfile)
         mask_files = ['salt://hubblestack_nebula_v2/' + mask_file.replace('.', '/') + '.yaml'
-                   for mask_file in mask_files]
-        if mask_files is None:
-            mask_files = 'salt://hubblestack_nebula_v2/mask.yaml'
-        if not isinstance(mask_files, list):
-            mask_files = [mask_files]
+                      for mask_file in mask_files]
+        if not mask_files:
+            mask_files = []
         for fh in mask_files:
             if 'salt://' in fh:
                 orig_fh = fh
@@ -370,10 +439,13 @@ def _mask_object(object_to_be_masked, topfile):
                                                     .format(f_data))
                     mask = _dict_update(mask, f_data, recursive_update=True, merge_lists=True)
 
-        log.debug("Using the mask: {}".format(mask))
-        mask_by = mask.get('mask_by', '******')
+        log.debug('Masking data: {}'.format(mask))
 
-        for blacklisted_string in mask.get("blacklisted_strings", []):
+        # Backwards compatibility with mask_by
+        mask_with = mask.get('mask_with', mask.get('mask_by', '******'))
+
+        # We can blacklist strings based on their pattern
+        for blacklisted_string in mask.get('blacklisted_strings', []):
             query_name = blacklisted_string['query_name']
             column = blacklisted_string['column']
             if query_name != '*':
@@ -383,74 +455,81 @@ def _mask_object(object_to_be_masked, topfile):
                             # if the column in not present in one data-object, it will
                             # not be present in others as well. Break in that case.
                             # This will happen only if mask.yaml is malformed
+                            log.error('masking data references a missing column {0} in query {1}'
+                                      .format(column, query_name))
                             break
                         value = query_result[column]
                         for pattern in blacklisted_string['blacklisted_patterns']:
-                            value = re.sub(pattern + "()", r"\1" + mask_by + r"\3", value)
+                            value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
                         query_result[column] = value
             else:
                 for r in object_to_be_masked:
                     for query_name, query_ret in r.iteritems():
                         for query_result in query_ret['data']:
                             if column not in query_result or not isinstance(query_result[column], basestring):
+                                # No error here, since we didn't reference a specific query
                                 break
                             value = query_result[column]
                             for pattern in blacklisted_string['blacklisted_patterns']:
-                                value = re.sub(pattern + "()", r"\1" + mask_by + r"\3", value)
+                                value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
                             query_result[column] = value
 
 
-        for blacklisted_object in mask.get("blacklisted_objects", []):
+        for blacklisted_object in mask.get('blacklisted_objects', []):
             query_name = blacklisted_object['query_name']
             column = blacklisted_object['column']
             if query_name != '*':
                 for r in object_to_be_masked:
                     for query_result in r.get(query_name, {'data':[]})['data']:
                         if column not in query_result or \
-                        (isinstance(query_result[column], basestring) and query_result[column].strip() != '' ):
+                                (isinstance(query_result[column], basestring) and
+                                 query_result[column].strip() != ''):
+                            # if the column in not present in one data-object, it will
+                            # not be present in others as well. Break in that case.
+                            # This will happen only if mask.yaml is malformed
+                            log.error('masking data references a missing column {0} in query {1}'
+                                      .format(column, query_name))
                             break
-                        _recursively_mask_objects(query_result[column], blacklisted_object, mask_by)
+                        _recursively_mask_objects(query_result[column], blacklisted_object, mask_with)
             else:
                 for r in object_to_be_masked:
                     for query_name, query_ret in r.iteritems():
                         for query_result in query_ret['data']:
                             if column not in query_result or \
-                            (isinstance(query_result[column], basestring) and query_result[column].strip() != '' ):
+                                    (isinstance(query_result[column], basestring) and
+                                     query_result[column].strip() != '' ):
+                                # No error here, since we didn't reference a specific query
                                 break
-                            _recursively_mask_objects(query_result[column], blacklisted_object, mask_by)
-
-            # successfully masked the object. No need to return anything
-
+                            _recursively_mask_objects(query_result[column], blacklisted_object, mask_with)
     except Exception as e:
-        log.exception("An error occured while masking the passwords: {}".format(e))
+        log.exception('An error occured while masking the passwords: {}'.format(e))
 
-def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_by):
+    # Object masked in place, so we don't need to return the object
+    return True
+
+def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_with):
     '''
     This function is used by ``_mask_object()`` to mask passwords contained in
-    json objects or json arrays. If the "object_to_mask" is a json array, then this
-    function is called recursively on the individual members of the array.
+    an osquery data structure (formed as a list of dicts, usually). Since the
+    lists can sometimes be nested, recurse through the lists.
 
-     object_to_mask
-        Json object/array whose elements are to masked recursively
+    object_to_mask
+        data structure to mask recursively
 
-     blacklisted_object
-        This parameters contains info about which queries are to be masked, which
-        attributes are to be masked, based upon the value of which attribute.
-        See hubblestack_nebula_v2/mask.yaml for exact format.
+    blacklisted_object
+        the blacklisted_objects entry from the mask.yaml
 
-    mask_by
-        If a password string is detected, it is replaced by the value of "mask_by"
-        parameter.
-
+    mask_with
+        masked values are replaced with this string
     '''
     if isinstance(object_to_mask, list):
         for child in object_to_mask:
-            _recursively_mask_objects(child, blacklisted_object, mask_by)
+            _recursively_mask_objects(child, blacklisted_object, mask_with)
     elif blacklisted_object['attribute_to_check'] in object_to_mask and \
          object_to_mask[blacklisted_object['attribute_to_check']] in blacklisted_object['blacklisted_patterns']:
         for key in blacklisted_object['attributes_to_mask']:
             if key in object_to_mask:
-                object_to_mask[key] = mask_by
+                object_to_mask[key] = mask_with
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):

@@ -381,11 +381,11 @@ def _mask_object(object_to_be_masked, topfile):
                                            # full globbing. '*' is just given
                                            # special treatment.
               column: 'environment'  # Column name in the osquery to be masked. No regex or glob support
-              attribute_to_check: 'value' # In the inner dict, this is the key
-                                          # to check for blacklisted_patterns
+              attribute_to_check: 'variable_name' # In the inner dict, this is the key
+                                                  # to check for blacklisted_patterns
               attributes_to_mask: # Values under these keys in the dict will be
-                - 'env_var_name'  # masked, assuming one of the blacklisted_patterns
-                                  # is found under attribute_to_check in the same dict
+                - 'value'  # masked, assuming one of the blacklisted_patterns
+                           # is found under attribute_to_check in the same dict
               blacklisted_patterns:  # Strings to look for under attribute_to_check. No regex support.
                 - 'ETCDCTL_READ_PASSWORD'
                 - 'ETCDCTL_WRITE_PASSWORD'

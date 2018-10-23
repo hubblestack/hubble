@@ -61,7 +61,8 @@ def returner(ret):
             # Empty single return, let's not do any setup or anything
             return
 
-        opts_list = get_splunk_options(_nick={'sourcetype_pulsar': 'sourcetype'})
+        opts_list = get_splunk_options( sourcetype_pulsar='hubble_fim',
+            _nick={'sourcetype_pulsar': 'sourcetype'})
 
         for opts in opts_list:
             logging.debug('Options: %s' % json.dumps(opts))

@@ -151,7 +151,7 @@ def main():
                               .format(retry))
 
         pidfile_count += 1
-        if pidfile_count > pidfile_refresh:
+        if __opts__['daemonize'] and pidfile_count > pidfile_refresh:
             pidfile_count = 0
             create_pidfile()
 

@@ -71,6 +71,49 @@ def _get_splunk_options(space, modality, **kw):
     return ret
 
 def get_splunk_options(*spaces, **kw):
+    '''
+    params:
+      *spaces: non-keyword arguments are config namespaces to search
+               the default is 'hubblestack:returner:splunk' (if nothing else is specified)
+      **kw: All keyword arguments are added to the optionspace as defaults that can be replaced by configs.
+            The exception is a special keyword argument '_nick', which remaps config names automagically.
+            The default for _nick is {'sourcetype_log':'sourcetype'}
+
+    example:
+    pretend we have this config
+
+        hubblestack:
+          returner:
+            splunk:
+              - token: feedbeef-feed-dead-beef-feeddeadbeef
+                indexer: index.me.bro.hostname.org
+                port: 12345
+                index: hubble
+                add_query_to_sourcetype: True
+                sourcetype_nova: hubble_audit
+                sourcetype_nebula: hubble_osquery
+                sourcetype_pulsar: hubble_fim
+                sourcetype_log: hubble_log
+                http_event_collector_ssl_verify: false
+
+   consider
+       get_splunk_options(sourcetype='blah')
+   confusingly, this gives the result
+       [ { ... 'sourcetype': 'hubble_log' ... } ]
+   because the default for _nick remaps the default sourcetype_log to sourcetype, which gives the above result
+
+   more examples:
+
+       get_splunk_options(sourcetype='blah', _nick={})
+       [ { ... 'sourcetype': 'blah' ... } ]
+
+       get_splunk_options(sourcetype_nebulous='blah', _nick={'sourcetype_nebulous': 'sourcetype'})
+       [ { ... 'sourcetype': 'blah' ... } ]
+
+       get_splunk_options(sourcetype_nebula='blah', _nick={'sourcetype_nebula': 'sourcetype'})
+       [ { ... 'sourcetype': 'hubble_osquery' ... } ]
+
+    '''
     if not spaces:
         spaces = ['hubblestack:returner:splunk']
 

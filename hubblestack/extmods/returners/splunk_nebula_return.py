@@ -58,7 +58,8 @@ log = logging.getLogger(__name__)
 
 def returner(ret):
     try:
-        opts_list = get_splunk_options(add_query_to_sourcetype=True, _nick={'sourcetype_nebula': 'sourcetype'})
+        opts_list = get_splunk_options( sourcetype_nebula='hubble_osquery',
+            add_query_to_sourcetype=True, _nick={'sourcetype_nebula': 'sourcetype'})
 
         for opts in opts_list:
             logging.debug('Options: %s' % json.dumps(opts))

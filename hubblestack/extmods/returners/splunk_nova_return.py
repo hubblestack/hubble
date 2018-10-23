@@ -55,7 +55,7 @@ log = logging.getLogger(__name__)
 
 def returner(ret):
     try:
-        opts_list = get_splunk_options()
+        opts_list = get_splunk_options(_nick={'sourcetype_nova': 'sourcetype'})
 
         for opts in opts_list:
             log.debug('Options: %s' % json.dumps(opts))

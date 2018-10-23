@@ -82,14 +82,16 @@ def get_splunk_options(*spaces, **kw):
 
     return []
 
-# if __name__ == '__main__':
-#     import logging
-#     logging.basicConfig(level=10)
-#     import hubblestack.daemon
-#     hubblestack.daemon.load_config()
-#     hubblestack.daemon.refresh_grains(initial=True)
-#     global __salt__
-#     __salt__ = hubblestack.daemon.__salt__
-#     import json
-#     import sys
-#     print(json.dumps(get_splunk_options(*sys.argv[1:]), indent=2))
+def __setup_for_testing():
+    global __salt__, __opts__
+    import hubblestack.daemon
+    parsed_args = hubblestack.daemon.parse_args()
+    import salt.config
+    parsed_args['configfile'] = config_file = '/etc/hubble/hubble'
+    __opts__ = salt.config.minion_config(config_file)
+    __opts__['conf_file'] = config_file
+    __opts__.update(parsed_args)
+    import salt.loader
+    __grains__ = salt.loader.grains(__opts__)
+    __utils__ = salt.loader.utils(__opts__)
+    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)

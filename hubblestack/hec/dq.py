@@ -44,7 +44,10 @@ class DiskQueue(object):
             if os.path.isfile(cache_file):
                 for f in glob.glob(cache_file + '*'):
                     os.unlink(f)
-            # If it still doesn't work, crash in the previous way
+            # Retry the write. If it still doesn't work, we'll raise an
+            # exception here. Hopefully the outer daemon loop catches the
+            # error. Also, hopefully, this doesn't interrupt logging for very
+            # long. Is this a full /var/ scenario?
             return Deque(directory=self.directory)
 
     @property

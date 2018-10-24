@@ -52,7 +52,7 @@ class SplunkHandler(logging.Handler):
     def __init__(self):
         super(SplunkHandler, self).__init__()
 
-        self.opts_list = get_splunk_options('hubblestack:returner:splunk')
+        self.opts_list = get_splunk_options()
         self.endpoint_list = []
 
         # Get cloud details

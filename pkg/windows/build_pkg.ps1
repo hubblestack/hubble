@@ -10,12 +10,6 @@ if (!((test-path "C:\Temp\hubble") -and (test-path "C:\Temp\salt"))) {
 }
 
 cd C:\temp
-#Finds the current OS. If it isn't 2012r2 it breaks.
-#This is a temporary fix until we can find out why it doesn't build on other OS's
-$OS = (Get-WmiObject -class Win32_OperatingSystem -Property Version).Version
-if ($os -notlike "6.3*" ) {
-    write-error "Hubble for Windows can currently on be built on Windows Server 2012R2. Please run this script 2012R2."
-}
 
 $hooks = ".\pkg\"
 

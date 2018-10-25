@@ -43,14 +43,8 @@ def _get_splunk_options(space, modality, **kw):
         'http_event_collector_ssl_verify': True,
     }
 
-    nicknames = {
-        'hec_ssl': 'http_event_server_ssl',
-        'sourcetype_log': 'sourcetype',
-    }
-
-    n = kw.pop('_nick', {})
+    nicknames = kw.pop('_nick', {'sourcetype_log': 'sourcetype'})
     base_opts.update(kw)
-    nicknames.update(n)
 
     req = [ k for k in base_opts if base_opts[k] is REQUIRED ]
 

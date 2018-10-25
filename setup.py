@@ -46,7 +46,8 @@ setup(
         'croniter',
         'gitpython',
         'pyinotify',
-        'vulners == 1.3.0'
+        'vulners == 1.3.0',
+        'diskcache',
     ],
     data_files=data_files,
     options={

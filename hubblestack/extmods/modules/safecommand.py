@@ -69,6 +69,6 @@ def run(command, args=None, override_file=None):
     if not args:
         ret = __salt__['cmd.run'](command, python_shell=False)
     else:
-        ret = __salt__['cmd.run']('{0} {1}'.format(command, override_args), python_shell=False)
+        ret = __salt__['cmd.run']('{0} {1}'.format(command, args), python_shell=False)
 
     return ret

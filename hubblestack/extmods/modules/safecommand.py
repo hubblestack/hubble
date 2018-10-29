@@ -42,4 +42,27 @@ def run(command, args=None, override_file=None):
         A fileserver location (``salt://this/is/a/path.txt``). The contents
         of the file at this location will be used *instead of* ``args``
     '''
-    pass
+    # Convert a list of args to a string
+    if isinstance(args, (list, tuple)):
+        args = ' '.join(args)
+
+    # Check for an override file for args
+    override_args = None
+    if override_file:
+        override = __salt__['cp.cache_file'](override_file)
+        if override:
+            try:
+                with open(override, 'r') as fh:
+                    override_args = fh.read().strip()
+            except Exception as exc:
+                log.exception('Error caching file {0}'.format(override_file))
+                raise CommandExecutionError(exc)
+
+    # Use override_args if we found any
+    if override_args is not None:
+        args = override_args
+
+    # Run the command with the final args
+    ret = __salt__['cmd.run'](command + override_args, python_shell=False)
+
+    return ret

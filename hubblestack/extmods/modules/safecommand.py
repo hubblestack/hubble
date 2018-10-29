@@ -46,6 +46,9 @@ def run(command, args=None, override_file=None):
     if isinstance(args, (list, tuple)):
         args = ' '.join(args)
 
+    if not args:
+        args = None
+
     # Check for an override file for args
     override_args = None
     if override_file:
@@ -63,6 +66,9 @@ def run(command, args=None, override_file=None):
         args = override_args
 
     # Run the command with the final args
-    ret = __salt__['cmd.run']('{0} {1}'.format(command, override_args), python_shell=False)
+    if not args:
+        ret = __salt__['cmd.run'](command, python_shell=False)
+    else:
+        ret = __salt__['cmd.run']('{0} {1}'.format(command, override_args), python_shell=False)
 
     return ret

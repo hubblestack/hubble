@@ -36,6 +36,10 @@ from hubblestack.hangtime import hangtime_wrapper
 
 log = logging.getLogger(__name__)
 
+# Importing syslog fails on windows
+if not salt.utils.platform.is_windows():
+    import syslog
+
 __opts__ = {}
 # This should work fine until we go to multiprocessing
 SESSION_UUID = str(uuid.uuid4())
@@ -160,6 +164,20 @@ def main():
             log.info('Refreshing grains')
             refresh_grains()
             last_grains_refresh = time.time()
+
+            # Emit syslog at grains refresh frequency
+            if not salt.utils.platform.is_windows():
+                 grains_to_emit=['system_uuid',
+                                 'hubble_uuid',
+                                 'session_uuid',
+                                 'machine_id',
+                                 'uuid',
+                                 'splunkindex',
+                                 'cloud_instance_id',
+                                 'cloud_account_id',
+                                 'localhost',
+                                 'host']
+                 emit_to_syslog(grains_to_emit) 
 
         try:
             log.debug('Executing schedule')
@@ -690,6 +708,24 @@ def refresh_grains(initial=False):
         handler = hubblestack.splunklogging.SplunkHandler()
         handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
 
+def emit_to_syslog(grains_to_emit):
+    '''
+    Emit grains and their values to syslog
+    '''
+    try:
+        # Avoid a syslog line to be longer than 1024 characters
+        # Build syslog message
+        syslog_list = []
+        syslog_list.append('hubble_syslog_message:')
+        for grain in grains_to_emit:
+            if grain in __grains__:
+                syslog_list.append('{0}={1}'.format(grain, __grains__[grain]))
+        syslog_message = ' '.join(syslog_list)
+        log.info('Emitting some grains to syslog')
+        syslog.openlog(logoption = syslog.LOG_PID)
+        syslog.syslog(syslog_message)
+    except Exception as e:
+        log.exception('An exception occurred on emitting a message to syslog: {0}'.format(e))
 
 def parse_args():
     '''

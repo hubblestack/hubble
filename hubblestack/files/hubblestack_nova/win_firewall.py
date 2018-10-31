@@ -49,6 +49,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
     with the CIS yaml processed by __virtual__
     '''
     __data__ = {}
+    __firewalldata__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
     __data__ = apply_labels(__data__, labels)

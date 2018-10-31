@@ -127,11 +127,15 @@ __fdg__ = None
 __returners__ = None
 
 
-def fdg(fdg_file):
+def fdg(fdg_file, starting_chained=None):
     '''
     Given an fdg file (usually a salt:// file, but can also be the absolute
     path to a file on the system), execute that fdg file, starting with the
     ``main`` block
+
+    starting_chained
+        Allows you to pass in a starting argument, which will be treated as
+        the ``chained`` argument for the ``main`` block. Optional.
     '''
     if fdg_file and fdg_file.startswith('salt://'):
         cached = __salt__['cp.cache_file'](fdg_file)
@@ -161,7 +165,7 @@ def fdg(fdg_file):
                                                                     '__grains__': __grains__})
 
     # Recursive execution of the blocks
-    ret = _fdg_execute('main', block_data)
+    ret = _fdg_execute('main', block_data, chained=starting_chained)
     return ret
 
 

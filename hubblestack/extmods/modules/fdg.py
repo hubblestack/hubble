@@ -169,6 +169,40 @@ def fdg(fdg_file, starting_chained=None):
     return ret
 
 
+def top(fdg_topfile='salt://fdg/top.fdg'):
+    '''
+    fdg has topfile support, similar to audit, osquery, and fim support for
+    topfiles.
+
+    .. code-block:: yaml
+
+        fdg:
+          '*':
+            - some_fdg_file
+          'G@splunkindex:edgeteam':
+            - extra_fdg_file: <starting_value>
+
+    Each item in the list under a given match is a separate flexible data
+    gathering routine. The ``.fdg`` filename should be left off, as periods
+    in this context are interpreted as directory separators.
+
+    Optionally, an fdg filename can be followed by a colon and a starting
+    value (as shown above with ``extra_fdg_file``) which will be passed in
+    as the ``starting_chained`` value.
+    '''
+    fdg_routines = _get_top_data(fdg_topfile)
+
+    ret = []
+    for fdg_file in fdg_routines:
+        if isinstance(fdg_file, dict):
+            for key, val in fdg_file.iteritems():
+                ret.append(fdg(key, val))
+        else:
+            ret.append(fdg(fdg_file))
+
+    return ret
+
+
 def _fdg_execute(block_id, block_data, chained=None):
     '''
     Recursive function which executes a block and any blocks chained by that
@@ -283,3 +317,29 @@ def _check_block(block, block_id):
                                         '\'{1}\' is not a valid block key'
                                         .format(block_id, key))
     return True
+
+
+def _get_top_data(topfile):
+
+    topfile = __salt__['cp.cache_file'](topfile)
+
+    try:
+        with open(topfile) as handle:
+            topdata = yaml.safe_load(handle)
+    except Exception as e:
+        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
+
+    if not isinstance(topdata, dict) or 'fdg' not in topdata:
+        raise CommandExecutionError('fdg topfile not formatted correctly: '
+                                    'missing ``fdg`` key or not formed as a '
+                                    'dict: {0}'.format(topdata))
+
+    topdata = topdata['fdg']
+
+    ret = []
+
+    for match, data in topdata.iteritems():
+        if __salt__['match.compound'](match):
+            ret.extend(data)
+
+    return ret

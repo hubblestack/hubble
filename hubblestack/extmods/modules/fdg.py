@@ -116,6 +116,7 @@ call chain.
 '''
 from __future__ import absolute_import
 import logging
+import os
 import salt.loader
 import salt.utils
 import yaml
@@ -189,6 +190,8 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
     Optionally, an fdg filename can be followed by a colon and a starting
     value (as shown above with ``extra_fdg_file``) which will be passed in
     as the ``starting_chained`` value.
+
+    Note that all paths in this file are assumed to be under salt://fdg/
     '''
     fdg_routines = _get_top_data(fdg_topfile)
 
@@ -196,11 +199,20 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
     for fdg_file in fdg_routines:
         if isinstance(fdg_file, dict):
             for key, val in fdg_file.iteritems():
-                ret.append(fdg(key, val))
+                ret.append(fdg(_fdg_saltify(key), val))
         else:
-            ret.append(fdg(fdg_file))
+            ret.append(fdg(_fdg_saltify(fdg_file)))
 
     return ret
+
+
+def _fdg_saltify(path):
+    '''
+    Take a path as it would be formatted in the fdg topfile and convert
+    it to a salt://fdg path.
+    '''
+    os.path.sep.join(path.split('.'))
+    return 'salt://fdg/{0}.fdg'.format(path)
 
 
 def _fdg_execute(block_id, block_data, chained=None):

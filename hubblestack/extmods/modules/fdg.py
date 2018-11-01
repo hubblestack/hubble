@@ -201,7 +201,7 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
             for key, val in fdg_file.iteritems():
                 ret[(key, val)] = fdg(_fdg_saltify(key), val)
         else:
-            ret[(key, None)] = fdg(_fdg_saltify(fdg_file))
+            ret[(fdg_file, None)] = fdg(_fdg_saltify(fdg_file))
 
     return ret
 

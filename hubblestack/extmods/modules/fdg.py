@@ -195,13 +195,13 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
     '''
     fdg_routines = _get_top_data(fdg_topfile)
 
-    ret = []
+    ret = {}
     for fdg_file in fdg_routines:
         if isinstance(fdg_file, dict):
             for key, val in fdg_file.iteritems():
-                ret.append(fdg(_fdg_saltify(key), val))
+                ret[(key, val)] = fdg(_fdg_saltify(key), val)
         else:
-            ret.append(fdg(_fdg_saltify(fdg_file)))
+            ret[(key, None)] = fdg(_fdg_saltify(fdg_file))
 
     return ret
 

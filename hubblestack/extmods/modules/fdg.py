@@ -192,6 +192,11 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
     as the ``starting_chained`` value.
 
     Note that all paths in this file are assumed to be under salt://fdg/
+
+    Returns will be compiled into a dictionary. The keys are two-item tuples,
+    the first of which is the fdg file, and the second of which is the
+    (optional) ``starting_chained`` value. The values in the dictionary are
+    the associated returns from the fdg runs.
     '''
     fdg_routines = _get_top_data(fdg_topfile)
 

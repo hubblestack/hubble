@@ -38,7 +38,7 @@ def request(url,
     away) due to security concerns.
 
     Returns will be a dict with 'status' (the http status code from the
-    request) and 'response' (the json response from the server). The status
+    request) and 'response' (the parsed json response from the server). The status
     piece of the fdg return will be based on the http status.
 
     url

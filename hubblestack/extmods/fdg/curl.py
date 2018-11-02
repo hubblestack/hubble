@@ -24,7 +24,6 @@ log = logging.getLogger(__name__)
 
 
 def request(url,
-            port=80,
             function='GET',
             params=None,
             data=None,
@@ -44,9 +43,6 @@ def request(url,
 
     url
         The endpoint to which the request will be sent
-
-    port
-        The port to use. 80 by default
 
     function
         GET, PUT, or POST
@@ -75,7 +71,6 @@ def request(url,
 
     # Data validation and preparation
     kwargs = {}
-    kwargs['port'] = port
     if params is not None:
         kwargs['params'] = params
     if data is not None:

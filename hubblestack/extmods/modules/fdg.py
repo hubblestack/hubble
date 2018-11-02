@@ -116,6 +116,7 @@ call chain.
 '''
 from __future__ import absolute_import
 import logging
+import os
 import salt.loader
 import salt.utils
 import yaml
@@ -127,11 +128,15 @@ __fdg__ = None
 __returners__ = None
 
 
-def fdg(fdg_file):
+def fdg(fdg_file, starting_chained=None):
     '''
     Given an fdg file (usually a salt:// file, but can also be the absolute
     path to a file on the system), execute that fdg file, starting with the
     ``main`` block
+
+    starting_chained
+        Allows you to pass in a starting argument, which will be treated as
+        the ``chained`` argument for the ``main`` block. Optional.
     '''
     if fdg_file and fdg_file.startswith('salt://'):
         cached = __salt__['cp.cache_file'](fdg_file)
@@ -161,8 +166,58 @@ def fdg(fdg_file):
                                                                     '__grains__': __grains__})
 
     # Recursive execution of the blocks
-    ret = _fdg_execute('main', block_data)
+    ret = _fdg_execute('main', block_data, chained=starting_chained)
     return ret
+
+
+def top(fdg_topfile='salt://fdg/top.fdg'):
+    '''
+    fdg has topfile support, similar to audit, osquery, and fim support for
+    topfiles.
+
+    .. code-block:: yaml
+
+        fdg:
+          '*':
+            - some_fdg_file
+          'G@splunkindex:edgeteam':
+            - extra_fdg_file: <starting_value>
+
+    Each item in the list under a given match is a separate flexible data
+    gathering routine. The ``.fdg`` filename should be left off, as periods
+    in this context are interpreted as directory separators.
+
+    Optionally, an fdg filename can be followed by a colon and a starting
+    value (as shown above with ``extra_fdg_file``) which will be passed in
+    as the ``starting_chained`` value.
+
+    Note that all paths in this file are assumed to be under salt://fdg/
+
+    Returns will be compiled into a dictionary. The keys are two-item tuples,
+    the first of which is the fdg file, and the second of which is the
+    (optional) ``starting_chained`` value. The values in the dictionary are
+    the associated returns from the fdg runs.
+    '''
+    fdg_routines = _get_top_data(fdg_topfile)
+
+    ret = {}
+    for fdg_file in fdg_routines:
+        if isinstance(fdg_file, dict):
+            for key, val in fdg_file.iteritems():
+                ret[(key, val)] = fdg(_fdg_saltify(key), val)
+        else:
+            ret[(fdg_file, None)] = fdg(_fdg_saltify(fdg_file))
+
+    return ret
+
+
+def _fdg_saltify(path):
+    '''
+    Take a path as it would be formatted in the fdg topfile and convert
+    it to a salt://fdg path.
+    '''
+    os.path.sep.join(path.split('.'))
+    return 'salt://fdg/{0}.fdg'.format(path)
 
 
 def _fdg_execute(block_id, block_data, chained=None):
@@ -176,6 +231,8 @@ def _fdg_execute(block_id, block_data, chained=None):
 
     # Status is used for the conditional chaining keywords
     status, ret = __fdg__[block['module']](*block.get('args', []), chained=chained, **block.get('kwargs', {}))
+
+    log.debug('fdg execution {0} returned {1}'.format(block_id, (status, ret)))
 
     if 'return' in block:
         returner = block['return']
@@ -279,3 +336,29 @@ def _check_block(block, block_id):
                                         '\'{1}\' is not a valid block key'
                                         .format(block_id, key))
     return True
+
+
+def _get_top_data(topfile):
+
+    topfile = __salt__['cp.cache_file'](topfile)
+
+    try:
+        with open(topfile) as handle:
+            topdata = yaml.safe_load(handle)
+    except Exception as e:
+        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
+
+    if not isinstance(topdata, dict) or 'fdg' not in topdata:
+        raise CommandExecutionError('fdg topfile not formatted correctly: '
+                                    'missing ``fdg`` key or not formed as a '
+                                    'dict: {0}'.format(topdata))
+
+    topdata = topdata['fdg']
+
+    ret = []
+
+    for match, data in topdata.iteritems():
+        if __salt__['match.compound'](match):
+            ret.extend(data)
+
+    return ret

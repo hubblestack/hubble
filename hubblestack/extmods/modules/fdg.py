@@ -232,7 +232,7 @@ def _fdg_execute(block_id, block_data, chained=None):
     # Status is used for the conditional chaining keywords
     status, ret = __fdg__[block['module']](*block.get('args', []), chained=chained, **block.get('kwargs', {}))
 
-    log.info('fdg execution {0} returned {1}'.format(block_id, (status, ret)))
+    log.debug('fdg execution {0} returned {1}'.format(block_id, (status, ret)))
 
     if 'return' in block:
         returner = block['return']

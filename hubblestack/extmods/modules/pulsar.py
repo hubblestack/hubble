@@ -552,8 +552,8 @@ def _preprocess_excludes(excludes):
                 try:
                     c = re.compile(r)
                     the_list.append(re_wrapper(c))
-                except Exception as e:
-                    log.warn('Failed to compile regex "%s": %s', r,e)
+                except:
+                    log.exception('Failed to compile regex "%s"', r)
                 continue
             else:
                 e = e.keys()[0]

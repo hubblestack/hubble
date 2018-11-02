@@ -166,17 +166,19 @@ def main():
             last_grains_refresh = time.time()
 
             # Emit syslog at grains refresh frequency
-            if not salt.utils.platform.is_windows():
-                 grains_to_emit=['system_uuid',
-                                 'hubble_uuid',
-                                 'session_uuid',
-                                 'machine_id',
-                                 'uuid',
-                                 'splunkindex',
-                                 'cloud_instance_id',
-                                 'cloud_account_id',
-                                 'localhost',
-                                 'host']
+            if not (salt.utils.platform.is_windows()) and __opts__.get('emit_grains_to_syslog', True):
+                 default_grains_to_emit=['system_uuid',
+                                         'hubble_uuid',
+                                         'session_uuid',
+                                         'machine_id',
+                                         'uuid',
+                                         'splunkindex',
+                                         'cloud_instance_id',
+                                         'cloud_account_id',
+                                         'localhost',
+                                         'host']
+                 grains_to_emit = []
+                 grains_to_emit.extend(__opts__.get('emit_grains_to_syslog_list', default_grains_to_emit))
                  emit_to_syslog(grains_to_emit) 
 
         try:

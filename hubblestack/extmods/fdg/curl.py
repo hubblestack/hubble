@@ -96,7 +96,7 @@ def request(url,
     # Pull out the pieces we want
     ret = {}
     ret['status'] = r.status_code
-    ret['response'] = r.json
+    ret['response'] = r.json()
 
     # Status in the return is based on http status
     try:

@@ -90,7 +90,14 @@ class Payload(object):
 
     @classmethod
     def rename_event_fields_in_payload(cls, dat):
-        pass
+        f = dat.get('fields')
+        e = dat.get('event')
+        if isinstance(f, dict) and isinstance(e, dict):
+            for k in f:
+                v = e.pop(k)
+                if v is not None:
+                    e[k + '_meta'] = v
+
 
     @classmethod
     def strip_empty_dict_entries(cls, dat):

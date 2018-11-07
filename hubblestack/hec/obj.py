@@ -76,6 +76,7 @@ class Payload(object):
             dat['time'] = str(int(time.time()))
 
         self.strip_empty_dict_entries(dat)
+        self.rename_event_fields_in_payload(dat)
         self.dat = json.dumps(dat)
 
     def __repr__(self):
@@ -86,6 +87,17 @@ class Payload(object):
 
     def __len__(self):
         return len(self.dat)
+
+    @classmethod
+    def rename_event_fields_in_payload(cls, dat):
+        f = dat.get('fields')
+        e = dat.get('event')
+        if isinstance(f, dict) and isinstance(e, dict):
+            for k in f:
+                v = e.pop(k)
+                if v is not None:
+                    e[k + '_meta'] = v
+
 
     @classmethod
     def strip_empty_dict_entries(cls, dat):

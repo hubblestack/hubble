@@ -494,7 +494,7 @@ def load_config():
     __opts__['install_dir'] = install_dir
 
     hubble_status.set_status_dumpster( parsed_args.get('status_dumpster',
-        os.join(parsed_args.get('cachedir'), 'status.json')) )
+        os.path.join(parsed_args.get('cachedir'), 'status.json')) )
 
     if __opts__['version']:
         print(__version__)

@@ -33,8 +33,10 @@ from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime
 from hubblestack.hangtime import hangtime_wrapper
+from hubblestack.status import HubbleStatus
 
 log = logging.getLogger(__name__)
+hubble_status = HubbleStatus(__name__, 'schedule', 'refresh_grains')
 
 # Importing syslog fails on windows
 if not salt.utils.platform.is_windows():
@@ -490,6 +492,9 @@ def load_config():
     __opts__.update(parsed_args)
     __opts__['conf_file'] = parsed_args.get('configfile')
     __opts__['install_dir'] = install_dir
+
+    hubble_status.set_status_dumpster( parsed_args.get('status_dumpster',
+        os.join(parsed_args.get('cachedir'), 'status.json')) )
 
     if __opts__['version']:
         print(__version__)

@@ -1,8 +1,7 @@
 import time
 import json
 from collections import namedtuple
-
-import signal
+from functools import wraps
 
 DUMPSTER = '/var/cache/hubble/status.json'
 
@@ -84,3 +83,42 @@ class HubbleStatus(object):
     @property
     def asdict(self):
         return { x: self.dat[x].asdict for x in self.dat }
+
+    def watch(self, mark_name):
+        ''' wrap a decorated function with a mark/fin pattern
+            .. code-block:: python
+                hs1 = HubbleStatus(__name__, 'thing1')
+                @hs1.watch
+                def thing1():
+                    time.sleep(2)
+
+                # or
+
+                @hs1.watch('thing1')
+                def some_other_name():
+                    time.sleep(2)
+
+            This is roughly equivalent to:
+            .. code-block:: python
+                def whatever():
+                    hs1.mark('thing1')
+                    time.sleep(2)
+                    hs1.fin('thing1')
+        '''
+        invoke = False
+        if callable(mark_name) and hasattr(mark_name, '__name__'):
+            # if mark_name is actually a function, invoke the decorator
+            # and return the decorated function (see below)
+            invoke = mark_name
+            mark_name = mark_name.__name__
+        def decorator(f):
+            @wraps(f)
+            def inner(*a, **kw):
+                self.mark(mark_name)
+                r = f(*a,**kw)
+                self.fin(mark_name)
+                return r
+            return inner
+        if invoke:
+            return decorator(invoke)
+        return decorator

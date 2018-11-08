@@ -81,6 +81,10 @@ def get_hubble_or_salt_opt(name):
         if name in __opts__['hubble']:
             return __opts__['hubble'][name]
 
+import signal
+
+DUMPSTER = '/var/cache/hubble/status.json'
+
 class HubbleStatusResourceNotFound(Exception):
     ''' Exception caused by trying to mark() a counter that wasn't explicitly defined
     '''

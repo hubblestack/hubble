@@ -29,7 +29,8 @@ class HubbleStatus(object):
 
         @property
         def asdict(self):
-            r = { 'start': self.start, 'count': self.count, 'dt': self.dt, 'ema_dt': self.ema_dt }
+            r = { 'start': self.start, 'count': self.count, 'last_t': self.last_t,
+                'dt': self.dt, 'ema_dt': self.ema_dt }
             if self.dur is not None:
                 r.update({'dur': self.dur, 'ema_dur': self.ema_dur})
             return r
@@ -56,10 +57,6 @@ class HubbleStatus(object):
         for r in self.resources:
             self.dat[r] = self.Stat()
 
-    @property
-    def stats(self):
-        return { x: self.dat[x].asdict for x in self.dat }
-
     def _namespaced(self, n):
         if self.namespace is None or self.namespace.startswith('_'):
             return n
@@ -80,10 +77,6 @@ class HubbleStatus(object):
     def fin(self, n):
         n = self._checkmark(n)
         self.dat[n].fin()
-
-    @property
-    def asdict(self):
-        return { x: self.dat[x].asdict for x in self.dat }
 
     def watch(self, mark_name):
         ''' wrap a decorated function with a mark/fin pattern
@@ -125,6 +118,22 @@ class HubbleStatus(object):
         return decorator
 
     @classmethod
+    def stats(cls):
+        r = { x: cls.dat[x].asdict for x in cls.dat }
+        min_dt = min([ x['dt'] for x in r.values() ])
+        max_t  = max([ x['last_t'] for x in r.values() ])
+        h1 = {'time': max_t, 'dt': min_dt}
+        r['HEALTH'] = h2 = {'last_activity': h1}
+        h2['alive'] = 'unknown'
+        if h1['dt'] < 300:
+            h2['alive'] = 'probably ok'
+        if h1['dt'] >= 600:
+            h2['alive'] = 'possibly hung'
+        if h1['dt'] < 60:
+            h2['alive'] = 'yes'
+        return r
+
+    @classmethod
     def set_status_dumpster(cls, loc):
         global DUMPSTER
         DUMPSTER = loc
@@ -133,7 +142,7 @@ class HubbleStatus(object):
             def dumpster_fire(signum, frame):
                 try:
                     with open(DUMPSTER, 'w') as fh:
-                        fh.write(json.dumps(cls.asdict, indent=2))
+                        fh.write(json.dumps(cls.stats(), indent=2))
                         fh.write('\n')
                 except:
                     log.exception("ignoring exception during dumpster fire")

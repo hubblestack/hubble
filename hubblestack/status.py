@@ -1,7 +1,11 @@
-import time
-import json
 from collections import namedtuple
 from functools import wraps
+import time
+import json
+import signal
+import logging
+
+log = logging.getLogger(__name__)
 
 DUMPSTER = '/var/cache/hubble/status.json'
 
@@ -9,6 +13,7 @@ class HubbleStatusResourceNotFound(Exception):
     pass
 
 class HubbleStatus(object):
+    _signaled = False
     dat = dict()
     class Stat(object):
         def __init__(self):
@@ -40,10 +45,6 @@ class HubbleStatus(object):
             self.dur = self.dt
             self.ema_dur  = self.dur if self.ema_dur is None else 0.5*self.ema_dur + 0.5*self.dur
 
-    @classmethod
-    def set_status_dumpster(cls, loc):
-        global DUMPSTER
-        DUMPSTER = loc
 
     def __init__(self, namespace, *resources):
         if namespace is None:
@@ -122,3 +123,18 @@ class HubbleStatus(object):
         if invoke:
             return decorator(invoke)
         return decorator
+
+    @classmethod
+    def set_status_dumpster(cls, loc):
+        global DUMPSTER
+        DUMPSTER = loc
+        if not cls._signaled:
+            cls._signaled = True
+            def dumpster_fire(signum, frame):
+                try:
+                    with open(DUMPSTER, 'w') as fh:
+                        fh.write(json.dumps(cls.asdict, indent=2))
+                        fh.write('\n')
+                except:
+                    log.exception("ignoring exception during dumpster fire")
+            signal.signal(signal.SIGUSR1, dumpster_fire)

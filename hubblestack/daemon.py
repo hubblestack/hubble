@@ -238,6 +238,7 @@ def getlastrunbybuckets(buckets, seconds):
         last_run = bucket_execution_time - seconds
     return last_run
 
+@hubble_status.watch
 def schedule():
     '''
     Rudimentary single-pass scheduler
@@ -645,6 +646,7 @@ def load_config():
 # tag='hubble:rg' will appear in the logs to differentiate this from other
 # hangtime_wrapper timers (if any)
 @hangtime_wrapper(timeout=600, repeats=True, tag='hubble:rg')
+@hubble_status.watch
 def refresh_grains(initial=False):
     '''
     Refresh the grains, pillar, utils, modules, and returners
@@ -702,6 +704,7 @@ def refresh_grains(initial=False):
     hubblestack.splunklogging.__salt__ = __salt__
     hubblestack.splunklogging.__opts__ = __opts__
 
+    # also starts the SIGUSR1 handler
     hubble_status.set_status_dumpster( __opts__.get('status_dumpster',
         os.path.join(__opts__.get('cachedir'), 'status.json')) )
 

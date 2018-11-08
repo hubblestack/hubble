@@ -493,9 +493,6 @@ def load_config():
     __opts__['conf_file'] = parsed_args.get('configfile')
     __opts__['install_dir'] = install_dir
 
-    hubble_status.set_status_dumpster( parsed_args.get('status_dumpster',
-        os.path.join(parsed_args.get('cachedir'), 'status.json')) )
-
     if __opts__['version']:
         print(__version__)
         clean_up_process(None, None)
@@ -704,6 +701,9 @@ def refresh_grains(initial=False):
     hubblestack.splunklogging.__grains__ = __grains__
     hubblestack.splunklogging.__salt__ = __salt__
     hubblestack.splunklogging.__opts__ = __opts__
+
+    hubble_status.set_status_dumpster( __opts__.get('status_dumpster',
+        os.path.join(__opts__.get('cachedir'), 'status.json')) )
 
     if not initial and __salt__['config.get']('splunklogging', False):
         class MockRecord(object):

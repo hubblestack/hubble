@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+'''
+sudo pkill -10 hubble
+echo -n hubble alive:
+sudo cat /var/cache/hubble/status.json | jq -r .HEALTH.alive
+'''
 
 from collections import namedtuple
 from functools import wraps

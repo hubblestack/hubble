@@ -52,6 +52,8 @@ TOP_STALENESS = 0
 import logging
 log = logging.getLogger(__name__)
 
+from hubblestack.status import HubbleStatus
+hubble_status = HubbleStatus(__name__, 'top', 'process')
 
 def __virtual__():
     if salt.utils.platform.is_windows():
@@ -606,6 +608,7 @@ class delta_t(object):
         self.marks[name] = time.time()
 
 
+@hubble_status.watch
 def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
             verbose=False):
     '''

@@ -40,6 +40,9 @@ import hubblestack.splunklogging
 
 log = logging.getLogger(__name__)
 
+from hubblestack.status import HubbleStatus
+hubble_status = HubbleStatus(__name__, 'top', 'queries')
+
 __virtualname__ = 'nebula'
 
 
@@ -47,6 +50,7 @@ def __virtual__():
     return __virtualname__
 
 
+@hubble_status.watch
 def queries(query_group,
             query_file=None,
             verbose=False,
@@ -283,6 +287,7 @@ def hubble_versions():
                                 'result': True}}
 
 
+@hubble_status.watch
 def top(query_group,
         topfile='salt://hubblestack_nebula_v2/top.nebula',
         topfile_for_mask=None,

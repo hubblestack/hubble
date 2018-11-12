@@ -14,7 +14,31 @@ import logging
 
 log = logging.getLogger(__name__)
 
-DUMPSTER = '/var/cache/hubble/status.json'
+DEFAULTS = {
+    'dumpster': '/var/cache/hubble/status.json',
+}
+
+__opts__ = dict()
+def get_hubble_status_opt(name):
+    ''' try to locate HubbleStatus options in
+        * __opts__['hubble_status'][name]
+        * __opts__['hubble']['status'][name]
+        * or __opts__['hubble_status_' + name]
+
+        Various defaults are defined in hubblestack.status.DEFAULTS
+    '''
+    r = None
+    for kl in (('hubble_status',name), ('hubble','status',name), ('hubble_status_'+name)):
+        t = __opts__
+        for k in kl:
+            if isinstance(t, dict):
+                t = t.get(k)
+        if t is not None:
+            r = t
+            break
+    if t is None:
+        t = DEFAULTS.get(name)
+    return t
 
 class HubbleStatusResourceNotFound(Exception):
     ''' Exception caused by trying to mark() a counter that wasn't explicitly defined
@@ -293,17 +317,20 @@ class HubbleStatus(object):
         return r
 
     @classmethod
-    def set_status_dumpster(cls, loc):
-        ''' inform the hubblestack.status module regards to the location of the dumpfile '''
-        global DUMPSTER
-        DUMPSTER = loc
+    def start_sigusr1_signal_handler(cls):
+        ''' start the signal.SIGUSR1 handler (dumps status to
+            /var/cache/hubble/status.json or whatever is specified in
+            hubble:status:dumpster config)
+        '''
         if not cls._signaled:
             cls._signaled = True
             def dumpster_fire(signum, frame):
+                dumpster = get_hubble_status_opt('dumpster')
                 try:
-                    with open(DUMPSTER, 'w') as fh:
+                    with open(dumpster, 'w') as fh:
                         fh.write(json.dumps(cls.stats(), indent=2))
                         fh.write('\n')
+                    log.info("wrote HubbleStatus to %s", dumpster)
                 except:
                     log.exception("ignoring exception during dumpster fire")
             signal.signal(signal.SIGUSR1, dumpster_fire)

@@ -704,9 +704,8 @@ def refresh_grains(initial=False):
     hubblestack.splunklogging.__salt__ = __salt__
     hubblestack.splunklogging.__opts__ = __opts__
 
-    # also starts the SIGUSR1 handler
-    hubble_status.set_status_dumpster( __opts__.get('status_dumpster',
-        os.path.join(__opts__.get('cachedir'), 'status.json')) )
+    hubblestack.status.__opts__ = __opts__
+    hubble_status.start_sigusr1_signal_handler()
 
     if not initial and __salt__['config.get']('splunklogging', False):
         class MockRecord(object):

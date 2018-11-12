@@ -17,6 +17,8 @@ log = logging.getLogger(__name__)
 DUMPSTER = '/var/cache/hubble/status.json'
 
 class HubbleStatusResourceNotFound(Exception):
+    ''' Exception caused by trying to mark() a counter that wasn't explicitly defined
+    '''
     pass
 
 class HubbleStatus(object):
@@ -72,6 +74,16 @@ class HubbleStatus(object):
     _signaled = False
     dat = dict()
     class Stat(object):
+        ''' Data sample container for a named mark.
+            Stat objects have the following properties
+
+            * last_t: the last time the counter was marked
+            * count: the count of times the counter was marked
+            * ema_dt: the average time between marks (updated at mark() time only)
+            * dur: the duration of the last mark()/fin() cycle
+            * ema_dur: the average duration between mark()/fin() cycles
+        '''
+
         def __init__(self):
             self.last_t = self.start = time.time()
             self.count  = 0
@@ -81,10 +93,12 @@ class HubbleStatus(object):
 
         @property
         def dt(self):
+            ''' a computed attribute: the time since the last mark() '''
             return time.time() - self.last_t
 
         @property
         def asdict(self):
+            ''' a computed attribute that clones and formats the various object properties in a dict() '''
             r = { 'count': self.count, 'last_t': self.last_t,
                 'dt': self.dt, 'ema_dt': self.ema_dt }
             if self.dur is not None:
@@ -109,6 +123,17 @@ class HubbleStatus(object):
 
 
     def __init__(self, namespace, *resources):
+        ''' params:
+            * namespace: a namespace for the counters tracked by the instance (usually __name__)
+            * *resources: an argument list of names for counters tracked by the instance
+
+            example:
+                hs = HubbleStatus(__name__, 'process', 'top', 'gizmo')
+                ...
+                hs.mark('gizmo')
+                long_operation()
+                hs.dur('gizmo')
+        '''
         if namespace is None:
             namespace = '_'
         self.namespace = namespace
@@ -119,6 +144,10 @@ class HubbleStatus(object):
             self.dat[r] = self.Stat()
 
     def _namespaced(self, n):
+        ''' resolve `n` as a namespaced resource identifier 
+            e.g.: hs._namespaced('blah') → 'hubblestack.daemon.blah'
+            prefixing is aborted if the argument `n` is already namespaced
+        '''
         if self.namespace is None or self.namespace.startswith('_'):
             return n
         if n.startswith(self.namespace + '.'):
@@ -126,16 +155,19 @@ class HubbleStatus(object):
         return self.namespace + '.' + n
 
     def _checkmark(self, n):
+        ''' ensure the resource `n` is tracked by the instance '''
         m = self._namespaced(n)
         if m not in self.resources:
             raise HubbleStatusResourceNotFound('"{}" is not a resource of this HubbleStatus instance')
         return m
 
     def mark(self, n):
+        ''' mark the named resource `n` — meaning increment the counters, update the last_t, etc '''
         n = self._checkmark(n)
         self.dat[n].mark()
 
     def fin(self, n):
+        ''' mark the end of a duration measurement '''
         n = self._checkmark(n)
         self.dat[n].fin()
 
@@ -262,6 +294,7 @@ class HubbleStatus(object):
 
     @classmethod
     def set_status_dumpster(cls, loc):
+        ''' inform the hubblestack.status module regards to the location of the dumpfile '''
         global DUMPSTER
         DUMPSTER = loc
         if not cls._signaled:

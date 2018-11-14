@@ -22,6 +22,9 @@ log = logging.getLogger(__name__)
 
 DEFAULTS = {
     'dumpster': '/var/cache/hubble/status.json',
+    'hung_time': 900,
+    'warn_time': 300,
+    'good_time':  60,
 }
 
 __opts__ = dict()
@@ -320,11 +323,11 @@ class HubbleStatus(object):
             },
         }
         h2['alive'] = 'unknown'
-        if h1['dt'] < 300:
-            h2['alive'] = 'warn'
-        if h1['dt'] >= 600:
+        if h1['dt'] >= get_hubble_status_opt('hung_time'):
             h2['alive'] = 'hung'
-        if h1['dt'] < 60:
+        if h1['dt'] >= get_hubble_status_opt('warn_time'):
+            h2['alive'] = 'warn'
+        if h1['dt'] <= get_hubble_status_opt('good_time'):
             h2['alive'] = 'yes'
         return r
 

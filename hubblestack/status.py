@@ -1,8 +1,14 @@
 # -*- coding: utf-8 -*-
 '''
-sudo pkill -10 hubble
-echo -n hubble alive:
-sudo cat /var/cache/hubble/status.json | jq -r .HEALTH.alive
+hubble.status aims to be a very lightweight stats tracker for the purposes of
+verifying the health of daemon. It piggybacks the normal hubble operations,
+increments counters, tracks function call times (and averages), and can dump to
+a status file on request.
+
+.. code-block:: shell
+    sudo pkill -10 hubble
+    echo -n hubble alive:
+    sudo cat /var/cache/hubble/status.json | jq -r .HEALTH.alive
 '''
 
 from collections import namedtuple
@@ -168,7 +174,7 @@ class HubbleStatus(object):
             self.dat[r] = self.Stat()
 
     def _namespaced(self, n):
-        ''' resolve `n` as a namespaced resource identifier 
+        ''' resolve `n` as a namespaced resource identifier
             e.g.: hs._namespaced('blah') → 'hubblestack.daemon.blah'
             prefixing is aborted if the argument `n` is already namespaced
         '''
@@ -246,6 +252,12 @@ class HubbleStatus(object):
 
             The output (after formatting as json) looks like the following
             (which was truncated and reordered slightly for presentation here).
+
+            Estimated process health is guessed based on the timing information from the marks():
+
+            The time spans hubble:status:hung_time=900 (past this time between marks, the process is probably hung)
+            all configurable: hubble:status:hung_time
+
 
             .. code-block:: javascript
                 {

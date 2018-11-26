@@ -21,11 +21,12 @@ import logging
 log = logging.getLogger(__name__)
 
 DEFAULTS = {
-    'dumpster': '/var/cache/hubble/status.json',
+    'dumpster': 'status.json', # '/var/cache/hubble/status.json',
     'hung_time': 900,
     'warn_time': 300,
     'good_time':  60,
 }
+
 
 __opts__ = dict()
 def get_hubble_status_opt(name):
@@ -48,6 +49,13 @@ def get_hubble_status_opt(name):
     if t is None:
         t = DEFAULTS.get(name)
     return t
+
+def get_hubble_or_salt_opt(name):
+    if name in __opts__:
+        return __opts__[name]
+    if 'hubble' in __opts__:
+        if name in __opts__['hubble']:
+            return __opts__['hubble'][name]
 
 class HubbleStatusResourceNotFound(Exception):
     ''' Exception caused by trying to mark() a counter that wasn't explicitly defined
@@ -335,12 +343,18 @@ class HubbleStatus(object):
     def start_sigusr1_signal_handler(cls):
         ''' start the signal.SIGUSR1 handler (dumps status to
             /var/cache/hubble/status.json or whatever is specified in
-            hubble:status:dumpster config)
+            cachedir + hubble:status:dumpster configs)
         '''
         if not cls._signaled:
             cls._signaled = True
+            if not hasattr(signal, 'SIGUSR1'):
+                # TODO: invent invocation that works in windows instead of just complaining
+                log.info("signal package lacks SIGUSR1, ignoring request to setup SIGUSR1 status.json handler")
+                return
             def dumpster_fire(signum, frame):
-                dumpster = get_hubble_status_opt('dumpster')
+                cachedir = get_hubble_or_salt_opt('cachedir') or ''
+                dumpster = get_hubble_status_opt('dumpster') or 'status.json'
+                dumpster = os.path.join(cachedir, dumpster)
                 try:
                     with open(dumpster, 'w') as fh:
                         fh.write(json.dumps(cls.stats(), indent=2))
@@ -349,3 +363,15 @@ class HubbleStatus(object):
                 except:
                     log.exception("ignoring exception during dumpster fire")
             signal.signal(signal.SIGUSR1, dumpster_fire)
+
+def __setup_for_testing():
+    global __opts__
+    import hubblestack.daemon
+    parsed_args = hubblestack.daemon.parse_args()
+    import salt.config
+    parsed_args['configfile'] = config_file = '/etc/hubble/hubble'
+    __opts__ = salt.config.minion_config(config_file)
+    __opts__['conf_file'] = config_file
+    __opts__.update(parsed_args)
+    import salt.loader
+    __grains__ = salt.loader.grains(__opts__)

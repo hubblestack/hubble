@@ -1,2 +1,3 @@
 salt-ssh
-vulners==1.3.0
+vulners
+diskcache

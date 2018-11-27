@@ -16,4 +16,5 @@ azure
 azure-storage-common
 azure-storage-blob
 croniter
-vulners==1.3.0
+vulners
+diskcache

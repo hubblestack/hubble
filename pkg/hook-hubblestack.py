@@ -33,6 +33,7 @@ HIDDEN_IMPORTS = [
     'azure.storage.common',
     'azure.storage.blob',
     'croniter',
+    'vulners',
 ]
 DATAS = []
 binaries = []

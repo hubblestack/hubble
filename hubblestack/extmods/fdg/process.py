@@ -3,8 +3,8 @@
 Flexible Data Gathering: data processing
 =============================
 
-This module primarily processes the data outputted by
-a module to serve it to another module to properly format it.
+This module primarily processes and properly format
+the data outputted by a module to serve it to another module.
 '''
 from __future__ import absolute_import
 import logging

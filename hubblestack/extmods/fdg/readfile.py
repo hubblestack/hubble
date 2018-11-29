@@ -218,6 +218,101 @@ def config(path,
             ]
         }
     '''
-    pass
+    if chained is not None:
+        path = path.format(chained)
+
+    if not os.path.isfile(path):
+        log.error('Path {0} not found.'.format(path))
+        return False, None
+
+    try:
+        if dictsep is None:
+            # All lines as list of strings
+            if not pattern and not ignore_pattern:
+                with open(path, 'r') as fh:
+                    ret = fh.readlines()
+                    return True, ret
+            # Some lines as a list of strings
+            ret = []
+            with open(path, 'r') as fh:
+                for line in fh:
+                    if not _check_pattern(line, pattern, ignore_pattern):
+                        continue
+                    ret.append(line)
+        else:
+            # Lines as key/value pairs in a dict
+            ret = {}
+            with open(path, 'r') as fh:
+                for line in fh:
+                    if not _check_pattern(line, pattern, ignore_pattern):
+                        continue
+                    key, val = _process_line(line, dictsep, valsep, subsep)
+                    if key in ret:
+                        # Duplicate keys, make it a list of values underneath if
+                        # not already
+                        if not isinstance(ret[key], list):
+                            ret[key] = [ret[key]]
+                        ret[key].append(val)
+                    else:
+                        ret[key] = val
+        return True, ret
+    except Exception as exc:
+        log.error('Error while processing readfile.config for file {0}: {1}'
+                  .format(path, exc))
+        return False, None
 
 
+def _check_pattern(line, pattern, ignore_pattern):
+    '''
+    Check a given line against both a pattern and an ignore_pattern and return
+    True or False based on whether that line should be used.
+    '''
+    keep = False
+
+    if pattern is None:
+        keep = True
+    elif re.match(pattern, line):
+        keep = True
+
+    if ignore_pattern is not None and re.match(ignore_pattern, line):
+        keep = False
+
+    return keep
+
+
+def _process_line(line, dictsep, valsep, subsep):
+    '''
+    Process a given line of data using the dictsep, valsep, and subsep
+    provided. For documentation, please see the docstring for ``config()``
+    '''
+    if dictsep is None:
+        return line, None
+
+    try:
+        key, val = line.split(dictsep, 1)
+    except:
+        return line, None
+
+    if valsep is not None:
+        # List of values
+        val = val.split(valsep)
+
+        # List of key-value pairs to form into a dict
+        if subsep is not None:
+            newval = {}
+            for subval in val:
+                try:
+                    valkey, valval = subval.split(valsep, 1)
+                except:
+                    valkey, valval = subval, None
+                newval[valkey] = valval
+            val = newval
+    elif subsep is not None:
+        # Single key-value pair to form into a dict
+        try:
+            valkey, valval = val.split(valsep)
+        except:
+            valkey, valval = val, None
+        val = {valkey: valval}
+
+    return key, val

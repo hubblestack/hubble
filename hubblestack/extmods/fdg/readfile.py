@@ -231,6 +231,7 @@ def config(path,
             if not pattern and not ignore_pattern:
                 with open(path, 'r') as fh:
                     ret = fh.readlines()
+                    ret = [s.strip() for s in ret]
                     return True, ret
             # Some lines as a list of strings
             ret = []

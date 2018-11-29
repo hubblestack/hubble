@@ -27,4 +27,5 @@ def osquerygrain():
                     grains['osquerybinpath'] = salt.utils.path.which(path)
                     break
             break
+    grains['osquerylogpath'] = '/var/log/osquery'
     return grains

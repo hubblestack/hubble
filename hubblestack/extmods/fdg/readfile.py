@@ -253,7 +253,9 @@ def config(path,
                     key, val = _process_line(line, dictsep, valsep, subsep)
                     if key in found_keys and key not in processed_keys:
                         # Duplicate keys, make it a list of values underneath
+                        # and add to list of values
                         ret[key] = [ret[key]]
+                        ret[key].append(val)
                         processed_keys.add(key)
                     elif key in found_keys and key in processed_keys:
                         # Duplicate keys, add to list of values

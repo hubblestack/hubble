@@ -236,25 +236,32 @@ def config(path,
             ret = []
             with open(path, 'r') as fh:
                 for line in fh:
+                    line = line.strip()
                     if not _check_pattern(line, pattern, ignore_pattern):
                         continue
                     ret.append(line)
         else:
             # Lines as key/value pairs in a dict
             ret = {}
+            found_keys = set()
+            processed_keys = set()
             with open(path, 'r') as fh:
                 for line in fh:
+                    line = line.strip()
                     if not _check_pattern(line, pattern, ignore_pattern):
                         continue
                     key, val = _process_line(line, dictsep, valsep, subsep)
-                    if key in ret:
-                        # Duplicate keys, make it a list of values underneath if
-                        # not already
-                        if not isinstance(ret[key], list):
-                            ret[key] = [ret[key]]
+                    if key in found_keys and key not in processed_keys:
+                        # Duplicate keys, make it a list of values underneath
+                        ret[key] = [ret[key]]
+                        processed_keys.add(key)
+                    elif key in found_keys and key in processed_keys:
+                        # Duplicate keys, add to list of values
                         ret[key].append(val)
                     else:
+                        # First found, add to dict as normal
                         ret[key] = val
+                        found_keys.add(key)
         return True, ret
     except Exception as exc:
         log.error('Error while processing readfile.config for file {0}: {1}'
@@ -302,7 +309,7 @@ def _process_line(line, dictsep, valsep, subsep):
             newval = {}
             for subval in val:
                 try:
-                    valkey, valval = subval.split(valsep, 1)
+                    valkey, valval = subval.split(subsep, 1)
                 except:
                     valkey, valval = subval, None
                 newval[valkey] = valval
@@ -310,7 +317,7 @@ def _process_line(line, dictsep, valsep, subsep):
     elif subsep is not None:
         # Single key-value pair to form into a dict
         try:
-            valkey, valval = val.split(valsep)
+            valkey, valval = val.split(subsep, 1)
         except:
             valkey, valval = val, None
         val = {valkey: valval}

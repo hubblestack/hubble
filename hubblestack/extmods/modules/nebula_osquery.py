@@ -251,7 +251,9 @@ def osqueryd_monitor(servicename='hubble_osqueryd',
                      configfile=None,
                      flagfile=None,
                      logdir=None,
+                     databasepath=None,
                      pidfile=None,
+                     hashfile=None,
                      daemonize=True):
     '''
     This function will monitor whether osqueryd is running on the system or not. 
@@ -274,9 +276,12 @@ def osqueryd_monitor(servicename='hubble_osqueryd',
     pidfile
         pidfile path where osquery daemon will write pid info
 
+    hashfile
+        path to hashfile where osquery flagfile's hash would be stored
+
     daemonize
         daemonize osquery daemon. Default is True. Applicable for posix system only
-        
+
     '''
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
     osqueryd_path = 'salt://osqueryd'
@@ -286,33 +291,45 @@ def osqueryd_monitor(servicename='hubble_osqueryd',
     base_path = cachedir
     if salt.utils.platform.is_windows():
         log.info("System is windows")
-        pidfile = base_path + "\osqueryd.pidfile"
-        config_path = base_path + "\osquery.conf"
-        flag_file = base_path + "\osquery.flags"
-        hash_file = base_path + "\hash_of_flagfile.txt"
+        if not pidfile:
+            pidfile = os.path.join(base_path, "osqueryd.pidfile")
+        if not configfile:
+            configfile = os.path.join(base_path, "osquery.conf")
+        if not flagfile:
+            flagfile = os.path.join(base_path, "osquery.flags")
+        if not hashfile:
+            hashfile = os.path.join(base_path, "hash_of_flagfile.txt")
         if not logdir:
             logdir = "C:\Program Files(x86)\Hubble\var\log\hubble_osquery"
+        if not databasepath:
+            databasepath = "C:\Program Files(x86)\Hubble\var\hubble_osquery_db"
         osqueryd_running = _osqueryd_running_status_windows(servicename)
         if not osqueryd_running:
-            _start_osqueryd(pidfile, config_path, flag_file, logdir, servicename)
-        osqueryd_restart = _osqueryd_restart_required(hash_file, flag_file)
+            _start_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, servicename)
+        osqueryd_restart = _osqueryd_restart_required(hashfile, flagfile)
         if osqueryd_restart:
-            _restart_osqueryd(pidfile, config_path, flag_file, logdir, hash_file, servicename)
+            _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
 
     else:
         log.info("Not windows")
-        pidfile = base_path + "/osquery.pid"
-        config_path = base_path + "/osquery.conf"
-        flag_file = base_path + "/osquery.flags"
-        hash_file = base_path + "/hash_of_flagfile.txt"
+        if not pidfile:
+            pidfile = os.path.join(base_path, "osqueryd.pidfile")
+        if not configfile:
+            configfile = os.path.join(base_path, "osquery.conf")
+        if not flagfile:
+            flagfile = os.path.join(base_path, "osquery.flags")
+        if not hashfile:
+            hashfile = os.path.join(base_path, "hash_of_flagfile.txt")
         if not logdir:
             logdir = "/var/log/hubble_osquery"
+        if not databasepath:
+            databasepath = "/var/cache/hubble/osquery"
         osqueryd_running = _osqueryd_running_status(pidfile, servicename)
         if not osqueryd_running:
-            _start_osqueryd(pidfile, config_path, flag_file, logdir, servicename)
-        osqueryd_restart = _osqueryd_restart_required(hash_file, flag_file)
+            _start_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, servicename)
+        osqueryd_restart = _osqueryd_restart_required(hashfile, flagfile)
         if osqueryd_restart:
-            _restart_osqueryd(pidfile, config_path, flag_file, logdir, hash_file, servicename)
+            _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
 
 
 def osqueryd_log_parser(osqueryd_logdir=None, 
@@ -738,22 +755,22 @@ def _osqueryd_running_status(pidfile, servicename):
     return osqueryd_running
 
 
-def _osqueryd_restart_required(hash_file, flag_file):
+def _osqueryd_restart_required(hashfile, flagfile):
     '''
     This function will check whether osqueryd needs to be restarted
     '''
-    open_file = open(flag_file, 'r')
+    open_file = open(flagfile, 'r')
     file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
     hash_md5 = md5()
     hash_md5.update(file_content.encode('ISO-8859-1'))
     new_hash = hash_md5.hexdigest()
 
-    if not os.path.isfile(hash_file):
-        f = open(hash_file, "w")
+    if not os.path.isfile(hashfile):
+        f = open(hashfile, "w")
         f.write(new_hash)
         return False
     else:
-        f = open(hash_file, "r")
+        f = open(hashfile, "r")
         old_hash = f.read()
         if old_hash != new_hash:
           log.info('old hash is {0} and new hash is {1}'.format(old_hash, new_hash))
@@ -781,7 +798,12 @@ def _osqueryd_running_status_windows(servicename):
     return osqueryd_running
 
 
-def _start_osqueryd(pidfile, config_path, flag_file, logdir, servicename):
+def _start_osqueryd(pidfile, 
+                    configfile, 
+                    flagfile, 
+                    logdir, 
+                    databasepath, 
+                    servicename):
     '''
     This function will start osqueryd
     ''' 
@@ -791,24 +813,31 @@ def _start_osqueryd(pidfile, config_path, flag_file, logdir, servicename):
         cmd = ['net', 'start', servicename]
     else:
         cmd = ['/opt/osquery/osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),
-               '--config_path={0}'.format(config_path), '--flagfile={0}'.format(flag_file), '--daemonize']
+               '--config_path={0}'.format(configfile), '--flagfile={0}'.format(flagfile), 
+               '--database_path={0}'.format(databasepath), '--daemonize']
     __salt__['cmd.run'](cmd, timeout=10000)
     log.info("daemonized the osqueryd")
 
 
-def _restart_osqueryd(pidfile, config_path, flag_file, logdir, hash_file, servicename):
+def _restart_osqueryd(pidfile, 
+                      configfile, 
+                      flagfile, 
+                      logdir, 
+                      databasepath, 
+                      hashfile, 
+                      servicename):
     '''
     This function will restart osqueryd
     ''' 
     log.info("osqueryd needs to be restarted, restarting now")
 
-    open_file = open(flag_file, 'r')
+    open_file = open(flagfile, 'r')
     file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
     hash_md5 = md5()
     hash_md5.update(file_content.encode('ISO-8859-1'))
     new_hash = hash_md5.hexdigest()
 
-    f = open(hash_file, "w")
+    f = open(hashfile, "w")
     f.write(new_hash)
     if salt.utils.platform.is_windows():
         stop_cmd = ['net', 'stop', servicename]
@@ -821,7 +850,8 @@ def _restart_osqueryd(pidfile, config_path, flag_file, logdir, hash_file, servic
         remove_pidfile_cmd = ['rm', '-rf', '{0}'.format(pidfile)]
         __salt__['cmd.run'](remove_pidfile_cmd, timeout=10000)
         start_cmd = ['/opt/osquery/osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),
-                     '--config_path={0}.format(config_path)', '--flagfile={0}'.format(flag_file), '--daemonize']
+                     '--config_path={0}.format(configfile)', '--flagfile={0}'.format(flagfile), 
+                     '--database_path={0}'.format(databasepath), '--daemonize']
         __salt__['cmd.run'](start_cmd, timeout=10000)
     log.info("daemonized the osqueryd")
 

@@ -130,7 +130,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                         tag_data['failure_reason'] = "Value of the key '{0}' could not be found in" \
                                                      " the registry. It should be set to '{1}({2})'" \
                                                      .format(name,
-                                                             match_output,
+                                                             tag_data['match_output'],
                                                              tag_data['value_type'])
                         ret['Failure'].append(tag_data)
 

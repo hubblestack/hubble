@@ -65,8 +65,8 @@ powershell -file build_env_2.ps1 -Silent
 Pop-Location
 Push-Location salt
 reloadEnv
+python ./setup.py --quiet install --force 
 python -m pip install --upgrade pip
-pip install -e .
 Pop-Location
 
 # Install hubble and dependency

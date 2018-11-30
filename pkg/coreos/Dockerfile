@@ -136,9 +136,9 @@ RUN pip -v install -r pyinstaller-requirements.txt
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.4.6
+ENV HUBBLE_CHECKOUT=v2.4.7
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=2.4.6
+ENV HUBBLE_VERSION=2.4.7
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -169,5 +169,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     && rm -rf /opt/hubble/hubble-libs/librpm* \
     # hack to get libssh2 since pyinstaller 3.2 does not do it
     && cp /usr/lib/x86_64-linux-gnu/libssh2.so.1 /opt/hubble/hubble-libs \
-    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}-coreos.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh \
+    && mkdir -p /etc/systemd/system \
+    && cp -f /hubble_build/pkg/hubble.service /etc/systemd/system \
+    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}-coreos.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh /etc/systemd/system \
     && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}-coreos.tar.gz > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}-coreos.tar.gz.sha256" ]

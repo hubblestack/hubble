@@ -28,12 +28,17 @@ import salt.utils.jid
 import salt.utils.gitfs
 import salt.log.setup
 import hubblestack.splunklogging
+import hubblestack.hec.opt
 from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime
 from hubblestack.hangtime import hangtime_wrapper
 
 log = logging.getLogger(__name__)
+
+# Importing syslog fails on windows
+if not salt.utils.platform.is_windows():
+    import syslog
 
 __opts__ = {}
 # This should work fine until we go to multiprocessing
@@ -151,7 +156,7 @@ def main():
                               .format(retry))
 
         pidfile_count += 1
-        if pidfile_count > pidfile_refresh:
+        if __opts__['daemonize'] and pidfile_count > pidfile_refresh:
             pidfile_count = 0
             create_pidfile()
 
@@ -159,6 +164,22 @@ def main():
             log.info('Refreshing grains')
             refresh_grains()
             last_grains_refresh = time.time()
+
+            # Emit syslog at grains refresh frequency
+            if not (salt.utils.platform.is_windows()) and __opts__.get('emit_grains_to_syslog', True):
+                 default_grains_to_emit=['system_uuid',
+                                         'hubble_uuid',
+                                         'session_uuid',
+                                         'machine_id',
+                                         'uuid',
+                                         'splunkindex',
+                                         'cloud_instance_id',
+                                         'cloud_account_id',
+                                         'localhost',
+                                         'host']
+                 grains_to_emit = []
+                 grains_to_emit.extend(__opts__.get('emit_grains_to_syslog_list', default_grains_to_emit))
+                 emit_to_syslog(grains_to_emit) 
 
         try:
             log.debug('Executing schedule')
@@ -525,6 +546,9 @@ def load_config():
     utils_dirs = __opts__.get('utils_dirs', [])
     utils_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'utils'))
     __opts__['utils_dirs'] = utils_dirs
+    fdg_dirs = __opts__.get('fdg_dirs', [])
+    fdg_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'fdg'))
+    __opts__['fdg_dirs'] = fdg_dirs
     __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')
@@ -668,6 +692,10 @@ def refresh_grains(initial=False):
     # are pulsar.queue, pulsar.notifier and cp.fileclient_###########
     # log.debug('keys in __context__: {}'.format(list(__context__)))
 
+    hubblestack.hec.opt.__grains__ = __grains__
+    hubblestack.hec.opt.__salt__ = __salt__
+    hubblestack.hec.opt.__opts__ = __opts__
+
     hubblestack.splunklogging.__grains__ = __grains__
     hubblestack.splunklogging.__salt__ = __salt__
     hubblestack.splunklogging.__opts__ = __opts__
@@ -682,6 +710,24 @@ def refresh_grains(initial=False):
         handler = hubblestack.splunklogging.SplunkHandler()
         handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
 
+def emit_to_syslog(grains_to_emit):
+    '''
+    Emit grains and their values to syslog
+    '''
+    try:
+        # Avoid a syslog line to be longer than 1024 characters
+        # Build syslog message
+        syslog_list = []
+        syslog_list.append('hubble_syslog_message:')
+        for grain in grains_to_emit:
+            if grain in __grains__:
+                syslog_list.append('{0}={1}'.format(grain, __grains__[grain]))
+        syslog_message = ' '.join(syslog_list)
+        log.info('Emitting some grains to syslog')
+        syslog.openlog(logoption = syslog.LOG_PID)
+        syslog.syslog(syslog_message)
+    except Exception as e:
+        log.exception('An exception occurred on emitting a message to syslog: {0}'.format(e))
 
 def parse_args():
     '''

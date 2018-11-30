@@ -49,11 +49,13 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
     with the CIS yaml processed by __virtual__
     '''
     __data__ = {}
-    __firewalldata__ = _import_firewall()
+    __firewalldata__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
     __data__ = apply_labels(__data__, labels)
     __tags__ = _get_tags(__data__)
+    if __tags__:
+        __firewalldata__ = _import_firewall()
     if debug:
         log.debug('firewall audit __data__:')
         log.debug(__data__)

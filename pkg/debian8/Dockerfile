@@ -145,9 +145,9 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v2.4.6
+ENV HUBBLE_CHECKOUT=v2.4.7
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=2.4.6
+ENV HUBBLE_VERSION=2.4.7
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -198,7 +198,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --iteration ${HUBBLE_ITERATION} \
        --config-files /etc/osquery/osquery.conf \
        --deb-no-default-config-files \
-       --after-install /hubble_build/conf/afterinstall.sh \
+       --after-install /hubble_build/conf/afterinstall-systemd.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
        etc/hubble etc/osquery etc/init.d opt usr \

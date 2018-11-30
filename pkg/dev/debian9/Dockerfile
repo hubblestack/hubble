@@ -143,7 +143,7 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #use the following variables to choose the version of hubble
 ARG HUBBLE_CHECKOUT=develop
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=2.4.6_develop
+ENV HUBBLE_VERSION=2.4.7_develop
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -197,7 +197,7 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --iteration ${HUBBLE_ITERATION} \
        --config-files /etc/osquery/osquery.conf \
        --deb-no-default-config-files \
-       --after-install /hubble_build/conf/afterinstall.sh \
+       --after-install /hubble_build/conf/afterinstall-systemd.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
        etc/hubble etc/osquery etc/init.d opt usr \

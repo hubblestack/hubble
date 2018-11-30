@@ -87,8 +87,7 @@ def returner(ret):
                                        http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl,
                                        http_event_collector_ssl_verify=http_event_collector_ssl_verify,
                                        proxy=proxy, timeout=timeout)
-
-            # st = 'salt:hubble:nova'
+            
             data = ret['return']
             minion_id = ret['id']
             jid = ret['jid']
@@ -154,12 +153,26 @@ def returner(ret):
                     event_time = query_results.get('time', '')
                     if 'columns' in query_results: #This means we have result log event
                         event.update(query_results['columns'])
-                        _generate_and_send_payload(hec, opts['index'], sourcetype, fqdn, custom_fields, index_extracted_fields, event, event_time)
+                        _generate_and_send_payload(hec, 
+                                                   opts['index'], 
+                                                   sourcetype, 
+                                                   fqdn, 
+                                                   custom_fields, 
+                                                   index_extracted_fields, 
+                                                   event, 
+                                                   event_time)
                     elif 'snapshot' in query_results: #This means we have snapshot log event
                         for q_result in query_results['snapshot']:
                             n_event = copy.deepcopy(event)
                             n_event.update(q_result)
-                            _generate_and_send_payload(hec, opts['index'], sourcetype, fqdn, custom_fields, index_extracted_fields, n_event, event_time)
+                            _generate_and_send_payload(hec, 
+                                                       opts['index'], 
+                                                       sourcetype, 
+                                                       fqdn, 
+                                                       custom_fields, 
+                                                       index_extracted_fields, 
+                                                       n_event, 
+                                                       event_time)
                     else:
                         log.error("Incompatible event data captured")
 
@@ -169,7 +182,14 @@ def returner(ret):
     return
 
 
-def _generate_and_send_payload(hec, index, sourcetype, fqdn, custom_fields, index_extracted_fields, event, event_time):
+def _generate_and_send_payload(hec, 
+                               index, 
+                               sourcetype, 
+                               fqdn, 
+                               custom_fields, 
+                               index_extracted_fields, 
+                               event, 
+                               event_time):
     payload = {}
     for custom_field in custom_fields:
         custom_field_name = 'custom_' + custom_field

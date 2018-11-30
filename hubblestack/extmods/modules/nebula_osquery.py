@@ -37,6 +37,7 @@ import salt.utils
 import salt.utils.files
 import salt.utils.platform
 
+from hashlib import md5
 from salt.exceptions import CommandExecutionError
 from os import path
 from hubblestack import __version__
@@ -244,6 +245,74 @@ def queries(query_group,
     if mask_passwords:
         mask_passwords_inplace(ret, topfile_for_mask)
     return ret
+
+
+def osqueryd_monitor(servicename='hubble_osqueryd',
+                     configfile=None,
+                     flagfile=None,
+                     logdir=None,
+                     pidfile=None,
+                     daemonize=True):
+    '''
+    This function will monitor whether osqueryd is running on the system or not. 
+    Whenever it detects that osqueryd is not running, it will start the osqueryd. 
+    Also, it checks for conditions that would require osqueryd to restart(such as changes in flag file content) 
+    On such conditions, osqueryd will get restarted, thereby loading new files.
+
+    servicename
+        service name to use in Windows. Default is 'hubble_osqueryd'
+
+    configfile
+        Path to osquery configuration file.
+
+    flagfile
+        Path to osquery flag file
+
+    logdir
+        Path to log directory where osquery daemon/service will write logs
+
+    pidfile
+        pidfile path where osquery daemon will write pid info
+
+    daemonize
+        daemonize osquery daemon. Default is True. Applicable for posix system only
+        
+    '''
+    saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
+    osqueryd_path = 'salt://osqueryd'
+    cached = __salt__['cp.cache_dir'](osqueryd_path,saltenv=saltenv)
+    log.info('cached osqueryd files to cachedir')
+    cachedir = os.path.join(__opts__.get('cachedir'),'files',saltenv,'osqueryd')
+    base_path = cachedir
+    if salt.utils.platform.is_windows():
+        log.info("System is windows")
+        pidfile = base_path + "\osqueryd.pidfile"
+        config_path = base_path + "\osquery.conf"
+        flag_file = base_path + "\osquery.flags"
+        hash_file = base_path + "\hash_of_flagfile.txt"
+        if not logdir:
+            logdir = "C:\Program Files(x86)\Hubble\var\log\hubble_osquery"
+        osqueryd_running = _osqueryd_running_status_windows(servicename)
+        if not osqueryd_running:
+            _start_osqueryd(pidfile, config_path, flag_file, logdir, servicename)
+        osqueryd_restart = _osqueryd_restart_required(hash_file, flag_file)
+        if osqueryd_restart:
+            _restart_osqueryd(pidfile, config_path, flag_file, logdir, hash_file, servicename)
+
+    else:
+        log.info("Not windows")
+        pidfile = base_path + "/osquery.pid"
+        config_path = base_path + "/osquery.conf"
+        flag_file = base_path + "/osquery.flags"
+        hash_file = base_path + "/hash_of_flagfile.txt"
+        if not logdir:
+            logdir = "/var/log/hubble_osquery"
+        osqueryd_running = _osqueryd_running_status(pidfile, servicename)
+        if not osqueryd_running:
+            _start_osqueryd(pidfile, config_path, flag_file, logdir, servicename)
+        osqueryd_restart = _osqueryd_restart_required(hash_file, flag_file)
+        if osqueryd_restart:
+            _restart_osqueryd(pidfile, config_path, flag_file, logdir, hash_file, servicename)
 
 
 def osqueryd_log_parser(osqueryd_logdir=None, 
@@ -632,6 +701,131 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
         return dest
 
 
+def _osqueryd_running_status(pidfile, servicename):
+    '''
+    This function will check whether osqueryd is running in *nix systems
+    '''
+    osqueryd_running = False
+    if os.path.isfile(pidfile):
+      try:
+        with open(pidfile, 'r') as f:
+          xpid = f.readline().strip()
+          try:
+            xpid = int(xpid)
+          except:
+            xpid = 0
+            log.warn('unable to parse pid="{pid}" in pidfile={file}'.format(pid=xpid,file=pidfile))
+          if xpid:
+            log.warn('pidfile={file} exists and contains pid={pid}'.format(file=pidfile, pid=xpid))
+            if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+              with open("/proc/{pid}/cmdline".format(pid=xpid),'r') as f2:
+                cmdline = f2.readline().strip().strip('\x00').replace('\x00',' ')
+                if 'osqueryd' in cmdline:
+                  log.info("process folder present and process is osqueryd")
+                  osqueryd_running = True
+                else:
+                  log.error("process is not osqueryd, attempting to start osqueryd")
+            else:
+              log.error("process folder not present, attempting to start osqueryd")
+          else:
+            log.error("pid cannot be determined, attempting to start osqueryd")
+      except:
+        log.error("unable to open pidfile, attempting to start osqueryd")
+    else:
+      cmd = ['pkill', 'osqueryd']
+      __salt__['cmd.run'](cmd, timeout=10000)
+      log.error("pidfile not found, attempting to start osqueryd")
+    return osqueryd_running
+
+
+def _osqueryd_restart_required(hash_file, flag_file):
+    '''
+    This function will check whether osqueryd needs to be restarted
+    '''
+    open_file = open(flag_file, 'r')
+    file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
+    hash_md5 = md5()
+    hash_md5.update(file_content.encode('ISO-8859-1'))
+    new_hash = hash_md5.hexdigest()
+
+    if not os.path.isfile(hash_file):
+        f = open(hash_file, "w")
+        f.write(new_hash)
+        return False
+    else:
+        f = open(hash_file, "r")
+        old_hash = f.read()
+        if old_hash != new_hash:
+          log.info('old hash is {0} and new hash is {1}'.format(old_hash, new_hash))
+          log.info('changes detected in flag file')
+          return True
+        else:
+          log.info('no changes detected in flag file')
+    return False
+
+
+def _osqueryd_running_status_windows(servicename):
+    '''
+    This function will check whether osqueryd is running in windows systems
+    '''
+    osqueryd_running = False
+    cmd_status = "(Get-Service -Name " + servicename + ").Status"
+    osqueryd_status = __salt__['cmd.run'](cmd_status, shell='powershell')
+    if osqueryd_status == 'Running':
+        osqueryd_running = True
+        log.info('osqueryd already running')
+    else:
+        log.info('osqueryd not running')
+        osqueryd_running = False
+    
+    return osqueryd_running
+
+
+def _start_osqueryd(pidfile, config_path, flag_file, logdir, servicename):
+    '''
+    This function will start osqueryd
+    ''' 
+    log.info("osqueryd is not running, attempting to start osqueryd")
+    if salt.utils.platform.is_windows():
+        log.error("requesting service manager to start osqueryD")
+        cmd = ['net', 'start', servicename]
+    else:
+        cmd = ['/opt/osquery/osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),
+               '--config_path={0}'.format(config_path), '--flagfile={0}'.format(flag_file), '--daemonize']
+    __salt__['cmd.run'](cmd, timeout=10000)
+    log.info("daemonized the osqueryd")
+
+
+def _restart_osqueryd(pidfile, config_path, flag_file, logdir, hash_file, servicename):
+    '''
+    This function will restart osqueryd
+    ''' 
+    log.info("osqueryd needs to be restarted, restarting now")
+
+    open_file = open(flag_file, 'r')
+    file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
+    hash_md5 = md5()
+    hash_md5.update(file_content.encode('ISO-8859-1'))
+    new_hash = hash_md5.hexdigest()
+
+    f = open(hash_file, "w")
+    f.write(new_hash)
+    if salt.utils.platform.is_windows():
+        stop_cmd = ['net', 'stop', servicename]
+        __salt__['cmd.run'](stop_cmd, timeout=10000)
+        start_cmd = ['net', 'start', servicename]
+        __salt__['cmd.run'](start_cmd, timeout=10000)
+    else:
+        stop_cmd = ['pkill', 'osqueryd']
+        __salt__['cmd.run'](stop_cmd, timeout=10000)
+        remove_pidfile_cmd = ['rm', '-rf', '{0}'.format(pidfile)]
+        __salt__['cmd.run'](remove_pidfile_cmd, timeout=10000)
+        start_cmd = ['/opt/osquery/osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),
+                     '--config_path={0}.format(config_path)', '--flagfile={0}'.format(flag_file), '--daemonize']
+        __salt__['cmd.run'](start_cmd, timeout=10000)
+    log.info("daemonized the osqueryd")
+
+
 def _parse_log(path_to_logfile, 
                offset,
                backuplogdir,
@@ -725,7 +919,11 @@ def _perform_log_rotation(path_to_logfile,
     residue_events = []
     if path.exists(path_to_logfile):
         if salt.utils.platform.is_windows():
-            residue_events = _rotate_log_windows(path_to_logfile, offset, backuplogdir, backuplogfilescount)
+            residue_events = _rotate_log_windows(path_to_logfile, 
+                                                 offset, 
+                                                 backuplogdir, 
+                                                 backuplogfilescount, 
+                                                 readResidueEvents)
         else:
             if enablediskstatslogging:
                 # Not forwarding disk_stats to splunk as of now, only filesystem logging will be done
@@ -771,11 +969,29 @@ def _rotate_log_posix(path_to_logfile,
 def _rotate_log_windows(path_to_logfile,
                         offset,
                         backuplogdir,
-                        backuplogfilescount):
+                        backuplogfilescount,
+                        readResidueEvents=True):
     '''
     Perform log rotation on windows
     '''
     residue_events = []
+    logfilename = os.path.basename(path_to_logfile)
+    listofbackuplogfiles = glob.glob(os.path.normpath(os.path.join(backuplogdir, logfilename)) + "*")
+
+    if listofbackuplogfiles:
+        log.info("Backup log file count: {0} and backup count threshold: {1}".format(len(listofbackuplogfiles), 
+                                                                                     backuplogfilescount))
+        listofbackuplogfiles.sort()
+        log.info("Backup log file sorted list: {0}".format(listofbackuplogfiles))
+        if(len(listofbackuplogfiles) > backuplogfilescount):
+            listofbackuplogfiles = listofbackuplogfiles[:len(listofbackuplogfiles) - backuplogfilescount]
+            for dfile in listofbackuplogfiles:
+                salt.utils.files.remove(dfile)
+            log.info("Successfully deleted backup files")
+    
+    backupLogFile = os.path.normpath(os.path.join(backuplogdir, logfilename) + "-" + str(time.time()))
+    #salt.utils.files.rename(path_to_logfile, backupLogFile) # Throws FileInUseException on windows platform
+
     log.info("Need to implement log rotation in windows and handle file in use exception")
     return residue_events
 

@@ -81,6 +81,7 @@ CMD powershell.exe -Command Push-Location C:/temp/hubble; \
   Move-Item 'hubble/PortableGit' -Destination './hubble/dist/hubble/' -Force; \
   Move-Item 'C:/ProgramData/chocolatey/lib/NSSM/tools/nssm.exe' -Destination './hubble/dist/hubble/' -Force; \
   Move-Item 'C:/ProgramData/osquery/osqueryi.exe' -Destination './hubble/dist/hubble/' -Force; \
+  Move-Item 'C:/ProgramData/osquery/osqueryd.exe' -Destination './hubble/dist/hubble/' -Force; \
   If (Test-Path C:/data/hubble.conf) {Copy-Item  C:/data/hubble.conf -Destination ./hubble/dist/hubble/etc/hubble/ -Force}; \
   If (Test-Path C:/data/opt) {Copy-Item  C:/data/opt -Destination './hubble/dist/hubble/' -Recurse -Force}; \
 #Build the installer

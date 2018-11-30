@@ -35,7 +35,6 @@ import collections
 
 import salt.utils
 import salt.utils.files
-import salt.utils.find
 import salt.utils.platform
 
 from salt.exceptions import CommandExecutionError
@@ -252,6 +251,7 @@ def osqueryd_log_parser(osqueryd_logdir=None,
                         maxlogfilesizethreshold=100000, 
                         logfilethresholdinbytes=10000,
                         backuplogfilescount=5,
+                        enablediskstatslogging=False,
                         topfile_for_mask=None,
                         mask_passwords=False):
     '''
@@ -274,6 +274,9 @@ def osqueryd_log_parser(osqueryd_logdir=None,
     backuplogfilescount
         Number of log file backups to keep
 
+    enablediskstatslogging
+        Enable logging of disk usage of /var/log partition. Default is False
+
     topfile_for_mask
         This is the location of the top file from which the masking information
         will be extracted
@@ -286,10 +289,10 @@ def osqueryd_log_parser(osqueryd_logdir=None,
     ret = []
     if osqueryd_logdir:
         result_logfile = osqueryd_logdir + '/osqueryd.results.log'
-        snapshot_logile = osqueryd_logdir + '/osqueryd.snapshots.log'
+        snapshot_logfile = osqueryd_logdir + '/osqueryd.snapshots.log'
     else:
         result_logfile = __grains__.get('osquerylogpath') + '/osqueryd.results.log'
-        snapshot_logile = __grains__.get('osquerylogpath') + '/osqueryd.snapshots.log'
+        snapshot_logfile = __grains__.get('osquerylogpath') + '/osqueryd.snapshots.log'
     if path.exists(result_logfile):
         result_logfile_offset = _get_file_offset(result_logfile)
         r_event_data = _parse_log(result_logfile, 
@@ -297,28 +300,70 @@ def osqueryd_log_parser(osqueryd_logdir=None,
                                   backuplogdir, 
                                   logfilethresholdinbytes,
                                   maxlogfilesizethreshold, 
-                                  backuplogfilescount)
-        #log.info("Differential Event data: {0}".format(r_event_data))
+                                  backuplogfilescount,
+                                  enablediskstatslogging)
         if r_event_data:
             ret = r_event_data
-    if path.exists(snapshot_logile):
-        snapshot_logfile_offset = _get_file_offset(snapshot_logile)
-        s_event_data = _parse_log(snapshot_logile, 
+    else:
+        log.error("Specified osquery result log file doesn't exist: {0}".format(result_logfile))
+    
+    if path.exists(snapshot_logfile):
+        snapshot_logfile_offset = _get_file_offset(snapshot_logfile)
+        s_event_data = _parse_log(snapshot_logfile, 
                                   snapshot_logfile_offset,
                                   backuplogdir,
                                   logfilethresholdinbytes,
                                   maxlogfilesizethreshold, 
-                                  backuplogfilescount)
+                                  backuplogfilescount,
+                                  enablediskstatslogging)
         #log.info("Snapshot Event data: {0}".format(s_event_data))
         if s_event_data:
             ret = ret + s_event_data
-    log.info("Returning: {0}".format(ret))
+    else:
+        log.error("Specified osquery snapshot log file doesn't exist: {0}".format(snapshot_logfile))
 
     if mask_passwords:
         #TODO Need to verify if masking feature works with new data format
         log.info("Perform masking")
         #mask_passwords_inplace(ret, topfile_for_mask)
     return ret
+
+
+def check_disk_usage(path=None):
+    '''
+    Check disk usage of specified path.
+    If no path is specified, path will default to '/var/log'
+
+    Can be scheduled via hubble conf as well
+
+    *** Linux Only method ***
+
+    '''
+    disk_stats = {}
+    if salt.utils.platform.is_windows():
+        log.info("Platform is windows, skipping disk usage stats")
+        disk_stats = {"Error": "Platform is windows"}
+    else:
+        if not path:
+            # We would be interested in var partition disk stats only, for other partitions specify 'path' param
+            path = "/var/log"
+        df_stat = os.statvfs(path)
+        total =  df_stat.f_frsize * df_stat.f_blocks
+        avail = df_stat.f_frsize * df_stat.f_bavail
+        used = total - avail
+        per_used = float(used)/total * 100
+        log.info("Stats for path: {0}, Total: {1}, Available: {2}, Used: {3}, Use%: {4}".format(path,
+                                                                                                total, 
+                                                                                                avail, 
+                                                                                                used, 
+                                                                                                per_used))
+        disk_stats = { 'Total' : total,
+                       'Available' : avail,
+                       'Used' : used,
+                       'Use_percent' : per_used
+        }
+
+    return disk_stats
 
 
 def fields(*args):
@@ -590,7 +635,8 @@ def _parse_log(path_to_logfile,
                backuplogdir,
                logfilethresholdinbytes,
                maxlogfilesizethreshold,
-               backuplogfilescount):
+               backuplogfilescount,
+               enablediskstatslogging):
     '''
     Parse logs generated by osquery daemon.
     Path to log file to be parsed should be specified
@@ -598,7 +644,6 @@ def _parse_log(path_to_logfile,
     event_data = []
     file_offset = offset
     rotateLog = False
-    #log.info("In function _parse_log, logfile: {0} and offset: {1}".format(path_to_logfile, offset))
     if path.exists(path_to_logfile):
         fileDes = open(path_to_logfile, "r+")
         if fileDes:
@@ -609,12 +654,14 @@ def _parse_log(path_to_logfile,
                 # In this scenario hubble might take too much time to process the logs which may not be required.
                 # To handle this, log file size is validated against max threshold size.
                 log.info("Log file size is above max threshold size that can be parsed by Hubble.")
-                log.info("Log file size: {0}".format(os.stat(path_to_logfile).st_size))
+                log.info("Log file size: {0}, max threshold: {1}".format(os.stat(path_to_logfile).st_size, maxlogfilesizethreshold))
                 log.info("Rotating log and skipping parsing for this iteration")
                 _perform_log_rotation(path_to_logfile, 
                                       file_offset,
                                       backuplogdir,
-                                      backuplogfilescount)
+                                      backuplogfilescount,
+                                      enablediskstatslogging,
+                                      False)
                 file_offset = 0 #Reset file offset to start of file in case original file is rotated
             else:
                 if os.stat(path_to_logfile).st_size > logfilethresholdinbytes:
@@ -624,28 +671,31 @@ def _parse_log(path_to_logfile,
                     event_data.append(event)
                 file_offset = fileDes.tell()
                 if rotateLog:
+                    log.info("Log file size above threshold, going to rotate log file: {0}".format(path_to_logfile))
                     residue_events = _perform_log_rotation(path_to_logfile, 
                                                         file_offset, 
                                                         backuplogdir, 
-                                                        backuplogfilescount)
+                                                        backuplogfilescount,
+                                                        enablediskstatslogging,
+                                                        True)
                     if residue_events:
+                        log.info("Found few residue logs, updating the data object")
                         event_data.append(residue_events)
                     file_offset = 0 #Reset file offset to start of file in case original file is rotated
             _set_cache_offset(path_to_logfile, file_offset)
             fileDes.close()
         else:
-            log.error('Unable to open log file: ' + path_to_logfile)
+            log.error('Unable to open log file for reading: {0}'.format(path_to_logfile))
     else:
-        log.error("Log file doesn't exists: " + path_to_logfile)
+        log.error("Log file doesn't exists: {0}".format(path_to_logfile))
 
     return event_data
 
 
 def _set_cache_offset(path_to_logfile, offset):
     '''
-    Cache file offste in memory
+    Cache file offset in memory
     '''
-    #log.info("In function _set_cache_offset, logfile: {0} and offset: {1}".format(path_to_logfile, offset))
     cachefilekey = os.path.basename(path_to_logfile)
     __RESULT_LOG_OFFSET__[cachefilekey] = offset
 
@@ -654,53 +704,59 @@ def _get_file_offset(path_to_logfile):
     '''
     Fetch file offset for specified file
     '''
-    #log.info("In function _get_file_offset, logfile: {0}".format(path_to_logfile))
     cachefilekey = os.path.basename(path_to_logfile)
     offset = __RESULT_LOG_OFFSET__.get(cachefilekey, 0)
-    #log.info("Returning Offset : {0} for file : {1}".format(offset, path_to_logfile))
     return offset
 
 
 def _perform_log_rotation(path_to_logfile, 
                           offset,
                           backuplogdir,
-                          backuplogfilescount):
+                          backuplogfilescount,
+                          enablediskstatslogging,
+                          readResidueEvents):
     '''
     Perform log rotation on specified file and create backup of file under specified backup directory.
     '''
-    #log.info("In function _perform_log_rotation, logfile: {0} and offset: {1}".format(path_to_logfile, offset))
     residue_events = []
     if path.exists(path_to_logfile):
         if salt.utils.platform.is_windows():
             residue_events = _rotate_log_windows(path_to_logfile, offset, backuplogdir, backuplogfilescount)
         else:
-            residue_events = _rotate_log_posix(path_to_logfile, offset, backuplogdir, backuplogfilescount)
+            if enablediskstatslogging:
+                # Not forwarding disk_stats to splunk as of now, only filesystem logging will be done
+                disk_stats = check_disk_usage()
+            residue_events = _rotate_log_posix(path_to_logfile, offset, backuplogdir, backuplogfilescount,readResidueEvents)
     return residue_events
 
 
 def _rotate_log_posix(path_to_logfile, 
                       offset,
                       backuplogdir,
-                      backuplogfilescount):
+                      backuplogfilescount,
+                      readResidueEvents=True):
+    '''
+    Function to perform log rotation on linux systems
+    '''
     residue_events = []
     logfilename = os.path.basename(path_to_logfile)
-    #listofbackuplogfiles = salt.utils.find.find(backuplogdir, "name={0}*".format(logfilename))
     listofbackuplogfiles = glob.glob(backuplogdir + "/" + logfilename + "*")
 
     if listofbackuplogfiles:
-        log.info("Backup log file list: {0}".format(listofbackuplogfiles))
-        log.info("Backup log file count: {0}".format(len(listofbackuplogfiles)))
+        log.info("Backup log file count: {0} and backup count threshold: {1}".format(len(listofbackuplogfiles), 
+                                                                                     backuplogfilescount))
         listofbackuplogfiles.sort()
         log.info("Backup log file sorted list: {0}".format(listofbackuplogfiles))
         if(len(listofbackuplogfiles) > backuplogfilescount):
             listofbackuplogfiles = listofbackuplogfiles[:len(listofbackuplogfiles) - backuplogfilescount]
             for dfile in listofbackuplogfiles:
                 salt.utils.files.remove(dfile)
-                log.info("Successfully deleted file: {0}".format(dfile))
+            log.info("Successfully deleted backup files")
     
     backupLogFile = backuplogdir + '/' + logfilename + "-" + str(time.time())
     salt.utils.files.rename(path_to_logfile, backupLogFile)
-    residue_events = _read_residue_logs(backupLogFile, offset)
+    if readResidueEvents:
+        residue_events = _read_residue_logs(backupLogFile, offset)
     return residue_events
 
 
@@ -708,6 +764,9 @@ def _rotate_log_windows(path_to_logfile,
                         offset,
                         backuplogdir,
                         backuplogfilescount):
+    '''
+    Perform log rotation on windows
+    '''
     residue_events = []
     log.info("Need to implement log rotation in windows and handle file in use exception")
     return residue_events
@@ -717,21 +776,13 @@ def _read_residue_logs(path_to_logfile, offset):
     '''
     Read any logs that might have been written while creating backup log file
     '''
-    #log.info("In function _read_residue_logs, logfile: {0} and offset: {1}".format(path_to_logfile, offset))
     event_data= []
     if path.exists(path_to_logfile):
        fileDes = open(path_to_logfile, "r+")
        if fileDes:
+           log.info("Checking for any residue logs that might have added while log rotation was being performed")
            fileDes.seek(offset)
            for event in fileDes.readlines():
                event_data.append(event)
            fileDes.close()
     return event_data
-
-
-def _check_disk_usage():
-    '''
-    Check disk usage where log rotation is to be done
-    '''
-    someValue = None
-    return someValue

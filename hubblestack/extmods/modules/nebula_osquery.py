@@ -288,11 +288,13 @@ def osqueryd_log_parser(osqueryd_logdir=None,
     '''
     ret = []
     if osqueryd_logdir:
-        result_logfile = osqueryd_logdir + '/osqueryd.results.log'
-        snapshot_logfile = osqueryd_logdir + '/osqueryd.snapshots.log'
+        result_logfile =  os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.results.log'))
+        snapshot_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.snapshots.log'))
     else:
-        result_logfile = __grains__.get('osquerylogpath') + '/osqueryd.results.log'
-        snapshot_logfile = __grains__.get('osquerylogpath') + '/osqueryd.snapshots.log'
+        result_logfile = os.path.normpath(os.path.join(__grains__.get('osquerylogpath'), 
+                                                       'osqueryd.results.log'))
+        snapshot_logfile = os.path.normpath(os.path.join(__grains__.get('osquerylogpath'), 
+                                                         '/osqueryd.snapshots.log'))
     if path.exists(result_logfile):
         result_logfile_offset = _get_file_offset(result_logfile)
         r_event_data = _parse_log(result_logfile, 
@@ -651,10 +653,11 @@ def _parse_log(path_to_logfile,
                 # This is done to handle scenarios where hubble process was in stopped state and
                 # osquery daemon was generating logs for that time frame. When hubble is started and
                 # this function gets executed, it might be possible that the log file is now huge.
-                # In this scenario hubble might take too much time to process the logs which may not be required.
+                # In this scenario hubble might take too much time to process the logs which may not be required
                 # To handle this, log file size is validated against max threshold size.
                 log.info("Log file size is above max threshold size that can be parsed by Hubble.")
-                log.info("Log file size: {0}, max threshold: {1}".format(os.stat(path_to_logfile).st_size, maxlogfilesizethreshold))
+                log.info("Log file size: {0}, max threshold: {1}".format(os.stat(path_to_logfile).st_size, 
+                                                                         maxlogfilesizethreshold))
                 log.info("Rotating log and skipping parsing for this iteration")
                 _perform_log_rotation(path_to_logfile, 
                                       file_offset,
@@ -671,7 +674,8 @@ def _parse_log(path_to_logfile,
                     event_data.append(event)
                 file_offset = fileDes.tell()
                 if rotateLog:
-                    log.info("Log file size above threshold, going to rotate log file: {0}".format(path_to_logfile))
+                    log.info('Log file size above threshold, '
+                              'going to rotate log file: {0}'.format(path_to_logfile))
                     residue_events = _perform_log_rotation(path_to_logfile, 
                                                         file_offset, 
                                                         backuplogdir, 
@@ -726,7 +730,11 @@ def _perform_log_rotation(path_to_logfile,
             if enablediskstatslogging:
                 # Not forwarding disk_stats to splunk as of now, only filesystem logging will be done
                 disk_stats = check_disk_usage()
-            residue_events = _rotate_log_posix(path_to_logfile, offset, backuplogdir, backuplogfilescount,readResidueEvents)
+            residue_events = _rotate_log_posix(path_to_logfile, 
+                                               offset, 
+                                               backuplogdir, 
+                                               backuplogfilescount,
+                                               readResidueEvents)
     return residue_events
 
 
@@ -740,7 +748,7 @@ def _rotate_log_posix(path_to_logfile,
     '''
     residue_events = []
     logfilename = os.path.basename(path_to_logfile)
-    listofbackuplogfiles = glob.glob(backuplogdir + "/" + logfilename + "*")
+    listofbackuplogfiles = glob.glob(os.path.normpath(os.path.join(backuplogdir, logfilename)) + "*")
 
     if listofbackuplogfiles:
         log.info("Backup log file count: {0} and backup count threshold: {1}".format(len(listofbackuplogfiles), 
@@ -753,7 +761,7 @@ def _rotate_log_posix(path_to_logfile,
                 salt.utils.files.remove(dfile)
             log.info("Successfully deleted backup files")
     
-    backupLogFile = backuplogdir + '/' + logfilename + "-" + str(time.time())
+    backupLogFile = os.path.normpath(os.path.join(backuplogdir, logfilename) + "-" + str(time.time()))
     salt.utils.files.rename(path_to_logfile, backupLogFile)
     if readResidueEvents:
         residue_events = _read_residue_logs(backupLogFile, offset)
@@ -780,7 +788,8 @@ def _read_residue_logs(path_to_logfile, offset):
     if path.exists(path_to_logfile):
        fileDes = open(path_to_logfile, "r+")
        if fileDes:
-           log.info("Checking for any residue logs that might have added while log rotation was being performed")
+           log.info('Checking for any residue logs that might have been '
+                     'added while log rotation was being performed')
            fileDes.seek(offset)
            for event in fileDes.readlines():
                event_data.append(event)

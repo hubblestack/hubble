@@ -311,7 +311,6 @@ def osqueryd_monitor(configfile=None,
             osqueryd_restart = _osqueryd_restart_required(hashfile, flagfile)
             if osqueryd_restart:
                 _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
-
     else:
         log.info("Not windows")
         if not pidfile:
@@ -845,6 +844,7 @@ def _osqueryd_restart_required(hashfile, flagfile):
     '''
     This function will check whether osqueryd needs to be restarted
     '''
+<<<<<<< HEAD
     try:
         open_file = open(flagfile, 'r')
         file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')

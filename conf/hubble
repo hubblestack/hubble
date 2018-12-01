@@ -75,6 +75,32 @@ fileserver_backend:
 #    returner: splunk_nebula_return
 #    returner_retry: True # only works on splunk returners for now
 #    run_on_start: False
+#  nebula_osqueryd_monitor:
+#    function: nebula.osqueryd_monitor
+#    seconds: 60
+#    splay: 10
+#    kwargs:
+#      configfile: /path/to/confbase/osquery/osquery.conf
+#      flagfile: /path/to/confbase/osquery/osquery.flags
+#      logdir: /var/log/hubble_osquery
+#      databasepath: /var/cache/hubble/osquery
+#      pidfile: /var/run/hubble_osquery/osquery.pidfile
+#      hashfile: /var/cache/hubble/osquery/hash_of_flagfile.txt
+#    run_on_start: True
+#  nebula_osquery:
+#    function: nebula.osqueryd_log_parser
+#    seconds: 60
+#    splay: 10
+#    kwargs:
+#      osqueryd_logdir: /var/log/hubble_osquery
+#      backuplogdir: /var/log/hubble_osquery/backuplogs
+#      maxlogfilesizethreshold: 1000000
+#      logfilethresholdinbytes: 100000
+#      enablediskstatslogging: True
+#      backuplogfilescount: 5
+#      mask_passwords: True
+#    returner: splunk_osqueryd_return
+#    run_on_start: True
 #  pulsar:
 #    function: pulsar.process
 #    seconds: 1

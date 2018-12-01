@@ -131,10 +131,13 @@ set prior to their use. You can find general config options for each returner at
 of each file located here
 https://github.com/hubblestack/hubble/tree/develop/hubblestack/extmods/returners.
 
-**Specify a returner when running Hubble from the command line:**::
+**Specify a returner when running Hubble from the command line:**
 
-    hubble hubble.audit --r RETURN, --return RETURN
+.. code-block::
+
+    hubble hubble.audit --r RETURN
+    hubble hubble.audit --return RETURN
 
 You can also define schedules for returners in the Hubble config file, which is typically
-located at ``/etc/hubble/hubble.conf``.
+located at ``/etc/hubble/hubble``.
 

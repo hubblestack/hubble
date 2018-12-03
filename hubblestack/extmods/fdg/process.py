@@ -117,7 +117,7 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, **kwargs):
                 chained.format(starting_seq)
         except (AttributeError, TypeError) as exc:
             raise ArgumentValueError(str(exc))
-    ret = _filter(chained, **kwargs)
+    ret = _filter(seq=chained, **kwargs)
     status = bool(ret)
 
     return status, ret
@@ -138,9 +138,8 @@ def _filter(seq,
         the function outputs [3, 4] - values less than or equal to 4, greater than 1,
         not equal to 2.
     '''
-    ret = seq
     for comp, value in kwargs.iteritems():
-        ret = [x for x in ret if _compare(comp, x, value)]
+        ret = [x for x in seq if _compare(comp, x, value)]
 
     return ret
 

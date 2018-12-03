@@ -15,13 +15,13 @@ from salt.exceptions import ArgumentValueError
 log = logging.getLogger(__name__)
 
 
-def filter_dict(dct, filter_values=False, extend_chained=True, chained=None, **kwargs):
+def filter_dict(starting_dict=None, filter_values=False, extend_chained=True, chained=None, **kwargs):
     '''
-    Given a target dict ``dct``, filter it and return the result.
+    Given a target dictionary, filter it and return the result.
 
-    By default, the ``dct`` will have ``.update()`` called on it
-    with ``chained`` as the only argument.
-    Set ``extend_chained`` to False to ignore ``chained``.
+    By default, ``chained`` will have ``.update()`` called on it
+    with ``starting_dict`` as the argument.
+    Set ``extend_chained`` to False to ignore ``starting_dict``.
 
     By default, the filtering will be done on keys.
     Set ``filter_values`` to True to filter by values.
@@ -32,9 +32,9 @@ def filter_dict(dct, filter_values=False, extend_chained=True, chained=None, **k
     ``kwargs`` is a dictionary mapping comparison types to values to compare against.
     '''
     if extend_chained:
-        if chained:
-            dct.update(chained)
-    ret = _filter_dict(dct, filter_values, **kwargs)
+        if starting_dict:
+            chained.update(starting_dict)
+    ret = _filter_dict(chained, filter_values, **kwargs)
     status = bool(ret)
 
     return status, ret
@@ -94,13 +94,13 @@ def _compare(comp, val1, val2):
     raise ArgumentValueError("Invalid argument '{}' should be in [gt, ge, lt, le, eq, ne]".format(comp))
 
 
-def filter_seq(seq, extend_chained=True, chained=None, **kwargs):
+def filter_seq(starting_seq=None, extend_chained=True, chained=None, **kwargs):
     '''
-    Given a target sequence ``seq``, filter it and return the result.
+    Given a target sequence sequence, filter it and return the result.
 
-    By default, the ``seq`` will have ``.extend()`` or ``.update()`` or ``.format()``
-    called on it with ``chained`` as the only argument. Set ``extend_chained`` to False
-    to ignore ``chained``.
+    By default, ``chained`` will have ``.extend()`` or ``.update()`` or ``.format()``
+    called on it with ``starting_seq`` as the only argument. Set ``extend_chained`` to False
+    to ignore ``starting_seq``.
 
     The first return value (status) will be True if the filtering is successful, and
     False othewise. The second argument will be the filtered sequence.
@@ -109,15 +109,15 @@ def filter_seq(seq, extend_chained=True, chained=None, **kwargs):
     '''
     if extend_chained:
         try:
-            if chained and isinstance(seq, set):
-                seq.update(chained)
-            elif chained and isinstance(seq, list):
-                seq.extend(chained)
-            elif chained and isinstance(seq, str):
-                seq.format(chained)
+            if starting_seq and isinstance(chained, set):
+                chained.update(starting_seq)
+            elif starting_seq and isinstance(chained, list):
+                chained.extend(starting_seq)
+            elif starting_seq and isinstance(chained, str):
+                chained.format(starting_seq)
         except (AttributeError, TypeError) as exc:
             raise ArgumentValueError(str(exc))
-    ret = _filter(seq, **kwargs)
+    ret = _filter(chained, **kwargs)
     status = bool(ret)
 
     return status, ret
@@ -145,101 +145,76 @@ def _filter(seq,
     return ret
 
 
-def get_index(lst, idx=0, get_last=False, append_chained=True, chained=None):
+def get_index(index=0, starting_list=None, append_chained=True, chained=None):
     '''
-    Given a list ``lst``, return the item found at ``idx``.
+    Given a list list, return the item found at ``index``.
 
-    By default, the ``lst`` will have ``.extend()`` called on it with
-    ``chained`` as the only argument.
+    By default, ``chained`` will have ``.extend()`` called on it with
+    ``starting_list`` as the only argument.
 
     The first return value (status) will be True if the return was successful, and
     False othewise. The second argument will be the requested list element.
 
-    ``append_chained`` is set to True when ``lst`` should be extended with ``chained``.
-    If set to False, chained is ignored.
+    ``append_chained`` is set to True when ``chained`` should be extended with ``starting_list``.
+    If set to False, ``starting_list`` is ignored.
 
-    ``get_last`` is used when the last element is requested; ``idx`` is overwritten.
     '''
     if append_chained:
-        if chained:
-            lst.extend(chained)
-    ret = _get_index(lst, idx, get_last)
+        if starting_list:
+            chained.extend(starting_list)
+    try:
+        ret = chained[index]
+    except IndexError:
+        log.error('List index out of range {}'.format(index))
+        return False, None
     status = bool(ret)
 
     return status, ret
 
 
-def _get_index(lst,
-               idx,
-               get_last):
+def get_key(key, starting_dict=None, extend_chained=True, chained=None):
     '''
-    Return the element found at index ``idx`` in the list ``lst`` or the last element if
-    ``get_last`` is set to True.
+    Given a dictionary, return an element by ``key``.
 
-    lst
-        The input list.
-
-    idx
-        The index.
-
-    get_last
-        Set to True when the last element is requested.
-    '''
-    if get_last:
-        idx = len(lst) - 1
-    try:
-        ret = lst[idx]
-    except IndexError:
-        log.error('List index out of range {}'.format(idx))
-        return None
-
-    return ret
-
-
-def get_key(dictionary, key, extend_chained=True, chained=None):
-    '''
-    Given a ``dictionary``, return an element by ``key``.
-
-    By default, the ``dictionary`` will have ``.update()`` called on it with
-    ``chained`` as the only argument. Set ``extend_chained`` to False
-    to ignore ``chained``.
+    By default, ``chained`` will have ``.update()`` called on it with
+    ``starting_dict`` as the only argument. Set ``extend_chained`` to False
+    to ignore ``starting_dict``.
 
     The first return value (status) will be True if the key is found, and
     False othewise. The second argument will be the value found by the key or
     None if the key is not present in the dictionary.
     '''
     if extend_chained:
-        if chained:
-            dictionary.update(chained)
+        chained.update(starting_dict)
     try:
-        ret = dictionary[key]
+        ret = chained[key]
     except KeyError:
         log.error("Key not found: {}".format(key))
-        ret = None
+        return False, None
     status = bool(ret)
 
     return status, ret
 
 
-def join(words, sep='', append_chained=True, chained=None):
+def join(words=None, sep='', append_chained=True, chained=None):
     '''
-    Given a list of strings ``words``, join them into a string, using ``sep`` as delimiter.
+    Given a list of strings, join them into a string, using ``sep`` as delimiter.
 
-    By default, the ``words`` will have ``.extend()`` called on it with
-    ``chained`` as the only argument.
+    By default, ``chained`` will have ``.extend()`` called on it with
+    ``words`` as the only argument.
 
     The first return value (status) will be True if the join was successful, and
     False othewise. The second argument will be the output of the ``join``
     command.
 
-    ``append_chained`` is set to True when ``words`` should be extended with ``chained``.
-    If set to False, chained is ignored.
+    ``append_chained`` is set to True when ``chained`` should be extended with ``words``.
+    If set to False, ``words`` is ignored.
     '''
     if append_chained:
-        if chained:
-            words.extend(chained)
+        if words:
+            chained.extend(words)
     try:
-        ret = sep.join(words)
+        ret = sep.join(chained)
     except (TypeError, AttributeError):
         log.error("Invalid arguments type")
         ret = None
@@ -248,29 +223,29 @@ def join(words, sep='', append_chained=True, chained=None):
     return status, ret
 
 
-def sort(seq, desc=False, lexico=False, extend_chained=True, chained=None):
+def sort(seq=None, desc=False, lexico=False, extend_chained=True, chained=None):
     '''
-    Given a target sequence ``seq``, sort it and return the sorted result.
+    Given a target sequence, sort it and return the sorted result.
 
-    By default, the ``seq`` will have ``.extend()`` or ``.update()`` or ``.format()``
-    called on it with ``chained`` as the only argument. Set ``extend_chained`` to False
-    to ignore ``chained``.
+    By default, ``chained`` will have ``.extend()`` or ``.update()`` or ``.format()``
+    called on it with ``seq`` as the only argument. Set ``extend_chained`` to False
+    to ignore ``seq``.
 
     The first return value (status) will be True if the sort is successful, and
     False othewise. The second argument will be the sorted sequence.
     '''
     if extend_chained:
         try:
-            if chained and isinstance(seq, (dict, set)):
-                seq.update(chained)
-            elif chained and isinstance(seq, list):
-                seq.extend(chained)
-            elif chained and isinstance(seq, str):
-                seq.format(chained)
+            if seq and isinstance(chained, (dict, set)):
+                chained.update(seq)
+            elif seq and isinstance(chained, list):
+                chained.extend(seq)
+            elif seq and isinstance(chained, str):
+                chained.format(seq)
         except (AttributeError, TypeError):
             log.error("Invalid arguments type")
             return False, None
-    ret = _sort(seq, desc, lexico)
+    ret = _sort(chained, desc, lexico)
     status = bool(ret)
 
     return status, ret

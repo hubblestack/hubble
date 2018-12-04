@@ -40,7 +40,7 @@ def __virtual__():
 
 def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.yaml',
             verbose=False):
-    '''
+    r'''
     Watch the configured files
 
     Example yaml config on fileserver (targeted by configfile option)

@@ -63,7 +63,7 @@ def _get_conn():
         _d = os.path.dirname(_p)
         if _d and not os.path.isdir(_d):
             log.debug('creating directory {0}'.format(_d))
-            os.makedirs(_d, 0755)
+            os.makedirs(_d, 0o755)
         log.debug('connecting to database in {0}'.format(_p))
         _conn = sqlite3.connect( _options.get('dumpster', 'hubble-returns.db') )
         log.debug('creating ret table')

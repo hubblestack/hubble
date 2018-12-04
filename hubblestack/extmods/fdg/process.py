@@ -15,13 +15,13 @@ from salt.exceptions import ArgumentValueError
 log = logging.getLogger(__name__)
 
 
-def filter_dict(starting_dict=None, filter_values=False, extend_chained=True, chained=None, **kwargs):
+def filter_dict(starting_dict=None, filter_values=False, update_chained=True, chained=None, **kwargs):
     '''
     Given a target dictionary, filter it and return the result.
 
     By default, ``chained`` will have ``.update()`` called on it
     with ``starting_dict`` as the argument.
-    Set ``extend_chained`` to False to ignore ``starting_dict``.
+    Set ``update_chained`` to False to ignore ``starting_dict``.
 
     By default, the filtering will be done on keys.
     Set ``filter_values`` to True to filter by values.
@@ -31,7 +31,7 @@ def filter_dict(starting_dict=None, filter_values=False, extend_chained=True, ch
 
     ``kwargs`` is a dictionary mapping comparison types to values to compare against.
     '''
-    if extend_chained:
+    if update_chained:
         if starting_dict:
             chained.update(starting_dict)
     ret = _filter_dict(chained, filter_values, **kwargs)
@@ -144,7 +144,7 @@ def _filter(seq,
     return ret
 
 
-def get_index(index=0, starting_list=None, append_chained=True, chained=None):
+def get_index(index=0, starting_list=None, extend_chained=True, chained=None):
     '''
     Given a list list, return the item found at ``index``.
 
@@ -154,11 +154,11 @@ def get_index(index=0, starting_list=None, append_chained=True, chained=None):
     The first return value (status) will be True if the return was successful, and
     False othewise. The second argument will be the requested list element.
 
-    ``append_chained`` is set to True when ``chained`` should be extended with ``starting_list``.
+    ``extend_chained`` is set to True when ``chained`` should be extended with ``starting_list``.
     If set to False, ``starting_list`` is ignored.
 
     '''
-    if append_chained:
+    if extend_chained:
         if starting_list:
             chained.extend(starting_list)
     try:
@@ -171,7 +171,7 @@ def get_index(index=0, starting_list=None, append_chained=True, chained=None):
     return status, ret
 
 
-def get_key(key, starting_dict=None, extend_chained=True, chained=None):
+def get_key(key, starting_dict=None, update_chained=True, chained=None):
     '''
     Given a dictionary, return an element by ``key``.
 
@@ -183,7 +183,7 @@ def get_key(key, starting_dict=None, extend_chained=True, chained=None):
     False othewise. The second argument will be the value found by the key or
     None if the key is not present in the dictionary.
     '''
-    if extend_chained:
+    if update_chained:
         chained.update(starting_dict)
     try:
         ret = chained[key]
@@ -195,7 +195,7 @@ def get_key(key, starting_dict=None, extend_chained=True, chained=None):
     return status, ret
 
 
-def join(words=None, sep='', append_chained=True, chained=None):
+def join(words=None, sep='', extend_chained=True, chained=None):
     '''
     Given a list of strings, join them into a string, using ``sep`` as delimiter.
 
@@ -206,10 +206,10 @@ def join(words=None, sep='', append_chained=True, chained=None):
     False othewise. The second argument will be the output of the ``join``
     command.
 
-    ``append_chained`` is set to True when ``chained`` should be extended with ``words``.
+    ``extend_chained`` is set to True when ``chained`` should be extended with ``words``.
     If set to False, ``words`` is ignored.
     '''
-    if append_chained:
+    if extend_chained:
         if words:
             chained.extend(words)
     try:

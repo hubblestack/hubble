@@ -363,6 +363,10 @@ class HubbleStatus(object):
         return r
 
     @classmethod
+    def as_json(cls, indent=2):
+        return json.dumps(cls.stats(), indent=indent)
+
+    @classmethod
     def dumpster_fire(cls):
         ''' dump the status.json file to cachedir
 
@@ -375,7 +379,7 @@ class HubbleStatus(object):
             dumpster = os.path.join(cachedir, dumpster)
         try:
             with open(dumpster, 'w') as fh:
-                fh.write(json.dumps(cls.stats(), indent=2))
+                fh.write(cls.as_json())
                 fh.write('\n')
             log.info("wrote HubbleStatus to %s", dumpster)
         except:

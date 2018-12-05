@@ -9,6 +9,25 @@ a status file on request.
     sudo pkill -10 hubble
     echo -n hubble alive:
     sudo cat /var/cache/hubble/status.json | jq -r .HEALTH.alive
+
+hubble.status options:
+
+    hubble:status:dumpster
+        The filename for the status dump (default: status.json).  If the
+        filename begins with a '/', the filename is assumed to be a full
+        pathname otherwise, the file will be placed in the hubble `cachedir`.
+
+    hubble:status:hung_time
+        If no counters have advanced or updated in (default) 900s, then the status dump will report
+        hubble as being "hung."
+
+    hubble:status:warn_time
+        If no counters have advanced or updated in (default) 300s, then the status dump will report
+        hubble as being "warn."
+
+    hubble:status:good_time
+        If any counter has advanced or updated in the last (default) 60s, then
+        the status dump will report the status as "yes."
 '''
 
 from collections import namedtuple
@@ -27,9 +46,8 @@ DEFAULTS = {
     'good_time':  60,
 }
 
-
 __opts__ = dict()
-def get_hubble_status_opt(name):
+def get_hubble_status_opt(name, require_type=None):
     ''' try to locate HubbleStatus options in
         * __opts__['hubble_status'][name]
         * __opts__['hubble']['status'][name]
@@ -48,6 +66,11 @@ def get_hubble_status_opt(name):
             break
     if t is None:
         t = DEFAULTS.get(name)
+    if require_type and callable(require_type):
+        try:
+            t = require_type(t)
+        except:
+            pass
     return t
 
 def get_hubble_or_salt_opt(name):
@@ -340,6 +363,25 @@ class HubbleStatus(object):
         return r
 
     @classmethod
+    def dumpster_fire(cls):
+        ''' dump the status.json file to cachedir
+
+            Location and filename can be adjusted with the cachedir and
+            hubble:status:dumpster options (see above).
+        '''
+        dumpster = get_hubble_status_opt('dumpster') or 'status.json'
+        if not dumpster.startswith('/'):
+            cachedir = get_hubble_or_salt_opt('cachedir') or '/tmp'
+            dumpster = os.path.join(cachedir, dumpster)
+        try:
+            with open(dumpster, 'w') as fh:
+                fh.write(json.dumps(cls.stats(), indent=2))
+                fh.write('\n')
+            log.info("wrote HubbleStatus to %s", dumpster)
+        except:
+            log.exception("ignoring exception during dumpster fire")
+
+    @classmethod
     def start_sigusr1_signal_handler(cls):
         ''' start the signal.SIGUSR1 handler (dumps status to
             /var/cache/hubble/status.json or whatever is specified in
@@ -349,20 +391,9 @@ class HubbleStatus(object):
             cls._signaled = True
             if not hasattr(signal, 'SIGUSR1'):
                 # TODO: invent invocation that works in windows instead of just complaining
-                log.info("signal package lacks SIGUSR1, ignoring request to setup SIGUSR1 status.json handler")
+                log.info("signal package lacks SIGUSR1, skipping SIGUSR1 status.json handler setup")
                 return
-            def dumpster_fire(signum, frame):
-                cachedir = get_hubble_or_salt_opt('cachedir') or ''
-                dumpster = get_hubble_status_opt('dumpster') or 'status.json'
-                dumpster = os.path.join(cachedir, dumpster)
-                try:
-                    with open(dumpster, 'w') as fh:
-                        fh.write(json.dumps(cls.stats(), indent=2))
-                        fh.write('\n')
-                    log.info("wrote HubbleStatus to %s", dumpster)
-                except:
-                    log.exception("ignoring exception during dumpster fire")
-            signal.signal(signal.SIGUSR1, dumpster_fire)
+            signal.signal(signal.SIGUSR1, cls.dumpster_fire)
 
 def __setup_for_testing():
     global __opts__

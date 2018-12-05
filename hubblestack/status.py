@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 '''
-hubble.status aims to be a very lightweight stats tracker for the purposes of
-verifying the health of daemon. It piggybacks the normal hubble operations,
+hubblestack.status aims to be a very lightweight stats tracker for the purposes
+of verifying the health of daemon. It piggybacks the normal hubble operations,
 increments counters, tracks function call times (and averages), and can dump to
 a status file on request.
 
@@ -10,7 +10,7 @@ a status file on request.
     echo -n hubble alive:
     sudo cat /var/cache/hubble/status.json | jq -r .HEALTH.alive
 
-hubble.status options:
+hubblestack.status options:
 
     hubble:status:dumpster
         The filename for the status dump (default: status.json).  If the

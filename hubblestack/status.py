@@ -243,7 +243,7 @@ class HubbleStatus(object):
             @wraps(f)
             def inner(*a, **kw):
                 self.mark(mark_name)
-                r = f(*a,**kw)
+                r = f(*a, **kw)
                 self.fin(mark_name)
                 return r
             return inner

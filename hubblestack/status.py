@@ -400,7 +400,7 @@ class HubbleStatus(object):
                 return
             signal.signal(signal.SIGUSR1, cls.dumpster_fire)
 
-def __setup_for_testing():
+def _setup_for_testing():
     global __opts__
     import hubblestack.daemon
     parsed_args = hubblestack.daemon.parse_args()

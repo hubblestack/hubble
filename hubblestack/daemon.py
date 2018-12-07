@@ -33,8 +33,10 @@ from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime
 from hubblestack.hangtime import hangtime_wrapper
+import hubblestack.status
 
 log = logging.getLogger(__name__)
+hubble_status = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
 
 # Importing syslog fails on windows
 if not salt.utils.platform.is_windows():
@@ -236,6 +238,7 @@ def getlastrunbybuckets(buckets, seconds):
         last_run = bucket_execution_time - seconds
     return last_run
 
+@hubble_status.watch
 def schedule():
     '''
     Rudimentary single-pass scheduler
@@ -643,6 +646,7 @@ def load_config():
 # tag='hubble:rg' will appear in the logs to differentiate this from other
 # hangtime_wrapper timers (if any)
 @hangtime_wrapper(timeout=600, repeats=True, tag='hubble:rg')
+@hubble_status.watch
 def refresh_grains(initial=False):
     '''
     Refresh the grains, pillar, utils, modules, and returners
@@ -699,6 +703,9 @@ def refresh_grains(initial=False):
     hubblestack.splunklogging.__grains__ = __grains__
     hubblestack.splunklogging.__salt__ = __salt__
     hubblestack.splunklogging.__opts__ = __opts__
+
+    hubblestack.status.__opts__ = __opts__
+    hubble_status.start_sigusr1_signal_handler()
 
     if not initial and __salt__['config.get']('splunklogging', False):
         class MockRecord(object):

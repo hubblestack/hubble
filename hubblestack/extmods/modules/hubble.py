@@ -28,6 +28,8 @@ import salt
 import salt.utils
 from salt.exceptions import CommandExecutionError
 from hubblestack import __version__
+from hubblestack.status import HubbleStatus
+hubble_status = HubbleStatus(__name__, 'top', 'audit')
 try:
     from nova_loader import NovaLazyLoader
 except ImportError:
@@ -36,6 +38,7 @@ except ImportError:
 __nova__ = {}
 
 
+@hubble_status.watch
 def audit(configs=None,
           tags='*',
           verbose=None,
@@ -354,6 +357,7 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
     return results
 
 
+@hubble_status.watch
 def top(topfile='top.nova',
         verbose=None,
         show_success=None,

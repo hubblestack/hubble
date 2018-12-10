@@ -87,7 +87,7 @@ fileserver_backend:
 #      pidfile: /var/run/hubble_osquery/osquery.pidfile
 #      hashfile: /var/cache/hubble/osquery/hash_of_flagfile.txt
 #    run_on_start: True
-#  nebula_osquery:
+#  nebula_osqueryd_log_parser:
 #    function: nebula.osqueryd_log_parser
 #    seconds: 60
 #    splay: 10

@@ -3,7 +3,7 @@
 Flexible Data Gathering: grep
 =============================
 
-This fdg module allows for grepping against files
+This fdg module allows for grepping against files and strings
 '''
 from __future__ import absolute_import
 import logging
@@ -14,12 +14,41 @@ from salt.exceptions import CommandExecutionError
 log = logging.getLogger(__name__)
 
 
-def grep(path, pattern, grep_args=None, format_chained=True, chained=None):
+def file(path, pattern, grep_args=None, format_pattern=True, format_chained=True, chained=None):
     '''
     Given a target ``path``, call ``grep`` to search for for ``pattern`` in that
     file.
 
     By default, the ``pattern`` will have ``.format()`` called on it with
+    ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
+    substitute the chained value.)
+    Set ``format_pattern`` to Falso to format the ``path`` instead.
+    If you want to avoid having to escape curly braces, set ``format_chained=False``.
+
+    The first return value (status) will be True if the pattern is found, and
+    False othewise. The second argument will be the output of the ``grep``
+    command.
+
+    ``grep_args`` can be used to pass in arguments to grep.
+    '''
+    if format_chained:
+        if format_pattern:
+            pattern = pattern.format(chained)
+        else:
+            path = path.format(chained)
+    if grep_args is None:
+        grep_args = []
+    ret = _grep(pattern=pattern, path=path, *grep_args)
+    status = bool(ret)
+    return status, ret
+
+
+def stdin(pattern, starting_string=None, grep_args=None, format_chained=True, chained=None):
+    '''
+    Given a target string, call ``grep`` to search for for ``pattern`` in that
+    string.
+
+    By default, the ``starting_string`` will have ``.format()`` called on it with
     ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
     substitute the chained value.) If you want to avoid having to escape
     curly braces, set ``format_chained=False``.
@@ -31,23 +60,28 @@ def grep(path, pattern, grep_args=None, format_chained=True, chained=None):
     ``grep_args`` can be used to pass in arguments to grep.
     '''
     if format_chained:
-        pattern = pattern.format(chained)
+        if starting_string:
+            chained = starting_string.format(chained)
     if grep_args is None:
         grep_args = []
-    ret = _grep(path, pattern, *grep_args)
+    ret = _grep(pattern=pattern, string=chained, *grep_args)
     status = bool(ret)
     return status, ret
 
 
-def _grep(path,
-          pattern,
+def _grep(pattern,
+          path=None,
+          string=None,
           *args):
     '''
-    Grep for a string in the specified file
+    Grep for a string in the specified file or string
 
     .. note::
         This function's return value is slated for refinement in future
         versions of Salt
+
+    pattern
+        Pattern to match. For example: ``test``, or ``a[0-5]``
 
     path
         Path to the file to be searched
@@ -57,8 +91,8 @@ def _grep(path,
             is being used then the path should be quoted to keep the shell from
             attempting to expand the glob expression.
 
-    pattern
-        Pattern to match. For example: ``test``, or ``a[0-5]``
+    string
+        String to search
 
     args
         Additional command-line flags to pass to the grep command. For example:
@@ -77,17 +111,20 @@ def _grep(path,
         salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr -- -i -B2
         salt '*' file.grep "/etc/sysconfig/network-scripts/*" ipaddr -- -i -l
     '''
-    path = os.path.expanduser(path)
+    if path:
+        path = os.path.expanduser(path)
 
     options = []
     if args and not isinstance(args, (list, tuple)):
         args = [args]
     for arg in args:
         options += arg.split()
-    cmd = ['grep'] + options + [pattern] + [path]
+    cmd = ['grep'] + options + [pattern]
+    if path:
+        cmd += [path]
 
     try:
-        ret = __salt__['cmd.run_stdout'](cmd, python_shell=False, ignore_retcode=True)
+        ret = __salt__['cmd.run_stdout'](cmd, python_shell=False, ignore_retcode=True, stdin=string)
     except (IOError, OSError) as exc:
         raise CommandExecutionError(exc.strerror)
 

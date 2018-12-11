@@ -134,6 +134,12 @@ def fdg(fdg_file, starting_chained=None):
     path to a file on the system), execute that fdg file, starting with the
     ``main`` block
 
+    Returns a tuple, with the first item in that tuple being a two-item tuple
+    with the fdg_file and the starting_chained value (dumped to a json string),
+    and the second item being the results::
+
+        ((fdg_file, starting_chained), results
+
     starting_chained
         Allows you to pass in a starting argument, which will be treated as
         the ``chained`` argument for the ``main`` block. Optional.
@@ -167,7 +173,7 @@ def fdg(fdg_file, starting_chained=None):
 
     # Recursive execution of the blocks
     ret = _fdg_execute('main', block_data, chained=starting_chained)
-    return ret
+    return (fdg_file, json.dumps(starting_chained)), ret
 
 
 def top(fdg_topfile='salt://fdg/top.fdg'):
@@ -195,8 +201,8 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
 
     Returns will be compiled into a dictionary. The keys are two-item tuples,
     the first of which is the fdg file, and the second of which is the
-    (optional) ``starting_chained`` value. The values in the dictionary are
-    the associated returns from the fdg runs.
+    (optional) ``starting_chained`` value dumped to a json string. The values
+    in the dictionary are the associated returns from the fdg runs.
     '''
     fdg_routines = _get_top_data(fdg_topfile)
 
@@ -204,10 +210,11 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
     for fdg_file in fdg_routines:
         if isinstance(fdg_file, dict):
             for key, val in fdg_file.iteritems():
-                ret[(key, val)] = fdg(_fdg_saltify(key), val)
+                retkey, retval = fdg(_fdg_saltify(key), val)
+                ret[retkey] = retval
         else:
-            ret[(fdg_file, None)] = fdg(_fdg_saltify(fdg_file))
-
+            retkey, retval = fdg(_fdg_saltify(fdg_file))
+            ret[retkey] = retval
     return ret
 
 

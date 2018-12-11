@@ -41,6 +41,7 @@ def _get_splunk_options(space, modality, **kw):
         'timeout': 9.05,
         'index_extracted_fields': [],
         'http_event_collector_ssl_verify': True,
+        'add_query_to_sourcetype': True,
     }
 
     nicknames = kw.pop('_nick', {'sourcetype_log': 'sourcetype'})

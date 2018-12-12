@@ -14,16 +14,15 @@ from salt.exceptions import CommandExecutionError
 log = logging.getLogger(__name__)
 
 
-def file(path, pattern, grep_args=None, format_pattern=True, format_chained=True, chained=None):
+def file(path, pattern, grep_args=None, format_chained=True, chained=None):
     '''
     Given a target ``path``, call ``grep`` to search for for ``pattern`` in that
     file.
 
-    By default, the ``pattern`` will have ``.format()`` called on it with
+    By default, the ``pattern`` and ``path`` will have ``.format()`` called on them with
     ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
-    substitute the chained value.)
-    Set ``format_pattern`` to Falso to format the ``path`` instead.
-    If you want to avoid having to escape curly braces, set ``format_chained=False``.
+    substitute the chained value.) If you want to avoid having to escape curly braces, 
+    set ``format_chained=False``.
 
     The first return value (status) will be True if the pattern is found, and
     False othewise. The second argument will be the output of the ``grep``
@@ -32,10 +31,8 @@ def file(path, pattern, grep_args=None, format_pattern=True, format_chained=True
     ``grep_args`` can be used to pass in arguments to grep.
     '''
     if format_chained:
-        if format_pattern:
-            pattern = pattern.format(chained)
-        else:
-            path = path.format(chained)
+        pattern = pattern.format(chained)
+        path = path.format(chained)
     if grep_args is None:
         grep_args = []
     ret = _grep(pattern=pattern, path=path, *grep_args)
@@ -52,6 +49,9 @@ def stdin(pattern, starting_string=None, grep_args=None, format_chained=True, ch
     ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
     substitute the chained value.) If you want to avoid having to escape
     curly braces, set ``format_chained=False``.
+
+    .. note::
+        If no ``starting_string`` is provided, the ``chained``value  will be used.
 
     The first return value (status) will be True if the pattern is found, and
     False othewise. The second argument will be the output of the ``grep``

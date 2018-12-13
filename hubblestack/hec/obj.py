@@ -75,7 +75,6 @@ class Payload(object):
         elif 'time' not in dat:
             dat['time'] = str(int(time.time()))
 
-        self.strip_empty_dict_entries(dat)
         self.rename_event_fields_in_payload(dat)
         self.dat = json.dumps(dat)
 
@@ -98,25 +97,6 @@ class Payload(object):
                 if v is not None:
                     e[k + '_meta'] = v
 
-
-    @classmethod
-    def strip_empty_dict_entries(cls, dat):
-        todo = [dat]
-        while todo:
-            dat = todo.pop(0)
-            if isinstance(dat, dict):
-                remove_keys = [k for k in dat if not dat[k] and dat[k] not in (0,False) ]
-                for k in remove_keys:
-                    del dat[k]
-                for v in dat.values():
-                    if isinstance(v, (list,tuple,dict)):
-                        if v not in todo:
-                            todo.append(v)
-            else:
-                for item in dat:
-                    if isinstance(item, (list,tuple,dict)):
-                        if item not in todo:
-                            todo.append(item)
 
 # Thanks to George Starcher for the http_event_collector class (https://github.com/georgestarcher/)
 # Default batch max size to match splunk's default limits for max byte

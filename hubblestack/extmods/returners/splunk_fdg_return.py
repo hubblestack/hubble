@@ -173,7 +173,7 @@ def returner(ret):
                             payload.update({'sourcetype': opts['sourcetype']})
 
                         # Remove any empty fields from the event payload
-                        remove_keys = [k for k in event if event[k] == ""]
+                        remove_keys = [k for k in event if event[k] == "" and not k.startswith('fdg_')]
                         for k in remove_keys:
                             del event[k]
 

@@ -232,6 +232,7 @@ def _fdg_execute(block_id, block_data, chained=None):
     Recursive function which executes a block and any blocks chained by that
     block (by calling itself).
     '''
+    log.debug('Executing fdg block with id {0} and chained value {1}'.format(block_id, chained))
     block = block_data.get(block_id)
 
     _check_block(block, block_id)
@@ -247,18 +248,25 @@ def _fdg_execute(block_id, block_data, chained=None):
         returner = None
 
     if 'xpipe_on_true' in block and status:
+        log.debug('Piping via chaining keyword xpipe_on_true.')
         return _xpipe(ret, block_data, block['xpipe_on_true'], returner)
     elif 'xpipe_on_false' in block and not status:
+        log.debug('Piping via chaining keyword xpipe_on_false.')
         return _xpipe(ret, block_data, block['xpipe_on_false'], returner)
     elif 'pipe_on_true' in block and status:
+        log.debug('Piping via chaining keyword pipe_on_true.')
         return _pipe(ret, block_data, block['pipe_on_true'], returner)
     elif 'pipe_on_false' in block and not status:
+        log.debug('Piping via chaining keyword pipe_on_false.')
         return _pipe(ret, block_data, block['pipe_on_false'], returner)
     elif 'xpipe' in block:
+        log.debug('Piping via chaining keyword xpipe.')
         return _xpipe(ret, block_data, block['xpipe'], returner)
     elif 'pipe' in block:
+        log.debug('Piping via chaining keyword pipe.')
         return _pipe(ret, block_data, block['pipe'], returner)
     else:
+        log.debug('No valid chaining keyword matched. Returning.')
         if returner:
             _return(ret, returner)
         return ret

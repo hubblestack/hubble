@@ -115,7 +115,6 @@ will end and any ``return`` keywords will be evaluated as we move back up the
 call chain.
 '''
 from __future__ import absolute_import
-import json
 import logging
 import os
 import salt.loader
@@ -136,7 +135,7 @@ def fdg(fdg_file, starting_chained=None):
     ``main`` block
 
     Returns a tuple, with the first item in that tuple being a two-item tuple
-    with the fdg_file and the starting_chained value (dumped to a json string),
+    with the fdg_file and the starting_chained value (dumped to a string),
     and the second item being the results::
 
         ((fdg_file, starting_chained), results
@@ -174,7 +173,7 @@ def fdg(fdg_file, starting_chained=None):
 
     # Recursive execution of the blocks
     ret = _fdg_execute('main', block_data, chained=starting_chained)
-    return (fdg_file, json.dumps(starting_chained)), ret
+    return (fdg_file, str(starting_chained)), ret
 
 
 def top(fdg_topfile='salt://fdg/top.fdg'):
@@ -202,7 +201,7 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
 
     Returns will be compiled into a dictionary. The keys are two-item tuples,
     the first of which is the fdg file, and the second of which is the
-    (optional) ``starting_chained`` value dumped to a json string. The values
+    (optional) ``starting_chained`` value dumped to a string. The values
     in the dictionary are the associated returns from the fdg runs.
     '''
     fdg_routines = _get_top_data(fdg_topfile)

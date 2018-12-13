@@ -437,10 +437,10 @@ def run_function():
             __returners__[returner](returner_ret)
 
     # TODO instantiate the salt outputter system?
-    if(__opts__['json_print']):
+    if __opts__['json_print']:
         print(json.dumps(ret))
     else:
-        if(__opts__['no_pprint']):
+        if not __opts__['no_pprint']:
             pprint.pprint(ret)
         else:
             print(ret)

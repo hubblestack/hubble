@@ -90,7 +90,6 @@ def returner(ret):
                                        http_event_collector_ssl_verify=http_event_collector_ssl_verify,
                                        proxy=proxy, timeout=timeout)
 
-            # st = 'salt:hubble:nova'
             data = ret['return']
             minion_id = ret['id']
             jid = ret['jid']

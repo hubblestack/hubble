@@ -138,6 +138,7 @@ def returner(ret):
                     data = {data[0]: data[1]}
                 for fdg_info, fdg_results in data.iteritems():
                     fdg_file, starting_chained = fdg_info
+                    fdg_file = fdg_file.lower().replace(' ', '_')
                     if not isinstance(fdg_results, list):
                         fdg_results = [fdg_results]
                     for fdg_result in fdg_results:
@@ -168,7 +169,7 @@ def returner(ret):
                         payload.update({'host': fqdn})
                         payload.update({'index': opts['index']})
                         if opts['add_query_to_sourcetype']:
-                            payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], query_name)})
+                            payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], fdg_file)})
                         else:
                             payload.update({'sourcetype': opts['sourcetype']})
 

@@ -115,6 +115,7 @@ will end and any ``return`` keywords will be evaluated as we move back up the
 call chain.
 '''
 from __future__ import absolute_import
+import json
 import logging
 import os
 import salt.loader

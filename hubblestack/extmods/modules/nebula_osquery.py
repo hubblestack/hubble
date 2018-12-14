@@ -391,9 +391,10 @@ def _mask_object(object_to_be_masked, topfile):
               attributes_to_mask: # Values under these keys in the dict will be
                 - 'value'  # masked, assuming one of the blacklisted_patterns
                            # is found under attribute_to_check in the same dict
-              blacklisted_patterns:  # Strings to look for under attribute_to_check. No regex support.
+              blacklisted_patterns:  # Strings to look for under attribute_to_check. Globbing support
                 - 'ETCDCTL_READ_PASSWORD'
                 - 'ETCDCTL_WRITE_PASSWORD'
+                - '*PASSWORD*'
 
     blacklisted_patterns (for blacklisted_strings)
 
@@ -530,11 +531,16 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_with):
     if isinstance(object_to_mask, list):
         for child in object_to_mask:
             _recursively_mask_objects(child, blacklisted_object, mask_with)
-    elif blacklisted_object['attribute_to_check'] in object_to_mask and \
-         object_to_mask[blacklisted_object['attribute_to_check']] in blacklisted_object['blacklisted_patterns']:
-        for key in blacklisted_object['attributes_to_mask']:
-            if key in object_to_mask:
-                object_to_mask[key] = mask_with
+    elif blacklisted_object['attribute_to_check'] in object_to_mask:
+        mask = False
+        for blacklisted_pattern in blacklisted_object['blacklisted_patterns']:
+            if fnmatch.fnmatch(object_to_mask[blacklisted_object['attribute_to_check']], blacklisted_pattern):
+                mask = True
+                break
+        if mask:
+            for key in blacklisted_object['attributes_to_mask']:
+                if key in object_to_mask:
+                    object_to_mask[key] = mask_with
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):

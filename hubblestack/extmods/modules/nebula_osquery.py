@@ -251,8 +251,7 @@ def queries(query_group,
     return ret
 
 
-def osqueryd_monitor(servicename='hubble_osqueryd',
-                     configfile=None,
+def osqueryd_monitor(configfile=None,
                      flagfile=None,
                      logdir=None,
                      databasepath=None,
@@ -264,9 +263,6 @@ def osqueryd_monitor(servicename='hubble_osqueryd',
     Whenever it detects that osqueryd is not running, it will start the osqueryd. 
     Also, it checks for conditions that would require osqueryd to restart(such as changes in flag file content) 
     On such conditions, osqueryd will get restarted, thereby loading new files.
-
-    servicename
-        service name to use in Windows. Default is 'hubble_osqueryd'
 
     configfile
         Path to osquery configuration file.
@@ -293,6 +289,7 @@ def osqueryd_monitor(servicename='hubble_osqueryd',
     log.info('cached osqueryd files to cachedir')
     cachedir = os.path.join(__opts__.get('cachedir'),'files',saltenv,'osqueryd')
     base_path = cachedir
+    servicename = "hubble_osqueryd"
     if salt.utils.platform.is_windows():
         log.info("System is windows")
         if not pidfile:
@@ -310,9 +307,10 @@ def osqueryd_monitor(servicename='hubble_osqueryd',
         osqueryd_running = _osqueryd_running_status_windows(servicename)
         if not osqueryd_running:
             _start_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, servicename)
-        osqueryd_restart = _osqueryd_restart_required(hashfile, flagfile)
-        if osqueryd_restart:
-            _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
+        else:
+            osqueryd_restart = _osqueryd_restart_required(hashfile, flagfile)
+            if osqueryd_restart:
+                _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
 
     else:
         log.info("Not windows")
@@ -331,9 +329,10 @@ def osqueryd_monitor(servicename='hubble_osqueryd',
         osqueryd_running = _osqueryd_running_status(pidfile, servicename)
         if not osqueryd_running:
             _start_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, servicename)
-        osqueryd_restart = _osqueryd_restart_required(hashfile, flagfile)
-        if osqueryd_restart:
-            _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
+        else:
+            osqueryd_restart = _osqueryd_restart_required(hashfile, flagfile)
+            if osqueryd_restart:
+                _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
 
 
 def osqueryd_log_parser(osqueryd_logdir=None, 
@@ -817,15 +816,18 @@ def _osqueryd_running_status(pidfile, servicename):
             xpid = 0
             log.warn('unable to parse pid="{pid}" in pidfile={file}'.format(pid=xpid,file=pidfile))
           if xpid:
-            log.warn('pidfile={file} exists and contains pid={pid}'.format(file=pidfile, pid=xpid))
+            log.info('pidfile={file} exists and contains pid={pid}'.format(file=pidfile, pid=xpid))
             if os.path.isdir("/proc/{pid}".format(pid=xpid)):
-              with open("/proc/{pid}/cmdline".format(pid=xpid),'r') as f2:
-                cmdline = f2.readline().strip().strip('\x00').replace('\x00',' ')
-                if 'osqueryd' in cmdline:
-                  log.info("process folder present and process is osqueryd")
-                  osqueryd_running = True
-                else:
-                  log.error("process is not osqueryd, attempting to start osqueryd")
+              try:
+                with open("/proc/{pid}/cmdline".format(pid=xpid),'r') as f2:
+                  cmdline = f2.readline().strip().strip('\x00').replace('\x00',' ')
+                  if 'osqueryd' in cmdline:
+                    log.info("process folder present and process is osqueryd")
+                    osqueryd_running = True
+                  else:
+                    log.error("process is not osqueryd, attempting to start osqueryd")
+              except:
+                log.error("process's cmdline cannot be determined, attempting to start osqueryd")
             else:
               log.error("process folder not present, attempting to start osqueryd")
           else:
@@ -843,25 +845,28 @@ def _osqueryd_restart_required(hashfile, flagfile):
     '''
     This function will check whether osqueryd needs to be restarted
     '''
-    open_file = open(flagfile, 'r')
-    file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
-    hash_md5 = md5()
-    hash_md5.update(file_content.encode('ISO-8859-1'))
-    new_hash = hash_md5.hexdigest()
+    try:
+        open_file = open(flagfile, 'r')
+        file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
+        hash_md5 = md5()
+        hash_md5.update(file_content.encode('ISO-8859-1'))
+        new_hash = hash_md5.hexdigest()
 
-    if not os.path.isfile(hashfile):
-        f = open(hashfile, "w")
-        f.write(new_hash)
-        return False
-    else:
-        f = open(hashfile, "r")
-        old_hash = f.read()
-        if old_hash != new_hash:
-          log.info('old hash is {0} and new hash is {1}'.format(old_hash, new_hash))
-          log.info('changes detected in flag file')
-          return True
+        if not os.path.isfile(hashfile):
+            f = open(hashfile, "w")
+            f.write(new_hash)
+            return False
         else:
-          log.info('no changes detected in flag file')
+            f = open(hashfile, "r")
+            old_hash = f.read()
+            if old_hash != new_hash:
+                log.info('old hash is {0} and new hash is {1}'.format(old_hash, new_hash))
+                log.info('changes detected in flag file')
+                return True
+            else:
+                log.info('no changes detected in flag file')
+    except:
+        log.error("some error occured, unable to determine whether osqueryd need to be restarted, not restarting osqueryd")
     return False
 
 

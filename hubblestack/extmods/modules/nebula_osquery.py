@@ -25,6 +25,7 @@ from __future__ import absolute_import
 
 import copy
 import glob
+import fnmatch
 import json
 import logging
 import os

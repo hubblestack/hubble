@@ -24,6 +24,7 @@ nebula_osquery:
 from __future__ import absolute_import
 
 import copy
+import fnmatch
 import json
 import logging
 import os

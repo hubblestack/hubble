@@ -96,3 +96,25 @@ class TestReadfile():
         status, ret = hubblestack.extmods.fdg.readfile.json(json_file, subkey='menuitem,15', sep=',')
         assert expected_status == status
         assert expected_ret == ret
+
+    def test_json_EmptyFile_EmptyReturn(self, json_file):
+        '''
+        Test that given an empty json file, the function returns False status and None value
+        '''
+        with open(json_file, 'r+') as invalid_file:
+            invalid_file.truncate(0)
+        expected_status, expected_ret = False, None
+        status, ret = hubblestack.extmods.fdg.readfile.json(json_file, subkey='id')
+        assert expected_status == status
+        assert expected_ret == ret
+
+    def test_json_InvalidJsonFile_EmptyReturn(self, json_file):
+        '''
+        Test that given an invalid json file, the function returns False status and None value
+        '''
+        with open(json_file, 'w+') as invalid_file:
+            invalid_file.write("invalijson")
+        expected_status, expected_ret = False, None
+        status, ret = hubblestack.extmods.fdg.readfile.json(json_file, subkey='id')
+        assert expected_status == status
+        assert expected_ret == ret

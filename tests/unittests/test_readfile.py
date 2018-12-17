@@ -29,7 +29,7 @@ class TestReadfile():
     def test_json_InvalidPath_EmptyReturn(self):
         '''
         Test that given an invalid path, the json function returns False status
-        and an empty return value
+        and None value
         '''
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.readfile.json('/invalid/path')
@@ -38,7 +38,7 @@ class TestReadfile():
 
     def test_json_SingleSubkey_ReturnsValue(self, json_file):
         '''
-        Test that given a single subkey argument, the function extracts the appropriated value
+        Test that given a single subkey argument, the function extracts the correct value
         '''
         expected_status, expected_ret = True, "file"
         status, ret = hubblestack.extmods.fdg.readfile.json(json_file, subkey='id')
@@ -48,7 +48,7 @@ class TestReadfile():
     def test_json_InvalidSingleSubkey_EmptyReturn(self, json_file):
         '''
         Test that given an invalid single subkey argument,
-        the function returns False status and empty value
+        the function returns False status and None value
         '''
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.readfile.json(json_file, subkey='invalid_key')
@@ -57,8 +57,8 @@ class TestReadfile():
 
     def test_json_MultipleSubkeys_ReturnsValue(self, json_file):
         '''
-        Test that given multiple subkeys, separated by a valid separator,
-        the function returns the appropriate value
+        Test that given multiple subkeys, separated by a valid separator ``sep``,
+        the function returns the correct value
         '''
         expected_status, expected_ret = True, "value2"
         status, ret = hubblestack.extmods.fdg.readfile.json(
@@ -68,8 +68,8 @@ class TestReadfile():
 
     def test_json_InvalidSep_EmptyReturn(self, json_file):
         '''
-        Test that given multiple subkeys separated by an invalid ``sep``,
-        the function returns a False status and None value
+        Test that given multiple subkeys separated by an invalid separator``sep``,
+        the function returns False status and None value
         '''
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.readfile.json(
@@ -79,7 +79,7 @@ class TestReadfile():
 
     def test_json_IndexSubkey_ReturnsValue(self, json_file):
         '''
-        Test that given an index as subkey, the function returns the appropriate value
+        Test that given an index as subkey, the function returns the correct value
         '''
         expected_status, expected_ret = True, "item2"
         status, ret = hubblestack.extmods.fdg.readfile.json(
@@ -113,7 +113,7 @@ class TestReadfile():
         Test that given an invalid json file, the function returns False status and None value
         '''
         with open(json_file, 'w+') as invalid_file:
-            invalid_file.write("invalijson")
+            invalid_file.write("InvalidJson")
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.readfile.json(json_file, subkey='id')
         assert expected_status == status

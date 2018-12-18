@@ -372,7 +372,7 @@ def _dict_convert_none(dictionary):
     return updated_dict
 
 
- def _seq_convert_none(seq):
+def _seq_convert_none(seq):
     '''
     Go over a sequence and look for dictionary keys that have values of empty strings and convert them to values of None.
     It recursively looks for nested sequences and sterilizes those too
@@ -382,7 +382,7 @@ def _dict_convert_none(dictionary):
     '''
     updated_seq = []
     for element in seq:
-        elif isinstance(element, dict):
+        if isinstance(element, dict):
             updated_seq.append(_dict_convert_none(element))
         elif isinstance(element, (list, set)):
             updated_seq.append(_seq_convert_none(element))

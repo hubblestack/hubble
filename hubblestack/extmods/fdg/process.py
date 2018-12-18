@@ -344,7 +344,7 @@ def dict_remove_none(starting_seq=None, extend_chained=True, chained=None):
     if isinstance(chained, dict):
         ret = _sterilize_dict(chained)
     else:
-        ret = [_sterilize_dict(element) if isinstance(element, dict) else element for element in chained]
+        ret = _sterilize_seq(chained)
     status = bool(ret)
 
     return status, ret
@@ -364,3 +364,23 @@ def _sterilize_dict(dictionary):
             dictionary[key] = _sterilize_dict(value)
 
     return dictionary
+
+
+def _sterilize_seq(seq):
+     '''
+    Sterilize a sequence by looking for dictionary keys that have values of None and removing them.
+    It recursively looks for nested sequences and sterilizes those too.
+
+    seq
+        The input sequence to sterilize
+    '''
+    updated_seq = []
+    for element in seq:
+        if isinstance(element, dict):
+            updated_seq.append(_sterilize_dict(element))
+        elif isinstance(element, (list, set)):
+            updated_seq.append(_sterilize_seq(element))
+        elif element:
+            updated_seq.append(element)
+
+    return updated_seq

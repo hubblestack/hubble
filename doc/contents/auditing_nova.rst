@@ -121,3 +121,23 @@ following to your ``top.nova`` file::
     nova:
       '*':
         - example_control.example
+
+It is quite possible you may want to send the NOVA audit results to a collection system. 
+This can be accomplished by using returners, which are included with Hubble. Currently, 
+there are returners available for **splunk**, **logstash**, **graylog**, and **sqlite**.
+Hubble supports using multiple returners from the same node so sending data to multiple 
+collectors is possible. Each individual returner has distinct options that need to be 
+set prior to their use. You can find general config options for each returner at the top 
+of each file located here
+https://github.com/hubblestack/hubble/tree/develop/hubblestack/extmods/returners.
+
+**Specify a returner when running Hubble from the command line:**
+
+.. code-block::
+
+    hubble hubble.audit --r RETURN
+    hubble hubble.audit --return RETURN
+
+You can also define schedules for returners in the Hubble config file, which is typically
+located at ``/etc/hubble/hubble``.
+

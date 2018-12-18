@@ -1,9 +1,13 @@
 # Updates yaml with PDF Table of Contents.  Create new file with changes to most recent file labeled with CIS document version
+from __future__ import print_function
+
 from glob import glob
 import os
 import PyPDF2
 import re
 import yaml
+
+from salt.ext.six.moves import input
 
 new_yaml = {}
 
@@ -16,29 +20,29 @@ def ItemAdder(title, server, key, tag, match, vtype, desc,):
 
 # ask for PDF file (figure out good way to use XLS file)
 filename = []
-print "Which PDF file are we checking against (alternatly place in same folder as script and this will happen automatically)"
+print("Which PDF file are we checking against (alternatly place in same folder as script and this will happen automatically)")
 files = os.listdir(os.getcwd())
 pdffiles = glob(os.path.join(os.getcwd(), "*.pdf"))
 if pdffiles:
     if len(pdffiles) >= 2:
-        print "There is more than 1 pdf in the folder"
+        print("There is more than 1 pdf in the folder")
         truefile = False
         while not truefile:
-            filename = raw_input('Path to PDF: ')
+            filename = input('Path to PDF: ')
             if os.path.isfile(filename):
                 truefile = True
             else:
-                print "that file does not exist"
+                print("that file does not exist")
     else:
         filename = pdffiles
 else:
     truefile = False
     while not truefile:
-        filename = raw_input('Path to PDF: ')
+        filename = input('Path to PDF: ')
         if os.path.isfile(filename):
             truefile = True
         else:
-            print "that file does not exist"
+            print("that file does not exist")
 
 # read in PDF
 initialstring = ''
@@ -69,28 +73,28 @@ for x, y in reall:
 
 # get yaml file
 yamlname = []
-print "Which YAML file are we checking against (alternatly place in same folder as script and this will happen automatically)"
+print("Which YAML file are we checking against (alternatly place in same folder as script and this will happen automatically)")
 yamlfiles = glob(os.path.join(os.getcwd(), "*.yaml"))
 if yamlfiles:
     if len(yamlfiles) >= 2:
-        print "There is more than 1 pdf in the folder"
+        print("There is more than 1 pdf in the folder")
         truefile = False
         while not truefile:
-            yamlname = raw_input('Path to YAML: ')
+            yamlname = input('Path to YAML: ')
             if os.path.isfile(filename):
                 truefile = True
             else:
-                print "that file does not exist"
+                print("that file does not exist")
     else:
         yamlname = yamlfiles
 else:
     truefile = False
     while not truefile:
-        yamlname = raw_input('Path to yaml: ')
+        yamlname = input('Path to yaml: ')
         if os.path.isfile(filename):
             truefile = True
         else:
-            print "that file does not exist"
+            print("that file does not exist")
 
 # Read in Yaml
 if isinstance(yamlname, list):
@@ -132,7 +136,7 @@ for item in orderedtags:
         yaml_side = flat_yaml[item]['description'].lower().strip()
         pdf_side = toc_dict[item].lower().strip()
         if yaml_side == pdf_side:
-            print "tag {} exists, and descriptions match!!!".format(item)
+            print("tag {} exists, and descriptions match!!!".format(item))
             # found verbatim, move into the new yaml
             test = new_yaml.get(section, '')
             if tlist not in test:
@@ -142,9 +146,9 @@ for item in orderedtags:
                     new_yaml[section][tlist] = {}
             new_yaml[section][tlist].update(ItemAdder(flat_yaml[item]['check_title'], flat_yaml[item]['os'], flat_yaml[item]['audit_key'], item, flat_yaml[item]['match_output'], flat_yaml[item]['value_type'], toc_dict[item].encode('ascii')))
         else:
-            print "tag {} exists, but descriptions do not match".format(item)
-            print "\tyaml side-\t{}".format(yaml_side)
-            print "\tpdf side-\t{}".format(pdf_side)
+            print("tag {} exists, but descriptions do not match".format(item))
+            print("\tyaml side-\t{}".format(yaml_side))
+            print("\tpdf side-\t{}".format(pdf_side))
             # check for unique section of tag (in case of missing 1 or 2 characters)
             if "'" in pdf_side:
                 unique = re.search("'.+?'", pdf_side).group(0).strip("'")
@@ -152,7 +156,7 @@ for item in orderedtags:
                 unique = re.search("\s.+?is", pdf_side).group(0).strip()
             unique_check = re.search(unique, yaml_side)
             if unique_check:
-                print "tag {} exists, and unique part of description matches".format(item)
+                print("tag {} exists, and unique part of description matches".format(item))
                 # if not found verbatim, but found partial, change desc to be verbatm and tag name
                 test = new_yaml.get(section, '')
                 if tlist not in test:
@@ -167,7 +171,7 @@ for item in orderedtags:
                     pdf_recurse = toc_dict[tag].lower().strip()
                     unique_recurse = re.search(unique, yaml_side)
                     if unique_recurse:
-                        print "----found description for tag {} in tag {}".format(item, tag)
+                        print("----found description for tag {} in tag {}".format(item, tag))
                         test = new_yaml.get(section, '')
                         if tlist not in test:
                             if test == '':
@@ -176,7 +180,7 @@ for item in orderedtags:
                                 new_yaml[section][tlist] = {}
                         new_yaml[section][tlist].update(ItemAdder(flat_yaml[tag]['check_title'], flat_yaml[tag]['os'], flat_yaml[tag]['audit_key'], item, flat_yaml[tag]['match_output'], flat_yaml[tag]['value_type'], toc_dict[item].encode('ascii')))
                         break
-                print "didn't find the descriptoin for tag {} anywhere in current yaml".format(item)
+                print("didn't find the descriptoin for tag {} anywhere in current yaml".format(item))
                 test = new_yaml.get(section, '')
                 if tlist not in test:
                     if test == '':
@@ -186,7 +190,7 @@ for item in orderedtags:
                 new_yaml[section][tlist].update(ItemAdder(flat_yaml[item]['check_title'], 'zz descs didnt match', flat_yaml[item]['audit_key'], item, flat_yaml[item]['match_output'], flat_yaml[item]['value_type'], toc_dict[item].encode('ascii')))
 
     else:
-        print "!!tag {} isn't in current yaml file".format(item)
+        print("!!tag {} isn't in current yaml file".format(item))
         # if not found anything, create new space with blanks for important documents
         cdescription = toc_dict[item].encode('ascii')
         if "'" in cdescription:

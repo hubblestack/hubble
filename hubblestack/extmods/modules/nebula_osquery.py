@@ -45,6 +45,9 @@ import hubblestack.splunklogging
 
 log = logging.getLogger(__name__)
 
+from hubblestack.status import HubbleStatus
+hubble_status = HubbleStatus(__name__, 'top', 'queries')
+
 __virtualname__ = 'nebula'
 __RESULT_LOG_OFFSET__ = {}
 
@@ -53,6 +56,7 @@ def __virtual__():
     return __virtualname__
 
 
+@hubble_status.watch
 def queries(query_group,
             query_file=None,
             verbose=False,
@@ -307,7 +311,6 @@ def osqueryd_monitor(configfile=None,
             osqueryd_restart = _osqueryd_restart_required(hashfile, flagfile)
             if osqueryd_restart:
                 _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
-
     else:
         log.info("Not windows")
         if not pidfile:
@@ -373,7 +376,7 @@ def osqueryd_log_parser(osqueryd_logdir=None,
     '''
     ret = []
     if osqueryd_logdir:
-        result_logfile =  os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.results.log'))
+        result_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.results.log'))
         snapshot_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.snapshots.log'))
     else:
         result_logfile = os.path.normpath(os.path.join(__grains__.get('osquerylogpath'), 
@@ -382,11 +385,11 @@ def osqueryd_log_parser(osqueryd_logdir=None,
                                                          '/osqueryd.snapshots.log'))
     if path.exists(result_logfile):
         result_logfile_offset = _get_file_offset(result_logfile)
-        r_event_data = _parse_log(result_logfile, 
-                                  result_logfile_offset, 
-                                  backuplogdir, 
+        r_event_data = _parse_log(result_logfile,
+                                  result_logfile_offset,
+                                  backuplogdir,
                                   logfilethresholdinbytes,
-                                  maxlogfilesizethreshold, 
+                                  maxlogfilesizethreshold,
                                   backuplogfilescount,
                                   enablediskstatslogging)
         if r_event_data:
@@ -396,11 +399,11 @@ def osqueryd_log_parser(osqueryd_logdir=None,
     
     if path.exists(snapshot_logfile):
         snapshot_logfile_offset = _get_file_offset(snapshot_logfile)
-        s_event_data = _parse_log(snapshot_logfile, 
+        s_event_data = _parse_log(snapshot_logfile,
                                   snapshot_logfile_offset,
                                   backuplogdir,
                                   logfilethresholdinbytes,
-                                  maxlogfilesizethreshold, 
+                                  maxlogfilesizethreshold,
                                   backuplogfilescount,
                                   enablediskstatslogging)
         #log.info("Snapshot Event data: {0}".format(s_event_data))
@@ -410,9 +413,8 @@ def osqueryd_log_parser(osqueryd_logdir=None,
         log.error("Specified osquery snapshot log file doesn't exist: {0}".format(snapshot_logfile))
 
     if mask_passwords:
-        #TODO Need to verify if masking feature works with new data format
         log.info("Perform masking")
-        #mask_passwords_inplace(ret, topfile_for_mask)
+        _mask_object(ret, topfile_for_mask)
     return ret
 
 
@@ -440,15 +442,15 @@ def check_disk_usage(path=None):
         used = total - avail
         per_used = float(used)/total * 100
         log.info("Stats for path: {0}, Total: {1}, Available: {2}, Used: {3}, Use%: {4}".format(path,
-                                                                                                total, 
-                                                                                                avail, 
-                                                                                                used, 
+                                                                                                total,
+                                                                                                avail,
+                                                                                                used,
                                                                                                 per_used))
-        disk_stats = { 'Total' : total,
-                       'Available' : avail,
-                       'Used' : used,
-                       'Use_percent' : per_used
-        }
+        disk_stats = {'Total' : total,
+                      'Available' : avail,
+                      'Used' : used,
+                      'Use_percent' : per_used
+                     }
 
     return disk_stats
 
@@ -495,6 +497,7 @@ def hubble_versions():
                                 'result': True}}
 
 
+@hubble_status.watch
 def top(query_group,
         topfile='salt://hubblestack_nebula_v2/top.nebula',
         topfile_for_mask=None,
@@ -572,49 +575,30 @@ def _mask_object(object_to_be_masked, topfile):
 
         # Target and mask strings based on regex patterns
         # Can limit search specific queries and columns
-        blacklisted_strings:
-            - query_name: 'running_procs'  # Name of the osquery to be masked.
-                                           # Put '*' to match all queries. Note
-                                           # that query_name doesn't support
-                                           # full globbing. '*' is just given
-                                           # special treatment.
-              column: 'command_line'  # Column name in the osquery to be masked. No regex or glob support
-              # See below for documentation of these blacklisted patterns
-              blacklisted_patterns:
-                  - '(prefix)(password)(suffix)'
-
 
         # Some osquery results are formed as lists of dicts. We can mask
         # based on variable names within these dicts.
         blacklisted_objects:
 
-            - query_name: 'running_procs'  # Name of the osquery to be masked.
+            - query_names:
+              - 'running_procs'
+              - 'listening_procs'          # List of name(s) of the osquery to be masked.
                                            # Put '*' to match all queries. Note
-                                           # that query_name doesn't support
+                                           # that query_names doesn't support
                                            # full globbing. '*' is just given
                                            # special treatment.
               column: 'environment'  # Column name in the osquery to be masked. No regex or glob support
-              attribute_to_check: 'variable_name' # In the inner dict, this is the key
+              attribute_to_check: 'variable_name' # Optional attribute
+                                                  # In the inner dict, this is the key
                                                   # to check for blacklisted_patterns
-              attributes_to_mask: # Values under these keys in the dict will be
+                                                  # Will skipped if column specified is of type 'String'
+              attributes_to_mask: # Optional attribute, Values under these keys in the dict will be
                 - 'value'  # masked, assuming one of the blacklisted_patterns
                            # is found under attribute_to_check in the same dict
+                           # Will be skipped if column specified is of type 'String'
               blacklisted_patterns:  # Strings to look for under attribute_to_check. No regex support.
                 - 'ETCDCTL_READ_PASSWORD'
                 - 'ETCDCTL_WRITE_PASSWORD'
-
-    blacklisted_patterns (for blacklisted_strings)
-
-        Blacklisted patterns are regular expressions, and have a prefix, a
-        secret, and a suffix. Nebula uses regex groups to maintain the prefix
-        and suffix, *which are not masked*. Only the password is masked.
-
-        If you don't need a suffix or a prefix, leave those sets of parenthesis
-        blank. Do not remove any parenthesis, or else your password could
-        remain unmasked!
-
-        blacklisted_patterns is formed as a list. These patterns are processed
-        (and substituted) in order.
 
     blacklisted_patterns (for blacklisted_objects)
 
@@ -631,7 +615,10 @@ def _mask_object(object_to_be_masked, topfile):
     try:
         mask = {}
         if topfile is None:
-            topfile = 'salt://hubblestack_nebula_v2/top.mask'
+            # We will maintain backward compatibility by keep two version of top files and mask files for now
+            # Once all hubble servers are updated, we can remove old version of top file and mask file
+            # Similar to what we have for nebula and nebula_v2 for older versions and newer versions of profiles
+            topfile = 'salt://hubblestack_nebula_v2/top_v2.mask'
         mask_files = _get_top_data(topfile)
         mask_files = ['salt://hubblestack_nebula_v2/' + mask_file.replace('.', '/') + '.yaml'
                       for mask_file in mask_files]
@@ -657,68 +644,125 @@ def _mask_object(object_to_be_masked, topfile):
         # Backwards compatibility with mask_by
         mask_with = mask.get('mask_with', mask.get('mask_by', '******'))
 
-        # We can blacklist strings based on their pattern
-        for blacklisted_string in mask.get('blacklisted_strings', []):
-            query_name = blacklisted_string['query_name']
-            column = blacklisted_string['column']
-            if query_name != '*':
-                for r in object_to_be_masked:
-                    for query_result in r.get(query_name, {'data':[]})['data']:
-                        if column not in query_result or not isinstance(query_result[column], basestring):
-                            # if the column in not present in one data-object, it will
-                            # not be present in others as well. Break in that case.
-                            # This will happen only if mask.yaml is malformed
-                            log.error('masking data references a missing column {0} in query {1}'
-                                      .format(column, query_name))
-                            break
-                        value = query_result[column]
-                        for pattern in blacklisted_string['blacklisted_patterns']:
-                            value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
-                        query_result[column] = value
-            else:
-                for r in object_to_be_masked:
-                    for query_name, query_ret in r.iteritems():
-                        for query_result in query_ret['data']:
-                            if column not in query_result or not isinstance(query_result[column], basestring):
-                                # No error here, since we didn't reference a specific query
-                                break
-                            value = query_result[column]
-                            for pattern in blacklisted_string['blacklisted_patterns']:
-                                value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
-                            query_result[column] = value
-
-
         for blacklisted_object in mask.get('blacklisted_objects', []):
-            query_name = blacklisted_object['query_name']
-            column = blacklisted_object['column']
-            if query_name != '*':
+            query_names = blacklisted_object['query_names']
+            column = blacklisted_object['column'] # Can be converted to list as well in future if need be
+            if '*' in query_names:
+                # This means wildcard is specified and each event should be masked, if applicable
                 for r in object_to_be_masked:
-                    for query_result in r.get(query_name, {'data':[]})['data']:
-                        if column not in query_result or \
-                                (isinstance(query_result[column], basestring) and
-                                 query_result[column].strip() != ''):
-                            # if the column in not present in one data-object, it will
-                            # not be present in others as well. Break in that case.
-                            # This will happen only if mask.yaml is malformed
-                            log.error('masking data references a missing column {0} in query {1}'
-                                      .format(column, query_name))
-                            break
-                        _recursively_mask_objects(query_result[column], blacklisted_object, mask_with)
-            else:
-                for r in object_to_be_masked:
-                    for query_name, query_ret in r.iteritems():
-                        for query_result in query_ret['data']:
+                    if 'action' in r:
+                        # This means data is generated by osquery daemon
+                        query_name = r['name']
+                        _mask_event_data(r, query_name, column, blacklisted_object, mask_with)
+                    else:
+                        # This means data is generated by osquery interactive shell
+                        for query_name, query_ret in r.iteritems():
                             if column not in query_result or \
                                     (isinstance(query_result[column], basestring) and
-                                     query_result[column].strip() != '' ):
-                                # No error here, since we didn't reference a specific query
+                                     query_result[column].strip() != ''):
+                                    # No error here, since we didn't reference a specific query
                                 break
-                            _recursively_mask_objects(query_result[column], blacklisted_object, mask_with)
+                            if isinstance(query_result[column], basestring):
+                                # If column is of 'string' type, then replace pattern in-place
+                                # No need for recursion here
+                                value = query_result[column]
+                                for pattern in blacklisted_object['blacklisted_patterns']:
+                                    value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
+                                query_result[column] = value
+                            else:
+                                _recursively_mask_objects(query_result[column], blacklisted_object, mask_with)
+            else:
+                # Perform masking on results of specific queries specified in 'query_names'
+                for query_name in query_names:
+                    for r in object_to_be_masked:
+                        if 'action' in r:
+                            # This means data is generated by osquery daemon
+                            _mask_event_data(r, query_name, column, blacklisted_object, mask_with)
+                        else:
+                            # This means data is generated by osquery interactive shell
+                            for query_result in r.get(query_name, {'data':[]})['data']:
+                                if column not in query_result or \
+                                        (isinstance(query_result[column], basestring) and
+                                         query_result[column].strip() != ''):
+                                        # if the column in not present in one data-object, it will
+                                        # not be present in others as well. Break in that case.
+                                        # This will happen only if mask.yaml is malformed
+                                    log.error('masking data references a missing column {0} in query {1}'
+                                              .format(column, query_name))
+                                    break
+                                if isinstance(query_result[column], basestring):
+                                    # If column is of 'string' type, then replace pattern in-place
+                                    # No need for recursion here
+                                    value = query_result[column]
+                                    for pattern in blacklisted_object['blacklisted_patterns']:
+                                        value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
+                                    query_result[column] = value
+                                else:
+                                    _recursively_mask_objects(query_result[column], blacklisted_object, mask_with)
     except Exception as e:
         log.exception('An error occured while masking the passwords: {}'.format(e))
 
     # Object masked in place, so we don't need to return the object
     return True
+
+
+def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object, mask_with):
+    '''
+    This method is responsible for masking potential secrets in event data generated by
+    osquery daemon. This will handle logs format of both differential and snapshot types
+
+    Logs generated by 'osqueryi' would not reach here due checks in parent method
+
+    object_to_be_masked
+        data structure to mask recursively
+
+    query_name
+        Perform masking only if query name in 'object_to_be_masked' matches the 'query_name'
+
+    column
+        column in which masking is to be performed
+
+    blacklisted_object
+        the blacklisted_objects entry from the mask.yaml
+
+    mask_with
+        masked values are replaced with this string
+
+    '''
+    object_to_be_masked = json.loads(object_to_be_masked)
+    if object_to_be_masked['action'] == 'snapshot' and query_name == object_to_be_masked['name']:
+        # This means we have event data of type 'snapshot'
+        for snap_object in object_to_be_masked['snapshot']:
+            if column not in snap_object or \
+                    (isinstance(snap_object[column], basestring) and
+                     snap_object[column].strip() != ''):
+                log.error('masking data references a missing column {0} in query {1}'
+                          .format(column, query_name))
+                break
+            if isinstance(snap_object[column], basestring):
+                value = snap_object[column]
+                for pattern in blacklisted_object['blacklisted_patterns']:
+                    value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
+                snap_object[column] = value
+            else:
+                _recursively_mask_objects(snap_object[column], blacklisted_object, mask_with)
+    elif query_name == object_to_be_masked['name']:
+        q_result = object_to_be_masked['columns']
+        if column not in q_result or \
+                (isinstance(q_result[column], basestring) and
+                 q_result[column].strip() != ''):
+            log.error('masking data references a missing column {0} in query {1}'
+                      .format(column, query_name))
+        if isinstance(q_result[column], basestring):
+            value = q_result[column]
+            for pattern in blacklisted_object['blacklisted_patterns']:
+                value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
+            q_result[column] = value
+        else:
+            _recursively_mask_objects(q_result[column], blacklisted_object, mask_with)
+    else:
+        # Unable to match query_name
+        log.debug('Skipping masking, as event data is not for query: {0}'.format(query_name))
 
 
 def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_with):

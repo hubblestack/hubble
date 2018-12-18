@@ -321,3 +321,72 @@ def _split(phrase,
         ret = phrase.split(sep)
 
     return ret
+
+
+def dict_convert_none(starting_seq=None, extend_chained=True, chained=None):
+    '''
+    Given a target sequence, look for dictionary keys that have empty string values and replace them with None
+
+    By default, ``chained`` will have ``.extend()`` or  ``.update()``  called on it with
+    ``starting_seq`` as the only argument. Set ``extend_chained`` to False to ignore ``starting_seq``.
+
+    The first return value (status) will be True if the replacing is successful, and
+    False othewise. The second argument will be the updated sequence.
+    '''
+    if extend_chained:
+        try:
+            if starting_seq and isinstance(chained, (set, dict)):
+                chained.update(starting_seq)
+            elif starting_seq and isinstance(chained, list):
+                chained.extend(starting_seq)
+        except (AttributeError, TypeError) as exc:
+            raise ArgumentValueError(str(exc))
+    if isinstance(chained, dict):
+        ret = _dict_convert_none(chained)
+    else:
+        ret = _seq_convert_none(chained)
+    status = bool(ret)
+
+    return status, ret
+
+
+def _dict_convert_none(dictionary):
+    '''
+    Look for keys that have values of empty strings and convert them to values of None.
+    It recursively looks for nested dictionaries and sterilizes those too
+
+    dictionary
+        The input dict to sterilize
+    '''
+    updated_dict = {}
+    for key, value in dictionary.iteritems():
+        if value is '':
+            updated_dict[key] = None
+        elif isinstance(value, dict):
+            updated_dict[key] = _dict_convert_none(value)
+        elif isinstance(value, (list, set)):
+            updated_dict[key] = _seq_convert_none(value)
+        else:
+            updated_dict[key] = value
+
+    return updated_dict
+
+
+ def _seq_convert_none(seq):
+    '''
+    Go over a sequence and look for dictionary keys that have values of empty strings and convert them to values of None.
+    It recursively looks for nested sequences and sterilizes those too
+
+    seq 
+        The input sequence to sterilize
+    '''
+    updated_seq = []
+    for element in seq:
+        elif isinstance(element, dict):
+            updated_seq.append(_dict_convert_none(element))
+        elif isinstance(element, (list, set)):
+            updated_seq.append(_seq_convert_none(element))
+        else:
+            updated_seq.append(element)
+
+    return updated_seq

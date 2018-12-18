@@ -358,12 +358,16 @@ def _sterilize_dict(dictionary):
     dictionary
         The input dict to sterilize
     '''
-    dictionary = {key: value for key, value in dictionary.iteritems() if value is not None}
+    updated_dict = {}
     for key, value in dictionary.iteritems():
         if isinstance(value, dict):
-            dictionary[key] = _sterilize_dict(value)
+            updated_dict[key] = _sterilize_dict(value)
+        elif isinstance(value, (set, list)):
+            updated_dict[key] = _sterilize_seq(value)
+        elif element:
+            updated_dict[key] = value
 
-    return dictionary
+    return updated_dict
 
 
 def _sterilize_seq(seq):

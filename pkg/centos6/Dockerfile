@@ -16,7 +16,7 @@ RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 #to pin to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=1ed050147ac88a7314c172e15e86f8886206dd06
+ENV OSQUERY_SRC_VERSION=0314871908273b2770129da9f5a7c3206f224f68
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 RUN yum -y install xz git make python ruby sudo which python-argparse
@@ -38,6 +38,8 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
  && make strip
 USER root
 RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt/osquery \
+ && cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery \
+ && mkdir -p /var/log/hubble_osquery/backuplogs \
  && chown -R root. /opt/osquery \
  && chmod -R 500 /opt/osquery/* \
 #put augeas lenses into the default directory that we changed earlier

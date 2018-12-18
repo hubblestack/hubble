@@ -10,7 +10,7 @@ import copy
 import logging
 import time
 import pprint
-import os
+import os, re
 import random
 import signal
 import sys
@@ -499,18 +499,19 @@ def load_config():
         clean_up_process(None, None)
         sys.exit(0)
 
+    scan_proc = __opts__.get('scan_proc', False)
     if __opts__['daemonize']:
         # before becoming a daemon, check for other procs and possibly send
         # then a signal 15 (otherwise refuse to run)
         if not __opts__.get('ignore_running', False):
-            check_pidfile(kill_other=True)
+            check_pidfile(kill_other=True, scan_proc=scan_proc)
         salt.utils.daemonize()
         create_pidfile()
     elif not __opts__['function'] and not __opts__['version']:
         # check the pidfile and possibly refuse to run
         # (assuming this isn't a single function call)
         if not __opts__.get('ignore_running', False):
-            check_pidfile(kill_other=False)
+            check_pidfile(kill_other=False, scan_proc=scan_proc)
 
     signal.signal(signal.SIGTERM, clean_up_process)
     signal.signal(signal.SIGINT, clean_up_process)
@@ -782,7 +783,23 @@ def parse_args():
                         help='Enable retry on the returner for one-off jobs')
     return vars(parser.parse_args())
 
-def check_pidfile(kill_other=False):
+_flog = None
+def _debug_pidfile():
+    global _flog
+    if os.environ.get('DEBUG_PIDFILE'):
+        if _flog is not None:
+            return _flog
+        _flog = logging.getLogger('pidfile-debug')
+        _flog.setLevel(logging.DEBUG)
+        fh = logging.FileHandler('/tmp/hubble-debug-pidfile.log')
+        fh.setLevel(logging.DEBUG)
+        fm = logging.Formatter('%(name)20s %(process)5s %(levelname)7s %(message)s')
+        fh.setFormatter(fm)
+        _flog.addHandler(fh)
+        return _flog
+    return log
+
+def check_pidfile(kill_other=False, scan_proc=True):
     '''
     Check to see if there's already a pidfile. If so, check to see if the
     indicated process is alive and is Hubble.
@@ -792,6 +809,8 @@ def check_pidfile(kill_other=False):
         processes; otherwise exit with an error.
 
     '''
+    log = _debug_pidfile()
+
     pidfile = __opts__['pidfile']
     if os.path.isfile(pidfile):
         with open(pidfile, 'r') as f:
@@ -803,24 +822,59 @@ def check_pidfile(kill_other=False):
                 log.warn('unable to parse pid="{pid}" in pidfile={file}'.format(pid=xpid,file=pidfile))
             if xpid:
                 log.warn('pidfile={file} exists and contains pid={pid}'.format(file=pidfile, pid=xpid))
+                kill_other_or_sys_exit(xpid, kill_other=kill_other)
+
+    if scan_proc:
+        scan_proc_for_hubbles(kill_other=kill_other)
+
+def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_other=True, no_pgrp=True):
+    log = _debug_pidfile()
+
+    if no_pgrp is True:
+        no_pgrp = os.getpgrp()
+    if isinstance(no_pgrp, int):
+        no_pgrp = str(no_pgrp)
+
+    if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+        pfile = '/proc/{pid}/cmdline'.format(pid=xpid)
+        log.error('searching %s for hubble procs matching %s', pfile, hname)
+        with open(pfile,'r') as fh:
+            cmdline = fh.readline().strip().strip('\x00').replace('\x00',' ')
+        if re.search(hname, cmdline):
+            if no_pgrp:
+                pstatfile = '/proc/{pid}/stat'.format(pid=xpid)
+                with open(pstatfile, 'r') as fh2:
+                    pgrp = fh2.readline().split()[4]
+                    if pgrp == no_pgrp:
+                        log.debug("process (%s) exists and seems to be a hubble, "
+                            "but matches our process group (%s), ignoring", xpid, pgrp)
+                        return False
+            if kill_other:
+                log.warn("process seems to still be alive and seems to be hubble, attempting to shutdown")
+                os.kill(int(xpid), ksig)
+                time.sleep(1)
                 if os.path.isdir("/proc/{pid}".format(pid=xpid)):
-                    with open("/proc/{pid}/cmdline".format(pid=xpid),'r') as f2:
-                        cmdline = f2.readline().strip().strip('\x00').replace('\x00',' ')
-                        if 'hubble' in cmdline:
-                            if kill_other:
-                                log.warn("process seems to still be alive and is hubble, attempting to shutdown")
-                                os.kill(int(xpid), signal.SIGTERM)
-                                time.sleep(1)
-                                if os.path.isdir("/proc/{pid}".format(pid=xpid)):
-                                    log.error("failed to shutdown process successfully; abnormal program exit")
-                                    sys.exit(1)
-                                else:
-                                    log.info("shutdown seems to have succeeded, proceeding with startup")
-                            else:
-                                log.error("refusing to run while another hubble instance is running")
-                                sys.exit(1)
-                        else:
-                            log.info("process does not appear to be hubble, ignoring")
+                    log.error("fatal error: failed to shutdown process (pid=%s) successfully", xpid)
+                    sys.exit(1)
+                else:
+                    return True
+            else:
+                log.error("refusing to run while another hubble instance is running")
+                sys.exit(1)
+    return False
+
+def scan_proc_for_hubbles(proc_path='/proc', hname=r'^/\S+python.*hubble', kill_other=True, ksig=signal.SIGTERM):
+    log = _debug_pidfile()
+
+    no_pgrp = str(os.getpgrp())
+
+    rpid = re.compile('\d+')
+    if os.path.isdir('/proc'):
+        for dirname, dirs, files in os.walk('/proc'):
+            if dirname == '/proc':
+                for pid in [ i for i in dirs if rpid.match(i) ]:
+                    kill_other_or_sys_exit(pid, hname=hname, kill_other=kill_other, ksig=ksig, no_pgrp=no_pgrp)
+                break
 
 def create_pidfile():
     '''

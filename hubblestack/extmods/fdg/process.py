@@ -360,7 +360,7 @@ def _dict_convert_none(dictionary):
     '''
     updated_dict = {}
     for key, value in dictionary.iteritems():
-        if value is '':
+        if value == '':
             updated_dict[key] = None
         elif isinstance(value, dict):
             updated_dict[key] = _dict_convert_none(value)
@@ -374,10 +374,11 @@ def _dict_convert_none(dictionary):
 
 def _seq_convert_none(seq):
     '''
-    Go over a sequence and look for dictionary keys that have values of empty strings and convert them to values of None.
+    Go over a sequence and look for dictionary keys that have values of empty strings
+    and convert them to values of None.
     It recursively looks for nested sequences and sterilizes those too
 
-    seq 
+    seq
         The input sequence to sterilize
     '''
     updated_seq = []

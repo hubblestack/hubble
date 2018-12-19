@@ -321,3 +321,23 @@ def _split(phrase,
         ret = phrase.split(sep)
 
     return ret
+
+
+def dict_to_list(starting_dict=None, update_chained=True, chained=None):
+    '''
+    Given a target dictionary, convert it to a list of (key, value) tuples.
+
+    By default, ``chained`` will have ``.update()`` called on it with
+    ``starting_dict`` as the only argument.
+    Set ``update_chained`` to False to ignore ``starting_dict``.
+
+    The first return value (status) will be True if the conversion is successful,
+    and False othewise. The second argument will be the list of tuples.
+    '''
+    if update_chained:
+        if starting_dict:
+            chained.update(starting_dict)
+    ret = [(key, value) for key, value in chained.iteritems()]
+    status = bool(ret)
+
+    return status, ret

@@ -24,6 +24,7 @@ nebula_osquery:
 from __future__ import absolute_import
 
 import copy
+import fnmatch
 import glob
 import fnmatch
 import json
@@ -335,9 +336,9 @@ def osqueryd_monitor(configfile=None,
                 _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
 
 
-def osqueryd_log_parser(osqueryd_logdir=None, 
+def osqueryd_log_parser(osqueryd_logdir=None,
                         backuplogdir=None,
-                        maxlogfilesizethreshold=100000, 
+                        maxlogfilesizethreshold=100000,
                         logfilethresholdinbytes=10000,
                         backuplogfilescount=5,
                         enablediskstatslogging=False,
@@ -597,7 +598,7 @@ def _mask_object(object_to_be_masked, topfile):
                 - 'value'  # masked, assuming one of the blacklisted_patterns
                            # is found under attribute_to_check in the same dict
                            # Will be skipped if column specified is of type 'String'
-              blacklisted_patterns:  # Strings to look for under attribute_to_check. Globbing support
+              blacklisted_patterns:  # Strings to look for under attribute_to_check. Globbing support.
                 - 'ETCDCTL_READ_PASSWORD'
                 - 'ETCDCTL_WRITE_PASSWORD'
                 - '*PASSWORD*'

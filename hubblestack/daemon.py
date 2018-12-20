@@ -783,22 +783,6 @@ def parse_args():
                         help='Enable retry on the returner for one-off jobs')
     return vars(parser.parse_args())
 
-_flog = None
-def _debug_pidfile():
-    global _flog
-    if os.environ.get('DEBUG_PIDFILE'):
-        if _flog is not None:
-            return _flog
-        _flog = logging.getLogger('pidfile-debug')
-        _flog.setLevel(logging.DEBUG)
-        fh = logging.FileHandler('/tmp/hubble-debug-pidfile.log')
-        fh.setLevel(logging.DEBUG)
-        fm = logging.Formatter('%(name)20s %(process)5s %(levelname)7s %(message)s')
-        fh.setFormatter(fm)
-        _flog.addHandler(fh)
-        return _flog
-    return log
-
 def check_pidfile(kill_other=False, scan_proc=True):
     '''
     Check to see if there's already a pidfile. If so, check to see if the
@@ -809,7 +793,6 @@ def check_pidfile(kill_other=False, scan_proc=True):
         processes; otherwise exit with an error.
 
     '''
-    log = _debug_pidfile()
 
     pidfile = __opts__['pidfile']
     if os.path.isfile(pidfile):
@@ -828,13 +811,10 @@ def check_pidfile(kill_other=False, scan_proc=True):
         scan_proc_for_hubbles(kill_other=kill_other)
 
 def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_other=True, no_pgrp=True):
-    log = _debug_pidfile()
-
     if no_pgrp is True:
         no_pgrp = os.getpgrp()
     if isinstance(no_pgrp, int):
         no_pgrp = str(no_pgrp)
-
     if os.path.isdir("/proc/{pid}".format(pid=xpid)):
         pfile = '/proc/{pid}/cmdline'.format(pid=xpid)
         log.error('searching %s for hubble procs matching %s', pfile, hname)
@@ -864,10 +844,7 @@ def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_othe
     return False
 
 def scan_proc_for_hubbles(proc_path='/proc', hname=r'^/\S+python.*hubble', kill_other=True, ksig=signal.SIGTERM):
-    log = _debug_pidfile()
-
     no_pgrp = str(os.getpgrp())
-
     rpid = re.compile('\d+')
     if os.path.isdir('/proc'):
         for dirname, dirs, files in os.walk('/proc'):

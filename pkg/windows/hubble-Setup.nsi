@@ -285,6 +285,45 @@
     nsExec::Exec "nssm.exe set Hubble AppParameters hubble.exe -c .\etc\hubble\hubble.conf"
     nsExec::Exec "nssm.exe set Hubble Start SERVICE_AUTO_START"
 
+		
+    ; Resolving osqueryd's unsafe permission error
+    $osqueryd_path = "$INSTDIR\osqueryd\"
+    $acl = Get-Item $osqueryd_path |get-acl
+    $acl.SetAccessRuleProtection($true,$true)
+    $acl |Set-Acl
+
+    $group = "NT SERVICE\TrustedInstaller"
+    $acl = Get-Acl $osqueryd_path
+    $inherit =[system.security.accesscontrol.InheritanceFlags]"ContainerInherit,ObjectInherit"
+    $propagation =[system.security.accesscontrol.PropagationFlags]"None"
+    $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule($group,"FullControl", $inherit, $Propagation ,,,"Allow")
+    $acl.RemoveAccessRuleAll($accessrule)
+    set-acl -aclobject $acl $osqueryd_path
+
+    $group = "ALL APPLICATION PACKAGES"
+    $acl = Get-Acl $osqueryd_path
+    $inherit =[system.security.accesscontrol.InheritanceFlags]"ContainerInherit,ObjectInherit"
+    $propagation =[system.security.accesscontrol.PropagationFlags]"None"
+    $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule($group,"FullControl", $inherit, $Propagation ,,,"Allow")
+    $acl.RemoveAccessRuleAll($accessrule)
+    set-acl -aclobject $acl $osqueryd_path
+
+    $group = "ALL RESTRICTED APPLICATION PACKAGES"
+    $acl = Get-Acl $osqueryd_path
+    $inherit =[system.security.accesscontrol.InheritanceFlags]"ContainerInherit,ObjectInherit"
+    $propagation =[system.security.accesscontrol.PropagationFlags]"None"
+    $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule($group,"FullControl", $inherit, $Propagation ,,,"Allow")
+    $acl.RemoveAccessRuleAll($accessrule)
+    set-acl -aclobject $acl $osqueryd_path
+
+    $group = "CREATOR OWNER"
+    $acl = Get-Acl $osqueryd_path
+    $inherit =[system.security.accesscontrol.InheritanceFlags]"ContainerInherit,ObjectInherit"
+    $propagation =[system.security.accesscontrol.PropagationFlags]"None"
+    $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule($group,"FullControl", $inherit, $Propagation ,,,"Allow")
+    $acl.RemoveAccessRuleAll($accessrule)
+    set-acl -aclobject $acl $osqueryd_path
+    
     ; Register the osqueryd Service
     nsExec::Exec "nssm.exe install hubble_osqueryd $INSTDIR\osqueryd.exe"
     nsExec::Exec "nssm.exe set hubble_osqueryd Description Open source software for monitoring and scheduling queries and record OS state changes"

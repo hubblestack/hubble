@@ -843,7 +843,7 @@ def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_othe
                 sys.exit(1)
     return False
 
-def scan_proc_for_hubbles(proc_path='/proc', hname=r'^/\S+python.*hubble', kill_other=True, ksig=signal.SIGTERM):
+def scan_proc_for_hubbles(proc_path='/proc', hname=r'^/\S+python.*?/opt/.*?hubble', kill_other=True, ksig=signal.SIGTERM):
     no_pgrp = str(os.getpgrp())
     rpid = re.compile('\d+')
     if os.path.isdir('/proc'):

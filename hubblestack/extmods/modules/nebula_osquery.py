@@ -24,6 +24,7 @@ nebula_osquery:
 from __future__ import absolute_import
 
 import copy
+import fnmatch
 import glob
 import json
 import logging
@@ -334,9 +335,9 @@ def osqueryd_monitor(configfile=None,
                 _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
 
 
-def osqueryd_log_parser(osqueryd_logdir=None, 
+def osqueryd_log_parser(osqueryd_logdir=None,
                         backuplogdir=None,
-                        maxlogfilesizethreshold=100000, 
+                        maxlogfilesizethreshold=100000,
                         logfilethresholdinbytes=10000,
                         backuplogfilescount=5,
                         enablediskstatslogging=False,
@@ -596,9 +597,10 @@ def _mask_object(object_to_be_masked, topfile):
                 - 'value'  # masked, assuming one of the blacklisted_patterns
                            # is found under attribute_to_check in the same dict
                            # Will be skipped if column specified is of type 'String'
-              blacklisted_patterns:  # Strings to look for under attribute_to_check. No regex support.
+              blacklisted_patterns:  # Strings to look for under attribute_to_check. Globbing support.
                 - 'ETCDCTL_READ_PASSWORD'
                 - 'ETCDCTL_WRITE_PASSWORD'
+                - '*PASSWORD*'
 
     blacklisted_patterns (for blacklisted_objects)
 
@@ -783,11 +785,16 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_with):
     if isinstance(object_to_mask, list):
         for child in object_to_mask:
             _recursively_mask_objects(child, blacklisted_object, mask_with)
-    elif blacklisted_object['attribute_to_check'] in object_to_mask and \
-         object_to_mask[blacklisted_object['attribute_to_check']] in blacklisted_object['blacklisted_patterns']:
-        for key in blacklisted_object['attributes_to_mask']:
-            if key in object_to_mask:
-                object_to_mask[key] = mask_with
+    elif blacklisted_object['attribute_to_check'] in object_to_mask:
+        mask = False
+        for blacklisted_pattern in blacklisted_object['blacklisted_patterns']:
+            if fnmatch.fnmatch(object_to_mask[blacklisted_object['attribute_to_check']], blacklisted_pattern):
+                mask = True
+                break
+        if mask:
+            for key in blacklisted_object['attributes_to_mask']:
+                if key in object_to_mask:
+                    object_to_mask[key] = mask_with
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):

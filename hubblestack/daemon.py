@@ -816,14 +816,23 @@ def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_othe
     if isinstance(no_pgrp, int):
         no_pgrp = str(no_pgrp)
     if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+        # NOTE: we'd prefer to check readlink(/proc/[pid]/exe), but that won't do
+        # any good the /opt/whatever/bin/hubble is normally a text file with a
+        # shebang; which the kernel picks up and uses to execute the real binary
+        # with the "bin" file as an argument; so we'll have to live with cmdline
         pfile = '/proc/{pid}/cmdline'.format(pid=xpid)
         log.error('searching %s for hubble procs matching %s', pfile, hname)
         with open(pfile,'r') as fh:
-            cmdline = fh.readline().strip().strip('\x00').replace('\x00',' ')
+            # NOTE: cmdline is actually null separated, not space separated
+            # that shouldn't matter much for most hname regular expressions,
+            # but one never knows.
+            cmdline = fh.readline().replace('\x00',' ').strip()
         if re.search(hname, cmdline):
             if no_pgrp:
                 pstatfile = '/proc/{pid}/stat'.format(pid=xpid)
                 with open(pstatfile, 'r') as fh2:
+                    # NOTE: man proc(5) § /proc/[pid]/stat
+                    # (pid, comm, state, ppid, pgrp, session, tty_nr, tpgid, flags, ...)
                     pgrp = fh2.readline().split()[4]
                     if pgrp == no_pgrp:
                         log.debug("process (%s) exists and seems to be a hubble, "

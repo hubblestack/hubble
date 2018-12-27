@@ -215,10 +215,10 @@ class HEC(object):
 
     def queueEvent(self, dat, eventtime=''):
         if not isinstance(dat, Payload):
-            payload = Payload(dat, eventtime, no_queue=no_queue)
-        if payload.no_queue: # here you silly hec, queue this no_queue payload...
+            dat = Payload(dat, eventtime, no_queue=no_queue)
+        if dat.no_queue: # here you silly hec, queue this no_queue payload...
             return
-        self._queue_event(payload)
+        self._queue_event(dat)
 
 
     def flushQueue(self):
@@ -253,7 +253,7 @@ class HEC(object):
             if pload.requeues < self.max_requeues:
                 log.debug("requeueing payload (requeues so far: %d)", pload.requeues)
                 pload.requeues += 1
-                self._queue_event(payload)
+                self._queue_event(pload)
 
 
     def _send(self, *payload):

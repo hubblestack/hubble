@@ -105,6 +105,7 @@ class Payload(object):
 
 class HEC(object):
     flushing_queue = False
+    last_flush = 0
 
     class Server(object):
         bad = False
@@ -228,9 +229,10 @@ class HEC(object):
         if self.queue.cn < 1:
             log.debug('nothing in queue')
             return
-        dt = time.time() - self.queue.last_get
+        dt = time.time() - self.last_flush
         if dt >= self.retry_diskqueue_interval and self.queue.cn:
             log.debug('flushing queue eventscount=%d', self.queue.cn)
+        self.last_flush = time.time()
         self.flushing_queue = True
         while self.flushing_queue:
             x = self.queue.getz()

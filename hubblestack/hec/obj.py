@@ -10,7 +10,7 @@ import hashlib
 import certifi
 import urllib3
 
-from . dq import DiskQueue
+from . dq import DiskQueue, QueueCapacityError
 
 import logging
 log = logging.getLogger(__name__)
@@ -204,8 +204,13 @@ class HEC(object):
             md5.update(u)
         actual_disk_queue = os.path.join(disk_queue, md5.hexdigest())
         log.debug("disk_queue for %s: %s", uril, actual_disk_queue)
-        self.queue = DiskQueue(actual_disk_queue, restrict_to=Payload,
-            max_items=max_diskqueue_items, max_size=max_diskqueue_size)
+        self.queue = DiskQueue(actual_disk_queue, size=max_diskqueue_size)
+
+    def _queue_event(self, payload):
+        try:
+            self.queue.put(str(payload))
+        except QueueCapacityError:
+            log.info("disk queue is full, dropping payload")
 
 
     def queueEvent(self, dat, eventtime=''):
@@ -213,26 +218,25 @@ class HEC(object):
             payload = Payload(dat, eventtime, no_queue=no_queue)
         if payload.no_queue: # here you silly hec, queue this no_queue payload...
             return
-        self.queue.put(payload)
+        self._queue_event(payload)
 
 
     def flushQueue(self):
         if self.flushing_queue:
             log.debug('already flushing queue')
             return
-        if self.queue.eventcount < 1:
+        if self.queue.cn < 1:
             log.debug('nothing in queue')
             return
         dt = time.time() - self.queue.last_get
-        if dt >= self.retry_diskqueue_interval and self.queue.eventcount:
-            log.debug('flushing queue eventscount=%d', self.queue.eventcount)
+        if dt >= self.retry_diskqueue_interval and self.queue.cn:
+            log.debug('flushing queue eventscount=%d', self.queue.cn)
         self.flushing_queue = True
         while self.flushing_queue:
-            x = self.queue.pull()
+            x = self.queue.getz()
             if not x:
                 break
-            self.batchEvent(x)
-        self.flushBatch()
+            self._send(x)
         self.flushing_queue = False
 
 
@@ -249,7 +253,7 @@ class HEC(object):
             if pload.requeues < self.max_requeues:
                 log.debug("requeueing payload (requeues so far: %d)", pload.requeues)
                 pload.requeues += 1
-                self.queue.put(pload)
+                self._queue_event(payload)
 
 
     def _send(self, *payload):

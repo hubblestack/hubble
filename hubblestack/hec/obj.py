@@ -271,11 +271,11 @@ class HEC(object):
                 r = self.pool_manager.request('POST', server.uri, body=data, headers=self.headers)
                 server.fails = 0
             except urllib3.exceptions.LocationParseError as e:
-                log.error('server uri parse error "{0}": {1}'.format(server.uri, e))
+                log.error('server uri parse error "%s": %s', server.uri, e)
                 server.bad = True
                 continue
             except Exception as e:
-                log.error('misc exception: %s', e)
+                log.error('presumed minor error with "%s" (mark fail and continue): %s', server.uri, e)
                 server.fails += 1
                 continue
             if r.status < 400:

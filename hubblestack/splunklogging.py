@@ -158,7 +158,7 @@ class SplunkHandler(logging.Handler):
         # to work right.
 
         rpn = getattr(record, 'pathname', '')
-        filtered = ('hubblestack/splunklogging', 'hubblestack/hec/')
+        filtered = ('hubblestack/splunklogging', 'hubblestack/hec/', 'urllib3/connectionpool')
         for i in filtered:
             if i in rpn:
                 return

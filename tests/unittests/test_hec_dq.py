@@ -17,6 +17,37 @@ def summon_dq(request):
         return DiskQueue('/tmp/test-dq', **kw)
     return _go
 
+def test_dq_compression0(summon_dq):
+    dq = summon_dq(compression=0)
+
+    source_data = ', '.join(['mah data'] * 10000)
+
+    x = dq.compress(source_data)
+    assert x == source_data
+    assert dq.decompress(x) == source_data
+
+    dq.put('one')
+    dq.put('two')
+    assert dq.peek() == 'one'
+    assert dq.get() == 'one'
+    assert dq.get() == 'two'
+
+def test_dq_compression5(summon_dq):
+    dq = summon_dq(compression=5)
+
+    source_data = ', '.join(['mah data'] * 10000)
+
+    x = dq.compress(source_data)
+    assert x != source_data
+    assert x.startswith("BZ")
+    assert dq.decompress(x) == source_data
+
+    dq.put('one')
+    dq.put('two')
+    assert dq.peek() == 'one'
+    assert dq.get() == 'one'
+    assert dq.get() == 'two'
+
 def test_dq_max_items(summon_dq):
     dq = summon_dq(size=100*10)
 

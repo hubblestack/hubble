@@ -23,7 +23,6 @@ http_event_collector_debug = False
 # the list of collector URLs given to the HEC object
 # are hashed into an md5 string that identifies the URL set
 # these maximums are per URL set, not for the entire disk cache
-max_diskqueue_items = 200
 max_diskqueue_size  = 10 * (1024 ** 2)
 
 class Payload(object):
@@ -128,10 +127,11 @@ class HEC(object):
     def __init__(self, token, http_event_server, host='', http_event_port='8088',
                  http_event_server_ssl=True, http_event_collector_ssl_verify=True,
                  max_bytes=_max_content_bytes, proxy=None, timeout=9.05,
-                 disk_queue='/var/cache/hubble/dq'):
+                 disk_queue='/var/cache/hubble/dq',
+                 disk_queue_size=max_diskqueue_size,
+                 disk_queue_compression=0):
 
         self.max_requeues =  5
-        self.queue_overflow_msg_delay = 10
         self.retry_diskqueue_interval = 60
 
         self.timeout = timeout
@@ -204,7 +204,7 @@ class HEC(object):
             md5.update(u)
         actual_disk_queue = os.path.join(disk_queue, md5.hexdigest())
         log.debug("disk_queue for %s: %s", uril, actual_disk_queue)
-        self.queue = DiskQueue(actual_disk_queue, size=max_diskqueue_size)
+        self.queue = DiskQueue(actual_disk_queue, size=disk_queue_size, compression=disk_queue_compression)
 
     def _queue_event(self, payload):
         try:

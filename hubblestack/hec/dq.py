@@ -1,5 +1,6 @@
 # -*- encoding: utf-8 -*-
 
+import bz2
 import os
 import logging
 import time
@@ -110,6 +111,23 @@ class DiskQueue(OKTypesMixin):
             self.clear()
         self._count()
 
+    def compress(self, dat):
+        if not self.compression:
+            return dat
+        def _bz2(x):
+            b = bz2.BZ2Compressor(self.compression)
+            d = b.compress(x)
+            return d + b.flush()
+        return _bz2(dat)
+
+    def decompress(self, dat):
+        if dat.startswith('BZ'):
+            try:
+                return bz2.BZ2Decompressor().decompress(dat)
+            except IOError:
+                pass
+        return dat
+
     def init_dq(self, directory, size):
         self.directory = directory
         self.size = size
@@ -146,18 +164,18 @@ class DiskQueue(OKTypesMixin):
         f = os.path.join(d, remainder)
         with open(f, 'wb') as fh:
             log.debug('writing item to disk cache')
-            fh.write(item)
+            fh.write(self.compress(item))
         self._count()
 
     def peek(self):
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                return fh.read()
+                return self.decompress(fh.read())
 
     def get(self):
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                ret = fh.read()
+                ret = self.decompress(fh.read())
             os.unlink(fname)
             self._count()
             return ret
@@ -168,7 +186,7 @@ class DiskQueue(OKTypesMixin):
         r = b''
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                p = fh.read()
+                p = self.decompress(fh.read())
             if len(r) + len(self.sep) + len(p) > sz:
                 break
             if r:

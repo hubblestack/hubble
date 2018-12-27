@@ -12,10 +12,20 @@ def summon_dq(request):
         if os.path.isdir(DQ_LOCATION):
             shutil.rmtree('/tmp/test-dq')
     fin() # make sure we don't have anything before we get started
-    request.addfinalizer(fin) # but also, make sure we clean up when we're done
+    #request.addfinalizer(fin) # but also, make sure we clean up when we're done
     def _go(**kw):
         return DiskQueue('/tmp/test-dq', **kw)
     return _go
+
+def test_getz_files(summon_dq):
+    dq = summon_dq()
+    dq.put('one')
+    dq.put('two')
+    assert len(list(dq.files)) == 0
+    assert dq.get() == 'one'
+    assert dq.get() == 'two'
+    assert len(list(dq.files)) == 0
+
 
 def test_dq_compression0(summon_dq):
     dq = summon_dq(compression=0)
@@ -28,9 +38,11 @@ def test_dq_compression0(summon_dq):
 
     dq.put('one')
     dq.put('two')
+    assert len(list(dq.files)) == 2
     assert dq.peek() == 'one'
     assert dq.get() == 'one'
     assert dq.get() == 'two'
+    assert len(list(dq.files)) == 0
 
 def test_dq_compression5(summon_dq):
     dq = summon_dq(compression=5)
@@ -44,9 +56,11 @@ def test_dq_compression5(summon_dq):
 
     dq.put('one')
     dq.put('two')
+    assert len(list(dq.files)) == 2
     assert dq.peek() == 'one'
     assert dq.get() == 'one'
     assert dq.get() == 'two'
+    assert len(list(dq.files)) == 0
 
 def test_dq_max_items(summon_dq):
     dq = summon_dq(size=100*10)

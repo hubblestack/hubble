@@ -42,6 +42,9 @@ def _get_splunk_options(space, modality, **kw):
         'index_extracted_fields': [],
         'http_event_collector_ssl_verify': True,
         'add_query_to_sourcetype': True,
+        'disk_queue': '/var/cache/hubble/dq',
+        'disk_queue_size': 10 * (1024 ** 2),
+        'disk_queue_compression': 0,
     }
 
     nicknames = kw.pop('_nick', {'sourcetype_log': 'sourcetype'})
@@ -119,6 +122,22 @@ def get_splunk_options(*spaces, **kw):
                 return ret
 
     return []
+
+def make_hec_args(opts):
+    a  = (opts['token'], opts['indexer'])
+    kw = {
+        'http_event_port': opts['port'],
+        'http_event_server_ssl': opts['http_event_server_ssl'],
+        'http_event_collector_ssl_verify': opts['http_event_collector_ssl_verify'],
+        'proxy': opts['proxy'],
+        'timeout': opts['timeout'],
+        'disk_queue': opts['disk_queue'],
+        'disk_queue_size': opts['disk_queue_size'],
+        'disk_queue_compression': opts['disk_queue_compression'],
+    }
+
+    return (a, kw)
+
 
 def __setup_for_testing():
     global __salt__, __opts__

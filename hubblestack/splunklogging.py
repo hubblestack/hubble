@@ -41,7 +41,7 @@ import requests
 import json
 import time
 import copy
-from hubblestack.hec import http_event_collector, get_splunk_options
+from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
 
 import logging
 
@@ -59,14 +59,7 @@ class SplunkHandler(logging.Handler):
         cloud_details = __grains__.get('cloud_details', {})
 
         for opts in self.opts_list:
-            http_event_collector_key = opts['token']
-            http_event_collector_host = opts['indexer']
-            http_event_collector_port = opts['port']
-            hec_ssl = opts['http_event_server_ssl']
-            proxy = opts['proxy']
-            timeout = opts['timeout']
             custom_fields = opts['custom_fields']
-            http_event_collector_ssl_verify = opts['http_event_collector_ssl_verify']
 
             # Set up the fields to be extracted at index time. The field values must be strings.
             # Note that these fields will also still be available in the event data
@@ -77,10 +70,8 @@ class SplunkHandler(logging.Handler):
                 pass
 
             # Set up the collector
-            hec = http_event_collector(http_event_collector_key, http_event_collector_host,
-                                       http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl,
-                                       http_event_collector_ssl_verify=http_event_collector_ssl_verify,
-                                       proxy=proxy, timeout=timeout)
+            args, kwargs = make_hec_args(opts)
+            hec = http_event_collector(*args, **kwargs)
 
             minion_id = __grains__['id']
             master = __grains__['master']

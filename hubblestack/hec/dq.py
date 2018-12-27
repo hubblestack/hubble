@@ -102,9 +102,10 @@ class MemQueue(OKTypesMixin):
 class DiskQueue(OKTypesMixin):
     sep = b' '
 
-    def __init__(self, directory, size=DEFAULT_DISK_SIZE, ok_types=OK_TYPES, fresh=False):
+    def __init__(self, directory, size=DEFAULT_DISK_SIZE, ok_types=OK_TYPES, fresh=False, compression=0):
         self.init_types(ok_types)
         self.init_dq(directory, size)
+        self.compression = compression
         if fresh:
             self.clear()
         self._count()

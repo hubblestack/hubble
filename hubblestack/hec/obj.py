@@ -293,8 +293,8 @@ class HEC(object):
                 self._requeue(payload)
 
     def _finish_send(self, r):
-        if r is not None and hasattr(r, 'text'):
-            log.debug(r.text)
+        if r is not None and hasattr(r, 'status') and hasattr(r, 'reason'):
+            log.debug('_send() result: %d %s', r.status, r.reason)
             self.flushQueue()
 
 

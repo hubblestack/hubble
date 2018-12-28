@@ -138,6 +138,7 @@ class HubbleStatus(object):
 
     _signaled = False
     dat = dict()
+    resources = list()
     class Stat(object):
         ''' Data sample container for a named mark.
             Stat objects have the following properties
@@ -204,8 +205,14 @@ class HubbleStatus(object):
         self.namespace = namespace
         if len(resources) == 1 and isinstance(resources[0], (list,tuple,dict)):
             resources = tuple(resources)
-        self.resources = [ self._namespaced(x) for x in resources ]
-        for r in self.resources:
+        for r in resources:
+            self.add_resource(r)
+
+    def add_resource(self, name):
+        r = self._namespaced(name)
+        if r not in self.resources:
+            self.resources.append(r)
+        if r not in self.dat:
             self.dat[r] = self.Stat()
 
     def _namespaced(self, n):

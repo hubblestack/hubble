@@ -184,12 +184,15 @@ class HubbleStatus(object):
                 r.update({'dur': self.dur, 'ema_dur': self.ema_dur})
             return r
 
-        def mark(self):
+        def mark(self, t=None):
             ''' mark a counter (ie, increment the count, mark the last_t =
                 time.time(), and update the ema_dt)
             '''
-            t = time.time()
-            if not self.first_t:
+            if t is None:
+                t = time.time()
+            elif isinstance(t, str):
+                t = int(t)
+            if not self.first_t or t < self.first_t:
                 self.first_t = t
             self.count += 1
             dt = self.dt
@@ -248,10 +251,10 @@ class HubbleStatus(object):
             raise HubbleStatusResourceNotFound('"{}" is not a resource of this HubbleStatus instance')
         return m
 
-    def mark(self, n):
+    def mark(self, n, t=None):
         ''' mark the named resource `n` — meaning increment the counters, update the last_t, etc '''
         n = self._checkmark(n)
-        self.dat[n].mark()
+        self.dat[n].mark(t=t)
 
     def fin(self, n):
         ''' mark the end of a duration measurement '''

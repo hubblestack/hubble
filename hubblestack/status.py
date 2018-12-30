@@ -392,7 +392,7 @@ class HubbleStatus(object):
         return json.dumps(cls.stats(), indent=indent)
 
     @classmethod
-    def dumpster_fire(cls):
+    def dumpster_fire(cls, *a, **kw):
         ''' dump the status.json file to cachedir
 
             Location and filename can be adjusted with the cachedir and

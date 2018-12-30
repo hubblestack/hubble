@@ -86,6 +86,18 @@ class HubbleStatusResourceNotFound(Exception):
     '''
     pass
 
+class ResourceTimer(object):
+    ''' described in HubbleStatus.resource_timer '''
+    def __init__(self, hubble_status, hs_key):
+        self.hubble_status = hubble_status
+        self.hs_key = hs_key
+
+    def __enter__(self):
+        self.hubble_status.mark(self.hs_key)
+
+    def __exit__(self):
+        self.hubble_status.fin(self.hs_key)
+
 class HubbleStatus(object):
     '''
         The values tracked by this package (and output by this method) are
@@ -406,6 +418,25 @@ class HubbleStatus(object):
                 log.info("signal package lacks SIGUSR1, skipping SIGUSR1 status.json handler setup")
                 return
             signal.signal(signal.SIGUSR1, cls.dumpster_fire)
+
+    def resource_timer(self, hs_key):
+        ''' return an object suitable for a with-block for timing code
+
+            instead of writing:
+                hs_key = 'resource-name-here'
+                hubble_status.add_resource(hs_key)
+                hubble_status.mark(hs_key)
+                do_things()
+                do_other_things()
+                hubble_status.fin(hs_key)
+
+            write this:
+                with hubble_status.resource_timer('resource-name-here'):
+                    do_things()
+                    do_other_things()
+        '''
+        self.add_resource(hs_key)
+        return ResourceTimer(self, hs_key)
 
 def _setup_for_testing():
     global __opts__

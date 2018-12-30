@@ -28,6 +28,11 @@ http_event_collector_debug = False
 # these maximums are per URL set, not for the entire disk cache
 max_diskqueue_size  = 10 * (1024 ** 2)
 
+def count_input(sourcetype):
+    hs_key = ':'.join(['input', sourcetype])
+    hubble_status.add_resource(hs_key)
+    hubble_status.mark(hs_key)
+
 class Payload(object):
     ''' formatters for final payload stringification
         and a convenient place to store retry counter information
@@ -226,6 +231,7 @@ class HEC(object):
             dat = Payload(dat, eventtime, no_queue=no_queue)
         if dat.no_queue: # here you silly hec, queue this no_queue payload...
             return
+        count_input(payload.sourcetype)
         self._queue_event(dat)
 
     def flushQueue(self):
@@ -322,6 +328,7 @@ class HEC(object):
 
     def sendEvent(self, payload, eventtime='', no_queue=False):
         payload = Payload.promote(payload, eventtime=eventtime, no_queue=no_queue)
+        count_input(payload.sourcetype)
 
         r = self._send(payload)
         self._finish_send(r)
@@ -329,6 +336,7 @@ class HEC(object):
 
     def batchEvent(self, dat, eventtime='', no_queue=False):
         payload = Payload.promote(dat, eventtime, no_queue=False)
+        count_input(payload.sourcetype)
 
         if (self.currentByteLength + len(payload)) > self.maxByteLength:
             self.flushBatch()

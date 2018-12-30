@@ -164,11 +164,7 @@ class HubbleStatus(object):
         '''
 
         def __init__(self):
-            self.last_t = self.first_t = 0
-            self.count  = 0
-            self.ema_dt = None
-            self.dur = None
-            self.ema_dur = None
+            self.reset()
 
         @property
         def dt(self):
@@ -211,6 +207,13 @@ class HubbleStatus(object):
             '''
             self.dur = self.dt
             self.ema_dur  = self.dur if self.ema_dur is None else 0.5*self.ema_dur + 0.5*self.dur
+
+        def reset(self):
+            self.last_t = self.first_t = 0
+            self.count  = 0
+            self.ema_dt = None
+            self.dur = None
+            self.ema_dur = None
 
 
     def __init__(self, namespace, *resources):
@@ -306,6 +309,17 @@ class HubbleStatus(object):
         if invoke:
             return decorator(invoke)
         return decorator
+
+    @classmethod
+    def reset(cls, key=None):
+        # NOTE: this is janky... allowing resets on arbitrary keys on the
+        # class, not even tracked with _checkmark() ... but it's needed to make
+        # the sourcetype accounting beacon update meaningfully.
+        if key is None:
+            for key in cls.dat:
+                cls.dat[key].reset()
+        else:
+            cls.dat[key].reset()
 
     @classmethod
     def stats(cls):

@@ -25,13 +25,11 @@ def msg_counts(pat=r'hubblestack.hec.obj.input:(?P<stype>[^:]+)', reset=True):
             pat - the key matching algorithm is a simple regular expression
     '''
 
-    if reset:
-        log.error("TODO: reset timers")
-
     km = re.compile(pat)
     r = list()
     s = get()
     fudge_me = None
+    rst = set()
     for k,v in s.iteritems():
         try:
             if v['first_t'] == 0 or v['last_t'] == 0:
@@ -46,7 +44,11 @@ def msg_counts(pat=r'hubblestack.hec.obj.input:(?P<stype>[^:]+)', reset=True):
             r.append(d)
             if d['stype'] == 'hubble_hec_counters':
                 fudge_me = d
+        rst.add(k)
+
     if r:
+       #for k in rst:
+       #    hubblestack.status.HubbleStatus.reset(k)
         min_time = min([ x['start'] for x in r ])
         if fudge_me:
             # this is a fudge factor for the recursion where we report on own

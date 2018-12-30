@@ -1,6 +1,7 @@
 
 import re
 import logging
+import math
 import hubblestack.status
 
 log = logging.getLogger(__name__)
@@ -30,6 +31,7 @@ def msg_counts(pat=r'hubblestack.hec.obj.input:(?P<stype>[^:]+)', reset=True):
     km = re.compile(pat)
     r = list()
     s = get()
+    fudge_me = None
     for k,v in s.iteritems():
         try:
             if v['first_t'] == 0 or v['last_t'] == 0:
@@ -39,15 +41,18 @@ def msg_counts(pat=r'hubblestack.hec.obj.input:(?P<stype>[^:]+)', reset=True):
         m = km.match(k)
         if m:
             d = m.groupdict()
-            d.update({ 'count': v['count'], 'start': v['first_t'], 'end': v['last_t'] })
+            d.update({ 'count': v['count'], 'start': int(v['first_t']),
+                'end': int(math.ceil(v['last_t'])) })
             r.append(d)
+            if d['stype'] == 'hubble_hec_counters':
+                fudge_me = d
     if r:
         min_time = min([ x['start'] for x in r ])
-        return {
-            'sourcetype': 'hubble_hec_counters',
-            'time': str(int(min_time)),
-            'events': r
-        }
+        if fudge_me:
+            # this is a fudge factor for the recursion where we report on own
+            # sourcetype missing the currently-being-submitted counts
+            fudge_me['count'] += len(r)
+        return { 'sourcetype': 'hubble_hec_counters', 'time': min_time, 'events': r }
 
 def dump():
     ''' trigger a dump to the status.json file as described in hubblestack.status

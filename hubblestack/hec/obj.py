@@ -32,6 +32,9 @@ def count_input(payload):
     hs_key = ':'.join(['input', payload.sourcetype])
     hubble_status.add_resource(hs_key)
     hubble_status.mark(hs_key, t=payload.time)
+    # NOTE: t=payload.time is an undocumented mark() argument
+    # that ensures the first_t and last_t include the given timestamp
+    # (without this, the accounting likely wouldn't work)
 
 class Payload(object):
     ''' formatters for final payload stringification

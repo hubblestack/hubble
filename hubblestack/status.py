@@ -188,16 +188,23 @@ class HubbleStatus(object):
             ''' mark a counter (ie, increment the count, mark the last_t =
                 time.time(), and update the ema_dt)
             '''
-            if t is None:
-                t = time.time()
-            elif isinstance(t, str):
-                t = int(t)
-            if not self.first_t or t < self.first_t:
-                self.first_t = t
+            now = time.time()
+            if not self.first_t:
+                self.first_t = now
             self.count += 1
             dt = self.dt
-            self.last_t = t
-            self.ema_dt  = dt if self.ema_dt is None else 0.5*self.ema_dt + 0.5*dt
+            self.last_t = now
+            if t is not None:
+                # NOTE: t should only be used for tracking time constrained counts
+                # (e.g., the sourcetype counts in hec.obj); we make sure the first_t
+                # and last_t include the given (e.g.) event time
+                if isinstance(t, str):
+                    t = int(t)
+                if t < self.first_t:
+                    self.first_t = t
+                if t > self.last_t:
+                    self.last_t = t
+            self.ema_dt = dt if self.ema_dt is None else 0.5*self.ema_dt + 0.5*dt
 
         def fin(self):
             ''' mark a counter duration (ie, mark the time since the last mark, and update the ema_dur)

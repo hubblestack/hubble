@@ -28,10 +28,10 @@ http_event_collector_debug = False
 # these maximums are per URL set, not for the entire disk cache
 max_diskqueue_size  = 10 * (1024 ** 2)
 
-def count_input(sourcetype):
-    hs_key = ':'.join(['input', sourcetype])
+def count_input(payload):
+    hs_key = ':'.join(['input', payload.sourcetype])
     hubble_status.add_resource(hs_key)
-    hubble_status.mark(hs_key)
+    hubble_status.mark(hs_key, t=payload.time)
 
 class Payload(object):
     ''' formatters for final payload stringification
@@ -76,12 +76,15 @@ class Payload(object):
         if 'host' not in dat or dat['host'] is None:
             dat['host'] = self.host
 
+        now = time.time()
         if eventtime:
             dat['time'] = eventtime
         elif 'time' not in dat:
-            dat['time'] = str(int(time.time()))
+            dat['time'] = now
 
         self.sourcetype = dat.get('sourcetype', 'hubble')
+        self.time       = dat.get('time', now)
+
         self.rename_event_fields_in_payload(dat)
         self.dat = json.dumps(dat)
 
@@ -328,15 +331,13 @@ class HEC(object):
 
     def sendEvent(self, payload, eventtime='', no_queue=False):
         payload = Payload.promote(payload, eventtime=eventtime, no_queue=no_queue)
-        count_input(payload.sourcetype)
-
+        count_input(payload)
         r = self._send(payload)
         self._finish_send(r)
 
 
     def batchEvent(self, dat, eventtime='', no_queue=False):
         payload = Payload.promote(dat, eventtime, no_queue=False)
-        count_input(payload.sourcetype)
 
         if (self.currentByteLength + len(payload)) > self.maxByteLength:
             self.flushBatch()
@@ -344,6 +345,7 @@ class HEC(object):
                 log.debug('auto flushing')
         else:
             self.currentByteLength = self.currentByteLength + len(payload)
+        count_input(payload)
         self.batchEvents.append(payload)
 
 

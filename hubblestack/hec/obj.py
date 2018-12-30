@@ -10,10 +10,13 @@ import hashlib
 import certifi
 import urllib3
 
-from . dq import DiskQueue, NoQueue, QueueCapacityError
-
 import logging
 log = logging.getLogger(__name__)
+
+import hubblestack.status
+hubble_status = hubblestack.status.HubbleStatus(__name__)
+
+from . dq import DiskQueue, NoQueue, QueueCapacityError
 
 __version__ = '1.0'
 
@@ -73,6 +76,7 @@ class Payload(object):
         elif 'time' not in dat:
             dat['time'] = str(int(time.time()))
 
+        self.sourcetype = dat.get('sourcetype', 'hubble')
         self.rename_event_fields_in_payload(dat)
         self.dat = json.dumps(dat)
 
@@ -224,7 +228,6 @@ class HEC(object):
             return
         self._queue_event(dat)
 
-
     def flushQueue(self):
         if self.flushing_queue:
             log.debug('already flushing queue')
@@ -318,7 +321,9 @@ class HEC(object):
 
 
     def sendEvent(self, payload, eventtime='', no_queue=False):
-        r = self._send( Payload.promote(payload, eventtime=eventtime, no_queue=no_queue) )
+        payload = Payload.promote(payload, eventtime=eventtime, no_queue=no_queue)
+
+        r = self._send(payload)
         self._finish_send(r)
 
 

@@ -155,6 +155,7 @@ class HubbleStatus(object):
         ''' Data sample container for a named mark.
             Stat objects have the following properties
 
+            * first_t: the first time the counter was marked
             * last_t: the last time the counter was marked
             * count: the count of times the counter was marked
             * ema_dt: the average time between marks (updated at mark() time only)
@@ -163,7 +164,7 @@ class HubbleStatus(object):
         '''
 
         def __init__(self):
-            self.last_t = self.start = time.time()
+            self.last_t = self.first_t = 0
             self.count  = 0
             self.ema_dt = None
             self.dur = None
@@ -178,7 +179,7 @@ class HubbleStatus(object):
         def asdict(self):
             ''' a computed attribute that clones and formats the various object properties in a dict() '''
             r = { 'count': self.count, 'last_t': self.last_t,
-                'dt': self.dt, 'ema_dt': self.ema_dt }
+                'dt': self.dt, 'ema_dt': self.ema_dt, 'first_t': self.first_t }
             if self.dur is not None:
                 r.update({'dur': self.dur, 'ema_dur': self.ema_dur})
             return r
@@ -188,6 +189,8 @@ class HubbleStatus(object):
                 time.time(), and update the ema_dt)
             '''
             t = time.time()
+            if not self.first_t:
+                self.first_t = t
             self.count += 1
             dt = self.dt
             self.last_t = t
@@ -346,10 +349,11 @@ class HubbleStatus(object):
                   }
                 }
         '''
-        r = { x: cls.dat[x].asdict for x in cls.dat }
+        r = { k: v.asdict for k,v in cls.dat.iteritems() if v.first_t > 0 }
         min_dt = min([ x['dt'] for x in r.values() ])
         max_t  = max([ x['last_t'] for x in r.values() ])
-        h1 = {'time': max_t, 'dt': min_dt}
+        min_t  = min([ x['first_t'] for x in r.values() if x['first_t'] > 0 ])
+        h1 = {'time': max_t, 'dt': min_dt, 'start': min_t}
         r['HEALTH'] = h2 = {'last_activity': h1}
         r['__doc__'] = {
             'service.name.here': {
@@ -359,6 +363,7 @@ class HubbleStatus(object):
                 "ema_dt": 'average time between calls',
                 "dur": 'duration of the last call',
                 "last_t": 'the last time the counter was called',
+                "first_t": 'the first time the counter was called',
             },
             'HEALTH': {
                 "last_activity": {

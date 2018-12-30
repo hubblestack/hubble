@@ -17,10 +17,10 @@ event collector. Required config/pillar settings:
 '''
 
 import time
-import logging
+#import logging
 from hubblestack.hec import http_event_collector, get_splunk_options
 
-log = logging.getLogger(__name__)
+#log = logging.getLogger(__name__)
 
 def _get_key(dat, k, d=None):
     if isinstance(dat, dict):
@@ -61,7 +61,7 @@ def returner(ret):
             payload = {'host': __grains__.get('fqdn', __grains__.get('id')), 'event': event,
                 'sourcetype': _get_key(event, 'sourcetype', t_sourcetype),
                 'time': _get_key(event, 'time', t_time) }
-            log.debug("batching payload: %s", payload)
-            time.sleep(2)
+            #log.debug("batching payload: %s", payload)
+            #time.sleep(2)
             hec.batchEvent(payload)
         hec.flushBatch()

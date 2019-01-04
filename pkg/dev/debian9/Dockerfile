@@ -144,7 +144,7 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 ARG HUBBLE_CHECKOUT=develop
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_VERSION=2.4.7_develop
-ENV HUBBLE_ITERATION=5051
+ENV HUBBLE_ITERATION=50501
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
@@ -154,7 +154,7 @@ RUN git clone ${HUBBLE_GIT_URL} "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout ${HUBBLE_CHECKOUT} \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
- && sed -i bak 's/BRANCH_NOT_SET/develop/g' /hubble_build/hubblestack/__init__.py
+ && sed -i bak 's/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g' /hubble_build/hubblestack/__init__.py
 RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build

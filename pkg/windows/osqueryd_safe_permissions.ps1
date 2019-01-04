@@ -1,4 +1,4 @@
-    $osqueryd_path = "$INSTDIR\osqueryd\"
+    $osqueryd_path = "C:/temp/hubble/dist/hubble/osqueryd/"
     $acl = Get-Item $osqueryd_path |get-acl
     $acl.SetAccessRuleProtection($true,$true)
     $acl |Set-Acl

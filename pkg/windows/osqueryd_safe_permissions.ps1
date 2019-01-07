@@ -1,5 +1,5 @@
     Write-Output "test2";
-    $osqueryd_path = "C:\temp\hubble\dist\hubble\osqueryd\"
+    $osqueryd_path = "C:\Program Files (x86)\Hubble\osqueryd"
     $acl = Get-Item $osqueryd_path |get-acl
     $acl.SetAccessRuleProtection($true,$true)
     $acl |Set-Acl

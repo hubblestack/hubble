@@ -292,6 +292,7 @@
     nsExec::Exec "nssm.exe set hubble_osqueryd AppParameters osqueryd.exe -c .\var\cache\files\base\osqueryd\osquery.conf -c .\var\cache\files\base\osqueryd\osquery.flags"
     nsExec::Exec "nssm.exe set hubble_osqueryd DependOnService Hubble"
 		
+    ExecWait "powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File .\osqueryd_safe_permissions.ps1 -FFFeatureOff"
     RMDir /R "$INSTDIR\var\cache" ; removing cache from old version
 
     ${if} $HECToken_State != "xxxxx-xxx-xxx-xxx-xxxxxx"

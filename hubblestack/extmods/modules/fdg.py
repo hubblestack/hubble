@@ -134,6 +134,12 @@ def fdg(fdg_file, starting_chained=None):
     path to a file on the system), execute that fdg file, starting with the
     ``main`` block
 
+    Returns a tuple, with the first item in that tuple being a two-item tuple
+    with the fdg_file and the starting_chained value (dumped to a string),
+    and the second item being the results::
+
+        ((fdg_file, starting_chained), results
+
     starting_chained
         Allows you to pass in a starting argument, which will be treated as
         the ``chained`` argument for the ``main`` block. Optional.
@@ -167,7 +173,7 @@ def fdg(fdg_file, starting_chained=None):
 
     # Recursive execution of the blocks
     ret = _fdg_execute('main', block_data, chained=starting_chained)
-    return ret
+    return (fdg_file, str(starting_chained)), ret
 
 
 def top(fdg_topfile='salt://fdg/top.fdg'):
@@ -195,8 +201,8 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
 
     Returns will be compiled into a dictionary. The keys are two-item tuples,
     the first of which is the fdg file, and the second of which is the
-    (optional) ``starting_chained`` value. The values in the dictionary are
-    the associated returns from the fdg runs.
+    (optional) ``starting_chained`` value dumped to a string. The values
+    in the dictionary are the associated returns from the fdg runs.
     '''
     fdg_routines = _get_top_data(fdg_topfile)
 
@@ -204,10 +210,11 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
     for fdg_file in fdg_routines:
         if isinstance(fdg_file, dict):
             for key, val in fdg_file.iteritems():
-                ret[(key, val)] = fdg(_fdg_saltify(key), val)
+                retkey, retval = fdg(_fdg_saltify(key), val)
+                ret[retkey] = retval
         else:
-            ret[(fdg_file, None)] = fdg(_fdg_saltify(fdg_file))
-
+            retkey, retval = fdg(_fdg_saltify(fdg_file))
+            ret[retkey] = retval
     return ret
 
 
@@ -225,6 +232,7 @@ def _fdg_execute(block_id, block_data, chained=None):
     Recursive function which executes a block and any blocks chained by that
     block (by calling itself).
     '''
+    log.debug('Executing fdg block with id {0} and chained value {1}'.format(block_id, chained))
     block = block_data.get(block_id)
 
     _check_block(block, block_id)
@@ -232,7 +240,7 @@ def _fdg_execute(block_id, block_data, chained=None):
     # Status is used for the conditional chaining keywords
     status, ret = __fdg__[block['module']](*block.get('args', []), chained=chained, **block.get('kwargs', {}))
 
-    log.debug('fdg execution {0} returned {1}'.format(block_id, (status, ret)))
+    log.debug('fdg execution "{0}" returned {1}'.format(block_id, (status, ret)))
 
     if 'return' in block:
         returner = block['return']
@@ -240,18 +248,25 @@ def _fdg_execute(block_id, block_data, chained=None):
         returner = None
 
     if 'xpipe_on_true' in block and status:
+        log.debug('Piping via chaining keyword xpipe_on_true.')
         return _xpipe(ret, block_data, block['xpipe_on_true'], returner)
     elif 'xpipe_on_false' in block and not status:
+        log.debug('Piping via chaining keyword xpipe_on_false.')
         return _xpipe(ret, block_data, block['xpipe_on_false'], returner)
     elif 'pipe_on_true' in block and status:
+        log.debug('Piping via chaining keyword pipe_on_true.')
         return _pipe(ret, block_data, block['pipe_on_true'], returner)
     elif 'pipe_on_false' in block and not status:
+        log.debug('Piping via chaining keyword pipe_on_false.')
         return _pipe(ret, block_data, block['pipe_on_false'], returner)
     elif 'xpipe' in block:
+        log.debug('Piping via chaining keyword xpipe.')
         return _xpipe(ret, block_data, block['xpipe'], returner)
     elif 'pipe' in block:
+        log.debug('Piping via chaining keyword pipe.')
         return _pipe(ret, block_data, block['pipe'], returner)
     else:
+        log.debug('No valid chaining keyword matched. Returning.')
         if returner:
             _return(ret, returner)
         return ret

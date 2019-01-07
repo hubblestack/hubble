@@ -1155,7 +1155,7 @@ def _rotate_log_windows(path_to_logfile,
             log.info("Successfully deleted backup files")
     
     backupLogFile = os.path.normpath(os.path.join(backuplogdir, logfilename) + "-" + str(time.time()))
-    #salt.utils.files.rename(path_to_logfile, backupLogFile) # Throws FileInUseException on windows platform
+    salt.utils.files.rename(path_to_logfile, backupLogFile) # Throws FileInUseException on windows platform
 
     log.info("Need to implement log rotation in windows and handle file in use exception")
     return residue_events

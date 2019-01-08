@@ -246,6 +246,8 @@ class HEC(object):
 
 
     def _requeue(self, payloads):
+        if not self.queue:
+            return
         log.debug("_requeue")
         if self.flushing_queue:
             log.debug("aborting queue flush due to requeue")
@@ -325,7 +327,8 @@ class HEC(object):
     def _finish_send(self, r):
         if r is not None and hasattr(r, 'status') and hasattr(r, 'reason'):
             log.debug('_send() result: %d %s', r.status, r.reason)
-            self.flushQueue()
+            if self.queue:
+                self.flushQueue()
 
 
     def sendEvent(self, payload, eventtime='', no_queue=False):

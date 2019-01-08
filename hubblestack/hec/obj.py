@@ -282,6 +282,26 @@ class HEC(object):
         # hubble sends to all of them, not just the first successful one.  and
         # mostly that logic is handled outside of the HEC class (see
         # splunklogging.py)
+        #
+        # Below, we'll only send to one server, and we'll use the following plan:
+        # for each server url in the HEC():
+        # 1. if we get a message bundle to go through
+        #    a. set fails to 0 (hey, it's working)
+        #    b. don't try any more URLs
+        #    c. if it's < 400, it's good, great return the result
+        #    d. but if it's bad (==400 and "bad request"), then we're probably
+        #       not going to succeed.  Log this horror and return the result,
+        #       but make no attempt at disk-queueing (if applicable)
+        # 2. if there's some exception during the send:
+        #    a. log that something bad happened
+        #    b. increment the fails (for sorting purposes only)
+        #    c. consider the type of exception
+        #       i. LocationParseError? This is never going to work. mark bad and continue
+        #      ii. Some other Exception? This will probably work again some day, mark for requeue
+        #     iii. if nothing else succeeds or fails (as above); enter the
+        #          message bundle to to the disk-queue (if any)
+
+        possible_requeue = False
         for server in sorted(servers, key=lambda u: u.fails):
             try:
                 r = self.pool_manager.request('POST', server.uri, body=data, headers=self.headers)
@@ -292,16 +312,21 @@ class HEC(object):
                 continue
             except Exception as e:
                 log.error('presumed minor error with "%s" (mark fail and continue): %s', server.uri, e)
+                possible_requeue = True
                 server.fails += 1
                 continue
+
             if r.status < 400:
                 return r
             elif r.status == 400 and r.reason.lower() == 'bad request':
                 log.error('message not accepted (%d %s), dropping payload: %s', r.status, r.reason, r.data)
                 return r
 
-        log.error('message not accepted (%d %s), requeueing: %s', r.status, r.reason, r.data)
-        self._requeue(payload)
+        # if we get here and something above thinks a requeue is a good idea
+        # then requeue it! \o/
+        if possible_requeue:
+            log.error('message not accepted (%d %s), requeueing: %s', r.status, r.reason, r.data)
+            self._requeue(payload)
 
     def _finish_send(self, r):
         if r is not None and hasattr(r, 'status') and hasattr(r, 'reason'):

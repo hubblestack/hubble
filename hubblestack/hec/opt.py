@@ -140,7 +140,7 @@ def make_hec_args(opts):
     return (a, kw)
 
 
-def __setup_for_testing():
+def _setup_for_testing():
     global __salt__, __opts__
     import hubblestack.daemon
     parsed_args = hubblestack.daemon.parse_args()

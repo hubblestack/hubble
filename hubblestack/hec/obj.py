@@ -298,9 +298,10 @@ class HEC(object):
                 return r
             elif r.status == 400 and r.reason.lower() == 'bad request':
                 log.error('message not accepted (%d %s), dropping payload: %s', r.status, r.reason, r.data)
-            else:
-                log.error('message not accepted (%d %s), requeueing: %s', r.status, r.reason, r.data)
-                self._requeue(payload)
+                return r
+
+        log.error('message not accepted (%d %s), requeueing: %s', r.status, r.reason, r.data)
+        self._requeue(payload)
 
     def _finish_send(self, r):
         if r is not None and hasattr(r, 'status') and hasattr(r, 'reason'):

@@ -107,6 +107,7 @@ class DiskQueue(OKTypesMixin):
         self.init_types(ok_types)
         self.init_dq(directory, size)
         self.compression = compression
+        log.debug('DiskQueue.__init__(%s, compression=%d)', directory, compression)
         if fresh:
             self.clear()
         self._count()

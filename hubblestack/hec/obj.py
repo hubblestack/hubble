@@ -211,9 +211,10 @@ class HEC(object):
             class NoQueue(object):
                 cn = 0
                 def put(self, *a, **kw):
-                    # log.debug('no-queue.put() dumping event')
+                    log.debug('no-queue.put() dumping event')
                     pass
                 def getz(self, *a, **kw):
+                    log.debug('no-queue.put() nothing to dequeue')
                     pass
 
     def _queue_event(self, payload):

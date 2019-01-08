@@ -36,6 +36,16 @@ class OKTypesMixin:
         if not isinstance(item, self.ok_types):
             raise QueueTypeError('type({0}) is not ({1})'.format(type(item), self.ok_types))
 
+class NoQueue(object):
+    cn = 0
+    def put(self, *a, **kw):
+        log.debug('no-queue.put() dumping event')
+        pass
+    def getz(self, *a, **kw):
+        log.debug('no-queue.put() nothing to dequeue')
+        pass
+    def __bool__(self):
+        return False
 
 class MemQueue(OKTypesMixin):
     sep = b' '
@@ -43,6 +53,9 @@ class MemQueue(OKTypesMixin):
     def __init__(self, size=DEFAULT_MEMORY_SIZE, ok_types=OK_TYPES):
         self.init_types(ok_types)
         self.init_mq(size)
+
+    def __bool__(self):
+        return True
 
     def init_mq(self, size):
         self.size = size
@@ -111,6 +124,9 @@ class DiskQueue(OKTypesMixin):
         if fresh:
             self.clear()
         self._count()
+
+    def __bool__(self):
+        return True
 
     def compress(self, dat):
         if not self.compression:
@@ -236,6 +252,9 @@ class DiskBackedQueue:
 
         self.dq = DiskQueue(directory, size=disk_size, ok_types=ok_types, fresh=fresh)
         self.mq = MemQueue(size=mem_size, ok_types=ok_types)
+
+    def __bool__(self):
+        return True
 
     def put(self, item):
         try:

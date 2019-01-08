@@ -10,7 +10,7 @@ import hashlib
 import certifi
 import urllib3
 
-from . dq import DiskQueue, QueueCapacityError
+from . dq import DiskQueue, NoQueue, QueueCapacityError
 
 import logging
 log = logging.getLogger(__name__)
@@ -208,14 +208,7 @@ class HEC(object):
             log.debug("disk_queue for %s: %s", uril, actual_disk_queue)
             self.queue = DiskQueue(actual_disk_queue, size=disk_queue_size, compression=disk_queue_compression)
         else:
-            class NoQueue(object):
-                cn = 0
-                def put(self, *a, **kw):
-                    log.debug('no-queue.put() dumping event')
-                    pass
-                def getz(self, *a, **kw):
-                    log.debug('no-queue.put() nothing to dequeue')
-                    pass
+            self.queue = NoQueue()
 
     def _queue_event(self, payload):
         try:
@@ -325,8 +318,9 @@ class HEC(object):
         # if we get here and something above thinks a requeue is a good idea
         # then requeue it! \o/
         if possible_requeue:
-            log.error('message not accepted (%d %s), requeueing: %s', r.status, r.reason, r.data)
-            self._requeue(payload)
+            if self.queue:
+                log.info('(re)queueing payload due to (hopefully) transient error')
+                self._requeue(payload)
 
     def _finish_send(self, r):
         if r is not None and hasattr(r, 'status') and hasattr(r, 'reason'):

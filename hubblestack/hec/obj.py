@@ -128,9 +128,9 @@ class HEC(object):
     def __init__(self, token, http_event_server, host='', http_event_port='8088',
                  http_event_server_ssl=True, http_event_collector_ssl_verify=True,
                  max_bytes=_max_content_bytes, proxy=None, timeout=9.05,
-                 disk_queue='/var/cache/hubble/dq',
+                 disk_queue=False,
                  disk_queue_size=max_diskqueue_size,
-                 disk_queue_compression=0):
+                 disk_queue_compression=5):
 
         self.max_requeues =  5
         self.retry_diskqueue_interval = 60
@@ -199,13 +199,22 @@ class HEC(object):
         else:
             self.pool_manager = urllib3.PoolManager(**pm_kw)
 
-        md5 = hashlib.md5()
-        uril = sorted([ x.uri for x in self.server_uri ])
-        for u in uril:
-            md5.update(u)
-        actual_disk_queue = os.path.join(disk_queue, md5.hexdigest())
-        log.debug("disk_queue for %s: %s", uril, actual_disk_queue)
-        self.queue = DiskQueue(actual_disk_queue, size=disk_queue_size, compression=disk_queue_compression)
+        if disk_queue:
+            md5 = hashlib.md5()
+            uril = sorted([ x.uri for x in self.server_uri ])
+            for u in uril:
+                md5.update(u)
+            actual_disk_queue = os.path.join(disk_queue, md5.hexdigest())
+            log.debug("disk_queue for %s: %s", uril, actual_disk_queue)
+            self.queue = DiskQueue(actual_disk_queue, size=disk_queue_size, compression=disk_queue_compression)
+        else:
+            class NoQueue(object):
+                cn = 0
+                def put(self, *a, **kw):
+                    # log.debug('no-queue.put() dumping event')
+                    pass
+                def getz(self, *a, **kw):
+                    pass
 
     def _queue_event(self, payload):
         try:

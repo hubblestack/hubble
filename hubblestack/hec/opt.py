@@ -43,8 +43,9 @@ def _get_splunk_options(space, modality, **kw):
         'http_event_collector_ssl_verify': True,
         'add_query_to_sourcetype': True,
         'disk_queue': '/var/cache/hubble/dq',
+        'disk_queue': False, # '/var/cache/hubble/dq',
         'disk_queue_size': 10 * (1024 ** 2),
-        'disk_queue_compression': 0,
+        'disk_queue_compression': 5,
     }
 
     nicknames = kw.pop('_nick', {'sourcetype_log': 'sourcetype'})

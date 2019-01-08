@@ -46,6 +46,7 @@ class NoQueue(object):
         pass
     def __bool__(self):
         return False
+    __nonzero__ = __bool__ # stupid python2
 
 class MemQueue(OKTypesMixin):
     sep = b' '
@@ -56,6 +57,7 @@ class MemQueue(OKTypesMixin):
 
     def __bool__(self):
         return True
+    __nonzero__ = __bool__ # stupid python2
 
     def init_mq(self, size):
         self.size = size
@@ -127,6 +129,7 @@ class DiskQueue(OKTypesMixin):
 
     def __bool__(self):
         return True
+    __nonzero__ = __bool__ # stupid python2
 
     def compress(self, dat):
         if not self.compression:
@@ -255,6 +258,7 @@ class DiskBackedQueue:
 
     def __bool__(self):
         return True
+    __nonzero__ = __bool__ # stupid python2
 
     def put(self, item):
         try:

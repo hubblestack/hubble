@@ -63,7 +63,6 @@ class Payload(object):
         if self.host is None:
             self.__class__.host = socket.gethostname()
 
-        self.requeues = 0
         self.no_queue = no_queue or dat.pop('_no_queue', False)
 
         if 'host' not in dat or dat['host'] is None:
@@ -132,7 +131,6 @@ class HEC(object):
                  disk_queue_size=max_diskqueue_size,
                  disk_queue_compression=5):
 
-        self.max_requeues =  5
         self.retry_diskqueue_interval = 60
 
         self.timeout = timeout
@@ -211,8 +209,10 @@ class HEC(object):
             self.queue = NoQueue()
 
     def _queue_event(self, payload):
+        p = str(payload)
+        log.info('queueing %d octets to disk', len(p))
         try:
-            self.queue.put(str(payload))
+            self.queue.put(p)
         except QueueCapacityError:
             log.info("disk queue is full, dropping payload")
 
@@ -245,24 +245,6 @@ class HEC(object):
         self.flushing_queue = False
 
 
-    def _requeue(self, payloads):
-        if not self.queue:
-            return
-        log.debug("_requeue")
-        if self.flushing_queue:
-            log.debug("aborting queue flush due to requeue")
-            self.flushing_queue = False
-        if not isinstance(payloads, (list,tuple)):
-            payloads = [ payloads ]
-        for pload in payloads:
-            if pload.no_queue:
-                continue
-            if pload.requeues < self.max_requeues:
-                log.debug("requeueing payload (requeues so far: %d)", pload.requeues)
-                pload.requeues += 1
-                self._queue_event(pload)
-
-
     def _send(self, *payload):
         data = ' '.join([ str(x) for x in payload ])
 
@@ -292,12 +274,13 @@ class HEC(object):
         #    b. increment the fails (for sorting purposes only)
         #    c. consider the type of exception
         #       i. LocationParseError? This is never going to work. mark bad and continue
-        #      ii. Some other Exception? This will probably work again some day, mark for requeue
+        #      ii. Some other Exception? This will probably work again some day, mark for queue
         #     iii. if nothing else succeeds or fails (as above); enter the
         #          message bundle to to the disk-queue (if any)
 
-        possible_requeue = False
+        possible_queue = False
         for server in sorted(servers, key=lambda u: u.fails):
+            log.debug('trying to send %d octets to %s', len(data), server.uri)
             try:
                 r = self.pool_manager.request('POST', server.uri, body=data, headers=self.headers)
                 server.fails = 0
@@ -307,22 +290,25 @@ class HEC(object):
                 continue
             except Exception as e:
                 log.error('presumed minor error with "%s" (mark fail and continue): %s', server.uri, e)
-                possible_requeue = True
+                possible_queue = True
                 server.fails += 1
                 continue
 
             if r.status < 400:
+                log.debug('octets accepted')
                 return r
             elif r.status == 400 and r.reason.lower() == 'bad request':
                 log.error('message not accepted (%d %s), dropping payload: %s', r.status, r.reason, r.data)
                 return r
 
-        # if we get here and something above thinks a requeue is a good idea
-        # then requeue it! \o/
-        if possible_requeue:
+        # if we get here and something above thinks a queue is a good idea
+        # then queue it! \o/
+        if possible_queue:
+            log.debug('possible_queue indicated')
             if self.queue:
-                log.info('(re)queueing payload due to (hopefully) transient error')
-                self._requeue(payload)
+                self._queue_event(data)
+            else:
+                log.debug('NoQueue established')
 
     def _finish_send(self, r):
         if r is not None and hasattr(r, 'status') and hasattr(r, 'reason'):

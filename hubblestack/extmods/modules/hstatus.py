@@ -8,6 +8,8 @@ log = logging.getLogger(__name__)
 
 __virtualname__ = 'hstatus'
 
+SOURCETYPE = 'hubble_audit_summary'
+
 def __virtual__():
     return True
 
@@ -41,27 +43,29 @@ def msg_counts(pat=r'hubblestack.hec.obj.input:(?P<stype>[^:]+)', reset=True):
             # first, populate d with {'stype': 'sourcetypehere'}
             d = m.groupdict()
             # then add the stats
-            d.update({ 'count': v['count'], 'start': int(v['first_t']),
-                'end': int(math.ceil(v['last_t'])) })
+            d.update({ 'event_count': v['count'], 'send_session_start': int(v['first_t']),
+                'send_session_end': int(math.ceil(v['last_t'])) })
             ret.append(d)
             # keep a pointer to the hec_counters
             # they'll need to be fixed later
-            if d['stype'] == 'hubble_hec_counters':
+            if d['stype'] == SOURCETYPE:
                 fudge_me = d
         to_reset.add(k)
 
     if ret:
         # XXX: I'm not convinced we really want to reset this on every fetch
         # it's going to make the fudge_me work out poorly sometimes (or most of the time)
-        # so the hubble_hec_counters will essentially always be wrong... is that bad??
+        # so the SOURCETYPE will essentially always be wrong... is that bad??
       # for k in to_reset:
       #     hubblestack.status.HubbleStatus.reset(k)
-        min_time = min([ x['start'] for x in ret ])
+        # See also: should I be fudging it at all? perhaps it should itself be
+        # excluded from any reports and counted completely differently.
+        min_time = min([ x['send_session_start'] for x in ret ])
         if fudge_me:
             # this is a fudge factor for the recursion where we report on own
             # sourcetype missing the currently-being-submitted counts
-            fudge_me['count'] += len(ret)
-        return { 'sourcetype': 'hubble_hec_counters', 'time': min_time, 'events': ret }
+            fudge_me['event_count'] += len(ret)
+        return { 'sourcetype': SOURCETYPE, 'time': min_time, 'events': ret }
 
 def dump():
     ''' trigger a dump to the status.json file as described in hubblestack.status

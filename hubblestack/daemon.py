@@ -841,3 +841,4 @@ def clean_up_process(signal, frame):
             if os.path.isfile(__opts__['pidfile']):
                 os.remove(__opts__['pidfile'])
     sys.exit(0)
+    

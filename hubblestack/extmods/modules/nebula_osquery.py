@@ -48,7 +48,7 @@ import hubblestack.splunklogging
 log = logging.getLogger(__name__)
 
 from hubblestack.status import HubbleStatus
-hubble_status = HubbleStatus(__name__, 'top', 'queries')
+hubble_status = HubbleStatus(__name__, 'top', 'queries', 'osqueryd_monitor', 'osqueryd_log_parser')
 
 __virtualname__ = 'nebula'
 __RESULT_LOG_OFFSET__ = {}
@@ -253,6 +253,7 @@ def queries(query_group,
     return ret
 
 
+@hubble_status.watch
 def osqueryd_monitor(configfile=None,
                      flagfile=None,
                      logdir=None,
@@ -336,6 +337,7 @@ def osqueryd_monitor(configfile=None,
                 _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
 
 
+@hubble_status.watch
 def osqueryd_log_parser(osqueryd_logdir=None,
                         backuplogdir=None,
                         maxlogfilesizethreshold=100000,
@@ -378,13 +380,15 @@ def osqueryd_log_parser(osqueryd_logdir=None,
     '''
     ret = []
     if osqueryd_logdir:
+        log.info("Base directory for osquery daemon logs specified as {0}".format(osqueryd_logdir))
         result_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.results.log'))
         snapshot_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.snapshots.log'))
     else:
-        result_logfile = os.path.normpath(os.path.join(__grains__.get('osquerylogpath'), 
-                                                       'osqueryd.results.log'))
-        snapshot_logfile = os.path.normpath(os.path.join(__grains__.get('osquerylogpath'), 
-                                                         '/osqueryd.snapshots.log'))
+        osquery_base_logdir = os.path.normpath(os.path.join(__grains__.get('osquerylogpath')))
+        log.info("Setting osquery daemon log file to default dir: {0}"
+                 .format(osquery_base_logdir))
+        result_logfile = os.path.normpath(osquery_base_logdir, 'osqueryd.results.log')
+        snapshot_logfile = os.path.normpath(osquery_base_logdir, '/osqueryd.snapshots.log')
     if path.exists(result_logfile):
         result_logfile_offset = _get_file_offset(result_logfile)
         r_event_data = _parse_log(result_logfile,
@@ -408,7 +412,6 @@ def osqueryd_log_parser(osqueryd_logdir=None,
                                   maxlogfilesizethreshold,
                                   backuplogfilescount,
                                   enablediskstatslogging)
-        #log.info("Snapshot Event data: {0}".format(s_event_data))
         if s_event_data:
             ret = ret + s_event_data
     else:
@@ -618,7 +621,7 @@ def _mask_object(object_to_be_masked, topfile):
     try:
         mask = {}
         if topfile is None:
-            # We will maintain backward compatibility by keep two version of top files and mask files for now
+            # We will maintain backward compatibility by keeping two versions of top files and mask files for now
             # Once all hubble servers are updated, we can remove old version of top file and mask file
             # Similar to what we have for nebula and nebula_v2 for older versions and newer versions of profiles
             topfile = 'salt://hubblestack_nebula_v2/top_v2.mask'
@@ -1084,21 +1087,39 @@ def _perform_log_rotation(path_to_logfile,
     '''
     residue_events = []
     if path.exists(path_to_logfile):
-        if salt.utils.platform.is_windows():
-            residue_events = _rotate_log_windows(path_to_logfile, 
-                                                 offset, 
-                                                 backuplogdir, 
-                                                 backuplogfilescount, 
-                                                 readResidueEvents)
+        logfilename = os.path.basename(path_to_logfile)
+        if path.exists(backuplogdir):
+            listofbackuplogfiles = glob.glob(os.path.normpath(os.path.join(backuplogdir, logfilename)) + "*")
+
+            if listofbackuplogfiles:
+                log.info("Backup log file count: {0} and backup count threshold: {1}".format(len(listofbackuplogfiles), 
+                                                                                            backuplogfilescount))
+                listofbackuplogfiles.sort()
+                log.info("Backup log file sorted list: {0}".format(listofbackuplogfiles))
+                if(len(listofbackuplogfiles) >= backuplogfilescount):
+                    listofbackuplogfiles = listofbackuplogfiles[:len(listofbackuplogfiles) - backuplogfilescount + 1]
+                    for dfile in listofbackuplogfiles:
+                        salt.utils.files.remove(dfile)
+                    log.info("Successfully deleted extra backup log files")
+        
+            if salt.utils.platform.is_windows():
+                residue_events = _rotate_log_windows(path_to_logfile, 
+                                                    offset, 
+                                                    backuplogdir, 
+                                                    backuplogfilescount, 
+                                                    readResidueEvents)
+            else:
+                if enablediskstatslogging:
+                    # Not forwarding disk_stats to splunk as of now, only filesystem logging will be done
+                    disk_stats = check_disk_usage()
+                residue_events = _rotate_log_posix(path_to_logfile, 
+                                                offset, 
+                                                backuplogdir, 
+                                                backuplogfilescount,
+                                                readResidueEvents)
         else:
-            if enablediskstatslogging:
-                # Not forwarding disk_stats to splunk as of now, only filesystem logging will be done
-                disk_stats = check_disk_usage()
-            residue_events = _rotate_log_posix(path_to_logfile, 
-                                               offset, 
-                                               backuplogdir, 
-                                               backuplogfilescount,
-                                               readResidueEvents)
+            log.error("Specified backup log directory does not exists. Log rotation will not be performed.")
+
     return residue_events
 
 
@@ -1112,18 +1133,6 @@ def _rotate_log_posix(path_to_logfile,
     '''
     residue_events = []
     logfilename = os.path.basename(path_to_logfile)
-    listofbackuplogfiles = glob.glob(os.path.normpath(os.path.join(backuplogdir, logfilename)) + "*")
-
-    if listofbackuplogfiles:
-        log.info("Backup log file count: {0} and backup count threshold: {1}".format(len(listofbackuplogfiles), 
-                                                                                     backuplogfilescount))
-        listofbackuplogfiles.sort()
-        log.info("Backup log file sorted list: {0}".format(listofbackuplogfiles))
-        if(len(listofbackuplogfiles) > backuplogfilescount):
-            listofbackuplogfiles = listofbackuplogfiles[:len(listofbackuplogfiles) - backuplogfilescount]
-            for dfile in listofbackuplogfiles:
-                salt.utils.files.remove(dfile)
-            log.info("Successfully deleted backup files")
     
     backupLogFile = os.path.normpath(os.path.join(backuplogdir, logfilename) + "-" + str(time.time()))
     salt.utils.files.rename(path_to_logfile, backupLogFile)
@@ -1142,23 +1151,12 @@ def _rotate_log_windows(path_to_logfile,
     '''
     residue_events = []
     logfilename = os.path.basename(path_to_logfile)
-    listofbackuplogfiles = glob.glob(os.path.normpath(os.path.join(backuplogdir, logfilename)) + "*")
-
-    if listofbackuplogfiles:
-        log.info("Backup log file count: {0} and backup count threshold: {1}".format(len(listofbackuplogfiles), 
-                                                                                     backuplogfilescount))
-        listofbackuplogfiles.sort()
-        log.info("Backup log file sorted list: {0}".format(listofbackuplogfiles))
-        if(len(listofbackuplogfiles) > backuplogfilescount):
-            listofbackuplogfiles = listofbackuplogfiles[:len(listofbackuplogfiles) - backuplogfilescount]
-            for dfile in listofbackuplogfiles:
-                salt.utils.files.remove(dfile)
-            log.info("Successfully deleted backup files")
     
     backupLogFile = os.path.normpath(os.path.join(backuplogdir, logfilename) + "-" + str(time.time()))
     salt.utils.files.rename(path_to_logfile, backupLogFile) # Throws FileInUseException on windows platform
 
-    log.info("Need to implement log rotation in windows and handle file in use exception")
+    if readResidueEvents:
+        residue_events = _read_residue_logs(backupLogFile, offset)
     return residue_events
 
 

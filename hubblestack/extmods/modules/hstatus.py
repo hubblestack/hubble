@@ -25,36 +25,40 @@ def msg_counts(pat=r'hubblestack.hec.obj.input:(?P<stype>[^:]+)', reset=True):
             pat - the key matching algorithm is a simple regular expression
     '''
 
-    km = re.compile(pat)
-    r = list()
-    s = get()
+    pat = re.compile(pat)
+    ret = list() # events to return
+    got_stats = get()
     fudge_me = None
-    rst = set()
-    for k,v in s.iteritems():
+    to_reset = set()
+    for k,v in got_stats.iteritems():
         try:
             if v['first_t'] == 0 or v['last_t'] == 0:
                 continue
         except KeyError:
             continue
-        m = km.match(k)
+        m = pat.match(k)
         if m:
+            # first, populate d with {'stype': 'sourcetypehere'}
             d = m.groupdict()
+            # then add the stats
             d.update({ 'count': v['count'], 'start': int(v['first_t']),
                 'end': int(math.ceil(v['last_t'])) })
-            r.append(d)
+            ret.append(d)
+            # keep a pointer to the hec_counters
+            # they'll need to be fixed later
             if d['stype'] == 'hubble_hec_counters':
                 fudge_me = d
-        rst.add(k)
+        to_reset.add(k)
 
-    if r:
-       #for k in rst:
+    if ret:
+       #for k in to_reset:
        #    hubblestack.status.HubbleStatus.reset(k)
-        min_time = min([ x['start'] for x in r ])
+        min_time = min([ x['start'] for x in ret ])
         if fudge_me:
             # this is a fudge factor for the recursion where we report on own
             # sourcetype missing the currently-being-submitted counts
-            fudge_me['count'] += len(r)
-        return { 'sourcetype': 'hubble_hec_counters', 'time': min_time, 'events': r }
+            fudge_me['count'] += len(ret)
+        return { 'sourcetype': 'hubble_hec_counters', 'time': min_time, 'events': ret }
 
 def dump():
     ''' trigger a dump to the status.json file as described in hubblestack.status

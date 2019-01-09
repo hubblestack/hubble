@@ -51,8 +51,11 @@ def msg_counts(pat=r'hubblestack.hec.obj.input:(?P<stype>[^:]+)', reset=True):
         to_reset.add(k)
 
     if ret:
-       #for k in to_reset:
-       #    hubblestack.status.HubbleStatus.reset(k)
+        # XXX: I'm not convinced we really want to reset this on every fetch
+        # it's going to make the fudge_me work out poorly sometimes (or most of the time)
+        # so the hubble_hec_counters will essentially always be wrong... is that bad??
+      # for k in to_reset:
+      #     hubblestack.status.HubbleStatus.reset(k)
         min_time = min([ x['start'] for x in ret ])
         if fudge_me:
             # this is a fudge factor for the recursion where we report on own

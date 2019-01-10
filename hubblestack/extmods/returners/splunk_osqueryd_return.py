@@ -141,6 +141,7 @@ def returner(ret):
                     event.update({'epoch': query_results['epoch']})
                     event.update({'counter': query_results['counter']})
                     event.update({'action': query_results['action']})
+                    event.update({'unixTime': query_results['unixTime']})
 
                     event.update(cloud_details)
                     sourcetype = opts['sourcetype']

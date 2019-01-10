@@ -808,17 +808,22 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_with):
         for child in object_to_mask:
             log.debug("Recursing object {0}".format(child))
             _recursively_mask_objects(child, blacklisted_object, mask_with)
-    elif blacklisted_object['attribute_to_check'] in object_to_mask:
-        mask = False
-        for blacklisted_pattern in blacklisted_object['blacklisted_patterns']:
-            if fnmatch.fnmatch(object_to_mask[blacklisted_object['attribute_to_check']], blacklisted_pattern):
-                mask = True
-                log.info("Attribute {0} will be masked.".format(object_to_mask[blacklisted_object['attribute_to_check']]))
-                break
-        if mask:
-            for key in blacklisted_object['attributes_to_mask']:
-                if key in object_to_mask:
-                    object_to_mask[key] = mask_with
+    # elif blacklisted_object['attribute_to_check'] in object_to_mask:
+    #     mask = False
+    #     for blacklisted_pattern in blacklisted_object['blacklisted_patterns']:
+    #         if fnmatch.fnmatch(object_to_mask[blacklisted_object['attribute_to_check']], blacklisted_pattern):
+    #             mask = True
+    #             log.info("Attribute {0} will be masked.".format(object_to_mask[blacklisted_object['attribute_to_check']]))
+    #             break
+    #     if mask:
+    #         for key in blacklisted_object['attributes_to_mask']:
+    #             if key in object_to_mask:
+    #                 object_to_mask[key] = mask_with
+    elif blacklisted_object['attribute_to_check'] in object_to_mask and \
+         object_to_mask[blacklisted_object['attribute_to_check']] in blacklisted_object['blacklisted_patterns']:
+        for key in blacklisted_object['attributes_to_mask']:
+            if key in object_to_mask:
+                object_to_mask[key] = mask_with
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):

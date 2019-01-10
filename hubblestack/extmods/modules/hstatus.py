@@ -30,7 +30,15 @@ def msg_counts(pat=MSG_COUNTS_PAT, reset=True, emit_self=False, sourcetype=SOURC
     to_reset = set()
     for k,v in hubblestack.status.HubbleStatus.stats().iteritems():
         try:
+            # if this counter hasn't fired at all, skip it
             if v['first_t'] == 0 or v['last_t'] == 0:
+                continue
+            # Sometimes the very first loop will give a trivial
+            # 1 second long count of exactly one event. Let's build up at least
+            # a couple counts before we report/reset.
+            if v['last_t'] <= v['first_t'] + 1:
+                continue
+            if v['event_count'] < 1:
                 continue
         except KeyError:
             continue

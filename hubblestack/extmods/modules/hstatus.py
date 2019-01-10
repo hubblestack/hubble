@@ -24,7 +24,8 @@ def msg_counts(pat=r'hubblestack.hec.obj.input:(?P<stype>[^:]+)', reset=True):
     ''' returns counter data formatted for the splunk_generic_return returner
 
         params:
-            pat - the key matching algorithm is a simple regular expression
+            pat   - the key matching algorithm is a simple regular expression
+            reset - whether or not to reset the counters returned
     '''
 
     pat = re.compile(pat)
@@ -53,13 +54,9 @@ def msg_counts(pat=r'hubblestack.hec.obj.input:(?P<stype>[^:]+)', reset=True):
         to_reset.add(k)
 
     if ret:
-        # XXX: I'm not convinced we really want to reset this on every fetch
-        # it's going to make the fudge_me work out poorly sometimes (or most of the time)
-        # so the SOURCETYPE will essentially always be wrong... is that bad??
-      # for k in to_reset:
-      #     hubblestack.status.HubbleStatus.reset(k)
-        # See also: should I be fudging it at all? perhaps it should itself be
-        # excluded from any reports and counted completely differently.
+        if reset:
+            for k in to_reset:
+                hubblestack.status.HubbleStatus.reset(k)
         min_time = min([ x['send_session_start'] for x in ret ])
         if fudge_me:
             # this is a fudge factor for the recursion where we report on own

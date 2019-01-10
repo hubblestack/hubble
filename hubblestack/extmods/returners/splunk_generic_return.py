@@ -17,19 +17,16 @@ event collector. Required config/pillar settings:
 '''
 
 import time
-#import logging
 from hubblestack.hec import http_event_collector, get_splunk_options
-
-#log = logging.getLogger(__name__)
 
 def _get_key(dat, k, d=None):
     if isinstance(dat, dict):
         return dat.pop(k, d)
     return d
 
-def returner(ret):
+def returner(retdata):
     try:
-        event = ret['return']
+        retdata = retdata['return']
     except KeyError:
         return
 
@@ -48,20 +45,22 @@ def returner(ret):
                                    http_event_collector_ssl_verify=http_event_collector_ssl_verify,
                                    proxy=proxy, timeout=timeout)
 
-        now = str(int(time.time()))
-        t_sourcetype = _get_key(event, 'sourcetype', 'hubble_generic')
-        t_time       = _get_key(event, 'time', now)
-        event        = _get_key(event, 'event', event)
-        events       = _get_key(event, 'events', event)
+        t_sourcetype = _get_key(retdata, 'sourcetype', 'hubble_generic')
+        t_time       = _get_key(retdata, 'time', time.time())
+        events       = _get_key(retdata, 'event', _get_key(retdata, 'events'))
+
+        if events is None:
+            return
 
         if not isinstance(events, (list,tuple)):
             events = [events]
 
+        if len(events) < 1 or (len(events) == 1 and events[0] is None):
+            return
+
         for event in events:
             payload = {'host': __grains__.get('fqdn', __grains__.get('id')), 'event': event,
                 'sourcetype': _get_key(event, 'sourcetype', t_sourcetype),
-                'time': _get_key(event, 'time', t_time) }
-            #log.debug("batching payload: %s", payload)
-            #time.sleep(2)
+                'time': str(int(_get_key(event, 'time', t_time)))}
             hec.batchEvent(payload)
         hec.flushBatch()

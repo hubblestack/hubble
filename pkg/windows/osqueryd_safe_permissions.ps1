@@ -34,3 +34,5 @@
     $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule($group,"FullControl", $inherit, $Propagation ,,,"Allow")
     $acl.RemoveAccessRuleAll($accessrule)
     set-acl -aclobject $acl $osqueryd_path
+
+    sc.exe create hubble_osqueryd binpath= '\"C:\Program Files (x86)\Hubble\osqueryd\osqueryd.exe\" --flagfile=\"C:\Program Files (x86)\Hubble\var\cache\files\base\osqueryd\osquery.flags\" --config_path=\"C:\Program Files (x86)\Hubble\var\cache\files\base\osqueryd\osquery.conf\"' displayname= "hubble_osqueryd"

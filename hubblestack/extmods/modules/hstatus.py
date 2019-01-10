@@ -38,10 +38,11 @@ def msg_counts(pat=MSG_COUNTS_PAT, reset=True, emit_self=False, sourcetype=SOURC
             # a couple counts before we report/reset.
             if v['last_t'] <= v['first_t'] + 1:
                 continue
-            if v['event_count'] < 1:
+            if v['count'] <= 1:
                 continue
         except KeyError:
             continue
+
         m = pat.match(k)
         if m:
             try:

@@ -937,7 +937,7 @@ def _osqueryd_running_status(pidfile, servicename):
       except:
         log.error("unable to open pidfile, attempting to start osqueryd")
     else:
-      cmd = ['pkill', 'osqueryd']
+      cmd = ['pkill', 'hubble_osqueryd']
       __salt__['cmd.run'](cmd, timeout=10000)
       log.error("pidfile not found, attempting to start osqueryd")
     return osqueryd_running
@@ -1005,7 +1005,7 @@ def _start_osqueryd(pidfile,
         log.error("requesting service manager to start osqueryD")
         cmd = ['net', 'start', servicename]
     else:
-        cmd = ['/opt/osquery/osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),
+        cmd = ['/opt/osquery/hubble_osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),
                '--config_path={0}'.format(configfile), '--flagfile={0}'.format(flagfile), 
                '--database_path={0}'.format(databasepath), '--daemonize']
     __salt__['cmd.run'](cmd, timeout=10000)
@@ -1038,11 +1038,11 @@ def _restart_osqueryd(pidfile,
         start_cmd = ['net', 'start', servicename]
         __salt__['cmd.run'](start_cmd, timeout=10000)
     else:
-        stop_cmd = ['pkill', 'osqueryd']
+        stop_cmd = ['pkill', 'hubble_osqueryd']
         __salt__['cmd.run'](stop_cmd, timeout=10000)
         remove_pidfile_cmd = ['rm', '-rf', '{0}'.format(pidfile)]
         __salt__['cmd.run'](remove_pidfile_cmd, timeout=10000)
-        start_cmd = ['/opt/osquery/osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),
+        start_cmd = ['/opt/osquery/hubble_osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),
                      '--config_path={0}.format(configfile)', '--flagfile={0}'.format(flagfile), 
                      '--database_path={0}'.format(databasepath), '--daemonize']
         __salt__['cmd.run'](start_cmd, timeout=10000)

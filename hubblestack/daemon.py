@@ -468,6 +468,10 @@ def load_config():
         salt.config.DEFAULT_MINION_OPTS['cachedir'] = 'C:\\Program Files (x86)\\hubble\\var\\cache'
         salt.config.DEFAULT_MINION_OPTS['pidfile'] = 'C:\\Program Files (x86)\\hubble\\var\\run\\hubble.pid'
         salt.config.DEFAULT_MINION_OPTS['log_file'] = 'C:\\Program Files (x86)\\hubble\\var\\log\\hubble.log'
+        salt.config.DEFAULT_MINION_OPTS['osquery_dbpath'] = 'C:\\Program Files (x86)\\hubble\\var\\hubble_osquery_db'
+        salt.config.DEFAULT_MINION_OPTS['osquerylogpath'] = 'C:\\Program Files (x86)\\hubble\\var\\log\\hubble_osquery'
+        salt.config.DEFAULT_MINION_OPTS['osquerylog_backupdir'] = \
+                                        'C:\\Program Files (x86)\\hubble\\var\\log\\hubble_osquery\\backuplogs'
 
     else:
         if parsed_args.get('configfile') is None:
@@ -475,6 +479,9 @@ def load_config():
         salt.config.DEFAULT_MINION_OPTS['cachedir'] = '/var/cache/hubble'
         salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
         salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
+        salt.config.DEFAULT_MINION_OPTS['osquery_dbpath'] = '/var/cache/hubble/osquery'
+        salt.config.DEFAULT_MINION_OPTS['osquerylogpath'] = '/var/log/hubble_osquery'
+        salt.config.DEFAULT_MINION_OPTS['osquerylog_backupdir'] = '/var/log/hubble_osquery/backuplogs'
 
     salt.config.DEFAULT_MINION_OPTS['file_roots'] = {'base': []}
     salt.config.DEFAULT_MINION_OPTS['log_level'] = None
@@ -486,6 +493,11 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['logfile_maxbytes'] = 100000000 # 100MB
     salt.config.DEFAULT_MINION_OPTS['logfile_backups'] = 1 # maximum rotated logs
     salt.config.DEFAULT_MINION_OPTS['delete_inaccessible_azure_containers'] = False
+    salt.config.DEFAULT_MINION_OPTS['enable_globbing_in_nebula_masking'] = False  # Globbing will not be supported in nebula masking
+    salt.config.DEFAULT_MINION_OPTS['osquery_logfile_maxbytes'] = 50000000 # 50MB
+    salt.config.DEFAULT_MINION_OPTS['osquery_logfile_maxbytes_toparse'] = 100000000 #100MB
+    salt.config.DEFAULT_MINION_OPTS['osquery_backuplogs_count'] = 2
+    
 
     global __opts__
 

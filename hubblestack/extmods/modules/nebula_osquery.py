@@ -464,8 +464,18 @@ def check_disk_usage(path=None):
         disk_stats = {'Total' : total,
                       'Available' : avail,
                       'Used' : used,
-                      'Use_percent' : per_used
+                      'Use_percent' : per_used,
+                      'Path' : path
                      }
+
+        if __salt__['config.get']('splunklogging', False):
+            log.info('Logging disk usage stats to splunk')
+            hubblestack.splunklogging.__grains__ = __grains__
+            hubblestack.splunklogging.__salt__ = __salt__
+            hubblestack.splunklogging.__opts__ = __opts__
+            handler = hubblestack.splunklogging.SplunkHandler()
+            stats = {'disk_stats': disk_stats, 'schedule_time' : time.time()}
+            handler.emit_data(stats)
 
     return disk_stats
 
@@ -1066,6 +1076,7 @@ def _parse_log(path_to_logfile,
                 log.info("Log file size: {0}, max threshold: {1}".format(os.stat(path_to_logfile).st_size, 
                                                                          maxlogfilesizethreshold))
                 log.info("Rotating log and skipping parsing for this iteration")
+                fileDes.close()
                 _perform_log_rotation(path_to_logfile, 
                                       file_offset,
                                       backuplogdir,
@@ -1080,6 +1091,7 @@ def _parse_log(path_to_logfile,
                 for event in fileDes.readlines():
                     event_data.append(event)
                 file_offset = fileDes.tell()
+                fileDes.close()
                 if rotateLog:
                     log.info('Log file size above threshold, '
                               'going to rotate log file: {0}'.format(path_to_logfile))
@@ -1094,7 +1106,6 @@ def _parse_log(path_to_logfile,
                         event_data.append(residue_events)
                     file_offset = 0 #Reset file offset to start of file in case original file is rotated
             _set_cache_offset(path_to_logfile, file_offset)
-            fileDes.close()
         else:
             log.error('Unable to open log file for reading: {0}'.format(path_to_logfile))
     else:
@@ -1145,62 +1156,22 @@ def _perform_log_rotation(path_to_logfile,
                     for dfile in listofbackuplogfiles:
                         salt.utils.files.remove(dfile)
                     log.info("Successfully deleted extra backup log files")
-        
-            if salt.utils.platform.is_windows():
-                residue_events = _rotate_log_windows(path_to_logfile, 
-                                                    offset, 
-                                                    backuplogdir, 
-                                                    backuplogfilescount, 
-                                                    readResidueEvents)
-            else:
-                if enablediskstatslogging:
-                    # Not forwarding disk_stats to splunk as of now, only filesystem logging will be done
-                    disk_stats = check_disk_usage()
-                residue_events = _rotate_log_posix(path_to_logfile, 
-                                                offset, 
-                                                backuplogdir, 
-                                                backuplogfilescount,
-                                                readResidueEvents)
+
+            residue_events = []
+            logfilename = os.path.basename(path_to_logfile)
+    
+            backupLogFile = os.path.normpath(os.path.join(backuplogdir, logfilename) + "-" + str(time.time()))
+            salt.utils.files.rename(path_to_logfile, backupLogFile)
+
+            if readResidueEvents:
+                residue_events = _read_residue_logs(backupLogFile, offset)
+
+            if enablediskstatslogging:
+                # As of now, this method would send disk stats to Splunk (if configured)
+                disk_stats = check_disk_usage()
         else:
             log.error("Specified backup log directory does not exists. Log rotation will not be performed.")
 
-    return residue_events
-
-
-def _rotate_log_posix(path_to_logfile, 
-                      offset,
-                      backuplogdir,
-                      backuplogfilescount,
-                      readResidueEvents=True):
-    '''
-    Function to perform log rotation on linux systems
-    '''
-    residue_events = []
-    logfilename = os.path.basename(path_to_logfile)
-    
-    backupLogFile = os.path.normpath(os.path.join(backuplogdir, logfilename) + "-" + str(time.time()))
-    salt.utils.files.rename(path_to_logfile, backupLogFile)
-    if readResidueEvents:
-        residue_events = _read_residue_logs(backupLogFile, offset)
-    return residue_events
-
-
-def _rotate_log_windows(path_to_logfile,
-                        offset,
-                        backuplogdir,
-                        backuplogfilescount,
-                        readResidueEvents=True):
-    '''
-    Perform log rotation on windows
-    '''
-    residue_events = []
-    logfilename = os.path.basename(path_to_logfile)
-    
-    backupLogFile = os.path.normpath(os.path.join(backuplogdir, logfilename) + "-" + str(time.time()))
-    salt.utils.files.rename(path_to_logfile, backupLogFile) # Throws FileInUseException on windows platform
-
-    if readResidueEvents:
-        residue_events = _read_residue_logs(backupLogFile, offset)
     return residue_events
 
 

@@ -286,6 +286,7 @@ def osqueryd_monitor(configfile=None,
         daemonize osquery daemon. Default is True. Applicable for posix system only
 
     '''
+    log.info("starting osqueryd monitor")
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
     osqueryd_path = 'salt://osqueryd'
     cached = __salt__['cp.cache_dir'](osqueryd_path,saltenv=saltenv)
@@ -880,6 +881,7 @@ def _osqueryd_running_status(pidfile, servicename):
     '''
     This function will check whether osqueryd is running in *nix systems
     '''
+    log.info("checking if osqueryd is already running or not")
     osqueryd_running = False
     if os.path.isfile(pidfile):
       try:
@@ -920,6 +922,7 @@ def _osqueryd_restart_required(hashfile, flagfile):
     '''
     This function will check whether osqueryd needs to be restarted
     '''
+    log.info("checking if osqueryd needs to be restarted or not")
     try:
         open_file = open(flagfile, 'r')
         file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
@@ -949,6 +952,7 @@ def _osqueryd_running_status_windows(servicename):
     '''
     This function will check whether osqueryd is running in windows systems
     '''
+    log.info("checking if osqueryd is already running or not")
     osqueryd_running = False
     cmd_status = "(Get-Service -Name " + servicename + ").Status"
     osqueryd_status = __salt__['cmd.run'](cmd_status, shell='powershell')

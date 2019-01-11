@@ -11,7 +11,7 @@ RUN apt-get update     \
  && apt-get -y upgrade
 
 #paths that hubble or hubble parts need in the package
-RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery
+RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery /var/log/hubble_osquery/backuplogs
 
 #patchelf build start
 #must precede osquery as at the moment, osquery won't build without patchelf
@@ -54,8 +54,7 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
  && make strip
 USER root
 RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt/osquery \
- && cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery \
- && mkdir -p /var/log/hubble_osquery/backuplogs \
+ && cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery/hubble_osqueryd \
  && chown -R root. /opt/osquery \
  && chmod -R 500 /opt/osquery/* \
 #put augeas lenses into the default directory that we changed earlier

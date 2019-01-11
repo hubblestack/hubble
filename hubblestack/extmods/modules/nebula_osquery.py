@@ -427,6 +427,22 @@ def osqueryd_log_parser(osqueryd_logdir=None,
     else:
         log.warn("Specified osquery snapshot log file doesn't exist: {0}".format(snapshot_logfile))
 
+    if ret:
+        n_ret = []
+        for r in ret:
+            obj = json.loads(r)
+            if 'action' in obj and obj['action'] == 'snapshot':
+                    for result in obj['snapshot']:
+                        for key, value in result.iteritems():
+                            if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
+                                result[key] = json.loads(value[len('__JSONIFY__'):])
+            elif 'action' in obj:
+                for key, value in obj['columns'].iteritems():
+                    if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
+                        obj['columns'][key] = json.loads(value[len('__JSONIFY__'):])
+            n_ret.append(obj)
+        ret = n_ret
+
     if mask_passwords:
         log.info("Perform masking")
         _mask_object(ret, topfile_for_mask)
@@ -760,22 +776,8 @@ def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object
     globbing_enabled
         enable globbing in specified blacklisted patterns of mask file
     '''
-    object_to_be_masked = json.loads(object_to_be_masked)
     if not query_name:
         query_name = object_to_be_masked['name']
-    if 'action' in object_to_be_masked and object_to_be_masked['action'] == 'snapshot':
-            for result in object_to_be_masked['snapshot']:
-                for key, value in result.iteritems():
-                    if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
-                        result[key] = json.loads(value[len('__JSONIFY__'):])
-    else:
-        if 'action' not in object_to_be_masked:
-            #Ideally this would never happen, osquery daemon logs would always contains 'action' field
-            log.error("Unsupported log format encountered!!")
-        else:
-            for key, value in object_to_be_masked['columns'].iteritems():
-                if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
-                    object_to_be_masked['columns'][key] = json.loads(value[len('__JSONIFY__'):])
 
     if object_to_be_masked['action'] == 'snapshot' and query_name == object_to_be_masked['name']:
         # This means we have event data of type 'snapshot'

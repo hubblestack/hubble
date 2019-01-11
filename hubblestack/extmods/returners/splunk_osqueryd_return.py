@@ -126,8 +126,7 @@ def returner(ret):
             if not data:
                 return
             else:
-                for query in data:
-                    query_results = json.loads(query)
+                for query_results in data:
                     event = {}
                     query_name = query_results['name']
                     event.update({'query': query_name})

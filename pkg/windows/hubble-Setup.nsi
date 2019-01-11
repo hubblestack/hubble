@@ -349,6 +349,7 @@
     ; Stop and Remove hubble service
     nsExec::Exec 'net stop hubble'
     nsExec::Exec 'sc delete hubble'
+    nsExec::Exec 'sc delete hubble_osqueryd'
 
     ; Remove files
     Delete "$INSTDIR\uninst.exe"

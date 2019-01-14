@@ -201,6 +201,13 @@ class DiskQueue(OKTypesMixin):
             return ret
 
     def getz(self, sz=SPLUNK_MAX_MSG):
+        ''' fetch items from the queue and concatenate them together using the
+            spacer ' ' until the size reaches (but does not exceed) the size
+            kwargs (sz).
+
+            kwargs:
+                sz : the maxsize of the queue fetch (default: SPLUNK_MAX_MSG=100k)
+        '''
         # Is it "dangerous" to unlink files during the os.walk (via generator)?
         # .oO( probably doesn't matter )
         r = b''

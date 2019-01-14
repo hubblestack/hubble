@@ -283,3 +283,51 @@ class TestReadfile():
         line = 'Line with invalid text'
         ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'bad pattern', None)
         assert expected_ret == ret
+
+    def test_processLine_ValidArguments_ReturnDict(self):
+        expected_key, expected_val= 'APP_ATTRIBUTES', {'cluster_role': 'controol', 'provider': 'aws', 'zone': '3'}
+        line = "APP_ATTRIBUTES=cluster_role:controol;zone:3;provider:aws" 
+        key, val = hubblestack.extmods.fdg.readfile._process_line(line, dictsep='=', valsep=';', subsep=':')
+        assert expected_key == key
+        assert expected_val == val
+
+    def test_processLine_EmptyDictsep_ReturnLine(self):
+        line = "line of text"
+        ret, none = hubblestack.extmods.fdg.readfile._process_line(line, None, None, None)
+        assert ret == line
+        assert none is None
+
+    def test_processLine_ValidDictsepValsepEmptySubsep_ReturnList(self):
+        expected_key, expected_val = 'key0', ['key1', 'key2', 'val']
+        line = "key0:key1;key2;val"
+        key, val = hubblestack.extmods.fdg.readfile._process_line(line, ':', ';', None)
+        assert expected_key == key
+        assert expected_val == val
+
+    def test_processLine_ValidDictsepInvalidValsep_ReturnList(self):
+        expected_key, expected_val = 'key0', ['key1;key2;val']
+        line = "key0:key1;key2;val"
+        key, val = hubblestack.extmods.fdg.readfile._process_line(line, ':', '-', None)
+        assert expected_key == key
+        assert expected_val == val
+
+    def test_processLine_ValidDictsepValsepInvalidSubsep_ReturnDict(self):
+        expected_key, expected_val = 'APP_ATTRIBUTES', {'cluster_role:controol': None, 'provider:aws': None, 
+                                                        'zone:3': None}
+        line = "APP_ATTRIBUTES=cluster_role:controol;zone:3;provider:aws"
+        key, val = hubblestack.extmods.fdg.readfile._process_line(line, '=', ';', '-')
+        assert expected_key == key
+        assert expected_val == val
+
+    def test_processLine_ValidDictsepSubsepInvalidValsep_ReturnDict(self):
+        expected_key, expected_val = 'key0', {'key1;val': 'val2'}
+        line = "key0:key1;val-val2"
+        key, val = hubblestack.extmods.fdg.readfile._process_line(line, ':', '.', '-')
+        assert expected_key == key
+        assert expected_val == val
+
+    def test_processLine_InvalidDictsep_ReturnLine(self):
+        line = "key0:key1;val-val2"
+        ret, none = hubblestack.extmods.fdg.readfile._process_line(line, '?', '.', '-')
+        assert ret == line
+        assert none is None

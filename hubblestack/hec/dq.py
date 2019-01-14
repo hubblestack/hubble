@@ -157,10 +157,7 @@ class DiskQueue(OKTypesMixin):
         if partial is not None:
             d = os.path.join(d, partial)
         if not os.path.isdir(d):
-            try: os.makedirs(d)
-            except OSError as e:
-                if e.errno == errno.EEXIST and os.path.isdir(d): pass
-                else: raise
+            os.makedirs(d)
         return d
 
     def clear(self):

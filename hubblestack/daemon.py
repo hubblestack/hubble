@@ -811,6 +811,33 @@ def check_pidfile(kill_other=False, scan_proc=True):
         scan_proc_for_hubbles(kill_other=kill_other)
 
 def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_other=True, no_pgrp=True):
+    ''' Attempt to locate other hubbles using a cmdline regular expression and kill them when found.
+        If killing the other processes fails (or kill_other is False), sys.exit instead.
+
+        params:
+          hname      :- the regular expression pattern to use to locate hubble (default: hubble)
+          ksig       :- the signal to use to kill the other processes (default:
+                        signal.SIGTERM=15)
+          kill_other :- (default: True); when false, don't attempt to kill,
+                        just locate and exit (if found)
+          no_pgrp    :- Avoid killing processes in this pgrp (avoid suicide). When no_pgrp is True,
+                        invoke os.getprgp() to populate the actual value.
+
+        caveats:
+            There are some detailed notes on the process scanning in the
+            function as comments.
+
+            The most important caveat is that the hname regular expressions
+            must match expecting that /proc/$$/cmdline text is null separated,
+            not space separated.
+
+            The other main caveat is that we can't actually examine the
+            /proc/$$/exe file (that's always just a python). We have to scan
+            the invocation text the kernel stored at launch. That text is not
+            immutable and should not (normally) be relied upon for any purpose
+            -- and this method does rely on it.
+    '''
+
     if no_pgrp is True:
         no_pgrp = os.getpgrp()
     if isinstance(no_pgrp, int):

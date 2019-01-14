@@ -232,3 +232,54 @@ class TestReadfile():
         status, ret = hubblestack.extmods.fdg.readfile.yaml(yaml_file, subkey='id')
         assert expected_status == status
         assert expected_ret == ret
+
+    def test_checkPattern_EmptyPatternEmptyIgnore_ReturnTrue(self):
+        expected_ret = True
+        ret = hubblestack.extmods.fdg.readfile._check_pattern('Sample text', None, None)
+        assert expected_ret == ret
+
+    def test_checkPattern_EmptyPatternValidIgnore_ReturnFalse(self):
+        expected_ret = False
+        ret = hubblestack.extmods.fdg.readfile._check_pattern('invalid text', None, 'invalid.*')
+        assert expected_ret == ret
+
+    def test_checkPattern_EmptyPatternInvalidIgnore_ReturnTrue(self):
+        expected_ret = True
+        ret = hubblestack.extmods.fdg.readfile._check_pattern('Sample text', None, 'invalid')
+        assert expected_ret == ret
+
+    def test_checkPattern_ValidPatternValidIgnore_ReturnFalse(self):
+        expected_ret = False
+        line = 'valid and invalid text'
+        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'valid.*', '.*invalid.*')
+        assert expected_ret == ret
+
+    def test_checkPattern_ValidPatternInvalidIgnore_ReturnTrue(self):
+        expected_ret = True
+        line = 'valid text'
+        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'valid', 'invalid')
+        assert expected_ret == ret
+
+    def test_checkPattern_ValidPatternEmptyIgnore_ReturnTrue(self):
+        expected_ret = True
+        line = 'valid text'
+        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'valid', None)
+        assert expected_ret == ret
+
+    def test_checkPattern_InvalidPatternInvalidIgnore_ReturnFalse(self):
+        expected_ret = False
+        line = 'Line with invalid text'
+        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'bad pattern', 'bad ignore')
+        assert expected_ret == ret
+
+    def test_checkPattern_InvalidPatternValidIgnore_ReturnFalse(self):
+        expected_ret = False
+        line = 'Line with invalid text'
+        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'bad pattern', '.*invalid.*')
+        assert expected_ret == ret
+
+    def test_checkPattern_InvalidPatternEmptyIgnore_ReturnFalse(self):
+        expected_ret = False
+        line = 'Line with invalid text'
+        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'bad pattern', None)
+        assert expected_ret == ret

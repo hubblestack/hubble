@@ -176,7 +176,7 @@ class DiskQueue(OKTypesMixin):
         self.check_type(item)
         if not self.accept(item):
             raise QueueCapacityError('refusing to accept item due to size')
-        fanout,remainder = self._fanout('{0}.{1}'.format(int(time.time()), self.cn))
+        fanout, remainder = self._fanout('{0}.{1}'.format(int(time.time()), self.cn))
         d = self._mkdir(fanout)
         f = os.path.join(d, remainder)
         with open(f, 'wb') as fh:

@@ -285,13 +285,6 @@
     nsExec::Exec "nssm.exe set Hubble AppParameters hubble.exe -c .\etc\hubble\hubble.conf"
     nsExec::Exec "nssm.exe set Hubble Start SERVICE_AUTO_START"
 
-    ; Register the Hubble Service	    
-    nsExec::Exec "nssm.exe install hubble_osqueryd $INSTDIR\osqueryd\osqueryd.exe"
-    nsExec::Exec "nssm.exe set hubble_osqueryd Description Open source software for monitoring and scheduling queries and record OS state changes"
-    nsExec::Exec "nssm.exe set hubble_osqueryd AppDirectory $INSTDIR\osqueryd\"
-    nsExec::Exec "nssm.exe set hubble_osqueryd AppParameters osqueryd.exe -c .\var\cache\files\base\osqueryd\osquery.conf -c .\var\cache\files\base\osqueryd\osquery.flags"
-    nsExec::Exec "nssm.exe set hubble_osqueryd DependOnService Hubble"
-		
     ExecWait "powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File .\osqueryd_safe_permissions.ps1 $INSTDIR -FFFeatureOff"
     RMDir /R "$INSTDIR\var\cache" ; removing cache from old version
 

@@ -1,5 +1,5 @@
     $hubble_path = $args[0]
-    $osqueryd_path = ".\osqueryd"
+    $osqueryd_path = $hubble_path + "\osqueryd\"
     $osqueryd_conffile_path = $hubble_path + "\var\cache\files\base\osqueryd\osquery.conf"
     $osqueryd_flagfile_path = $hubble_path + "\var\cache\files\base\osqueryd\osquery.flags"
     $acl = Get-Item $osqueryd_path |get-acl

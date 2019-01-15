@@ -413,6 +413,27 @@ def _seq_convert_none(seq):
     return updated_seq
 
 
+def print_string(starting_string, format_chained=True, chained=None):
+    '''
+    Given a string, return it.
+
+    By default, ``starting_string`` will have ``.format()`` called on it 
+    with ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
+    substitute the chained value.) If you want to avoid having to escape curly braces,
+    set ``format_chained=False``.
+    
+    The first return value (status) will be False only if an error will occur.
+    '''
+    if format_chained:
+        try:
+            starting_string = starting_string.format(chained)
+        except AttributeError:
+            log.error("Invalid type for starting_string - has to be string.")
+            return False, None
+
+    return True, starting_string
+
+
 def dict_remove_none(starting_seq=None, extend_chained=True, chained=None):
     '''
     Given a target sequence, look for dictionary keys that have values of None and remove those keys.

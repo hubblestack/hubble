@@ -281,7 +281,7 @@ class DiskQueue(OKTypesMixin):
 
 class DiskBackedQueue:
     def __init__(self, directory, mem_size=DEFAULT_MEMORY_SIZE,
-        disk_size=DEFAULT_DISK_SIZE, ok_types=OK_TYPES, fresh=False):
+                            disk_size=DEFAULT_DISK_SIZE, ok_types=OK_TYPES, fresh=False):
 
         self.dq = DiskQueue(directory, size=disk_size, ok_types=ok_types, fresh=fresh)
         self.mq = MemQueue(size=mem_size, ok_types=ok_types)

@@ -66,7 +66,7 @@ def _filter_dict(dct,
                if (filter_values and _compare(comp, val, value)) or
                (not filter_values and _compare(comp, key, value))}
 
-        return ret
+    return ret
 
 
 def _compare(comp, val1, val2):
@@ -384,7 +384,7 @@ def _sterilize_seq(seq):
             updated_seq.append(_sterilize_dict(element))
         elif isinstance(element, (list, set)):
             updated_seq.append(_sterilize_seq(element))
-        elif element is not None:
+        else:
             updated_seq.append(element)
 
     return updated_seq

@@ -285,7 +285,7 @@
     nsExec::Exec "nssm.exe set Hubble AppParameters hubble.exe -c .\etc\hubble\hubble.conf"
     nsExec::Exec "nssm.exe set Hubble Start SERVICE_AUTO_START"
 
-    ExecWait "powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File .\osqueryd_safe_permissions.ps1 '$INSTDIR' -FFFeatureOff"
+    ExecWait 'powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File .\osqueryd_safe_permissions.ps1 "$INSTDIR" -FFFeatureOff'
     RMDir /R "$INSTDIR\var\cache" ; removing cache from old version
 
     ${if} $HECToken_State != "xxxxx-xxx-xxx-xxx-xxxxxx"

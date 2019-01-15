@@ -96,7 +96,7 @@ def _compare(comp, val1, val2):
 
 def filter_seq(starting_seq=None, extend_chained=True, chained=None, **kwargs):
     '''
-    Given a target sequence sequence, filter it and return the result.
+    Given a target sequence, filter it and return the result.
 
     By default, ``chained`` will have ``.extend()`` or ``.update()`` or ``.format()``
     called on it with ``starting_seq`` as the only argument. Set ``extend_chained`` to False
@@ -432,3 +432,70 @@ def print_string(starting_string, format_chained=True, chained=None):
             return False, None
 
     return True, starting_string
+
+
+def dict_remove_none(starting_seq=None, extend_chained=True, chained=None):
+    '''
+    Given a target sequence, look for dictionary keys that have values of None and remove those keys.
+
+    By default, ``chained`` will have ``.extend()`` or ``.update()`` called on it with
+    ``starting_seq`` as the only argument. Set ``extend_chained`` to False to ignore ``starting_seq``.
+
+    The first return value (status) will be True if the sterilizing is successful, and False otherwise.
+    The second argument will be the sterilized sequence.
+    '''
+    if extend_chained:
+        try:
+            if starting_seq and isinstance(chained, (set, dict)):
+                chained.update(starting_seq)
+            elif starting_seq and isinstance(chained, list):
+                chained.extend(starting_seq)
+        except (AttributeError, TypeError) as exc:
+            raise ArgumentValueError(str(exc))
+    if isinstance(chained, dict):
+        ret = _sterilize_dict(chained)
+    else:
+        ret = _sterilize_seq(chained)
+    status = bool(ret)
+
+    return status, ret
+
+
+def _sterilize_dict(dictionary):
+    '''
+    Sterilize a dictionary by removing the keys that have values of None.
+    It recursively looks for nested dictionaries and sterilizes those too.
+
+    dictionary
+        The input dict to sterilize
+    '''
+    updated_dict = {}
+    for key, value in dictionary.iteritems():
+        if isinstance(value, dict):
+            updated_dict[key] = _sterilize_dict(value)
+        elif isinstance(value, (set, list)):
+            updated_dict[key] = _sterilize_seq(value)
+        elif value is not None:
+            updated_dict[key] = value
+
+    return updated_dict
+
+
+def _sterilize_seq(seq):
+    '''
+    Sterilize a sequence by looking for dictionary keys that have values of None and removing them.
+    It recursively looks for nested sequences and sterilizes those too.
+
+    seq
+        The input sequence to sterilize
+    '''
+    updated_seq = []
+    for element in seq:
+        if isinstance(element, dict):
+            updated_seq.append(_sterilize_dict(element))
+        elif isinstance(element, (list, set)):
+            updated_seq.append(_sterilize_seq(element))
+        else:
+            updated_seq.append(element)
+
+    return updated_seq

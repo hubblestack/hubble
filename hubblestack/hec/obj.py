@@ -75,7 +75,6 @@ class Payload(object):
         elif 'time' not in dat:
             dat['time'] = str(int(time.time()))
 
-        self.strip_empty_dict_entries(dat)
         self.rename_event_fields_in_payload(dat)
         self.dat = json.dumps(dat)
 
@@ -98,25 +97,6 @@ class Payload(object):
                 if v is not None:
                     e[k + '_meta'] = v
 
-
-    @classmethod
-    def strip_empty_dict_entries(cls, dat):
-        todo = [dat]
-        while todo:
-            dat = todo.pop(0)
-            if isinstance(dat, dict):
-                remove_keys = [k for k in dat if not dat[k] and dat[k] not in (0,False) ]
-                for k in remove_keys:
-                    del dat[k]
-                for v in dat.values():
-                    if isinstance(v, (list,tuple,dict)):
-                        if v not in todo:
-                            todo.append(v)
-            else:
-                for item in dat:
-                    if isinstance(item, (list,tuple,dict)):
-                        if item not in todo:
-                            todo.append(item)
 
 # Thanks to George Starcher for the http_event_collector class (https://github.com/georgestarcher/)
 # Default batch max size to match splunk's default limits for max byte
@@ -291,19 +271,20 @@ class HEC(object):
                 r = self.pool_manager.request('POST', server.uri, body=data, headers=self.headers)
                 server.fails = 0
             except urllib3.exceptions.LocationParseError as e:
-                if self.log_other_exceptions:
-                    log.error('server uri parse error "{0}": {1}'.format(server.uri, e))
+                log.error('server uri parse error "{0}": {1}'.format(server.uri, e))
                 server.bad = True
                 continue
             except Exception as e:
+                log.error('misc exception: %s', e)
                 server.fails += 1
                 continue
             if r.status < 400:
                 return r
-
-        log.error('failed to send payload, queueing for later delivery')
-        self._requeue(payload)
-
+            elif r.status == 400 and r.reason.lower() == 'bad request':
+                log.error('message not accepted (%d %s), dropping payload: %s', r.status, r.reason, r.data)
+            else:
+                log.error('message not accepted (%d %s), requeueing: %s', r.status, r.reason, r.data)
+                self._requeue(payload)
 
     def _finish_send(self, r):
         if r is not None and hasattr(r, 'text'):

@@ -271,19 +271,20 @@ class HEC(object):
                 r = self.pool_manager.request('POST', server.uri, body=data, headers=self.headers)
                 server.fails = 0
             except urllib3.exceptions.LocationParseError as e:
-                if self.log_other_exceptions:
-                    log.error('server uri parse error "{0}": {1}'.format(server.uri, e))
+                log.error('server uri parse error "{0}": {1}'.format(server.uri, e))
                 server.bad = True
                 continue
             except Exception as e:
+                log.error('misc exception: %s', e)
                 server.fails += 1
                 continue
             if r.status < 400:
                 return r
-
-        log.error('failed to send payload, queueing for later delivery')
-        self._requeue(payload)
-
+            elif r.status == 400 and r.reason.lower() == 'bad request':
+                log.error('message not accepted (%d %s), dropping payload: %s', r.status, r.reason, r.data)
+            else:
+                log.error('message not accepted (%d %s), requeueing: %s', r.status, r.reason, r.data)
+                self._requeue(payload)
 
     def _finish_send(self, r):
         if r is not None and hasattr(r, 'text'):

@@ -41,4 +41,4 @@
     set-acl -aclobject $acl $osqueryd_path
 
     sc.exe create $osqueryd_service_name binpath=$binpath  displayname=$osqueryd_service_name
-    sc.exe config hubble_osqueryd depend= Hubble
+    sc.exe config $osqueryd_service_name depend= Hubble

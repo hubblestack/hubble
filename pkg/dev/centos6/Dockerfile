@@ -11,7 +11,7 @@ FROM centos:6
 RUN yum makecache fast && yum -y update
 
 #paths that hubble or hubble parts need in the package
-RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery /var/log/hubble_osquery/backuplogs
+RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery
 
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies

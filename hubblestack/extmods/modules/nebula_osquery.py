@@ -299,7 +299,6 @@ def osqueryd_monitor(configfile=None,
     if not databasepath:
             databasepath = __opts__.get('osquery_dbpath')
     if salt.utils.platform.is_windows():
-        log.info("System is windows")
         if not pidfile:
             pidfile = os.path.join(base_path, "osqueryd.pidfile")
         if not configfile:
@@ -317,7 +316,6 @@ def osqueryd_monitor(configfile=None,
             if osqueryd_restart:
                 _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
     else:
-        log.info("Not windows")
         if not pidfile:
             pidfile = os.path.join(base_path, "osqueryd.pidfile")
         if not configfile:
@@ -1034,6 +1032,8 @@ def _restart_osqueryd(pidfile,
 
     f = open(hashfile, "w")
     f.write(new_hash)
+    open_file.close()
+    f.close()
     if salt.utils.platform.is_windows():
         stop_cmd = ['net', 'stop', servicename]
         __salt__['cmd.run'](stop_cmd, timeout=10000)

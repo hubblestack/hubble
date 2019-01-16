@@ -10,7 +10,7 @@ FROM centos:6
 RUN yum makecache fast && yum -y update
 
 #paths that hubble or hubble parts need in the package
-RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery /var/log/hubble_osquery/backuplogs
+RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery 
 
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
@@ -148,6 +148,7 @@ ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
 CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py' \
     && cp /hubble_build/conf/osquery.conf /etc/osquery/ \
     && cp /hubble_build/conf/osquery.flags /etc/osquery/ \
+    && mkdir -p /var/log/hubble_osquery/backuplogs \
 # hubble default configuration file
     && cp -rf /hubble_build/conf/hubble /etc/hubble/ \
     && cp -rf /hubble_build/conf/hubble-profile.sh /etc/profile.d/ \
@@ -156,7 +157,7 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
     # make sure rpm shared libs are taken out to avoid mismatch between rpm database and shared libs that pyinstaller includes
     && rm -rf /opt/hubble/hubble-libs/librpm* \
 #rpm pkg start
-    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh \
+    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh /var/log/hubble_osquery/backuplogs \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
@@ -182,7 +183,7 @@ CMD [ "scl enable python27 'pyinstaller --onedir --noconfirm --log-level ${_BINA
                                  --after-install /hubble_build/conf/afterinstall.sh \
                                  --after-upgrade /hubble_build/conf/afterupgrade.sh \
                                  --before-remove /hubble_build/conf/beforeremove.sh \
-                                 etc/hubble etc/osquery etc/init.d etc/cron.d opt usr' \
+                                 etc/hubble etc/osquery etc/init.d etc/cron.d opt usr var' \
 #edit to change iteration number, if necessary
     && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el6.x86_64.rpm \
     && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el6.x86_64.rpm \

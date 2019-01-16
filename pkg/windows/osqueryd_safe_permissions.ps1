@@ -1,7 +1,12 @@
-    $osqueryd_path = ".\osqueryd"
+    $hubble_path = $args[0]
+    $osqueryd_path = $hubble_path + "\osqueryd\"
+    $osqueryd_conffile_path = $hubble_path + "\var\cache\files\base\osqueryd\osquery.conf"
+    $osqueryd_flagfile_path = $hubble_path + "\var\cache\files\base\osqueryd\osquery.flags"
     $acl = Get-Item $osqueryd_path |get-acl
     $acl.SetAccessRuleProtection($true,$true)
     $acl |Set-Acl
+    $binpath = "\" + '"' + $osqueryd_path + "osqueryd.exe" + "\" + '"' 	+ " --flagfile=\" + '"' + $osqueryd_flagfile_path + "\" + '"' + " --config_path=\" + '"' + $osqueryd_conffile_path + "\" + '"'
+    $osqueryd_service_name = "hubble_osqueryd"
 
     $group = "NT SERVICE\TrustedInstaller"
     $acl = Get-Acl $osqueryd_path
@@ -35,5 +40,5 @@
     $acl.RemoveAccessRuleAll($accessrule)
     set-acl -aclobject $acl $osqueryd_path
 
-    sc.exe create hubble_osqueryd binpath= '\"C:\Program Files (x86)\Hubble\osqueryd\osqueryd.exe\" --flagfile=\"C:\Program Files (x86)\Hubble\var\cache\files\base\osqueryd\osquery.flags\" --config_path=\"C:\Program Files (x86)\Hubble\var\cache\files\base\osqueryd\osquery.conf\"' displayname= "hubble_osqueryd"
+    sc.exe create $osqueryd_service_name binpath=$binpath  displayname=$osqueryd_service_name
     sc.exe config hubble_osqueryd depend= Hubble

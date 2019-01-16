@@ -423,7 +423,7 @@ def osqueryd_log_parser(osqueryd_logdir=None,
                                   backuplogfilescount,
                                   enablediskstatslogging)
         if s_event_data:
-            ret = ret + s_event_data
+            ret += s_event_data
     else:
         log.warn("Specified osquery snapshot log file doesn't exist: {0}".format(snapshot_logfile))
 
@@ -468,7 +468,7 @@ def check_disk_usage(path=None):
             # We would be interested in var partition disk stats only, for other partitions specify 'path' param
             path = "/var/log"
         df_stat = os.statvfs(path)
-        total =  df_stat.f_frsize * df_stat.f_blocks
+        total = df_stat.f_frsize * df_stat.f_blocks
         avail = df_stat.f_frsize * df_stat.f_bavail
         used = total - avail
         per_used = float(used)/total * 100
@@ -1105,7 +1105,7 @@ def _parse_log(path_to_logfile,
                                                         True)
                     if residue_events:
                         log.info("Found few residue logs, updating the data object")
-                        event_data.append(residue_events)
+                        event_data += residue_events
                     file_offset = 0 #Reset file offset to start of file in case original file is rotated
             _set_cache_offset(path_to_logfile, file_offset)
         else:

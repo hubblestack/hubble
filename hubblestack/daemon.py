@@ -51,7 +51,15 @@ def run():
     '''
     Set up program, daemonize if needed
     '''
-    # Don't put anything that needs config or logging above this line
+
+    # before running load_config -> salt.config.minion_config -> salt.config.load_config,
+    # salt populates logging handlers with a salt null-handler and a salt store logging handler
+    # if there are errors in the config, it then reports those errors to Null and invokes sys.exit
+    # ...
+    # clear out the salt null handlers and configure console logging for now
+    logging.root.handlers = []
+    logging.basicConfig(level=logging.INFO)
+
     try:
         load_config()
     except Exception as e:

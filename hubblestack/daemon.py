@@ -856,7 +856,7 @@ def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_othe
         # shebang; which the kernel picks up and uses to execute the real binary
         # with the "bin" file as an argument; so we'll have to live with cmdline
         pfile = '/proc/{pid}/cmdline'.format(pid=xpid)
-        log.error('searching %s for hubble procs matching %s', pfile, hname)
+        log.debug('searching %s for hubble procs matching %s', pfile, hname)
         with open(pfile,'r') as fh:
             # NOTE: cmdline is actually null separated, not space separated
             # that shouldn't matter much for most hname regular expressions,

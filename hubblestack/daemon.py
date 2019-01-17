@@ -57,6 +57,8 @@ def run():
     # if there are errors in the config, it then reports those errors to Null and invokes sys.exit
     # ...
     # clear out the salt null handlers and configure console logging for now
+    global orig_logging_handlers
+    orig_logging_handlers = logging.root.handlers
     logging.root.handlers = []
     logging.basicConfig(level=logging.INFO)
 
@@ -608,6 +610,7 @@ def load_config():
     }
 
     # Setup logging
+    logging.root.handlers = orig_logging_handlers
     salt.log.setup.setup_console_logger(**console_logging_opts)
     salt.log.setup.setup_logfile_logger(__opts__['log_file'],
                                         __opts__['log_level'],

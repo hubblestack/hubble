@@ -46,7 +46,6 @@ __opts__ = {}
 # This should work fine until we go to multiprocessing
 SESSION_UUID = str(uuid.uuid4())
 
-
 def run():
     '''
     Set up program, daemonize if needed
@@ -56,11 +55,12 @@ def run():
     # salt populates logging handlers with a salt null-handler and a salt store logging handler
     # if there are errors in the config, it then reports those errors to Null and invokes sys.exit
     # ...
-    # clear out the salt null handlers and configure console logging for now
-    global orig_logging_handlers
-    orig_logging_handlers = logging.root.handlers
-    logging.root.handlers = []
-    logging.basicConfig(level=logging.INFO)
+    # add a stream logger for now
+    formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s')
+    handler   = logging.StreamHandler()
+    handler.setLevel(logging.INFO)
+    handler.setFormatter(formatter)
+    logging.root.handlers.insert(0, handler)
 
     try:
         load_config()
@@ -610,7 +610,6 @@ def load_config():
     }
 
     # Setup logging
-    logging.root.handlers = orig_logging_handlers
     salt.log.setup.setup_console_logger(**console_logging_opts)
     salt.log.setup.setup_logfile_logger(__opts__['log_file'],
                                         __opts__['log_level'],

@@ -46,12 +46,24 @@ __opts__ = {}
 # This should work fine until we go to multiprocessing
 SESSION_UUID = str(uuid.uuid4())
 
+early_log_handler = None
 
 def run():
     '''
     Set up program, daemonize if needed
     '''
-    # Don't put anything that needs config or logging above this line
+
+    # before running load_config -> salt.config.minion_config -> salt.config.load_config,
+    # salt populates logging handlers with a salt null-handler and a salt store logging handler
+    # if there are errors in the config, it then reports those errors to Null and invokes sys.exit
+    # ...
+    # add a stream logger for now, but remember it so we can ensure its not part of the loggers later
+    global early_log_handler
+    early_log_handler = logging.StreamHandler()
+    early_log_handler.setLevel(logging.INFO)
+    early_log_handler.setFormatter( logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s') )
+    logging.root.handlers.insert(0, early_log_handler)
+
     try:
         load_config()
     except Exception as e:
@@ -484,7 +496,7 @@ def load_config():
         salt.config.DEFAULT_MINION_OPTS['osquerylog_backupdir'] = '/var/log/hubble_osquery/backuplogs'
 
     salt.config.DEFAULT_MINION_OPTS['file_roots'] = {'base': []}
-    salt.config.DEFAULT_MINION_OPTS['log_level'] = None
+    salt.config.DEFAULT_MINION_OPTS['log_level'] = 'error'
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
     salt.config.DEFAULT_MINION_OPTS['grains_refresh_frequency'] = 3600  # 1 hour
@@ -610,6 +622,10 @@ def load_config():
         'log_format': __opts__.get('console_log_format'),
         'date_format': __opts__.get('console_log_date_format'),
     }
+
+    # remove early console logging from the handlers
+    if early_log_handler in logging.root.handlers:
+        logging.root.handlers.remove(early_log_handler)
 
     # Setup logging
     salt.log.setup.setup_console_logger(**console_logging_opts)
@@ -860,7 +876,7 @@ def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_othe
         # shebang; which the kernel picks up and uses to execute the real binary
         # with the "bin" file as an argument; so we'll have to live with cmdline
         pfile = '/proc/{pid}/cmdline'.format(pid=xpid)
-        log.error('searching %s for hubble procs matching %s', pfile, hname)
+        log.debug('searching %s for hubble procs matching %s', pfile, hname)
         with open(pfile,'r') as fh:
             # NOTE: cmdline is actually null separated, not space separated
             # that shouldn't matter much for most hname regular expressions,

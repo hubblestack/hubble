@@ -286,12 +286,12 @@ def osqueryd_monitor(configfile=None,
         daemonize osquery daemon. Default is True. Applicable for posix system only
 
     '''
-    log.info("starting osqueryd monitor")
+    log.info("Starting osqueryd monitor")
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
-    osqueryd_path = 'salt://osqueryd'
-    cached = __salt__['cp.cache_dir'](osqueryd_path,saltenv=saltenv)
-    log.info('cached osqueryd files to cachedir')
-    cachedir = os.path.join(__opts__.get('cachedir'),'files',saltenv,'osqueryd')
+    osqueryd_path = 'salt://osquery'
+    cached = __salt__['cp.cache_dir'](osqueryd_path, saltenv=saltenv)
+    log.info('Cached osqueryd files to cachedir')
+    cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'osquery')
     base_path = cachedir
     servicename = "hubble_osqueryd"
     if not logdir:

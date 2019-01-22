@@ -381,10 +381,14 @@ def osqueryd_log_parser(osqueryd_logdir=None,
         result_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.results.log'))
         snapshot_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.snapshots.log'))
     else:
+        osquery_base_logdir = __opts__.get('osquerylogpath')
         log.info("Setting osquery daemon log file to default dir: {0}"
                  .format(osquery_base_logdir))
-        result_logfile = os.path.normpath(__opts__.get('osquerylogpath'), 'osqueryd.results.log')
-        snapshot_logfile = os.path.normpath(__opts__.get('osquerylogpath'), '/osqueryd.snapshots.log')
+        result_logfile = os.path.normpath(os.path.join(osquery_base_logdir, 'osqueryd.results.log'))
+        snapshot_logfile = os.path.normpath(os.path.join(osquery_base_logdir, 'osqueryd.snapshots.log'))
+
+    log.debug("Result log file resolved to: {0}".format(result_logfile))
+    log.debug("Snapshot log file resolved to: {0}".format(snapshot_logfile))
 
     if not backuplogdir:
         backuplogdir = __opts__.get('osquerylog_backupdir')

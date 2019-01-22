@@ -407,7 +407,7 @@ def osqueryd_log_parser(osqueryd_logdir=None,
                                   backuplogfilescount,
                                   enablediskstatslogging)
         if r_event_data:
-            ret = r_event_data
+            ret += r_event_data
     else:
         log.warn("Specified osquery result log file doesn't exist: {0}".format(result_logfile))
 

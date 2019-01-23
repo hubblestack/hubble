@@ -337,9 +337,9 @@ def osqueryd_monitor(configfile=None,
 @hubble_status.watch
 def osqueryd_log_parser(osqueryd_logdir=None,
                         backuplogdir=None,
-                        maxlogfilesizethreshold=100000,
-                        logfilethresholdinbytes=10000,
-                        backuplogfilescount=5,
+                        maxlogfilesizethreshold=None,
+                        logfilethresholdinbytes=None,
+                        backuplogfilescount=None,
                         enablediskstatslogging=False,
                         topfile_for_mask=None,
                         mask_passwords=False):

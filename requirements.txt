@@ -1,3 +1,2 @@
 salt-ssh
 vulners
-diskcache

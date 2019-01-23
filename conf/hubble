@@ -77,7 +77,7 @@ fileserver_backend:
 #    run_on_start: False
 #  nebula_osqueryd_monitor:
 #    function: nebula.osqueryd_monitor
-#    seconds: 60
+#    seconds: 300
 #    splay: 10
 #    kwargs:
 #      configfile: /path/to/confbase/osquery/osquery.conf
@@ -89,7 +89,7 @@ fileserver_backend:
 #    run_on_start: True
 #  nebula_osqueryd_log_parser:
 #    function: nebula.osqueryd_log_parser
-#    seconds: 60
+#    seconds: 300
 #    splay: 10
 #    kwargs:
 #      osqueryd_logdir: /var/log/hubble_osquery
@@ -141,6 +141,9 @@ fileserver_backend:
 
 #config_to_grains:
 #  - splunkindex: "hubblestack:returner:splunk:0:index"
+
+#Set log level
+log_level: info
 
 ## If you are instead using the slack returner, you'll need a block similar to
 ## this:

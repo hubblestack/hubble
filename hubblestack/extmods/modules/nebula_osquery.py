@@ -460,6 +460,9 @@ def check_disk_usage(path=None):
 
     *** Linux Only method ***
 
+    path
+        Defaults to '/var/log'
+
     '''
     disk_stats = {}
     if salt.utils.platform.is_windows():

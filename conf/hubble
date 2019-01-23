@@ -50,6 +50,13 @@ fileserver_backend:
 #    returner: splunk_nova_return
 #    returner_retry: True # only works on splunk returners for now
 #    run_on_start: False
+#  fdg_top:
+#    function: fdg.top
+#    seconds: 86400
+#    splay: 3600
+#    returner: splunk_fdg_return
+#    returner_retry: True
+#    run_on_start: True
 #  nebula_fifteen_min:
 #    function: nebula.queries
 #    seconds: 900

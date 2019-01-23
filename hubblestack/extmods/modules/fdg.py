@@ -355,10 +355,14 @@ def _check_block(block, block_id):
 
 def _get_top_data(topfile):
 
-    topfile = __salt__['cp.cache_file'](topfile)
+    cached_topfile = __salt__['cp.cache_file'](topfile)
+
+    if not cached_topfile:
+        log.debug('FDG topfile {0} not found from fileserver. Aborting.'.format(topfile))
+        return []
 
     try:
-        with open(topfile) as handle:
+        with open(cached_topfile) as handle:
             topdata = yaml.safe_load(handle)
     except Exception as e:
         raise CommandExecutionError('Could not load topfile: {0}'.format(e))

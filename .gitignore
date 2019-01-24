@@ -36,6 +36,7 @@ var/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+pytest-output.txt
 
 # Unit test / coverage reports
 htmlcov/
@@ -93,7 +94,10 @@ ENV/
 
 # Visual Studio Code settings
 .vscode
-
 doc/_build
 
+# jenkins files
+vlib
+pip.cache
 setup.txt
+*-*.txt

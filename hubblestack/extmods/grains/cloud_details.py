@@ -35,7 +35,7 @@ def _get_aws_details():
         # AWS account id is always an integer number
         # So if it's an aws machine it must be a valid integer number
         # Else it will throw an Exception
-        aws['cloud_account_id'] = int(aws['cloud_account_id'])
+        int(aws['cloud_account_id'])
 
         aws['cloud_instance_id'] = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
                                                 timeout=3).text

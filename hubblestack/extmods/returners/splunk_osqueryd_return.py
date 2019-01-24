@@ -136,32 +136,33 @@ def returner(ret):
                     event.update(cloud_details)
                     sourcetype = opts['sourcetype']
                     if opts['add_query_to_sourcetype']:
-                        sourcetype = opts['sourcetype'] + '_' + query_name
+                        # Remove 'pack_' from query name to shorten the sourcetype length
+                        sourcetype = opts['sourcetype'] + '_' + query_name.replace('pack_', '')
 
                     # If the osquery query includes a field called 'time' it will be checked.
                     # If it's within the last year, it will be used as the eventtime.
                     event_time = query_results.get('time', '')
                     if 'columns' in query_results: #This means we have result log event
                         event.update(query_results['columns'])
-                        _generate_and_send_payload(hec, 
-                                                   opts['index'], 
-                                                   sourcetype, 
-                                                   fqdn, 
-                                                   custom_fields, 
-                                                   index_extracted_fields, 
-                                                   event, 
+                        _generate_and_send_payload(hec,
+                                                   opts['index'],
+                                                   sourcetype,
+                                                   fqdn,
+                                                   custom_fields,
+                                                   index_extracted_fields,
+                                                   event,
                                                    event_time)
                     elif 'snapshot' in query_results: #This means we have snapshot log event
                         for q_result in query_results['snapshot']:
                             n_event = copy.deepcopy(event)
                             n_event.update(q_result)
-                            _generate_and_send_payload(hec, 
-                                                       opts['index'], 
-                                                       sourcetype, 
-                                                       fqdn, 
-                                                       custom_fields, 
-                                                       index_extracted_fields, 
-                                                       n_event, 
+                            _generate_and_send_payload(hec,
+                                                       opts['index'],
+                                                       sourcetype,
+                                                       fqdn,
+                                                       custom_fields,
+                                                       index_extracted_fields,
+                                                       n_event,
                                                        event_time)
                     else:
                         log.error("Incompatible event data captured")

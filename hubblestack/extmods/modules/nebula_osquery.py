@@ -377,13 +377,10 @@ def osqueryd_log_parser(osqueryd_logdir=None,
     '''
     ret = []
     if osqueryd_logdir:
-        log.info("Base directory for osquery daemon logs specified as {0}".format(osqueryd_logdir))
         result_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.results.log'))
         snapshot_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.snapshots.log'))
     else:
         osquery_base_logdir = __opts__.get('osquerylogpath')
-        log.info("Setting osquery daemon log file to default dir: {0}"
-                 .format(osquery_base_logdir))
         result_logfile = os.path.normpath(os.path.join(osquery_base_logdir, 'osqueryd.results.log'))
         snapshot_logfile = os.path.normpath(os.path.join(osquery_base_logdir, 'osqueryd.snapshots.log'))
 
@@ -490,7 +487,7 @@ def check_disk_usage(path=None):
                      }
 
         if __salt__['config.get']('splunklogging', False):
-            log.info('Logging disk usage stats to splunk')
+            log.debug('Logging disk usage stats to splunk')
             hubblestack.splunklogging.__grains__ = __grains__
             hubblestack.splunklogging.__salt__ = __salt__
             hubblestack.splunklogging.__opts__ = __opts__
@@ -1073,50 +1070,50 @@ def _parse_log(path_to_logfile,
     file_offset = offset
     rotateLog = False
     if path.exists(path_to_logfile):
-        fileDes = open(path_to_logfile, "r+")
-        if fileDes:
-            if os.stat(path_to_logfile).st_size > maxlogfilesizethreshold:
-                # This is done to handle scenarios where hubble process was in stopped state and
-                # osquery daemon was generating logs for that time frame. When hubble is started and
-                # this function gets executed, it might be possible that the log file is now huge.
-                # In this scenario hubble might take too much time to process the logs which may not be required
-                # To handle this, log file size is validated against max threshold size.
-                log.info("Log file size is above max threshold size that can be parsed by Hubble.")
-                log.info("Log file size: {0}, max threshold: {1}".format(os.stat(path_to_logfile).st_size, 
-                                                                         maxlogfilesizethreshold))
-                log.info("Rotating log and skipping parsing for this iteration")
-                fileDes.close()
-                _perform_log_rotation(path_to_logfile, 
-                                      file_offset,
-                                      backuplogdir,
-                                      backuplogfilescount,
-                                      enablediskstatslogging,
-                                      False)
-                file_offset = 0 #Reset file offset to start of file in case original file is rotated
-            else:
-                if os.stat(path_to_logfile).st_size > logfilethresholdinbytes:
-                    rotateLog = True
-                fileDes.seek(offset)
-                for event in fileDes.readlines():
-                    event_data.append(event)
-                file_offset = fileDes.tell()
-                fileDes.close()
-                if rotateLog:
-                    log.info('Log file size above threshold, '
-                              'going to rotate log file: {0}'.format(path_to_logfile))
-                    residue_events = _perform_log_rotation(path_to_logfile, 
-                                                        file_offset, 
-                                                        backuplogdir, 
-                                                        backuplogfilescount,
-                                                        enablediskstatslogging,
-                                                        True)
-                    if residue_events:
-                        log.info("Found few residue logs, updating the data object")
-                        event_data += residue_events
+        with open(path_to_logfile, "r") as fileDes:
+            if fileDes:
+                if os.stat(path_to_logfile).st_size > maxlogfilesizethreshold:
+                    # This is done to handle scenarios where hubble process was in stopped state and
+                    # osquery daemon was generating logs for that time frame. When hubble is started and
+                    # this function gets executed, it might be possible that the log file is now huge.
+                    # In this scenario hubble might take too much time to process the logs which may not be required
+                    # To handle this, log file size is validated against max threshold size.
+                    log.info("Log file size is above max threshold size that can be parsed by Hubble.")
+                    log.info("Log file size: {0}, max threshold: {1}".format(os.stat(path_to_logfile).st_size, 
+                                                                            maxlogfilesizethreshold))
+                    log.info("Rotating log and skipping parsing for this iteration")
+                    fileDes.close() # Closing explicitly to handle File in Use exception in windows
+                    _perform_log_rotation(path_to_logfile,
+                                        file_offset,
+                                        backuplogdir,
+                                        backuplogfilescount,
+                                        enablediskstatslogging,
+                                        False)
                     file_offset = 0 #Reset file offset to start of file in case original file is rotated
-            _set_cache_offset(path_to_logfile, file_offset)
-        else:
-            log.error('Unable to open log file for reading: {0}'.format(path_to_logfile))
+                else:
+                    if os.stat(path_to_logfile).st_size > logfilethresholdinbytes:
+                        rotateLog = True
+                    fileDes.seek(offset)
+                    for event in fileDes.readlines():
+                        event_data.append(event)
+                    file_offset = fileDes.tell()
+                    fileDes.close() # Closing explicitly to handle File in Use exception in windows
+                    if rotateLog:
+                        log.info('Log file size above threshold, '
+                                'going to rotate log file: {0}'.format(path_to_logfile))
+                        residue_events = _perform_log_rotation(path_to_logfile,
+                                                            file_offset, 
+                                                            backuplogdir, 
+                                                            backuplogfilescount,
+                                                            enablediskstatslogging,
+                                                            True)
+                        if residue_events:
+                            log.info("Found few residue logs, updating the data object")
+                            event_data += residue_events
+                        file_offset = 0 #Reset file offset to start of file in case original file is rotated
+                _set_cache_offset(path_to_logfile, file_offset)
+            else:
+                log.error('Unable to open log file for reading: {0}'.format(path_to_logfile))
     else:
         log.error("Log file doesn't exists: {0}".format(path_to_logfile))
 
@@ -1190,12 +1187,11 @@ def _read_residue_logs(path_to_logfile, offset):
     '''
     event_data= []
     if path.exists(path_to_logfile):
-       fileDes = open(path_to_logfile, "r+")
-       if fileDes:
-           log.info('Checking for any residue logs that might have been '
-                     'added while log rotation was being performed')
-           fileDes.seek(offset)
-           for event in fileDes.readlines():
-               event_data.append(event)
-           fileDes.close()
+        with open(path_to_logfile, "r") as fileDes:
+            if fileDes:
+                log.info('Checking for any residue logs that might have been '
+                         'added while log rotation was being performed')
+                fileDes.seek(offset)
+                for event in fileDes.readlines():
+                    event_data.append(event)
     return event_data

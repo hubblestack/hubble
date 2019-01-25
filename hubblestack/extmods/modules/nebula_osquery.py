@@ -953,28 +953,25 @@ def _osqueryd_restart_required(hashfile, flagfile):
     '''
     log.info("checking if osqueryd needs to be restarted or not")
     try:
-        open_file = open(flagfile, 'r')
-        file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
-        hash_md5 = md5()
-        hash_md5.update(file_content.encode('ISO-8859-1'))
-        new_hash = hash_md5.hexdigest()
-        open_file.close()
+        with open(flagfile, "r") as open_file:
+            file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
+            hash_md5 = md5()
+            hash_md5.update(file_content.encode('ISO-8859-1'))
+            new_hash = hash_md5.hexdigest()
 
         if not os.path.isfile(hashfile):
-            f = open(hashfile, "w")
-            f.write(new_hash)
-            f.close()
-            return False
+            with open(hashfile, "w") as f:
+                f.write(new_hash)
+                return False
         else:
-            f = open(hashfile, "r")
-            old_hash = f.read()
-            if old_hash != new_hash:
-                log.info('old hash is {0} and new hash is {1}'.format(old_hash, new_hash))
-                log.info('changes detected in flag file')
-                return True
-            else:
-                log.info('no changes detected in flag file')
-            f.close()
+            with open(hashfile, "r") as f:
+                old_hash = f.read()
+                if old_hash != new_hash:
+                    log.info('old hash is {0} and new hash is {1}'.format(old_hash, new_hash))
+                    log.info('changes detected in flag file')
+                    return True
+                else:
+                    log.info('no changes detected in flag file')
     except:
         log.error("some error occured, unable to determine whether osqueryd need to be restarted, not restarting osqueryd")
     return False
@@ -1031,16 +1028,14 @@ def _restart_osqueryd(pidfile,
     ''' 
     log.info("osqueryd needs to be restarted, restarting now")
 
-    open_file = open(flagfile, 'r')
-    file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
-    hash_md5 = md5()
-    hash_md5.update(file_content.encode('ISO-8859-1'))
-    new_hash = hash_md5.hexdigest()
+    with open(flagfile, "r") as open_file:
+        file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
+        hash_md5 = md5()
+        hash_md5.update(file_content.encode('ISO-8859-1'))
+        new_hash = hash_md5.hexdigest()
 
-    f = open(hashfile, "w")
-    f.write(new_hash)
-    open_file.close()
-    f.close()
+    with open(hashfile, "w") as f:
+        f.write(new_hash)
     if salt.utils.platform.is_windows():
         stop_cmd = ['net', 'stop', servicename]
         __salt__['cmd.run'](stop_cmd, timeout=10000)

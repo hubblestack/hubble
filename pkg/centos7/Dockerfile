@@ -10,13 +10,13 @@ FROM centos:7
 RUN yum makecache fast && yum -y update
 
 #paths that hubble or hubble parts need in the package
-RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery
+RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery 
 
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 #to pin to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=1ed050147ac88a7314c172e15e86f8886206dd06
+ENV OSQUERY_SRC_VERSION=0314871908273b2770129da9f5a7c3206f224f68
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 RUN yum -y install git make python ruby sudo which
@@ -38,6 +38,7 @@ RUN cd /home/"$OSQUERY_BUILD_USER" \
  && make strip
 USER root
 RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt/osquery \
+ && cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery/hubble_osqueryd \
  && chown -R root. /opt/osquery \
  && chmod -R 500 /opt/osquery/* \
 #put augeas lenses into the default directory that we changed earlier
@@ -144,6 +145,7 @@ ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
 CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py \
     && cp /hubble_build/conf/osquery.conf /etc/osquery/ \
     && cp /hubble_build/conf/osquery.flags /etc/osquery/ \
+    && mkdir -p /var/log/hubble_osquery/backuplogs \
 # hubble default configuration file
     && cp -rf /hubble_build/conf/hubble /etc/hubble/ \
     && cp -rf /hubble_build/conf/hubble-profile.sh /etc/profile.d/ \
@@ -152,7 +154,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
     # make sure rpm shared libs are taken out to avoid mismatch between rpm database and shared libs that pyinstaller includes
     && rm -rf /opt/hubble/hubble-libs/librpm* \
 #rpm pkg start
-    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh \
+    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh /var/log/hubble_osquery/backuplogs \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system \
@@ -176,7 +178,7 @@ CMD [ "pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --addit
        --after-install /hubble_build/conf/afterinstall-systemd.sh \
        --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
-       etc/hubble etc/osquery opt usr \
+       etc/hubble etc/osquery opt usr var \
 #edit to change iteration number, if necessary
     && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm \
     && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm \

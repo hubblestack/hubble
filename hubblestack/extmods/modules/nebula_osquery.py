@@ -958,10 +958,12 @@ def _osqueryd_restart_required(hashfile, flagfile):
         hash_md5 = md5()
         hash_md5.update(file_content.encode('ISO-8859-1'))
         new_hash = hash_md5.hexdigest()
+        open_file.close()
 
         if not os.path.isfile(hashfile):
             f = open(hashfile, "w")
             f.write(new_hash)
+            f.close()
             return False
         else:
             f = open(hashfile, "r")
@@ -972,6 +974,7 @@ def _osqueryd_restart_required(hashfile, flagfile):
                 return True
             else:
                 log.info('no changes detected in flag file')
+            f.close()
     except:
         log.error("some error occured, unable to determine whether osqueryd need to be restarted, not restarting osqueryd")
     return False

@@ -194,7 +194,7 @@ class HubbleStatus(object):
                 # NOTE: t should only be used for tracking time constrained counts
                 # (e.g., the sourcetype counts in hec.obj); we make sure the first_t
                 # and last_t include the given (e.g.) event time
-                if isinstance(t, str):
+                if isinstance(t, (str,unicode)):
                     t = int(t)
                 if t < self.first_t:
                     self.first_t = t

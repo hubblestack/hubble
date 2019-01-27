@@ -237,7 +237,7 @@ class HEC(object):
             dat = Payload(dat, eventtime, no_queue=no_queue)
         if dat.no_queue: # here you silly hec, queue this no_queue payload...
             return
-        count_input(payload.sourcetype)
+        count_input(payload)
         self._queue_event(dat)
 
     def flushQueue(self):

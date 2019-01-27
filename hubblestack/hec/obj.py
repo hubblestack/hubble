@@ -323,7 +323,7 @@ class HEC(object):
             if self.queue:
                 self._queue_event(data)
             else:
-                log.debug('NoQueue established')
+                log.debug('queue is NoQueue, not actually queueing anything')
 
     def _finish_send(self, r):
         if r is not None and hasattr(r, 'status') and hasattr(r, 'reason'):

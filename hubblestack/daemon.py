@@ -62,15 +62,6 @@ def run():
     if not os.path.isdir(__opts__['cachedir']):
         os.makedirs(__opts__['cachedir'])
 
-    if __opts__['buildinfo']:
-        try:
-            from hubblestack import __buildinfo__
-        except ImportError:
-            __buildinfo__ = 'NOT SET'
-        print(__buildinfo__)
-        clean_up_process(None, None)
-        sys.exit(0)
-
     try:
         main()
     except KeyboardInterrupt:
@@ -499,6 +490,15 @@ def load_config():
         clean_up_process(None, None)
         sys.exit(0)
 
+    if __opts__['buildinfo']:
+        try:
+            from hubblestack import __buildinfo__
+        except ImportError:
+            __buildinfo__ = 'NOT SET'
+        print(__buildinfo__)
+        clean_up_process(None, None)
+        sys.exit(0)
+
     if __opts__['daemonize']:
         # before becoming a daemon, check for other procs and possibly send
         # then a signal 15 (otherwise refuse to run)
@@ -506,7 +506,7 @@ def load_config():
             check_pidfile(kill_other=True)
         salt.utils.daemonize()
         create_pidfile()
-    elif not __opts__['function'] and not __opts__['version']:
+    elif not __opts__['function'] and not __opts__['version'] and not __opts__['buildinfo'] :
         # check the pidfile and possibly refuse to run
         # (assuming this isn't a single function call)
         if not __opts__.get('ignore_running', False):

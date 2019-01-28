@@ -10,7 +10,7 @@ import copy
 import logging
 import time
 import pprint
-import os
+import os, re
 import random
 import signal
 import sys
@@ -46,12 +46,24 @@ __opts__ = {}
 # This should work fine until we go to multiprocessing
 SESSION_UUID = str(uuid.uuid4())
 
+early_log_handler = None
 
 def run():
     '''
     Set up program, daemonize if needed
     '''
-    # Don't put anything that needs config or logging above this line
+
+    # before running load_config -> salt.config.minion_config -> salt.config.load_config,
+    # salt populates logging handlers with a salt null-handler and a salt store logging handler
+    # if there are errors in the config, it then reports those errors to Null and invokes sys.exit
+    # ...
+    # add a stream logger for now, but remember it so we can ensure its not part of the loggers later
+    global early_log_handler
+    early_log_handler = logging.StreamHandler()
+    early_log_handler.setLevel(logging.INFO)
+    early_log_handler.setFormatter( logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s') )
+    logging.root.handlers.insert(0, early_log_handler)
+
     try:
         load_config()
     except Exception as e:
@@ -459,6 +471,10 @@ def load_config():
         salt.config.DEFAULT_MINION_OPTS['cachedir'] = 'C:\\Program Files (x86)\\hubble\\var\\cache'
         salt.config.DEFAULT_MINION_OPTS['pidfile'] = 'C:\\Program Files (x86)\\hubble\\var\\run\\hubble.pid'
         salt.config.DEFAULT_MINION_OPTS['log_file'] = 'C:\\Program Files (x86)\\hubble\\var\\log\\hubble.log'
+        salt.config.DEFAULT_MINION_OPTS['osquery_dbpath'] = 'C:\\Program Files (x86)\\hubble\\var\\hubble_osquery_db'
+        salt.config.DEFAULT_MINION_OPTS['osquerylogpath'] = 'C:\\Program Files (x86)\\hubble\\var\\log\\hubble_osquery'
+        salt.config.DEFAULT_MINION_OPTS['osquerylog_backupdir'] = \
+                                        'C:\\Program Files (x86)\\hubble\\var\\log\\hubble_osquery\\backuplogs'
 
     else:
         if parsed_args.get('configfile') is None:
@@ -466,9 +482,12 @@ def load_config():
         salt.config.DEFAULT_MINION_OPTS['cachedir'] = '/var/cache/hubble'
         salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
         salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
+        salt.config.DEFAULT_MINION_OPTS['osquery_dbpath'] = '/var/cache/hubble/osquery'
+        salt.config.DEFAULT_MINION_OPTS['osquerylogpath'] = '/var/log/hubble_osquery'
+        salt.config.DEFAULT_MINION_OPTS['osquerylog_backupdir'] = '/var/log/hubble_osquery/backuplogs'
 
     salt.config.DEFAULT_MINION_OPTS['file_roots'] = {'base': []}
-    salt.config.DEFAULT_MINION_OPTS['log_level'] = None
+    salt.config.DEFAULT_MINION_OPTS['log_level'] = 'error'
     salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
     salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
     salt.config.DEFAULT_MINION_OPTS['grains_refresh_frequency'] = 3600  # 1 hour
@@ -477,6 +496,11 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['logfile_maxbytes'] = 100000000 # 100MB
     salt.config.DEFAULT_MINION_OPTS['logfile_backups'] = 1 # maximum rotated logs
     salt.config.DEFAULT_MINION_OPTS['delete_inaccessible_azure_containers'] = False
+    salt.config.DEFAULT_MINION_OPTS['enable_globbing_in_nebula_masking'] = False  # Globbing will not be supported in nebula masking
+    salt.config.DEFAULT_MINION_OPTS['osquery_logfile_maxbytes'] = 50000000 # 50MB
+    salt.config.DEFAULT_MINION_OPTS['osquery_logfile_maxbytes_toparse'] = 100000000 #100MB
+    salt.config.DEFAULT_MINION_OPTS['osquery_backuplogs_count'] = 2
+    
 
     global __opts__
 
@@ -499,18 +523,20 @@ def load_config():
         clean_up_process(None, None)
         sys.exit(0)
 
+    scan_proc = __opts__.get('scan_proc', False)
+
     if __opts__['daemonize']:
         # before becoming a daemon, check for other procs and possibly send
         # then a signal 15 (otherwise refuse to run)
         if not __opts__.get('ignore_running', False):
-            check_pidfile(kill_other=True)
+            check_pidfile(kill_other=True, scan_proc=scan_proc)
         salt.utils.daemonize()
         create_pidfile()
     elif not __opts__['function'] and not __opts__['version'] and not __opts__['buildinfo'] :
         # check the pidfile and possibly refuse to run
         # (assuming this isn't a single function call)
         if not __opts__.get('ignore_running', False):
-            check_pidfile(kill_other=False)
+            check_pidfile(kill_other=False, scan_proc=scan_proc)
 
     signal.signal(signal.SIGTERM, clean_up_process)
     signal.signal(signal.SIGINT, clean_up_process)
@@ -597,6 +623,10 @@ def load_config():
         'log_format': __opts__.get('console_log_format'),
         'date_format': __opts__.get('console_log_date_format'),
     }
+
+    # remove early console logging from the handlers
+    if early_log_handler in logging.root.handlers:
+        logging.root.handlers.remove(early_log_handler)
 
     # Setup logging
     salt.log.setup.setup_console_logger(**console_logging_opts)
@@ -782,7 +812,7 @@ def parse_args():
                         help='Enable retry on the returner for one-off jobs')
     return vars(parser.parse_args())
 
-def check_pidfile(kill_other=False):
+def check_pidfile(kill_other=False, scan_proc=True):
     '''
     Check to see if there's already a pidfile. If so, check to see if the
     indicated process is alive and is Hubble.
@@ -792,6 +822,7 @@ def check_pidfile(kill_other=False):
         processes; otherwise exit with an error.
 
     '''
+
     pidfile = __opts__['pidfile']
     if os.path.isfile(pidfile):
         with open(pidfile, 'r') as f:
@@ -803,24 +834,89 @@ def check_pidfile(kill_other=False):
                 log.warn('unable to parse pid="{pid}" in pidfile={file}'.format(pid=xpid,file=pidfile))
             if xpid:
                 log.warn('pidfile={file} exists and contains pid={pid}'.format(file=pidfile, pid=xpid))
+                kill_other_or_sys_exit(xpid, kill_other=kill_other)
+
+    if scan_proc:
+        scan_proc_for_hubbles(kill_other=kill_other)
+
+def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_other=True, no_pgrp=True):
+    ''' Attempt to locate other hubbles using a cmdline regular expression and kill them when found.
+        If killing the other processes fails (or kill_other is False), sys.exit instead.
+
+        params:
+          hname      :- the regular expression pattern to use to locate hubble (default: hubble)
+          ksig       :- the signal to use to kill the other processes (default:
+                        signal.SIGTERM=15)
+          kill_other :- (default: True); when false, don't attempt to kill,
+                        just locate and exit (if found)
+          no_pgrp    :- Avoid killing processes in this pgrp (avoid suicide). When no_pgrp is True,
+                        invoke os.getprgp() to populate the actual value.
+
+        caveats:
+            There are some detailed notes on the process scanning in the
+            function as comments.
+
+            The most important caveat is that the hname regular expressions
+            must match expecting that /proc/$$/cmdline text is null separated,
+            not space separated.
+
+            The other main caveat is that we can't actually examine the
+            /proc/$$/exe file (that's always just a python). We have to scan
+            the invocation text the kernel stored at launch. That text is not
+            immutable and should not (normally) be relied upon for any purpose
+            -- and this method does rely on it.
+    '''
+
+    if no_pgrp is True:
+        no_pgrp = os.getpgrp()
+    if isinstance(no_pgrp, int):
+        no_pgrp = str(no_pgrp)
+    if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+        # NOTE: we'd prefer to check readlink(/proc/[pid]/exe), but that won't do
+        # any good the /opt/whatever/bin/hubble is normally a text file with a
+        # shebang; which the kernel picks up and uses to execute the real binary
+        # with the "bin" file as an argument; so we'll have to live with cmdline
+        pfile = '/proc/{pid}/cmdline'.format(pid=xpid)
+        log.debug('searching %s for hubble procs matching %s', pfile, hname)
+        with open(pfile,'r') as fh:
+            # NOTE: cmdline is actually null separated, not space separated
+            # that shouldn't matter much for most hname regular expressions,
+            # but one never knows.
+            cmdline = fh.readline().replace('\x00',' ').strip()
+        if re.search(hname, cmdline):
+            if no_pgrp:
+                pstatfile = '/proc/{pid}/stat'.format(pid=xpid)
+                with open(pstatfile, 'r') as fh2:
+                    # NOTE: man proc(5) § /proc/[pid]/stat
+                    # (pid, comm, state, ppid, pgrp, session, tty_nr, tpgid, flags, ...)
+                    pgrp = fh2.readline().split()[4]
+                    if pgrp == no_pgrp:
+                        log.debug("process (%s) exists and seems to be a hubble, "
+                            "but matches our process group (%s), ignoring", xpid, pgrp)
+                        return False
+            if kill_other:
+                log.warn("process seems to still be alive and seems to be hubble, attempting to shutdown")
+                os.kill(int(xpid), ksig)
+                time.sleep(1)
                 if os.path.isdir("/proc/{pid}".format(pid=xpid)):
-                    with open("/proc/{pid}/cmdline".format(pid=xpid),'r') as f2:
-                        cmdline = f2.readline().strip().strip('\x00').replace('\x00',' ')
-                        if 'hubble' in cmdline:
-                            if kill_other:
-                                log.warn("process seems to still be alive and is hubble, attempting to shutdown")
-                                os.kill(int(xpid), signal.SIGTERM)
-                                time.sleep(1)
-                                if os.path.isdir("/proc/{pid}".format(pid=xpid)):
-                                    log.error("failed to shutdown process successfully; abnormal program exit")
-                                    sys.exit(1)
-                                else:
-                                    log.info("shutdown seems to have succeeded, proceeding with startup")
-                            else:
-                                log.error("refusing to run while another hubble instance is running")
-                                sys.exit(1)
-                        else:
-                            log.info("process does not appear to be hubble, ignoring")
+                    log.error("fatal error: failed to shutdown process (pid=%s) successfully", xpid)
+                    sys.exit(1)
+                else:
+                    return True
+            else:
+                log.error("refusing to run while another hubble instance is running")
+                sys.exit(1)
+    return False
+
+def scan_proc_for_hubbles(proc_path='/proc', hname=r'^/\S+python.*?/opt/.*?hubble', kill_other=True, ksig=signal.SIGTERM):
+    no_pgrp = str(os.getpgrp())
+    rpid = re.compile('\d+')
+    if os.path.isdir('/proc'):
+        for dirname, dirs, files in os.walk('/proc'):
+            if dirname == '/proc':
+                for pid in [ i for i in dirs if rpid.match(i) ]:
+                    kill_other_or_sys_exit(pid, hname=hname, kill_other=kill_other, ksig=ksig, no_pgrp=no_pgrp)
+                break
 
 def create_pidfile():
     '''

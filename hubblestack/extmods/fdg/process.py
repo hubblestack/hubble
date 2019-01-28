@@ -31,10 +31,14 @@ def filter_dict(starting_dict=None, filter_values=False, update_chained=True, ch
 
     ``kwargs`` is a dictionary mapping comparison types to values to compare against.
     '''
-    if update_chained:
-        if starting_dict:
-            chained.update(starting_dict)
-    ret = _filter_dict(chained, filter_values, **kwargs)
+    try:
+        if update_chained:
+            if starting_dict:
+                chained.update(starting_dict)
+    except (AttributeError, TypeError, ValueError):
+        log.error('Invalid argument type - dict required')
+        return False, None
+    ret = _filter_dict(chained, filter_values, kwargs)
     status = bool(ret)
 
     return status, ret
@@ -42,7 +46,7 @@ def filter_dict(starting_dict=None, filter_values=False, update_chained=True, ch
 
 def _filter_dict(dct,
                  filter_values,
-                 **kwargs):
+                 filter_rules):
     '''
     Filter a dictionary.
 
@@ -50,9 +54,10 @@ def _filter_dict(dct,
         The input dictionary to be filtered.
 
     filter_values
-        Indicate if the function should filter the values instead of keys.
+        ``True`` if the function should filter the values instead of keys,
+        ``False`` otherwise.
 
-    kwargs
+    filter_rules
         A dict of (comparison_type, value) pairs that dictate the type of filtering
         where comparison_type can be [gt, lt, eq, ne, ge, le].
         For e.g. for ``dct`` = {1: 'a', 2: 'b', 3: 'c', 4: 'd', 5: 'e'}
@@ -61,10 +66,13 @@ def _filter_dict(dct,
         not equal to 2.
     '''
     ret = dct
-    for comp, value in kwargs.iteritems():
-        ret = {key: val for key, val in ret.iteritems()
-               if (filter_values and _compare(comp, val, value)) or
-               (not filter_values and _compare(comp, key, value))}
+    for comp, value in filter_rules.iteritems():
+        try:
+            ret = {key: val for key, val in ret.iteritems()
+                   if (filter_values and _compare(comp, val, value)) or
+                   (not filter_values and _compare(comp, key, value))}
+        except ArgumentValueError:
+            return None
 
     return ret
 
@@ -90,13 +98,14 @@ def _compare(comp, val1, val2):
         return val1 == val2
     if comp == "ne":
         return val1 != val2
-
-    raise ArgumentValueError("Invalid argument '{}' should be in [gt, ge, lt, le, eq, ne]".format(comp))
+    
+    log.error("Invalid argument '{}' - should be in [gt, ge, lt, le, eq, ne]".format(comp))
+    raise ArgumentValueError
 
 
 def filter_seq(starting_seq=None, extend_chained=True, chained=None, **kwargs):
     '''
-    Given a target sequence sequence, filter it and return the result.
+    Given a target sequence, filter it and return the result.
 
     By default, ``chained`` will have ``.extend()`` or ``.update()`` or ``.format()``
     called on it with ``starting_seq`` as the only argument. Set ``extend_chained`` to False
@@ -106,6 +115,17 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, **kwargs):
     False othewise. The second argument will be the filtered sequence.
 
     ``kwargs`` is a dictionary mapping comparison types to values to compare against.
+    It can take the following values:
+        ge = greater or equal, gt = greater than, lt = lower than, le = lower or equal
+        ne = not equal, eq = equal
+    Sample module:
+        module: process.filter_seq
+          kwargs:
+            starting_seq: [1, 2, 3, 4, 5]
+            ge: 1
+            ne: 2
+            lt:5
+    Outputs: [3, 4]
     '''
     if extend_chained:
         try:
@@ -114,32 +134,42 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, **kwargs):
             elif starting_seq and isinstance(chained, list):
                 chained.extend(starting_seq)
             elif starting_seq and isinstance(chained, str):
-                chained.format(starting_seq)
-        except (AttributeError, TypeError) as exc:
-            raise ArgumentValueError(str(exc))
-    ret = _filter(seq=chained, **kwargs)
+                chained =  starting_seq.format(chained)
+            else:
+                raise AttributeError
+        except (AttributeError, TypeError, ValueError) as exc:
+            log.error("Invalid argument type")
+            return False, None
+    ret = _filter(seq=chained, filter_rules=kwargs)
     status = bool(ret)
 
     return status, ret
 
 
 def _filter(seq,
-            **kwargs):
+            filter_rules):
     '''
     Filter a sequence.
 
     seq
         The input sequence to be filtered.
 
-    kwargs
+    filter_rules 
         A dict of (comparison_type, value) pairs that dictate the type of filtering
         where comparison_type can be [gt, lt, eq, ne, ge, le].
-        For e.g. for ``seq`` = [1, 2, 3, 4, 5] ``kwargs``={le: 4, gt: 1, ne: 2}
+        For e.g. for ``seq`` = [1, 2, 3, 4, 5] ``filter_rules``={le: 4, gt: 1, ne: 2}
         the function outputs [3, 4] - values less than or equal to 4, greater than 1,
         not equal to 2.
     '''
-    for comp, value in kwargs.iteritems():
-        ret = [x for x in seq if _compare(comp, x, value)]
+    if not isinstance(filter_rules, dict):
+        log.error("``filter_rules`` should be of type dict")
+        return None
+    ret = seq
+    for comp, value in filter_rules.iteritems():
+        try:
+            ret = [x for x in ret if _compare(comp, x, value)]
+        except ArgumentValueError:
+            return None
 
     return ret
 
@@ -160,11 +190,18 @@ def get_index(index=0, starting_list=None, extend_chained=True, chained=None):
     '''
     if extend_chained:
         if starting_list:
-            chained.extend(starting_list)
+            try:
+                chained.extend(starting_list)
+            except (AttributeError, TypeError) as exc:
+                log.error("Invalid argument type")
+                return False, None
     try:
         ret = chained[index]
     except IndexError:
         log.error('List index out of range {}'.format(index))
+        return False, None
+    except TypeError:
+        log.error('Arguments should be of type list')
         return False, None
     status = bool(ret)
 
@@ -184,11 +221,19 @@ def get_key(key, starting_dict=None, update_chained=True, chained=None):
     None if the key is not present in the dictionary.
     '''
     if update_chained:
-        chained.update(starting_dict)
+        if starting_dict:
+            try:
+                chained.update(starting_dict)
+            except (TypeError, ValueError):
+                log.error("Arguments should be of type dict")
+                return False, None
     try:
         ret = chained[key]
     except KeyError:
         log.error("Key not found: {}".format(key))
+        return False, None
+    except TypeError:
+        log.error("Arguments should be of type dict")
         return False, None
     status = bool(ret)
 
@@ -211,7 +256,11 @@ def join(words=None, sep='', extend_chained=True, chained=None):
     '''
     if extend_chained:
         if words:
-            chained.extend(words)
+            try:
+                chained.extend(words)
+            except (AttributeError, TypeError) as exc:
+                log.error("Arguments should be of type list")
+                return False, None
     try:
         ret = sep.join(chained)
     except (TypeError, AttributeError):
@@ -240,8 +289,8 @@ def sort(seq=None, desc=False, lexico=False, extend_chained=True, chained=None):
             elif seq and isinstance(chained, list):
                 chained.extend(seq)
             elif seq and isinstance(chained, str):
-                chained.format(seq)
-        except (AttributeError, TypeError):
+                chained = seq.format(chained)
+        except (AttributeError, TypeError, ValueError):
             log.error("Invalid arguments type")
             return False, None
     ret = _sort(chained, desc, lexico)
@@ -269,7 +318,11 @@ def _sort(seq,
     key = None
     if lexico:
         key = str.lower
-    ret = sorted(seq, reverse=desc, key=key)
+    try:
+        ret = sorted(seq, reverse=desc, key=key)
+    except TypeError:
+        log.error("Invalid argument type")
+        return None
 
     return ret
 
@@ -291,7 +344,12 @@ def split(phrase, sep=None, regex=False, format_chained=True, chained=None):
 
     '''
     if format_chained:
-        phrase = phrase.format(chained)
+        if chained:
+            try:
+                phrase = phrase.format(chained)
+            except AttributeError:
+                log.error("Invalid attributes type")
+                return False, None
     ret = _split(phrase, sep, regex)
     status = bool(ret) and len(ret) > 1
 
@@ -315,9 +373,218 @@ def _split(phrase,
         Set to True if ``sep`` should be treated as a regex instead of a delimiter.
     '''
     ret = []
-    if regex:
-        ret = re.split(sep, phrase)
-    else:
-        ret = phrase.split(sep)
+    try:
+        if regex:
+            ret = re.split(sep, phrase)
+        else:
+            ret = phrase.split(sep)
+    except (AttributeError, TypeError):
+        log.error("Invalid argument type")
+        return None
 
     return ret
+
+
+def dict_to_list(starting_dict=None, update_chained=True, chained=None):
+    '''
+    Given a target dictionary, convert it to a list of (key, value) tuples.
+
+    By default, ``chained`` will have ``.update()`` called on it with
+    ``starting_dict`` as the only argument.
+    Set ``update_chained`` to False to ignore ``starting_dict``.
+
+    The first return value (status) will be True if the conversion is successful,
+    and False othewise. The second argument will be the list of tuples.
+    '''
+    if update_chained:
+        if starting_dict:
+            try:
+                chained.update(starting_dict)
+            except (AttributeError, ValueError, TypeError):
+                log.error("Invalid arguments type")
+                return False, None
+    ret = [(key, value) for key, value in chained.iteritems()]
+    status = bool(ret)
+
+    return status, ret
+
+
+def dict_convert_none(starting_seq=None, extend_chained=True, chained=None):
+    '''
+    Given a target sequence, look for dictionary keys that have empty string values and replace them with None
+
+    By default, ``chained`` will have ``.extend()`` or  ``.update()``  called on it with
+    ``starting_seq`` as the only argument. Set ``extend_chained`` to False to ignore ``starting_seq``.
+
+    The first return value (status) will be True if the replacing is successful, and
+    False othewise. The second argument will be the updated sequence.
+    '''
+    if extend_chained:
+        try:
+            if starting_seq and isinstance(chained, (set, dict)):
+                chained.update(starting_seq)
+            elif starting_seq and isinstance(chained, list):
+                chained.extend(starting_seq)
+        except (AttributeError, TypeError, ValueError):
+            log.error("Invalid type of arguments")
+            return False, None
+    if isinstance(chained, dict):
+        ret = _dict_convert_none(chained)
+    elif isinstance(chained, (set, list, tuple)):
+        ret = _seq_convert_none(chained)
+    else:
+        log.error("Invalid arguments type - dict or sequence expected")
+        ret = None
+    status = bool(ret)
+
+    return status, ret
+
+
+def _dict_convert_none(dictionary):
+    '''
+    Look for keys that have values of empty strings and convert them to values of None.
+    It recursively looks for nested dictionaries and sterilizes those too
+
+    dictionary
+        The input dict to sterilize
+    '''
+    if not isinstance(dictionary, dict):
+        log.error("Invalid argument type - should be dict")
+        return None
+    updated_dict = {}
+    for key, value in dictionary.iteritems():
+        if value == '':
+            updated_dict[key] = None
+        elif isinstance(value, dict):
+            updated_dict[key] = _dict_convert_none(value)
+        elif isinstance(value, (list, set, tuple)):
+            updated_dict[key] = _seq_convert_none(value)
+        else:
+            updated_dict[key] = value
+
+    return updated_dict
+
+
+def _seq_convert_none(seq):
+    '''
+    Go over a sequence and look for dictionary keys that have values of empty strings
+    and convert them to values of None.
+    It recursively looks for nested sequences and sterilizes those too
+
+    seq
+        The input sequence to sterilize
+    '''
+    if not isinstance(seq, (list, set, tuple)):
+        log.error("Invalid argument type - list set or tuple expected")
+        return None
+    updated_seq = []
+    for element in seq:
+        if isinstance(element, dict):
+            updated_seq.append(_dict_convert_none(element))
+        elif isinstance(element, (list, set, tuple)):
+            updated_seq.append(_seq_convert_none(element))
+        else:
+            updated_seq.append(element)
+
+    return updated_seq
+
+
+def print_string(starting_string, format_chained=True, chained=None):
+    '''
+    Given a string, return it.
+
+    By default, ``starting_string`` will have ``.format()`` called on it 
+    with ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
+    substitute the chained value.) If you want to avoid having to escape curly braces,
+    set ``format_chained=False``.
+    
+    The first return value (status) will be False only if an error will occur.
+    '''
+    if format_chained:
+        try:
+            starting_string = starting_string.format(chained)
+        except AttributeError:
+            log.error("Invalid type for starting_string - has to be string.")
+            return False, None
+    if not isinstance(starting_string, str):
+        log.error('Invalid arguments - starting_string should be a string')
+        return False, None
+
+    return bool(starting_string), starting_string
+
+
+def dict_remove_none(starting_seq=None, extend_chained=True, chained=None):
+    '''
+    Given a target sequence, look for dictionary keys that have values of None and remove those keys.
+
+    By default, ``chained`` will have ``.extend()`` or ``.update()`` called on it with
+    ``starting_seq`` as the only argument. Set ``extend_chained`` to False to ignore ``starting_seq``.
+
+    The first return value (status) will be True if the sterilizing is successful, and False otherwise.
+    The second argument will be the sterilized sequence.
+    '''
+    if extend_chained:
+        try:
+            if starting_seq and isinstance(chained, (set, dict)):
+                chained.update(starting_seq)
+            elif starting_seq and isinstance(chained, list):
+                chained.extend(starting_seq)
+        except (AttributeError, TypeError, ValueError):
+            log.error("Invalid arguments type")
+            return False, None
+    if isinstance(chained, dict):
+        ret = _sterilize_dict(chained)
+    elif isinstance(chained, (list, set, tuple)):
+        ret = _sterilize_seq(chained)
+    else:
+        log.error("Invalid arguments type - dict, list, set or tuple expected")
+        ret = None
+    status = bool(ret)
+
+    return status, ret
+
+
+def _sterilize_dict(dictionary):
+    '''
+    Sterilize a dictionary by removing the keys that have values of None.
+    It recursively looks for nested dictionaries and sterilizes those too.
+
+    dictionary
+        The input dict to sterilize
+    '''
+    if not isinstance(dictionary, dict):
+        log.error("Invalid argument type - should be dict")
+        return None
+    updated_dict = {}
+    for key, value in dictionary.iteritems():
+        if isinstance(value, dict):
+            updated_dict[key] = _sterilize_dict(value)
+        elif isinstance(value, (set, list, tuple)):
+            updated_dict[key] = _sterilize_seq(value)
+        elif value is not None:
+            updated_dict[key] = value
+
+    return updated_dict
+
+
+def _sterilize_seq(seq):
+    '''
+    Sterilize a sequence by looking for dictionary keys that have values of None and removing them.
+    It recursively looks for nested sequences and sterilizes those too.
+
+    seq
+        The input sequence to sterilize
+    '''
+    if not isinstance(seq, (list, set, tuple)):
+        log.error('Invalid argument type - should be list, set or tuple')
+        return None
+    updated_seq = []
+    for element in seq:
+        if isinstance(element, dict):
+            updated_seq.append(_sterilize_dict(element))
+        elif isinstance(element, (list, set, tuple)):
+            updated_seq.append(_sterilize_seq(element))
+        else:
+            updated_seq.append(element)
+
+    return updated_seq

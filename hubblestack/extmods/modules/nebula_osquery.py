@@ -25,6 +25,8 @@ from __future__ import absolute_import
 
 import copy
 import fnmatch
+import glob
+import fnmatch
 import json
 import logging
 import os
@@ -34,17 +36,22 @@ import yaml
 import collections
 
 import salt.utils
+import salt.utils.files
 import salt.utils.platform
+
+from hashlib import md5
 from salt.exceptions import CommandExecutionError
+from os import path
 from hubblestack import __version__
 import hubblestack.splunklogging
 
 log = logging.getLogger(__name__)
 
 from hubblestack.status import HubbleStatus
-hubble_status = HubbleStatus(__name__, 'top', 'queries')
+hubble_status = HubbleStatus(__name__, 'top', 'queries', 'osqueryd_monitor', 'osqueryd_log_parser')
 
 __virtualname__ = 'nebula'
+__RESULT_LOG_OFFSET__ = {}
 
 
 def __virtual__():
@@ -246,6 +253,251 @@ def queries(query_group,
     return ret
 
 
+@hubble_status.watch
+def osqueryd_monitor(configfile=None,
+                     flagfile=None,
+                     logdir=None,
+                     databasepath=None,
+                     pidfile=None,
+                     hashfile=None,
+                     daemonize=True):
+    '''
+    This function will monitor whether osqueryd is running on the system or not. 
+    Whenever it detects that osqueryd is not running, it will start the osqueryd. 
+    Also, it checks for conditions that would require osqueryd to restart(such as changes in flag file content) 
+    On such conditions, osqueryd will get restarted, thereby loading new files.
+
+    configfile
+        Path to osquery configuration file.
+
+    flagfile
+        Path to osquery flag file
+
+    logdir
+        Path to log directory where osquery daemon/service will write logs
+
+    pidfile
+        pidfile path where osquery daemon will write pid info
+
+    hashfile
+        path to hashfile where osquery flagfile's hash would be stored
+
+    daemonize
+        daemonize osquery daemon. Default is True. Applicable for posix system only
+
+    '''
+    log.info("Starting osqueryd monitor")
+    saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
+    osqueryd_path = 'salt://osquery'
+    cached = __salt__['cp.cache_dir'](osqueryd_path, saltenv=saltenv)
+    log.info('Cached osqueryd files to cachedir')
+    cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'osquery')
+    base_path = cachedir
+    servicename = "hubble_osqueryd"
+    if not logdir:
+            logdir = __opts__.get('osquerylogpath')
+    if not databasepath:
+            databasepath = __opts__.get('osquery_dbpath')
+    if salt.utils.platform.is_windows():
+        if not pidfile:
+            pidfile = os.path.join(base_path, "osqueryd.pidfile")
+        if not configfile:
+            configfile = os.path.join(base_path, "osquery.conf")
+        if not flagfile:
+            flagfile = os.path.join(base_path, "osquery.flags")
+        if not hashfile:
+            hashfile = os.path.join(base_path, "hash_of_flagfile.txt")
+
+        osqueryd_running = _osqueryd_running_status_windows(servicename)
+        if not osqueryd_running:
+            _start_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, servicename)
+        else:
+            osqueryd_restart = _osqueryd_restart_required(hashfile, flagfile)
+            if osqueryd_restart:
+                _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
+    else:
+        if not pidfile:
+            pidfile = os.path.join(base_path, "osqueryd.pidfile")
+        if not configfile:
+            configfile = os.path.join(base_path, "osquery.conf")
+        if not flagfile:
+            flagfile = os.path.join(base_path, "osquery.flags")
+        if not hashfile:
+            hashfile = os.path.join(base_path, "hash_of_flagfile.txt")
+
+        osqueryd_running = _osqueryd_running_status(pidfile, servicename)
+        if not osqueryd_running:
+            _start_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, servicename)
+        else:
+            osqueryd_restart = _osqueryd_restart_required(hashfile, flagfile)
+            if osqueryd_restart:
+                _restart_osqueryd(pidfile, configfile, flagfile, logdir, databasepath, hashfile, servicename)
+
+
+@hubble_status.watch
+def osqueryd_log_parser(osqueryd_logdir=None,
+                        backuplogdir=None,
+                        maxlogfilesizethreshold=None,
+                        logfilethresholdinbytes=None,
+                        backuplogfilescount=None,
+                        enablediskstatslogging=False,
+                        topfile_for_mask=None,
+                        mask_passwords=False):
+    '''
+    Parse osquery daemon logs and perform log rotation based on specified parameters
+
+    osqueryd_logdir
+        Directory path where osquery result and snapshot logs would be created
+
+    backuplogdir
+        Directory path where hubble should create log file backups post log rotation
+
+    maxlogfilesizethreshold
+        Log file size threshold in bytes. If osquery log file size is greter than this value,
+        then logs will only be roatated but not parsed
+
+    logfilethresholdinbytes
+        Log file size threshold in bytes. If osquery log file is greter than this value,
+        then log rotation will be done once logs have been processed
+
+    backuplogfilescount
+        Number of log file backups to keep
+
+    enablediskstatslogging
+        Enable logging of disk usage of /var/log partition. Default is False
+
+    topfile_for_mask
+        This is the location of the top file from which the masking information
+        will be extracted
+
+    mask_passwords
+        Defaults to False. If set to True, passwords mentioned in the
+        return object are masked
+
+    '''
+    ret = []
+    if osqueryd_logdir:
+        result_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.results.log'))
+        snapshot_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.snapshots.log'))
+    else:
+        osquery_base_logdir = __opts__.get('osquerylogpath')
+        result_logfile = os.path.normpath(os.path.join(osquery_base_logdir, 'osqueryd.results.log'))
+        snapshot_logfile = os.path.normpath(os.path.join(osquery_base_logdir, 'osqueryd.snapshots.log'))
+
+    log.debug("Result log file resolved to: {0}".format(result_logfile))
+    log.debug("Snapshot log file resolved to: {0}".format(snapshot_logfile))
+
+    if not backuplogdir:
+        backuplogdir = __opts__.get('osquerylog_backupdir')
+    if not logfilethresholdinbytes:
+        logfilethresholdinbytes = __opts__.get('osquery_logfile_maxbytes')
+    if not maxlogfilesizethreshold:
+        maxlogfilesizethreshold = __opts__.get('osquery_logfile_maxbytes_toparse')
+    if not backuplogfilescount:
+        backuplogfilescount = __opts__.get('osquery_backuplogs_count')
+    if not enablediskstatslogging:
+        enablediskstatslogging = False
+
+    if path.exists(result_logfile):
+        result_logfile_offset = _get_file_offset(result_logfile)
+        r_event_data = _parse_log(result_logfile,
+                                  result_logfile_offset,
+                                  backuplogdir,
+                                  logfilethresholdinbytes,
+                                  maxlogfilesizethreshold,
+                                  backuplogfilescount,
+                                  enablediskstatslogging)
+        if r_event_data:
+            ret += r_event_data
+    else:
+        log.warn("Specified osquery result log file doesn't exist: {0}".format(result_logfile))
+
+    if path.exists(snapshot_logfile):
+        snapshot_logfile_offset = _get_file_offset(snapshot_logfile)
+        s_event_data = _parse_log(snapshot_logfile,
+                                  snapshot_logfile_offset,
+                                  backuplogdir,
+                                  logfilethresholdinbytes,
+                                  maxlogfilesizethreshold,
+                                  backuplogfilescount,
+                                  enablediskstatslogging)
+        if s_event_data:
+            ret += s_event_data
+    else:
+        log.warn("Specified osquery snapshot log file doesn't exist: {0}".format(snapshot_logfile))
+
+    if ret:
+        n_ret = []
+        for r in ret:
+            obj = json.loads(r)
+            if 'action' in obj and obj['action'] == 'snapshot':
+                    for result in obj['snapshot']:
+                        for key, value in result.iteritems():
+                            if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
+                                result[key] = json.loads(value[len('__JSONIFY__'):])
+            elif 'action' in obj:
+                for key, value in obj['columns'].iteritems():
+                    if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
+                        obj['columns'][key] = json.loads(value[len('__JSONIFY__'):])
+            n_ret.append(obj)
+        ret = n_ret
+
+    if mask_passwords:
+        log.info("Perform masking")
+        _mask_object(ret, topfile_for_mask)
+    return ret
+
+
+def check_disk_usage(path=None):
+    '''
+    Check disk usage of specified path.
+    If no path is specified, path will default to '/var/log'
+
+    Can be scheduled via hubble conf as well
+
+    *** Linux Only method ***
+
+    path
+        Defaults to '/var/log'
+
+    '''
+    disk_stats = {}
+    if salt.utils.platform.is_windows():
+        log.info("Platform is windows, skipping disk usage stats")
+        disk_stats = {"Error": "Platform is windows"}
+    else:
+        if not path:
+            # We would be interested in var partition disk stats only, for other partitions specify 'path' param
+            path = "/var/log"
+        df_stat = os.statvfs(path)
+        total = df_stat.f_frsize * df_stat.f_blocks
+        avail = df_stat.f_frsize * df_stat.f_bavail
+        used = total - avail
+        per_used = float(used)/total * 100
+        log.info("Stats for path: {0}, Total: {1}, Available: {2}, Used: {3}, Use%: {4}".format(path,
+                                                                                                total,
+                                                                                                avail,
+                                                                                                used,
+                                                                                                per_used))
+        disk_stats = {'Total' : total,
+                      'Available' : avail,
+                      'Used' : used,
+                      'Use_percent' : per_used,
+                      'Path' : path
+                     }
+
+        if __salt__['config.get']('splunklogging', False):
+            log.debug('Logging disk usage stats to splunk')
+            hubblestack.splunklogging.__grains__ = __grains__
+            hubblestack.splunklogging.__salt__ = __salt__
+            hubblestack.splunklogging.__opts__ = __opts__
+            handler = hubblestack.splunklogging.SplunkHandler()
+            stats = {'disk_stats': disk_stats, 'schedule_time' : time.time()}
+            handler.emit_data(stats)
+
+    return disk_stats
+
+
 def fields(*args):
     '''
     Use config.get to retrieve custom data based on the keys in the `*args`
@@ -340,6 +592,7 @@ def _get_top_data(topfile):
 
     return ret
 
+
 def _mask_object(object_to_be_masked, topfile):
     '''
     Given an object with potential secrets (or other data that should not be
@@ -365,50 +618,31 @@ def _mask_object(object_to_be_masked, topfile):
 
         # Target and mask strings based on regex patterns
         # Can limit search specific queries and columns
-        blacklisted_strings:
-            - query_name: 'running_procs'  # Name of the osquery to be masked.
-                                           # Put '*' to match all queries. Note
-                                           # that query_name doesn't support
-                                           # full globbing. '*' is just given
-                                           # special treatment.
-              column: 'command_line'  # Column name in the osquery to be masked. No regex or glob support
-              # See below for documentation of these blacklisted patterns
-              blacklisted_patterns:
-                  - '(prefix)(password)(suffix)'
-
 
         # Some osquery results are formed as lists of dicts. We can mask
         # based on variable names within these dicts.
         blacklisted_objects:
 
-            - query_name: 'running_procs'  # Name of the osquery to be masked.
+            - query_names:
+              - 'running_procs'
+              - 'listening_procs'          # List of name(s) of the osquery to be masked.
                                            # Put '*' to match all queries. Note
-                                           # that query_name doesn't support
+                                           # that query_names doesn't support
                                            # full globbing. '*' is just given
                                            # special treatment.
               column: 'environment'  # Column name in the osquery to be masked. No regex or glob support
-              attribute_to_check: 'variable_name' # In the inner dict, this is the key
+              attribute_to_check: 'variable_name' # Optional attribute
+                                                  # In the inner dict, this is the key
                                                   # to check for blacklisted_patterns
-              attributes_to_mask: # Values under these keys in the dict will be
+                                                  # Will skipped if column specified is of type 'String'
+              attributes_to_mask: # Optional attribute, Values under these keys in the dict will be
                 - 'value'  # masked, assuming one of the blacklisted_patterns
                            # is found under attribute_to_check in the same dict
-              blacklisted_patterns:  # Strings to look for under attribute_to_check. Globbing support
+                           # Will be skipped if column specified is of type 'String'
+              blacklisted_patterns:  # Strings to look for under attribute_to_check. Conditional Globbing support.
                 - 'ETCDCTL_READ_PASSWORD'
                 - 'ETCDCTL_WRITE_PASSWORD'
-                - '*PASSWORD*'
-
-    blacklisted_patterns (for blacklisted_strings)
-
-        Blacklisted patterns are regular expressions, and have a prefix, a
-        secret, and a suffix. Nebula uses regex groups to maintain the prefix
-        and suffix, *which are not masked*. Only the password is masked.
-
-        If you don't need a suffix or a prefix, leave those sets of parenthesis
-        blank. Do not remove any parenthesis, or else your password could
-        remain unmasked!
-
-        blacklisted_patterns is formed as a list. These patterns are processed
-        (and substituted) in order.
+                - '*PASSWORD*'  # Enable globbing by setting 'enable_globbing_in_nebula_masking' to True, default False
 
     blacklisted_patterns (for blacklisted_objects)
 
@@ -425,7 +659,10 @@ def _mask_object(object_to_be_masked, topfile):
     try:
         mask = {}
         if topfile is None:
-            topfile = 'salt://hubblestack_nebula_v2/top.mask'
+            # We will maintain backward compatibility by keeping two versions of top files and mask files for now
+            # Once all hubble servers are updated, we can remove old version of top file and mask file
+            # Similar to what we have for nebula and nebula_v2 for older versions and newer versions of profiles
+            topfile = 'salt://hubblestack_nebula_v2/top_v2.mask'
         mask_files = _get_top_data(topfile)
         mask_files = ['salt://hubblestack_nebula_v2/' + mask_file.replace('.', '/') + '.yaml'
                       for mask_file in mask_files]
@@ -451,70 +688,135 @@ def _mask_object(object_to_be_masked, topfile):
         # Backwards compatibility with mask_by
         mask_with = mask.get('mask_with', mask.get('mask_by', '******'))
 
-        # We can blacklist strings based on their pattern
-        for blacklisted_string in mask.get('blacklisted_strings', []):
-            query_name = blacklisted_string['query_name']
-            column = blacklisted_string['column']
-            if query_name != '*':
-                for r in object_to_be_masked:
-                    for query_result in r.get(query_name, {'data':[]})['data']:
-                        if column not in query_result or not isinstance(query_result[column], basestring):
-                            # if the column in not present in one data-object, it will
-                            # not be present in others as well. Break in that case.
-                            # This will happen only if mask.yaml is malformed
-                            log.error('masking data references a missing column {0} in query {1}'
-                                      .format(column, query_name))
-                            break
-                        value = query_result[column]
-                        for pattern in blacklisted_string['blacklisted_patterns']:
-                            value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
-                        query_result[column] = value
-            else:
-                for r in object_to_be_masked:
-                    for query_name, query_ret in r.iteritems():
-                        for query_result in query_ret['data']:
-                            if column not in query_result or not isinstance(query_result[column], basestring):
-                                # No error here, since we didn't reference a specific query
-                                break
-                            value = query_result[column]
-                            for pattern in blacklisted_string['blacklisted_patterns']:
-                                value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
-                            query_result[column] = value
-
+        log.info("Total number of results to check for masking: {0}".format(len(object_to_be_masked)))
+        globbing_enabled = __opts__.get('enable_globbing_in_nebula_masking')
 
         for blacklisted_object in mask.get('blacklisted_objects', []):
-            query_name = blacklisted_object['query_name']
-            column = blacklisted_object['column']
-            if query_name != '*':
+            query_names = blacklisted_object['query_names']
+            column = blacklisted_object['column'] # Can be converted to list as well in future if need be
+            if '*' in query_names:
+                # This means wildcard is specified and each event should be masked, if applicable
                 for r in object_to_be_masked:
-                    for query_result in r.get(query_name, {'data':[]})['data']:
-                        if column not in query_result or \
-                                (isinstance(query_result[column], basestring) and
-                                 query_result[column].strip() != ''):
-                            # if the column in not present in one data-object, it will
-                            # not be present in others as well. Break in that case.
-                            # This will happen only if mask.yaml is malformed
-                            log.error('masking data references a missing column {0} in query {1}'
-                                      .format(column, query_name))
-                            break
-                        _recursively_mask_objects(query_result[column], blacklisted_object, mask_with)
+                    if 'action' in r:
+                        # This means data is generated by osquery daemon
+                        _mask_event_data(r, None, column, blacklisted_object, mask_with, globbing_enabled)
+                    else:
+                        # This means data is generated by osquery interactive shell
+                        for query_name, query_ret in r.iteritems():
+                            for query_result in query_ret['data']:
+                                if column not in query_result or \
+                                        (isinstance(query_result[column], basestring) and
+                                        query_result[column].strip() != ''):
+                                        # No error here, since we didn't reference a specific query
+                                    break
+                                if isinstance(query_result[column], basestring):
+                                    # If column is of 'string' type, then replace pattern in-place
+                                    # No need for recursion here
+                                    value = query_result[column]
+                                    for pattern in blacklisted_object['blacklisted_patterns']:
+                                        value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
+                                    query_result[column] = value
+                                else:
+                                    _recursively_mask_objects(query_result[column], blacklisted_object, mask_with, globbing_enabled)
             else:
-                for r in object_to_be_masked:
-                    for query_name, query_ret in r.iteritems():
-                        for query_result in query_ret['data']:
-                            if column not in query_result or \
-                                    (isinstance(query_result[column], basestring) and
-                                     query_result[column].strip() != '' ):
-                                # No error here, since we didn't reference a specific query
-                                break
-                            _recursively_mask_objects(query_result[column], blacklisted_object, mask_with)
+                # Perform masking on results of specific queries specified in 'query_names'
+                for query_name in query_names:
+                    for r in object_to_be_masked:
+                        if 'action' in r:
+                            # This means data is generated by osquery daemon
+                            _mask_event_data(r, query_name, column, blacklisted_object, mask_with, globbing_enabled)
+                        else:
+                            # This means data is generated by osquery interactive shell
+                            for query_result in r.get(query_name, {'data':[]})['data']:
+                                if column not in query_result or \
+                                        (isinstance(query_result[column], basestring) and
+                                         query_result[column].strip() != ''):
+                                        # if the column in not present in one data-object, it will
+                                        # not be present in others as well. Break in that case.
+                                        # This will happen only if mask.yaml is malformed
+                                    log.error('masking data references a missing column {0} in query {1}'
+                                              .format(column, query_name))
+                                    break
+                                if isinstance(query_result[column], basestring):
+                                    # If column is of 'string' type, then replace pattern in-place
+                                    # No need for recursion here
+                                    value = query_result[column]
+                                    for pattern in blacklisted_object['blacklisted_patterns']:
+                                        value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
+                                    query_result[column] = value
+                                else:
+                                    _recursively_mask_objects(query_result[column], blacklisted_object, mask_with, globbing_enabled)
     except Exception as e:
         log.exception('An error occured while masking the passwords: {}'.format(e))
 
     # Object masked in place, so we don't need to return the object
     return True
 
-def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_with):
+
+def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object, mask_with, globbing_enabled):
+    '''
+    This method is responsible for masking potential secrets in event data generated by
+    osquery daemon. This will handle logs format of both differential and snapshot types
+
+    Logs generated by 'osqueryi' would not reach here due checks in parent method
+
+    object_to_be_masked
+        data structure to mask recursively
+
+    query_name
+        Perform masking only if query name in 'object_to_be_masked' matches the 'query_name'
+
+    column
+        column in which masking is to be performed
+
+    blacklisted_object
+        the blacklisted_objects entry from the mask.yaml
+
+    mask_with
+        masked values are replaced with this string
+
+    globbing_enabled
+        enable globbing in specified blacklisted patterns of mask file
+    '''
+    if not query_name:
+        query_name = object_to_be_masked['name']
+
+    if object_to_be_masked['action'] == 'snapshot' and query_name == object_to_be_masked['name']:
+        # This means we have event data of type 'snapshot'
+        for snap_object in object_to_be_masked['snapshot']:
+            if column not in snap_object or \
+                    (isinstance(snap_object[column], basestring) and
+                     snap_object[column].strip() != ''):
+                log.error('masking data references a missing column {0} in query {1}'
+                          .format(column, query_name))
+                break
+            if isinstance(snap_object[column], basestring):
+                value = snap_object[column]
+                for pattern in blacklisted_object['blacklisted_patterns']:
+                    value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
+                snap_object[column] = value
+            else:
+                _recursively_mask_objects(snap_object[column], blacklisted_object, mask_with, globbing_enabled)
+    elif query_name == object_to_be_masked['name']:
+        q_result = object_to_be_masked['columns']
+        if column not in q_result or \
+                (isinstance(q_result[column], basestring) and
+                 q_result[column].strip() != ''):
+            log.error('masking data references a missing column {0} in query {1}'
+                      .format(column, query_name))
+        if isinstance(q_result[column], basestring):
+            value = q_result[column]
+            for pattern in blacklisted_object['blacklisted_patterns']:
+                value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
+            q_result[column] = value
+        else:
+            _recursively_mask_objects(q_result[column], blacklisted_object, mask_with, globbing_enabled)
+    else:
+        # Unable to match query_name
+        log.debug('Skipping masking, as event data is not for query: {0}'.format(query_name))
+
+
+def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_with, globbing_enabled):
     '''
     This function is used by ``_mask_object()`` to mask passwords contained in
     an osquery data structure (formed as a list of dicts, usually). Since the
@@ -528,20 +830,30 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, mask_with):
 
     mask_with
         masked values are replaced with this string
+    
+    globbing_enabled
+        enable globbing in specified blacklisted patterns of mask file
     '''
     if isinstance(object_to_mask, list):
         for child in object_to_mask:
-            _recursively_mask_objects(child, blacklisted_object, mask_with)
-    elif blacklisted_object['attribute_to_check'] in object_to_mask:
+            log.debug("Recursing object {0}".format(child))
+            _recursively_mask_objects(child, blacklisted_object, mask_with, globbing_enabled)
+    elif globbing_enabled and blacklisted_object['attribute_to_check'] in object_to_mask:
         mask = False
         for blacklisted_pattern in blacklisted_object['blacklisted_patterns']:
             if fnmatch.fnmatch(object_to_mask[blacklisted_object['attribute_to_check']], blacklisted_pattern):
                 mask = True
+                log.info("Attribute {0} will be masked.".format(object_to_mask[blacklisted_object['attribute_to_check']]))
                 break
         if mask:
             for key in blacklisted_object['attributes_to_mask']:
                 if key in object_to_mask:
                     object_to_mask[key] = mask_with
+    elif (not globbing_enabled) and blacklisted_object['attribute_to_check'] in object_to_mask and \
+         object_to_mask[blacklisted_object['attribute_to_check']] in blacklisted_object['blacklisted_patterns']:
+        for key in blacklisted_object['attributes_to_mask']:
+            if key in object_to_mask:
+                object_to_mask[key] = mask_with
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
@@ -592,3 +904,292 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
             for k in upd:
                 dest[k] = upd[k]
         return dest
+
+
+def _osqueryd_running_status(pidfile, servicename):
+    '''
+    This function will check whether osqueryd is running in *nix systems
+    '''
+    log.info("checking if osqueryd is already running or not")
+    osqueryd_running = False
+    if os.path.isfile(pidfile):
+      try:
+        with open(pidfile, 'r') as f:
+          xpid = f.readline().strip()
+          try:
+            xpid = int(xpid)
+          except:
+            xpid = 0
+            log.warn('unable to parse pid="{pid}" in pidfile={file}'.format(pid=xpid,file=pidfile))
+          if xpid:
+            log.info('pidfile={file} exists and contains pid={pid}'.format(file=pidfile, pid=xpid))
+            if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+              try:
+                with open("/proc/{pid}/cmdline".format(pid=xpid),'r') as f2:
+                  cmdline = f2.readline().strip().strip('\x00').replace('\x00',' ')
+                  if 'osqueryd' in cmdline:
+                    log.info("process folder present and process is osqueryd")
+                    osqueryd_running = True
+                  else:
+                    log.error("process is not osqueryd, attempting to start osqueryd")
+              except:
+                log.error("process's cmdline cannot be determined, attempting to start osqueryd")
+            else:
+              log.error("process folder not present, attempting to start osqueryd")
+          else:
+            log.error("pid cannot be determined, attempting to start osqueryd")
+      except:
+        log.error("unable to open pidfile, attempting to start osqueryd")
+    else:
+      cmd = ['pkill', 'hubble_osqueryd']
+      __salt__['cmd.run'](cmd, timeout=10000)
+      log.error("pidfile not found, attempting to start osqueryd")
+    return osqueryd_running
+
+
+def _osqueryd_restart_required(hashfile, flagfile):
+    '''
+    This function will check whether osqueryd needs to be restarted
+    '''
+    log.info("checking if osqueryd needs to be restarted or not")
+    try:
+        with open(flagfile, "r") as open_file:
+            file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
+            hash_md5 = md5()
+            hash_md5.update(file_content.encode('ISO-8859-1'))
+            new_hash = hash_md5.hexdigest()
+
+        if not os.path.isfile(hashfile):
+            with open(hashfile, "w") as f:
+                f.write(new_hash)
+                return False
+        else:
+            with open(hashfile, "r") as f:
+                old_hash = f.read()
+                if old_hash != new_hash:
+                    log.info('old hash is {0} and new hash is {1}'.format(old_hash, new_hash))
+                    log.info('changes detected in flag file')
+                    return True
+                else:
+                    log.info('no changes detected in flag file')
+    except:
+        log.error("some error occured, unable to determine whether osqueryd need to be restarted, not restarting osqueryd")
+    return False
+
+
+def _osqueryd_running_status_windows(servicename):
+    '''
+    This function will check whether osqueryd is running in windows systems
+    '''
+    log.info("checking if osqueryd is already running or not")
+    osqueryd_running = False
+    cmd_status = "(Get-Service -Name " + servicename + ").Status"
+    osqueryd_status = __salt__['cmd.run'](cmd_status, shell='powershell')
+    if osqueryd_status == 'Running':
+        osqueryd_running = True
+        log.info('osqueryd already running')
+    else:
+        log.info('osqueryd not running')
+        osqueryd_running = False
+    
+    return osqueryd_running
+
+
+def _start_osqueryd(pidfile, 
+                    configfile, 
+                    flagfile, 
+                    logdir, 
+                    databasepath, 
+                    servicename):
+    '''
+    This function will start osqueryd
+    ''' 
+    log.info("osqueryd is not running, attempting to start osqueryd")
+    if salt.utils.platform.is_windows():
+        log.error("requesting service manager to start osqueryD")
+        cmd = ['net', 'start', servicename]
+    else:
+        cmd = ['/opt/osquery/hubble_osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),
+               '--config_path={0}'.format(configfile), '--flagfile={0}'.format(flagfile), 
+               '--database_path={0}'.format(databasepath), '--daemonize']
+    __salt__['cmd.run'](cmd, timeout=10000)
+    log.info("daemonized the osqueryd")
+
+
+def _restart_osqueryd(pidfile, 
+                      configfile, 
+                      flagfile, 
+                      logdir, 
+                      databasepath, 
+                      hashfile, 
+                      servicename):
+    '''
+    This function will restart osqueryd
+    ''' 
+    log.info("osqueryd needs to be restarted, restarting now")
+
+    with open(flagfile, "r") as open_file:
+        file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
+        hash_md5 = md5()
+        hash_md5.update(file_content.encode('ISO-8859-1'))
+        new_hash = hash_md5.hexdigest()
+
+    with open(hashfile, "w") as f:
+        f.write(new_hash)
+    if salt.utils.platform.is_windows():
+        stop_cmd = ['net', 'stop', servicename]
+        __salt__['cmd.run'](stop_cmd, timeout=10000)
+        start_cmd = ['net', 'start', servicename]
+        __salt__['cmd.run'](start_cmd, timeout=10000)
+    else:
+        stop_cmd = ['pkill', 'hubble_osqueryd']
+        __salt__['cmd.run'](stop_cmd, timeout=10000)
+        remove_pidfile_cmd = ['rm', '-rf', '{0}'.format(pidfile)]
+        __salt__['cmd.run'](remove_pidfile_cmd, timeout=10000)
+        start_cmd = ['/opt/osquery/hubble_osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),
+                     '--config_path={0}.format(configfile)', '--flagfile={0}'.format(flagfile), 
+                     '--database_path={0}'.format(databasepath), '--daemonize']
+        __salt__['cmd.run'](start_cmd, timeout=10000)
+    log.info("daemonized the osqueryd")
+
+
+def _parse_log(path_to_logfile, 
+               offset,
+               backuplogdir,
+               logfilethresholdinbytes,
+               maxlogfilesizethreshold,
+               backuplogfilescount,
+               enablediskstatslogging):
+    '''
+    Parse logs generated by osquery daemon.
+    Path to log file to be parsed should be specified
+    '''
+    event_data = []
+    file_offset = offset
+    rotateLog = False
+    if path.exists(path_to_logfile):
+        with open(path_to_logfile, "r") as fileDes:
+            if fileDes:
+                if os.stat(path_to_logfile).st_size > maxlogfilesizethreshold:
+                    # This is done to handle scenarios where hubble process was in stopped state and
+                    # osquery daemon was generating logs for that time frame. When hubble is started and
+                    # this function gets executed, it might be possible that the log file is now huge.
+                    # In this scenario hubble might take too much time to process the logs which may not be required
+                    # To handle this, log file size is validated against max threshold size.
+                    log.info("Log file size is above max threshold size that can be parsed by Hubble.")
+                    log.info("Log file size: {0}, max threshold: {1}".format(os.stat(path_to_logfile).st_size, 
+                                                                            maxlogfilesizethreshold))
+                    log.info("Rotating log and skipping parsing for this iteration")
+                    fileDes.close() # Closing explicitly to handle File in Use exception in windows
+                    _perform_log_rotation(path_to_logfile,
+                                        file_offset,
+                                        backuplogdir,
+                                        backuplogfilescount,
+                                        enablediskstatslogging,
+                                        False)
+                    file_offset = 0 #Reset file offset to start of file in case original file is rotated
+                else:
+                    if os.stat(path_to_logfile).st_size > logfilethresholdinbytes:
+                        rotateLog = True
+                    fileDes.seek(offset)
+                    for event in fileDes.readlines():
+                        event_data.append(event)
+                    file_offset = fileDes.tell()
+                    fileDes.close() # Closing explicitly to handle File in Use exception in windows
+                    if rotateLog:
+                        log.info('Log file size above threshold, '
+                                'going to rotate log file: {0}'.format(path_to_logfile))
+                        residue_events = _perform_log_rotation(path_to_logfile,
+                                                            file_offset, 
+                                                            backuplogdir, 
+                                                            backuplogfilescount,
+                                                            enablediskstatslogging,
+                                                            True)
+                        if residue_events:
+                            log.info("Found few residue logs, updating the data object")
+                            event_data += residue_events
+                        file_offset = 0 #Reset file offset to start of file in case original file is rotated
+                _set_cache_offset(path_to_logfile, file_offset)
+            else:
+                log.error('Unable to open log file for reading: {0}'.format(path_to_logfile))
+    else:
+        log.error("Log file doesn't exists: {0}".format(path_to_logfile))
+
+    return event_data
+
+
+def _set_cache_offset(path_to_logfile, offset):
+    '''
+    Cache file offset in memory
+    '''
+    cachefilekey = os.path.basename(path_to_logfile)
+    __RESULT_LOG_OFFSET__[cachefilekey] = offset
+
+
+def _get_file_offset(path_to_logfile):
+    '''
+    Fetch file offset for specified file
+    '''
+    cachefilekey = os.path.basename(path_to_logfile)
+    offset = __RESULT_LOG_OFFSET__.get(cachefilekey, 0)
+    return offset
+
+
+def _perform_log_rotation(path_to_logfile, 
+                          offset,
+                          backuplogdir,
+                          backuplogfilescount,
+                          enablediskstatslogging,
+                          readResidueEvents):
+    '''
+    Perform log rotation on specified file and create backup of file under specified backup directory.
+    '''
+    residue_events = []
+    if path.exists(path_to_logfile):
+        logfilename = os.path.basename(path_to_logfile)
+        if path.exists(backuplogdir):
+            listofbackuplogfiles = glob.glob(os.path.normpath(os.path.join(backuplogdir, logfilename)) + "*")
+
+            if listofbackuplogfiles:
+                log.info("Backup log file count: {0} and backup count threshold: {1}".format(len(listofbackuplogfiles), 
+                                                                                            backuplogfilescount))
+                listofbackuplogfiles.sort()
+                log.info("Backup log file sorted list: {0}".format(listofbackuplogfiles))
+                if(len(listofbackuplogfiles) >= backuplogfilescount):
+                    listofbackuplogfiles = listofbackuplogfiles[:len(listofbackuplogfiles) - backuplogfilescount + 1]
+                    for dfile in listofbackuplogfiles:
+                        salt.utils.files.remove(dfile)
+                    log.info("Successfully deleted extra backup log files")
+
+            residue_events = []
+            logfilename = os.path.basename(path_to_logfile)
+    
+            backupLogFile = os.path.normpath(os.path.join(backuplogdir, logfilename) + "-" + str(time.time()))
+            salt.utils.files.rename(path_to_logfile, backupLogFile)
+
+            if readResidueEvents:
+                residue_events = _read_residue_logs(backupLogFile, offset)
+
+            if enablediskstatslogging:
+                # As of now, this method would send disk stats to Splunk (if configured)
+                disk_stats = check_disk_usage()
+        else:
+            log.error("Specified backup log directory does not exists. Log rotation will not be performed.")
+
+    return residue_events
+
+
+def _read_residue_logs(path_to_logfile, offset):
+    '''
+    Read any logs that might have been written while creating backup log file
+    '''
+    event_data= []
+    if path.exists(path_to_logfile):
+        with open(path_to_logfile, "r") as fileDes:
+            if fileDes:
+                log.info('Checking for any residue logs that might have been '
+                         'added while log rotation was being performed')
+                fileDes.seek(offset)
+                for event in fileDes.readlines():
+                    event_data.append(event)
+    return event_data

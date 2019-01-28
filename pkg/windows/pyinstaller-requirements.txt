@@ -15,4 +15,3 @@ azure-storage-common
 azure-storage-blob
 croniter
 vulners
-diskcache

@@ -10,7 +10,7 @@ import hashlib
 import certifi
 import urllib3
 
-from . dq import DiskQueue
+from . dq import DiskQueue, NoQueue, QueueCapacityError
 
 import logging
 log = logging.getLogger(__name__)
@@ -23,7 +23,6 @@ http_event_collector_debug = False
 # the list of collector URLs given to the HEC object
 # are hashed into an md5 string that identifies the URL set
 # these maximums are per URL set, not for the entire disk cache
-max_diskqueue_items = 200
 max_diskqueue_size  = 10 * (1024 ** 2)
 
 class Payload(object):
@@ -64,7 +63,6 @@ class Payload(object):
         if self.host is None:
             self.__class__.host = socket.gethostname()
 
-        self.requeues = 0
         self.no_queue = no_queue or dat.pop('_no_queue', False)
 
         if 'host' not in dat or dat['host'] is None:
@@ -106,6 +104,7 @@ class Payload(object):
 
 class HEC(object):
     flushing_queue = False
+    last_flush = 0
 
     class Server(object):
         bad = False
@@ -128,10 +127,10 @@ class HEC(object):
     def __init__(self, token, http_event_server, host='', http_event_port='8088',
                  http_event_server_ssl=True, http_event_collector_ssl_verify=True,
                  max_bytes=_max_content_bytes, proxy=None, timeout=9.05,
-                 disk_queue='/var/cache/hubble/dq'):
+                 disk_queue=False,
+                 disk_queue_size=max_diskqueue_size,
+                 disk_queue_compression=5):
 
-        self.max_requeues =  5
-        self.queue_overflow_msg_delay = 10
         self.retry_diskqueue_interval = 60
 
         self.timeout = timeout
@@ -198,58 +197,52 @@ class HEC(object):
         else:
             self.pool_manager = urllib3.PoolManager(**pm_kw)
 
-        md5 = hashlib.md5()
-        uril = sorted([ x.uri for x in self.server_uri ])
-        for u in uril:
-            md5.update(u)
-        actual_disk_queue = os.path.join(disk_queue, md5.hexdigest())
-        log.debug("disk_queue for %s: %s", uril, actual_disk_queue)
-        self.queue = DiskQueue(actual_disk_queue, restrict_to=Payload,
-            max_items=max_diskqueue_items, max_size=max_diskqueue_size)
+        if disk_queue:
+            md5 = hashlib.md5()
+            uril = sorted([ x.uri for x in self.server_uri ])
+            for u in uril:
+                md5.update(u)
+            actual_disk_queue = os.path.join(disk_queue, md5.hexdigest())
+            log.debug("disk_queue for %s: %s", uril, actual_disk_queue)
+            self.queue = DiskQueue(actual_disk_queue, size=disk_queue_size, compression=disk_queue_compression)
+        else:
+            self.queue = NoQueue()
+
+    def _queue_event(self, payload):
+        p = str(payload)
+        log.info('queueing %d octets to disk', len(p))
+        try:
+            self.queue.put(p)
+        except QueueCapacityError:
+            log.info("disk queue is full, dropping payload")
 
 
     def queueEvent(self, dat, eventtime=''):
         if not isinstance(dat, Payload):
-            payload = Payload(dat, eventtime, no_queue=no_queue)
-        if payload.no_queue: # here you silly hec, queue this no_queue payload...
+            dat = Payload(dat, eventtime, no_queue=no_queue)
+        if dat.no_queue: # here you silly hec, queue this no_queue payload...
             return
-        self.queue.put(payload)
+        self._queue_event(dat)
 
 
     def flushQueue(self):
         if self.flushing_queue:
             log.debug('already flushing queue')
             return
-        if self.queue.eventcount < 1:
+        if self.queue.cn < 1:
             log.debug('nothing in queue')
             return
-        dt = time.time() - self.queue.last_get
-        if dt >= self.retry_diskqueue_interval and self.queue.eventcount:
-            log.debug('flushing queue eventscount=%d', self.queue.eventcount)
+        dt = time.time() - self.last_flush
+        if dt >= self.retry_diskqueue_interval and self.queue.cn:
+            log.debug('flushing queue eventscount=%d', self.queue.cn)
+        self.last_flush = time.time()
         self.flushing_queue = True
         while self.flushing_queue:
-            x = self.queue.pull()
+            x = self.queue.getz()
             if not x:
                 break
-            self.batchEvent(x)
-        self.flushBatch()
+            self._send(x)
         self.flushing_queue = False
-
-
-    def _requeue(self, payloads):
-        log.debug("_requeue")
-        if self.flushing_queue:
-            log.debug("aborting queue flush due to requeue")
-            self.flushing_queue = False
-        if not isinstance(payloads, (list,tuple)):
-            payloads = [ payloads ]
-        for pload in payloads:
-            if pload.no_queue:
-                continue
-            if pload.requeues < self.max_requeues:
-                log.debug("requeueing payload (requeues so far: %d)", pload.requeues)
-                pload.requeues += 1
-                self.queue.put(pload)
 
 
     def _send(self, *payload):
@@ -266,29 +259,62 @@ class HEC(object):
         # hubble sends to all of them, not just the first successful one.  and
         # mostly that logic is handled outside of the HEC class (see
         # splunklogging.py)
+        #
+        # Below, we'll only send to one server, and we'll use the following plan:
+        # for each server url in the HEC():
+        # 1. if we get a message bundle to go through
+        #    a. set fails to 0 (hey, it's working)
+        #    b. don't try any more URLs
+        #    c. if it's < 400, it's good, great return the result
+        #    d. but if it's bad (==400 and "bad request"), then we're probably
+        #       not going to succeed.  Log this horror and return the result,
+        #       but make no attempt at disk-queueing (if applicable)
+        # 2. if there's some exception during the send:
+        #    a. log that something bad happened
+        #    b. increment the fails (for sorting purposes only)
+        #    c. consider the type of exception
+        #       i. LocationParseError? This is never going to work. mark bad and continue
+        #      ii. Some other Exception? This will probably work again some day, mark for queue
+        #     iii. if nothing else succeeds or fails (as above); enter the
+        #          message bundle to to the disk-queue (if any)
+
+        possible_queue = False
         for server in sorted(servers, key=lambda u: u.fails):
+            log.debug('trying to send %d octets to %s', len(data), server.uri)
             try:
                 r = self.pool_manager.request('POST', server.uri, body=data, headers=self.headers)
                 server.fails = 0
             except urllib3.exceptions.LocationParseError as e:
-                if self.log_other_exceptions:
-                    log.error('server uri parse error "{0}": {1}'.format(server.uri, e))
+                log.error('server uri parse error "%s": %s', server.uri, e)
                 server.bad = True
                 continue
             except Exception as e:
+                log.error('presumed minor error with "%s" (mark fail and continue): %s', server.uri, e)
+                possible_queue = True
                 server.fails += 1
                 continue
+
             if r.status < 400:
+                log.debug('octets accepted')
+                return r
+            elif r.status == 400 and r.reason.lower() == 'bad request':
+                log.error('message not accepted (%d %s), dropping payload: %s', r.status, r.reason, r.data)
                 return r
 
-        log.error('failed to send payload, queueing for later delivery')
-        self._requeue(payload)
-
+        # if we get here and something above thinks a queue is a good idea
+        # then queue it! \o/
+        if possible_queue:
+            log.debug('possible_queue indicated')
+            if self.queue:
+                self._queue_event(data)
+            else:
+                log.debug('NoQueue established')
 
     def _finish_send(self, r):
-        if r is not None and hasattr(r, 'text'):
-            log.debug(r.text)
-            self.flushQueue()
+        if r is not None and hasattr(r, 'status') and hasattr(r, 'reason'):
+            log.debug('_send() result: %d %s', r.status, r.reason)
+            if self.queue:
+                self.flushQueue()
 
 
     def sendEvent(self, payload, eventtime='', no_queue=False):

@@ -167,7 +167,7 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #use the following variables to choose the version of hubble
 ARG HUBBLE_CHECKOUT=develop
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=2.4.7_develop
+ENV HUBBLE_VERSION=2.4.7-develop
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
@@ -178,7 +178,8 @@ RUN git clone ${HUBBLE_GIT_URL} "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout ${HUBBLE_CHECKOUT} \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
- && echo __version__ = \"`git describe --tags | sed 's/v//'`\" > /hubble_build/hubblestack/__init__.py
+ && sed -i "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" /hubble_build/hubblestack/__init__.py \
+ && sed -i "s/COMMIT_NOT_SET/`git describe`/g" /hubble_build/hubblestack/__init__.py
 RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build

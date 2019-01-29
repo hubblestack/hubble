@@ -1,0 +1,8 @@
+hubble_cached_uuid
+fim_canary.tmp
+requirements.txt
+cache
+log
+dumpster.sqlite
+pip.cache
+verbose.log

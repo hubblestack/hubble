@@ -6,13 +6,7 @@ RUN yum install wget git vim python-setuptools net-tools unzip osquery gcc pytho
 WORKDIR /root
 RUN easy_install pip \
     && pip install -U setuptools
-RUN git clone --bare https://github.com/hubblestack/hubble repo
 ADD https://github.com/hubblestack/hubble/archive/develop.zip /tmp
-RUN unzip /tmp/develop.zip \
-    && mv hubble-develop hubble \
-    && mv repo hubble/.git
+RUN git clone https://github.com/hubblestack/hubble /root/hubble
 WORKDIR /root/hubble
-RUN git init \
-    && git pull \
-    && git reset HEAD
 RUN python setup.py install --force

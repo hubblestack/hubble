@@ -52,7 +52,7 @@ def filter_config(opts_to_log):
     '''
     Filters out keys containing certain patterns to avoid sensitive information being sent to splunk
     '''
-    patterns_to_filter = ["password", "token"]
+    patterns_to_filter = ["password", "token", "passphrase", "privkey", "keyid"]
     filtered_conf = remove_sensitive_info(opts_to_log, patterns_to_filter)
     return filtered_conf
 

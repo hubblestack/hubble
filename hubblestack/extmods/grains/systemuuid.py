@@ -2,7 +2,6 @@
 '''
 Gather the system uuid via osquery
 '''
-import os
 import salt.utils.path
 import salt.modules.cmdmod
 

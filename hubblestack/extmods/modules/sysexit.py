@@ -11,6 +11,6 @@ from salt.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 
-def sysexit(command):
+def sysexit(code=0):
     log.info('instructing daemon to exit')
-    sys.exit(0)
+    sys.exit(code)

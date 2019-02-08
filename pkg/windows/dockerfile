@@ -17,8 +17,8 @@ ENV SALT_SRC_PATH='C:/temp/salt/'
 ENV SALT_GIT_URL=https://github.com/saltstack/salt
 ENV SALT_CHECKOUT=v2018.11
 #All the variables used for hubble
-ENV HUBBLE_CHECKOUT=v2.4.7
-ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
+ARG HUBBLE_CHECKOUT=v2.4.7
+ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 ENV _HOOK_DIR='./pkg/'
 ENV NSIS_LOC='C:/Program Files (x86)/NSIS'
@@ -32,7 +32,8 @@ COPY pyinstaller-requirements.txt c:/temp/
 COPY hubble.conf C:/temp/
 #install Chocolatey, then git and git.portable, and osquery
 RUN powershell.exe -Command Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString("$env:CHOCO_URL"))
-RUN powershell.exe -Command choco install git git.portable osquery nssm -y;
+RUN powershell.exe -Command choco install git osquery nssm -y;
+RUN powershell.exe -Command choco install git.portable --version 2.19.0 -y;
 
 #RUN powershell.exe $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 #Git clone salt and run packages

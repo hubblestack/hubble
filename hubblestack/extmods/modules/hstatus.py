@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 
 __virtualname__ = 'hstatus'
 
-SOURCETYPE = 'hubble_audit_summary'
+SOURCETYPE = 'hubble_hec_summary'
 MSG_COUNTS_PAT = r'hubblestack.hec.obj.input:(?P<stype>[^:]+)'
 
 def __virtual__():

@@ -6,13 +6,15 @@ This fdg module allows for reading in the contents of files, with various
 options for format and filtering.
 '''
 from __future__ import absolute_import
+
 import json as _json
 import logging
 import os
 import re
+
 import yaml as _yaml
 
-from salt.exceptions import CommandExecutionError
+from hubblestack.extmods.fdg.process import encode_base64
 
 log = logging.getLogger(__name__)
 
@@ -326,3 +328,38 @@ def _process_line(line, dictsep, valsep, subsep):
         val = {valkey: valval}
 
     return key, val
+
+
+def readfile_string(path, encode_b64=False, chained=None):
+    '''
+    Open the file at ``path``, read its contents and return them as a string.
+
+    path
+        Path of file to be read in
+
+    encode_64
+        Set to `True` if the return string should be base64 encoded.
+        Defaults to `False` which returns a regular string.
+
+    format_chained
+
+    chained
+        Value passed in via chaining in fdg. Will be called with ``.format()``
+        on the path if defined.
+    '''
+    if chained is not None:
+        path = path.format(chained)
+    if not os.path.isfile(path):
+        log.error('Path {0} not found.'.format(path))
+        return False, None
+    try:
+        with open(path, 'r') as input_file:
+            ret = input_file.read()
+    except Exception as exc:
+        log.error('Error reading file {0}: {1}'.format(path, exc))
+        return False, None
+    status = bool(ret)
+    if encode_b64:
+        status, ret = encode_base64(ret)
+
+    return status, ret

@@ -12,6 +12,7 @@ import base64
 import logging
 import re
 
+import salt.ext.six as six
 from salt.exceptions import ArgumentValueError
 
 log = logging.getLogger(__name__)
@@ -100,7 +101,7 @@ def _compare(comp, val1, val2):
         return val1 == val2
     if comp == "ne":
         return val1 != val2
-    
+
     log.error("Invalid argument '{}' - should be in [gt, ge, lt, le, eq, ne]".format(comp))
     raise ArgumentValueError
 
@@ -136,7 +137,7 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, **kwargs):
             elif starting_seq and isinstance(chained, list):
                 chained.extend(starting_seq)
             elif starting_seq and isinstance(chained, str):
-                chained =  starting_seq.format(chained)
+                chained = starting_seq.format(chained)
             else:
                 raise AttributeError
         except (AttributeError, TypeError, ValueError) as exc:
@@ -156,7 +157,7 @@ def _filter(seq,
     seq
         The input sequence to be filtered.
 
-    filter_rules 
+    filter_rules
         A dict of (comparison_type, value) pairs that dictate the type of filtering
         where comparison_type can be [gt, lt, eq, ne, ge, le].
         For e.g. for ``seq`` = [1, 2, 3, 4, 5] ``filter_rules``={le: 4, gt: 1, ne: 2}
@@ -495,11 +496,11 @@ def print_string(starting_string, format_chained=True, chained=None):
     '''
     Given a string, return it.
 
-    By default, ``starting_string`` will have ``.format()`` called on it 
+    By default, ``starting_string`` will have ``.format()`` called on it
     with ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
     substitute the chained value.) If you want to avoid having to escape curly braces,
     set ``format_chained=False``.
-    
+
     The first return value (status) will be False only if an error will occur.
     '''
     if format_chained:
@@ -612,9 +613,12 @@ def encode_base64(starting_string, format_chained=True, chained=None):
     if not isinstance(starting_string, str):
         log.error('Invalid arguments - starting_string should be a string')
         return False, None
-    ret = base64.b64encode(bytes(starting_string, 'utf-8'))
-    # convert from bytes to str
-    ret = ret.decode('ascii')
+    # compatbility with python2 & 3
+    if six.PY3:
+        ret = base64.b64encode(bytes(starting_string, 'utf-8'))
+        # convert from bytes to str
+        ret = ret.decode('ascii')
+    else:
+        ret = base64.b64encode(starting_string)
 
     return bool(ret), ret
-

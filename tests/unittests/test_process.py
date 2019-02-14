@@ -825,7 +825,7 @@ class TestProcess():
         assert status == expected_status
         assert ret == expected_ret
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
-            starting_string='')
+            starting_string='', format_chained=False)
         assert status == expected_status
         assert ret == ''
 

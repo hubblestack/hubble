@@ -808,3 +808,42 @@ class TestProcess():
             chained={9: {10: None, 11: set([1, 2, 1])}, 11: None})
         assert status is True
         assert ret == {2: {3: [{5: 'a'}, [None, {7: 'b'}]], 8: 'c'}, 9: {11: [1, 2]}}
+
+
+    def test_encodeBase64_invalidArguments_emptyReturn(self):
+        '''
+        Test that given invalid arguments, the function returns None
+        '''
+        # invalid `starting_string`
+        expected_status, expected_ret = False, None
+        status, ret = hubblestack.extmods.fdg.process.encode_base64(
+            starting_string=123, chained="foo")
+        assert status == expected_status
+        assert ret == expected_ret
+        status, ret = hubblestack.extmods.fdg.process.encode_base64(
+            starting_string=['a', 'c'], format_chained=False)
+        assert status == expected_status
+        assert ret == expected_ret
+        status, ret = hubblestack.extmods.fdg.process.encode_base64(
+            starting_string='')
+        assert status == expected_status
+        assert ret == ''
+
+
+    def test_encodeBase64_validArguments_returnString(self):
+        '''
+        Test that given valid arguments, the function correctly encodes the string
+        and returns it
+        '''
+        status, ret = hubblestack.extmods.fdg.process.encode_base64(
+            starting_string="foo {}", chained="bar")
+        assert status
+        assert ret == 'Zm9vIGJhcg=='
+        status, ret = hubblestack.extmods.fdg.process.encode_base64(
+            starting_string="foo", chained="bar")
+        assert status
+        assert ret == 'Zm9v'
+        status, ret = hubblestack.extmods.fdg.process.encode_base64(
+            starting_string="foo {}", format_chained=False, chained="bar")
+        assert status
+        assert ret == 'Zm9vIHt9'

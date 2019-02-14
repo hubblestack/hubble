@@ -7,6 +7,8 @@ This module primarily processes and properly format
 the data outputted by a module to serve it to another module.
 '''
 from __future__ import absolute_import
+
+import base64
 import logging
 import re
 
@@ -588,3 +590,31 @@ def _sterilize_seq(seq):
             updated_seq.append(element)
 
     return updated_seq
+
+
+def encode_base64(starting_string, format_chained=True, chained=None):
+    '''
+    Given a string, base64 encode it and return it.
+
+    By default, ``starting_string`` will have ``.format()`` called on it
+    with ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
+    substitute the chained value.) If you want to avoid having to escape curly braces,
+    set ``format_chained=False``.
+
+    The first return value (status) will be False only if an error will occur.
+    '''
+    if format_chained:
+        try:
+            starting_string = starting_string.format(chained)
+        except AttributeError:
+            log.error("Invalid type for starting_string - has to be string.")
+            return False, None
+    if not isinstance(starting_string, str):
+        log.error('Invalid arguments - starting_string should be a string')
+        return False, None
+    ret = base64.b64encode(bytes(starting_string, 'utf-8'))
+    # convert from bytes to str
+    ret = ret.decode('ascii')
+
+    return bool(ret), ret
+

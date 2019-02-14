@@ -741,7 +741,8 @@ def _mask_object(object_to_be_masked, topfile):
                                                     column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                                                     log.debug("Constructing custom blacklisted patterns based on \
                                                               environment variable '{0}'".format(blacklisted_object['custom_mask_key']))
-                                                    blacklisted_object['custom_blacklist'] = [ p.strip() for p in column_field['value'].split(',')]
+                                                    blacklisted_object['custom_blacklist'] = [ p.strip() for p in column_field['value'].split(',')
+                                                                                                 if p.strip() != blacklisted_object['custom_mask_key']]
                                                 else:
                                                     log.debug("Custom mask variable not set in environment. \
                                                               Custom mask key used: {0}".format(blacklisted_object['custom_mask_key']))
@@ -782,7 +783,8 @@ def _mask_object(object_to_be_masked, topfile):
                                                     column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                                                     log.debug("Constructing custom blacklisted patterns based on \
                                                               environment variable '{0}'".format(blacklisted_object['custom_mask_key']))
-                                                    blacklisted_object['custom_blacklist'] = [ p.strip() for p in column_field['value'].split(',')]
+                                                    blacklisted_object['custom_blacklist'] = [ p.strip() for p in column_field['value'].split(',')
+                                                                                                 if p.strip() != blacklisted_object['custom_mask_key']]
                                                 else:
                                                     log.debug("Custom mask variable not set in environment. \
                                                               Custom mask key used: {0}".format(blacklisted_object['custom_mask_key']))
@@ -857,7 +859,8 @@ def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object
                                 column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                                 log.debug("Constructing custom blacklisted patterns based on \
                                           environment variable '{0}'".format(blacklisted_object['custom_mask_key']))
-                                blacklisted_object['custom_blacklist'] = [ p.strip() for p in column_field['value'].split(',')]
+                                blacklisted_object['custom_blacklist'] = [ p.strip() for p in column_field['value'].split(',')
+                                                                         if p.strip() != blacklisted_object['custom_mask_key']]
                             else:
                                 log.debug("Custom mask variable not set in environment. \
                                           Custom mask key used: {0}".format(blacklisted_object['custom_mask_key']))
@@ -889,7 +892,8 @@ def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object
                             column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                             log.debug("Constructing custom blacklisted patterns based on \
                                       environment variable '{0}'".format(blacklisted_object['custom_mask_key']))
-                            blacklisted_object['custom_blacklist'] = [ p.strip() for p in column_field['value'].split(',')]
+                            blacklisted_object['custom_blacklist'] = [ p.strip() for p in column_field['value'].split(',')
+                                                                         if p.strip() != blacklisted_object['custom_mask_key']]
                         else:
                             log.debug("Custom mask variable not set in environment. \
                                           Custom mask key used: {0}".format(blacklisted_object['custom_mask_key']))
@@ -937,6 +941,7 @@ def _perform_masking(object_to_mask, blacklisted_object, mask_with, globbing_ena
     '''
     if 'custom_blacklist' in blacklisted_object:
         blacklisted_patterns = blacklisted_object['custom_blacklist']
+        log.debug("Using custom blacklisted patterns for masking: {0}".format(blacklisted_patterns))
     else:
         blacklisted_patterns = blacklisted_object['blacklisted_patterns']
     _recursively_mask_objects(object_to_mask, blacklisted_object, blacklisted_patterns, mask_with, globbing_enabled)

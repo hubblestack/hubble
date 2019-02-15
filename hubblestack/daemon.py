@@ -937,25 +937,26 @@ def create_pidfile():
             f.write(str(pid))
 
 
-def clean_up_process(signal, frame):
+def clean_up_process(received_signal, frame):
     '''
     Log any signals received. If a SIGKILL or SIGINT is received, clean up
     pidfile and anything else that needs to be cleaned up.
     '''
     try:
-        handler = hubblestack.splunklogging.SplunkHandler()
-        class MockRecord(object):
-            def __init__(self, message, levelname, asctime, name):
-                self.message = message
-                self.levelname = levelname
-                self.asctime = asctime
-                self.name = name
-        handler.emit(MockRecord('Signal {0} detected'.format(signal),
-                                'INFO',
-                                time.asctime(),
-                                'hubblestack.signals'))
+        if __salt__['config.get']('splunklogging', False):
+            handler = hubblestack.splunklogging.SplunkHandler()
+            class MockRecord(object):
+                def __init__(self, message, levelname, asctime, name):
+                    self.message = message
+                    self.levelname = levelname
+                    self.asctime = asctime
+                    self.name = name
+            handler.emit(MockRecord('Signal {0} detected'.format(received_signal),
+                                    'INFO',
+                                    time.asctime(),
+                                    'hubblestack.signals'))
     finally:
-        if signal == signal.SIGINT or signal == signal.SIGKILL:
+        if received_signal == signal.SIGINT or received_signal == signal.SIGKILL:
             if not __opts__.get('ignore_running', False):
                 if __opts__['daemonize']:
                     if os.path.isfile(__opts__['pidfile']):

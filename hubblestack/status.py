@@ -425,17 +425,18 @@ class HubbleStatus(object):
             hubble:status:dumpster options (see above).
         '''
         try:
-            handler = hubblestack.splunklogging.SplunkHandler()
-            class MockRecord(object):
-                def __init__(self, message, levelname, asctime, name):
-                    self.message = message
-                    self.levelname = levelname
-                    self.asctime = asctime
-                    self.name = name
-            handler.emit(MockRecord('Signal {0} detected'.format(signal.SIGUSR1),
-                                    'INFO',
-                                    time.asctime(),
-                                    'hubblestack.signals'))
+            if __salt__['config.get']('splunklogging', False):
+                handler = hubblestack.splunklogging.SplunkHandler()
+                class MockRecord(object):
+                    def __init__(self, message, levelname, asctime, name):
+                        self.message = message
+                        self.levelname = levelname
+                        self.asctime = asctime
+                        self.name = name
+                handler.emit(MockRecord('Signal {0} detected'.format(signal.SIGUSR1),
+                                        'INFO',
+                                        time.asctime(),
+                                        'hubblestack.signals'))
         finally:
             dumpster = get_hubble_status_opt('dumpster') or 'status.json'
             if not dumpster.startswith('/'):

@@ -540,6 +540,13 @@ def load_config():
 
     signal.signal(signal.SIGTERM, clean_up_process)
     signal.signal(signal.SIGINT, clean_up_process)
+    signal.signal(signal.SIGABRT, clean_up_process)
+    signal.signal(signal.SIGFPE, clean_up_process)
+    signal.signal(signal.SIGILL, clean_up_process)
+    signal.signal(signal.SIGSEGV, clean_up_process)
+    if not salt.utils.platform.is_windows():
+        signal.signal(signal.SIGHUP, clean_up_process)
+        signal.signal(signal.SIGQUIT, clean_up_process)
 
     # Optional sleep to wait for network
     time.sleep(int(__opts__.get('startup_sleep', 0)))
@@ -930,10 +937,25 @@ def create_pidfile():
 
 def clean_up_process(signal, frame):
     '''
-    Clean up pidfile and anything else that needs to be cleaned up
+    Log any signals received. If a SIGKILL or SIGINT is received, clean up
+    pidfile and anything else that needs to be cleaned up.
     '''
-    if not __opts__.get('ignore_running', False):
-        if __opts__['daemonize']:
-            if os.path.isfile(__opts__['pidfile']):
-                os.remove(__opts__['pidfile'])
-    sys.exit(0)
+    try:
+        handler = hubblestack.splunklogging.SplunkHandler()
+        class MockRecord(object):
+            def __init__(self, message, levelname, asctime, name):
+                self.message = message
+                self.levelname = levelname
+                self.asctime = asctime
+                self.name = name
+        handler.emit(MockRecord('Signal {0} detected'.format(signal),
+                                'INFO',
+                                time.asctime(),
+                                'hubblestack.signals'))
+    finally:
+        if signal == signal.SIGINT or signal == signal.SIGKILL:
+            if not __opts__.get('ignore_running', False):
+                if __opts__['daemonize']:
+                    if os.path.isfile(__opts__['pidfile']):
+                        os.remove(__opts__['pidfile'])
+            sys.exit(0)

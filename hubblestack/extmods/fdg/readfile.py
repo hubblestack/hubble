@@ -360,6 +360,6 @@ def readfile_string(path, encode_b64=False, chained=None):
         return False, None
     status = bool(ret)
     if encode_b64:
-        status, ret = encode_base64(ret)
+        status, ret = encode_base64(ret, format_chained=False)
 
     return status, ret

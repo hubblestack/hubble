@@ -86,6 +86,18 @@ class HubbleStatusResourceNotFound(Exception):
     '''
     pass
 
+class ResourceTimer(object):
+    ''' described in HubbleStatus.resource_timer '''
+    def __init__(self, hubble_status, hs_key):
+        self.hubble_status = hubble_status
+        self.hs_key = hs_key
+
+    def __enter__(self):
+        self.hubble_status.mark(self.hs_key)
+
+    def __exit__(self):
+        self.hubble_status.fin(self.hs_key)
+
 class HubbleStatus(object):
     '''
         The values tracked by this package (and output by this method) are
@@ -138,10 +150,12 @@ class HubbleStatus(object):
 
     _signaled = False
     dat = dict()
+    resources = list()
     class Stat(object):
         ''' Data sample container for a named mark.
             Stat objects have the following properties
 
+            * first_t: the first time the counter was marked
             * last_t: the last time the counter was marked
             * count: the count of times the counter was marked
             * ema_dt: the average time between marks (updated at mark() time only)
@@ -150,11 +164,7 @@ class HubbleStatus(object):
         '''
 
         def __init__(self):
-            self.last_t = self.start = time.time()
-            self.count  = 0
-            self.ema_dt = None
-            self.dur = None
-            self.ema_dur = None
+            self.reset()
 
         @property
         def dt(self):
@@ -165,26 +175,45 @@ class HubbleStatus(object):
         def asdict(self):
             ''' a computed attribute that clones and formats the various object properties in a dict() '''
             r = { 'count': self.count, 'last_t': self.last_t,
-                'dt': self.dt, 'ema_dt': self.ema_dt }
+                'dt': self.dt, 'ema_dt': self.ema_dt, 'first_t': self.first_t }
             if self.dur is not None:
                 r.update({'dur': self.dur, 'ema_dur': self.ema_dur})
             return r
 
-        def mark(self):
+        def mark(self, t=None):
             ''' mark a counter (ie, increment the count, mark the last_t =
                 time.time(), and update the ema_dt)
             '''
-            t = time.time()
+            now = time.time()
+            if not self.first_t:
+                self.first_t = now
             self.count += 1
             dt = self.dt
-            self.last_t = t
-            self.ema_dt  = dt if self.ema_dt is None else 0.5*self.ema_dt + 0.5*dt
+            self.last_t = now
+            if t is not None:
+                # NOTE: t should only be used for tracking time constrained counts
+                # (e.g., the sourcetype counts in hec.obj); we make sure the first_t
+                # and last_t include the given (e.g.) event time
+                if isinstance(t, (str,unicode)):
+                    t = int(t)
+                if t < self.first_t:
+                    self.first_t = t
+                if t > self.last_t:
+                    self.last_t = t
+            self.ema_dt = dt if self.ema_dt is None else 0.5*self.ema_dt + 0.5*dt
 
         def fin(self):
             ''' mark a counter duration (ie, mark the time since the last mark, and update the ema_dur)
             '''
             self.dur = self.dt
             self.ema_dur  = self.dur if self.ema_dur is None else 0.5*self.ema_dur + 0.5*self.dur
+
+        def reset(self):
+            self.last_t = self.first_t = 0
+            self.count  = 0
+            self.ema_dt = None
+            self.dur = None
+            self.ema_dur = None
 
 
     def __init__(self, namespace, *resources):
@@ -204,8 +233,14 @@ class HubbleStatus(object):
         self.namespace = namespace
         if len(resources) == 1 and isinstance(resources[0], (list,tuple,dict)):
             resources = tuple(resources)
-        self.resources = [ self._namespaced(x) for x in resources ]
-        for r in self.resources:
+        for r in resources:
+            self.add_resource(r)
+
+    def add_resource(self, name):
+        r = self._namespaced(name)
+        if r not in self.resources:
+            self.resources.append(r)
+        if r not in self.dat:
             self.dat[r] = self.Stat()
 
     def _namespaced(self, n):
@@ -226,10 +261,10 @@ class HubbleStatus(object):
             raise HubbleStatusResourceNotFound('"{}" is not a resource of this HubbleStatus instance')
         return m
 
-    def mark(self, n):
+    def mark(self, n, t=None):
         ''' mark the named resource `n` — meaning increment the counters, update the last_t, etc '''
         n = self._checkmark(n)
-        self.dat[n].mark()
+        self.dat[n].mark(t=t)
 
     def fin(self, n):
         ''' mark the end of a duration measurement '''
@@ -274,6 +309,17 @@ class HubbleStatus(object):
         if invoke:
             return decorator(invoke)
         return decorator
+
+    @classmethod
+    def reset(cls, key=None):
+        # NOTE: this is janky... allowing resets on arbitrary keys on the
+        # class, not even tracked with _checkmark() ... but it's needed to make
+        # the sourcetype accounting beacon update meaningfully.
+        if key is None:
+            for key in cls.dat:
+                cls.dat[key].reset()
+        else:
+            cls.dat[key].reset()
 
     @classmethod
     def stats(cls):
@@ -327,10 +373,11 @@ class HubbleStatus(object):
                   }
                 }
         '''
-        r = { x: cls.dat[x].asdict for x in cls.dat }
+        r = { k: v.asdict for k,v in cls.dat.iteritems() if v.first_t > 0 }
         min_dt = min([ x['dt'] for x in r.values() ])
         max_t  = max([ x['last_t'] for x in r.values() ])
-        h1 = {'time': max_t, 'dt': min_dt}
+        min_t  = min([ x['first_t'] for x in r.values() if x['first_t'] > 0 ])
+        h1 = {'time': max_t, 'dt': min_dt, 'start': min_t}
         r['HEALTH'] = h2 = {'last_activity': h1}
         r['__doc__'] = {
             'service.name.here': {
@@ -340,6 +387,7 @@ class HubbleStatus(object):
                 "ema_dt": 'average time between calls',
                 "dur": 'duration of the last call',
                 "last_t": 'the last time the counter was called',
+                "first_t": 'the first time the counter was called',
             },
             'HEALTH': {
                 "last_activity": {
@@ -368,7 +416,7 @@ class HubbleStatus(object):
         return json.dumps(cls.stats(), indent=indent)
 
     @classmethod
-    def dumpster_fire(cls):
+    def dumpster_fire(cls, *a, **kw):
         ''' dump the status.json file to cachedir
 
             Location and filename can be adjusted with the cachedir and
@@ -399,6 +447,25 @@ class HubbleStatus(object):
                 log.info("signal package lacks SIGUSR1, skipping SIGUSR1 status.json handler setup")
                 return
             signal.signal(signal.SIGUSR1, cls.dumpster_fire)
+
+    def resource_timer(self, hs_key):
+        ''' return an object suitable for a with-block for timing code
+
+            instead of writing:
+                hs_key = 'resource-name-here'
+                hubble_status.add_resource(hs_key)
+                hubble_status.mark(hs_key)
+                do_things()
+                do_other_things()
+                hubble_status.fin(hs_key)
+
+            write this:
+                with hubble_status.resource_timer('resource-name-here'):
+                    do_things()
+                    do_other_things()
+        '''
+        self.add_resource(hs_key)
+        return ResourceTimer(self, hs_key)
 
 def _setup_for_testing():
     global __opts__

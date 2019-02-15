@@ -10,10 +10,13 @@ import hashlib
 import certifi
 import urllib3
 
-from . dq import DiskQueue, NoQueue, QueueCapacityError
-
 import logging
 log = logging.getLogger(__name__)
+
+import hubblestack.status
+hubble_status = hubblestack.status.HubbleStatus(__name__)
+
+from . dq import DiskQueue, NoQueue, QueueCapacityError
 
 __version__ = '1.0'
 
@@ -24,6 +27,14 @@ http_event_collector_debug = False
 # are hashed into an md5 string that identifies the URL set
 # these maximums are per URL set, not for the entire disk cache
 max_diskqueue_size  = 10 * (1024 ** 2)
+
+def count_input(payload):
+    hs_key = ':'.join(['input', payload.sourcetype])
+    hubble_status.add_resource(hs_key)
+    hubble_status.mark(hs_key, t=payload.time)
+    # NOTE: t=payload.time is an undocumented mark() argument
+    # that ensures the first_t and last_t include the given timestamp
+    # (without this, the accounting likely wouldn't work)
 
 class Payload(object):
     ''' formatters for final payload stringification
@@ -68,10 +79,14 @@ class Payload(object):
         if 'host' not in dat or dat['host'] is None:
             dat['host'] = self.host
 
+        now = time.time()
         if eventtime:
             dat['time'] = eventtime
         elif 'time' not in dat:
-            dat['time'] = str(int(time.time()))
+            dat['time'] = now
+
+        self.sourcetype = dat.get('sourcetype', 'hubble')
+        self.time       = dat.get('time', now)
 
         self.rename_event_fields_in_payload(dat)
         self.dat = json.dumps(dat)
@@ -222,8 +237,8 @@ class HEC(object):
             dat = Payload(dat, eventtime, no_queue=no_queue)
         if dat.no_queue: # here you silly hec, queue this no_queue payload...
             return
+        count_input(payload)
         self._queue_event(dat)
-
 
     def flushQueue(self):
         if self.flushing_queue:
@@ -308,7 +323,7 @@ class HEC(object):
             if self.queue:
                 self._queue_event(data)
             else:
-                log.debug('NoQueue established')
+                log.debug('queue is NoQueue, not actually queueing anything')
 
     def _finish_send(self, r):
         if r is not None and hasattr(r, 'status') and hasattr(r, 'reason'):
@@ -318,7 +333,9 @@ class HEC(object):
 
 
     def sendEvent(self, payload, eventtime='', no_queue=False):
-        r = self._send( Payload.promote(payload, eventtime=eventtime, no_queue=no_queue) )
+        payload = Payload.promote(payload, eventtime=eventtime, no_queue=no_queue)
+        count_input(payload)
+        r = self._send(payload)
         self._finish_send(r)
 
 
@@ -331,6 +348,7 @@ class HEC(object):
                 log.debug('auto flushing')
         else:
             self.currentByteLength = self.currentByteLength + len(payload)
+        count_input(payload)
         self.batchEvents.append(payload)
 
 

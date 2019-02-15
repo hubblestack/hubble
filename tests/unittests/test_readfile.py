@@ -121,6 +121,7 @@ class TestReadfile():
         assert expected_status == status
         assert expected_ret == ret
 
+
     def test_json_InvalidJsonFile_EmptyReturn(self, json_file):
         '''
         Test that given an invalid json file, the function returns False status and None value
@@ -523,3 +524,36 @@ class TestReadfile():
             config_file, ignore_pattern=".*(worker|master).*", dictsep="=", valsep=';')
         assert expected_status == status
         assert expected_ret == ret
+
+
+    def test_readfileString_InvalidPath_emptyReturn(self):
+        '''
+        Test that given invalid arguments, the function returns False and None.
+        '''
+        expected_status, expected_ret = False, None
+        status, ret= hubblestack.extmods.fdg.readfile.readfile_string('/invalid/path')
+        assert status == expected_status
+        assert ret == expected_ret
+
+
+    def test_readfileString_ValidPathFalseEncode_returnString(self, json_file):
+        '''
+        Test that given a valid path, the contents are returned as string with no encoding
+        '''
+        with open(json_file, 'w') as jfile:
+            jfile.writelines(["First line", "Second line", "Foo bar line"])
+        status, ret = hubblestack.extmods.fdg.readfile.readfile_string(json_file)
+        assert status == True
+        assert ret == "First lineSecond lineFoo bar line"
+
+
+    def test_readfileString_ValidPathTrueEncode_returnEncodedString(self, json_file):
+        '''
+        Test that given a valid path, the contents are returned as string
+        '''
+        with open(json_file, 'w') as jfile:
+            jfile.writelines(["Foo", "bar"])
+        status, ret = hubblestack.extmods.fdg.readfile.readfile_string(json_file, encode_b64=True)
+        assert status == True
+        # encoded Foobar
+        assert ret == 'Rm9vYmFy'

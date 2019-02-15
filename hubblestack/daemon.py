@@ -184,7 +184,7 @@ def main():
                                          'host']
                  grains_to_emit = []
                  grains_to_emit.extend(__opts__.get('emit_grains_to_syslog_list', default_grains_to_emit))
-                 emit_to_syslog(grains_to_emit) 
+                 emit_to_syslog(grains_to_emit)
 
         try:
             log.debug('Executing schedule')
@@ -289,7 +289,7 @@ def schedule():
 
     min_splay
         This parameters works in conjunction with <splay>. If a <min_splay> is provided, and random
-        between <min_splay> and <splay> is chosen. If <min_splay> is not provided, it 
+        between <min_splay> and <splay> is chosen. If <min_splay> is not provided, it
         defaults to zero. Optional.
 
     args
@@ -500,7 +500,7 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['osquery_logfile_maxbytes'] = 50000000 # 50MB
     salt.config.DEFAULT_MINION_OPTS['osquery_logfile_maxbytes_toparse'] = 100000000 #100MB
     salt.config.DEFAULT_MINION_OPTS['osquery_backuplogs_count'] = 2
-    
+
 
     global __opts__
 

@@ -37,7 +37,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
     os_version = __grains__.get('osmajorrelease')
 
     if debug:
-        log.debug("os_version: {0}, os_name{1}".format(os_version, os_name))
+        log.debug("os_version: {0}, os_name: {1}".format(os_version, os_name))
 
     ret = {'Success': [], 'Failure': [], 'Controlled': []}
 
@@ -48,8 +48,8 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
             vulners_data = _vulners_query(local_packages, os=os_name, version=os_version, api_key=data['vulners_api_key'])
             if 'result' in vulners_data and vulners_data['result'] == 'ERROR':
                 log.error(vulners_data['data']['error'])
-            vulners_data = _process_vulners(_vulners_query(local_packages, os=os_name, version=os_version))
 
+            vulners_data = _process_vulners(vulners_data)
             total_packages = len(local_packages)
             secure_packages = total_packages - len(vulners_data)
 
@@ -68,7 +68,26 @@ def _get_local_packages():
     '''
 
     local_packages = __salt__['pkg.list_pkgs']()
-    return ['{0}-{1}'.format(pkg, local_packages[pkg]) for pkg in local_packages]
+    os_family = __grains__['os_family'].lower()
+    arch = __grains__['osarch']
+
+    # Debian based backage managers expect this package format:
+    #    deb dpkg-query -W -f='${Package} ${Version} ${Architecture}\\n'
+    # while RPM based package mangers expect this package format:
+    #    rpm -qa --qf '%{NAME}-%{VERSION}-%{RELEASE}.%{ARCH}\\n'
+    vulner_package_format = ''
+
+    if os_family == 'debian':
+        vulner_package_format = '{package} {version} {arch}'
+    elif os_family == 'redhat':
+        vulner_package_format = '{package}-{version}.{arch}'
+    else:
+        return None
+
+    return [ vulner_package_format.format(package=pkg, 
+                                          version=local_packages[pkg],
+                                          arch=arch) 
+             for pkg in local_packages ]
 
 
 def _vulners_query(packages=None, os=None, version=None, api_key=None):
@@ -114,11 +133,11 @@ def _process_vulners(vulners):
     :return: A list of dictionaries as hubble.py swallows
     '''
 
-    packages = vulners.get('data', {}).get('packages')
+    packages = vulners.get('packages')
     if not packages:
         return []
 
-    return [{'tag': pkg,
+    return [{'tag': 'Vulnerable package: {0}'.format(pkg),
              'vulnerabilities': packages[pkg],
              'description': ', '.join(packages[pkg].keys())}
             for pkg in packages]

@@ -527,7 +527,7 @@ def load_config():
 
     if __opts__['daemonize']:
         # before becoming a daemon, check for other procs and possibly send
-        # then a signal 15 (otherwise refuse to run)
+        # them a signal 15 (otherwise refuse to run)
         if not __opts__.get('ignore_running', False):
             check_pidfile(kill_other=True, scan_proc=scan_proc)
         salt.utils.daemonize()
@@ -829,7 +829,6 @@ def check_pidfile(kill_other=False, scan_proc=True):
         processes; otherwise exit with an error.
 
     '''
-
     pidfile = __opts__['pidfile']
     if os.path.isfile(pidfile):
         with open(pidfile, 'r') as f:
@@ -913,6 +912,9 @@ def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_othe
             else:
                 log.error("refusing to run while another hubble instance is running")
                 sys.exit(1)
+    else:
+        # pidfile present, but nothing at that pid. Did we receive a sigterm?
+        log.warning('Pidfile found on startup, but no process at that pid. Did hubble receive a SIGTERM?')
     return False
 
 def scan_proc_for_hubbles(proc_path='/proc', hname=r'^/\S+python.*?/opt/.*?hubble', kill_other=True, ksig=signal.SIGTERM):

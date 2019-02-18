@@ -412,23 +412,31 @@ class PulsarWatchManager(pyinotify.WatchManager):
                 else:
                     raise Exception("pyinotify.WatchManager.add_watch() failed to return a dict")
             except pyinotify.WatchManagerError as wme:
-                self.update_config() # make sure we have the latest settings
-                if isinstance(wme.wmd, dict):
-                    res.update(wme.wmd) # copy over what did work before it broke
-                if self.update_muw:
-                    muw = self.max_user_watches
-                    muwb = muw + self.update_muw_bump
-                    if muwb <= self.update_muw_highwater:
-                        self.max_user_watches = muwb
-                        continue
-                    else:
-                        log.error("during add_watch({0}): max watches reached ({1}). consider "
-                            "increasing the inotify_limits:highwater mark".format(path, muw))
-                        break
+                log.error(wme)
+                if 'permission denied' in str(wme).lower():
+                    continue # assume it's just this one file/dir
                 else:
-                    log.error("during add_watch({0}): max watches reached. "
-                        "consider setting the inotify_limits:udpate".format(path))
-                    break
+                    # when we can't add more watches becuase of
+                    #   sysctl -q fs.inotify.max_user_watches
+                    # the error is (roughly), "Errno=No space left on device (ENOSPC)".
+                    # Is that always the case? It's hard to say for sure.
+                    self.update_config() # make sure we have the latest settings
+                    if isinstance(wme.wmd, dict):
+                        res.update(wme.wmd) # copy over what did work before it broke
+                    if self.update_muw:
+                        muw = self.max_user_watches
+                        muwb = muw + self.update_muw_bump
+                        if muwb <= self.update_muw_highwater:
+                            self.max_user_watches = muwb
+                            continue
+                        else:
+                            log.error("during add_watch({0}): max watches reached ({1}). consider "
+                                "increasing the inotify_limits:highwater mark".format(path, muw))
+                            break
+                    else:
+                        log.error("during add_watch({0}): max watches reached. "
+                            "consider setting the inotify_limits:udpate".format(path))
+                        break
             except Exception as e:
                 log.error("exception during add_watch({0}): {1}".format(path, repr(e)))
                 break

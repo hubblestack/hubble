@@ -82,10 +82,6 @@ celerybeat-schedule
 # dotenv
 .env
 
-# virtualenv
-venv/
-ENV/
-
 # Spyder project settings
 .spyderproject
 
@@ -96,8 +92,17 @@ ENV/
 .vscode
 doc/_build
 
-# jenkins files
-vlib
-pip.cache
+# misc setup.py output
 setup.txt
-*-*.txt
+
+# jenkins noise
+*output*.txt
+*manifest*.txt
+setup.txt
+pip.cache
+vlib/
+venv/
+ENV/
+pylint-*.txt
+pytest-*.txt
+bandit-*.txt

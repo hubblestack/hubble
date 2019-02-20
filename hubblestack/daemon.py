@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-# XXX: this is a change for the sake of change (testing jenkins linting script)
 '''
 Main entry point for the hubble daemon
 '''
+
 from __future__ import print_function
 
 # import lockfile

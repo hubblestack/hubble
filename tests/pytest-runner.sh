@@ -1,22 +1,15 @@
 #!/bin/bash
 
-source "$(dirname "$0")/jenkins-job-include.sh"
+source "$(dirname "$0")/jenkins-job-include.sh"; show_vars
 
 PYTEST=(
     python -m pytest --color yes
     --log-cli-level INFO
     --log-cli-format "%(asctime)s %(name)17s %(levelname)5s %(message)s"
     --log-cli-date-format "%H:%M:%S"
+    tests/unittests
 )
 
-# BLACKLIST=""
-#     | grep -vE "$BLACKLIST" \
-
-set -x
-
-ls -1 tests/unittests/*.py \
-    | tee pytest-manifest.txt \
-    | (xargs -r "${PYTEST[@]}"; echo $? > pytest-result.txt) \
-    | tee pytest-output.txt
-
-exit $(< pytest-result.txt)
+vecho "${PYTEST[*]}"
+( "${PYTEST[@]}"; echo $? > "${LOGPREFIX}-result.txt" ) | tee "${LOGPREFIX}-output.txt"
+exit $(< "${LOGPREFIX}-result.txt")

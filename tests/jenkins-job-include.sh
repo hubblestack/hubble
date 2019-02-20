@@ -1,20 +1,87 @@
 #!/bin/bash
 
 # in case jenkins has -x set on, turn it off until we're ready
-set +x
+if [ -n "$JJ_DEBUG" ]
+then set -e -x
+else set -e +x
+fi
 
-source /etc/profile.d/kersplat.sh
+VLIB="$(pwd)/vlib"
+VENV="$(pwd)/venv"
+
+if [ -e /etc/profile.d/kersplat.sh ]
+then source /etc/profile.d/kersplat.sh # probably vestitgial from early test testing
+elif [ -d "$VENV" ]
+then source "$VENV/bin/activate" # probably linting or testing
+fi
 
 LOGPREFIX="$( cut -d- -f1 <<< "$(basename "$0")" )"
 
-echo "LOGPREFIX:   $LOGPREFIX"
-echo "PYTHON:      $(which python)"
-echo "PYLINT:      $(which pylint)"
-echo "PWD:         $(pwd)"
-echo "HUBBLESTACK: $(ls -ald hubblestack 2>&1)"
+if [ -d "$VENV" -a -f "$VENV/bin/activate" ]
+then source "$VENV/bin/activate"
+fi
+
+function error {
+    local err_color=$'\e[0;31m'
+    local err="$*"
+    echo "ERROR${err:+: }${err_color}$err"
+    return 1
+}
+
+function vecho {
+    local VAR="$1"
+    local VAL="$2"
+
+    local var_color=$'\e[0;35m'
+    local val_color=$'\e[1;35m'
+    local rst_color=$'\e[m'
+
+    if [ -z "$VAR" ]
+    then return 0
+    fi
+    if [ -z "$VAL" ]
+    then echo "${var_color}---- ${VAR}${rst_color}"; return 0
+    fi
+
+    if [[ "$VAL" =~ ^CMD: ]]; then
+        VAL="$(${VAL:4} 2>&1)"
+        if [ $? -gt 0 ]
+        then val_color="$err_color"
+        fi
+    fi
+
+    printf "$var_color%s $val_color%s$rst_color\n" "$VAR:" "$VAL"
+    return 0
+}
+
+function relevant-files {
+    local LHS="${1:-origin/$CHANGE_TARGET}"
+    local RHS="${2:-origin/$BRANCH_NAME}"
+
+    if [ -z "$1$CHANGE_TARGET" -o -z "$2$BRANCH_NAME" ]; then
+        LHS="develop" # probably not in jenkins, use local shell's head
+        RHS="HEAD"
+    fi
+
+    if [[ "$(git show -s --format='%s%n%b' "${LHS}..${RHS}" )" =~ LINT=FULL ]]
+    then find hubblestack -name "*.py"
+    else find hubblestack -name "*.py" -exec git diff --name-only "$LHS" "$RHS" {} +
+    fi
+}
+
+function show_vars {
+    vecho '$LOGPREFIX' "$LOGPREFIX"
+    vecho which-python "CMD:which python"
+    vecho which-pip    "CMD:which pip"
+    vecho which-pylint "CMD:which pylint"
+    vecho which-pytest "CMD:which pytest"
+    if [ -d "$VENV" -a -f "$VENV/bin/activate" ]
+    then vecho '$VENV' "$VENV"
+    fi
+}
 
 if [ ! -d ./hubblestack ]; then
-    echo /hubble/hubblestack seems to be missing
+    error "something is wrong. there's no ./hubblestack"
     exit 1
 fi
 

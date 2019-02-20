@@ -2,16 +2,20 @@
 
 pipeline {
     agent any
+
     options {
         timestamps()
         ansiColor 'xterm'
     }
+
     environment {
         PY_COLORS = 1
     }
+
     stages {
         stage('parallel') {
             parallel {
+
                 stage('testing') {
                     agent { docker { image "jettero/kersplat:centos-v1.0.6" } }
                     steps {
@@ -20,6 +24,7 @@ pipeline {
                         sh 'bash tests/pytest-runner.sh'
                     }
                 }
+
                 stage('linting') {
                     agent { docker { image "jettero/kersplat:centos-v1.0.6" } }
                     steps {
@@ -28,13 +33,15 @@ pipeline {
                         sh 'bash tests/pylint-runner.sh'
                     }
                 }
-                post {
-                    always {
-                        archiveArtifacts artifacts: 'pytest-*.txt'
-                        archiveArtifacts artifacts: 'pylint-*.txt'
-                    }
-                }
+
             }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'pytest-*.txt'
+            archiveArtifacts artifacts: 'pylint-*.txt'
         }
     }
 }

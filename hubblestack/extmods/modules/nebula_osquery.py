@@ -23,17 +23,17 @@ nebula_osquery:
 '''
 from __future__ import absolute_import
 
+import collections
 import copy
-import fnmatch
 import glob
 import fnmatch
 import json
 import logging
-import os
 import re
 import time
+import os
+from os import path
 import yaml
-import collections
 
 import salt.utils
 import salt.utils.files
@@ -41,14 +41,12 @@ import salt.utils.platform
 
 from hashlib import md5
 from salt.exceptions import CommandExecutionError
-from os import path
 from hubblestack import __version__
 import hubblestack.splunklogging
 
 log = logging.getLogger(__name__)
 
 from hubblestack.status import HubbleStatus
-
 hubble_status = HubbleStatus(__name__, 'top', 'queries', 'osqueryd_monitor', 'osqueryd_log_parser')
 
 __virtualname__ = 'nebula'
@@ -132,26 +130,26 @@ def queries(query_group,
             ret = []
             ret.append(
                 {'fallback_osfinger': {
-                    'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
-                              'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
-                    'result': True
-                }}
+                 'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
+                           'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
+                 'result': True
+                 }}
             )
             if 'pkg.list_pkgs' in __salt__:
                 ret.append(
                     {'fallback_pkgs': {
-                        'data': [{'name': k, 'version': v} for k, v in __salt__['pkg.list_pkgs']().iteritems()],
-                        'result': True
-                    }}
+                     'data': [{'name': k, 'version': v} for k, v in __salt__['pkg.list_pkgs']().iteritems()],
+                     'result': True
+                     }}
                 )
             uptime = __salt__['status.uptime']()
             if isinstance(uptime, dict):
                 uptime = uptime.get('seconds', __salt__['cmd.run']('uptime'))
             ret.append(
                 {'fallback_uptime': {
-                    'data': [{'uptime': uptime}],
-                    'result': True
-                }}
+                 'data': [{'uptime': uptime}],
+                 'result': True
+                 }}
             )
             if report_version_with_day:
                 ret.append(hubble_versions())
@@ -189,7 +187,7 @@ def queries(query_group,
         t0 = time.time()
         res = __salt__['cmd.run_all'](cmd, timeout=10000)
         t1 = time.time()
-        timing[name] = t1 - t0
+        timing[name] = t1-t0
         if res['retcode'] == 0:
             query_ret['data'] = json.loads(res['stdout'])
         else:
@@ -213,20 +211,19 @@ def queries(query_group,
             ret = []
             ret.append(
                 {'fallback_osfinger': {
-                    'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
-                              'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
-                    'result': True
-                }}
+                 'data': [{'osfinger': __grains__.get('osfinger', __grains__.get('osfullname')),
+                           'osrelease': __grains__.get('osrelease', __grains__.get('lsb_distrib_release'))}],
+                 'result': True
+                 }}
             )
             ret.append(
                 {'fallback_error': {
-                    'data': 'osqueryi is installed but not compatible with this version of windows',
-                    'result': True
-                }}
+                 'data': 'osqueryi is installed but not compatible with this version of windows',
+                         'result': True
+                 }}
             )
             return ret
-        else:
-            return None
+        return None
 
     if __salt__['config.get']('splunklogging', False):
         log.info('Logging osquery timing data to splunk')
@@ -263,9 +260,9 @@ def osqueryd_monitor(configfile=None,
                      hashfile=None,
                      daemonize=True):
     '''
-    This function will monitor whether osqueryd is running on the system or not. 
-    Whenever it detects that osqueryd is not running, it will start the osqueryd. 
-    Also, it checks for conditions that would require osqueryd to restart(such as changes in flag file content) 
+    This function will monitor whether osqueryd is running on the system or not.
+    Whenever it detects that osqueryd is not running, it will start the osqueryd.
+    Also, it checks for conditions that would require osqueryd to restart(such as changes in flag file content)
     On such conditions, osqueryd will get restarted, thereby loading new files.
 
     configfile
@@ -296,9 +293,9 @@ def osqueryd_monitor(configfile=None,
     base_path = cachedir
     servicename = "hubble_osqueryd"
     if not logdir:
-        logdir = __opts__.get('osquerylogpath')
+            logdir = __opts__.get('osquerylogpath')
     if not databasepath:
-        databasepath = __opts__.get('osquery_dbpath')
+            databasepath = __opts__.get('osquery_dbpath')
     if salt.utils.platform.is_windows():
         if not pidfile:
             pidfile = os.path.join(base_path, "hubble_osqueryd.pidfile")
@@ -432,10 +429,10 @@ def osqueryd_log_parser(osqueryd_logdir=None,
         for r in ret:
             obj = json.loads(r)
             if 'action' in obj and obj['action'] == 'snapshot':
-                for result in obj['snapshot']:
-                    for key, value in result.iteritems():
-                        if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
-                            result[key] = json.loads(value[len('__JSONIFY__'):])
+                    for result in obj['snapshot']:
+                        for key, value in result.iteritems():
+                            if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
+                                result[key] = json.loads(value[len('__JSONIFY__'):])
             elif 'action' in obj:
                 for key, value in obj['columns'].iteritems():
                     if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
@@ -539,9 +536,9 @@ def fields(*args):
     # Return it as nebula data
     if ret:
         return [{'custom_fields': {
-            'data': [ret],
-            'result': True
-        }}]
+                 'data': [ret],
+                 'result': True
+                 }}]
     return []
 
 
@@ -572,6 +569,7 @@ def top(query_group,
         verbose=False,
         report_version_with_day=True,
         mask_passwords=False):
+
     if salt.utils.platform.is_windows():
         topfile = 'salt://hubblestack_nebula_v2/win_top.nebula'
 
@@ -589,6 +587,7 @@ def top(query_group,
 
 
 def _get_top_data(topfile):
+
     topfile = __salt__['cp.cache_file'](topfile)
 
     try:
@@ -598,7 +597,7 @@ def _get_top_data(topfile):
         raise CommandExecutionError('Could not load topfile: {0}'.format(e))
 
     if not isinstance(topdata, dict) or 'nebula' not in topdata or \
-            not (isinstance(topdata['nebula'], list)):
+            not isinstance(topdata['nebula'], list):
         raise CommandExecutionError('Nebula topfile not formatted correctly. '
                                     'Note that under the "nebula" key the data '
                                     'should now be formatted as a list of '
@@ -719,8 +718,8 @@ def _mask_object(object_to_be_masked, topfile):
         for blacklisted_object in mask.get('blacklisted_objects', []):
             query_names = blacklisted_object['query_names']
             column = blacklisted_object['column']  # Can be converted to list as well in future if need be
-            custom_mask_column = blacklisted_object.get('custom_mask_column',
-                                                        '')  # Name of column that stores environment variables
+            # Name of column that stores environment variables
+            custom_mask_column = blacklisted_object.get('custom_mask_column', '')
             if '*' in query_names:
                 # This means wildcard is specified and each event should be masked, if applicable
                 for r in object_to_be_masked:
@@ -738,28 +737,21 @@ def _mask_object(object_to_be_masked, topfile):
                                         for column_field in mask_column:
                                             try:
                                                 if 'variable_name' in column_field and 'value' in column_field and \
-                                                        column_field['variable_name'] == blacklisted_object[
-                                                    'custom_mask_key']:
+                                                        column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                                                     log.debug("Constructing custom blacklisted patterns based on \
                                                               environment variable '{0}'".format(
                                                         blacklisted_object['custom_mask_key']))
-                                                    blacklisted_object['custom_blacklist'] = [p.strip() for p in
-                                                                                              column_field[
-                                                                                                  'value'].split(',')
-                                                                                              if p.strip() !=
-                                                                                              blacklisted_object[
-                                                                                                  'custom_mask_key']]
+                                                    blacklisted_object['custom_blacklist'] = [p.strip() for p in column_field['value'].split(',')
+                                                                                              if p.strip() != blacklisted_object['custom_mask_key']]
                                                 else:
                                                     log.debug("Custom mask variable not set in environment. \
-                                                              Custom mask key used: {0}".format(
-                                                        blacklisted_object['custom_mask_key']))
+                                                              Custom mask key used: {0}".format(blacklisted_object['custom_mask_key']))
                                             except Exception as e:
-                                                log.error(
-                                                    "Failed to generate custom blacklisted patterns based on hubble mask key")
+                                                log.error("Failed to generate custom blacklisted patterns based on hubble mask key")
                                                 log.error("Got error: {0}".format(e))
                                 if column not in query_result or \
-                                        (isinstance(query_result[column], basestring) and
-                                         query_result[column].strip() != ''):
+                                    (isinstance(query_result[column], basestring) and
+                                        query_result[column].strip() != ''):
                                     # No error here, since we didn't reference a specific query
                                     break
                                 if isinstance(query_result[column], basestring):
@@ -770,8 +762,9 @@ def _mask_object(object_to_be_masked, topfile):
                                         value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
                                     query_result[column] = value
                                 else:
-                                    _perform_masking(query_result[column], blacklisted_object, mask_with,
-                                                     globbing_enabled)
+                                    _perform_masking(
+                                        query_result[column], blacklisted_object,
+                                        mask_with, globbing_enabled)
             else:
                 # Perform masking on results of specific queries specified in 'query_names'
                 for query_name in query_names:
@@ -789,31 +782,24 @@ def _mask_object(object_to_be_masked, topfile):
                                         for column_field in mask_column:
                                             try:
                                                 if 'variable_name' in column_field and 'value' in column_field and \
-                                                        column_field['variable_name'] == blacklisted_object[
-                                                    'custom_mask_key']:
+                                                        column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                                                     log.debug("Constructing custom blacklisted patterns based on \
-                                                              environment variable '{0}'".format(
-                                                        blacklisted_object['custom_mask_key']))
-                                                    blacklisted_object['custom_blacklist'] = [p.strip() for p in
-                                                                                              column_field[
-                                                                                                  'value'].split(',')
-                                                                                              if p.strip() !=
-                                                                                              blacklisted_object[
-                                                                                                  'custom_mask_key']]
+                                                              environment variable '{0}'".format(blacklisted_object['custom_mask_key']))
+                                                    blacklisted_object['custom_blacklist'] = [p.strip() for p in column_field['value'].split(',')
+                                                                                              if p.strip() != blacklisted_object['custom_mask_key']]
                                                 else:
                                                     log.debug("Custom mask variable not set in environment. \
                                                               Custom mask key used: {0}".format(
                                                         blacklisted_object['custom_mask_key']))
                                             except Exception as e:
-                                                log.error(
-                                                    "Failed to generate custom blacklisted patterns based on hubble mask key")
+                                                log.error("Failed to generate custom blacklisted patterns based on hubble mask key")
                                                 log.error("Got error: {0}".format(e))
                                 if column not in query_result or \
                                         (isinstance(query_result[column], basestring) and
                                          query_result[column].strip() != ''):
-                                    # if the column in not present in one data-object, it will
-                                    # not be present in others as well. Break in that case.
-                                    # This will happen only if mask.yaml is malformed
+                                        # if the column in not present in one data-object, it will
+                                        # not be present in others as well. Break in that case.
+                                        # This will happen only if mask.yaml is malformed
                                     log.error('masking data references a missing column {0} in query {1}'
                                               .format(column, query_name))
                                     break
@@ -825,8 +811,9 @@ def _mask_object(object_to_be_masked, topfile):
                                         value = re.sub(pattern + '()', r'\1' + mask_with + r'\3', value)
                                     query_result[column] = value
                                 else:
-                                    _perform_masking(query_result[column], blacklisted_object, mask_with,
-                                                     globbing_enabled)
+                                    _perform_masking(
+                                        query_result[column], blacklisted_object,
+                                        mask_with, globbing_enabled)
     except Exception as e:
         log.exception('An error occured while masking the passwords: {}'.format(e))
 
@@ -861,9 +848,8 @@ def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object
     '''
     if not query_name:
         query_name = object_to_be_masked['name']
-
-    custom_mask_column = blacklisted_object.get('custom_mask_column',
-                                                '')  # Name of column that stores environment variables
+    # Name of column that stores environment variables
+    custom_mask_column = blacklisted_object.get('custom_mask_column', '')
 
     if object_to_be_masked['action'] == 'snapshot' and query_name == object_to_be_masked['name']:
         # This means we have event data of type 'snapshot'
@@ -878,10 +864,8 @@ def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object
                                     column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                                 log.debug("Constructing custom blacklisted patterns based on \
                                           environment variable '{0}'".format(blacklisted_object['custom_mask_key']))
-                                blacklisted_object['custom_blacklist'] = [p.strip() for p in
-                                                                          column_field['value'].split(',')
-                                                                          if p.strip() != blacklisted_object[
-                                                                              'custom_mask_key']]
+                                blacklisted_object['custom_blacklist'] = [p.strip() for p in column_field['value'].split(',')
+                                                                          if p.strip() != blacklisted_object['custom_mask_key']]
                             else:
                                 log.debug("Custom mask variable not set in environment. \
                                           Custom mask key used: {0}".format(blacklisted_object['custom_mask_key']))
@@ -913,10 +897,8 @@ def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object
                                 column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                             log.debug("Constructing custom blacklisted patterns based on \
                                       environment variable '{0}'".format(blacklisted_object['custom_mask_key']))
-                            blacklisted_object['custom_blacklist'] = [p.strip() for p in
-                                                                      column_field['value'].split(',')
-                                                                      if p.strip() != blacklisted_object[
-                                                                          'custom_mask_key']]
+                            blacklisted_object['custom_blacklist'] = [p.strip() for p in column_field['value'].split(',')
+                                                                      if p.strip() != blacklisted_object['custom_mask_key']]
                         else:
                             log.debug("Custom mask variable not set in environment. \
                                           Custom mask key used: {0}".format(blacklisted_object['custom_mask_key']))
@@ -958,7 +940,7 @@ def _perform_masking(object_to_mask, blacklisted_object, mask_with, globbing_ena
 
     mask_with
         masked values are replaced with this string
-    
+
     globbing_enabled
         enable globbing in specified blacklisted patterns of mask file
     '''
@@ -987,7 +969,7 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, blacklisted_pa
 
     mask_with
         masked values are replaced with this string
-    
+
     globbing_enabled
         enable globbing in specified blacklisted patterns of mask file
     '''
@@ -1000,8 +982,8 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, blacklisted_pa
         for blacklisted_pattern in blacklisted_patterns:
             if fnmatch.fnmatch(object_to_mask[blacklisted_object['attribute_to_check']], blacklisted_pattern):
                 mask = True
-                log.info(
-                    "Attribute {0} will be masked.".format(object_to_mask[blacklisted_object['attribute_to_check']]))
+                log.info("Attribute {0} will be masked.".format(
+                    object_to_mask[blacklisted_object['attribute_to_check']]))
                 break
         if mask:
             for key in blacklisted_object['attributes_to_mask']:
@@ -1071,37 +1053,37 @@ def _osqueryd_running_status(pidfile, servicename):
     log.info("checking if osqueryd is already running or not")
     osqueryd_running = False
     if os.path.isfile(pidfile):
-        try:
-            with open(pidfile, 'r') as f:
-                xpid = f.readline().strip()
-                try:
-                    xpid = int(xpid)
-                except:
-                    xpid = 0
-                    log.warn('unable to parse pid="{pid}" in pidfile={file}'.format(pid=xpid, file=pidfile))
-                if xpid:
-                    log.info('pidfile={file} exists and contains pid={pid}'.format(file=pidfile, pid=xpid))
-                    if os.path.isdir("/proc/{pid}".format(pid=xpid)):
-                        try:
-                            with open("/proc/{pid}/cmdline".format(pid=xpid), 'r') as f2:
-                                cmdline = f2.readline().strip().strip('\x00').replace('\x00', ' ')
-                                if 'osqueryd' in cmdline:
-                                    log.info("process folder present and process is osqueryd")
-                                    osqueryd_running = True
-                                else:
-                                    log.error("process is not osqueryd, attempting to start osqueryd")
-                        except:
-                            log.error("process's cmdline cannot be determined, attempting to start osqueryd")
-                    else:
-                        log.error("process folder not present, attempting to start osqueryd")
-                else:
-                    log.error("pid cannot be determined, attempting to start osqueryd")
-        except:
-            log.error("unable to open pidfile, attempting to start osqueryd")
+      try:
+        with open(pidfile, 'r') as f:
+          xpid = f.readline().strip()
+          try:
+            xpid = int(xpid)
+          except:
+            xpid = 0
+            log.warn('unable to parse pid="{pid}" in pidfile={file}'.format(pid=xpid, file=pidfile))
+          if xpid:
+            log.info('pidfile={file} exists and contains pid={pid}'.format(file=pidfile, pid=xpid))
+            if os.path.isdir("/proc/{pid}".format(pid=xpid)):
+              try:
+                with open("/proc/{pid}/cmdline".format(pid=xpid), 'r') as f2:
+                  cmdline = f2.readline().strip().strip('\x00').replace('\x00', ' ')
+                  if 'osqueryd' in cmdline:
+                    log.info("process folder present and process is osqueryd")
+                    osqueryd_running = True
+                  else:
+                    log.error("process is not osqueryd, attempting to start osqueryd")
+              except:
+                log.error("process's cmdline cannot be determined, attempting to start osqueryd")
+            else:
+              log.error("process folder not present, attempting to start osqueryd")
+          else:
+            log.error("pid cannot be determined, attempting to start osqueryd")
+      except:
+        log.error("unable to open pidfile, attempting to start osqueryd")
     else:
-        cmd = ['pkill', 'hubble_osqueryd']
-        __salt__['cmd.run'](cmd, timeout=10000)
-        log.error("pidfile not found, attempting to start osqueryd")
+      cmd = ['pkill', 'hubble_osqueryd']
+      __salt__['cmd.run'](cmd, timeout=10000)
+      log.error("pidfile not found, attempting to start osqueryd")
     return osqueryd_running
 
 
@@ -1206,8 +1188,8 @@ def _restart_osqueryd(pidfile,
         remove_pidfile_cmd = ['rm', '-rf', '{0}'.format(pidfile)]
         __salt__['cmd.run'](remove_pidfile_cmd, timeout=10000)
         start_cmd = ['/opt/osquery/hubble_osqueryd', '--pidfile={0}'.format(pidfile),
-                     '--logger_path={0}'.format(logdir),
-                     '--config_path={0}.format(configfile)', '--flagfile={0}'.format(flagfile),
+                     '--logger_path={0}'.format(logdir), '--config_path={0}.format(configfile)',
+                     '--flagfile={0}'.format(flagfile),
                      '--database_path={0}'.format(databasepath), '--daemonize']
         __salt__['cmd.run'](start_cmd, timeout=10000)
     log.info("daemonized the osqueryd")
@@ -1315,7 +1297,7 @@ def _perform_log_rotation(path_to_logfile,
                                                                                              backuplogfilescount))
                 listofbackuplogfiles.sort()
                 log.info("Backup log file sorted list: {0}".format(listofbackuplogfiles))
-                if (len(listofbackuplogfiles) >= backuplogfilescount):
+                if len(listofbackuplogfiles) >= backuplogfilescount:
                     listofbackuplogfiles = listofbackuplogfiles[:len(listofbackuplogfiles) - backuplogfilescount + 1]
                     for dfile in listofbackuplogfiles:
                         salt.utils.files.remove(dfile)
@@ -1365,11 +1347,10 @@ def query(query):
     '''
     MAX_FILE_SIZE = 104857600
     if 'attach' in query.lower() or 'curl' in query.lower():
-        log.critical('Skipping potentially malicious osquery query which contains either \'attach\' or \'curl\': {0}'
-                     .format(query))
+        log.critical(
+            'Skipping potentially malicious osquery query which contains either \'attach\' or \'curl\': %s', query)
         return None
     query_ret = {'result': True}
-
     # Run the osqueryi query
     cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query]
     res = __salt__['cmd.run_all'](cmd, timeout=10000)

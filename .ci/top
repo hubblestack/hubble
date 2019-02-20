@@ -18,7 +18,6 @@ pipeline {
                         sh 'pyenv install 2.7.14 || echo "python 2.7.14 was already installed"'
                         sh 'eval "$(pyenv init -)"; pyenv local 2.7.14; pyenv shell 2.7.14'
                         sh 'bash tests/pytest-runner.sh'
-                        archiveArtifacts artifacts: 'pytest-*.txt', onlyIfSuccessful: false
                     }
                 }
                 stage('linting') {
@@ -27,7 +26,12 @@ pipeline {
                         sh 'pyenv install 2.7.14 || echo "python 2.7.14 was already installed"'
                         sh 'eval "$(pyenv init -)"; pyenv local 2.7.14; pyenv shell 2.7.14'
                         sh 'bash tests/pylint-runner.sh'
-                        archiveArtifacts artifacts: 'pylint-*.txt', onlyIfSuccessful: false
+                    }
+                }
+                post {
+                    always {
+                        archiveArtifacts artifacts: 'pytest-*.txt'
+                        archiveArtifacts artifacts: 'pylint-*.txt'
                     }
                 }
             }

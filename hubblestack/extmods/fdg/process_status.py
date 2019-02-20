@@ -1,5 +1,5 @@
 '''
-Flexible Data Gathering: readfile
+Flexible Data Gathering: process_status
 =================================
 
 This fdg module allows for displaying the currently-running

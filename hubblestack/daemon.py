@@ -184,7 +184,7 @@ def main():
                                          'host']
                  grains_to_emit = []
                  grains_to_emit.extend(__opts__.get('emit_grains_to_syslog_list', default_grains_to_emit))
-                 emit_to_syslog(grains_to_emit) 
+                 emit_to_syslog(grains_to_emit)
 
         try:
             log.debug('Executing schedule')
@@ -289,7 +289,7 @@ def schedule():
 
     min_splay
         This parameters works in conjunction with <splay>. If a <min_splay> is provided, and random
-        between <min_splay> and <splay> is chosen. If <min_splay> is not provided, it 
+        between <min_splay> and <splay> is chosen. If <min_splay> is not provided, it
         defaults to zero. Optional.
 
     args
@@ -500,7 +500,7 @@ def load_config():
     salt.config.DEFAULT_MINION_OPTS['osquery_logfile_maxbytes'] = 50000000 # 50MB
     salt.config.DEFAULT_MINION_OPTS['osquery_logfile_maxbytes_toparse'] = 100000000 #100MB
     salt.config.DEFAULT_MINION_OPTS['osquery_backuplogs_count'] = 2
-    
+
 
     global __opts__
 
@@ -527,7 +527,7 @@ def load_config():
 
     if __opts__['daemonize']:
         # before becoming a daemon, check for other procs and possibly send
-        # then a signal 15 (otherwise refuse to run)
+        # them a signal 15 (otherwise refuse to run)
         if not __opts__.get('ignore_running', False):
             check_pidfile(kill_other=True, scan_proc=scan_proc)
         salt.utils.daemonize()
@@ -540,6 +540,13 @@ def load_config():
 
     signal.signal(signal.SIGTERM, clean_up_process)
     signal.signal(signal.SIGINT, clean_up_process)
+    signal.signal(signal.SIGABRT, clean_up_process)
+    signal.signal(signal.SIGFPE, clean_up_process)
+    signal.signal(signal.SIGILL, clean_up_process)
+    signal.signal(signal.SIGSEGV, clean_up_process)
+    if not salt.utils.platform.is_windows():
+        signal.signal(signal.SIGHUP, clean_up_process)
+        signal.signal(signal.SIGQUIT, clean_up_process)
 
     # Optional sleep to wait for network
     time.sleep(int(__opts__.get('startup_sleep', 0)))
@@ -822,7 +829,6 @@ def check_pidfile(kill_other=False, scan_proc=True):
         processes; otherwise exit with an error.
 
     '''
-
     pidfile = __opts__['pidfile']
     if os.path.isfile(pidfile):
         with open(pidfile, 'r') as f:
@@ -906,6 +912,9 @@ def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_othe
             else:
                 log.error("refusing to run while another hubble instance is running")
                 sys.exit(1)
+    else:
+        # pidfile present, but nothing at that pid. Did we receive a sigterm?
+        log.warning('Pidfile found on startup, but no process at that pid. Did hubble receive a SIGTERM?')
     return False
 
 def scan_proc_for_hubbles(proc_path='/proc', hname=r'^/\S+python.*?/opt/.*?hubble', kill_other=True, ksig=signal.SIGTERM):
@@ -928,12 +937,28 @@ def create_pidfile():
             f.write(str(pid))
 
 
-def clean_up_process(signal, frame):
+def clean_up_process(received_signal, frame):
     '''
-    Clean up pidfile and anything else that needs to be cleaned up
+    Log any signals received. If a SIGKILL or SIGINT is received, clean up
+    pidfile and anything else that needs to be cleaned up.
     '''
-    if not __opts__.get('ignore_running', False):
-        if __opts__['daemonize']:
-            if os.path.isfile(__opts__['pidfile']):
-                os.remove(__opts__['pidfile'])
-    sys.exit(0)
+    try:
+        if __salt__['config.get']('splunklogging', False):
+            handler = hubblestack.splunklogging.SplunkHandler()
+            class MockRecord(object):
+                def __init__(self, message, levelname, asctime, name):
+                    self.message = message
+                    self.levelname = levelname
+                    self.asctime = asctime
+                    self.name = name
+            handler.emit(MockRecord('Signal {0} detected'.format(received_signal),
+                                    'INFO',
+                                    time.asctime(),
+                                    'hubblestack.signals'))
+    finally:
+        if received_signal == signal.SIGINT or received_signal == signal.SIGKILL:
+            if not __opts__.get('ignore_running', False):
+                if __opts__['daemonize']:
+                    if os.path.isfile(__opts__['pidfile']):
+                        os.remove(__opts__['pidfile'])
+            sys.exit(0)

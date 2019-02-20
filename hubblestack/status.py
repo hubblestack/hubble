@@ -38,6 +38,8 @@ import signal
 import logging
 import os
 
+import hubblestack.splunklogging
+
 log = logging.getLogger(__name__)
 
 DEFAULTS = {
@@ -422,17 +424,31 @@ class HubbleStatus(object):
             Location and filename can be adjusted with the cachedir and
             hubble:status:dumpster options (see above).
         '''
-        dumpster = get_hubble_status_opt('dumpster') or 'status.json'
-        if not dumpster.startswith('/'):
-            cachedir = get_hubble_or_salt_opt('cachedir') or '/tmp'
-            dumpster = os.path.join(cachedir, dumpster)
         try:
-            with open(dumpster, 'w') as fh:
-                fh.write(cls.as_json())
-                fh.write('\n')
-            log.info("wrote HubbleStatus to %s", dumpster)
-        except:
-            log.exception("ignoring exception during dumpster fire")
+            if __salt__['config.get']('splunklogging', False):
+                handler = hubblestack.splunklogging.SplunkHandler()
+                class MockRecord(object):
+                    def __init__(self, message, levelname, asctime, name):
+                        self.message = message
+                        self.levelname = levelname
+                        self.asctime = asctime
+                        self.name = name
+                handler.emit(MockRecord('Signal {0} detected'.format(signal.SIGUSR1),
+                                        'INFO',
+                                        time.asctime(),
+                                        'hubblestack.signals'))
+        finally:
+            dumpster = get_hubble_status_opt('dumpster') or 'status.json'
+            if not dumpster.startswith('/'):
+                cachedir = get_hubble_or_salt_opt('cachedir') or '/tmp'
+                dumpster = os.path.join(cachedir, dumpster)
+            try:
+                with open(dumpster, 'w') as fh:
+                    fh.write(cls.as_json())
+                    fh.write('\n')
+                log.info("wrote HubbleStatus to %s", dumpster)
+            except:
+                log.exception("ignoring exception during dumpster fire")
 
     @classmethod
     def start_sigusr1_signal_handler(cls):

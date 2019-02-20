@@ -3,7 +3,7 @@
 source "$(dirname "$0")/jenkins-job-include.sh"
 
 PYTEST=(
-    python -m pytest
+    python -m pytest --color yes
     --log-cli-level INFO
     --log-cli-format "%(asctime)s %(name)17s %(levelname)5s %(message)s"
     --log-cli-date-format "%H:%M:%S"

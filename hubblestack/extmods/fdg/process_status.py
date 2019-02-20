@@ -18,25 +18,56 @@ def list_processes(chained=None):
     Return a list of processes containing the name of the currently running processes.
 
     The first return value (status) will be True if the osquery query is successful
-    and False othewise. The second argument will be the the ouput (list of strings).
+    and False otherwise. The second argument will be the the ouput (list of strings).
     '''
-    res = __salt__['nebula.query']('SELECT name FROM processes')
-    if not res['result']:
-        log.error("Error executing the osquery query: {}".format(res['error']))
+    res = _run_query('SELECT name FROM processes')
+    try:
+        ret = _convert_to_str(res['data'])
+    except (KeyError, TypeError) as exc:
+        log.error('Invalid data type returned by osquery call {0}: {1}'.format(res, exc))
         return False, None
-    # convert from unicode to `str` and `int`
-    ret = _unicode_to_str(res['data'])
 
     return bool(ret), ret
 
 
-def _unicode_to_str(process_data):
+def _convert_to_str(process_data):
+    '''
+    Convert list of dicts containing items as unicode or other data type to str.
+
+    process_data
+        input list of dicts to convert to str
+    '''
+    if not process_data:
+        return None
     ret = []
-    for process in process_data:
-        str_process = {str(name): str(val) for name, val in process.iteritems()}
-        ret.append(str_process)
+    try:
+        for process in process_data:
+            str_process = {str(name): str(val) for name, val in process.iteritems()}
+            ret.append(str_process)
+    except (TypeError, AttributeError) as exc:
+        log.error('Invalid argument type; must be list of dicts: {}'.format(exc))
+        return None
 
     return ret
+
+
+def _run_query(query_sql):
+    '''
+    Send the ``query_sql`` to osquery and return the results.
+
+    query_sql
+        The query to be executed
+    '''
+    res = __salt__['nebula.query'](query_sql)
+    try:
+        if not res['result']:
+            log.error("Error executing the osquery query: {}".format(res['error']))
+            return None
+    except (KeyError, TypeError) as exc:
+        log.error('Invalid data type returned by osquery call {0}: {1}'.format(res, exc))
+        return None
+
+    return res
 
 
 def find_process(filter_sql, fields=None, format_chained=True, chained=None):
@@ -50,6 +81,10 @@ def find_process(filter_sql, fields=None, format_chained=True, chained=None):
 
     filter
         String containing the `sql` syntax filtering.
+        e.g. 'pid > 123'
+             "name == 'foo'"
+             "state == 'S'"
+             "parent == 1 and state != 'R'"
 
     field
         String specifying extra fields to be returned about the processes, separated by comma.
@@ -79,12 +114,14 @@ def find_process(filter_sql, fields=None, format_chained=True, chained=None):
         fields += ',name,pid'
     else:
         fields = 'name,pid'
-    query = "SELECT pid,name,{0} FROM processes WHERE {1}".format(fields, filter_sql)
-    res = __salt__['nebula.query'](query)
-    if not res['result']:
-        log.error("Error executing the osquery query {0}: {1}".format(query, res['error']))
+    query = "SELECT {0} FROM processes WHERE {1}".format(fields, filter_sql)
+    res = _run_query(query)
+    try:
+        ret = _convert_to_str(res['data'])
+    except (KeyError, TypeError) as exc:
+        log.error('Invalid data type returned by osquery call {0}: {1}'.format(
+            res, exc))
         return False, None
-    ret = _unicode_to_str(res['data'])
 
     return bool(ret), ret
 
@@ -116,9 +153,8 @@ def is_running(filter_sql, format_chained=True, chained=None):
         except (AttributeError, TypeError) as exc:
             log.error('Invalid arguments: {}'.format(exc))
     query = 'SELECT state FROM processes where {0}'.format(filter_sql)
-    res = __salt__['nebula.query'](query)
-    if not res['result']:
-        log.error("Error executing the osquery query {0}: {1}".format(query, res['error']))
+    res = _run_query(query)
+    if not res:
         return False, None
     # more than one process
     if len(res['data']) > 1:
@@ -128,7 +164,7 @@ def is_running(filter_sql, format_chained=True, chained=None):
     if not res['data']:
         return False, False
     # the process is in the Running state
-    if res['data'][0]['state'] == 'R':
+    if str(res['data'][0]['state']) == 'R':
         return True, True
 
     return True, False
@@ -174,10 +210,11 @@ def find_children(parent_filter, parent_field=None, returned_fields=None, format
         parent_field = 'name'
     query = "SELECT {0} FROM processes WHERE parent == (SELECT pid FROM processes WHERE {1} == '{2}')".format(
         returned_fields, parent_field, parent_filter)
-    res = __salt__['nebula.query'](query)
-    if not res['result']:
-        log.error("Error executing the osquery query {0}: {1}".format(query, res['error']))
+    res = _run_query(query)
+    try:
+        ret = _convert_to_str(res['data'])
+    except (KeyError, TypeError) as exc:
+        log.error('Invalid data type returned by osquery call {0}: {1}'.format(res, exc))
         return False, None
-    ret = _unicode_to_str(res['data'])
 
     return bool(ret), ret

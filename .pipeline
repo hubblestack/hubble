@@ -14,7 +14,8 @@ pipeline {
     stages {
         stage('setup') {
             steps {
-                sh 'rm -vf *-manifest.txt *-result.txt *-output.txt; echo cleaned up output files'
+                sh 'git clean -dfx; echo clean up repo completely'
+                //sh 'rm -vf *-manifest.txt *-result.txt *-output.txt; echo cleaned up output files'
                 sh './tests/jenkins-setup.sh'
             }
         }

@@ -41,6 +41,9 @@ setup(
             'hubble = hubblestack.daemon:run',
         ],
     },
+    tests_require=[
+        'mock',
+    ],
     install_requires=[
         'salt-ssh >= 2015.8.0',
         'croniter',

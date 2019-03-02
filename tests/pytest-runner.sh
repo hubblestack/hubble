@@ -11,5 +11,6 @@ PYTEST=(
 )
 
 vecho "${PYTEST[*]}"
-( "${PYTEST[@]}"; echo $? > "${LOGPREFIX}-result.txt" ) | tee "${LOGPREFIX}-output.txt"
-exit $(< "${LOGPREFIX}-result.txt")
+( set +e; "${PYTEST[@]}"; echo $? > "$RESULT_FILE" ) | tee "$OUTPUT_FILE"
+clean_colors_output_file
+exit $(< "$RESULT_FILE")

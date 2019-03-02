@@ -9,17 +9,28 @@ fi
 VLIB="$(pwd)/vlib"
 VENV="$(pwd)/venv"
 
-if [ -e /etc/profile.d/kersplat.sh ]
-then source /etc/profile.d/kersplat.sh # probably vestitgial from early test testing
-elif [ -d "$VENV" ]
+if [ -e /etc/profile.d/kersplat.sh ]; then
+    source /etc/profile.d/kersplat.sh
+    pyenv local 2.7.14
+    pyenv shell 2.7.14
+fi
+
+if [ -d "$VENV" -a -f "$VENV/bin/activate" ]
 then source "$VENV/bin/activate" # probably linting or testing
 fi
 
 LOGPREFIX="$( cut -d- -f1 <<< "$(basename "$0")" )"
+RESULT_FILE="${LOGPREFIX}-result.txt"
+OUTPUT_FILE="${LOGPREFIX}-output.txt"
+MANIFEST_FILE="${LOGPREFIX}-manifest.txt"
 
 if [ -d "$VENV" -a -f "$VENV/bin/activate" ]
 then source "$VENV/bin/activate"
 fi
+
+function clean_colors_output_file {
+    sed -i -e 's/\x1b\[[0-9;]*m//g' "${1:-$OUTPUT_FILE}"
+}
 
 function error {
     local err_color=$'\e[0;31m'

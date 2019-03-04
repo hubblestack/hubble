@@ -38,8 +38,6 @@ import signal
 import logging
 import os
 
-import hubblestack.splunklogging
-
 log = logging.getLogger(__name__)
 
 DEFAULTS = {
@@ -426,6 +424,8 @@ class HubbleStatus(object):
         '''
         try:
             if __salt__['config.get']('splunklogging', False):
+                # lazy load to avoid circular import
+                import hubblestack.splunklogging
                 handler = hubblestack.splunklogging.SplunkHandler()
                 class MockRecord(object):
                     def __init__(self, message, levelname, asctime, name):

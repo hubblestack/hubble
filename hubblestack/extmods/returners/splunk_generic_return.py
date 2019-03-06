@@ -17,6 +17,7 @@ event collector. Required config/pillar settings:
 '''
 
 import time
+import hubblestack.utils.stdrec as stdrec
 from hubblestack.hec import http_event_collector, get_splunk_options
 
 def _get_key(dat, k, d=None):
@@ -62,5 +63,7 @@ def returner(retdata):
             payload = {'host': __grains__.get('fqdn', __grains__.get('id')), 'event': event,
                 'sourcetype': _get_key(event, 'sourcetype', t_sourcetype),
                 'time': str(int(_get_key(event, 'time', t_time)))}
+            # add various std host info data and index extracted fields
+            stdrec.update_payload(payload)
             hec.batchEvent(payload)
         hec.flushBatch()

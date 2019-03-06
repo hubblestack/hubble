@@ -54,7 +54,6 @@ RETRY = False
 
 log = logging.getLogger(__name__)
 
-
 def returner(ret):
     try:
         if isinstance(ret, dict) and not ret.get('return'):

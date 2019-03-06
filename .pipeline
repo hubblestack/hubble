@@ -1,19 +1,7 @@
 
-def imgname = 'jettero/kersplat:centos-v1.0.6'
-// I'd prefer to use an image from hubblestack, but we'll need one with a
-// modern python preferably using pyenv (see salt's ci scripts), virtualenv,
-// pytest, etc.
-//
-// I also hope future pipelines will build packages, run the hubble daemon in
-// system-like containers (for further testing) and various other things.
-//
-// -Paul
+def imgname = 'hubblestack/jenkins:centos-v1.0.7'
 
 pipeline {
-    // I want to use an image from hubblestack
-    // but this one (eg) doesn't seem to have a modern python or password entries for uid=1000
-    // which crashes salt, etc
-    // agent { docker { image "hubblestack/cent7dev" } }
     agent { docker { image "${imgname}" } }
 
     options {

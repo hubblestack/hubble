@@ -26,6 +26,7 @@ import salt.utils
 import salt.utils.platform
 import salt.utils.jid
 import salt.utils.gitfs
+import salt.utils.path
 import salt.log.setup
 import hubblestack.splunklogging
 import hubblestack.hec.opt
@@ -646,6 +647,33 @@ def load_config():
     os.chmod(__opts__['log_file'], 384)
     os.chmod(parsed_args.get('configfile'), 384)
 
+    # Check for a cloned system with existing hubble_uuid
+    cached_uuid_path = os.path.join(os.path.dirname(__opts__['configfile']), 'hubble_cached_uuid')
+    cached_system_uuid_path = os.path.join(os.path.dirname(__opts__['configfile']),
+                                           'hubble_cached_system_uuid')
+
+    try:
+        if os.path.isfile(cached_uuid_path) and os.path.isfile(cached_system_uuid_path):
+            with open(cached_uuid_path, 'r') as f, open(cached_system_uuid_path, 'r') as g:
+                cached_uuid = f.read()
+                cached_system_uuid = g.read()
+            if cached_uuid != cached_system_uuid:
+                query = '"SELECT uuid AS system_uuid FROM osquery_info;" --header=false --csv'
+                # Prefer our /opt/osquery/osqueryi if present
+                osqueryipaths = ('/opt/osquery/osqueryi', 'osqueryi', '/usr/bin/osqueryi')
+                for path in osqueryipaths:
+                    if salt.utils.path.which(path):
+                        live_uuid = __salt__['cmd.run']('{0} {1}'.format(path, query))
+                        live_uuid = str(live_uuid).upper()
+                        if len(live_uuid) == 36 and live_uuid != cached_system_uuid:
+                            log.error("potentially cloned system detected: System_uuid grain "
+                                      "previously saved on disk doesn't match live system value.\n"
+                                      "Resettig cached hubble_uuid value.")
+                            os.remove(cached_uuid_path)
+                        break
+    except Exception:
+        log.exception("Problem opening cache files while checking for previously cloned system")
+
     refresh_grains(initial=True)
 
     # splunk logs below warning, above info by default
@@ -722,6 +750,7 @@ def refresh_grains(initial=False):
         __opts__['fileserver_backend'] = __opts__['fallback_fileserver_backend']
 
     __opts__['hubble_uuid'] = __grains__.get('hubble_uuid', None)
+    __opts__['system_uuid'] = __grains__.get('system_uuid', None)
     __pillar__ = {}
     __opts__['grains'] = __grains__
     __opts__['pillar'] = __pillar__

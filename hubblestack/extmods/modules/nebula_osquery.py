@@ -621,7 +621,7 @@ def _generate_osquery_conf_file(conftopfile):
     cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'hubblestack_nebula_v2')
     base_path = cachedir
 
-    osqd_configs = _get_osquery_top_data(conftopfile)
+    osqd_configs = _get_top_data(conftopfile)
     configfile = os.path.join(base_path, "osquery.conf")
     conf_data = {}
     osqd_configs = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml' for config in osqd_configs]
@@ -667,7 +667,7 @@ def _generate_osquery_flags_file(flagstopfile):
     cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'hubblestack_nebula_v2')
     base_path = cachedir
 
-    osqd_flags = _get_osquery_top_data(flagstopfile)
+    osqd_flags = _get_top_data(flagstopfile)
     flagfile = os.path.join(base_path, "osquery.flags")
     flags_data = {}
     osqd_flags = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml' for config in osqd_flags]
@@ -699,35 +699,6 @@ def _generate_osquery_flags_file(flagstopfile):
             log.error("Failed to generate osquery flags file using topfile {0}".format(e))
     
     return flagfile
-
-
-def _get_osquery_top_data(topfile):
-
-    topfile = __salt__['cp.cache_file'](topfile)
-
-    try:
-        with open(topfile) as handle:
-            topdata = yaml.safe_load(handle)
-    except Exception as e:
-        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
-
-    if not isinstance(topdata, dict) or 'osquery' not in topdata or \
-            not isinstance(topdata['osquery'], list):
-        raise CommandExecutionError('Osquery topfile not formatted correctly. '
-                                    'Note that under the "osquery" key the data '
-                                    'should now be formatted as a list of '
-                                    'single-key dicts.')
-
-    topdata = topdata['osquery']
-
-    ret = []
-
-    for topmatch in topdata:
-        for match, data in topmatch.iteritems():
-            if __salt__['match.compound'](match):
-                ret.extend(data)
-
-    return ret
 
 
 def _mask_object(object_to_be_masked, topfile):

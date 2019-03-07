@@ -301,9 +301,9 @@ def osqueryd_monitor(configfile=None,
     base_path = cachedir
     servicename = "hubble_osqueryd"
     if not logdir:
-            logdir = __opts__.get('osquerylogpath')
+        logdir = __opts__.get('osquerylogpath')
     if not databasepath:
-            databasepath = __opts__.get('osquery_dbpath')
+        databasepath = __opts__.get('osquery_dbpath')
     if salt.utils.platform.is_windows():
         if not pidfile:
             pidfile = os.path.join(base_path, "hubble_osqueryd.pidfile")
@@ -445,10 +445,10 @@ def osqueryd_log_parser(osqueryd_logdir=None,
         for r in ret:
             obj = json.loads(r)
             if 'action' in obj and obj['action'] == 'snapshot':
-                    for result in obj['snapshot']:
-                        for key, value in result.iteritems():
-                            if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
-                                result[key] = json.loads(value[len('__JSONIFY__'):])
+                for result in obj['snapshot']:
+                    for key, value in result.iteritems():
+                        if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
+                            result[key] = json.loads(value[len('__JSONIFY__'):])
             elif 'action' in obj:
                 for key, value in obj['columns'].iteritems():
                     if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
@@ -610,7 +610,8 @@ def _get_top_data(topfile):
 def _generate_osquery_conf_file(conftopfile):
     '''
     Function to dynamically create osquery configuration file in JSON format.
-    This function would load osquery configuration in YAML format and make use of topfile to selectively load file(s) based on grains
+    This function would load osquery configuration in YAML format and 
+    make use of topfile to selectively load file(s) based on grains
     '''
 
     log.info("Generating osquery conf file using topfile: {0}".format(conftopfile))
@@ -624,7 +625,8 @@ def _generate_osquery_conf_file(conftopfile):
     osqd_configs = _get_top_data(conftopfile)
     configfile = os.path.join(base_path, "osquery.conf")
     conf_data = {}
-    osqd_configs = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml' for config in osqd_configs]
+    osqd_configs = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml'
+                    for config in osqd_configs]
     for fh in osqd_configs:
         if 'salt://' in fh:
             orig_fh = fh
@@ -639,9 +641,9 @@ def _generate_osquery_conf_file(conftopfile):
                     raise CommandExecutionError('File data is not formed as a dict {0}'
                                                 .format(f_data))
                 conf_data = _dict_update(conf_data,
-                                        f_data,
-                                        recursive_update=True,
-                                        merge_lists=True)
+                                         f_data,
+                                         recursive_update=True,
+                                         merge_lists=True)
     if conf_data:
         try:
             log.debug("Writing config to osquery.conf file")
@@ -649,14 +651,15 @@ def _generate_osquery_conf_file(conftopfile):
                 json.dump(conf_data, cf)
         except Exception as e:
             log.error("Failed to generate osquery conf file using topfile {0}".format(e))
-    
+
     return configfile
 
 
 def _generate_osquery_flags_file(flagstopfile):
     '''
     Function to dynamically create osquery flags file.
-    This function would load osquery flags in YAML format and make use of topfile to selectively load file(s) based on grains
+    This function would load osquery flags in YAML format and 
+    make use of topfile to selectively load file(s) based on grains
     '''
 
     log.info("Generating osquery flags file using topfile: {0}".format(flagstopfile))
@@ -670,7 +673,8 @@ def _generate_osquery_flags_file(flagstopfile):
     osqd_flags = _get_top_data(flagstopfile)
     flagfile = os.path.join(base_path, "osquery.flags")
     flags_data = {}
-    osqd_flags = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml' for config in osqd_flags]
+    osqd_flags = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml'
+                  for config in osqd_flags]
     for fh in osqd_flags:
         if 'salt://' in fh:
             orig_fh = fh
@@ -685,9 +689,9 @@ def _generate_osquery_flags_file(flagstopfile):
                     raise CommandExecutionError('File data is not formed as a dict {0}'
                                                 .format(f_data))
                 flags_data = _dict_update(flags_data,
-                                        f_data,
-                                        recursive_update=True,
-                                        merge_lists=True)
+                                          f_data,
+                                          recursive_update=True,
+                                          merge_lists=True)
     if flags_data:
         try:
             log.debug("Writing config to osquery.flags file")
@@ -697,7 +701,7 @@ def _generate_osquery_flags_file(flagstopfile):
                     cf.write(propdata)
         except Exception as e:
             log.error("Failed to generate osquery flags file using topfile {0}".format(e))
-    
+
     return flagfile
 
 

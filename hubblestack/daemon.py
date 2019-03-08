@@ -29,6 +29,7 @@ import salt.utils.gitfs
 import salt.log.setup
 import hubblestack.splunklogging
 import hubblestack.hec.opt
+import hubblestack.utils.stdrec
 from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime
@@ -732,6 +733,9 @@ def refresh_grains(initial=False):
     # the only things that turn up in here (and that get preserved)
     # are pulsar.queue, pulsar.notifier and cp.fileclient_###########
     # log.debug('keys in __context__: {}'.format(list(__context__)))
+
+    hubblestack.utils.stdrec.__grains__ = __grains__
+    hubblestack.utils.stdrec.__opts__ = __opts__
 
     hubblestack.hec.opt.__grains__ = __grains__
     hubblestack.hec.opt.__salt__ = __salt__

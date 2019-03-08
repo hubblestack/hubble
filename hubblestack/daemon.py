@@ -22,6 +22,7 @@ import math
 import salt.fileclient
 import salt.fileserver
 import salt.fileserver.gitfs
+import salt.modules.cmdmod
 import salt.utils
 import salt.utils.platform
 import salt.utils.jid
@@ -651,7 +652,6 @@ def load_config():
     cached_uuid_path = os.path.join(os.path.dirname(__opts__['configfile']), 'hubble_cached_uuid')
     cached_system_uuid_path = os.path.join(os.path.dirname(__opts__['configfile']),
                                            'hubble_cached_system_uuid')
-
     try:
         if os.path.isfile(cached_uuid_path) and os.path.isfile(cached_system_uuid_path):
             with open(cached_uuid_path, 'r') as f, open(cached_system_uuid_path, 'r') as g:
@@ -663,7 +663,7 @@ def load_config():
                 osqueryipaths = ('/opt/osquery/osqueryi', 'osqueryi', '/usr/bin/osqueryi')
                 for path in osqueryipaths:
                     if salt.utils.path.which(path):
-                        live_uuid = __salt__['cmd.run_stdout']('{0} {1}'.format(path, query), output_loglevel='quiet')
+                        live_uuid = salt.modules.cmdmod.run_stdout('{0} {1}'.format(path, query), output_loglevel='quiet')
                         live_uuid = str(live_uuid).upper()
                         if len(live_uuid) == 36 and live_uuid != cached_system_uuid:
                             log.error("potentially cloned system detected: System_uuid grain "

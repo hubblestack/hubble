@@ -84,3 +84,14 @@ def _get_uuid_from_system():
                 return first_run
             else:
                 return None
+    # If osquery isn't available, attempt to get uuid from /sys path (linux only)
+    try:
+        with open('/sys/devices/virtual/dmi/id/product_uuid', 'r') as f:
+            file_uuid = f.read()
+        file_uuid = str(file_uuid).upper()
+        if len(file_uuid) == 36:
+            return file_uuid
+        else:
+            return None
+    except Exception:
+        return None

@@ -649,6 +649,31 @@ def load_config():
     os.chmod(parsed_args.get('configfile'), 384)
 
     # Check for a cloned system with existing hubble_uuid
+    def _get_uuid_from_system():
+        query = '"SELECT uuid AS system_uuid FROM osquery_info;" --header=false --csv'
+
+        # Prefer our /opt/osquery/osqueryi if present
+        osqueryipaths = ('/opt/osquery/osqueryi', 'osqueryi', '/usr/bin/osqueryi')
+        for path in osqueryipaths:
+            if salt.utils.path.which(path):
+                live_uuid = salt.modules.cmdmod.run_stdout('{0} {1}'.format(path, query), output_loglevel='quiet')
+                live_uuid = str(live_uuid).upper()
+                if len(live_uuid) == 36:
+                    return live_uuid
+                else:
+                    return None
+        # If osquery isn't available, attempt to get uuid from /sys path (linux only)
+        try:
+            with open('/sys/devices/virtual/dmi/id/product_uuid', 'r') as f:
+                file_uuid = f.read()
+            file_uuid = str(file_uuid).upper()
+            if len(file_uuid) == 36:
+                return file_uuid
+            else:
+                return None
+        except Exception:
+            return None
+
     cached_uuid_path = os.path.join(os.path.dirname(__opts__['configfile']), 'hubble_cached_uuid')
     cached_system_uuid_path = os.path.join(os.path.dirname(__opts__['configfile']),
                                            'hubble_cached_system_uuid')
@@ -658,19 +683,13 @@ def load_config():
                 cached_uuid = f.read()
                 cached_system_uuid = g.read()
             if cached_uuid != cached_system_uuid:
-                query = '"SELECT uuid AS system_uuid FROM osquery_info;" --header=false --csv'
-                # Prefer our /opt/osquery/osqueryi if present
-                osqueryipaths = ('/opt/osquery/osqueryi', 'osqueryi', '/usr/bin/osqueryi')
-                for path in osqueryipaths:
-                    if salt.utils.path.which(path):
-                        live_uuid = salt.modules.cmdmod.run_stdout('{0} {1}'.format(path, query), output_loglevel='quiet')
-                        live_uuid = str(live_uuid).upper()
-                        if len(live_uuid) == 36 and live_uuid != cached_system_uuid:
-                            log.error("potentially cloned system detected: System_uuid grain "
-                                      "previously saved on disk doesn't match live system value.\n"
-                                      "Resettig cached hubble_uuid value.")
-                            os.remove(cached_uuid_path)
-                        break
+                live_uuid = _get_uuid_from_system()
+                if live_uuid != cached_system_uuid:
+                    log.error("potentially cloned system detected: System_uuid grain "
+                              "previously saved on disk doesn't match live system value.\n"
+                              "Resettig cached hubble_uuid value.")
+                    os.remove(cached_uuid_path)
+
     except Exception:
         log.exception("Problem opening cache files while checking for previously cloned system")
 

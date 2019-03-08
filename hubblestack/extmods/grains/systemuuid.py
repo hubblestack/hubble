@@ -24,9 +24,18 @@ def get_system_uuid():
     cached_system_uuid_path = os.path.join(os.path.dirname(__opts__['configfile']),
                                            'hubble_cached_system_uuid')
     previous_system_uuid = __opts__.get('system_uuid', None)
+    hubble_uuid = __opts__.get('hubble_uuid', None)
+
+    if not hubble_uuid:
+        cached_hubble_uuid_path = os.path.join(os.path.dirname(__opts__['configfile']), 'hubble_cached_uuid')
+        try:
+            with open(cached_hubble_uuid_path, 'r') as f:
+                hubble_uuid = f.read()
+        except Exception:
+            hubble_uuid = None
 
     # Get the system uuid via osquery. If it changes, fall back to hubble_uuid
-    live_system_uuid = _get_uuid_from_system() or __opts__.get('hubble_uuid', None)
+    live_system_uuid = _get_uuid_from_system() or hubble_uuid
 
     if not live_system_uuid:
         # Can't reliably get system_uuid, and hubble_uuid not yet generated. Aborting.

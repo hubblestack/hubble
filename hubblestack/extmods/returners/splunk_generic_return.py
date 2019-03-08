@@ -59,10 +59,16 @@ def returner(retdata):
         if len(events) < 1 or (len(events) == 1 and events[0] is None):
             return
 
+        idx = opts.get('index')
+
         for event in events:
-            payload = {'host': __grains__.get('fqdn', __grains__.get('id')), 'event': event,
+            payload = {
+                'host': __grains__.get('fqdn', __grains__.get('id')),
+                'event': event,
                 'sourcetype': _get_key(event, 'sourcetype', t_sourcetype),
                 'time': str(int(_get_key(event, 'time', t_time)))}
+            if idx:
+                payload['index'] = idx
             # add various std host info data and index extracted fields
             stdrec.update_payload(payload)
             hec.batchEvent(payload)

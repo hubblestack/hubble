@@ -943,7 +943,7 @@ def create_pidfile():
 
 def clean_up_process(received_signal, frame):
     '''
-    Log any signals received. If a SIGKILL or SIGINT is received, clean up
+    Log any signals received. If a SIGTERM or SIGINT is received, clean up
     pidfile and anything else that needs to be cleaned up.
     '''
     try:
@@ -960,7 +960,7 @@ def clean_up_process(received_signal, frame):
                                     time.asctime(),
                                     'hubblestack.signals'))
     finally:
-        if received_signal == signal.SIGINT or received_signal == signal.SIGKILL:
+        if received_signal == signal.SIGINT or received_signal == signal.SIGTERM:
             if not __opts__.get('ignore_running', False):
                 if __opts__['daemonize']:
                     if os.path.isfile(__opts__['pidfile']):

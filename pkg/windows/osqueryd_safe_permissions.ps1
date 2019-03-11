@@ -3,6 +3,8 @@
     $osqueryd_conffile_path = $hubble_path + "\var\cache\files\base\hubblestack_nebula_v2\osquery.conf"
     $osqueryd_flagfile_path = $hubble_path + "\var\cache\files\base\hubblestack_nebula_v2\osquery.flags"
     $osqueryd_logfile_path = $hubble_path + "\var\log\hubble_osquery"
+    $osqueryd_backuplog_path = $osqueryd_logfile_path + "\backuplogs"
+
     $acl = Get-Item $osqueryd_path |get-acl
     $acl.SetAccessRuleProtection($true,$true)
     $acl |Set-Acl
@@ -41,8 +43,8 @@
     $acl.RemoveAccessRuleAll($accessrule)
     set-acl -aclobject $acl $osqueryd_path
 
-    if(!(Test-Path -Path $osqueryd_logfile_path )){
-        New-Item -Path $osqueryd_logfile_path -ItemType Directory
+    if(!(Test-Path -Path $osqueryd_backuplog_path )){
+        New-Item -Path $osqueryd_backuplog_path -ItemType Directory
     }
 
     sc.exe create $osqueryd_service_name binpath=$binpath  displayname=$osqueryd_service_name

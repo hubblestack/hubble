@@ -294,10 +294,10 @@ def osqueryd_monitor(configfile=None,
     '''
     log.info("Starting osqueryd monitor")
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
-    osqueryd_path = 'salt://osquery'
+    osqueryd_path = 'salt://hubblestack_nebula_v2'
     cached = __salt__['cp.cache_dir'](osqueryd_path, saltenv=saltenv)
-    log.info('Cached osqueryd files to cachedir')
-    cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'osquery')
+    log.debug('Cached nebula files to cachedir')
+    cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'hubblestack_nebula_v2')
     base_path = cachedir
     servicename = "hubble_osqueryd"
     if not logdir:

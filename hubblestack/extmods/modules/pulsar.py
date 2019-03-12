@@ -615,8 +615,6 @@ class delta_t(object):
         self.last_mark = name
         self.marks[name] = time.time()
 
-_wtf_counter = 0
-
 @hubble_status.watch
 def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
             verbose=False):
@@ -716,13 +714,6 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
     cm = ConfigManager(configfile=configfile, verbose=verbose)
     config = cm.config
-
-    log.debug('WTF( %s %s )', config.get('refresh_interval'), cm._last_update)
-    global _wtf_counter
-    import json
-    with open('/tmp/wtf-{:04d}.json'.format(_wtf_counter), 'w') as fh:
-        json.dump(config, fh, indent=2)
-        _wtf_counter += 1
 
     if config.get('verbose'):
         log.debug('Pulsar beacon called.')

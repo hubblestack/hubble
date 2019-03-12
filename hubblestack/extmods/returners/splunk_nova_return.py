@@ -161,7 +161,7 @@ def returner(ret):
                 fields = {}
                 for item in index_extracted_fields:
                     if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
-                        fields[item] = str(payload['event'][item])
+                        fields["meta_%s" % item] = str(payload['event'][item])
                 if fields:
                     payload.update({'fields': fields})
 
@@ -213,7 +213,7 @@ def returner(ret):
                 fields = {}
                 for item in index_extracted_fields:
                     if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
-                        fields[item] = str(payload['event'][item])
+                        fields["meta_%s" % item] = str(payload['event'][item])
                 if fields:
                     payload.update({'fields': fields})
 
@@ -251,7 +251,7 @@ def returner(ret):
                 fields = {}
                 for item in index_extracted_fields:
                     if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
-                        fields[item] = str(payload['event'][item])
+                        fields["meta_%s" % item] = str(payload['event'][item])
                 if fields:
                     payload.update({'fields': fields})
 

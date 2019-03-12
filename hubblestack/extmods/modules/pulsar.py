@@ -615,6 +615,7 @@ class delta_t(object):
         self.last_mark = name
         self.marks[name] = time.time()
 
+_wtf_counter = 0
 
 @hubble_status.watch
 def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
@@ -715,6 +716,13 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
     cm = ConfigManager(configfile=configfile, verbose=verbose)
     config = cm.config
+
+    log.debug('WTF( %s %s )', config.get('refresh_interval'), cm._last_update)
+    global _wtf_counter
+    import json
+    with open('/tmp/wtf-{:04d}.json'.format(_wtf_counter), 'w') as fh:
+        json.dump(config, fh, indent=2)
+        _wtf_counter += 1
 
     if config.get('verbose'):
         log.debug('Pulsar beacon called.')
@@ -946,7 +954,11 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
             elif isinstance(dest_subkey, list) \
                     and isinstance(val, list):
                 if merge_lists:
-                    dest[key] = dest.get(key, []) + val
+                    # NOTE: this is probably quite slow, but prevents a
+                    # horrible memory leak ...
+                    target = dest.get(key, [])
+                    target += [ v for v in val if v not in target ]
+                    dest[key] = target
                 else:
                     dest[key] = upd[key]
             else:

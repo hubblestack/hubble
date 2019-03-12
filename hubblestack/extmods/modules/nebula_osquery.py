@@ -253,6 +253,8 @@ def queries(query_group,
 
 @hubble_status.watch
 def osqueryd_monitor(configfile=None,
+                     conftopfile=None,
+                     flagstopfile=None,
                      flagfile=None,
                      logdir=None,
                      databasepath=None,
@@ -266,10 +268,16 @@ def osqueryd_monitor(configfile=None,
     On such conditions, osqueryd will get restarted, thereby loading new files.
 
     configfile
-        Path to osquery configuration file.
+        Path to osquery configuration file. If this is specified, conftopfile will be ignored
+
+    conftopfile
+        Path to topfile which will be used to dynamically generate osquery conf in JSON format
+
+    flagstopfile
+        Path to topfile which will be used to dynamically generate osquery flags
 
     flagfile
-        Path to osquery flag file
+        Path to osquery flag file. If this is specified, flagstopfile will be ignored
 
     logdir
         Path to log directory where osquery daemon/service will write logs
@@ -286,23 +294,27 @@ def osqueryd_monitor(configfile=None,
     '''
     log.info("Starting osqueryd monitor")
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
-    osqueryd_path = 'salt://osquery'
+    osqueryd_path = 'salt://hubblestack_nebula_v2'
     cached = __salt__['cp.cache_dir'](osqueryd_path, saltenv=saltenv)
-    log.info('Cached osqueryd files to cachedir')
-    cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'osquery')
+    log.debug('Cached nebula files to cachedir')
+    cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'hubblestack_nebula_v2')
     base_path = cachedir
     servicename = "hubble_osqueryd"
     if not logdir:
-            logdir = __opts__.get('osquerylogpath')
+        logdir = __opts__.get('osquerylogpath')
     if not databasepath:
-            databasepath = __opts__.get('osquery_dbpath')
+        databasepath = __opts__.get('osquery_dbpath')
     if salt.utils.platform.is_windows():
         if not pidfile:
             pidfile = os.path.join(base_path, "hubble_osqueryd.pidfile")
         if not configfile:
-            configfile = os.path.join(base_path, "osquery.conf")
+            if not conftopfile:
+                conftopfile = 'salt://hubblestack_nebula_v2/win_top.osqueryconf'
+            configfile = _generate_osquery_conf_file(conftopfile)
         if not flagfile:
-            flagfile = os.path.join(base_path, "osquery.flags")
+            if not flagstopfile:
+                flagstopfile = 'salt://hubblestack_nebula_v2/win_top.osqueryflags'
+            flagfile = _generate_osquery_flags_file(flagstopfile)
         if not hashfile:
             hashfile = os.path.join(base_path, "hash_of_flagfile.txt")
 
@@ -317,9 +329,13 @@ def osqueryd_monitor(configfile=None,
         if not pidfile:
             pidfile = os.path.join(base_path, "hubble_osqueryd.pidfile")
         if not configfile:
-            configfile = os.path.join(base_path, "osquery.conf")
+            if not conftopfile:
+                conftopfile = 'salt://hubblestack_nebula_v2/top.osqueryconf'
+            configfile = _generate_osquery_conf_file(conftopfile)
         if not flagfile:
-            flagfile = os.path.join(base_path, "osquery.flags")
+            if not flagstopfile:
+                flagstopfile = 'salt://hubblestack_nebula_v2/top.osqueryflags'
+            flagfile = _generate_osquery_flags_file(flagstopfile)
         if not hashfile:
             hashfile = os.path.join(base_path, "hash_of_flagfile.txt")
 
@@ -429,10 +445,10 @@ def osqueryd_log_parser(osqueryd_logdir=None,
         for r in ret:
             obj = json.loads(r)
             if 'action' in obj and obj['action'] == 'snapshot':
-                    for result in obj['snapshot']:
-                        for key, value in result.iteritems():
-                            if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
-                                result[key] = json.loads(value[len('__JSONIFY__'):])
+                for result in obj['snapshot']:
+                    for key, value in result.iteritems():
+                        if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
+                            result[key] = json.loads(value[len('__JSONIFY__'):])
             elif 'action' in obj:
                 for key, value in obj['columns'].iteritems():
                     if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
@@ -444,30 +460,6 @@ def osqueryd_log_parser(osqueryd_logdir=None,
         log.info("Perform masking")
         _mask_object(ret, topfile_for_mask)
     return ret
-
-
-def hubble_metadata():
-    '''
-    Log Hubble version and buildinfo. Buildinfo if set, will be logged.
-    Data logged by this function is union of hubble_versions() function and --buildinfo param.
-    '''
-    build_metadata = hubble_versions()
-    try:
-        from hubblestack import __buildinfo__
-    except ImportError:
-        __buildinfo__ = {'buildinfo': 'NOT SET'}
-    build_metadata.update(__buildinfo__)
-
-    log.info("Hubble build metadata: {0}".format(build_metadata))
-
-    if __salt__['config.get']('splunklogging', False):
-        log.debug('Logging hubble build metadata to splunk')
-        hubblestack.splunklogging.__grains__ = __grains__
-        hubblestack.splunklogging.__salt__ = __salt__
-        hubblestack.splunklogging.__opts__ = __opts__
-        handler = hubblestack.splunklogging.SplunkHandler()
-        metadata = {'build_metadata': build_metadata, 'schedule_time': time.time()}
-        handler.emit_data(metadata)
 
 
 def check_disk_usage(path=None):
@@ -613,6 +605,104 @@ def _get_top_data(topfile):
                 ret.extend(data)
 
     return ret
+
+
+def _generate_osquery_conf_file(conftopfile):
+    '''
+    Function to dynamically create osquery configuration file in JSON format.
+    This function would load osquery configuration in YAML format and 
+    make use of topfile to selectively load file(s) based on grains
+    '''
+
+    log.info("Generating osquery conf file using topfile: {0}".format(conftopfile))
+    saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
+    osqueryd_path = 'salt://hubblestack_nebula_v2'
+    cached = __salt__['cp.cache_dir'](osqueryd_path, saltenv=saltenv)
+    log.debug('Cached nebula files to cachedir')
+    cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'hubblestack_nebula_v2')
+    base_path = cachedir
+
+    osqd_configs = _get_top_data(conftopfile)
+    configfile = os.path.join(base_path, "osquery.conf")
+    conf_data = {}
+    osqd_configs = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml'
+                    for config in osqd_configs]
+    for fh in osqd_configs:
+        if 'salt://' in fh:
+            orig_fh = fh
+            fh = __salt__['cp.cache_file'](fh)
+        if fh is None:
+            log.error('Could not find file {0}.'.format(orig_fh))
+            return None
+        if os.path.isfile(fh):
+            with open(fh, 'r') as f:
+                f_data = yaml.safe_load(f)
+                if not isinstance(f_data, dict):
+                    raise CommandExecutionError('File data is not formed as a dict {0}'
+                                                .format(f_data))
+                conf_data = _dict_update(conf_data,
+                                         f_data,
+                                         recursive_update=True,
+                                         merge_lists=True)
+    if conf_data:
+        try:
+            log.debug("Writing config to osquery.conf file")
+            with open(configfile, "w") as cf:
+                json.dump(conf_data, cf)
+        except Exception as e:
+            log.error("Failed to generate osquery conf file using topfile {0}".format(e))
+
+    return configfile
+
+
+def _generate_osquery_flags_file(flagstopfile):
+    '''
+    Function to dynamically create osquery flags file.
+    This function would load osquery flags in YAML format and 
+    make use of topfile to selectively load file(s) based on grains
+    '''
+
+    log.info("Generating osquery flags file using topfile: {0}".format(flagstopfile))
+    saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
+    osqueryd_path = 'salt://hubblestack_nebula_v2'
+    cached = __salt__['cp.cache_dir'](osqueryd_path, saltenv=saltenv)
+    log.debug('Cached nebula files to cachedir')
+    cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'hubblestack_nebula_v2')
+    base_path = cachedir
+
+    osqd_flags = _get_top_data(flagstopfile)
+    flagfile = os.path.join(base_path, "osquery.flags")
+    flags_data = {}
+    osqd_flags = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml'
+                  for config in osqd_flags]
+    for fh in osqd_flags:
+        if 'salt://' in fh:
+            orig_fh = fh
+            fh = __salt__['cp.cache_file'](fh)
+        if fh is None:
+            log.error('Could not find file {0}.'.format(orig_fh))
+            return None
+        if os.path.isfile(fh):
+            with open(fh, 'r') as f:
+                f_data = yaml.safe_load(f)
+                if not isinstance(f_data, dict):
+                    raise CommandExecutionError('File data is not formed as a dict {0}'
+                                                .format(f_data))
+                flags_data = _dict_update(flags_data,
+                                          f_data,
+                                          recursive_update=True,
+                                          merge_lists=True)
+    if flags_data:
+        try:
+            log.debug("Writing config to osquery.flags file")
+            with open(flagfile, "w") as cf:
+                for key in flags_data:
+                    propdata = "--" + key + "=" + flags_data.get(key) + "\n"
+                    cf.write(propdata)
+        except Exception as e:
+            log.error("Failed to generate osquery flags file using topfile {0}".format(e))
+
+    return flagfile
 
 
 def _mask_object(object_to_be_masked, topfile):

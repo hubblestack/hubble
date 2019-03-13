@@ -88,7 +88,6 @@ class Payload(object):
         self.sourcetype = dat.get('sourcetype', 'hubble')
         self.time       = dat.get('time', now)
 
-        self.rename_event_fields_in_payload(dat)
         self.dat = json.dumps(dat)
 
     def __repr__(self):
@@ -99,16 +98,6 @@ class Payload(object):
 
     def __len__(self):
         return len(self.dat)
-
-    @classmethod
-    def rename_event_fields_in_payload(cls, dat):
-        f = dat.get('fields')
-        e = dat.get('event')
-        if isinstance(f, dict) and isinstance(e, dict):
-            for k in f:
-                v = e.pop(k)
-                if v is not None:
-                    e[k + '_meta'] = v
 
 
 # Thanks to George Starcher for the http_event_collector class (https://github.com/georgestarcher/)

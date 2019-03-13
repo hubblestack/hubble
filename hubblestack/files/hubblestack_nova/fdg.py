@@ -13,12 +13,12 @@ fdg:
   fstab_tmp_partition:  # unique ID
     data:
       CentOS Linux-6:  # osfinger grain
-        fdg_file: 'salt://fdg/my_fdg_file.fdg':  # filename for fdg routine
+        fdg_file: 'salt://fdg/my_fdg_file.fdg'  # filename for fdg routine
         tag: 'CIS-1.1.1'  # audit tag
         starting_chained: 'value'  # value for fdg `starting_chained` (optional)
         true_for_success: True  # Whether a "truthy" value constitues success
       '*':  # wildcard, will be run if no direct osfinger match
-        fdg_file: 'salt://fdg/my_fdg_file.fdg':  # filename for fdg routine
+        fdg_file: 'salt://fdg/my_fdg_file.fdg'  # filename for fdg routine
         tag: 'CIS-1.1.1'  # audit tag
     # The rest of these attributes are optional
     description: |
@@ -69,7 +69,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                     continue
                 name = tag_data['name']
 
-                if 'fdg_file' not in tagged_data:
+                if 'fdg_file' not in tag_data:
                     log.error('No `fdg_file` argument found for fdg audit {0}, file {1}'
                               .format(tag, name))
                     tag_data = copy.deepcopy(tag_data)
@@ -79,9 +79,9 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                     ret['Failure'].append(tag_data)
                     continue
 
-                fdg_file = tagged_data['fdg_file']
-                starting_chained = tagged_data.get('starting_chained')
-                true_for_success = tagged_data.get('true_for_success', True)
+                fdg_file = tag_data['fdg_file']
+                starting_chained = tag_data.get('starting_chained')
+                true_for_success = tag_data.get('true_for_success', True)
 
                 _, fdg_results = __salt__['fdg.fdg'](fdg_file, starting_chained=starting_chained)
                 fdg_return = fdg_results[1]

@@ -128,7 +128,7 @@ class SplunkHandler(logging.Handler):
             fields = {}
             for item in index_extracted_fields:
                 if item in event and not isinstance(event[item], (list, dict, tuple)):
-                    fields[item] = str(event[item])
+                    fields["meta_%s" % item] = str(event[item])
             if fields:
                 payload.update({'fields': fields})
 

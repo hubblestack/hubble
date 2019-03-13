@@ -83,18 +83,17 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 starting_chained = tag_data.get('starting_chained')
                 true_for_success = tag_data.get('true_for_success', True)
 
-                _, fdg_results = __salt__['fdg.fdg'](fdg_file, starting_chained=starting_chained)
-                fdg_return = fdg_results[1]
+                _, fdg_result = __salt__['fdg.fdg'](fdg_file, starting_chained=starting_chained)
 
-                tag_data['fdg_results'] = fdg_results
+                tag_data['fdg_result'] = fdg_result
 
                 if true_for_success:
-                    if fdg_return:
+                    if fdg_result:
                         ret['Success'].append(tag_data)
                     else:
                         ret['Failure'].append(tag_data)
                 else:
-                    if fdg_return:
+                    if fdg_result:
                         ret['Failure'].append(tag_data)
                     else:
                         ret['Success'].append(tag_data)

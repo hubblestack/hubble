@@ -67,7 +67,7 @@ def index_extracted(payload):
         if item in payload['event']:
             val = payload['event'][item]
             if not isinstance(val, (list, dict, tuple)):
-                fields[item] = str(val)
+                fields["meta_%s" % item] = str(val)
     return fields
 
 def update_payload(payload):

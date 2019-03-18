@@ -2,6 +2,7 @@
 '''
 Main entry point for the hubble daemon
 '''
+
 from __future__ import print_function
 
 # import lockfile
@@ -645,6 +646,8 @@ def load_config():
                                         max_bytes=__opts__.get('logfile_maxbytes', 100000000),
                                         backup_count=__opts__.get('logfile_backups', 1))
 
+    with open(__opts__['log_file'], 'a') as fh:
+        pass # ensure the file exists before we set perms on it
     # 384 is 0o600 permissions, written without octal for python 2/3 compat
     os.chmod(__opts__['log_file'], 384)
     os.chmod(parsed_args.get('configfile'), 384)

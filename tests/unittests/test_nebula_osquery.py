@@ -102,6 +102,7 @@ class TestNebula():
         __salt__['cp.cache_file'] = cp_cache_file
         __salt__['match.compound'] = match_compound
         hubblestack.extmods.modules.nebula_osquery.__salt__ = __salt__
+        hubblestack.extmods.modules.nebula_osquery.__grains__ = {'osfinger': 'Ubuntu-16.04'}
         var = hubblestack.extmods.modules.nebula_osquery.top(query_group, topfile, verbose, report_version_with_day)
         hubblestack.extmods.modules.nebula_osquery.__salt__ = {}
         assert len(var) != 0

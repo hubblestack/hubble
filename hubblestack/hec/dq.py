@@ -92,6 +92,10 @@ class MemQueue(OKTypesMixin):
         if len(self.mq) > 0:
             return self.mq.popleft()
 
+    def pop(self):
+        ''' pop an item from the queue '''
+        self.mq.popleft()
+
     def getz(self, sz=SPLUNK_MAX_MSG):
         ''' get items from the queue and concatenate them together using the
         spacer ' ' until the size reaches (but does not exceed) the kwarg sz.
@@ -303,6 +307,12 @@ class DiskBackedQueue:
         if r is None:
             r = self.dq.peek()
         return r
+
+    def pop(self):
+        if self.mq.cn:
+            self.mq.pop()
+        elif self.dq.cn:
+            self.dq.pop()
 
     def unget(self, msg):
         ''' Put an item (back) in the queue at the front (LIFO order)

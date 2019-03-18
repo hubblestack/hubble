@@ -1,112 +1,142 @@
-
 import pytest
-import shutil
 import os
-from hubblestack.hec.dq import DiskQueue, QueueCapacityError
 
-DQ_LOCATION = os.environ.get('TEST_DQ_LOC', '/tmp/test-dq')
+from hubblestack.hec.dq import DiskQueue, MemQueue, DiskBackedQueue
+from hubblestack.hec.dq import QueueTypeError, QueueCapacityError
 
-@pytest.fixture(scope='function')
-def summon_dq(request):
-    def fin():
-        if os.path.isdir(DQ_LOCATION):
-            shutil.rmtree('/tmp/test-dq')
-    fin() # make sure we don't have anything before we get started
-    #request.addfinalizer(fin) # but also, make sure we clean up when we're done
-    def _go(**kw):
-        return DiskQueue('/tmp/test-dq', **kw)
-    return _go
+TEST_DQ_DIR = os.environ.get('TEST_DQ_DIR', '/tmp/dq.{0}'.format(os.getuid()))
 
-def test_getz_files(summon_dq):
-    dq = summon_dq()
-    dq.put('one')
-    dq.put('two')
-    assert len(list(dq.files)) == 0
-    assert dq.get() == 'one'
-    assert dq.get() == 'two'
-    assert len(list(dq.files)) == 0
+@pytest.fixture
+def samp():
+    return tuple(b'one two three four five'.split())
 
+@pytest.fixture
+def mq():
+    return MemQueue(size=100)
 
-def test_dq_compression0(summon_dq):
-    dq = summon_dq(compression=0)
+@pytest.fixture
+def dq():
+    return DiskQueue(TEST_DQ_DIR, size=100, fresh=True)
 
-    source_data = ', '.join(['mah data'] * 10000)
+@pytest.fixture
+def dbq():
+    return DiskBackedQueue(TEST_DQ_DIR, mem_size=100, disk_size=100, fresh=True)
 
-    x = dq.compress(source_data)
-    assert x == source_data
-    assert dq.decompress(x) == source_data
+def test_mem_queue(mq):
+    borked = False
 
-    dq.put('one')
-    dq.put('two')
-    assert len(list(dq.files)) == 2
-    assert dq.peek() == 'one'
-    assert dq.get() == 'one'
-    assert dq.get() == 'two'
-    assert len(list(dq.files)) == 0
+    mq.put(b'one')
+    mq.put(b'two')
+    mq.put(b'three')
 
-def test_dq_compression5(summon_dq):
-    dq = summon_dq(compression=5)
+    assert len(mq) == 13
+    assert mq.peek() == b'one'
+    assert mq.get() == b'one'
+    assert mq.peek() == b'two'
+    assert len(mq) == 9
 
-    source_data = ', '.join(['mah data'] * 10000)
+    assert mq.getz() == b'two three'
+    assert len(mq) == 0
 
-    x = dq.compress(source_data)
-    assert x != source_data
-    assert x.startswith("BZ")
-    assert dq.decompress(x) == source_data
+    mq.put(b'one')
+    mq.put(b'two')
+    mq.put(b'three')
 
-    dq.put('one')
-    dq.put('two')
-    assert len(list(dq.files)) == 2
-    assert dq.peek() == 'one'
-    assert dq.get() == 'one'
-    assert dq.get() == 'two'
-    assert len(list(dq.files)) == 0
+    assert mq.getz(8) == b'one two'
+    assert mq.getz(8) == b'three'
 
-def test_dq_max_items(summon_dq):
-    dq = summon_dq(size=100*10)
+def test_disk_queue(dq):
+    borked = False
 
-    for i in range(200):
-        try:
-            dq.put('{:010}'.format(i))
-        except QueueCapacityError:
-            break
+    dq.put(b'one')
+    dq.put(b'two')
+    dq.put(b'three')
 
-    assert dq.cn == 100
+    assert len(dq) == 13
+    assert dq.peek() == b'one'
+    assert dq.get() == b'one'
+    assert dq.peek() == b'two'
+    assert len(dq) == 9
 
-    l = list()
-    while True:
-        item = dq.get()
-        if item is not None:
-            l.append(item)
+    assert dq.getz() == b'two three'
+    assert len(dq) == 0
+
+    dq.put(b'one')
+    dq.put(b'two')
+    dq.put(b'three')
+
+    assert dq.getz(8) == b'one two'
+    assert dq.getz(8) == b'three'
+
+def test_disk_backed_queue(dbq):
+    borked = False
+
+    with pytest.raises(QueueCapacityError):
+        for i in range(22):
+            dbq.put('{0:10}'.format(i).encode())
+
+    assert dbq.mq.sz == 100
+    assert dbq.dq.sz == 100
+
+    mr,dr = 100,100
+    for i in range(20):
+        b = '{0:10}'.format(i).encode()
+        assert dbq.get() == b
+
+        if dr:
+            dr -= 10
         else:
-            break
+            mr -= 10
 
-    assert len(l) == 100
-    assert l == [ '{:010}'.format(i) for i in range(100) ]
+        assert dbq.mq.sz == mr
+        assert dbq.dq.sz == dr
 
-def test_dq_size(summon_dq):
-    # this is a really small queue size. The journal and other sqlite overhead
-    # will eat up a large portion of this small cache space.
-    SZ = 100 * 1024
+    assert dbq.mq.sz == 0
+    assert dbq.dq.sz == 0
 
-    dq = summon_dq(size=SZ)
-    for i in range(200):
-        dq.put(str(i))
+    compare = list()
+    for i in range(15):
+        v = '{0:10}'.format(i).encode()
+        dbq.put(v)
+        compare.append(v)
+    assert dbq.mq.sz == 100
+    assert dbq.dq.sz == 50
+    assert dbq.getz() == dbq.mq.sep.join(compare)
 
-    # The size is essentially random, due to sqlite overhead
-    assert dq.sz > 0
-    assert dq.sz <= SZ
-    assert dq.cn == 200
+    compare = list()
+    for i in range(15):
+        v = '{0:10}'.format(i).encode()
+        dbq.put(v)
+        compare.append(v)
+    assert dbq.mq.sz == 100
+    assert dbq.dq.sz == 50
+    assert dbq.getz(25) == dbq.mq.sep.join(compare[0:2])
+    compare = compare[2:]
+    assert dbq.mq.sz == 100
+    assert dbq.dq.sz == 30
 
-    f = '{:04d} SUPER LONG TEXT TO FILL 100k BUFFER. '
-    sz = len(f.format(0))
 
-    for i in range(200):
-        dq.put(f.format(i) * 10)
+def _test_pop(samp,q):
+    for i in samp:
+        q.put(i)
+    for i in samp:
+        assert q.peek() == i
+        q.pop()
 
-    at_most = int(SZ/sz)
+def test_mq_pop(samp,mq):
+    _test_pop(samp,mq)
 
-    assert dq.sz > 0
-    assert dq.sz <= SZ
-    assert dq.cn < at_most
-    assert dq.cn > 5 # surely we can fit at least 5
+def test_dq_pop(samp,dq):
+    _test_pop(samp,dq)
+
+def test_dbq_pop(dbq):
+    samp = tuple( b'test-{i:02x}' for i in range(14) )
+    for i in samp:
+        dbq.put(i)
+    assert dbq.cn == 14
+    assert dbq.mq.cn == 8
+    assert dbq.dq.cn == 6
+    for i in samp:
+        assert dbq.peek() == i
+        dbq.pop()
+        assert dbq.dq.cn + dbq.mq.cn == dbq.cn

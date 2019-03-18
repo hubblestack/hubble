@@ -36,6 +36,7 @@ var/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+pytest-output.txt
 
 # Unit test / coverage reports
 htmlcov/
@@ -81,10 +82,6 @@ celerybeat-schedule
 # dotenv
 .env
 
-# virtualenv
-venv/
-ENV/
-
 # Spyder project settings
 .spyderproject
 
@@ -93,5 +90,19 @@ ENV/
 
 # Visual Studio Code settings
 .vscode
-
 doc/_build
+
+# misc setup.py output
+setup.txt
+
+# jenkins noise
+*output*.txt
+*manifest*.txt
+setup.txt
+pip.cache
+vlib/
+venv/
+ENV/
+pylint-*.txt
+pytest-*.txt
+bandit-*.txt

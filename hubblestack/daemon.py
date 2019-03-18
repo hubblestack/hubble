@@ -841,7 +841,7 @@ def parse_args():
                         help='Pass in an alternative configuration file. Default: /etc/hubble/hubble')
     parser.add_argument('-p', '--no-pprint',
                         help='Turn off pprint for single-function output',
-                        action='store_false')
+                        action='store_true')
     parser.add_argument('-v', '--verbose',
                         action='count',
                         help=('Verbosity level. Use -v or -vv or -vvv for '

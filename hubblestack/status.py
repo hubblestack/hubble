@@ -42,10 +42,23 @@ log = logging.getLogger(__name__)
 
 DEFAULTS = {
     'dumpster': 'status.json', # '/var/cache/hubble/status.json',
-    'hung_time': 900,
-    'warn_time': 300,
-    'good_time':  60,
+    'hung_time':   900,
+    'warn_time':   300,
+    'good_time':    60,
+    'bucket_len': 3600,
 }
+
+MAX_DEPTH = 3 # depth of bucket memory
+
+def t_bucket(t=None, bucket_len=None):
+    ''' convert a time into a bucket id '''
+    if t is None:
+        t = time.time()
+    if bucket_len is None:
+        bucket_len = int(get_hubble_status_opt('bucket_len'))
+    t = int(t)
+    r = t % bucket_len
+    return ( (t - r), bucket_len )
 
 __opts__ = dict()
 def get_hubble_status_opt(name, require_type=None):
@@ -147,7 +160,6 @@ class HubbleStatus(object):
                 hubble_status.fin('f4') # mark the duration in the counter stack
                 return
     '''
-
     _signaled = False
     dat = dict()
     resources = list()
@@ -163,8 +175,23 @@ class HubbleStatus(object):
             * ema_dur: the average duration between mark()/fin() cycles
         '''
 
-        def __init__(self):
-            self.reset()
+        def __init__(self, t=None):
+            self.bucket, self.bucket_len = t_bucket(t=t)
+            self.next = None
+            self.last_t = self.first_t = 0
+            self.count  = 0
+            self.ema_dt = None
+            self.dur = None
+            self.ema_dur = None
+
+        def get_bucket(self, bucket):
+            bucket, _ = t_bucket(t=bucket)
+            if self.bucket == bucket:
+                return self
+            if self.next is not None:
+                return self.next.get_bucket(bucket)
+            self.next = self.__class__(t=bucket)
+            return self.next
 
         @property
         def dt(self):
@@ -172,10 +199,22 @@ class HubbleStatus(object):
             return time.time() - self.last_t
 
         @property
-        def asdict(self):
-            ''' a computed attribute that clones and formats the various object properties in a dict() '''
+        def buckets(self):
+            r = {self.bucket,}
+            if self.next is not None:
+                r.update(self.next.buckets)
+            return sorted(r)
+
+        def asdict(self, bucket=None):
+            ''' return a copy of the various stat object properties
+                (optionally for the given bucket)
+            '''
+            if bucket is not None:
+                self = self.get_bucket(bucket)
             r = { 'count': self.count, 'last_t': self.last_t,
-                'dt': self.dt, 'ema_dt': self.ema_dt, 'first_t': self.first_t }
+                'dt': self.dt, 'ema_dt': self.ema_dt, 'first_t': self.first_t,
+                'bucket': self.bucket, 'bucket_len': self.bucket_len
+                }
             if self.dur is not None:
                 r.update({'dur': self.dur, 'ema_dur': self.ema_dur})
             return r
@@ -183,38 +222,51 @@ class HubbleStatus(object):
         def mark(self, t=None):
             ''' mark a counter (ie, increment the count, mark the last_t =
                 time.time(), and update the ema_dt)
+
+                optional param "t": integer timestampjof mark
             '''
-            now = time.time()
-            if not self.first_t:
-                self.first_t = now
-            self.count += 1
-            dt = self.dt
-            self.last_t = now
-            if t is not None:
-                # NOTE: t should only be used for tracking time constrained counts
-                # (e.g., the sourcetype counts in hec.obj); we make sure the first_t
-                # and last_t include the given (e.g.) event time
+            if t is None:
+                t = time.time()
+                self = self.get_bucket(t)
+            else:
                 if isinstance(t, (str,unicode)):
                     t = int(t)
+                self = self.get_bucket(t)
                 if t < self.first_t:
                     self.first_t = t
                 if t > self.last_t:
                     self.last_t = t
+            if not self.first_t:
+                self.first_t = t
+            self.count += 1
+            dt = self.dt
+            self.last_t = t
             self.ema_dt = dt if self.ema_dt is None else 0.5*self.ema_dt + 0.5*dt
+            return self
 
         def fin(self):
             ''' mark a counter duration (ie, mark the time since the last mark, and update the ema_dur)
+
+                NOTE: because the stats are bucketed (for searching purposes), it's important to fin()
+                the right stat object. For this reason, mark() returns a stat object, which is the right one
+                upon which to call fin()
             '''
             self.dur = self.dt
             self.ema_dur  = self.dur if self.ema_dur is None else 0.5*self.ema_dur + 0.5*self.dur
 
-        def reset(self):
-            self.last_t = self.first_t = 0
-            self.count  = 0
-            self.ema_dt = None
-            self.dur = None
-            self.ema_dur = None
+        def __iter__(self):
+            if self.next is not None:
+                for i in self.next:
+                    yield i
+            yield self
 
+        def reset(self):
+            ''' expunge all but the latest bucket '''
+            items = list(self)
+            mb = max(items, key=lambda x: x.bucket)
+            for node in items:
+                node.next = None
+            return mb
 
     def __init__(self, namespace, *resources):
         ''' params:
@@ -261,15 +313,43 @@ class HubbleStatus(object):
             raise HubbleStatusResourceNotFound('"{}" is not a resource of this HubbleStatus instance')
         return m
 
+    def _check_depth(self, n):
+        ''' make sure we never have more than MAX_DEPTH memory of past buckets '''
+        node = self.dat[n]
+        bl = node.buckets
+        if len(bl) > MAX_DEPTH:
+            nb = sorted(self.dat[n], key=lambda x: x.bucket)[-3:]
+            for i in range(0,len(nb)-1):
+                nb[i].next = nb[i+1]
+            nb[-1].next = None
+            self.dat[n] = nb[0]
+
     def mark(self, n, t=None):
-        ''' mark the named resource `n` — meaning increment the counters, update the last_t, etc '''
+        ''' mark the named resource `n` — meaning increment the counters, update the last_t, etc
+        '''
         n = self._checkmark(n)
-        self.dat[n].mark(t=t)
+        r = self.dat[n].mark(t=t)
+        self._check_depth(n)
+        return r
 
     def fin(self, n):
-        ''' mark the end of a duration measurement '''
+        ''' mark the end of a duration measurement
+
+            NOTE: because the stats are bucketed (for searching purposes), it's important to fin()
+            the right stat object. For this reason, mark() returns a stat object, which is the right one
+            upon which to call fin()
+        '''
         n = self._checkmark(n)
         self.dat[n].fin()
+
+    @classmethod
+    def buckets(cls, n=None):
+        if n is not None:
+            return self.dat[n].buckets
+        r = set()
+        for item in cls.dat.values():
+            r.update(item.buckets)
+        return sorted(r)
 
     def watch(self, mark_name):
         ''' wrap a decorated function with a mark/fin pattern
@@ -301,9 +381,9 @@ class HubbleStatus(object):
         def decorator(f):
             @wraps(f)
             def inner(*a, **kw):
-                self.mark(mark_name)
+                stat_handle = self.mark(mark_name)
                 r = f(*a, **kw)
-                self.fin(mark_name)
+                stat_handle.fin()
                 return r
             return inner
         if invoke:
@@ -316,10 +396,10 @@ class HubbleStatus(object):
         # class, not even tracked with _checkmark() ... but it's needed to make
         # the sourcetype accounting beacon update meaningfully.
         if key is None:
-            for key in cls.dat:
-                cls.dat[key].reset()
+            for k,v in cls.dat.iteritems():
+                cls.dat[k] = v.reset()
         else:
-            cls.dat[key].reset()
+            cls.dat[key] = cls.dat[key].reset()
 
     @classmethod
     def stats(cls):
@@ -373,7 +453,7 @@ class HubbleStatus(object):
                   }
                 }
         '''
-        r = { k: v.asdict for k,v in cls.dat.iteritems() if v.first_t > 0 }
+        r = self.short()
         min_dt = min([ x['dt'] for x in r.values() ])
         max_t  = max([ x['last_t'] for x in r.values() ])
         min_t  = min([ x['first_t'] for x in r.values() if x['first_t'] > 0 ])
@@ -410,6 +490,21 @@ class HubbleStatus(object):
         if h1['dt'] <= get_hubble_status_opt('good_time'):
             h2['alive'] = 'yes'
         return r
+
+    @classmethod
+    def short(cls, bucket=None):
+        ''' return a shortened stats listing (no docs or health guesses)
+
+            optionally, give parameter bucket:
+                some number in epoch time - to return the stats in that bucket
+                or the word 'all' or the string '*' - to return all but the
+                  last bucket as a list
+
+        '''
+        if bucket in ('*', 'all'):
+            # NOTE: :-1 so we skip the current bucket
+            return [ cls.short(b) for b in cls.buckets()[:-1] ]
+        return { k: v.asdict(bucket) for k,v in cls.dat.iteritems() if v.first_t > 0 }
 
     @classmethod
     def as_json(cls, indent=2):

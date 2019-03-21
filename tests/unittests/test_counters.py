@@ -31,8 +31,7 @@ def test_one_count():
 
 def test_buckets():
     t0 = 1553102100
-    hubblestack.status.MAX_DEPTH = 100
-    hubblestack.status.__opts__['hubble_status'] = { 'bucket_len': 5 }
+    hubblestack.status.__opts__['hubble_status'] = { 'bucket_len': 5, 'max_buckets': 1000 }
     hubble_status = hubblestack.status.HubbleStatus('x', 'test1')
 
     for t in range(t0, t0+100):
@@ -56,7 +55,7 @@ def test_buckets():
 
 def test_max_depth():
     t0 = 1553102100
-    hubblestack.status.__opts__['hubble_status'] = { 'bucket_len': 5 }
+    hubblestack.status.__opts__['hubble_status'] = { 'bucket_len': 5, 'max_buckets': 1000 }
     hubble_status = hubblestack.status.HubbleStatus('x', 'test1')
 
     for t in range(t0, t0+100):
@@ -64,7 +63,7 @@ def test_max_depth():
 
     b1 = hubble_status.buckets()
 
-    hubblestack.status.MAX_DEPTH = 3
+    hubblestack.status.__opts__['hubble_status']['max_buckets'] = 3
     hubble_status.mark('test1', t0+99)
 
     b2 = hubble_status.buckets()

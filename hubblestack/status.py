@@ -453,12 +453,17 @@ class HubbleStatus(object):
                   }
                 }
         '''
-        r = self.short()
+
+        r = cls.short()
+
         min_dt = min([ x['dt'] for x in r.values() ])
         max_t  = max([ x['last_t'] for x in r.values() ])
         min_t  = min([ x['first_t'] for x in r.values() if x['first_t'] > 0 ])
         h1 = {'time': max_t, 'dt': min_dt, 'start': min_t}
-        r['HEALTH'] = h2 = {'last_activity': h1}
+        r['HEALTH'] = h2 = {
+            'buckets': cls.buckets(),
+            'last_activity': h1,
+        }
         r['__doc__'] = {
             'service.name.here': {
                 "count": 'number of times the counter was called',

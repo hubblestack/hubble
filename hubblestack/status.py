@@ -46,9 +46,8 @@ DEFAULTS = {
     'warn_time':   300,
     'good_time':    60,
     'bucket_len': 3600,
+    'max_buckets':   3,
 }
-
-MAX_DEPTH = 3 # depth of bucket memory
 
 def t_bucket(t=None, bucket_len=None):
     ''' convert a time into a bucket id '''
@@ -58,7 +57,8 @@ def t_bucket(t=None, bucket_len=None):
         bucket_len = int(get_hubble_status_opt('bucket_len'))
     t = int(t)
     r = t % bucket_len
-    return ( (t - r), bucket_len )
+    b = ( (t - r), bucket_len )
+    return b
 
 __opts__ = dict()
 def get_hubble_status_opt(name, require_type=None):
@@ -184,14 +184,22 @@ class HubbleStatus(object):
             self.dur = None
             self.ema_dur = None
 
-        def get_bucket(self, bucket):
+        def get_bucket(self, bucket, no_append=False):
             bucket, _ = t_bucket(t=bucket)
-            if self.bucket == bucket:
-                return self
-            if self.next is not None:
-                return self.next.get_bucket(bucket)
-            self.next = self.__class__(t=bucket)
-            return self.next
+            for i in self:
+                if i.bucket == bucket:
+                    return i
+            new_bucket = self.__class__(t=bucket)
+            if no_append:
+                return new_bucket
+            x = self
+            while x.next is not None:
+                x = x.next
+            x.next = new_bucket
+            return new_bucket
+
+        def find_bucket(self, bucket):
+            return self.get_bucket(bucket, no_append=True)
 
         @property
         def dt(self):
@@ -210,7 +218,7 @@ class HubbleStatus(object):
                 (optionally for the given bucket)
             '''
             if bucket is not None:
-                self = self.get_bucket(bucket)
+                self = self.find_bucket(bucket)
             r = { 'count': self.count, 'last_t': self.last_t,
                 'dt': self.dt, 'ema_dt': self.ema_dt, 'first_t': self.first_t,
                 'bucket': self.bucket, 'bucket_len': self.bucket_len
@@ -314,15 +322,17 @@ class HubbleStatus(object):
         return m
 
     def _check_depth(self, n):
-        ''' make sure we never have more than MAX_DEPTH memory of past buckets '''
+        ''' make sure we never have more than max_depth memory of past buckets '''
+        max_depth = int(get_hubble_status_opt('max_buckets'))
+        n = self._namespaced(n)
         node = self.dat[n]
         bl = node.buckets
-        if len(bl) > MAX_DEPTH:
-            nb = sorted(self.dat[n], key=lambda x: x.bucket)[-3:]
-            for i in range(0,len(nb)-1):
-                nb[i].next = nb[i+1]
-            nb[-1].next = None
-            self.dat[n] = nb[0]
+        if len(bl) > max_depth:
+            nb_list = sorted(node, key=lambda x: x.bucket)[-max_depth:]
+            for idx,nb_node in enumerate(nb_list[:-1]):
+                nb_node.next = nb_list[idx+1]
+            nb_list[-1].next = None
+            self.dat[n] = nb_list[0]
 
     def mark(self, n, t=None):
         ''' mark the named resource `n` — meaning increment the counters, update the last_t, etc
@@ -331,16 +341,6 @@ class HubbleStatus(object):
         r = self.dat[n].mark(t=t)
         self._check_depth(n)
         return r
-
-    def fin(self, n):
-        ''' mark the end of a duration measurement
-
-            NOTE: because the stats are bucketed (for searching purposes), it's important to fin()
-            the right stat object. For this reason, mark() returns a stat object, which is the right one
-            upon which to call fin()
-        '''
-        n = self._checkmark(n)
-        self.dat[n].fin()
 
     @classmethod
     def buckets(cls, n=None):
@@ -461,7 +461,7 @@ class HubbleStatus(object):
         min_t  = min([ x['first_t'] for x in r.values() if x['first_t'] > 0 ])
         h1 = {'time': max_t, 'dt': min_dt, 'start': min_t}
         r['HEALTH'] = h2 = {
-            'buckets': cls.buckets(),
+            'buckets': { k: n.buckets for k,n in cls.dat.iteritems() },
             'last_activity': h1,
         }
         r['__doc__'] = {

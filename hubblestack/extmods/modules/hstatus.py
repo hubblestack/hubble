@@ -28,33 +28,32 @@ def msg_counts(pat=MSG_COUNTS_PAT, reset=True, emit_self=False, sourcetype=SOURC
     pat = re.compile(pat)
     ret = list() # events to return
     to_reset = set()
-    for k,v in hubblestack.status.HubbleStatus.stats().iteritems():
-        try:
-            # if this counter hasn't fired at all, skip it
-            if v['first_t'] == 0 or v['last_t'] == 0:
-                continue
-            # Sometimes the very first loop will give a trivial
-            # 1 second long count of exactly one event. Let's build up at least
-            # a couple counts before we report/reset.
-            if v['last_t'] <= v['first_t'] + 1:
-                continue
-            if v['count'] <= 1:
-                continue
-        except KeyError:
-            continue
-
-        m = pat.match(k)
-        if m:
+    for bucket_set in hubblestack.status.HubbleStatus.short('all'):
+        for k,v in bucket_set.iteritems():
             try:
-                stype = m.groupdict()['stype']
-            except KeyError:
+                # if this counter hasn't fired at all, skip it
+                if v['first_t'] == 0 or v['last_t'] == 0:
+                    continue
+                # here should be at least one count
+                if v['count'] <= 1:
+                    continue
+            except KeyError as e:
                 continue
-            if emit_self or stype != sourcetype:
-                ret.append({ 'stype': stype,
-                    'event_count': v['count'],
-                    'send_session_start': int(v['first_t']),
-                    'send_session_end': int(math.ceil(v['last_t'])) })
-            to_reset.add(k)
+
+            m = pat.match(k)
+            if m:
+                try:
+                    stype = m.groupdict()['stype']
+                except KeyError:
+                    continue
+                if emit_self or stype != sourcetype:
+                    ret.append({ 'stype': stype,
+                        'bucket': v['bucket'],
+                        'bucket_len': v['bucket_len'],
+                        'event_count': v['count'],
+                        'send_session_start': int(v['first_t']),
+                        'send_session_end': int(math.ceil(v['last_t'])) })
+                to_reset.add(k)
 
     if ret:
         if reset:

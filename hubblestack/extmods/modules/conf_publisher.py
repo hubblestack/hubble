@@ -25,6 +25,8 @@ def publish(*args):
     opts_to_log = {}
     if not args:
         opts_to_log = copy.deepcopy(__opts__)
+        if 'grains' in opts_to_log:
+            opts_to_log.pop('grains')
     else:
         for arg in args:
             if arg in  __opts__:
@@ -34,7 +36,7 @@ def publish(*args):
     hubblestack.splunklogging.__salt__ = __salt__
     hubblestack.splunklogging.__opts__ = __opts__
 
-    filtered_conf = filter_config(opts_to_log)
+    filtered_conf = _filter_config(opts_to_log)
 
     class MockRecord(object):
             def __init__(self, message, levelname, asctime, name):
@@ -48,25 +50,17 @@ def publish(*args):
     log.debug('Published config to splunk')
 
 
-def filter_config(opts_to_log):
+def _filter_config(opts_to_log):
     '''
     Filters out keys containing certain patterns to avoid sensitive information being sent to splunk
     '''
-    patterns_to_filter = ["password", "token", "passphrase", "privkey", "keyid"]
-    filtered_conf = remove_sensitive_info(opts_to_log, patterns_to_filter)
-    return filtered_conf
-
-
-def remove_sensitive_info(obj, patterns_to_filter):
-    '''
-    Filter known sensitive info
-    '''
-    if isinstance(obj, dict):
-         obj = {
+    patterns_to_filter = ["password", "token", "passphrase", "privkey", "keyid", "key"]
+    if isinstance(opts_to_log, dict):
+         opts_to_log = {
              key: remove_sensitive_info(value, patterns_to_filter)
-             for key, value in obj.iteritems()
+             for key, value in opts_to_log.iteritems()
              if not any(patt in key for patt in patterns_to_filter)}
-    elif isinstance(obj, list):
-         obj = [remove_sensitive_info(item, patterns_to_filter)
-                    for item in obj]
-    return obj
+    elif isinstance(opts_to_log, list):
+         opts_to_log = [remove_sensitive_info(item, patterns_to_filter)
+                    for item in opts_to_log]
+    return opts_to_log

@@ -121,6 +121,7 @@ def queries(query_group,
                                           f_data,
                                           recursive_update=True,
                                           merge_lists=True)
+    __opts__['nebula_queries'] = query_data
 
     if 'osquerybinpath' not in __grains__:
         if query_group == 'day':

@@ -10,7 +10,7 @@ import time
 log = logging.getLogger(__name__)
 
 
-def publish(*args):
+def publish(report_directly_to_splunk=True, *args):
 
     '''
     Publishes config to splunk at an interval defined in schedule
@@ -25,48 +25,53 @@ def publish(*args):
     opts_to_log = {}
     if not args:
         opts_to_log = copy.deepcopy(__opts__)
+        if 'grains' in opts_to_log:
+            opts_to_log.pop('grains')
     else:
         for arg in args:
             if arg in  __opts__:
                 opts_to_log[arg] = __opts__[arg]
 
-    hubblestack.splunklogging.__grains__ = __grains__
-    hubblestack.splunklogging.__salt__ = __salt__
-    hubblestack.splunklogging.__opts__ = __opts__
+    if report_directly_to_splunk:
+        hubblestack.splunklogging.__grains__ = __grains__
+        hubblestack.splunklogging.__salt__ = __salt__
+        hubblestack.splunklogging.__opts__ = __opts__
 
-    filtered_conf = filter_config(opts_to_log)
+        filtered_conf = _filter_config(opts_to_log)
 
-    class MockRecord(object):
-            def __init__(self, message, levelname, asctime, name):
-                self.message = message
-                self.levelname = levelname
-                self.asctime = asctime
-                self.name = name
+        class MockRecord(object):
+                def __init__(self, message, levelname, asctime, name):
+                    self.message = message
+                    self.levelname = levelname
+                    self.asctime = asctime
+                    self.name = name
 
-    handler = hubblestack.splunklogging.SplunkHandler()
-    handler.emit(MockRecord(filtered_conf, 'INFO', time.asctime(), 'hubblestack.hubble_config'))
-    log.debug('Published config to splunk')
+        handler = hubblestack.splunklogging.SplunkHandler()
+        handler.emit(MockRecord(filtered_conf, 'INFO', time.asctime(), 'hubblestack.hubble_config'))
+        log.debug('Published config to splunk')
 
-
-def filter_config(opts_to_log):
-    '''
-    Filters out keys containing certain patterns to avoid sensitive information being sent to splunk
-    '''
-    patterns_to_filter = ["password", "token", "passphrase", "privkey", "keyid"]
-    filtered_conf = remove_sensitive_info(opts_to_log, patterns_to_filter)
     return filtered_conf
 
 
-def remove_sensitive_info(obj, patterns_to_filter):
+def _filter_config(opts_to_log):
+    '''
+    Filters out keys containing certain patterns to avoid sensitive information being sent to splunk
+    '''
+    patterns_to_filter = ["password", "token", "passphrase", "privkey", "keyid", "s3.key"]
+    filtered_conf = _remove_sensitive_info(opts_to_log, patterns_to_filter)
+    return filtered_conf
+
+
+def _remove_sensitive_info(obj, patterns_to_filter):
     '''
     Filter known sensitive info
     '''
     if isinstance(obj, dict):
          obj = {
-             key: remove_sensitive_info(value, patterns_to_filter)
+             key: _remove_sensitive_info(value, patterns_to_filter)
              for key, value in obj.iteritems()
              if not any(patt in key for patt in patterns_to_filter)}
     elif isinstance(obj, list):
-         obj = [remove_sensitive_info(item, patterns_to_filter)
+         obj = [_remove_sensitive_info(item, patterns_to_filter)
                     for item in obj]
     return obj

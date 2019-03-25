@@ -10,7 +10,7 @@ import time
 log = logging.getLogger(__name__)
 
 
-def publish(*args):
+def publish(report_directly_to_splunk=True, *args):
 
     '''
     Publishes config to splunk at an interval defined in schedule
@@ -32,22 +32,25 @@ def publish(*args):
             if arg in  __opts__:
                 opts_to_log[arg] = __opts__[arg]
 
-    hubblestack.splunklogging.__grains__ = __grains__
-    hubblestack.splunklogging.__salt__ = __salt__
-    hubblestack.splunklogging.__opts__ = __opts__
+    if report_directly_to_splunk:
+        hubblestack.splunklogging.__grains__ = __grains__
+        hubblestack.splunklogging.__salt__ = __salt__
+        hubblestack.splunklogging.__opts__ = __opts__
 
-    filtered_conf = _filter_config(opts_to_log)
+        filtered_conf = _filter_config(opts_to_log)
 
-    class MockRecord(object):
-            def __init__(self, message, levelname, asctime, name):
-                self.message = message
-                self.levelname = levelname
-                self.asctime = asctime
-                self.name = name
+        class MockRecord(object):
+                def __init__(self, message, levelname, asctime, name):
+                    self.message = message
+                    self.levelname = levelname
+                    self.asctime = asctime
+                    self.name = name
 
-    handler = hubblestack.splunklogging.SplunkHandler()
-    handler.emit(MockRecord(filtered_conf, 'INFO', time.asctime(), 'hubblestack.hubble_config'))
-    log.debug('Published config to splunk')
+        handler = hubblestack.splunklogging.SplunkHandler()
+        handler.emit(MockRecord(filtered_conf, 'INFO', time.asctime(), 'hubblestack.hubble_config'))
+        log.debug('Published config to splunk')
+
+    return filtered_conf
 
 
 def _filter_config(opts_to_log):

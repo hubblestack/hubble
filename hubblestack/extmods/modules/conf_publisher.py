@@ -54,13 +54,21 @@ def _filter_config(opts_to_log):
     '''
     Filters out keys containing certain patterns to avoid sensitive information being sent to splunk
     '''
-    patterns_to_filter = ["password", "token", "passphrase", "privkey", "keyid", "key"]
-    if isinstance(opts_to_log, dict):
-         opts_to_log = {
-             key: remove_sensitive_info(value, patterns_to_filter)
-             for key, value in opts_to_log.iteritems()
+    patterns_to_filter = ["password", "token", "passphrase", "privkey", "keyid", "s3.key"]
+    filtered_conf = _remove_sensitive_info(opts_to_log, patterns_to_filter)
+    return filtered_conf
+
+
+def _remove_sensitive_info(obj, patterns_to_filter):
+    '''
+    Filter known sensitive info
+    '''
+    if isinstance(obj, dict):
+         obj = {
+             key: _remove_sensitive_info(value, patterns_to_filter)
+             for key, value in obj.iteritems()
              if not any(patt in key for patt in patterns_to_filter)}
-    elif isinstance(opts_to_log, list):
-         opts_to_log = [remove_sensitive_info(item, patterns_to_filter)
-                    for item in opts_to_log]
-    return opts_to_log
+    elif isinstance(obj, list):
+         obj = [_remove_sensitive_info(item, patterns_to_filter)
+                    for item in obj]
+    return obj

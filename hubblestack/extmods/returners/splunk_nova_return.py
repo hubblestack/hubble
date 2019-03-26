@@ -120,15 +120,16 @@ def returner(ret):
 
             # Get cloud details
             cloud_details = {}
-            if 'cloud_details' in __grains__  and bool(__grains__['cloud_details']) and isinstance(__grains__['cloud_details'], dict):
-                default_cloud_details_fields = ['cloud_account_id', 'cloud_instance_id', 'cloud_type']
-                cloud_details_fields = []
-                try:
-                    cloud_details_fields.append(__opts__.get('cloud_details_fields', default_cloud_details_fields)
-                except TypeError:
-                    pass
+            default_cloud_details_fields = ['cloud_account_id', 'cloud_instance_id', 'cloud_type']
+            cloud_details_fields = __opts__.get('cloud_details_fields', default_cloud_details_fields)
+
+            try:
                 for field in cloud_details_fields:
-                    cloud_details[field] = __grains__['cloud_details'].get(field, None)
+                    value = __grains__['cloud_details'].get(field, None)
+                    if value:
+                        cloud_details[field] = value
+            except Exception:
+                pass
 
             for fai in data.get('Failure', []):
                 check_id = fai.keys()[0]

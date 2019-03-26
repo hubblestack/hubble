@@ -525,18 +525,10 @@ class HubbleStatus(object):
         try:
             if __salt__['config.get']('splunklogging', False):
                 # lazy load to avoid circular import
-                import hubblestack.splunklogging
-                handler = hubblestack.splunklogging.SplunkHandler()
-                class MockRecord(object):
-                    def __init__(self, message, levelname, asctime, name):
-                        self.message = message
-                        self.levelname = levelname
-                        self.asctime = asctime
-                        self.name = name
-                handler.emit(MockRecord('Signal {0} detected'.format(signal.SIGUSR1),
-                                        'INFO',
-                                        time.asctime(),
-                                        'hubblestack.signals'))
+                import hubblestack.log
+                hubblestack.log.emit_to_splunk('Signal {0} detected'.format(signal.SIGUSR1),
+                                               'INFO',
+                                               'hubblestack.signals')
         finally:
             dumpster = get_hubble_status_opt('dumpster') or 'status.json'
             if not dumpster.startswith('/'):

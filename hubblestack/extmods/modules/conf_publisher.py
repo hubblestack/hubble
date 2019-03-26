@@ -3,7 +3,7 @@
 Module to send config options to splunk
 '''
 import logging
-import hubblestack.splunklogging
+import hubblestack.log
 import copy
 import time
 
@@ -32,22 +32,10 @@ def publish(report_directly_to_splunk=True, *args):
             if arg in  __opts__:
                 opts_to_log[arg] = __opts__[arg]
 
+    filtered_conf = _filter_config(opts_to_log)
+
     if report_directly_to_splunk:
-        hubblestack.splunklogging.__grains__ = __grains__
-        hubblestack.splunklogging.__salt__ = __salt__
-        hubblestack.splunklogging.__opts__ = __opts__
-
-        filtered_conf = _filter_config(opts_to_log)
-
-        class MockRecord(object):
-                def __init__(self, message, levelname, asctime, name):
-                    self.message = message
-                    self.levelname = levelname
-                    self.asctime = asctime
-                    self.name = name
-
-        handler = hubblestack.splunklogging.SplunkHandler()
-        handler.emit(MockRecord(filtered_conf, 'INFO', time.asctime(), 'hubblestack.hubble_config'))
+        hubblestack.log.emit_to_splunk(filtered_conf, 'INFO', 'hubblestack.hubble_config')
         log.debug('Published config to splunk')
 
     return filtered_conf

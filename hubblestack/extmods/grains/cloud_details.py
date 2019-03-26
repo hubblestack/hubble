@@ -12,11 +12,14 @@ def get_cloud_details():
 
     aws = _get_aws_details()
     azure = _get_azure_details()
+    gcp = _get_gcp_details()
 
     if aws['cloud_details']:
         grains.update(aws)
     if azure['cloud_details']:
         grains.update(azure)
+    if gcp['cloud_details']:
+        grains.update(gcp)
 
     return grains
 
@@ -66,4 +69,25 @@ def _get_azure_details():
         azure = None
 
     ret['cloud_details'] = azure
+    return ret
+
+def _get_gcp_details():
+    # Gather google compute platform information if present
+    ret = {}
+    gcp = {}
+    gcp['cloud_instance_id'] = None
+    gcp['cloud_account_id'] = None
+    gcp['cloud_type'] = 'gcp'
+    gcp_header = {'Metadata-Flavor': 'Google'}
+    try:
+        gcp['cloud_instance_id'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/id',
+                                                headers=gcp_header, timeout=3).text
+        gcp['cloud_account_id'] = requests.get('http://metadata.google.internal/computeMetadata/v1/project/numeric-project-id',
+                                                headers=gcp_header, timeout=3).text
+
+    except (requests.exceptions.RequestException, ValueError):
+        # Not on gcp box
+        gcp = None
+
+    ret['cloud_details'] = gcp
     return ret

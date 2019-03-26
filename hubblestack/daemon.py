@@ -998,6 +998,13 @@ def clean_up_process(received_signal, frame):
     Log any signals received. If a SIGTERM or SIGINT is received, clean up
     pidfile and anything else that needs to be cleaned up.
     '''
+    if received_signal is None and frame is None:
+        if not __opts__.get('ignore_running', False):
+            if __opts__['daemonize']:
+                if os.path.isfile(__opts__['pidfile']):
+                    os.remove(__opts__['pidfile'])
+        sys.exit(0)
+
     try:
         if __salt__['config.get']('splunklogging', False):
             handler = hubblestack.splunklogging.SplunkHandler()

@@ -51,8 +51,6 @@ hubble_status = HubbleStatus(__name__, 'top', 'queries', 'osqueryd_monitor', 'os
 
 __virtualname__ = 'nebula'
 __RESULT_LOG_OFFSET__ = {}
-__CUSTOM_MASK_KEY__ = 'ENV_VARS_TO_REDACT'
-
 
 def __virtual__():
     return __virtualname__
@@ -746,6 +744,7 @@ def _mask_object(object_to_be_masked, topfile):
                                            # special treatment.
               column: 'environment'  # Column name in the osquery to be masked. No regex or glob support
               custom_mask_column: 'environment'  # Column name which stores environment variables
+              custom_mask_key: '__hubble_mask__' # Env variable to look for constructing custom blacklist of patterns
               attribute_to_check: 'variable_name' # Optional attribute
                                                   # In the inner dict, this is the key
                                                   # to check for blacklisted_patterns
@@ -828,15 +827,15 @@ def _mask_object(object_to_be_masked, topfile):
                                         for column_field in mask_column:
                                             try:
                                                 if 'variable_name' in column_field and 'value' in column_field and \
-                                                        column_field['variable_name'] == __CUSTOM_MASK_KEY__:
+                                                        column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                                                     log.debug("Constructing custom blacklisted patterns based on \
-                                                              environment variable '{0}'".format(__CUSTOM_MASK_KEY__))
+                                                              environment variable '{0}'".format(blacklisted_object['custom_mask_key']))
                                                     blacklisted_object['custom_blacklist'] = [p.strip() for p in
                                                                                               column_field['value'].replace(' ', ',').split(',')
-                                                                                              if p.strip() and p.strip() != __CUSTOM_MASK_KEY__]
+                                                                                              if p.strip() and p.strip() != blacklisted_object['custom_mask_key']]
                                                 else:
                                                     log.debug("Custom mask variable not set in environment. \
-                                                              Custom mask key used: {0}".format(__CUSTOM_MASK_KEY__))
+                                                              Custom mask key used: {0}".format(blacklisted_object['custom_mask_key']))
                                             except Exception as e:
                                                 log.error("Failed to generate custom blacklisted patterns based on hubble mask key")
                                                 log.error("Got error: {0}".format(e))
@@ -874,15 +873,15 @@ def _mask_object(object_to_be_masked, topfile):
                                         for column_field in mask_column:
                                             try:
                                                 if 'variable_name' in column_field and 'value' in column_field and \
-                                                        column_field['variable_name'] == __CUSTOM_MASK_KEY__:
+                                                        column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                                                     log.debug("Constructing custom blacklisted patterns based on \
-                                                              environment variable '{0}'".format(__CUSTOM_MASK_KEY__))
+                                                              environment variable '{0}'".format(blacklisted_object['custom_mask_key']))
                                                     blacklisted_object['custom_blacklist'] = [p.strip() for p in
                                                                                               column_field['value'].replace(' ', ',').split(',')
-                                                                                              if p.strip() and p.strip() != __CUSTOM_MASK_KEY__]
+                                                                                              if p.strip() and p.strip() != blacklisted_object['custom_mask_key']]
                                                 else:
                                                     log.debug("Custom mask variable not set in environment. \
-                                                              Custom mask key used: {0}".format(__CUSTOM_MASK_KEY__))
+                                                              Custom mask key used: {0}".format(blacklisted_object['custom_mask_key']))
                                             except Exception as e:
                                                 log.error("Failed to generate custom blacklisted patterns based on hubble mask key")
                                                 log.error("Got error: {0}".format(e))
@@ -954,15 +953,15 @@ def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object
                     for column_field in mask_column:
                         try:
                             if 'variable_name' in column_field and 'value' in column_field and \
-                                    column_field['variable_name'] == __CUSTOM_MASK_KEY__:
+                                    column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                                 log.debug("Constructing custom blacklisted patterns based on \
-                                          environment variable '{0}'".format(__CUSTOM_MASK_KEY__))
+                                          environment variable '{0}'".format(blacklisted_object['custom_mask_key']))
                                 blacklisted_object['custom_blacklist'] = [p.strip() for p in
                                                                           column_field['value'].replace(' ', ',').split(',')
-                                                                          if p.strip() and p.strip() != __CUSTOM_MASK_KEY__]
+                                                                          if p.strip() and p.strip() != blacklisted_object['custom_mask_key']]
                             else:
                                 log.debug("Custom mask variable not set in environment. \
-                                          Custom mask key used: {0}".format(__CUSTOM_MASK_KEY__))
+                                          Custom mask key used: {0}".format(blacklisted_object['custom_mask_key']))
                         except Exception as e:
                             log.error("Failed to generate custom blacklisted patterns based on hubble mask key")
                             log.error("Got error: {0}".format(e))
@@ -989,15 +988,15 @@ def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object
                 for column_field in mask_column:
                     try:
                         if 'variable_name' in column_field and 'value' in column_field and \
-                                column_field['variable_name'] == __CUSTOM_MASK_KEY__:
+                                column_field['variable_name'] == blacklisted_object['custom_mask_key']:
                             log.debug("Constructing custom blacklisted patterns based on \
-                                      environment variable '{0}'".format(__CUSTOM_MASK_KEY__))
+                                      environment variable '{0}'".format(blacklisted_object['custom_mask_key']))
                             blacklisted_object['custom_blacklist'] = [p.strip() for p in
                                                                       column_field['value'].replace(' ', ',').split(',')
-                                                                      if p.strip() and p.strip() != __CUSTOM_MASK_KEY__]
+                                                                      if p.strip() and p.strip() != blacklisted_object['custom_mask_key']]
                         else:
                             log.debug("Custom mask variable not set in environment. \
-                                          Custom mask key used: {0}".format(__CUSTOM_MASK_KEY__))
+                                          Custom mask key used: {0}".format(blacklisted_object['custom_mask_key']))
                     except Exception as e:
                         log.error("Failed to generate custom blacklisted patterns based on hubble mask key")
                         log.error("Got error: {0}".format(e))
@@ -1044,7 +1043,7 @@ def _perform_masking(object_to_mask, blacklisted_object, mask_with, globbing_ena
     blacklisted_patterns = blacklisted_object['blacklisted_patterns']
     # For now, we will be performing masking based on global list as well as dynamic list present in process's environment variable
     # If there's no noticeable performance impact then we will continue using both else switch to using either global blacklist
-    # or dynamic blacklist as specified by __CUSTOM_MASK_KEY__ in process's environment
+    # or dynamic blacklist as specified by blacklisted_object['custom_mask_key'] in process's environment
     if 'custom_blacklist' in blacklisted_object and blacklisted_object['custom_blacklist']:
         blacklisted_patterns = blacklisted_object['blacklisted_patterns'] + blacklisted_object['custom_blacklist']
         blacklisted_patterns = list(set(blacklisted_patterns)) # remove duplicates, if any

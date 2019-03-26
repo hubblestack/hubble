@@ -29,8 +29,8 @@ import salt.utils.platform
 import salt.utils.jid
 import salt.utils.gitfs
 import salt.utils.path
-import salt.log.setup
 import hubblestack.splunklogging
+import hubblestack.log
 import hubblestack.hec.opt
 import hubblestack.utils.stdrec
 from hubblestack import __version__
@@ -640,11 +640,11 @@ def load_config():
         logging.root.handlers.remove(early_log_handler)
 
     # Setup logging
-    salt.log.setup.setup_console_logger(**console_logging_opts)
-    salt.log.setup.setup_logfile_logger(__opts__['log_file'],
-                                        __opts__['log_level'],
-                                        max_bytes=__opts__.get('logfile_maxbytes', 100000000),
-                                        backup_count=__opts__.get('logfile_backups', 1))
+    hubblestack.log.setup_console_logger(**console_logging_opts)
+    hubblestack.log.setup_file_logger(__opts__['log_file'],
+                                      __opts__['log_level'],
+                                      max_bytes=__opts__.get('logfile_maxbytes', 100000000),
+                                      backup_count=__opts__.get('logfile_backups', 1))
 
     with open(__opts__['log_file'], 'a') as fh:
         pass # ensure the file exists before we set perms on it
@@ -699,25 +699,9 @@ def load_config():
 
     refresh_grains(initial=True)
 
-    # splunk logs below warning, above info by default
-    logging.SPLUNK = int(__opts__.get('splunk_log_level', 25))
-    logging.addLevelName(logging.SPLUNK, 'SPLUNK')
-    def splunk(self, message, *args, **kwargs):
-        if self.isEnabledFor(logging.SPLUNK):
-            self._log(logging.SPLUNK, message, args, **kwargs)
-    logging.Logger.splunk = splunk
     if __salt__['config.get']('splunklogging', False):
-        root_logger = logging.getLogger()
-        handler = hubblestack.splunklogging.SplunkHandler()
-        handler.setLevel(logging.SPLUNK)
-        root_logger.addHandler(handler)
-        class MockRecord(object):
-            def __init__(self, message, levelname, asctime, name):
-                self.message = message
-                self.levelname = levelname
-                self.asctime = asctime
-                self.name = name
-        handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
+        hubblestack.log.setup_splunk_logger()
+        hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
 
 # 600s is a long time to get stuck loading grains and *not* be doing things
 # like nova/pulsar. The SIGALRM will get caught by salt.loader.raw_mod as an
@@ -801,14 +785,7 @@ def refresh_grains(initial=False):
     hubble_status.start_sigusr1_signal_handler()
 
     if not initial and __salt__['config.get']('splunklogging', False):
-        class MockRecord(object):
-            def __init__(self, message, levelname, asctime, name):
-                self.message = message
-                self.levelname = levelname
-                self.asctime = asctime
-                self.name = name
-        handler = hubblestack.splunklogging.SplunkHandler()
-        handler.emit(MockRecord(__grains__, 'INFO', time.asctime(), 'hubblestack.grains_report'))
+        hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
 
 def emit_to_syslog(grains_to_emit):
     '''
@@ -1007,17 +984,9 @@ def clean_up_process(received_signal, frame):
 
     try:
         if __salt__['config.get']('splunklogging', False):
-            handler = hubblestack.splunklogging.SplunkHandler()
-            class MockRecord(object):
-                def __init__(self, message, levelname, asctime, name):
-                    self.message = message
-                    self.levelname = levelname
-                    self.asctime = asctime
-                    self.name = name
-            handler.emit(MockRecord('Signal {0} detected'.format(received_signal),
-                                    'INFO',
-                                    time.asctime(),
-                                    'hubblestack.signals'))
+            hubblestack.log.emit_to_splunk('Signal {0} detected'.format(received_signal),
+                                           'INFO',
+                                           'hubblestack.signals')
     finally:
         if received_signal == signal.SIGINT or received_signal == signal.SIGTERM:
             if not __opts__.get('ignore_running', False):

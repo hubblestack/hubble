@@ -216,5 +216,5 @@ def _generate_and_send_payload(hec,
     except Exception:
         event_time = ''
     finally:
-        log.info("Sending logs to splunk: {0}".format(payload))
+        log.debug("Sending logs to splunk: {0}".format(payload))
         hec.batchEvent(payload, eventtime=event_time)

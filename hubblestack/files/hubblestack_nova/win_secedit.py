@@ -453,9 +453,9 @@ def _reg_value_translator(input_string):
         return '4,1'
     elif input_string == 'classic - local users authenticate as themselves':
         return '4,1'
-    elif input_string == 'rc4_hmac_md5, aes128_hmac_SHA1, aes256_hmac_sha1, future encryption types':
+    elif input_string == 'rc4_hmac_md5, aes128_hmac_sha1, aes256_hmac_sha1, future encryption types':
         return '4,2147483644'
-    elif input_string == 'send ntlmv2 response only. Refuse lm & ntlm':
+    elif input_string == 'send ntlmv2 response only. refuse lm & ntlm':
         return '4,5'
     elif input_string == 'negotiate signing':
         return '4,1'

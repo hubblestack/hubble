@@ -100,7 +100,7 @@ def setup_console_logger(log_level='error',
 
 def setup_file_logger(log_file,
                       log_level='error',
-                      log_format='%(asctime)s,%(msecs)03d [%(name)-17s:%(lineno)-4d][%(levelname)-8s][%(process)d] %(message)s',
+                      log_format='%(asctime)s,%(msecs)03d [%(levelname)][%(name)-17s:%(lineno)-4d] %(message)s',
                       date_format='%Y-%m-%d %H:%M:%S',
                       max_bytes=100000000,
                       backup_count=1):

@@ -88,7 +88,7 @@ def setup_console_logger(log_level='error',
     '''
     rootlogger = logging.getLogger()
 
-    handler = logging.StreamHandler()
+    handler = logging.handlers.StreamHandler()
     handler.setLevel(LOG_LEVELS.get(log_level, logging.ERROR))
 
     formatter = logging.Formatter(log_format, date_format)
@@ -110,7 +110,7 @@ def setup_file_logger(log_file,
     '''
     rootlogger = logging.getLogger()
 
-    handler = logging.RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count)
+    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count)
     handler.setLevel(LOG_LEVELS.get(log_level, logging.ERROR))
 
     formatter = logging.Formatter(log_format, date_format)

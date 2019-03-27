@@ -800,7 +800,7 @@ def _mask_object(object_to_be_masked, topfile):
         log.debug('Masking data: {}'.format(mask))
 
         # Backwards compatibility with mask_by
-        mask_with = mask.get('mask_with', mask.get('mask_by', '******'))
+        mask_with = mask.get('mask_with', mask.get('mask_by', 'REDACTED'))
 
         log.info("Total number of results to check for masking: {0}".format(len(object_to_be_masked)))
         globbing_enabled = __opts__.get('enable_globbing_in_nebula_masking')
@@ -1054,12 +1054,21 @@ def _perform_masking(object_to_mask, blacklisted_object, mask_with, globbing_ena
         # If there's no noticeable performance impact then we will continue using both else switch to using either global blacklist
         # or dynamic blacklist as specified by blacklisted_object['custom_mask_key'] in process's environment
         if 'custom_blacklist' in blacklisted_object and blacklisted_object['custom_blacklist']:
-            blacklisted_patterns = blacklisted_object['blacklisted_patterns'] + blacklisted_object['custom_blacklist']
-            blacklisted_patterns = list(set(blacklisted_patterns)) # remove duplicates, if any
-            log.debug("Appending custom blacklisted patterns in global blacklist for masking")
+            if blacklisted_object.get('blacklisted_patterns', None):
+                blacklisted_patterns = blacklisted_object['blacklisted_patterns'] + blacklisted_object['custom_blacklist']
+                blacklisted_patterns = list(set(blacklisted_patterns)) # remove duplicates, if any
+                log.debug("Appending custom blacklisted patterns in global blacklist for masking")
+            else:
+                blacklisted_patterns = blacklisted_object['custom_blacklist']
+                log.debug("Local blacklist missing, using global blacklist for masking")
+        else:
+            if blacklisted_object.get('blacklisted_patterns', None):
+                blacklisted_patterns = blacklisted_object['blacklisted_patterns']
+                log.debug("No local blacklist found, using global blacklist only for masking")
     elif enable_global_masking is True:
-        blacklisted_patterns = blacklisted_object['blacklisted_patterns']
-        log.debug("Only global masking is enabled.")
+        if blacklisted_object.get('blacklisted_patterns', None):
+            blacklisted_patterns = blacklisted_object['blacklisted_patterns']
+            log.debug("Only global masking is enabled.")
     elif enable_local_masking is True:
         if 'custom_blacklist' in blacklisted_object and blacklisted_object['custom_blacklist']:
             blacklisted_patterns = blacklisted_object['custom_blacklist']

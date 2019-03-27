@@ -629,13 +629,13 @@ def load_config():
     # Console logging is probably the same, but can be different
     console_logging_opts = {
         'log_level': __opts__.get('console_log_level', __opts__['log_level']),
-        'log_format': __opts__.get('console_log_format', '[%(levelname)-8s] %(message)s'),
+        'log_format': __opts__.get('console_log_format', '%(asctime)s [%(levelname)-5s] %(message)s'),
         'date_format': __opts__.get('console_log_date_format', '%H:%M:%S'),
     }
     file_logging_opts = {
         'log_file': __opts__.get('log_file', '/var/log/hubble'),
         'log_level': __opts__['log_level'],
-        'log_format': __opts__.get('log_format', '%(asctime)s,%(msecs)03d [%(levelname)][%(name)-17s:%(lineno)-4d] %(message)s'),
+        'log_format': __opts__.get('log_format', '%(asctime)s,%(msecs)03d [%(levelname)-5s] [%(name)s:%(lineno)d]  %(message)s'),
         'date_format': __opts__.get('log_date_format', '%Y-%m-%d %H:%M:%S'),
         'max_bytes': __opts__.get('logfile_maxbytes', 100000000),
         'backup_count': __opts__.get('logfile_backups', 1),

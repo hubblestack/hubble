@@ -88,7 +88,7 @@ def setup_console_logger(log_level='error',
     '''
     rootlogger = logging.getLogger()
 
-    handler = logging.handlers.StreamHandler()
+    handler = logging.StreamHandler()
     handler.setLevel(LOG_LEVELS.get(log_level, logging.ERROR))
 
     formatter = logging.Formatter(log_format, date_format)

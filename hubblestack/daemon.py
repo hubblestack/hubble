@@ -629,8 +629,16 @@ def load_config():
     # Console logging is probably the same, but can be different
     console_logging_opts = {
         'log_level': __opts__.get('console_log_level', __opts__['log_level']),
-        'log_format': __opts__.get('console_log_format'),
-        'date_format': __opts__.get('console_log_date_format'),
+        'log_format': __opts__.get('console_log_format', '[%(levelname)-8s] %(message)s'),
+        'date_format': __opts__.get('console_log_date_format', '%H:%M:%S'),
+    }
+    file_logging_opts = {
+        'log_file': __opts__.get('log_file', '/var/log/hubble'),
+        'log_level': __opts__['log_level'],
+        'log_format': __opts__.get('log_format', '%(asctime)s,%(msecs)03d [%(levelname)][%(name)-17s:%(lineno)-4d] %(message)s'),
+        'date_format': __opts__.get('log_date_format', '%Y-%m-%d %H:%M:%S'),
+        'max_bytes': __opts__.get('logfile_maxbytes', 100000000),
+        'backup_count': __opts__.get('logfile_backups', 1),
     }
 
     # remove early console logging from the handlers
@@ -639,10 +647,7 @@ def load_config():
 
     # Setup logging
     hubblestack.log.setup_console_logger(**console_logging_opts)
-    hubblestack.log.setup_file_logger(__opts__['log_file'],
-                                      __opts__['log_level'],
-                                      max_bytes=__opts__.get('logfile_maxbytes', 100000000),
-                                      backup_count=__opts__.get('logfile_backups', 1))
+    hubblestack.log.setup_file_logger(**file_logging_opts)
 
     # 384 is 0o600 permissions, written without octal for python 2/3 compat
     os.chmod(__opts__['log_file'], 384)

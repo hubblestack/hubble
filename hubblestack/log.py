@@ -79,6 +79,22 @@ class MockRecord(object):
         self.name = name
 
 
+# Set up an early log handler for use while we're generating config.
+# Will be removed when we set up the console or file logger.
+TEMP_HANDLER = logging.StreamHandler()
+TEMP_HANDLER.setLevel(logging.INFO)
+TEMP_HANDLER.setFormatter( logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s') )
+logging.root.handlers.insert(0, TEMP_HANDLER)
+
+
+def _remove_temp_handler():
+    '''
+    Remove temporary handler if it exists
+    '''
+    if TEMP_HANDLER and TEMP_HANDLER in logging.root.handlers:
+        logging.root.handlers.remove(TEMP_HANDLER)
+
+
 def setup_console_logger(log_level='error',
                          log_format='%(asctime)s [%(levelname)-5s] %(message)s',
                          date_format='%H:%M:%S'):
@@ -86,6 +102,7 @@ def setup_console_logger(log_level='error',
     Sets up logging to STDERR, allowing for configurable level, format, and
     date format.
     '''
+    _remove_temp_handler()
     rootlogger = logging.getLogger()
 
     handler = logging.StreamHandler()
@@ -108,6 +125,7 @@ def setup_file_logger(log_file,
     Sets up logging to a file. By default will auto-rotate those logs every
     100MB and keep one backup.
     '''
+    _remove_temp_handler()
     rootlogger = logging.getLogger()
 
     handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count)
@@ -124,6 +142,7 @@ def setup_splunk_logger():
     '''
     Sets up logging to splunk.
     '''
+    _remove_temp_handler()
     rootlogger = logging.getLogger()
 
     handler = hubblestack.splunklogging.SplunkHandler()

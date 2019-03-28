@@ -50,24 +50,11 @@ __opts__ = {}
 # This should work fine until we go to multiprocessing
 SESSION_UUID = str(uuid.uuid4())
 
-early_log_handler = None
 
 def run():
     '''
     Set up program, daemonize if needed
     '''
-
-    # before running load_config -> salt.config.minion_config -> salt.config.load_config,
-    # salt populates logging handlers with a salt null-handler and a salt store logging handler
-    # if there are errors in the config, it then reports those errors to Null and invokes sys.exit
-    # ...
-    # add a stream logger for now, but remember it so we can ensure its not part of the loggers later
-    global early_log_handler
-    early_log_handler = logging.StreamHandler()
-    early_log_handler.setLevel(logging.INFO)
-    early_log_handler.setFormatter( logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s') )
-    logging.root.handlers.insert(0, early_log_handler)
-
     try:
         load_config()
     except Exception as e:
@@ -642,10 +629,6 @@ def load_config():
         'max_bytes': __opts__.get('logfile_maxbytes', 100000000),
         'backup_count': __opts__.get('logfile_backups', 1),
     }
-
-    # remove early console logging from the handlers
-    if early_log_handler in logging.root.handlers:
-        logging.root.handlers.remove(early_log_handler)
 
     # Setup logging
     hubblestack.log.setup_console_logger(**console_logging_opts)

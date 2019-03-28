@@ -179,12 +179,11 @@ def main():
                                          'hubble_uuid',
                                          'session_uuid',
                                          'machine_id',
-                                         'uuid',
                                          'splunkindex',
-                                         'cloud_instance_id',
-                                         'cloud_account_id',
+                                         'cloud_details',
+                                         'hubble_version',
                                          'localhost',
-                                         'host']
+                                         'fqdn']
                  grains_to_emit = []
                  grains_to_emit.extend(__opts__.get('emit_grains_to_syslog_list', default_grains_to_emit))
                  emit_to_syslog(grains_to_emit)
@@ -818,6 +817,9 @@ def emit_to_syslog(grains_to_emit):
         syslog_list.append('hubble_syslog_message:')
         for grain in grains_to_emit:
             if grain in __grains__:
+                if bool(__grains__[grain]) and isinstance(__grains__[grain], dict):
+                    for key, value in __grains__[grain].iteritems():
+                        syslog_list.append('{0}={1}'.format(key, value))
                 syslog_list.append('{0}={1}'.format(grain, __grains__[grain]))
         syslog_message = ' '.join(syslog_list)
         log.info('Emitting some grains to syslog')

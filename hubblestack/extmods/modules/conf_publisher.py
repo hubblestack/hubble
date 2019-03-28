@@ -58,7 +58,7 @@ def _filter_config(opts_to_log, remove_dots=True):
     if remove_dots:
         for key in opts_to_log.keys():
             if '.' in key:
-                opts[key.replace('.', '_')] = opts.pop(key)
+                opts_to_log[key.replace('.', '_')] = opts_to_log.pop(key)
     filtered_conf = _remove_sensitive_info(opts_to_log, patterns_to_filter)
     return filtered_conf
 

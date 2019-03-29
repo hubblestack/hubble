@@ -165,21 +165,6 @@ class SplunkHandler(logging.Handler):
             hec.flushBatch()
         return True
 
-    def emit_data(self, data):
-        '''
-        Add the given data (in dict format!) to the event template and emit as
-        usual
-        '''
-        for hec, event, payload in self.endpoint_list:
-            event = copy.deepcopy(event)
-            payload = copy.deepcopy(payload)
-            event.update(data)
-            payload['event'] = event
-            # no_queue tells the hec never to queue the data to disk
-            hec.batchEvent(payload, eventtime=time.time(), no_queue=True)
-            hec.flushBatch()
-        return True
-
     def format_record(self, record):
         '''
         Format the log record into a dictionary for easy insertion into a

@@ -42,7 +42,7 @@ import salt.utils.platform
 from hashlib import md5
 from salt.exceptions import CommandExecutionError
 from hubblestack import __version__
-import hubblestack.splunklogging
+import hubblestack.log
 
 log = logging.getLogger(__name__)
 
@@ -226,14 +226,10 @@ def queries(query_group,
         return None
 
     if __salt__['config.get']('splunklogging', False):
-        log.info('Logging osquery timing data to splunk')
-        hubblestack.splunklogging.__grains__ = __grains__
-        hubblestack.splunklogging.__salt__ = __salt__
-        hubblestack.splunklogging.__opts__ = __opts__
-        handler = hubblestack.splunklogging.SplunkHandler()
+        log.debug('Logging osquery timing data to splunk')
         timing_data = {'query_run_length': timing,
                        'schedule_time': schedule_time}
-        handler.emit_data(timing_data)
+        hubblestack.log.emit_to_splunk(timing_data, 'INFO', 'hubblestack.osquery_timing')
 
     if query_group == 'day' and report_version_with_day:
         ret.append(hubble_versions())
@@ -502,12 +498,8 @@ def check_disk_usage(path=None):
 
         if __salt__['config.get']('splunklogging', False):
             log.debug('Logging disk usage stats to splunk')
-            hubblestack.splunklogging.__grains__ = __grains__
-            hubblestack.splunklogging.__salt__ = __salt__
-            hubblestack.splunklogging.__opts__ = __opts__
-            handler = hubblestack.splunklogging.SplunkHandler()
             stats = {'disk_stats': disk_stats, 'schedule_time': time.time()}
-            handler.emit_data(stats)
+            hubblestack.log.emit_to_splunk(stats, 'INFO', 'hubblestack.disk_usage')
 
     return disk_stats
 

@@ -42,6 +42,7 @@ import json
 import time
 import copy
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
+import hubblestack.utils.stdrec
 
 import logging
 
@@ -54,9 +55,6 @@ class SplunkHandler(logging.Handler):
 
         self.opts_list = get_splunk_options()
         self.endpoint_list = []
-
-        # Get cloud details
-        cloud_details = __grains__.get('cloud_details', {})
 
         for opts in self.opts_list:
             custom_fields = opts['custom_fields']
@@ -102,13 +100,7 @@ class SplunkHandler(logging.Handler):
                 fqdn = new_fqdn
 
             event = {}
-            event.update({'master': master})
-            event.update({'minion_id': minion_id})
-            event.update({'dest_host': fqdn})
-            event.update({'dest_ip': fqdn_ip4})
-            event.update({'system_uuid': __grains__.get('system_uuid')})
-
-            event.update(cloud_details)
+            event.update(hubblestack.utils.stdrec.std_info())
 
             for custom_field in custom_fields:
                 custom_field_name = 'custom_' + custom_field

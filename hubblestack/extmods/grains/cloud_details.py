@@ -28,13 +28,21 @@ def _get_aws_details():
     # Gather amazon information if present
     ret = {}
     aws = {}
+    aws_extra = {}
     aws['cloud_instance_id'] = None
     aws['cloud_account_id'] = None
     aws['cloud_type'] = 'aws'
 
     try:
-        aws['cloud_account_id'] = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
-                                               timeout=3).json().get('accountId', 'unknown')
+        res = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
+                            timeout=3).json()
+        aws['cloud_account_id'] = res.get('accountId', 'unknown')
+        aws_extra['cloud_private_ip'] = res.get('privateIp')
+        aws_extra['cloud_instance_type'] = res.get('instanceType')
+        aws_extra['cloud_availability_zone'] = res.get('availabilityZone')
+        aws_extra['cloud_ami_id'] = res.get('imageId')
+        aws_extra['cloud_region'] = res.get('region')
+
         # AWS account id is always an integer number
         # So if it's an aws machine it must be a valid integer number
         # Else it will throw an Exception
@@ -45,8 +53,18 @@ def _get_aws_details():
     except (requests.exceptions.RequestException, ValueError):
         # Not on an AWS box
         aws = None
+    try:
+        aws_extra['cloud_public_hostname'] = requests.get('http://169.254.169.254/latest/meta-data/public-hostname',
+                                                          timeout=3).text
+        aws_extra['cloud_public_ipv4'] = requests.get('http://169.254.169.254/latest/meta-data/public-ipv4',
+                                                      timeout=3).text
+        aws_extra['cloud_private_hostname'] = requests.get('http://169.254.169.254/latest/meta-data/local-hostname',
+                                                           timeout=3).text
+    except (requests.exceptions.RequestException, ValueError):
+        aws_extra = None
 
     ret['cloud_details'] = aws
+    ret['cloud_details_extra'] = aws_extra
     return ret
 
 

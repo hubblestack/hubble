@@ -499,7 +499,7 @@ def check_disk_usage(path=None):
         if __salt__['config.get']('splunklogging', False):
             log.debug('Logging disk usage stats to splunk')
             stats = {'disk_stats': disk_stats, 'schedule_time': time.time()}
-            hubblestack.log.emit_to_splunk(stats, 'INFO', 'hubblestack.osquery_disk_usage')
+            hubblestack.log.emit_to_splunk(stats, 'INFO', 'hubblestack.disk_usage')
 
     return disk_stats
 

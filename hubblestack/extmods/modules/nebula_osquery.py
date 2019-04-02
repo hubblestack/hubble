@@ -602,7 +602,7 @@ def _get_top_data(topfile):
 def _generate_osquery_conf_file(conftopfile):
     '''
     Function to dynamically create osquery configuration file in JSON format.
-    This function would load osquery configuration in YAML format and 
+    This function would load osquery configuration in YAML format and
     make use of topfile to selectively load file(s) based on grains
     '''
 
@@ -650,7 +650,7 @@ def _generate_osquery_conf_file(conftopfile):
 def _generate_osquery_flags_file(flagstopfile):
     '''
     Function to dynamically create osquery flags file.
-    This function would load osquery flags in YAML format and 
+    This function would load osquery flags in YAML format and
     make use of topfile to selectively load file(s) based on grains
     '''
 

@@ -51,6 +51,7 @@ hubble_status = HubbleStatus(__name__, 'top', 'queries', 'osqueryd_monitor', 'os
 
 __virtualname__ = 'nebula'
 __RESULT_LOG_OFFSET__ = {}
+OSQUERYD_NEEDS_RESTART = False
 
 def __virtual__():
     return __virtualname__
@@ -106,7 +107,7 @@ def queries(query_group,
         if 'salt://' in fh:
             orig_fh = fh
             fh = __salt__['cp.cache_file'](fh)
-        if fh is None:
+        if not fh:
             log.error('Could not find file {0}.'.format(orig_fh))
             return None
         if os.path.isfile(fh):
@@ -183,7 +184,14 @@ def queries(query_group,
             'result': True,
         }
 
-        cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
+        extensions_loadfile = __opts__.get('osquery_extensions_loadfile')
+
+        # Run the osqueryi query
+        if extensions_loadfile:
+            cmd = [__grains__['osquerybinpath'], '--extensions_autoload', extensions_loadfile, '--read_max', MAX_FILE_SIZE, '--json', query_sql]
+        else:
+            cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
+
         t0 = time.time()
         res = __salt__['cmd.run_all'](cmd, timeout=10000)
         t1 = time.time()
@@ -623,7 +631,7 @@ def _generate_osquery_conf_file(conftopfile):
         if 'salt://' in fh:
             orig_fh = fh
             fh = __salt__['cp.cache_file'](fh)
-        if fh is None:
+        if not fh:
             log.error('Could not find file {0}.'.format(orig_fh))
             return None
         if os.path.isfile(fh):
@@ -671,7 +679,7 @@ def _generate_osquery_flags_file(flagstopfile):
         if 'salt://' in fh:
             orig_fh = fh
             fh = __salt__['cp.cache_file'](fh)
-        if fh is None:
+        if not fh:
             log.error('Could not find file {0}.'.format(orig_fh))
             return None
         if os.path.isfile(fh):
@@ -778,7 +786,7 @@ def _mask_object(object_to_be_masked, topfile):
             if 'salt://' in fh:
                 orig_fh = fh
                 fh = __salt__['cp.cache_file'](fh)
-            if fh is None:
+            if not fh:
                 log.error('Could not find file {0}.'.format(orig_fh))
                 return None
             if os.path.isfile(fh):
@@ -1212,6 +1220,10 @@ def _osqueryd_restart_required(hashfile, flagfile):
     This function will check whether osqueryd needs to be restarted
     '''
     log.info("checking if osqueryd needs to be restarted or not")
+    if OSQUERYD_NEEDS_RESTART:
+        global OSQUERYD_NEEDS_RESTART
+        OSQUERYD_NEEDS_RESTART = False
+        return True
     try:
         with open(flagfile, "r") as open_file:
             file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
@@ -1471,8 +1483,14 @@ def query(query):
             'Skipping potentially malicious osquery query which contains either \'attach\' or \'curl\': %s', query)
         return None
     query_ret = {'result': True}
+
+    extensions_loadfile = __opts__.get('osquery_extensions_loadfile')
+
     # Run the osqueryi query
-    cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query]
+    if extensions_loadfile:
+        cmd = [__grains__['osquerybinpath'], '--extensions_autoload', extensions_loadfile, '--read_max', MAX_FILE_SIZE, '--json', query]
+    else:
+        cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query]
     res = __salt__['cmd.run_all'](cmd, timeout=10000)
     if res['retcode'] == 0:
         query_ret['data'] = json.loads(res['stdout'])
@@ -1484,3 +1502,125 @@ def query(query):
         query_ret['error'] = res['stderr']
 
     return query_ret
+
+
+def extensions(extensions_topfile=None, extensions_loadfile=None):
+    '''
+    Given a topfile location, parse the topfile and lay down osquery extensions
+    and other files as shown in the targeted profiles.
+
+    The default topfile location is
+    ``salt://hubblestack_nebula_v2/top.extensions``
+
+    You can also specify a custom extensions loadfile for osquery, otherwise
+    the configured path in ``osquery_extensions_loadfile`` will be used.
+
+    If extensions_loadfile is defined, osqueryd will be restarted, if it is
+    found to be running.
+
+    Profile example::
+
+        files:
+            - path: salt://hubblestack_nebula_v2/extensions/test.ext
+              dest: /opt/osquery/extensions/test.ext
+              extension_autoload: True   # optional, defaults to False
+              mode: '600'                # optional, default shown
+              user: root                 # optional, default shown
+              group: root                # optional, default shown
+            - path: salt://hubblestack_nebula_v2/extensions/conf/test.json
+              dest: /opt/osquery/extensions/conf/test.json
+              extension_autoload: False  # optional, defaults to False
+              mode: '600'                # optional, default shown
+              user: root                 # optional, default shown
+              group: root                # optional, default shown
+    '''
+    if salt.utils.is_windows():
+        log.error('Windows is not supported for nebula.extensions')
+        return False
+
+    if extensions_topfile is None:
+        extensions_topfile = 'salt://hubblestack_nebula_v2/top.extensions'
+
+    try:
+        topdata = _get_top_data(extensions_topfile)
+    except Exception as exc:
+        log.info('An error occurred fetching top data for nebula.extensions: {0}'
+                 .format(exc))
+        return False
+
+    if not topdata:
+        return True
+
+    extension_data = {}
+
+    for fh in topdata:
+        if 'salt://' in fh:
+            orig_fh = fh
+            fh = __salt__['cp.cache_file'](fh)
+        if not fh:
+            log.error('Could not find file {0}.'.format(orig_fh))
+            continue
+        if os.path.isfile(fh):
+            with open(fh, 'r') as f:
+                f_data = yaml.safe_load(f)
+                if not isinstance(f_data, dict):
+                    raise CommandExecutionError('File data is not formed as a dict {0}'
+                                                .format(f_data))
+                extension_data = _dict_update(extension_data,
+                                              f_data,
+                                              recursive_update=True,
+                                              merge_lists=True)
+
+    files = extension_data.get('files')
+    if files and isinstance(files, list):
+        if extensions_loadfile is None:
+            extensions_loadfile = __opts__.get('osquery_extensions_loadfile')
+
+        autoload = []
+        for f in files:
+            path = f.get('path')
+            dest = f.get('dest')
+            if not path or not dest:
+                log.error('path or dest missing in files entry: {0}'.format(f))
+                continue
+
+            result = _get_file(**f)
+
+            if result and f.get('extension_autoload', False):
+                autoload.append(dest)
+
+        if extensions_loadfile:
+            try:
+                with open(extensions_loadfile, 'w') as fh:
+                    for extension in autoload:
+                        fh.write(extension)
+                        fh.write('\n')
+            except Exception as exc:
+                log.error('Something went wrong writing osquery extensions.load: {0}'.format(exc))
+
+            # Leave flag to restart osqueryd
+            global OSQUERYD_NEEDS_RESTART
+            OSQUERYD_NEEDS_RESTART = True
+
+
+def _get_file(path, dest, mode='600', user='root', group='root', **kwargs):
+    '''
+    Cache a file from a salt ``path`` to a local ``dest`` with the given
+    attributes.
+    '''
+    try:
+        mode = str(mode)
+        local_path = __salt__['cp.get_file'](path, dest)
+        if not local_path:
+            log.error('Couldn\'t cache file: {0}'.format(path))
+            return False
+        ret = __salt__['file.check_perms'](name=local_path,
+                                           ret=None,
+                                           user=user,
+                                           group=group,
+                                           mode=mode)
+
+        return ret['result']
+    except Exception as exc:
+        log.error('An error occurred getting file {0}: {1}'.format(path, exc))
+        return False

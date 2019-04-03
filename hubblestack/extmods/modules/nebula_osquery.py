@@ -1591,7 +1591,7 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
             dest = f.get('dest')
 
             # Allow for file removals
-            if path and f.get('remove') and os.path.exists(path):
+            if path and f.get('remove') and os.path.exists(dest):
                 try:
                     os.unlink(path)
                 except:

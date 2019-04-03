@@ -1638,7 +1638,7 @@ def _get_file(path, dest, mode='600', user='root', group='root', **kwargs):
                                            group=group,
                                            mode=mode)
 
-        return ret['result']
+        return ret[0]['result']
     except Exception as exc:
         log.error('An error occurred getting file {0}: {1}'.format(path, exc))
         return False

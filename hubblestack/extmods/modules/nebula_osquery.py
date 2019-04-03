@@ -582,6 +582,9 @@ def _get_top_data(topfile):
 
     topfile = __salt__['cp.cache_file'](topfile)
 
+    if not topfile:
+        raise CommandExecutionError('Topfile not found.')
+
     try:
         with open(topfile) as handle:
             topdata = yaml.safe_load(handle)

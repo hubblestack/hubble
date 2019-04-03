@@ -1557,6 +1557,9 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
     if not topdata:
         return True
 
+    topdata = ['salt://hubblestack_nebula_v2/' + config.replace('.', '/') + '.yaml'
+               for config in topdata]
+
     extension_data = {}
 
     for fh in topdata:

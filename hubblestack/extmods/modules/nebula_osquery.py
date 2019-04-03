@@ -1613,7 +1613,7 @@ def _get_file(path, dest, mode='600', user='root', group='root', **kwargs):
     '''
     try:
         mode = str(mode)
-        local_path = __salt__['cp.get_file'](path, dest)
+        local_path = __salt__['cp.get_file'](path, dest, makedirs=True)
         if not local_path:
             log.error('Couldn\'t cache file: {0}'.format(path))
             return False

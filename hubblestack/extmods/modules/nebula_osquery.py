@@ -1521,6 +1521,9 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
     If extensions_loadfile is defined, osqueryd will be restarted, if it is
     found to be running.
 
+    Add ``remove: True`` to a file entry to delete the file. This allows for
+    removing a no-longer-needed extension.
+
     Profile example::
 
         files:
@@ -1583,6 +1586,15 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
         for f in files:
             path = f.get('path')
             dest = f.get('dest')
+
+            # Allow for file removals
+            if path and f.get('remove') and os.path.exists(path):
+                try:
+                    os.unlink(path)
+                except:
+                    pass
+                continue
+
             if not path or not dest:
                 log.error('path or dest missing in files entry: {0}'.format(f))
                 continue

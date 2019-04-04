@@ -32,7 +32,6 @@ import logging
 import re
 import time
 import os
-from os import path
 import yaml
 
 import salt.utils
@@ -411,7 +410,7 @@ def osqueryd_log_parser(osqueryd_logdir=None,
     if not enablediskstatslogging:
         enablediskstatslogging = False
 
-    if path.exists(result_logfile):
+    if os.path.exists(result_logfile):
         result_logfile_offset = _get_file_offset(result_logfile)
         r_event_data = _parse_log(result_logfile,
                                   result_logfile_offset,
@@ -425,7 +424,7 @@ def osqueryd_log_parser(osqueryd_logdir=None,
     else:
         log.warn("Specified osquery result log file doesn't exist: {0}".format(result_logfile))
 
-    if path.exists(snapshot_logfile):
+    if os.path.exists(snapshot_logfile):
         snapshot_logfile_offset = _get_file_offset(snapshot_logfile)
         s_event_data = _parse_log(snapshot_logfile,
                                   snapshot_logfile_offset,
@@ -1339,7 +1338,7 @@ def _parse_log(path_to_logfile,
     event_data = []
     file_offset = offset
     rotateLog = False
-    if path.exists(path_to_logfile):
+    if os.path.exists(path_to_logfile):
         with open(path_to_logfile, "r") as fileDes:
             if fileDes:
                 if os.stat(path_to_logfile).st_size > maxlogfilesizethreshold:
@@ -1417,9 +1416,9 @@ def _perform_log_rotation(path_to_logfile,
     Perform log rotation on specified file and create backup of file under specified backup directory.
     '''
     residue_events = []
-    if path.exists(path_to_logfile):
+    if os.path.exists(path_to_logfile):
         logfilename = os.path.basename(path_to_logfile)
-        if path.exists(backuplogdir):
+        if os.path.exists(backuplogdir):
             listofbackuplogfiles = glob.glob(os.path.normpath(os.path.join(backuplogdir, logfilename)) + "*")
 
             if listofbackuplogfiles:
@@ -1456,7 +1455,7 @@ def _read_residue_logs(path_to_logfile, offset):
     Read any logs that might have been written while creating backup log file
     '''
     event_data = []
-    if path.exists(path_to_logfile):
+    if os.path.exists(path_to_logfile):
         with open(path_to_logfile, "r") as fileDes:
             if fileDes:
                 log.info('Checking for any residue logs that might have been '

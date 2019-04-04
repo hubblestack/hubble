@@ -1592,8 +1592,11 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
             dest = os.path.abspath(dest)
 
             dest_ok = False
-            for whitelisted_path in __opts__.get('osquery_extensions_path_whitelist',
-                                                 ['/opt/osquery/extensions/']):
+            whitelisted_paths = __opts__.get('osquery_extensions_path_whitelist',
+                                             ['/opt/osquery/extensions/'])
+            if not isinstance(whitelisted_paths, list):
+                whitelisted_paths = list(whitelisted_paths)
+            for whitelisted_path in whitelisted_paths:
                 if dest.startswith(whitelisted_path):
                     dest_ok = True
             if not dest_ok:

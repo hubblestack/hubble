@@ -184,13 +184,8 @@ def queries(query_group,
             'result': True,
         }
 
-        extensions_loadfile = __opts__.get('osquery_extensions_loadfile')
-
         # Run the osqueryi query
-        if extensions_loadfile:
-            cmd = [__grains__['osquerybinpath'], '--extensions_autoload', extensions_loadfile, '--read_max', MAX_FILE_SIZE, '--json', query_sql]
-        else:
-            cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
+        cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query_sql]
 
         t0 = time.time()
         res = __salt__['cmd.run_all'](cmd, timeout=10000)
@@ -1487,13 +1482,8 @@ def query(query):
         return None
     query_ret = {'result': True}
 
-    extensions_loadfile = __opts__.get('osquery_extensions_loadfile')
-
     # Run the osqueryi query
-    if extensions_loadfile:
-        cmd = [__grains__['osquerybinpath'], '--extensions_autoload', extensions_loadfile, '--read_max', MAX_FILE_SIZE, '--json', query]
-    else:
-        cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query]
+    cmd = [__grains__['osquerybinpath'], '--read_max', MAX_FILE_SIZE, '--json', query]
     res = __salt__['cmd.run_all'](cmd, timeout=10000)
     if res['retcode'] == 0:
         query_ret['data'] = json.loads(res['stdout'])

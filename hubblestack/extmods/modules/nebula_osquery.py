@@ -1514,6 +1514,17 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
     Add ``remove: True`` to a file entry to delete the file. This allows for
     removing a no-longer-needed extension.
 
+    By default, files can only be written under ``/opt/osquery/extensions`` to
+    prevent accidental or malicious overwriting of system files. To change this
+    whitelist, you can add ``osquery_extensions_path_whitelist`` in your
+    hubble config. Form the configuration as a list of acceptable prefixes for
+    files delivered by this module. Include trailing slashes, as we just use
+    a "startswith" comparison::
+
+        osquery_extensions_path_whitelist:
+            - /opt/osquery/extensions/
+            - /opt/osquery/augeas/
+
     Profile example::
 
         files:
@@ -1579,6 +1590,17 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
         for f in files:
             path = f.get('path')
             dest = f.get('dest')
+            dest = os.path.abspath(dest)
+
+            dest_ok = False
+            for whitelisted_path in __opts__.get('osquery_extensions_path_whitelist',
+                                                 ['/opt/osquery/extensions/']):
+                if dest.startswith(whitelisted_path):
+                    dest_ok = True
+            if not dest_ok:
+                log.error('Skipping file outside of osquery_extensions_path_whitelist: {0}'
+                          .format(dest))
+                continue
 
             # Allow for file removals
             if f.get('remove'):

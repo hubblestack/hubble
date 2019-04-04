@@ -106,7 +106,7 @@ def _merge_yaml(ret, data, profile=None):
     '''
     if 'fdg' not in ret:
         ret['fdg'] = []
-    for key, val in data['fdg'].iteritems():
+    for key, val in data.get('fdg', {}).iteritems():
         if profile and isinstance(val, dict):
             val['nova_profile'] = profile
         ret['fdg'].append({key: val})

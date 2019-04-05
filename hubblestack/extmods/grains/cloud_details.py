@@ -53,15 +53,16 @@ def _get_aws_details():
     except (requests.exceptions.RequestException, ValueError):
         # Not on an AWS box
         aws = None
-    try:
-        aws_extra['cloud_public_hostname'] = requests.get('http://169.254.169.254/latest/meta-data/public-hostname',
+    if aws:
+        try:
+            aws_extra['cloud_public_hostname'] = requests.get('http://169.254.169.254/latest/meta-data/public-hostname',
+                                                              timeout=3).text
+            aws_extra['cloud_public_ipv4'] = requests.get('http://169.254.169.254/latest/meta-data/public-ipv4',
                                                           timeout=3).text
-        aws_extra['cloud_public_ipv4'] = requests.get('http://169.254.169.254/latest/meta-data/public-ipv4',
-                                                      timeout=3).text
-        aws_extra['cloud_private_hostname'] = requests.get('http://169.254.169.254/latest/meta-data/local-hostname',
-                                                           timeout=3).text
-    except (requests.exceptions.RequestException, ValueError):
-        aws_extra = None
+            aws_extra['cloud_private_hostname'] = requests.get('http://169.254.169.254/latest/meta-data/local-hostname',
+                                                               timeout=3).text
+        except (requests.exceptions.RequestException, ValueError):
+            aws_extra = None
 
     ret['cloud_details'] = aws
     ret['cloud_details_extra'] = aws_extra
@@ -106,28 +107,26 @@ def _get_gcp_details():
     except (requests.exceptions.RequestException, ValueError):
         # Not on gcp box
         gcp = None
-    try:
-        gcp_extra['cloud_project_id'] = requests.get('http://metadata.google.internal/computeMetadata/v1/project/project-id',
-                                                     headers=gcp_header, timeout=3).text
-        gcp_extra['cloud_instance_name'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/name',
-                                                        headers=gcp_header, timeout=3).text
-        gcp_extra['cloud_instance_hostname'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/hostname',
-                                                             headers=gcp_header, timeout=3).text
-        gcp_extra['cloud_instance_zone'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/zone',
-                                                        headers=gcp_header, timeout=3).text
-        gcp_extra['cloud_instance_image'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/image',
+    if gcp:
+        try:
+            gcp_extra['cloud_project_id'] = requests.get('http://metadata.google.internal/computeMetadata/v1/project/project-id',
                                                          headers=gcp_header, timeout=3).text
-        gcp_extra['cloud_instance_machine_type'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/machine-type',
+            gcp_extra['cloud_instance_name'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/name',
+                                                            headers=gcp_header, timeout=3).text
+            gcp_extra['cloud_instance_hostname'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/hostname',
                                                                 headers=gcp_header, timeout=3).text
-        gcp_extra['cloud_instance_network_interfaces'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/?recursive=true',
-                                                                      headers=gcp_header, timeout=3).json()
-        gcp_extra['cloud_instance_tags'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/tags?recursive=true',
-                                                        headers=gcp_header, timeout=3).json()
-        gcp_extra['cloud_instance_attributes'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/attributes/?recursive=true',
-                                                              headers=gcp_header, timeout=3).json()
-    except (requests.exceptions.RequestException, ValueError):
-        # Not on gcp box
-        gcp_extra = None
+            gcp_extra['cloud_instance_zone'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/zone',
+                                                            headers=gcp_header, timeout=3).text
+            gcp_extra['cloud_instance_image'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/image',
+                                                             headers=gcp_header, timeout=3).text
+            gcp_extra['cloud_instance_machine_type'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/machine-type',
+                                                                     headers=gcp_header, timeout=3).text
+            gcp_extra['cloud_instance_network_interfaces'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/?recursive=true',
+                                                                          headers=gcp_header, timeout=3).json()
+            gcp_extra['cloud_instance_tags'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/tags?recursive=true',
+                                                            headers=gcp_header, timeout=3).json()
+        except (requests.exceptions.RequestException, ValueError):
+            gcp_extra = None
 
     ret['cloud_details'] = gcp
     ret['cloud_details_extra'] = gcp_extra

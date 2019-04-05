@@ -37,11 +37,6 @@ def _get_aws_details():
         res = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
                             timeout=3).json()
         aws['cloud_account_id'] = res.get('accountId', 'unknown')
-        aws_extra['cloud_private_ip'] = res.get('privateIp')
-        aws_extra['cloud_instance_type'] = res.get('instanceType')
-        aws_extra['cloud_availability_zone'] = res.get('availabilityZone')
-        aws_extra['cloud_ami_id'] = res.get('imageId')
-        aws_extra['cloud_region'] = res.get('region')
 
         # AWS account id is always an integer number
         # So if it's an aws machine it must be a valid integer number
@@ -55,6 +50,11 @@ def _get_aws_details():
         aws = None
     if aws:
         try:
+            aws_extra['cloud_private_ip'] = res.get('privateIp')
+            aws_extra['cloud_instance_type'] = res.get('instanceType')
+            aws_extra['cloud_availability_zone'] = res.get('availabilityZone')
+            aws_extra['cloud_ami_id'] = res.get('imageId')
+            aws_extra['cloud_region'] = res.get('region')
             aws_extra['cloud_public_hostname'] = requests.get('http://169.254.169.254/latest/meta-data/public-hostname',
                                                               timeout=3).text
             aws_extra['cloud_public_ipv4'] = requests.get('http://169.254.169.254/latest/meta-data/public-ipv4',
@@ -73,11 +73,13 @@ def _get_azure_details():
     # Gather azure information if present
     ret = {}
     azure = {}
+    azure_extra = {}
     azure['cloud_instance_id'] = None
     azure['cloud_account_id'] = None
     azure['cloud_type'] = 'azure'
     azureHeader = {'Metadata': 'true'}
     try:
+        # Reminder: rev the api version for access to more details
         id = requests.get('http://169.254.169.254/metadata/instance/compute?api-version=2017-08-01',
                           headers=azureHeader, timeout=3).json()
         azure['cloud_instance_id'] = id['vmId']
@@ -87,7 +89,32 @@ def _get_azure_details():
         # Not on an Azure box
         azure = None
 
+    if azure:
+        try:
+            azure_extra['cloud_resource_group_name'] = id['resourceGroupName']
+            azure_extra['cloud_location'] = id['location']
+            azure_extra['cloud_instance_name'] = id['name']
+            azure_extra['cloud_image_offer'] = id['offer']
+            azure_extra['cloud_os_type'] = id['osType']
+            azure_extra['cloud_image_publisher'] = id['publisher']
+            azure_extra['cloud_instance_tags'] = id['tags']
+            azure_extra['cloud_image_version'] = id['version']
+            azure_extra['cloud_instance_size'] = id['vmSize']
+            interface = requests.get('http://169.254.169.254/metadata/instance/network/interface?api-version=2017-08-01',
+                                     headers=azureHeader, timeout=3).json()
+            for counter, value in enumerate(interface):
+               grain_name_private_ipv4 = "cloud_interface_{0}_private_ipv4".format(counter)
+               azure_extra[grain_name_private_ipv4] = value['ipv4']['ipAddress'][0]['privateIpAddress']
+               grain_name_public_ipv4 = "cloud_interface_{0}_public_ipv4".format(counter)
+               azure_extra[grain_name_public_ipv4] = value['ipv4']['ipAddress'][0]['publicIpAddress']
+               grain_name_mac = "cloud_interface_{0}_mac_address".format(counter)
+               azure_extra[grain_name_mac] = value['macAddress']
+
+        except (requests.exceptions.RequestException, ValueError):
+            azure_extra = None
+
     ret['cloud_details'] = azure
+    ret['cloud_details_extra'] = azure_extra
     return ret
 
 def _get_gcp_details():

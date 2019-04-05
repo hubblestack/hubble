@@ -25,13 +25,14 @@ from __future__ import absolute_import
 
 import collections
 import copy
-import glob
 import fnmatch
+import glob
 import json
 import logging
-import re
-import time
 import os
+import re
+import shutil
+import time
 import yaml
 
 import salt.utils
@@ -1643,11 +1644,12 @@ def _get_file(path, dest, mode='600', user='root', group='root', **kwargs):
     '''
     try:
         mode = str(mode)
-        local_path = __salt__['cp.get_file'](path, dest, makedirs=True)
+        local_path = __salt__['cp.cache_file'](path)
         if not local_path:
             log.error('Couldn\'t cache {0} to {1}. This is probably due to '
                       'an issue finding the file in S3.'.format(path, dest))
             return False
+        shutil.copyfile(local_path, dest)
         ret = __salt__['file.check_perms'](name=local_path,
                                            ret=None,
                                            user=user,

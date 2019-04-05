@@ -1645,7 +1645,8 @@ def _get_file(path, dest, mode='600', user='root', group='root', **kwargs):
         mode = str(mode)
         local_path = __salt__['cp.get_file'](path, dest, makedirs=True)
         if not local_path:
-            log.error('Couldn\'t cache file: {0}'.format(path))
+            log.error('Couldn\'t cache {0} to {1}. This is probably due to '
+                      'an issue finding the file in S3.'.format(path, dest))
             return False
         ret = __salt__['file.check_perms'](name=local_path,
                                            ret=None,

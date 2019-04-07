@@ -182,7 +182,7 @@ def _get_gcp_details():
                 gcp_extra[grain_name_targetips] = ','.join(value['targetInstanceIps'])
 
                 grain_name_accessconfig_external_ips = "cloud_interface_{0}_accessconfigs_external_ips".format(counter)
-                external_ips_list = [ dict['externalIp'] for dict in value['accessConfigs'] if 'externalIp' in dict ]
+                external_ips_list = [ item['externalIp'] for item in value['accessConfigs'] if 'externalIp' in item ]
                 gcp_extra[grain_name_accessconfig_external_ips] = ','.join(external_ips_list)
 
             for key in gcp_extra.keys():

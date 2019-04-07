@@ -61,6 +61,10 @@ def _get_aws_details():
                                                           timeout=3).text
             aws_extra['cloud_private_hostname'] = requests.get('http://169.254.169.254/latest/meta-data/local-hostname',
                                                                timeout=3).text
+            for key in aws_extra.keys():
+                if not aws_extra[key]:
+                    aws_extra.pop(key)
+
         except (requests.exceptions.RequestException, ValueError):
             aws_extra = None
 
@@ -93,22 +97,28 @@ def _get_azure_details():
         try:
             azure_extra['cloud_resource_group_name'] = id['resourceGroupName']
             azure_extra['cloud_location'] = id['location']
-            azure_extra['cloud_instance_name'] = id['name']
+            azure_extra['cloud_name'] = id['name']
             azure_extra['cloud_image_offer'] = id['offer']
             azure_extra['cloud_os_type'] = id['osType']
             azure_extra['cloud_image_publisher'] = id['publisher']
-            azure_extra['cloud_instance_tags'] = id['tags']
+            azure_extra['cloud_tags'] = id['tags']
             azure_extra['cloud_image_version'] = id['version']
-            azure_extra['cloud_instance_size'] = id['vmSize']
-            interface = requests.get('http://169.254.169.254/metadata/instance/network/interface?api-version=2017-08-01',
-                                     headers=azureHeader, timeout=3).json()
-            for counter, value in enumerate(interface):
-               grain_name_private_ipv4 = "cloud_interface_{0}_private_ipv4".format(counter)
-               azure_extra[grain_name_private_ipv4] = value['ipv4']['ipAddress'][0]['privateIpAddress']
-               grain_name_public_ipv4 = "cloud_interface_{0}_public_ipv4".format(counter)
-               azure_extra[grain_name_public_ipv4] = value['ipv4']['ipAddress'][0]['publicIpAddress']
-               grain_name_mac = "cloud_interface_{0}_mac_address".format(counter)
-               azure_extra[grain_name_mac] = value['macAddress']
+            azure_extra['cloud_size'] = id['vmSize']
+            interface_list = requests.get('http://169.254.169.254/metadata/instance/network/interface?api-version=2017-08-01',
+                                          headers=azureHeader, timeout=3).json()
+            for counter, value in enumerate(interface_list):
+                grain_name_private_ipv4 = "cloud_interface_{0}_private_ipv4".format(counter)
+                azure_extra[grain_name_private_ipv4] = value['ipv4']['ipAddress'][0]['privateIpAddress']
+
+                grain_name_public_ipv4 = "cloud_interface_{0}_public_ipv4".format(counter)
+                azure_extra[grain_name_public_ipv4] = value['ipv4']['ipAddress'][0]['publicIpAddress']
+
+                grain_name_mac = "cloud_interface_{0}_mac_address".format(counter)
+                azure_extra[grain_name_mac] = value['macAddress']
+
+            for key in azure_extra.keys():
+                if not azure_extra[key]:
+                    azure_extra.pop(key)
 
         except (requests.exceptions.RequestException, ValueError):
             azure_extra = None
@@ -138,20 +148,47 @@ def _get_gcp_details():
         try:
             gcp_extra['cloud_project_id'] = requests.get('http://metadata.google.internal/computeMetadata/v1/project/project-id',
                                                          headers=gcp_header, timeout=3).text
-            gcp_extra['cloud_instance_name'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/name',
-                                                            headers=gcp_header, timeout=3).text
-            gcp_extra['cloud_instance_hostname'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/hostname',
-                                                                headers=gcp_header, timeout=3).text
-            gcp_extra['cloud_instance_zone'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/zone',
-                                                            headers=gcp_header, timeout=3).text
-            gcp_extra['cloud_instance_image'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/image',
-                                                             headers=gcp_header, timeout=3).text
-            gcp_extra['cloud_instance_machine_type'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/machine-type',
-                                                                     headers=gcp_header, timeout=3).text
-            gcp_extra['cloud_instance_network_interfaces'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/?recursive=true',
-                                                                          headers=gcp_header, timeout=3).json()
-            gcp_extra['cloud_instance_tags'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/tags?recursive=true',
-                                                            headers=gcp_header, timeout=3).json()
+            gcp_extra['cloud_name'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/name',
+                                                   headers=gcp_header, timeout=3).text
+            gcp_extra['cloud_hostname'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/hostname',
+                                                       headers=gcp_header, timeout=3).text
+            gcp_extra['cloud_zone'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/zone',
+                                                   headers=gcp_header, timeout=3).text
+            gcp_extra['cloud_image'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/image',
+                                                    headers=gcp_header, timeout=3).text
+            gcp_extra['cloud_machine_type'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/machine-type',
+                                                           headers=gcp_header, timeout=3).text
+            gcp_extra['cloud_tags'] = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/tags?recursive=true',
+                                                   headers=gcp_header, timeout=3).json()
+            interface_list = requests.get('http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/?recursive=true',
+                                          headers=gcp_header, timeout=3).json()
+            for counter, value in enumerate(interface_list):
+                grain_name_network = "cloud_interface_{0}_network".format(counter)
+                gcp_extra[grain_name_network] = value['network']
+
+                grain_name_ip = "cloud_interface_{0}_ip".format(counter)
+                gcp_extra[grain_name_ip] = value['ip']
+
+                grain_name_subnetmask = "cloud_interface_{0}_subnetmask".format(counter)
+                gcp_extra[grain_name_subnetmask] = value['subnetmask']
+
+                grain_name_mac = "cloud_interface_{0}_mac_address".format(counter)
+                gcp_extra[grain_name_mac] = value['mac']
+
+                grain_name_forwardedips = "cloud_interface_{0}_forwarded_ips".format(counter)
+                gcp_extra[grain_name_forwardedips] = ','.join(value['forwardedIps'])
+
+                grain_name_targetips = "cloud_interface_{0}_target_ips".format(counter)
+                gcp_extra[grain_name_targetips] = ','.join(value['targetInstanceIps'])
+
+                grain_name_accessconfig_external_ips = "cloud_interface_{0}_accessconfigs_external_ips".format(counter)
+                external_ips_list = [ dict['externalIp'] for dict in value['accessConfigs'] if 'externalIp' in dict ]
+                gcp_extra[grain_name_accessconfig_external_ips] = ','.join(external_ips_list)
+
+            for key in gcp_extra.keys():
+                if not gcp_extra[key]:
+                    gcp_extra.pop(key)
+
         except (requests.exceptions.RequestException, ValueError):
             gcp_extra = None
 

@@ -30,6 +30,7 @@ def request(url,
             username=None,
             password=None,
             timeout=9,
+            verify=None,
             chained=None):
     '''
     Given a series of arguments, make a request using ``requests``.
@@ -62,6 +63,9 @@ def request(url,
     timeout
         How long to wait for a request
 
+    verify
+        Path to certfile to use for SSL verification (or False to disable verification)
+
     chained
         Ignored
     '''
@@ -77,6 +81,8 @@ def request(url,
         kwargs['data'] = data
     if username is not None:
         kwargs['auth'] = (username, password)
+    if verify is not None:
+        kwargs['verify'] = verify
     kwargs['timeout'] = int(timeout)
     if function not in ('GET', 'PUT', 'POST'):
         log.error('Invalid request type {0}'.format(function))

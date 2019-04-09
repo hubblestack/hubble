@@ -36,7 +36,7 @@ Data might look something like this::
             unique_id2
 
     unique_id2:
-        module: module_name.function:
+        module: module_name.function
         args:
             - foo
             - bar
@@ -138,7 +138,7 @@ def fdg(fdg_file, starting_chained=None):
     with the fdg_file and the starting_chained value (dumped to a string),
     and the second item being the results::
 
-        ((fdg_file, starting_chained), results
+        ((fdg_file, starting_chained), results)
 
     starting_chained
         Allows you to pass in a starting argument, which will be treated as

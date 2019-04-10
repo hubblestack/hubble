@@ -281,7 +281,7 @@ def _xpipe(chained, chained_status, block_data, block_id, returner=None):
     '''
     ret = []
     for value in chained:
-        ret.append(_fdg_execute(block_id, block_data, chained, chained_status))
+        ret.append(_fdg_execute(block_id, block_data, value, chained_status))
     if returner:
         _return(ret, returner)
     return ret

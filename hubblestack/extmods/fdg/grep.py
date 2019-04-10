@@ -14,7 +14,7 @@ from salt.exceptions import CommandExecutionError
 log = logging.getLogger(__name__)
 
 
-def file(path, pattern, grep_args=None, format_chained=True, chained=None):
+def file(path, pattern, grep_args=None, format_chained=True, chained=None, chained_status=None):
     '''
     Given a target ``path``, call ``grep`` to search for for ``pattern`` in that
     file.
@@ -40,7 +40,7 @@ def file(path, pattern, grep_args=None, format_chained=True, chained=None):
     return status, ret
 
 
-def stdin(pattern, starting_string=None, grep_args=None, format_chained=True, chained=None):
+def stdin(pattern, starting_string=None, grep_args=None, format_chained=True, chained=None, chained_status=None):
     '''
     Given a target string, call ``grep`` to search for for ``pattern`` in that
     string.

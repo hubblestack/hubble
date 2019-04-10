@@ -31,7 +31,8 @@ def request(url,
             password=None,
             timeout=9,
             verify=None,
-            chained=None):
+            chained=None,
+            chained_status=None):
     '''
     Given a series of arguments, make a request using ``requests``.
 

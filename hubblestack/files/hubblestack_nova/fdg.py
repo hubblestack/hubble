@@ -17,6 +17,7 @@ fdg:
         tag: 'CIS-1.1.1'  # audit tag
         starting_chained: 'value'  # value for fdg `starting_chained` (optional)
         true_for_success: True  # Whether a "truthy" value constitues success
+        use_status: False  # Use the status result of the fdg run.
       '*':  # wildcard, will be run if no direct osfinger match
         fdg_file: 'salt://fdg/my_fdg_file.fdg'  # filename for fdg routine
         tag: 'CIS-1.1.1'  # audit tag
@@ -32,6 +33,12 @@ The ``true_for_success`` argument decides how success/failure are decided
 based on the fdg return. By default, any "truthy" value in the ``results`` piece
 of the FDG return will constitute success. Set this option to False to treat
 "falsey" values as success.
+
+The ``use_status`` argument determines whether the status result or the actual
+result returned from fdg will be used. If this is True, only the status result of
+the fdg run will be considered. If it is False, only the actual result of the
+fdg run will be considered. Regardless, the ``true_for_success`` argument
+will be respected.
 '''
 from __future__ import absolute_import
 import logging
@@ -82,18 +89,26 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 fdg_file = tag_data['fdg_file']
                 starting_chained = tag_data.get('starting_chained')
                 true_for_success = tag_data.get('true_for_success', True)
+                use_status = tag_data.get('use_status', False)
 
-                _, fdg_result = __salt__['fdg.fdg'](fdg_file, starting_chained=starting_chained)
+                _, fdg_run = __salt__['fdg.fdg'](fdg_file, starting_chained=starting_chained)
+                fdg_result, fdg_status = fdg_run
 
                 tag_data['fdg_result'] = fdg_result
+                tag_data['fdg_status'] = fdg_status
+
+                if use_status:
+                    check_value = fdg_status
+                else:
+                    check_value = fdg_result
 
                 if true_for_success:
-                    if fdg_result:
+                    if check_value:
                         ret['Success'].append(tag_data)
                     else:
                         ret['Failure'].append(tag_data)
                 else:
-                    if fdg_result:
+                    if check_value:
                         ret['Failure'].append(tag_data)
                     else:
                         ret['Success'].append(tag_data)

@@ -19,7 +19,7 @@ from hubblestack.extmods.fdg.process import encode_base64
 log = logging.getLogger(__name__)
 
 
-def json(path, subkey=None, sep=None, chained=None):
+def json(path, subkey=None, sep=None, chained=None, chained_status=None):
     '''
     Pull data (optionally from a subkey) of a json object in a file at ``path``
 
@@ -75,7 +75,7 @@ def json(path, subkey=None, sep=None, chained=None):
     return True, ret
 
 
-def yaml(path, subkey=None, sep=None, chained=None):
+def yaml(path, subkey=None, sep=None, chained=None, chained_status=None):
     '''
     Pull data (optionally from a subkey) of a yaml object in a file at ``path``
 
@@ -137,7 +137,8 @@ def config(path,
            dictsep=None,
            valsep=None,
            subsep=None,
-           chained=None):
+           chained=None,
+           chained_status=None):
     '''
     This is a fairly specialized function designed to pull data from a file
     with formatting similar to this::
@@ -330,7 +331,7 @@ def _process_line(line, dictsep, valsep, subsep):
     return key, val
 
 
-def readfile_string(path, encode_b64=False, chained=None):
+def readfile_string(path, encode_b64=False, chained=None, chained_status=None):
     '''
     Open the file at ``path``, read its contents and return them as a string.
 

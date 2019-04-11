@@ -13,7 +13,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-def list_processes(chained=None):
+def list_processes(chained=None, chained_status=None):
     '''
     Return a list of processes containing the name of the currently running processes.
 
@@ -70,7 +70,7 @@ def _run_query(query_sql):
     return res
 
 
-def find_process(filter_sql, fields=None, format_chained=True, chained=None):
+def find_process(filter_sql, fields=None, format_chained=True, chained=None, chained_status=None):
     '''
     Return a list of processes matching the filter criteria.
 
@@ -126,7 +126,7 @@ def find_process(filter_sql, fields=None, format_chained=True, chained=None):
     return bool(ret), ret
 
 
-def is_running(filter_sql, format_chained=True, chained=None):
+def is_running(filter_sql, format_chained=True, chained=None, chained_status=None):
     '''
     Check if the process matching the filter is running or not.
     Returns `True` if it is running and `False` otherwise.
@@ -170,7 +170,7 @@ def is_running(filter_sql, format_chained=True, chained=None):
     return True, False
 
 
-def find_children(parent_filter, parent_field=None, returned_fields=None, format_chained=False, chained=None):
+def find_children(parent_filter, parent_field=None, returned_fields=None, format_chained=False, chained=None, chained_status=None):
     '''
     Returns a list of processes (dict with process data) that match the filter criteria.
 

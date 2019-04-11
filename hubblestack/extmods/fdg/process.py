@@ -18,7 +18,7 @@ from salt.exceptions import ArgumentValueError
 log = logging.getLogger(__name__)
 
 
-def filter_dict(starting_dict=None, filter_values=False, update_chained=True, chained=None, **kwargs):
+def filter_dict(starting_dict=None, filter_values=False, update_chained=True, chained=None, chained_status=None, **kwargs):
     '''
     Given a target dictionary, filter it and return the result.
 
@@ -106,7 +106,7 @@ def _compare(comp, val1, val2):
     raise ArgumentValueError
 
 
-def filter_seq(starting_seq=None, extend_chained=True, chained=None, **kwargs):
+def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_status=None, **kwargs):
     '''
     Given a target sequence, filter it and return the result.
 
@@ -177,7 +177,7 @@ def _filter(seq,
     return ret
 
 
-def get_index(index=0, starting_list=None, extend_chained=True, chained=None):
+def get_index(index=0, starting_list=None, extend_chained=True, chained=None, chained_status=None):
     '''
     Given a list list, return the item found at ``index``.
 
@@ -211,7 +211,7 @@ def get_index(index=0, starting_list=None, extend_chained=True, chained=None):
     return status, ret
 
 
-def get_key(key, starting_dict=None, update_chained=True, chained=None):
+def get_key(key, starting_dict=None, update_chained=True, chained=None, chained_status=None):
     '''
     Given a dictionary, return an element by ``key``.
 
@@ -243,7 +243,7 @@ def get_key(key, starting_dict=None, update_chained=True, chained=None):
     return status, ret
 
 
-def join(words=None, sep='', extend_chained=True, chained=None):
+def join(words=None, sep='', extend_chained=True, chained=None, chained_status=None):
     '''
     Given a list of strings, join them into a string, using ``sep`` as delimiter.
 
@@ -274,7 +274,7 @@ def join(words=None, sep='', extend_chained=True, chained=None):
     return status, ret
 
 
-def sort(seq=None, desc=False, lexico=False, extend_chained=True, chained=None):
+def sort(seq=None, desc=False, lexico=False, extend_chained=True, chained=None, chained_status=None):
     '''
     Given a target sequence, sort it and return the sorted result.
 
@@ -330,7 +330,7 @@ def _sort(seq,
     return ret
 
 
-def split(phrase, sep=None, regex=False, format_chained=True, chained=None):
+def split(phrase, sep=None, regex=False, format_chained=True, chained=None, chained_status=None):
     '''
     Given a ``phrase`` string, split it into a list of words by a ``sep`` delimiter.
 
@@ -388,7 +388,7 @@ def _split(phrase,
     return ret
 
 
-def dict_to_list(starting_dict=None, update_chained=True, chained=None):
+def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_status=None):
     '''
     Given a target dictionary, convert it to a list of (key, value) tuples.
 
@@ -412,7 +412,7 @@ def dict_to_list(starting_dict=None, update_chained=True, chained=None):
     return status, ret
 
 
-def dict_convert_none(starting_seq=None, extend_chained=True, chained=None):
+def dict_convert_none(starting_seq=None, extend_chained=True, chained=None, chained_status=None):
     '''
     Given a target sequence, look for dictionary keys that have empty string values and replace them with None
 
@@ -492,7 +492,7 @@ def _seq_convert_none(seq):
     return updated_seq
 
 
-def print_string(starting_string, format_chained=True, chained=None):
+def print_string(starting_string, format_chained=True, chained=None, chained_status=None):
     '''
     Given a string, return it.
 
@@ -516,7 +516,7 @@ def print_string(starting_string, format_chained=True, chained=None):
     return bool(starting_string), starting_string
 
 
-def dict_remove_none(starting_seq=None, extend_chained=True, chained=None):
+def dict_remove_none(starting_seq=None, extend_chained=True, chained=None, chained_status=None):
     '''
     Given a target sequence, look for dictionary keys that have values of None and remove those keys.
 
@@ -593,7 +593,7 @@ def _sterilize_seq(seq):
     return updated_seq
 
 
-def encode_base64(starting_string, format_chained=True, chained=None):
+def encode_base64(starting_string, format_chained=True, chained=None, chained_status=None):
     '''
     Given a string, base64 encode it and return it.
 

@@ -15,7 +15,7 @@ from salt.exceptions import CommandExecutionError
 log = logging.getLogger(__name__)
 
 
-def query(query_sql, osquery_args=None, osquery_path=None, format_chained=True, chained=None):
+def query(query_sql, osquery_args=None, osquery_path=None, format_chained=True, chained=None, chained_status=None):
     '''
     Given an osquery query ``query_sql``, run that query.
 

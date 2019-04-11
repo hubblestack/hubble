@@ -227,7 +227,7 @@ def _fdg_saltify(path):
     return 'salt://fdg/{0}.fdg'.format(path)
 
 
-def _fdg_execute(block_id, block_data, chained=None):
+def _fdg_execute(block_id, block_data, chained=None, chained_status=None):
     '''
     Recursive function which executes a block and any blocks chained by that
     block (by calling itself).
@@ -238,7 +238,7 @@ def _fdg_execute(block_id, block_data, chained=None):
     _check_block(block, block_id)
 
     # Status is used for the conditional chaining keywords
-    status, ret = __fdg__[block['module']](*block.get('args', []), chained=chained, **block.get('kwargs', {}))
+    status, ret = __fdg__[block['module']](*block.get('args', []), chained=chained, chained_status=chained_status, **block.get('kwargs', {}))
 
     log.debug('fdg execution "{0}" returned {1}'.format(block_id, (status, ret)))
 
@@ -249,30 +249,30 @@ def _fdg_execute(block_id, block_data, chained=None):
 
     if 'xpipe_on_true' in block and status:
         log.debug('Piping via chaining keyword xpipe_on_true.')
-        return _xpipe(ret, block_data, block['xpipe_on_true'], returner)
+        return _xpipe(ret, status, block_data, block['xpipe_on_true'], returner)
     elif 'xpipe_on_false' in block and not status:
         log.debug('Piping via chaining keyword xpipe_on_false.')
-        return _xpipe(ret, block_data, block['xpipe_on_false'], returner)
+        return _xpipe(ret, status, block_data, block['xpipe_on_false'], returner)
     elif 'pipe_on_true' in block and status:
         log.debug('Piping via chaining keyword pipe_on_true.')
-        return _pipe(ret, block_data, block['pipe_on_true'], returner)
+        return _pipe(ret, status, block_data, block['pipe_on_true'], returner)
     elif 'pipe_on_false' in block and not status:
         log.debug('Piping via chaining keyword pipe_on_false.')
-        return _pipe(ret, block_data, block['pipe_on_false'], returner)
+        return _pipe(ret, status, block_data, block['pipe_on_false'], returner)
     elif 'xpipe' in block:
         log.debug('Piping via chaining keyword xpipe.')
-        return _xpipe(ret, block_data, block['xpipe'], returner)
+        return _xpipe(ret, status, block_data, block['xpipe'], returner)
     elif 'pipe' in block:
         log.debug('Piping via chaining keyword pipe.')
-        return _pipe(ret, block_data, block['pipe'], returner)
+        return _pipe(ret, status, block_data, block['pipe'], returner)
     else:
         log.debug('No valid chaining keyword matched. Returning.')
         if returner:
-            _return(ret, returner)
-        return ret
+            _return((ret, status), returner)
+        return ret, status
 
 
-def _xpipe(chained, block_data, block_id, returner=None):
+def _xpipe(chained, chained_status, block_data, block_id, returner=None):
     '''
     Iterate over the given value and for each iteration, call the given fdg
     block by id with the iteration value as the passthrough.
@@ -281,18 +281,18 @@ def _xpipe(chained, block_data, block_id, returner=None):
     '''
     ret = []
     for value in chained:
-        ret.append(_fdg_execute(block_id, block_data, chained))
+        ret.append(_fdg_execute(block_id, block_data, value, chained_status))
     if returner:
         _return(ret, returner)
     return ret
 
 
-def _pipe(chained, block_data, block_id, returner=None):
+def _pipe(chained, chained_status, block_data, block_id, returner=None):
     '''
     Call the given fdg block by id with the given value as the passthrough and
     return the result
     '''
-    ret = _fdg_execute(block_id, block_data, chained)
+    ret = _fdg_execute(block_id, block_data, chained, chained_status)
     if returner:
         _return(ret, returner)
     return ret
@@ -318,7 +318,8 @@ def _return(data, returner, returner_retry=None):
                     'jid': salt.utils.jid.gen_jid(__opts__),
                     'fun': 'fdg.fdg',
                     'fun_args': [],
-                    'return': data,
+                    'return': data[0],
+                    'return_status': data[1],
                     'retry': returner_retry}
     __returners__[returner](returner_ret)
 

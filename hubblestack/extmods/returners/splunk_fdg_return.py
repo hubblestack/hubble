@@ -62,7 +62,7 @@ log = logging.getLogger(__name__)
 
 def returner(ret):
     try:
-        opts_list = get_splunk_options( sourcetype_fdg='hubble_fdg',
+        opts_list = get_splunk_options(sourcetype='hubble_fdg', sourcetype_fdg='hubble_fdg',
             add_query_to_sourcetype=True, _nick={'sourcetype_fdg': 'sourcetype'})
 
         for opts in opts_list:
@@ -143,7 +143,8 @@ def returner(ret):
                     for fdg_result in fdg_results:
                         event = {}
                         payload = {}
-                        event.update({'fdg_result': fdg_result})
+                        event.update({'fdg_result': fdg_result[0]})
+                        event.update({'fdg_status': fdg_result[1]})
                         event.update({'fdg_file': fdg_file})
                         event.update({'fdg_starting_chained': starting_chained})
                         event.update({'job_id': jid})

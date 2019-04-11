@@ -27,16 +27,37 @@ def request(url,
             function='GET',
             params=None,
             data=None,
+            headers=None,
             username=None,
             password=None,
             timeout=9,
             verify=None,
-            chained=None):
+            decode_json=True,
+            chained=None,
+            chained_status=None):
     '''
     Given a series of arguments, make a request using ``requests``.
 
     Note that this function doesn't support chained values (they are thrown
     away) due to security concerns.
+
+    Example:
+
+        module: curl.request
+        args:
+            - 'https://urltocurl.tld:8080/uri'
+        kwargs:
+            params:
+                key1: value1
+                key2: value2
+            timeout: 3
+            headers:
+                user-agent: curl
+                Content-Type: application/json
+            username: Administrator
+            password: strong-password
+            verify: False
+            decode_json: False
 
     Returns will be a dict with 'status' (the http status code from the
     request) and 'response' (the parsed json response from the server). The status
@@ -54,6 +75,9 @@ def request(url,
     data
         Payload to include for POST/PUT
 
+    headers
+        A dict of custom headers in the form {"user-agent": "hubble"}
+
     username
         Used for auth
 
@@ -65,6 +89,10 @@ def request(url,
 
     verify
         Path to certfile to use for SSL verification (or False to disable verification)
+
+    decode_json
+        Whether or not to attempt to decode the return value into json. If decoding fails,
+        return the raw response. Defaults to True.
 
     chained
         Ignored
@@ -102,7 +130,13 @@ def request(url,
     # Pull out the pieces we want
     ret = {}
     ret['status'] = r.status_code
-    ret['response'] = r.json()
+    if decode_json:
+        try:
+            ret['response'] = r.json()
+        except ValueError:
+            ret['response'] = r.text
+    else:
+        ret['response'] = r.text
 
     # Status in the return is based on http status
     try:

@@ -583,9 +583,11 @@ def load_config():
     disable_modules.extend([
         'boto3_elasticache',
         'boto3_route53',
+        'boto3_sns',
         'boto_apigateway',
         'boto_asg',
         'boto_cfn',
+        'boto_cloudfront',
         'boto_cloudtrail',
         'boto_cloudwatch_event',
         'boto_cloudwatch',
@@ -606,9 +608,11 @@ def load_config():
         'boto_rds',
         'boto_route53',
         'boto_s3_bucket',
+        'boto_s3',
         'boto_secgroup',
         'boto_sns',
         'boto_sqs',
+        'boto_ssm',
         'boto_vpc',
     ])
     __opts__['disable_modules'] = disable_modules

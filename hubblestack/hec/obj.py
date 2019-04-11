@@ -6,6 +6,7 @@ import time
 import copy
 import os
 import hashlib
+import random
 
 import certifi
 import urllib3
@@ -285,8 +286,18 @@ class HEC(object):
         possible_queue = False
         for server in sorted(servers, key=lambda u: u.fails):
             log.debug('trying to send %d octets to %s', len(data), server.uri)
+            the_uri = server.uri
             try:
-                r = self.pool_manager.request('POST', server.uri, body=data, headers=self.headers)
+                hname = urllib3.util.parse_url(server.uri).host
+                hip   = socket.gethostbyname_ex(hname)[2]
+                if hip:
+                    the_uri = server.uri.replace(hname, random.choice(hip))
+            except socket.gaierror:
+                pass
+            if server.uri != the_uri:
+                log.debug('rewrote %s as %s using random name resolution', server.uri, the_uri)
+            try:
+                r = self.pool_manager.request('POST', the_uri, body=data, headers=self.headers)
                 server.fails = 0
             except urllib3.exceptions.LocationParseError as e:
                 log.error('server uri parse error "%s": %s', server.uri, e)

@@ -722,6 +722,10 @@ def refresh_grains(initial=False):
         for grain in __opts__.get('grains_persist', []):
             if grain in __grains__:
                 persist[grain] = __grains__[grain]
+        # Hardcode these core grains as persisting
+        for grain in ['hubble_version', 'buildinfo']:
+            if grain in __grains__:
+                persist[grain] = __grains__[grain]
 
     if initial:
         __context__ = {}
@@ -732,6 +736,15 @@ def refresh_grains(initial=False):
     __grains__ = salt.loader.grains(__opts__)
     __grains__.update(persist)
     __grains__['session_uuid'] = SESSION_UUID
+
+    # This was a weird one. In older versions of hubble the version and
+    # buildinfo were not persisted automatically which means that if you
+    # installed a new version without restarting hubble, grains refresh could
+    # cause that old daemon to report grains as if it were the new version.
+    # Now if this hubble_marker_3 grain is present you know you can trust the
+    # hubble_version and buildinfo.
+    __grains__['hubble_marker_3'] = True
+
     old_grains.update(__grains__)
     __grains__ = old_grains
 

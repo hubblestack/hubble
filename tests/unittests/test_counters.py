@@ -49,10 +49,6 @@ def test_buckets():
         c += x['x.test1']['count']
     assert c == 100
 
-    hubble_status.reset()
-    b = hubble_status.buckets()
-    assert len(b) == 1
-
 def test_max_depth():
     t0 = 1553102100
     hubblestack.status.__opts__['hubble_status'] = { 'bucket_len': 5, 'max_buckets': 1000 }

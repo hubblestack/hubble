@@ -14,20 +14,18 @@ MSG_COUNTS_PAT = r'hubblestack.hec.obj.input:(?P<stype>[^:]+)'
 def __virtual__():
     return True
 
-def msg_counts(pat=MSG_COUNTS_PAT, reset=True, emit_self=False, sourcetype=SOURCETYPE):
+def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
     ''' returns counter data formatted for the splunk_generic_return returner
 
         params:
             pat        - the key matching algorithm is a simple regular expression
                          (default: hstatus.MSG_COUNTS_PAT)
-            reset      - whether or not to reset the counters returned (default: True)
             emit_self  - whether to emit sourcetype counters (default: False)
             sourcetype - the sourcetype for the accounting messages (default: hstatus.SOURCETYPE)
     '''
 
     pat = re.compile(pat)
     ret = list() # events to return
-    to_reset = set()
     for bucket_set in hubblestack.status.HubbleStatus.short('all'):
         for k,v in bucket_set.iteritems():
             try:
@@ -49,12 +47,7 @@ def msg_counts(pat=MSG_COUNTS_PAT, reset=True, emit_self=False, sourcetype=SOURC
                         'event_count': v['count'],
                         'send_session_start': int(v['first_t']),
                         'send_session_end': int(math.ceil(v['last_t'])) })
-                to_reset.add(k)
-
     if ret:
-        if reset:
-            for k in to_reset:
-                hubblestack.status.HubbleStatus.reset(k)
         return { 'sourcetype': sourcetype, 'events': ret }
 
 def dump():

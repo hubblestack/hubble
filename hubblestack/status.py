@@ -268,14 +268,6 @@ class HubbleStatus(object):
                     yield i
             yield self
 
-        def reset(self):
-            ''' expunge all but the latest bucket '''
-            items = list(self)
-            mb = max(items, key=lambda x: x.bucket)
-            for node in items:
-                node.next = None
-            return mb
-
     def __init__(self, namespace, *resources):
         ''' params:
             * namespace: a namespace for the counters tracked by the instance (usually __name__)
@@ -389,17 +381,6 @@ class HubbleStatus(object):
         if invoke:
             return decorator(invoke)
         return decorator
-
-    @classmethod
-    def reset(cls, key=None):
-        # NOTE: this is janky... allowing resets on arbitrary keys on the
-        # class, not even tracked with _checkmark() ... but it's needed to make
-        # the sourcetype accounting beacon update meaningfully.
-        if key is None:
-            for k,v in cls.dat.iteritems():
-                cls.dat[k] = v.reset()
-        else:
-            cls.dat[key] = cls.dat[key].reset()
 
     @classmethod
     def stats(cls):

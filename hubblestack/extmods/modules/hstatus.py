@@ -31,20 +31,16 @@ def msg_counts(pat=MSG_COUNTS_PAT, reset=True, emit_self=False, sourcetype=SOURC
     for bucket_set in hubblestack.status.HubbleStatus.short('all'):
         for k,v in bucket_set.iteritems():
             try:
-                # if this counter hasn't fired at all, skip it
-                if v['first_t'] == 0 or v['last_t'] == 0:
-                    continue
-                # here should be at least one count
+                # should be at least one count
                 if v['count'] <= 1:
                     continue
             except KeyError as e:
                 continue
-
             m = pat.match(k)
             if m:
                 try:
                     stype = m.groupdict()['stype']
-                except KeyError:
+                except KeyError as e:
                     continue
                 if emit_self or stype != sourcetype:
                     ret.append({ 'stype': stype,

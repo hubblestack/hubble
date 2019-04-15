@@ -339,6 +339,15 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
             return True
         else:
             return False
+    elif 'account_contains' in value:  # Require an account to be present, but not exclusively.
+        if "*S-" not in evaluator:
+            evaluator = _account_audit(evaluator, __sidaccounts__)
+        evaluator_list = evaluator.split(',')
+        current_list = current.split(',')
+        for list_item in evaluator_list:
+            if list_item not in current_list:
+                return False
+        return True
     elif 'contains' in value:
         if type(evaluator) != list:
             evaluator = evaluator.split(',')

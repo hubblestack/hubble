@@ -488,8 +488,7 @@ class HubbleStatus(object):
 
         '''
         if bucket in ('*', 'all'):
-            # NOTE: :-1 so we skip the current bucket
-            return [ cls.short(b) for b in cls.buckets()[:-1] ]
+            return [ cls.short(b) for b in cls.buckets() ]
         return { k: v.asdict(bucket) for k,v in cls.dat.iteritems() if v.first_t > 0 }
 
     @classmethod

@@ -108,6 +108,11 @@ fileserver_backend:
 #      mask_passwords: True
 #    returner: splunk_osqueryd_return
 #    run_on_start: True
+#  nebula_osquery_extensions:
+#    function: nebula.extensions
+#    seconds: 86400
+#    splay: 3600
+#    run_on_start: True
 #  pulsar:
 #    function: pulsar.process
 #    seconds: 1

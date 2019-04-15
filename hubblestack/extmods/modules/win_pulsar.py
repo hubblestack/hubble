@@ -34,7 +34,7 @@ def __virtual__():
     if not salt.utils.platform.is_windows():
         return False, 'This module only works on windows'
     win_version = __grains__['osfullname']
-    if '2012' not in win_version and '2016' not in win_version:
+    if '2008' in win_version or '2003' in win_version:
         return False, 'This module only works with Server 2012 (Win8) or higher'
     return __virtualname__
 

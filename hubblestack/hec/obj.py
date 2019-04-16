@@ -194,6 +194,7 @@ class HEC(object):
         if http_event_collector_ssl_verify:
             pm_kw.update({'cert_reqs': 'CERT_REQUIRED', 'ca_certs': certifi.where()})
         else:
+            pm_kw.update({'cert_reqs': 'CERT_NONE'})
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         if self.proxy:

@@ -59,6 +59,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
         _merge_yaml(__data__, data, profile)
     __data__ = apply_labels(__data__, labels)
     __tags__ = _get_tags(__data__)
+    __is_domain_controller__ = _is_domain_controller()
     if debug:
         log.debug('secedit audit __data__:')
         log.debug(__data__)
@@ -75,6 +76,12 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 name = tag_data['name']
                 audit_type = tag_data['type']
                 output = tag_data['match_output'].lower()
+                run_on_dc = tag_data.get('run_on_dc', True)
+                run_on_member_server = tag_data.get('run_on_member_server', True)
+                if __is_domain_controller__ and not run_on_dc:
+                    continue
+                if not __is_domain_controller__ and not run_on_member_server:
+                    continue
 
                 # Blacklisted audit (do not include)
                 if audit_type == 'blacklist':
@@ -478,3 +485,13 @@ def _reg_value_translator(input_string):
         return '7,'
     else:
         return input_string
+
+
+def _is_domain_controller():
+    ret = __salt__['reg.read_value'](hive="HKLM",
+                                     key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
+                                     vname="ProductType")
+    if ret['vdata'] == "LanmanNT":
+        return True
+    else:
+        return False

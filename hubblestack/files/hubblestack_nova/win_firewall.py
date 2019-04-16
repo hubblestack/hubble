@@ -54,6 +54,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
         _merge_yaml(__data__, data, profile)
     __data__ = apply_labels(__data__, labels)
     __tags__ = _get_tags(__data__)
+    __is_domain_controller__ = _is_domain_controller()
     if __tags__:
         __firewalldata__ = _import_firewall()
     if debug:
@@ -73,6 +74,12 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 audit_type = tag_data['type']
                 match_output = tag_data['match_output'].lower()
                 match_type = tag_data.get('match_type', '=')
+                run_on_dc = tag_data.get('run_on_dc', True)
+                run_on_member_server = tag_data.get('run_on_member_server', True)
+                if __is_domain_controller__ and not run_on_dc:
+                    continue
+                if not __is_domain_controller__ and not run_on_member_server:
+                    continue
 
                 # Blacklisted audit (do not include)
                 if 'blacklist' in audit_type:
@@ -228,3 +235,13 @@ def _translate_value_type(current, value, evaluator, match):
             if int(current) < int(evaluator):
                 return True
     return False
+
+
+def _is_domain_controller():
+    ret = __salt__['reg.read_value'](hive="HKLM",
+                                     key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
+                                     vname="ProductType")
+    if ret['vdata'] == "LanmanNT":
+        return True
+    else:
+        return False

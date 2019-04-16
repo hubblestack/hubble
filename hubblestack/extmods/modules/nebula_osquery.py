@@ -1267,14 +1267,18 @@ def _start_osqueryd(pidfile,
     '''
     log.info("osqueryd is not running, attempting to start osqueryd")
     if salt.utils.platform.is_windows():
-        log.error("requesting service manager to start osqueryD")
+        log.warn("requesting service manager to start osqueryd")
         cmd = ['net', 'start', servicename]
     else:
         cmd = ['/opt/osquery/hubble_osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),
                '--config_path={0}'.format(configfile), '--flagfile={0}'.format(flagfile),
                '--database_path={0}'.format(databasepath), '--daemonize']
-    __salt__['cmd.run'](cmd, timeout=10000)
-    log.info("daemonized the osqueryd")
+    ret_dict = __salt__['cmd.run_all'](cmd, timeout=10000)
+    if ret_dict.get('retcode', None) != 0:
+        log.error("Failed to start osquery daemon. Retcode: {0} and error: {1}".format(ret_dict.get('retcode', None),
+                  ret_dict.get('stderr', None)))
+    else:
+        log.info("Successfully started osqueryd")
 
 
 def _restart_osqueryd(pidfile,
@@ -1299,20 +1303,35 @@ def _restart_osqueryd(pidfile,
         f.write(new_hash)
     if salt.utils.platform.is_windows():
         stop_cmd = ['net', 'stop', servicename]
-        __salt__['cmd.run'](stop_cmd, timeout=10000)
+        ret_stop = __salt__['cmd.run_all'](stop_cmd, timeout=10000)
+        if ret_stop.get('retcode', None) != 0:
+            log.error("Failed to stop osqueryd service. Retcode: {0} and error: {1}".format(ret_stop.get('retcode', None),
+                       ret_stop.get('stderr', None)))
         start_cmd = ['net', 'start', servicename]
-        __salt__['cmd.run'](start_cmd, timeout=10000)
+        ret_start = __salt__['cmd.run_all'](start_cmd, timeout=10000)
+        if ret_start.get('retcode', None) != 0:
+            log.error("Failed to start osqueryd service. Retcode: {0} and error: {1}".format(ret_start.get('retcode', None),
+                       ret_start.get('stderr', None)))
+        else:
+            log.info("Osqueryd service successfully restarted")
     else:
         stop_cmd = ['pkill', 'hubble_osqueryd']
-        __salt__['cmd.run'](stop_cmd, timeout=10000)
+        ret_stop = __salt__['cmd.run_all'](stop_cmd, timeout=10000)
+        if ret_stop.get('retcode', None) != 0:
+            log.error("Failed to stop osqueryd. Retcode: {0} and error: {1}".format(ret_stop.get('retcode', None),
+                       ret_stop.get('stderr', None)))
         remove_pidfile_cmd = ['rm', '-rf', '{0}'.format(pidfile)]
         __salt__['cmd.run'](remove_pidfile_cmd, timeout=10000)
         start_cmd = ['/opt/osquery/hubble_osqueryd', '--pidfile={0}'.format(pidfile),
-                     '--logger_path={0}'.format(logdir), '--config_path={0}.format(configfile)',
+                     '--logger_path={0}'.format(logdir), '--config_path={0}'.format(configfile),
                      '--flagfile={0}'.format(flagfile),
                      '--database_path={0}'.format(databasepath), '--daemonize']
-        __salt__['cmd.run'](start_cmd, timeout=10000)
-    log.info("daemonized the osqueryd")
+        ret_start = __salt__['cmd.run_all'](start_cmd, timeout=10000)
+        if ret_start.get('retcode', None) != 0:
+            log.error("Failed to start osqueryd. Retcode: {0} and error: {1}".format(ret_start.get('retcode', None),
+                       ret_start.get('stderr', None)))
+        else:
+            log.info("Successfully restarted osqueryd")
 
 
 def _parse_log(path_to_logfile,

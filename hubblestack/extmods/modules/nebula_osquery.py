@@ -1267,7 +1267,7 @@ def _start_osqueryd(pidfile,
     '''
     log.info("osqueryd is not running, attempting to start osqueryd")
     if salt.utils.platform.is_windows():
-        log.warn("requesting service manager to start osqueryd")
+        log.info("requesting service manager to start osqueryd")
         cmd = ['net', 'start', servicename]
     else:
         cmd = ['/opt/osquery/hubble_osqueryd', '--pidfile={0}'.format(pidfile), '--logger_path={0}'.format(logdir),

@@ -181,23 +181,10 @@ def main():
             sf_count = schedule()
             if sf_count > 0:
                 log.debug('Executed %d schedule item(s)', sf_count)
-                workaround_salt_log_handler_queues()
+                hubblestack.log.workaround_salt_log_handler_queues()
         except Exception as e:
             log.exception('Error executing schedule')
         time.sleep(__opts__.get('scheduler_sleep_frequency', 0.5))
-
-def workaround_salt_log_handler_queues():
-    class _FakeLogHandler(object):
-        level = 10
-        count = 0
-        def handle(self, record):
-            self.count += 1
-    flh = _FakeLogHandler()
-    import salt.log.setup as sls
-    sls.LOGGING_STORE_HANDLER.sync_with_handlers([flh])
-    sls.LOGGING_NULL_HANDLER.sync_with_handlers([flh])
-    if flh.count > 0:
-        log.info("pretended to handle %d logging record(s) for salt.log.setup.LOGGING_*_HANDLER", flh.count)
 
 def getsecondsbycronexpression(base, cron_exp):
     '''

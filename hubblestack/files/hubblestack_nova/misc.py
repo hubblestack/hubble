@@ -1021,6 +1021,12 @@ def _is_int(input):
         return False
     return True
 
+def check_sshd_parameters(*args, **kwargs):
+    '''
+    Fix spelling while also retaining backwards comparability
+    '''
+    return check_sshd_paramters(*args, **kwargs)
+
 def check_sshd_paramters(pattern, values=None, comparetype='regex'):
     '''
     This function will check if any pattern passed is present in ssh service
@@ -1137,4 +1143,5 @@ FUNCTION_MAP = {
     'check_if_any_pkg_installed': check_if_any_pkg_installed,
     'ensure_max_password_expiration': ensure_max_password_expiration,
     'check_sshd_paramters': check_sshd_paramters,
+    'check_sshd_parameters': check_sshd_parameters,
 }

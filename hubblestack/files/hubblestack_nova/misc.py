@@ -1023,7 +1023,7 @@ def _is_int(input):
 
 def check_sshd_parameters(*args, **kwargs):
     '''
-    Fix spelling while also retaining backwards comparability
+    Fix spelling while also retaining backwards compatibility
     '''
     return check_sshd_paramters(*args, **kwargs)
 

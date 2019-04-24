@@ -62,6 +62,8 @@ def returner(retdata):
         idx = opts.get('index')
 
         for event in events:
+            event.update({'timezone': __grains__['timezone']})
+            event.update({'timezone_hours_offset': __grains__['timezone_hours_offset']})
             payload = {
                 'host': __grains__.get('fqdn', __grains__.get('id')),
                 'event': event,

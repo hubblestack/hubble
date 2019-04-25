@@ -45,6 +45,8 @@ def std_info():
         'dest_ip': fqdn_ip4,
         'dest_fqdn': local_fqdn,
         'system_uuid': __grains__.get('system_uuid'),
+        'timezone': __grains__.get('timezone'),
+        'timezone_hours_offset': __grains.get('timeonze_hours_offset')
     }
 
     ret.update(__grains__.get('cloud_details', {}))

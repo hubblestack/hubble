@@ -12,7 +12,7 @@ def timezone():
     Generate the timezone code name of the host
     '''
 
-    return {'timezone': time.strftime('%Z')}
+    return {'timezone_short': time.strftime('%Z')}
 
 
 def hours_offset():

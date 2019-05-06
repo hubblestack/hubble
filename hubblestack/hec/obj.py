@@ -110,6 +110,7 @@ class Payload(object):
 class HEC(object):
     flushing_queue = False
     last_flush = 0
+    direct_logging = False
 
     class Server(object):
         bad = False
@@ -224,8 +225,10 @@ class HEC(object):
         self._send(self._payload_msg(message, *a))
 
     def _queue_event(self, payload):
-        if self.queue.cn < 1:
+        if self.queue.cn < 1 and not self.direct_logging:
+            self.direct_logging = True
             self._direct_send_msg('queue(start)')
+            self.direct_logging = False
         p = str(payload)
         log.info('queueing %d octets to disk', len(p))
         try:

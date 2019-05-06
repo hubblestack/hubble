@@ -228,7 +228,7 @@ class HEC(object):
             self._direct_send_msg('queue(start)')
         p = str(payload)
         # should be at info level; error for production logging:
-        log.error('queueing %d octets to disk', len(p))
+        log.error('Sending to Splunk failed, queueing %d octets to disk', len(p))
         try:
             self.queue.put(p)
         except QueueCapacityError:

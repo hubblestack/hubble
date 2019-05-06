@@ -227,11 +227,13 @@ class HEC(object):
         if self.queue.cn < 1:
             self._direct_send_msg('queue(start)')
         p = str(payload)
-        log.info('queueing %d octets to disk', len(p))
+        # should be at info level; error for production logging:
+        log.error('queueing %d octets to disk', len(p))
         try:
             self.queue.put(p)
         except QueueCapacityError:
-            log.info("disk queue is full, dropping payload")
+            # was at info level, but this is an error condition worth logging
+            log.error("disk queue is full, dropping payload")
 
 
     def queueEvent(self, dat, eventtime=''):
@@ -252,7 +254,9 @@ class HEC(object):
         self._direct_send_msg('queue(flush) eventscount=%d', self.queue.cn)
         dt = time.time() - self.last_flush
         if dt >= self.retry_diskqueue_interval and self.queue.cn:
-            log.debug('flushing queue eventscount=%d', self.queue.cn)
+            # was at debug level. bumped to error level for production logging
+            log.error('flushing queue eventscount=%d; NOTE: queued events may contain more than one payload/event',
+                self.queue.cn)
         self.last_flush = time.time()
         self.flushing_queue = True
         while self.flushing_queue:
@@ -263,6 +267,7 @@ class HEC(object):
         self.flushing_queue = False
         if self.queue.cn < 1:
             self._direct_send_msg('queue(end)')
+            log.error('flushing complete eventscount=%d', self.queue.cn)
 
 
     def _send(self, *payload):

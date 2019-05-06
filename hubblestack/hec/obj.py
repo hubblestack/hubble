@@ -89,7 +89,23 @@ class Payload(object):
         self.sourcetype = dat.get('sourcetype', 'hubble')
         self.time       = dat.get('time', now)
 
-        self.dat = json.dumps(dat)
+        out_str = json.dumps(dat)
+        if len(out_str) > 5000:
+            move_to_bottom = []
+            for k, v in dat['event'].iteritems():
+                try:
+                    if len(json.dumps(v)) > 500:
+                        move_to_bottom.append(k)
+                except Exception:
+                    pass
+
+            for x in move_to_bottom:
+                dat['event']['zzzzzzzzzzzzzzzzzz_%s' % x] = dat['event'].pop(x)
+
+            out_str = json.dumps(dat, sort_keys=True)
+            out_str = out_str.replace('zzzzzzzzzzzzzzzzzz_', '')
+
+        self.dat = out_str
 
     def __repr__(self):
         return 'Payload({0})'.format(self)

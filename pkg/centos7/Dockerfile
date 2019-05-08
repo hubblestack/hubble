@@ -181,7 +181,6 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --url ${HUBBLE_URL} \
        --description \"${HUBBLE_DESCRIPTION}\" \
        --rpm-summary \"${HUBBLE_SUMMARY}\" \
-       --config-files /etc/hubble/hubble \
        --after-install /hubble_build/conf/afterinstall-systemd.sh \
        --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \

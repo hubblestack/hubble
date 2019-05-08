@@ -201,7 +201,6 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        -v ${HUBBLE_VERSION} \
        --iteration ${HUBBLE_ITERATION} \
        --url ${HUBBLE_URL} \
-       --config-files /etc/hubble/hubble \
        --deb-no-default-config-files \
        --after-install /hubble_build/conf/afterinstall-systemd.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \

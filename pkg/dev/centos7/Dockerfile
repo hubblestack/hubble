@@ -185,7 +185,7 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --after-install /hubble_build/conf/afterinstall-systemd.sh \
        --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
-       etc/hubble opt usr \
+       etc/hubble opt usr /var/log/hubble_osquery/backuplogs \
 #edit to change iteration number, if necessary
     && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm \
     && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm \

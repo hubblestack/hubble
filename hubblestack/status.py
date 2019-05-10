@@ -40,6 +40,10 @@ import os
 
 log = logging.getLogger(__name__)
 
+# This global is used by the extmods/modules/hstatus to persist last send time
+# info. Best not to fiddle with it outside of that module.
+last_send_time = 0
+
 DEFAULTS = {
     'dumpster': 'status.json', # '/var/cache/hubble/status.json',
     'hung_time':   900,

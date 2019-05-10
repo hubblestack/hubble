@@ -29,6 +29,7 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
     # (assuming hubble_log is reporting in and the logs are above the logging
     # level)
 
+    now = int(time.time())
     pat = re.compile(pat)
     ret = list() # events to return
     for bucket_set in hubblestack.status.HubbleStatus.short('all'):
@@ -36,9 +37,6 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
             try:
                 # should be at least one count
                 if v['count'] < 1:
-                    continue
-                # skip records we probably already sent
-                if v['last_t'] < hubblestack.status.last_send_time:
                     continue
             except KeyError as e:
                 continue
@@ -49,15 +47,18 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
                 except KeyError as e:
                     continue
                 if emit_self or stype != sourcetype:
+                    rep = hubblestack.status.HubbleStatus.get_reported(k, v['bucket'])
+                    if isinstance(rep, list):
+                        rep.append(now)
                     ret.append({ 'stype': stype,
                         'bucket': v['bucket'],
                         'bucket_len': v['bucket_len'],
+                        'reported': rep,
                         'event_count': v['count'],
                         'send_session_start': int(v['first_t']),
                         'send_session_end': int(math.ceil(v['last_t'])) })
     if ret:
-        hubblestack.status.last_send_time = time.time()
-        return { 'sourcetype': sourcetype, 'events': ret }
+        return { 'time': now, 'sourcetype': sourcetype, 'events': ret }
 
 def dump():
     ''' trigger a dump to the status.json file as described in hubblestack.status

@@ -40,10 +40,6 @@ import os
 
 log = logging.getLogger(__name__)
 
-# This global is used by the extmods/modules/hstatus to persist last send time
-# info. Best not to fiddle with it outside of that module.
-last_send_time = 0
-
 DEFAULTS = {
     'dumpster': 'status.json', # '/var/cache/hubble/status.json',
     'hung_time':   900,
@@ -187,6 +183,9 @@ class HubbleStatus(object):
             self.ema_dt = None
             self.dur = None
             self.ema_dur = None
+            # reported is used exclusively by extmods/modules/hstatus
+            # cleared on every mark()
+            self.reported = list()
 
         def get_bucket(self, bucket, no_append=False):
             bucket, _ = t_bucket(t=bucket)
@@ -254,6 +253,7 @@ class HubbleStatus(object):
             dt = self.dt
             self.last_t = t
             self.ema_dt = dt if self.ema_dt is None else 0.5*self.ema_dt + 0.5*dt
+            self.reported = list()
             return self
 
         def fin(self):
@@ -337,6 +337,12 @@ class HubbleStatus(object):
         r = self.dat[n].mark(t=t)
         self._check_depth(n)
         return r
+
+    @classmethod
+    def get_reported(cls, n, bucket):
+        b = cls.dat[n].find_bucket(bucket)
+        if b:
+            return b.reported
 
     @classmethod
     def buckets(cls, n=None):

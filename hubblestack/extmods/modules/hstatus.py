@@ -48,15 +48,24 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
                     continue
                 if emit_self or stype != sourcetype:
                     rep = hubblestack.status.HubbleStatus.get_reported(k, v['bucket'])
+                    skip = False
                     if isinstance(rep, list):
-                        rep.append(now)
-                    ret.append({ 'stype': stype,
-                        'bucket': v['bucket'],
-                        'bucket_len': v['bucket_len'],
-                        'reported': rep,
-                        'event_count': v['count'],
-                        'send_session_start': int(v['first_t']),
-                        'send_session_end': int(math.ceil(v['last_t'])) })
+                        if len(rep) < 4:
+                            rep.append(now)
+                        else:
+                            skip = True
+                    else:
+                        # This is just in case the bucket can't be found
+                        # it should otherwise always be populated as a list
+                        rep = "unknown reported format: " + repr(rep)
+                    if not skip:
+                        ret.append({ 'stype': stype,
+                            'bucket': v['bucket'],
+                            'bucket_len': v['bucket_len'],
+                            'reported': rep,
+                            'event_count': v['count'],
+                            'send_session_start': int(v['first_t']),
+                            'send_session_end': int(math.ceil(v['last_t'])) })
     if ret:
         return { 'time': now, 'sourcetype': sourcetype, 'events': ret }
 

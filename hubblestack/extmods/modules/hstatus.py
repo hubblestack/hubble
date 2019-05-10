@@ -11,7 +11,6 @@ __virtualname__ = 'hstatus'
 
 SOURCETYPE = 'hubble_hec_summary'
 MSG_COUNTS_PAT = r'hubblestack.hec.obj.input:(?P<stype>[^:]+)'
-_last_send_time = 0 # track the last time we sent something
 
 def __virtual__():
     return True
@@ -39,7 +38,7 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
                 if v['count'] < 1:
                     continue
                 # skip records we probably already sent
-                if v['last_t'] < _last_send_time:
+                if v['last_t'] < hubblestack.status.last_send_time:
                     continue
             except KeyError as e:
                 continue
@@ -57,8 +56,7 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
                         'send_session_start': int(v['first_t']),
                         'send_session_end': int(math.ceil(v['last_t'])) })
     if ret:
-        global _last_send_time
-        _last_send_time = time.time()
+        hubblestack.status.last_send_time = time.time()
         return { 'sourcetype': sourcetype, 'events': ret }
 
 def dump():

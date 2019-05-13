@@ -317,7 +317,8 @@ class HEC(object):
                 server.bad = True
                 continue
             except Exception as e:
-                log.error('presumed minor error with "%s" (mark fail and continue): %s', server.uri, e)
+                log.error('presumed minor error with "%s" (mark fail and continue): %s',
+                    server.uri, repr(e), exc_info=True)
                 possible_queue = True
                 server.fails += 1
                 continue

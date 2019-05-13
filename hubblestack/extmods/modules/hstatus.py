@@ -29,6 +29,8 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
     # (assuming hubble_log is reporting in and the logs are above the logging
     # level)
 
+    summary_repeat = __opts__.get('hubble_status', {}).get('summary_repeat', 4)
+
     now = int(time.time())
     pat = re.compile(pat)
     ret = list() # events to return
@@ -50,7 +52,7 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
                     rep = hubblestack.status.HubbleStatus.get_reported(k, v['bucket'])
                     skip = False
                     if isinstance(rep, list):
-                        if len(rep) < 4:
+                        if len(rep) < summary_repeat:
                             rep.append(now)
                         else:
                             skip = True

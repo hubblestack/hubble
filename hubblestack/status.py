@@ -183,6 +183,9 @@ class HubbleStatus(object):
             self.ema_dt = None
             self.dur = None
             self.ema_dur = None
+            # reported is used exclusively by extmods/modules/hstatus
+            # cleared on every mark()
+            self.reported = list()
 
         def get_bucket(self, bucket, no_append=False):
             bucket, _ = t_bucket(t=bucket)
@@ -250,6 +253,7 @@ class HubbleStatus(object):
             dt = self.dt
             self.last_t = t
             self.ema_dt = dt if self.ema_dt is None else 0.5*self.ema_dt + 0.5*dt
+            self.reported = list()
             return self
 
         def fin(self):
@@ -333,6 +337,12 @@ class HubbleStatus(object):
         r = self.dat[n].mark(t=t)
         self._check_depth(n)
         return r
+
+    @classmethod
+    def get_reported(cls, n, bucket):
+        b = cls.dat[n].find_bucket(bucket)
+        if b:
+            return b.reported
 
     @classmethod
     def buckets(cls, n=None):

@@ -11,7 +11,6 @@ __virtualname__ = 'hstatus'
 
 SOURCETYPE = 'hubble_hec_summary'
 MSG_COUNTS_PAT = r'hubblestack.hec.obj.input:(?P<stype>[^:]+)'
-_last_send_time = 0 # track the last time we sent something
 
 def __virtual__():
     return True
@@ -30,6 +29,9 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
     # (assuming hubble_log is reporting in and the logs are above the logging
     # level)
 
+    summary_repeat = __opts__.get('hubble_status', {}).get('summary_repeat', 4)
+
+    now = int(time.time())
     pat = re.compile(pat)
     ret = list() # events to return
     for bucket_set in hubblestack.status.HubbleStatus.short('all'):
@@ -37,9 +39,6 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
             try:
                 # should be at least one count
                 if v['count'] < 1:
-                    continue
-                # skip records we probably already sent
-                if v['last_t'] < _last_send_time:
                     continue
             except KeyError as e:
                 continue
@@ -50,16 +49,27 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
                 except KeyError as e:
                     continue
                 if emit_self or stype != sourcetype:
-                    ret.append({ 'stype': stype,
-                        'bucket': v['bucket'],
-                        'bucket_len': v['bucket_len'],
-                        'event_count': v['count'],
-                        'send_session_start': int(v['first_t']),
-                        'send_session_end': int(math.ceil(v['last_t'])) })
+                    rep = hubblestack.status.HubbleStatus.get_reported(k, v['bucket'])
+                    skip = False
+                    if isinstance(rep, list):
+                        if len(rep) < summary_repeat:
+                            rep.append(now)
+                        else:
+                            skip = True
+                    else:
+                        # This is just in case the bucket can't be found
+                        # it should otherwise always be populated as a list
+                        rep = "unknown reported format: " + repr(rep)
+                    if not skip:
+                        ret.append({ 'stype': stype,
+                            'bucket': v['bucket'],
+                            'bucket_len': v['bucket_len'],
+                            'reported': rep,
+                            'event_count': v['count'],
+                            'send_session_start': int(v['first_t']),
+                            'send_session_end': int(math.ceil(v['last_t'])) })
     if ret:
-        global _last_send_time
-        _last_send_time = time.time()
-        return { 'sourcetype': sourcetype, 'events': ret }
+        return { 'time': now, 'sourcetype': sourcetype, 'events': ret }
 
 def dump():
     ''' trigger a dump to the status.json file as described in hubblestack.status

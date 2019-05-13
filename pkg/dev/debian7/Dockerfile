@@ -12,7 +12,7 @@ RUN apt-get update     \
  && apt-get -y upgrade
 
 #paths that hubble or hubble parts need in the package
-RUN mkdir -p /etc/osquery /var/log/osquery /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/osquery
+RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
 
 #patchelf build start
 #must precede osquery as at the moment, osquery won't build without patchelf
@@ -169,6 +169,7 @@ ARG HUBBLE_CHECKOUT=develop
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_VERSION=3.0.0-develop
 ENV HUBBLE_ITERATION=1
+ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
@@ -186,8 +187,6 @@ WORKDIR /hubble_build
 ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
 CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubblestack/__init__.py ; cat /data/hubble_buildinfo >> /hubble_build/hubblestack/__init__.py; fi \
     && pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py \
-    && cp /hubble_build/conf/osquery.conf /etc/osquery/ \
-    && cp /hubble_build/conf/osquery.flags /etc/osquery/ \
     && mkdir -p /var/log/hubble_osquery/backuplogs \
 # hubble default configuration file
     && cp -rf /hubble_build/conf/hubble /etc/hubble/ \
@@ -199,13 +198,13 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
     # hack to get libssh2 since pyinstaller 3.2 does not do it
     && cp /usr/lib/x86_64-linux-gnu/libssh2.so.1 /opt/hubble/hubble-libs \
 #debian pkg start
-    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /etc/osquery /opt/hubble /opt/osquery /var/log/osquery /etc/profile.d/hubble-profile.sh /var/log/hubble_osquery/backuplogs\
+    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /opt/hubble /opt/osquery /etc/profile.d/hubble-profile.sh /var/log/hubble_osquery/backuplogs\
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/cron.d \
+    && if [ -f /data/hubble-autostart ] ; then mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/cron.d ; fi \
     && cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/ \
-    && cp /hubble_build/pkg/hubble-autostart /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/cron.d/ \
+    && if [ -f /data/hubble-autostart ] ; then cp /hubble_build/pkg/hubble-autostart /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/cron.d/ ; fi \
     && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
 #during container run, if a configuration file exists in a /data copy it over the existing one so it would be
 #possile to optionally include a custom one with the package
@@ -221,12 +220,12 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        -n hubblestack \
        -v ${HUBBLE_VERSION} \
        --iteration ${HUBBLE_ITERATION} \
-       --config-files /etc/osquery/osquery.conf \
+       --url ${HUBBLE_URL} \
        --deb-no-default-config-files \
        --after-install /hubble_build/conf/afterinstall.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
-       etc/hubble etc/osquery etc/init.d etc/cron.d opt usr var\
+       etc opt usr /var/log/hubble_osquery/backuplogs \
     && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb7_amd64.deb \
     && openssl dgst -sha256 /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb7_amd64.deb \
                           > /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb7_amd64.deb.sha256" ]

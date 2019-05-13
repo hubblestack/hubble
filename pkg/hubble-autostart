@@ -1,3 +1,1 @@
 */5 * * * * root /etc/init.d/hubble start
-# restart hubble once every day at 0700 hours
-* 7 * * * root /etc/init.d/hubble restart

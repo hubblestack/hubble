@@ -44,7 +44,7 @@ def std_info():
         'dest_host': fqdn,
         'dest_ip': fqdn_ip4,
         'dest_fqdn': local_fqdn,
-        'system_uuid': __grains__.get('system_uuid'),
+        'system_uuid': __grains__.get('system_uuid')
     }
 
     ret.update(__grains__.get('cloud_details', {}))

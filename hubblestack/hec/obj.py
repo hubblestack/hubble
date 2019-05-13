@@ -17,6 +17,7 @@ import hubblestack.status
 hubble_status = hubblestack.status.HubbleStatus(__name__)
 
 from . dq import DiskQueue, NoQueue, QueueCapacityError
+from hubblestack.utils.stdrec import update_payload
 
 __version__ = '1.0'
 
@@ -109,6 +110,7 @@ class Payload(object):
 class HEC(object):
     flushing_queue = False
     last_flush = 0
+    direct_logging = False
 
     class Server(object):
         bad = False
@@ -213,13 +215,28 @@ class HEC(object):
         else:
             self.queue = NoQueue()
 
+    def _payload_msg(self, message, *a):
+        event = dict(loggername='hubblestack.hec.obj', message=message % a)
+        payload = dict(time=int(time.time()), sourcetype='hubble_log', event=event)
+        update_payload(payload)
+        return str(Payload(payload))
+
+    def _direct_send_msg(self, message, *a):
+        self._send(self._payload_msg(message, *a))
+
     def _queue_event(self, payload):
+        if self.queue.cn < 1 and not self.direct_logging:
+            self.direct_logging = True
+            self._direct_send_msg('queue(start)')
+            self.direct_logging = False
         p = str(payload)
-        log.info('queueing %d octets to disk', len(p))
+        # should be at info level; error for production logging:
+        log.error('Sending to Splunk failed, queueing %d octets to disk', len(p))
         try:
             self.queue.put(p)
         except QueueCapacityError:
-            log.info("disk queue is full, dropping payload")
+            # was at info level, but this is an error condition worth logging
+            log.error("disk queue is full, dropping payload")
 
 
     def queueEvent(self, dat, eventtime=''):
@@ -237,9 +254,12 @@ class HEC(object):
         if self.queue.cn < 1:
             log.debug('nothing in queue')
             return
+        self._direct_send_msg('queue(flush) eventscount=%d', self.queue.cn)
         dt = time.time() - self.last_flush
         if dt >= self.retry_diskqueue_interval and self.queue.cn:
-            log.debug('flushing queue eventscount=%d', self.queue.cn)
+            # was at debug level. bumped to error level for production logging
+            log.error('flushing queue eventscount=%d; NOTE: queued events may contain more than one payload/event',
+                self.queue.cn)
         self.last_flush = time.time()
         self.flushing_queue = True
         while self.flushing_queue:
@@ -248,6 +268,9 @@ class HEC(object):
                 break
             self._send(x)
         self.flushing_queue = False
+        if self.queue.cn < 1:
+            self._direct_send_msg('queue(end)')
+            log.error('flushing complete eventscount=%d', self.queue.cn)
 
 
     def _send(self, *payload):

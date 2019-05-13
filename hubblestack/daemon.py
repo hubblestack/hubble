@@ -178,7 +178,10 @@ def main():
 
         try:
             log.debug('Executing schedule')
-            schedule()
+            sf_count = schedule()
+            if sf_count > 0:
+                log.debug('Executed %d schedule item(s)', sf_count)
+                hubblestack.log.workaround_salt_log_handler_queues()
         except Exception as e:
             log.exception('Error executing schedule')
         time.sleep(__opts__.get('scheduler_sleep_frequency', 0.5))
@@ -296,6 +299,7 @@ def schedule():
         Whether to run the scheduled job on daemon start. Defaults to False.
         Optional.
     '''
+    sf_count = 0
     base = datetime(2018, 1, 1, 0, 0)
     schedule_config = __opts__.get('schedule', {})
     if 'user_schedule' in __opts__ and isinstance(__opts__['user_schedule'], dict):
@@ -372,6 +376,7 @@ def schedule():
             log.debug('Executing scheduled function {0}'.format(func))
             jobdata['last_run'] = time.time()
             ret = __salt__[func](*args, **kwargs)
+            sf_count += 1
             if __opts__['log_level'] == 'debug':
                 log.debug('Job returned:\n{0}'.format(ret))
             for returner in returners:
@@ -387,6 +392,7 @@ def schedule():
                                 'return': ret,
                                 'retry': returner_retry}
                 __returners__[returner](returner_ret)
+    return sf_count
 
 
 def run_function():

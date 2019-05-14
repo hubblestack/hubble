@@ -55,12 +55,15 @@ def _get_aws_details():
             aws_extra['cloud_availability_zone'] = res.get('availabilityZone')
             aws_extra['cloud_ami_id'] = res.get('imageId')
             aws_extra['cloud_region'] = res.get('region')
-            aws_extra['cloud_public_hostname'] = requests.get('http://169.254.169.254/latest/meta-data/public-hostname',
-                                                              timeout=3).text
-            aws_extra['cloud_public_ipv4'] = requests.get('http://169.254.169.254/latest/meta-data/public-ipv4',
-                                                          timeout=3).text
-            aws_extra['cloud_private_hostname'] = requests.get('http://169.254.169.254/latest/meta-data/local-hostname',
-                                                               timeout=3).text
+            r = requests.get('http://169.254.169.254/latest/meta-data/public-hostname', timeout=3)
+            if r.status_code == requests.codes.ok:
+                aws_extra['cloud_public_hostname'] = r.text
+            r = requests.get('http://169.254.169.254/latest/meta-data/public-ipv4', timeout=3)
+            if r.status_code == requests.codes.ok:
+                aws_extra['cloud_public_ipv4'] = r.text
+            r = requests.get('http://169.254.169.254/latest/meta-data/local-hostname', timeout=3)
+            if r.status_code == requests.codes.ok:
+                aws_extra['cloud_private_hostname'] = r.text
             for key in aws_extra.keys():
                 if not aws_extra[key]:
                     aws_extra.pop(key)

@@ -51,7 +51,7 @@ def _get_splunk_options(space, modality, **kw):
         'add_query_to_sourcetype': True,
         # disk_queue* can come from the top of the config
         'disk_queue': confg('disk_queue', False),
-        'disk_queue_size': confg('disk_queue_size', 10 * (1024 ** 2)),
+        'disk_queue_size': confg('disk_queue_size', 100 * (1024 ** 2)),
         'disk_queue_compression': confg('disk_queue_compression', 5),
     }
 

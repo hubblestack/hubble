@@ -16,6 +16,11 @@
 #   list_of_opts = get_splunk_options()
 #
 # we just look in [config.get]('hubblestack:returner:splunk')
+#
+# Additionally, the defaults for disk_queue, disk_queue_size and
+# disk_queue_compression can be set in the top level configuration -- although,
+# are still overridden by per-hec configs.
+
 
 import copy
 
@@ -28,6 +33,8 @@ MODALITIES = ('config.get',) # used to house grains.get before config.get
 
 def _get_splunk_options(space, modality, **kw):
     ret = list()
+
+    confg = __salt__['config.get']
 
     base_opts = {
         'token': REQUIRED,
@@ -42,10 +49,10 @@ def _get_splunk_options(space, modality, **kw):
         'index_extracted_fields': [],
         'http_event_collector_ssl_verify': True,
         'add_query_to_sourcetype': True,
-        'disk_queue': '/var/cache/hubble/dq',
-        'disk_queue': False, # '/var/cache/hubble/dq',
-        'disk_queue_size': 10 * (1024 ** 2),
-        'disk_queue_compression': 5,
+        # disk_queue* can come from the top of the config
+        'disk_queue': confg('disk_queue', False),
+        'disk_queue_size': confg('disk_queue_size', 100 * (1024 ** 2)),
+        'disk_queue_compression': confg('disk_queue_compression', 5),
     }
 
     nicknames = kw.pop('_nick', {'sourcetype_log': 'sourcetype'})

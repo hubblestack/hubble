@@ -21,9 +21,7 @@ def fqdn():
     local_fqdn = None
     if not salt.utils.platform.is_windows():
         local_fqdn = __salt__['cmd.run']('hostname --fqdn')
-    if not local_fqdn or 'hostname: ' in local_fqdn:
-        grains['local_fqdn'] = ''
-    else:
+    if local_fqdn and 'hostname: ' not in local_fqdn:
         grains['local_fqdn'] = local_fqdn
     return grains
 

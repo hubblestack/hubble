@@ -254,6 +254,7 @@ class HEC(object):
         if self.queue.cn < 1:
             log.debug('nothing in queue')
             return
+        self.flushing_queue = True
         self._direct_send_msg('queue(flush) eventscount=%d', self.queue.cn)
         dt = time.time() - self.last_flush
         if dt >= self.retry_diskqueue_interval and self.queue.cn:
@@ -261,7 +262,6 @@ class HEC(object):
             log.error('flushing queue eventscount=%d; NOTE: queued events may contain more than one payload/event',
                 self.queue.cn)
         self.last_flush = time.time()
-        self.flushing_queue = True
         while self.flushing_queue:
             x = self.queue.getz()
             if not x:

@@ -46,10 +46,7 @@ def returner(ret):
     for opts in opts_list:
         proxy = opts['proxy']
         timeout = opts['timeout']
-        # custom_fields = opts['custom_fields']
         sumo_pulsar_return = opts['sumo_pulsar_return']
-        # port = opts['port']
-
         data = _dedupList(ret['return'])
         minion_id = __opts__['id']
         fqdn = __grains__['fqdn']
@@ -74,7 +71,6 @@ def returner(ret):
 
         for alert in alerts:
             event = {}
-            # payload = {}
             if ('change' in alert):  # Linux, normal pulsar
                 # The second half of the change will be '|IN_ISDIR' for directories
                 change = alert['change'].split('|')[0]
@@ -170,11 +166,6 @@ def returner(ret):
 
             event.update(cloud_details)
 
-            # payload.update({'host': fqdn})
-            # payload.update({'_sourcecategory': opts['sourcecategory']})
-            # payload.update({'short_message': 'hubblestack'})
-            # payload.update({'hubblemsg': event})
-
             rdy = json.dumps(event)
             requests.post('{}/'.format(sumo_pulsar_return), rdy)
     return
@@ -189,8 +180,6 @@ def _get_options():
         for opt in returner_opts:
             processed = {}
             processed['sumo_pulsar_return'] = opt.get('sumo_pulsar_return')
-            # processed['custom_fields'] = opt.get('custom_fields', [])
-            # processed['sourcecategory'] = opt.get('sourcecategory_pulsar', 'hubble_fim')
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
             sumo_opts.append(processed)
@@ -198,13 +187,10 @@ def _get_options():
     else:
         try:
             sumo_pulsar_return = __salt__['config.get']('hubblestack:returner:sumo:sumo_pulsar_return')
-            # sourcecategory = __salt__['config.get']('hubblestack:pulsar:returner:sumo:sourcecategory')
-            # custom_fields = __salt__['config.get']('hubblestack:pulsar:returner:sumo:custom_fields', [])
         except:
             return None
 
         sumo_opts = {'sumo_pulsar_return': sumo_pulsar_return}
-        # sumo_opts = {'sumo_pulsar_return': sumo_pulsar_return, 'sourcecategory': sourcecategory, 'custom_fields': custom_fields}
         sumo_opts['proxy'] = __salt__['config.get']('hubblestack:pulsar:returner:sumo:proxy', {})
         sumo_opts['timeout'] = __salt__['config.get']('hubblestack:pulsar:returner:sumo:timeout', 9.05)
 

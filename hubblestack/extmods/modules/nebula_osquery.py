@@ -492,11 +492,11 @@ def check_disk_usage(path=None):
                                                                                                 avail,
                                                                                                 used,
                                                                                                 per_used))
-        disk_stats = {'Total': total,
-                      'Available': avail,
-                      'Used': used,
-                      'Use_percent': per_used,
-                      'Path': path
+        disk_stats = {'total': total,
+                      'available': avail,
+                      'used': used,
+                      'use_percent': per_used,
+                      'path': path
                       }
 
         if __salt__['config.get']('splunklogging', False):

@@ -5,7 +5,35 @@
 # The resulting image is ready to run the pyinstaller on container start and drop hubble<version>-coreos.tar.gz
 # in the /data directory. Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
+# Requires docker 17.05 or higher
 
+# Set this arguement to "local" if you want to build osquery for local code.
+# In that case, osquery folder must exist besides Dockerfile
+ARG OSQUERY_BUILD_ENV=remote
+
+#--------------- TEMP CONTAINER FOR LOCAL OSQUERY -------------------------
+FROM alpine as osquery_local
+ONBUILD COPY osquery /osquery
+ONBUILD RUN echo "Copying osquery from local folder"
+
+
+
+#--------------- TEMP CONTAINER FOR GIT OSQUERY ----------------------------
+FROM alpine/git as osquery_remote
+ENV OSQUERY_SRC_VERSION=3.3.2
+ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
+ONBUILD RUN cd / \
+ && git clone "$OSQUERY_GIT_URL" \
+ && cd osquery/ \
+ && git checkout "$OSQUERY_SRC_VERSION" \
+ && echo "Fetching osquery from git"
+
+
+#--------------- TEMP CONTAINER FOR OSQUERY ( BASED ON ARG)  ----------------
+FROM osquery_"$OSQUERY_BUILD_ENV" as osquery_image
+
+
+#--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
 FROM centos:7
 
 RUN yum makecache fast && yum -y update
@@ -17,20 +45,17 @@ RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osque
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 #to pin to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=3.3.2
 ENV OSQUERY_BUILD_USER=osquerybuilder
-ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 RUN yum -y install git make python ruby sudo which
 RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
  && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
+COPY --from=osquery_image /osquery /home/"$OSQUERY_BUILD_USER"/osquery
 RUN mkdir -p /usr/local/osquery/ \
- && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/
+ && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/ \
+ && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /home/"$OSQUERY_BUILD_USER"/osquery
 USER $OSQUERY_BUILD_USER
 ENV SKIP_TESTS=1
-RUN cd /home/"$OSQUERY_BUILD_USER" \
- && git clone "$OSQUERY_GIT_URL" \
- && cd osquery/ \
- && git checkout "$OSQUERY_SRC_VERSION" \
+RUN cd /home/"$OSQUERY_BUILD_USER"/osquery \
  && make sysprep \
 #have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
  && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \

@@ -12,11 +12,9 @@ hubblestack:
     sumo:
       - proxy: {}
         timeout: 10
-        sourcecategory_nebula: hubble_osquery
-        sourcecategory_pulsar: hubble_fim
-        sourcecategory_nova: hubble_audit
-        sumo_collector: https://sumocollectoraddress/
-
+        sumo_nebula_return: https://yoursumo.sumologic.com/endpointhere
+        sumo_pulsar_return: https://yoursumo.sumologic.com/endpointhere
+        sumo_nova_return: https://yoursumo.sumologic.com/endpointhere
 
 '''
 
@@ -24,6 +22,7 @@ import os
 import json
 import requests
 from collections import defaultdict
+
 
 def _dedupList(l):
     deduped = []
@@ -48,7 +47,7 @@ def returner(ret):
         proxy = opts['proxy']
         timeout = opts['timeout']
         # custom_fields = opts['custom_fields']
-        sumo_collector = opts['sumo_collector']
+        sumo_pulsar_return = opts['sumo_pulsar_return']
         # port = opts['port']
 
         data = _dedupList(ret['return'])
@@ -76,7 +75,7 @@ def returner(ret):
         for alert in alerts:
             event = {}
             # payload = {}
-            if('change' in alert):  # Linux, normal pulsar
+            if ('change' in alert):  # Linux, normal pulsar
                 # The second half of the change will be '|IN_ISDIR' for directories
                 change = alert['change'].split('|')[0]
                 # Skip the IN_IGNORED events
@@ -177,7 +176,7 @@ def returner(ret):
             # payload.update({'hubblemsg': event})
 
             rdy = json.dumps(event)
-            requests.post('{}/'.format(sumo_collector), rdy)
+            requests.post('{}/'.format(sumo_pulsar_return), rdy)
     return
 
 
@@ -189,7 +188,7 @@ def _get_options():
             returner_opts = [returner_opts]
         for opt in returner_opts:
             processed = {}
-            processed['sumo_collector'] = opt.get('sumo_collector')
+            processed['sumo_pulsar_return'] = opt.get('sumo_pulsar_return')
             # processed['custom_fields'] = opt.get('custom_fields', [])
             # processed['sourcecategory'] = opt.get('sourcecategory_pulsar', 'hubble_fim')
             processed['proxy'] = opt.get('proxy', {})
@@ -198,14 +197,14 @@ def _get_options():
         return sumo_opts
     else:
         try:
-            sumo_collector = __salt__['config.get']('hubblestack:returner:sumo:sumo_collector')
+            sumo_pulsar_return = __salt__['config.get']('hubblestack:returner:sumo:sumo_pulsar_return')
             # sourcecategory = __salt__['config.get']('hubblestack:pulsar:returner:sumo:sourcecategory')
             # custom_fields = __salt__['config.get']('hubblestack:pulsar:returner:sumo:custom_fields', [])
         except:
             return None
 
-        sumo_opts = {'sumo_collector': sumo_collector}
-        # sumo_opts = {'sumo_collector': sumo_collector, 'sourcecategory': sourcecategory, 'custom_fields': custom_fields}
+        sumo_opts = {'sumo_pulsar_return': sumo_pulsar_return}
+        # sumo_opts = {'sumo_pulsar_return': sumo_pulsar_return, 'sourcecategory': sourcecategory, 'custom_fields': custom_fields}
         sumo_opts['proxy'] = __salt__['config.get']('hubblestack:pulsar:returner:sumo:proxy', {})
         sumo_opts['timeout'] = __salt__['config.get']('hubblestack:pulsar:returner:sumo:timeout', 9.05)
 

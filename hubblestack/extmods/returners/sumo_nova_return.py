@@ -12,9 +12,9 @@ hubblestack:
     sumo:
       - proxy: {}
         timeout: 10
-        sumo_collector_nebula: hubble_osquery
-        sumo_collector_pulsar: hubble_fim
-        sumo_collector_nova: hubble_audit
+        sumo_nebula_return: https://yoursumo.sumologic.com/endpointhere
+        sumo_pulsar_return: https://yoursumo.sumologic.com/endpointhere
+        sumo_nova_return: https://yoursumo.sumologic.com/endpointhere
 
 '''
 
@@ -34,7 +34,7 @@ def returner(ret):
     for opts in opts_list:
         proxy = opts['proxy']
         timeout = opts['timeout']
-        sumo_collector_nova = opts['sumo_collector_nova']
+        sumo_nova_return = opts['sumo_nova_return']
         data = ret['return']
         minion_id = ret['id']
         jid = ret['jid']
@@ -64,7 +64,6 @@ def returner(ret):
 
         for fai in data.get('Failure', []):
             check_id = fai.keys()[0]
-            # payload = {}
             event = {}
             event.update({'check_result': 'Failure'})
             event.update({'check_id': check_id})
@@ -82,26 +81,11 @@ def returner(ret):
 
             event.update(cloud_details)
 
-            # for custom_field in custom_fields:
-            #     custom_field_name = 'custom_' + custom_field
-            #     custom_field_value = __salt__['config.get'](custom_field, '')
-            #     if isinstance(custom_field_value, str):
-            #         event.update({custom_field_name: custom_field_value})
-            #     elif isinstance(custom_field_value, list):
-            #         custom_field_value = ','.join(custom_field_value)
-            #         event.update({custom_field_name: custom_field_value})
-
-            # payload.update({'host': fqdn})
-            # payload.update({'_sourcecategory': opts['sourcecategory']})
-            # payload.update({'short_message': 'hubblestack'})
-            # payload.update({'hubblemsg': event})
-
             rdy = json.dumps(event)
-            requests.post('{}/'.format(sumo_collector_nova), data=rdy)
+            requests.post('{}/'.format(sumo_nova_return), data=rdy)
 
         for suc in data.get('Success', []):
             check_id = suc.keys()[0]
-            # payload = {}
             event = {}
             event.update({'check_result': 'Success'})
             event.update({'check_id': check_id})
@@ -119,25 +103,10 @@ def returner(ret):
 
             event.update(cloud_details)
 
-            # for custom_field in custom_fields:
-            #     custom_field_name = 'custom_' + custom_field
-            #     custom_field_value = __salt__['config.get'](custom_field, '')
-            #     if isinstance(custom_field_value, str):
-            #         event.update({custom_field_name: custom_field_value})
-            #     elif isinstance(custom_field_value, list):
-            #         custom_field_value = ','.join(custom_field_value)
-            #         event.update({custom_field_name: custom_field_value})
-
-            # payload.update({'host': fqdn})
-            # payload.update({'_sourcecategory': opts['sourcecategory']})
-            # payload.update({'short_message': 'hubblestack'})
-            # payload.update({'hubblemsg': event})
-
             rdy = json.dumps(event)
-            requests.post('{}/'.format(sumo_collector_nova), rdy)
+            requests.post('{}/'.format(sumo_nova_return), rdy)
 
         if data.get('Compliance', None):
-            # payload = {}
             event = {}
             event.update({'job_id': jid})
             event.update({'compliance_percentage': data['Compliance']})
@@ -148,22 +117,8 @@ def returner(ret):
 
             event.update(cloud_details)
 
-            # for custom_field in custom_fields:
-            #     custom_field_name = 'custom_' + custom_field
-            #     custom_field_value = __salt__['config.get'](custom_field, '')
-            #     if isinstance(custom_field_value, str):
-            #         event.update({custom_field_name: custom_field_value})
-            #     elif isinstance(custom_field_value, list):
-            #         custom_field_value = ','.join(custom_field_value)
-            #         event.update({custom_field_name: custom_field_value})
-
-            # payload.update({'host': fqdn})
-            # payload.update({'_sourcecategory': opts['sourcecategory']})
-            # payload.update({'short_message': 'hubblestack'})
-            # payload.update({'hubblemsg': event})
-
             rdy = json.dumps(event)
-            requests.post('{}/'.format(sumo_collector_nova), rdy)
+            requests.post('{}/'.format(sumo_nova_return), rdy)
 
     return
 
@@ -176,22 +131,19 @@ def _get_options():
             returner_opts = [returner_opts]
         for opt in returner_opts:
             processed = {}
-            processed['sumo_collector_nova'] = opt.get('sumo_collector_nova')
+            processed['sumo_nova_return'] = opt.get('sumo_nova_return')
             processed['proxy'] = opt.get('proxy', {})
             processed['timeout'] = opt.get('timeout', 9.05)
             sumo_opts.append(processed)
         return sumo_opts
     else:
         try:
-            sumo_collector_nova = __salt__['config.get']('hubblestack:returner:sumo:sumo_collector_nova')
-            # sourcecategory = __salt__['config.get']('hubblestack:returner:sumo:sourcecategory')
+            sumo_nova_return = __salt__['config.get']('hubblestack:returner:sumo:sumo_nova_return')
         except:
             return None
 
-        sumo_opts = {'sumo_collector_nova': sumo_collector_nova}
-        # sumo_opts = {'sumo_collector': sumo_collector, 'sourcecategory': sourcecategory, 'custom_fields': custom_fields}
+        sumo_opts = {'sumo_nova_return': sumo_nova_return}
         sumo_opts['proxy'] = __salt__['config.get']('hubblestack:nova:returner:sumo:proxy', {})
         sumo_opts['timeout'] = __salt__['config.get']('hubblestack:nova:returner:sumo:timeout', 9.05)
 
         return [sumo_opts]
-

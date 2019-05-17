@@ -75,7 +75,7 @@ RUN apt-get -y install  \
 #install libcurl to avoid depending on host version
 #requires autoconf libtool libssh2-devel zlib-devel autoconf
 ENV LIBCURL_SRC_URL=https://github.com/curl/curl.git
-ENV LIBCURL_SRC_VERSION=curl-7_61_0
+ENV LIBCURL_SRC_VERSION=curl-7_64_1
 ENV LIBCURL_TEMP=/tmp/libcurl
 ENV PATH=/opt/hubble/bin/:/opt/hubble/include:/opt/hubble/lib:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 RUN mkdir -p "$LIBCURL_TEMP" \
@@ -92,7 +92,7 @@ RUN mkdir -p "$LIBCURL_TEMP" \
 #install git so that git package won't be a package dependency
 #requires make git libcurl-devel autoconf zlib-devel gcc
 ENV GIT_SRC_URL=https://github.com/git/git.git
-ENV GIT_SRC_VERSION=v2.16.4
+ENV GIT_SRC_VERSION=v2.21.0
 ENV GITTEMP=/tmp/gittemp
 RUN mkdir -p "$GITTEMP" \
  && cd "$GITTEMP" \

@@ -57,27 +57,26 @@ def returner(ret):
             return
         else:
             for query in data:
-                for query_name, query_results in query.iteritems():
-                    for q in query_results['data']:
-                        event = {}
-                        event.update(q)
-                        event.update({'query': query_name})
-                        event.update({'job_id': jid})
-                        event.update({'master': master})
-                        event.update({'minion_id': minion_id})
-                        event.update({'dest_host': fqdn})
-                        event.update({'dest_ip': fqdn_ip4})
-                        event.update(cloud_details)
-                        event_time = q.get('time', '')
-                        try:
-                            if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(
-                                    float(event_time))).days > 365:
-                                event_time = ''
-                        except:
+                for q in query['query_result']['data']:
+                    event = {}
+                    event.update(q)
+                    event.update({'query': query['query_name']})
+                    event.update({'job_id': jid})
+                    event.update({'master': master})
+                    event.update({'minion_id': minion_id})
+                    event.update({'dest_host': fqdn})
+                    event.update({'dest_ip': fqdn_ip4})
+                    event.update(cloud_details)
+                    event_time = q.get('time', '')
+                    try:
+                        if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(
+                                float(event_time))).days > 365:
                             event_time = ''
-                        finally:
-                            rdy = json.dumps(event)
-                            requests.post('{}/'.format(sumo_nebula_return), rdy)
+                    except:
+                        event_time = ''
+                    finally:
+                        rdy = json.dumps(event)
+                        requests.post('{}/'.format(sumo_nebula_return), rdy)
     return
 
 

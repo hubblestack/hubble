@@ -140,8 +140,15 @@ class SplunkHandler(logging.Handler):
         # splunk; so any logging.Filter would need to be very carefully added
         # to work right.
 
-        rpn = getattr(record, 'pathname', '')
-        filtered = ('hubblestack/splunklogging', 'hubblestack/hec/', 'urllib3/connectionpool')
+        # NOTE: we used to use 'pathname', rather than 'name' here.  That can't
+        # be made to work when hubble is packaged in a binary (every single
+        # 'pathname' comes through as logging/__init__.py for some reason).
+        #
+        # Matching 'name' works, but relies on devs using getLogger(__name__)
+        # and not some other arbitrary string.
+
+        filtered = ('hubblestack.splunklogging', 'hubblestack.hec', 'urllib3.connectionpool')
+        rpn = getattr(record, 'name', '')
         for i in filtered:
             if i in rpn:
                 return

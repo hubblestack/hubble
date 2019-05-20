@@ -63,17 +63,17 @@ def returner(ret):
             return
         else:
             for query in data:
-                for q in query['query_result']['data']:
+                for query_name, value in query.items():
+                    for d in value['data']:
                         event = {}
                         payload = {}
-                        event.update(q)
-                        event.update({'query': query['query_name']})
+                        event.update(d)
+                        event.update({'query': query_name})
                         event.update({'job_id': jid})
                         event.update({'master': master})
                         event.update({'minion_id': minion_id})
                         event.update({'dest_host': fqdn})
                         event.update({'dest_ip': fqdn_ip4})
-
                         event.update(cloud_details)
 
                         for custom_field in custom_fields:
@@ -92,7 +92,7 @@ def returner(ret):
 
                         # If the osquery query includes a field called 'time' it will be checked.
                         # If it's within the last year, it will be used as the eventtime.
-                        event_time = q.get('time', '')
+                        event_time = d.get('time', '')
                         try:
                             if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
                                 event_time = ''

@@ -22,7 +22,7 @@ from salt.exceptions import CommandExecutionError
 log = logging.getLogger(__name__)
 
 
-def run(command, args=None, override_file=None):
+def run(command, args=None, override_file=None, timeout=30):
     '''
     This function allows a specific command to be run, with the option to have
     command-line arguments for the command to be defined in hubblestack_data.
@@ -41,6 +41,9 @@ def run(command, args=None, override_file=None):
     override_file
         A fileserver location (``salt://this/is/a/path.txt``). The contents
         of the file at this location will be used *instead of* ``args``
+
+    timeout
+        Limit the cmd.run to ``timeout`` seconds. Default 30
     '''
     # Convert a list of args to a string
     if isinstance(args, (list, tuple)):
@@ -67,8 +70,8 @@ def run(command, args=None, override_file=None):
 
     # Run the command with the final args
     if not args:
-        ret = __salt__['cmd.run'](command, python_shell=False)
+        ret = __salt__['cmd.run'](command, python_shell=False, timeout=timeout)
     else:
-        ret = __salt__['cmd.run']('{0} {1}'.format(command, args), python_shell=False)
+        ret = __salt__['cmd.run']('{0} {1}'.format(command, args), python_shell=False, timeout=timeout)
 
     return ret

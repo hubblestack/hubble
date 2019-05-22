@@ -234,9 +234,9 @@ class DiskQueue(OKTypesMixin):
         for fname in self.files:
             with open(fname, 'rb') as fh:
                 p = self.decompress(fh.read())
-            if len(r) + len(self.sep) + len(p) > sz:
-                break
             if r:
+                if len(r) + len(self.sep) + len(p) > sz:
+                    break
                 r += self.sep
             r += p
             os.unlink(fname)

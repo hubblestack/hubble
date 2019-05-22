@@ -134,7 +134,7 @@ def get_splunk_options(*spaces, **kw):
 def make_hec_args(opts):
     if isinstance(opts, (tuple,list)):
         return [ make_hec_args(i) for i in opts ]
-    a  = (opts['token'], opts['indexer'])
+    a  = (opts['token'], opts['index'], opts['indexer'])
     kw = {
         'http_event_port': opts['port'],
         'http_event_server_ssl': opts['http_event_server_ssl'],

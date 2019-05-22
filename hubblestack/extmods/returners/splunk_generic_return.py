@@ -18,7 +18,7 @@ event collector. Required config/pillar settings:
 
 import time
 import hubblestack.utils.stdrec as stdrec
-from hubblestack.hec import http_event_collector, get_splunk_options
+from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
 
 def _get_key(dat, key, default_value=None):
     '''
@@ -49,20 +49,8 @@ def _build_hec(opts):
     opts
         dict containing Splunk options to be passed to the `http_event_collector`
     '''
-    http_event_collector_key = opts['token']
-    http_event_collector_host = opts['indexer']
-    http_event_collector_port = opts['port']
-    hec_ssl = opts['http_event_server_ssl']
-    proxy = opts['proxy']
-    timeout = opts['timeout']
-    http_event_collector_ssl_verify = opts['http_event_collector_ssl_verify']
-
-    hec = http_event_collector(http_event_collector_key, http_event_collector_host,
-                               http_event_port=http_event_collector_port,
-                               http_event_server_ssl=hec_ssl,
-                               http_event_collector_ssl_verify=http_event_collector_ssl_verify,
-                               proxy=proxy, timeout=timeout)
-
+    args, kwargs = make_hec_args(opts)
+    hec = http_event_collector(*args, **kwargs)
     return hec
 
 

@@ -75,6 +75,7 @@ def returner(ret):
             timeout = opts['timeout']
             custom_fields = opts['custom_fields']
             http_event_collector_ssl_verify = opts['http_event_collector_ssl_verify']
+            index = opts['index']
 
             # Set up the fields to be extracted at index time. The field values must be strings.
             # Note that these fields will also still be available in the event data
@@ -85,9 +86,10 @@ def returner(ret):
                 pass
 
             # Set up the collector
-            hec = http_event_collector(http_event_collector_key, http_event_collector_host,
+            hec = http_event_collector(http_event_collector_key, index, http_event_collector_host,
                                        http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl,
                                        http_event_collector_ssl_verify=http_event_collector_ssl_verify,
+                                       http_event_index=http_event_index,
                                        proxy=proxy, timeout=timeout)
 
             data = ret['return']

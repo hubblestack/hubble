@@ -53,6 +53,7 @@ def _build_hec(opts):
     http_event_collector_host = opts['indexer']
     http_event_collector_port = opts['port']
     hec_ssl = opts['http_event_server_ssl']
+    http_event_index = opts['http_event_index']
     proxy = opts['proxy']
     timeout = opts['timeout']
     http_event_collector_ssl_verify = opts['http_event_collector_ssl_verify']
@@ -61,6 +62,7 @@ def _build_hec(opts):
                                http_event_port=http_event_collector_port,
                                http_event_server_ssl=hec_ssl,
                                http_event_collector_ssl_verify=http_event_collector_ssl_verify,
+                               http_event_index=http_event_index,
                                proxy=proxy, timeout=timeout)
 
     return hec

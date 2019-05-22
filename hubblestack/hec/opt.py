@@ -137,6 +137,7 @@ def make_hec_args(opts):
     a  = (opts['token'], opts['indexer'])
     kw = {
         'http_event_port': opts['port'],
+        'http_event_index': opts['index'],
         'http_event_server_ssl': opts['http_event_server_ssl'],
         'http_event_collector_ssl_verify': opts['http_event_collector_ssl_verify'],
         'proxy': opts['proxy'],

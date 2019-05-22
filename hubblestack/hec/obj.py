@@ -131,6 +131,7 @@ class HEC(object):
 
 
     def __init__(self, token, http_event_server, host='', http_event_port='8088',
+                 http_event_index='default',
                  http_event_server_ssl=True, http_event_collector_ssl_verify=True,
                  max_bytes=_max_content_bytes, proxy=None, timeout=9.05,
                  disk_queue=False,
@@ -141,6 +142,7 @@ class HEC(object):
 
         self.timeout = timeout
         self.token = token
+        self.default_index = http_event_index
         self.batchEvents = []
         self.maxByteLength = max_bytes
         self.currentByteLength = 0
@@ -217,7 +219,8 @@ class HEC(object):
 
     def _payload_msg(self, message, *a):
         event = dict(loggername='hubblestack.hec.obj', message=message % a)
-        payload = dict(time=int(time.time()), sourcetype='hubble_log', event=event)
+        payload = dict(index=self.default_index,
+            time=int(time.time()), sourcetype='hubble_log', event=event)
         update_payload(payload)
         return str(Payload(payload))
 

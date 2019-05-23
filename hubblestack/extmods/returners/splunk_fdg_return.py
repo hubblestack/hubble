@@ -67,6 +67,16 @@ def returner(ret):
 
         for opts in opts_list:
             logging.debug('Options: %s' % json.dumps(opts))
+            custom_fields = opts['custom_fields']
+
+            # Set up the fields to be extracted at index time. The field values must be strings.
+            # Note that these fields will also still be available in the event data
+            index_extracted_fields = []
+            try:
+                index_extracted_fields.extend(__opts__.get('splunk_index_extracted_fields', []))
+            except TypeError:
+                pass
+
             args, kwargs = make_hec_args(opts)
             hec = http_event_collector(*args, **kwargs)
 

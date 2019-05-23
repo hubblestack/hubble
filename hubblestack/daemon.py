@@ -183,6 +183,9 @@ def main():
                 hubblestack.log.workaround_salt_log_handler_queues()
         except Exception as e:
             log.exception('Error executing schedule: {0}'.format(e))
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+
         time.sleep(__opts__.get('scheduler_sleep_frequency', 0.5))
 
 def getsecondsbycronexpression(base, cron_exp):

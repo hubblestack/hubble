@@ -2,15 +2,13 @@
 Description=Hubblestack
 Requires=network-online.target
 After=network-online.target
-StartLimitInterval=350
-StartLimitBurst=10
 
 [Service]
 Type=forking
 PIDFile=/var/run/hubble.pid
 ExecStart=/opt/hubble/hubble -d
 Restart=always
-RestartSec=30
+RestartSec=300
 MemoryAccounting=true
 
 [Install]

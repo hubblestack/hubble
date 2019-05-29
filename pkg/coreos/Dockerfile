@@ -197,5 +197,5 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
     && cp /usr/lib/x86_64-linux-gnu/libssh2.so.1 /opt/hubble/hubble-libs \
     && mkdir -p /etc/systemd/system \
     && cp -f /hubble_build/pkg/hubble.service /etc/systemd/system \
-    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}-coreos.tar.gz /etc/hubble /opt/hubble /opt/osquery /etc/profile.d/hubble-profile.sh /etc/systemd/system /var/log/hubble_osquery/backuplogs \
-    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}-coreos.tar.gz > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}-coreos.tar.gz.sha256" ]
+    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.coreos.tar.gz /etc/hubble /opt/hubble /opt/osquery /etc/profile.d/hubble-profile.sh /etc/systemd/system /var/log/hubble_osquery/backuplogs \
+    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.coreos.tar.gz > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.coreos.tar.gz.sha256" ]

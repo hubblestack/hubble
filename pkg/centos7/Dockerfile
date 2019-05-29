@@ -19,7 +19,8 @@ ONBUILD RUN echo "Copying osquery from local folder"
 
 #--------------- TEMP CONTAINER FOR GIT OSQUERY ----------------------------
 FROM alpine/git as osquery_remote
-ENV OSQUERY_SRC_VERSION=0314871908273b2770129da9f5a7c3206f224f68
+#to pin osquery to a different version change the following envirnment variable
+ENV OSQUERY_SRC_VERSION=3.3.2
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 ONBUILD RUN cd / \
  && git clone "$OSQUERY_GIT_URL" \
@@ -28,7 +29,7 @@ ONBUILD RUN cd / \
  && echo "Fetching osquery from git"
 
 
-#--------------- TEMP CONTAINER FOR OSQUERY ( BASED ON ARG )  ----------------
+#--------------- TEMP CONTAINER FOR OSQUERY ( BASED ON ARGUMENT ) ---------------
 FROM osquery_"$OSQUERY_BUILD_ENV" as osquery_image
 
 
@@ -42,8 +43,6 @@ RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osque
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
-#to pin to a different version change the following envirnment variable
-
 ENV OSQUERY_BUILD_USER=osquerybuilder
 RUN yum -y install git make python ruby sudo which
 RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \

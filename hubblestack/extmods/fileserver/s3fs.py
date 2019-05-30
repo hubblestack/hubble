@@ -179,8 +179,12 @@ def find_file(path, saltenv='base', **kwargs):
 
     cached_file_path = _get_cached_file_name(fnd['bucket'], saltenv, path)
 
-    # jit load the file from S3 if it's not in the cache or it's old
-    _get_file_from_s3(metadata, saltenv, fnd['bucket'], path, cached_file_path)
+    try:
+        # jit load the file from S3 if it's not in the cache or it's old
+        _get_file_from_s3(metadata, saltenv, fnd['bucket'], path, cached_file_path)
+    except:
+        if not os.path.isfile(cached_file_path):
+            raise
 
     return fnd
 
@@ -363,7 +367,18 @@ def _init():
 
     if metadata is None:
         # bucket files cache expired or does not exist
-        metadata = _refresh_buckets_cache_file(cache_file)
+        try:
+            metadata = _refresh_buckets_cache_file(cache_file)
+        except:
+            # If we failed to fetch new metadata, then try to fallback on the cache
+            try:
+                if os.path.isfile(cache_file):
+                    metadata = _read_buckets_cache_file(cache_file)
+                    return metadata
+            except OSError:
+                pass
+            # No cache file, so raise.
+            raise
 
     return metadata
 

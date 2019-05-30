@@ -51,7 +51,7 @@ def returner(ret):
         master = __grains__['master']
         try:
             fqdn_ip4 = __grains__['fqdn_ip4'][0]
-        except gelfhttpror:
+        except IndexError:
             fqdn_ip4 = __grains__['ipv4'][0]
         if fqdn_ip4.startswith('127.'):
             for ip4_addr in __grains__['ipv4']:

@@ -5,6 +5,8 @@ Currently each returner seems to generate these data by hand in their own way.
 This is being tested/used in the generic returner and probably only from
 hstatus exec module (for now).
 '''
+import socket
+
 
 def std_info():
     ''' Generate and return hubble standard host data for use in events:

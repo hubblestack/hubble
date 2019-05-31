@@ -49,7 +49,7 @@ import requests
 import json
 import time
 from datetime import datetime
-from hubblestack.hec import http_event_collector, get_splunk_options
+from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
 
 import logging
 

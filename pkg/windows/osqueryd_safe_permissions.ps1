@@ -27,6 +27,14 @@
     $acl.RemoveAccessRuleAll($accessrule)
     set-acl -aclobject $acl $osqueryd_path
 
+    $group = "ALL APPLICATION PACKAGES"
+    $acl = Get-Acl $osqueryd_path
+    $inherit =[system.security.accesscontrol.InheritanceFlags]"ContainerInherit,ObjectInherit"
+    $propagation =[system.security.accesscontrol.PropagationFlags]"None"
+    $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule($group,"Write", $inherit, $Propagation ,,,"Deny")
+    $acl.AddAccessRule($accessrule)
+    set-acl -aclobject $acl $osqueryd_path
+
     $group = "ALL RESTRICTED APPLICATION PACKAGES"
     $acl = Get-Acl $osqueryd_path
     $inherit =[system.security.accesscontrol.InheritanceFlags]"ContainerInherit,ObjectInherit"

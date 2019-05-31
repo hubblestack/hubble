@@ -4,7 +4,34 @@
 # The resulting image is ready to run the pyinstaller on container start and drop hubble<version>-coreos.tar.gz
 # in the /data directory. Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
+# Requires docker 17.05 or higher
 
+ARG OSQUERY_BUILD_ENV=remote
+
+#--------------- TEMP CONTAINER FOR LOCAL OSQUERY -------------------------
+FROM alpine as osquery_local
+ONBUILD COPY osquery /osquery
+ONBUILD RUN echo "Copying osquery from local folder"
+
+
+
+#--------------- TEMP CONTAINER FOR GIT OSQUERY ----------------------------
+FROM alpine/git as osquery_remote
+#to osquery pin to a different version change the following envirnment variable
+ENV OSQUERY_SRC_VERSION=3.3.2
+ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
+ONBUILD RUN cd / \
+ && git clone "$OSQUERY_GIT_URL" \
+ && cd osquery/ \
+ && git checkout "$OSQUERY_SRC_VERSION" \
+ && echo "Fetching osquery from git"
+
+
+#--------------- TEMP CONTAINER FOR OSQUERY ( BASED UPON ARGUMENT )  ------------
+FROM osquery_"$OSQUERY_BUILD_ENV" as osquery
+
+
+#--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
 FROM debian:9
 
 RUN apt-get update     \
@@ -31,21 +58,17 @@ RUN mkdir -p "$PATCHELF_TEMP" \
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
-#to pin to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=0314871908273b2770129da9f5a7c3206f224f68
 ENV OSQUERY_BUILD_USER=osquerybuilder
-ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 RUN apt-get -y install git make python ruby sudo curl
 RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \
  && sed -i 's/^%sudo.*/%sudo\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
+COPY --from=osquery /osquery /home/"$OSQUERY_BUILD_USER"/osquery
 RUN mkdir -p /usr/local/osquery/ \
- && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/
+ && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/ \
+ && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /home/"$OSQUERY_BUILD_USER"/osquery
 USER $OSQUERY_BUILD_USER
 ENV SKIP_TESTS=1
-RUN cd /home/"$OSQUERY_BUILD_USER" \
- && git clone "$OSQUERY_GIT_URL" \
- && cd osquery/ \
- && git checkout "$OSQUERY_SRC_VERSION" \
+RUN cd /home/"$OSQUERY_BUILD_USER"/osquery \
  && make sysprep \
 #have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
  && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
@@ -202,6 +225,6 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
        etc/hubble etc/init.d opt usr /var/log/hubble_osquery/backuplogs \
-    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb9_amd64.deb \
-    && openssl dgst -sha256 /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb9_amd64.deb \
-                          > /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb9_amd64.deb.sha256" ]
+    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb \
+    && openssl dgst -sha256 /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb \
+                          > /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb.sha256" ]

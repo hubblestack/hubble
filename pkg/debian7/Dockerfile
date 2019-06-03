@@ -248,6 +248,6 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
        etc opt usr /var/log/hubble_osquery/backuplogs \
-    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb7.amd64.deb \
-    && openssl dgst -sha256 /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb7.amd64.deb \
-                          > /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb7.amd64.deb.sha256" ]
+    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb7.amd64.deb \
+    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb7.amd64.deb \
+                          > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb7.amd64.deb.sha256" ]

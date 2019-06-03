@@ -151,8 +151,8 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v3.0.0
-ENV HUBBLE_VERSION=3.0.0
+ENV HUBBLE_CHECKOUT=v3.0.1
+ENV HUBBLE_VERSION=3.0.1
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
@@ -168,7 +168,7 @@ RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && git checkout "$HUBBLE_CHECKOUT" \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
  && sed -i "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" /hubble_build/hubblestack/__init__.py \
- && sed -i "s/COMMIT_NOT_SET/`git describe`/g" /hubble_build/hubblestack/__init__.py
+ && sed -i "s/COMMIT_NOT_SET/TAGGED_BUILD/g" /hubble_build/hubblestack/__init__.py
 RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build

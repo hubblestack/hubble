@@ -164,9 +164,9 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v3.0.0
+ENV HUBBLE_CHECKOUT=v3.0.1
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=3.0.0
+ENV HUBBLE_VERSION=3.0.1
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_SRC_PATH=/hubble_src
@@ -225,6 +225,6 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
        etc/hubble etc/init.d opt usr /var/log/hubble_osquery/backuplogs \
-    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb \
-    && openssl dgst -sha256 /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb \
-                          > /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb.sha256" ]
+    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb \
+    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb \
+                          > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb.sha256" ]

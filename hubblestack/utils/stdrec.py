@@ -10,9 +10,8 @@ import socket
 
 def std_info():
     ''' Generate and return hubble standard host data for use in events:
-          master, minion_id, dest_host, dest_ip, dest_fqdn and system_uuid
+          minion_id, dest_host, dest_ip, dest_fqdn and system_uuid
     '''
-    master = __grains__['master']
     minion_id = __opts__['id']
     fqdn = __grains__['fqdn']
     fqdn = fqdn if fqdn else minion_id
@@ -41,7 +40,6 @@ def std_info():
         fqdn = new_fqdn
 
     ret = {
-        'master': master,
         'minion_id': minion_id,
         'dest_host': fqdn,
         'dest_ip': fqdn_ip4,

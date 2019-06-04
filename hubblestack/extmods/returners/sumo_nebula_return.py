@@ -40,7 +40,6 @@ def returner(ret):
         data = ret['return']
         minion_id = ret['id']
         jid = ret['jid']
-        master = __grains__['master']
         fqdn = __grains__['fqdn']
         fqdn = fqdn if fqdn else minion_id
         try:
@@ -63,7 +62,6 @@ def returner(ret):
                         event.update(d)
                         event.update({'query': query_name})
                         event.update({'job_id': jid})
-                        event.update({'master': master})
                         event.update({'minion_id': minion_id})
                         event.update({'dest_host': fqdn})
                         event.update({'dest_ip': fqdn_ip4})

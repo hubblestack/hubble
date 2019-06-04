@@ -63,7 +63,6 @@ def returner(ret):
         minion_id = __opts__['id']
         fqdn = __grains__['fqdn']
         fqdn = fqdn if fqdn else minion_id
-        master = __grains__['master']
         try:
             fqdn_ip4 = __grains__['fqdn_ip4'][0]
         except IndexError:
@@ -172,7 +171,6 @@ def returner(ret):
                 # TODO: Should we be reporting 'EntryType' or 'TimeGenerated?
                 #   EntryType reports whether attempt to change was successful.
 
-            event.update({'master': master})
             event.update({'minion_id': minion_id})
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})

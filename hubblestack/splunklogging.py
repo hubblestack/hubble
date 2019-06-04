@@ -72,7 +72,6 @@ class SplunkHandler(logging.Handler):
             hec = http_event_collector(*args, **kwargs)
 
             minion_id = __grains__['id']
-            master = __grains__['master']
             fqdn = __grains__['fqdn']
             # Sometimes fqdn is blank. If it is, replace it with minion_id
             fqdn = fqdn if fqdn else minion_id

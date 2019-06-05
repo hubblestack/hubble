@@ -1217,9 +1217,9 @@ def _osqueryd_restart_required(hashfile, flagfile):
     '''
     This function will check whether osqueryd needs to be restarted
     '''
+    global OSQUERYD_NEEDS_RESTART
     log.info("checking if osqueryd needs to be restarted or not")
     if OSQUERYD_NEEDS_RESTART:
-        global OSQUERYD_NEEDS_RESTART
         OSQUERYD_NEEDS_RESTART = False
         return True
     try:

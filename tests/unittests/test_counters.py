@@ -8,7 +8,7 @@ def sleep_100ms_and_mark(st=0.1):
     time.sleep(st)
     return time.time()
 
-def test_one_count():
+def test_counts():
     hubble_status = hubblestack.status.HubbleStatus('x', 'test1', 'test2')
     t0 = time.time()
     m = hubble_status.mark('test1')
@@ -29,7 +29,8 @@ def test_one_count():
     assert s2['x.test2']['count'] == 1
     assert s2['x.test2']['dt'] == pytest.approx(0.1, rel=1e2)
 
-def test_buckets():
+
+    ########
     t0 = 1553102100
     hubblestack.status.__opts__['hubble_status'] = { 'bucket_len': 5, 'max_buckets': 1000 }
     hubble_status = hubblestack.status.HubbleStatus('x', 'test1')
@@ -49,7 +50,8 @@ def test_buckets():
         c += x['x.test1']['count']
     assert c == 100
 
-def test_max_depth():
+
+    ########
     t0 = 1553102100
     hubblestack.status.__opts__['hubble_status'] = { 'bucket_len': 5, 'max_buckets': 1000 }
     hubble_status = hubblestack.status.HubbleStatus('x', 'test1')

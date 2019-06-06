@@ -11,7 +11,8 @@ import copy
 import logging
 import time
 import pprint
-import os, re
+import os
+import re
 import random
 import signal
 import sys

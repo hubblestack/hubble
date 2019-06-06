@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nebula-to-Splunk returner
 
 Deliver HubbleStack Nebula query data into Splunk using the HTTP
@@ -37,7 +37,7 @@ gateway is not defined.
             custom_fields:
               - site
               - product_group
-'''
+"""
 import socket
 
 # Imports for http event forwarder

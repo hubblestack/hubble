@@ -1,6 +1,6 @@
-'''
+"""
 HubbleStack Cloud Details Grain
-'''
+"""
 
 import requests
 

@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nebula-to-graylog (http input) returner
 
 Deliver HubbleStack Nebula query data into graylog using the HTTP input
@@ -19,7 +19,7 @@ hubblestack:
         sourcetype_nova: hubble_audit
         gelfhttp: https://graylog-gelf-http-input-addr
 
-'''
+"""
 
 import json
 import time
@@ -28,8 +28,8 @@ from datetime import datetime
 
 
 def returner(ret):
-    '''
-    '''
+    """
+    """
     opts_list = _get_options()
 
     # Get cloud details

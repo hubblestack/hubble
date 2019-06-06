@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Pulsar-to-sumo (http input) returner
 
 Deliver HubbleStack Pulsar event data into sumo using the HTTP input
@@ -16,7 +16,7 @@ hubblestack:
         sumo_pulsar_return: https://yoursumo.sumologic.com/endpointhere
         sumo_nova_return: https://yoursumo.sumologic.com/endpointhere
 
-'''
+"""
 
 import os
 import json
@@ -33,8 +33,8 @@ def _dedupList(l):
 
 
 def returner(ret):
-    '''
-    '''
+    """
+    """
     if isinstance(ret, dict) and not ret.get('return'):
         return
 

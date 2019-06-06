@@ -1,10 +1,10 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 Flexible Data Gathering: osquery
 ================================
 
 This fdg module allows for running osquery queries
-'''
+"""
 from __future__ import absolute_import
 import json
 import logging
@@ -16,7 +16,7 @@ log = logging.getLogger(__name__)
 
 
 def query(query_sql, osquery_args=None, osquery_path=None, format_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Given an osquery query ``query_sql``, run that query.
 
     By default, the ``query_sql`` will have ``.format()`` called on it with
@@ -44,7 +44,7 @@ def query(query_sql, osquery_args=None, osquery_path=None, format_chained=True, 
 
     chained
         The value chained from the previous call.
-    '''
+    """
     if format_chained:
         query_sql = query_sql.format(chained)
     if osquery_args is None:
@@ -53,12 +53,12 @@ def query(query_sql, osquery_args=None, osquery_path=None, format_chained=True, 
 
 
 def _osquery(query_sql, osquery_path=None, *args):
-    '''
+    """
     Format the osquery command and run it
 
     Returns a tuple, (status, ret) where status is True if the retcode is 0,
     False otherwise, and ``ret`` is the stdout of the osquery command
-    '''
+    """
     MAX_FILE_SIZE = 104857600
     if not query_sql:
         return False, ''

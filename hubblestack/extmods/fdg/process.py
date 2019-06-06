@@ -1,11 +1,11 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 Flexible Data Gathering: data processing
 =============================
 
 This module primarily processes and properly format
 the data outputted by a module to serve it to another module.
-'''
+"""
 from __future__ import absolute_import
 
 import base64
@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 
 
 def filter_dict(starting_dict=None, filter_values=False, update_chained=True, chained=None, chained_status=None, **kwargs):
-    '''
+    """
     Given a target dictionary, filter it and return the result.
 
     By default, ``chained`` will have ``.update()`` called on it
@@ -33,7 +33,7 @@ def filter_dict(starting_dict=None, filter_values=False, update_chained=True, ch
     False othewise. The second argument will be the filtered dictionary.
 
     ``kwargs`` is a dictionary mapping comparison types to values to compare against.
-    '''
+    """
     try:
         if update_chained:
             if starting_dict:
@@ -50,7 +50,7 @@ def filter_dict(starting_dict=None, filter_values=False, update_chained=True, ch
 def _filter_dict(dct,
                  filter_values,
                  filter_rules):
-    '''
+    """
     Filter a dictionary.
 
     dct
@@ -67,7 +67,7 @@ def _filter_dict(dct,
                       ``kwargs``={le: 4, gt: 1, ne: 2}
         the function outputs {3: 'c', 4: 'd'} - key values less than or equal to 4, greater than 1,
         not equal to 2.
-    '''
+    """
     ret = dct
     for comp, value in filter_rules.iteritems():
         try:
@@ -81,14 +81,14 @@ def _filter_dict(dct,
 
 
 def _compare(comp, val1, val2):
-    '''
+    """
     Function that compares two values.
 
     comp
         The type of comparison that should be applied.
         Can have values from [gt, lt, ge, le, eq, ne].
         For e.g. "gt" stands for "greater than"
-    '''
+    """
     if comp == "gt":
         return val1 > val2
     if comp == "ge":
@@ -107,7 +107,7 @@ def _compare(comp, val1, val2):
 
 
 def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_status=None, **kwargs):
-    '''
+    """
     Given a target sequence, filter it and return the result.
 
     By default, ``chained`` will have ``.extend()`` or ``.update()`` or ``.format()``
@@ -129,7 +129,7 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_sta
             ne: 2
             lt:5
     Outputs: [3, 4]
-    '''
+    """
     if extend_chained:
         try:
             if starting_seq and isinstance(chained, set):
@@ -151,7 +151,7 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_sta
 
 def _filter(seq,
             filter_rules):
-    '''
+    """
     Filter a sequence.
 
     seq
@@ -163,7 +163,7 @@ def _filter(seq,
         For e.g. for ``seq`` = [1, 2, 3, 4, 5] ``filter_rules``={le: 4, gt: 1, ne: 2}
         the function outputs [3, 4] - values less than or equal to 4, greater than 1,
         not equal to 2.
-    '''
+    """
     if not isinstance(filter_rules, dict):
         log.error("``filter_rules`` should be of type dict")
         return None
@@ -178,7 +178,7 @@ def _filter(seq,
 
 
 def get_index(index=0, starting_list=None, extend_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Given a list list, return the item found at ``index``.
 
     By default, ``chained`` will have ``.extend()`` called on it with
@@ -190,7 +190,7 @@ def get_index(index=0, starting_list=None, extend_chained=True, chained=None, ch
     ``extend_chained`` is set to True when ``chained`` should be extended with ``starting_list``.
     If set to False, ``starting_list`` is ignored.
 
-    '''
+    """
     if extend_chained:
         if starting_list:
             try:
@@ -212,7 +212,7 @@ def get_index(index=0, starting_list=None, extend_chained=True, chained=None, ch
 
 
 def get_key(key, starting_dict=None, update_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Given a dictionary, return an element by ``key``.
 
     By default, ``chained`` will have ``.update()`` called on it with
@@ -222,7 +222,7 @@ def get_key(key, starting_dict=None, update_chained=True, chained=None, chained_
     The first return value (status) will be True if the key is found, and
     False othewise. The second argument will be the value found by the key or
     None if the key is not present in the dictionary.
-    '''
+    """
     if update_chained:
         if starting_dict:
             try:
@@ -244,7 +244,7 @@ def get_key(key, starting_dict=None, update_chained=True, chained=None, chained_
 
 
 def join(words=None, sep='', extend_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Given a list of strings, join them into a string, using ``sep`` as delimiter.
 
     By default, ``chained`` will have ``.extend()`` called on it with
@@ -256,7 +256,7 @@ def join(words=None, sep='', extend_chained=True, chained=None, chained_status=N
 
     ``extend_chained`` is set to True when ``chained`` should be extended with ``words``.
     If set to False, ``words`` is ignored.
-    '''
+    """
     if extend_chained:
         if words:
             try:
@@ -275,7 +275,7 @@ def join(words=None, sep='', extend_chained=True, chained=None, chained_status=N
 
 
 def sort(seq=None, desc=False, lexico=False, extend_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Given a target sequence, sort it and return the sorted result.
 
     By default, ``chained`` will have ``.extend()`` or ``.update()`` or ``.format()``
@@ -284,7 +284,7 @@ def sort(seq=None, desc=False, lexico=False, extend_chained=True, chained=None, 
 
     The first return value (status) will be True if the sort is successful, and
     False othewise. The second argument will be the sorted sequence.
-    '''
+    """
     if extend_chained:
         try:
             if seq and isinstance(chained, (dict, set)):
@@ -305,7 +305,7 @@ def sort(seq=None, desc=False, lexico=False, extend_chained=True, chained=None, 
 def _sort(seq,
           desc,
           lexico):
-    '''
+    """
     Sort a sequence.
 
     seq
@@ -316,7 +316,7 @@ def _sort(seq,
 
     lexico
         Set to True if the sorting thould be in lexicographical order.
-    '''
+    """
     ret = []
     key = None
     if lexico:
@@ -331,7 +331,7 @@ def _sort(seq,
 
 
 def split(phrase, sep=None, regex=False, format_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Given a ``phrase`` string, split it into a list of words by a ``sep`` delimiter.
 
     By default, the ``phrase`` will have ``.format()`` called on it with
@@ -345,7 +345,7 @@ def split(phrase, sep=None, regex=False, format_chained=True, chained=None, chai
 
     ``regex`` will be set to True if ``sep`` is a regex instead of a pattern.
 
-    '''
+    """
     if format_chained:
         if chained:
             try:
@@ -362,7 +362,7 @@ def split(phrase, sep=None, regex=False, format_chained=True, chained=None, chai
 def _split(phrase,
            sep,
            regex):
-    '''
+    """
     Run the split command on the phrase using ``sep`` as a delimiter or regex.
 
     phrase
@@ -374,7 +374,7 @@ def _split(phrase,
 
     regex
         Set to True if ``sep`` should be treated as a regex instead of a delimiter.
-    '''
+    """
     ret = []
     try:
         if regex:
@@ -389,7 +389,7 @@ def _split(phrase,
 
 
 def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Given a target dictionary, convert it to a list of (key, value) tuples.
 
     By default, ``chained`` will have ``.update()`` called on it with
@@ -398,7 +398,7 @@ def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_
 
     The first return value (status) will be True if the conversion is successful,
     and False othewise. The second argument will be the list of tuples.
-    '''
+    """
     if update_chained:
         if starting_dict:
             try:
@@ -413,7 +413,7 @@ def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_
 
 
 def dict_convert_none(starting_seq=None, extend_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Given a target sequence, look for dictionary keys that have empty string values and replace them with None
 
     By default, ``chained`` will have ``.extend()`` or  ``.update()``  called on it with
@@ -421,7 +421,7 @@ def dict_convert_none(starting_seq=None, extend_chained=True, chained=None, chai
 
     The first return value (status) will be True if the replacing is successful, and
     False othewise. The second argument will be the updated sequence.
-    '''
+    """
     if extend_chained:
         try:
             if starting_seq and isinstance(chained, (set, dict)):
@@ -444,13 +444,13 @@ def dict_convert_none(starting_seq=None, extend_chained=True, chained=None, chai
 
 
 def _dict_convert_none(dictionary):
-    '''
+    """
     Look for keys that have values of empty strings and convert them to values of None.
     It recursively looks for nested dictionaries and sterilizes those too
 
     dictionary
         The input dict to sterilize
-    '''
+    """
     if not isinstance(dictionary, dict):
         log.error("Invalid argument type - should be dict")
         return None
@@ -469,14 +469,14 @@ def _dict_convert_none(dictionary):
 
 
 def _seq_convert_none(seq):
-    '''
+    """
     Go over a sequence and look for dictionary keys that have values of empty strings
     and convert them to values of None.
     It recursively looks for nested sequences and sterilizes those too
 
     seq
         The input sequence to sterilize
-    '''
+    """
     if not isinstance(seq, (list, set, tuple)):
         log.error("Invalid argument type - list set or tuple expected")
         return None
@@ -493,7 +493,7 @@ def _seq_convert_none(seq):
 
 
 def print_string(starting_string, format_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Given a string, return it.
 
     By default, ``starting_string`` will have ``.format()`` called on it
@@ -502,7 +502,7 @@ def print_string(starting_string, format_chained=True, chained=None, chained_sta
     set ``format_chained=False``.
 
     The first return value (status) will be False only if an error will occur.
-    '''
+    """
     if format_chained:
         try:
             starting_string = starting_string.format(chained)
@@ -517,7 +517,7 @@ def print_string(starting_string, format_chained=True, chained=None, chained_sta
 
 
 def dict_remove_none(starting_seq=None, extend_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Given a target sequence, look for dictionary keys that have values of None and remove those keys.
 
     By default, ``chained`` will have ``.extend()`` or ``.update()`` called on it with
@@ -525,7 +525,7 @@ def dict_remove_none(starting_seq=None, extend_chained=True, chained=None, chain
 
     The first return value (status) will be True if the sterilizing is successful, and False otherwise.
     The second argument will be the sterilized sequence.
-    '''
+    """
     if extend_chained:
         try:
             if starting_seq and isinstance(chained, (set, dict)):
@@ -548,13 +548,13 @@ def dict_remove_none(starting_seq=None, extend_chained=True, chained=None, chain
 
 
 def _sterilize_dict(dictionary):
-    '''
+    """
     Sterilize a dictionary by removing the keys that have values of None.
     It recursively looks for nested dictionaries and sterilizes those too.
 
     dictionary
         The input dict to sterilize
-    '''
+    """
     if not isinstance(dictionary, dict):
         log.error("Invalid argument type - should be dict")
         return None
@@ -571,13 +571,13 @@ def _sterilize_dict(dictionary):
 
 
 def _sterilize_seq(seq):
-    '''
+    """
     Sterilize a sequence by looking for dictionary keys that have values of None and removing them.
     It recursively looks for nested sequences and sterilizes those too.
 
     seq
         The input sequence to sterilize
-    '''
+    """
     if not isinstance(seq, (list, set, tuple)):
         log.error('Invalid argument type - should be list, set or tuple')
         return None
@@ -594,7 +594,7 @@ def _sterilize_seq(seq):
 
 
 def encode_base64(starting_string, format_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Given a string, base64 encode it and return it.
 
     By default, ``starting_string`` will have ``.format()`` called on it
@@ -603,7 +603,7 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
     set ``format_chained=False``.
 
     The first return value (status) will be False only if an error will occur.
-    '''
+    """
     if format_chained:
         try:
             starting_string = starting_string.format(chained)

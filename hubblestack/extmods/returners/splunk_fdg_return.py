@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack FDG-to-Splunk returner
 
 Deliver HubbleStack FDG query data into Splunk using the HTTP
@@ -41,7 +41,7 @@ gateway is not defined.
             custom_fields:
               - site
               - product_group
-'''
+"""
 import socket
 
 # Imports for http event forwarder

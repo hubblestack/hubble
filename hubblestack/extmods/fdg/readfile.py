@@ -1,10 +1,10 @@
-'''
+"""
 Flexible Data Gathering: readfile
 =================================
 
 This fdg module allows for reading in the contents of files, with various
 options for format and filtering.
-'''
+"""
 from __future__ import absolute_import
 
 import json as _json
@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 
 def json(path, subkey=None, sep=None, chained=None, chained_status=None):
-    '''
+    """
     Pull data (optionally from a subkey) of a json object in a file at ``path``
 
     path
@@ -39,7 +39,7 @@ def json(path, subkey=None, sep=None, chained=None, chained_status=None):
     chained
         Value passed in via chaining in fdg. Will be called with ``.format()``
         on the path and subkey if defined.
-    '''
+    """
     if chained is not None:
         path = path.format(chained)
         if subkey:
@@ -76,7 +76,7 @@ def json(path, subkey=None, sep=None, chained=None, chained_status=None):
 
 
 def yaml(path, subkey=None, sep=None, chained=None, chained_status=None):
-    '''
+    """
     Pull data (optionally from a subkey) of a yaml object in a file at ``path``
 
     path
@@ -95,7 +95,7 @@ def yaml(path, subkey=None, sep=None, chained=None, chained_status=None):
     chained
         Value passed in via chaining in fdg. Will be called with ``.format()``
         on the path and subkey if defined.
-    '''
+    """
     if chained is not None:
         path = path.format(chained)
         if subkey:
@@ -139,7 +139,7 @@ def config(path,
            subsep=None,
            chained=None,
            chained_status=None):
-    '''
+    """
     This is a fairly specialized function designed to pull data from a file
     with formatting similar to this::
 
@@ -220,7 +220,7 @@ def config(path,
                  "provider": "aws"}
             ]
         }
-    '''
+    """
     if chained is not None:
         path = path.format(chained)
 
@@ -276,10 +276,10 @@ def config(path,
 
 
 def _check_pattern(line, pattern, ignore_pattern):
-    '''
+    """
     Check a given line against both a pattern and an ignore_pattern and return
     True or False based on whether that line should be used.
-    '''
+    """
     keep = False
 
     if pattern is None:
@@ -294,10 +294,10 @@ def _check_pattern(line, pattern, ignore_pattern):
 
 
 def _process_line(line, dictsep, valsep, subsep):
-    '''
+    """
     Process a given line of data using the dictsep, valsep, and subsep
     provided. For documentation, please see the docstring for ``config()``
-    '''
+    """
     if dictsep is None:
         return line, None
 
@@ -332,7 +332,7 @@ def _process_line(line, dictsep, valsep, subsep):
 
 
 def readfile_string(path, encode_b64=False, chained=None, chained_status=None):
-    '''
+    """
     Open the file at ``path``, read its contents and return them as a string.
 
     path
@@ -347,7 +347,7 @@ def readfile_string(path, encode_b64=False, chained=None, chained_status=None):
     chained
         Value passed in via chaining in fdg. Will be called with ``.format()``
         on the path if defined.
-    '''
+    """
     if chained is not None:
         path = path.format(chained)
     if not os.path.isfile(path):

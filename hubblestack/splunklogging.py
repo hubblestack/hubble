@@ -1,4 +1,4 @@
-'''
+"""
 Hubblestack python log handler for splunk
 
 Uses the same configuration as the rest of the splunk returners, returns to
@@ -33,7 +33,7 @@ be skipped:
             custom_fields:
               - site
               - product_group
-'''
+"""
 import socket
 
 # Imports for http event forwarder
@@ -47,9 +47,9 @@ import hubblestack.utils.stdrec
 import logging
 
 class SplunkHandler(logging.Handler):
-    '''
+    """
     Log handler for splunk
-    '''
+    """
     def __init__(self):
         super(SplunkHandler, self).__init__()
 
@@ -126,10 +126,10 @@ class SplunkHandler(logging.Handler):
             self.endpoint_list.append((hec, event, payload))
 
     def emit(self, record):
-        '''
+        """
         Emit a single record using the hec/event template/payload template
         generated in __init__()
-        '''
+        """
 
         # NOTE: poor man's filtering ... goal: prevent logging loops and
         # various objects from logging to splunk in an infinite spiral of spam.
@@ -164,10 +164,10 @@ class SplunkHandler(logging.Handler):
         return True
 
     def format_record(self, record):
-        '''
+        """
         Format the log record into a dictionary for easy insertion into a
         splunk event dictionary
-        '''
+        """
         try:
             log_entry = {'message': record.message,
                          'level': record.levelname,

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Module for handling timeouts in code that may not be designed for it.
-'''
+"""
 
 import signal
 import time
@@ -16,7 +16,7 @@ class HangTime(Exception):
     prev = list()
 
     def __init__(self, msg="hang timeout detected", timeout=300, tag=None, repeats=False, decay=1.0):
-        ''' HangTime wraps code via with block.
+        """ HangTime wraps code via with block.
 
         ... code-block:: python
             try:
@@ -67,7 +67,7 @@ class HangTime(Exception):
             3nd timeout       50s     28.125s       0.5s
             4th timeout       50s     21.094s       0.1s
             4th timeout       50s     15.820s       0.1s
-        '''
+        """
         self.timeout = timeout
         self.started = 0
         self.tag = tag
@@ -79,11 +79,11 @@ class HangTime(Exception):
         return "HT({:0.2f}s, tag={})".format(self.timeout, self.tag)
 
     def restore(self, ended=False):
-        ''' this method restores the original alarm signal handler, or sets up
+        """ this method restores the original alarm signal handler, or sets up
             the next timer on the pushdown stack. It takes a single argument
             indicating whether the with block is exiting (so it can know when
             to short-circuit the pushdown stack).
-        '''
+        """
         if not ended and signal.getitimer(signal.ITIMER_REAL)[0] > 0:
             log.debug("timer running, blocking timer stack restore")
             return
@@ -105,13 +105,13 @@ class HangTime(Exception):
             signal.signal(signal.SIGALRM, signal.SIG_DFL)
 
     def fire_timer(self, *sig_param):
-        ''' when an itimer fires, execution enters this method
+        """ when an itimer fires, execution enters this method
             which either clears timers, sets up the next timer in a nest, or
             repeats the last timer as specified by the options.
 
             After the timers are handled, this method raises the HangTime
             exception.
-        '''
+        """
         log.debug("timer fired on %s", repr(self))
         if self.repeats:
             self.timeout = max(0.1, self.timeout * self.decay)
@@ -122,10 +122,10 @@ class HangTime(Exception):
         raise self
 
     def __enter__(self):
-        ''' the logic that starts the timers is normally fired by the with
+        """ the logic that starts the timers is normally fired by the with
             keyword though, with just calls this __enter__ function. The timers
             are started here.
-        '''
+        """
         log.debug("watching for process hangs %s", repr(self))
         self.prev.append(self)
         signal.signal(signal.SIGALRM, self.fire_timer)
@@ -134,9 +134,9 @@ class HangTime(Exception):
         return self
 
     def __exit__(self, e_type, e_obj, e_tb):
-        ''' when the code leaves the a HangTime with block, execution enters this __exit__
+        """ when the code leaves the a HangTime with block, execution enters this __exit__
             method. It attempts to clean up any remaining timers.
-        '''
+        """
         if not isinstance(e_obj, HangTime):
             log.debug("%s exited with-block normally", repr(self))
         else:
@@ -147,10 +147,10 @@ class HangTime(Exception):
 
 
 def hangtime_wrapper(**ht_kw):
-    ''' wrap decroated function in a with HangTime block and guard against exceptions
+    """ wrap decroated function in a with HangTime block and guard against exceptions
         The options are roughly the same as for HangTime with a minor exception.
         options:
-    '''
+    """
     callback = ht_kw.pop('callback', None)
     def _decorator(actual):
         def _frobnicator(*a, **kw):

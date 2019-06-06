@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 Flexible Data Gathering
 =======================
 
@@ -113,7 +113,7 @@ these ``xpipe`` values, same as with the ``pipe`` chaining keywords.
 If there are no chaining keywords that are valid to execute, the fdg execution
 will end and any ``return`` keywords will be evaluated as we move back up the
 call chain.
-'''
+"""
 from __future__ import absolute_import
 import logging
 import os
@@ -129,7 +129,7 @@ __returners__ = None
 
 
 def fdg(fdg_file, starting_chained=None):
-    '''
+    """
     Given an fdg file (usually a salt:// file, but can also be the absolute
     path to a file on the system), execute that fdg file, starting with the
     ``main`` block
@@ -143,7 +143,7 @@ def fdg(fdg_file, starting_chained=None):
     starting_chained
         Allows you to pass in a starting argument, which will be treated as
         the ``chained`` argument for the ``main`` block. Optional.
-    '''
+    """
     if fdg_file and fdg_file.startswith('salt://'):
         cached = __salt__['cp.cache_file'](fdg_file)
     else:
@@ -177,7 +177,7 @@ def fdg(fdg_file, starting_chained=None):
 
 
 def top(fdg_topfile='salt://fdg/top.fdg'):
-    '''
+    """
     fdg has topfile support, similar to audit, osquery, and fim support for
     topfiles.
 
@@ -203,7 +203,7 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
     the first of which is the fdg file, and the second of which is the
     (optional) ``starting_chained`` value dumped to a string. The values
     in the dictionary are the associated returns from the fdg runs.
-    '''
+    """
     fdg_routines = _get_top_data(fdg_topfile)
 
     ret = {}
@@ -219,19 +219,19 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
 
 
 def _fdg_saltify(path):
-    '''
+    """
     Take a path as it would be formatted in the fdg topfile and convert
     it to a salt://fdg path.
-    '''
+    """
     os.path.sep.join(path.split('.'))
     return 'salt://fdg/{0}.fdg'.format(path)
 
 
 def _fdg_execute(block_id, block_data, chained=None, chained_status=None):
-    '''
+    """
     Recursive function which executes a block and any blocks chained by that
     block (by calling itself).
-    '''
+    """
     log.debug('Executing fdg block with id {0} and chained value {1}'.format(block_id, chained))
     block = block_data.get(block_id)
 
@@ -273,12 +273,12 @@ def _fdg_execute(block_id, block_data, chained=None, chained_status=None):
 
 
 def _xpipe(chained, chained_status, block_data, block_id, returner=None):
-    '''
+    """
     Iterate over the given value and for each iteration, call the given fdg
     block by id with the iteration value as the passthrough.
 
     The results will be returned as a list.
-    '''
+    """
     ret = []
     for value in chained:
         ret.append(_fdg_execute(block_id, block_data, value, chained_status))
@@ -288,10 +288,10 @@ def _xpipe(chained, chained_status, block_data, block_id, returner=None):
 
 
 def _pipe(chained, chained_status, block_data, block_id, returner=None):
-    '''
+    """
     Call the given fdg block by id with the given value as the passthrough and
     return the result
-    '''
+    """
     ret = _fdg_execute(block_id, block_data, chained, chained_status)
     if returner:
         _return(ret, returner)
@@ -299,9 +299,9 @@ def _pipe(chained, chained_status, block_data, block_id, returner=None):
 
 
 def _return(data, returner, returner_retry=None):
-    '''
+    """
     Return data using the returner system
-    '''
+    """
     # JIT load the returners, since most returns will be handled by the daemon
     global __returners__
     if not __returners__:
@@ -325,9 +325,9 @@ def _return(data, returner, returner_retry=None):
 
 
 def _check_block(block, block_id):
-    '''
+    """
     Check if a block is valid
-    '''
+    """
     if not block:
         raise CommandExecutionError('Could not execute block \'{0}\', as it is not found.'
                                     .format(block_id))

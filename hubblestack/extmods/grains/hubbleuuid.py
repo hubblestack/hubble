@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Generate a unique uuid for this host, storing it on disk so it persists across
 restarts
-'''
+"""
 import logging
 import os
 import uuid
@@ -11,10 +11,10 @@ log = logging.getLogger(__name__)
 
 
 def hubble_uuid():
-    '''
+    """
     Generate a unique uuid for this host, storing it on disk so it persists
     across restarts
-    '''
+    """
     cached_uuid_path = os.path.join(os.path.dirname(__opts__['configfile']), 'hubble_cached_uuid')
     existing_uuid = __opts__.get('hubble_uuid', None)
     try:

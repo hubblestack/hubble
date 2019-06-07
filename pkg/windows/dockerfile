@@ -33,7 +33,7 @@ COPY hubble.conf C:/temp/
 #install Chocolatey, then git and git.portable, and osquery
 RUN powershell.exe -Command Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString("$env:CHOCO_URL"))
 RUN powershell.exe -Command choco install git nssm -y;
-RUN powershell.exe -Command choco install osquery --version 3.3.2 -y;
+RUN powershell.exe -Command choco install osquery --version 3.4.0 -y;
 RUN powershell.exe -Command choco install git.portable --version 2.19.0 -y;
 
 #RUN powershell.exe $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")

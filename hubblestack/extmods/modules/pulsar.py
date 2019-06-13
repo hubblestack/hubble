@@ -158,6 +158,7 @@ class ConfigManager(object):
         else:
             log.error('Pulsar beacon \'paths\' data improperly formatted. Should be list of paths')
 
+        to_set['paths'] = config.get('paths')
         self.nc_config = to_set
         self._abspathify()
         if config.get('verbose'):

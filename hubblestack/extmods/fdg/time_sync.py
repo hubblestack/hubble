@@ -7,8 +7,10 @@ NTP servers for differences bigger than 15 minutes.
 
 from __future__ import absolute_import
 import logging
+import salt.utils.platform
 
-
+if not salt.utils.platform.is_windows():
+    import ntplib
 log = logging.getLogger(__name__)
 
 
@@ -77,9 +79,22 @@ def _query_ntp_server(ntp_server):
     ntp_server
         string containing the NTP server to query
     '''
-    ret = __salt__['cmd.run']('ntpdate -q {0}'.format(ntp_server), python_shell=False)
+    # use w32tm instead of ntplib
+    if salt.utils.platform.is_windows():
+        ret = __salt__['cmd.run']('w32tm /stripchart /computer:{0} /dataonly /samples:1'.format(
+            ntp_server))
+        try:
+            return float(ret.split('\n')[-1].split()[1][:-1])
+        except (ValueError, AttributeError, IndexError):
+            log.error("An error occured while querying the server: %s", ret)
+            return None
+
+    ret = None
     try:
-        return float(ret.split('\n')[-1].split('offset')[1].split()[0])
-    except (TypeError, AttributeError, IndexError):
-        log.error("Unexpected return data %s", ret)
-        return None
+        ntp_client = ntplib.NTPClient()
+        response = ntp_client.request(ntp_server, version=3)
+        ret = response.offset
+    except Exception:
+        log.error("Unexpected error occured while querying the server.", exc_info=True)
+
+    return ret

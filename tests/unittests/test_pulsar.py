@@ -84,6 +84,7 @@ class TestPulsar():
         __salt__['config.get'] = config_get
         pulsar.__salt__ = __salt__
         pulsar.__opts__ = {}
+        pulsar.__context__ = {}
         var = pulsar.process(configfile, verbose)
         pulsar.__salt__ = {}
         assert len(var) == 0

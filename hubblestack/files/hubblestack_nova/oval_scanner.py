@@ -4,7 +4,7 @@ This is a Hubble Nova CVE scanner that uses an OVAL source file.
 Written by Wes Miser
 Contributions by Michael Robinson and Proofpoint, Inc.
 
-To use this scanner, an oval.yaml file must exist within the
+To use this scanner, a yaml file must exist within the
 hubblestack_nova_profiles directory, preferably within the cve folder.  The
 contents of the file should be as follows (notice everything under oval_scanner
 is indented):
@@ -22,14 +22,14 @@ scanner will automatically pull the appropriate OVAL source definition file from
 the supported distro's public repository.  opt_local_sourcefile will override
 opt_baseurl and opt_remote_sourcefile even if their values are specified.
 
-top.nova must also reference the oval.yaml file.  Note that other CVE scanners
+top.nova must also reference the yaml file.  Note that other CVE scanners
 must be disabled or conflicts will ensue.  The contents of top.nova can look as
 follows:
 
 nova:
   'G@kernel:Linux and not G@osfinger:*CoreOS*':
     ## - cve.vulners <-- ensure other CVE scanners are not active
-    - cve.oval
+    - cve.oval <-- assuming the yaml is oval.yaml in this example
 
 When run, the scanner will parse the source OVAL file into a readable
 dictionary, maps OVAL defintions directly to OVAL object and OVAL state
@@ -44,20 +44,19 @@ from __future__ import absolute_import
 
 import xml.etree.ElementTree as ET
 import json
-import sys
 import requests
 import logging
 
 
 def __virtual__():
-    return not sys.platform.startswith('win')
+    return not salt.utils.platform.is_windows() 
 
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
     """Hubble audit function"""
     ret = {'Success': [], 'Failure': []}
     for profile, data in data_list:
-        if 'oval' in profile and 'oval_scanner' in data:
+        if 'oval_scanner' in data:
             # Distro facts
             distro_name = __grains__.get('os').lower()
             distro_release = __grains__.get('osmajorrelease')

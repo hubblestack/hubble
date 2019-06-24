@@ -46,6 +46,7 @@ import xml.etree.ElementTree as ET
 import json
 import requests
 import logging
+import salt.utils.platform
 
 
 def __virtual__():

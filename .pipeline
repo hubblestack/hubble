@@ -17,24 +17,52 @@ pipeline {
     stages {
         stage('setup') {
             steps {
-                sh 'rm -vf *-manifest.txt *-result.txt *-output.txt; echo cleaned up output files'
-                sh './tests/jenkins-setup.sh'
+                sh '''#!/bin/bash
+                    source /etc/profile.d/kersplat.sh
+                    pyenv local 2.7.14
+                    pyenv shell 2.7.14
+                    pip install --cache-dir ./pip.cache -t ./vlib virtualenv
+                    PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv
+                    source ./venv/bin/activate
+                    pip install --cache-dir ./pip.cache -U pip
+                    pip install --cache-dir ./pip.cache -U pylint bandit pytest
+                    pip install --cache-dir ./pip.cache -U -r test-requirements.txt
+                    '''
             }
         }
-        stage('test/lint') {
+        stage('lint/test') {
             parallel {
-                stage('pylint') { steps { sh './tests/pylint-runner.sh' } }
-                stage('pytest') { steps { sh './tests/pytest-runner.sh' } }
-                stage('bandit') { steps { sh './tests/bandit-runner.sh' } }
+                stage('pytest') {
+                    steps {
+                        sh '''#!/bin/bash
+                            source ./venv/bin/activate
+                            pytest --log-cli-level INFO \
+                                --log-cli-format "%(asctime)s %(name)17s %(levelname)5s %(message)s" \
+                                --log-cli-date-format "%H:%M:%S" \
+                            '''
+                    }
+                }
+                stage('pylint') {
+                    steps {
+                        sh '''#!/bin/bash
+                            # NOTE: CHANGE_TARGET and BRANCH_NAME are only populated on multibranch pipeline.
+                            # For other environments, we have to fake it with 'origin/develop' and 'HEAD'
+                            LHS="origin/${CHANGE_TARGET:-develop}"
+                            RHS="${BRANCH_NAME:+origin/}${BRANCH_NAME:-HEAD}"
+                            git branch -vva
+                            echo "LHS=$LHS RHS=$RHS"
+                            if [[ $(git show -s --format='%s%n%b' "${LHS}..${RHS}") =~ LINT-FULL ]]
+                            then find hubblestack -name "*.py"
+                            else find hubblestack -name "*.py" -exec git diff --name-only "$LHS" "$RHS" {} +
+                            fi > pylint-manifest.txt
+                            '''
+                        sh '''#!/bin/bash
+                            source ./venv/bin/activate
+                            < pylint-manifest.txt xargs -r pylint -f colorized
+                            '''
+                    }
+                }
             }
-        }
-    }
-
-    post {
-        always {
-            archiveArtifacts artifacts: 'pylint-*.txt'
-            archiveArtifacts artifacts: 'pytest-*.txt'
-            archiveArtifacts artifacts: 'bandit-*.txt'
         }
     }
 }

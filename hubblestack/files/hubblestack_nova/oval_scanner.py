@@ -11,16 +11,16 @@ is indented):
 
 oval_scanner:
   opt_baseurl: <valid http/https url>
-  opt_sourcefile: <valid source file>
-  opt_local_file: <valid local file residing on the client>
-  opt_output: <write the vulnerability results to a file on the client>
+  opt_remote_sourcefile: <valid source file>
+  opt_local_sourcefile: <valid source file residing on the client>
+  opt_output_file: <write the vulnerability results to a file on the client>
 
 oval_scanner is the primary key.  Each opt key's value under the primary key
-is optional and does not need to be specified.  If opt_baseurl, opt_sourcefile,
-and opt_local_file values are not specified, the scanner will automatically pull
-the appropriate OVAL source definition file from the supported distro's public
-repository.  opt_local_file will override opt_baseurl and opt_sourcefile even if
-their values are specified.
+is optional and does not need to be specified.  If opt_baseurl,
+opt_remote_sourcefile, and opt_local_sourcefile values are not specified, the
+scanner will automatically pull the appropriate OVAL source definition file from
+the supported distro's public repository.  opt_local_sourcefile will override
+opt_baseurl and opt_remote_sourcefile even if their values are specified.
 
 top.nova must also reference the oval.yaml file.  Note that other CVE scanners
 must be disabled or conflicts will ensue.  The contents of top.nova can look as
@@ -63,25 +63,25 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
             distro_release = __grains__.get('osmajorrelease')
             distro_codename = __grains__.get('lsb_distrib_codename')
             logging.debug("distro_name: {0}, distro_release: {1}, distro_codename: {2}".format(distro_name, distro_release, distro_codename))
-            supported_dist = ('ubuntu', 'centos')
+            supported_dist = ('ubuntu', 'debian', 'centos', 'redhat')
             if distro_name not in (supported_dist):
                 logging.info('The oval CVE scanner does not currently support {0}'.format(distro_name.capitalize()))
                 return ret
             local_pkgs = __salt__['pkg.list_pkgs']()
             # Scanner options
             opt_baseurl = data['oval_scanner']['opt_baseurl']
-            opt_sourcefile = data['oval_scanner']['opt_sourcefile']
-            opt_local_file = data['oval_scanner']['opt_local_file']
-            opt_output = data['oval_scanner']['opt_output']
+            opt_remote_sourcefile = data['oval_scanner']['opt_remote_sourcefile']
+            opt_local_sourcefile = data['oval_scanner']['opt_local_sourcefile']
+            opt_output_file = data['oval_scanner']['opt_output_file']
             # Build report
-            source_content = get_source_content(distro_name, distro_release, distro_codename, opt_baseurl, opt_sourcefile, opt_local_file)
+            source_content = get_source_content(distro_name, distro_release, distro_codename, opt_baseurl, opt_remote_sourcefile, opt_local_sourcefile)
             oval_definition = build_oval(source_content)
             oval_and_maps = map_oval_ids(oval_definition)
             vulns = create_vulns(oval_and_maps)
             report = get_impact_report(vulns, local_pkgs, distro_name)
             # Write report to file if specified
-            if opt_output:
-                write_report_to_file(opt_output, report)
+            if opt_output_file:
+                write_report_to_file(opt_output_file, report)
             # Return Hubble formatted output
             hubble_out = parse_impact_report(report, local_pkgs, ret)
             return hubble_out
@@ -106,10 +106,10 @@ def parse_impact_report(report, local_pkgs, hubble_format, impacted_pkgs=[]):
     return hubble_format
 
 
-def write_report_to_file(opt_output, report):
+def write_report_to_file(opt_output_file, report):
     """Write report to local disk"""
-    logging.info('Writing CVE data to {0}'.format(opt_output))
-    with open(opt_output, 'w') as outfile:
+    logging.info('Writing CVE data to {0}'.format(opt_output_file))
+    with open(opt_output_file, 'w') as outfile:
         outfile.write(json.dumps(report, indent=2, sort_keys=True))
 
 
@@ -132,12 +132,18 @@ def build_impact(vulns, local_pkgs, distro_name, result={}):
             if name in local_pkgs:
                 title = data['title']
                 cve = data['cve']
-                severity = data['severity']
-                if distro_name in ('centos'):
-                    rhsa = data['rhsa']
-                    impact = get_centos_impact(local_pkgs[name], name, ver, title, cve, rhsa, severity)
-                elif distro_name in ('ubuntu'):
-                    impact = get_ubuntu_impact(local_pkgs[name], name, ver, title, cve, severity)
+                if 'severity' in data:
+                  severity = data['severity']
+                else:
+                  severity = 'N/A'
+                if distro_name in ('centos', 'redhat'):
+                    advisory = data['rhsa']
+                else:
+                    if 'advisories' in data:
+                      advisory = data['advisories']
+                    else:
+                      advisory = cve
+                impact = get_impact(local_pkgs[name], name, ver, title, cve, advisory, severity)
                 if impact:
                     result = build_impact_report(impact)
     return result
@@ -152,40 +158,24 @@ def build_impact_report(impact, report={}):
                 'updated_pkg': [],
                 'installed': [],
                 'severity': detail['severity'],
-                'cve': detail['cve']
+                'cve': detail['cve'],
+                'advisory': detail['advisory']
             }
         report[adv]['updated_pkg'].append(detail['updated_pkg'])
         report[adv]['installed'].append(detail['installed'])
-        if 'rhsa' in detail:
-            report[adv]['rhsa'] = detail['rhsa']
     return report
 
 
-# Package parsers
-def get_ubuntu_impact(local_ver, name, ver, title, cve, severity):
-    """Compare local package versions to vulnerability versions in Ubuntu"""
-    logging.debug('get_ubuntu_impact')
+def get_impact(local_ver, name, ver, title, cve, advisory, severity):
+    """Compare local package ver to vulnerability ver in rpm distros"""
+    logging.debug('get_rpm_impact')
     impact = {}
     if __salt__['pkg.version_cmp'](ver, local_ver) > 0:
         impact[title] = {
             'updated_pkg': {'name': name, 'version': ver},
             'installed': {'name': name, 'version': local_ver},
             'severity': severity,
-            'cve': cve
-        }
-    return impact
-
-
-def get_centos_impact(local_ver, name, ver, title, cve, rhsa, severity):
-    """Compare local package versions to vulnerability versions in CentOS"""
-    logging.debug('get_centos_impact')
-    impact = {}
-    if __salt__['pkg.version_cmp'](ver, local_ver) > 0:
-        impact[title] = {
-            'updated_pkg': {'name': name, 'version': ver},
-            'installed': {'name': name, 'version': local_ver},
-            'severity': severity,
-            'rhsa': rhsa,
+            'advisory': advisory,
             'cve': cve
         }
     return impact
@@ -306,12 +296,17 @@ def build_definitions(root, namespace, defs={}):
                 source = reference.attrib['source']
                 if source in ('RHSA', 'RHBA', 'RHEA'):
                     definition_data['rhsa'] = {ref_id: ref_url}
-                elif source == 'CVE':
+                elif source in ('CVE'):
                     definition_data['cve'].append({ref_id: ref_url})
             advisory = metadata.find('oval:advisory', namespace)
             if is_et(advisory):
                 severity = advisory.find('oval:severity', namespace).text
                 definition_data['severity'] = severity
+                adv_refs = advisory.findall('oval:ref', namespace)
+                advisories = []
+                for ref in adv_refs:
+                    advisories.append(ref.text)
+                definition_data['advisories'] = advisories
             for criterion in definition.iter():
                 if is_et(criterion) and 'test_ref' in criterion.attrib:
                     definition_data['tests'].append(criterion.attrib['test_ref'])
@@ -420,12 +415,14 @@ def get_source_content(distro_name, distro_release, distro_codename, base_url, s
 def get_definition_source(base_url, source_file, distro_name, distro_release, distro_codename):
     """Determine the source"""
     logging.debug('get_definition_source')
-    if distro_name == 'centos':
-        source = source_file or 'Red_Hat_Enterprise_Linux_{0}.xml'.format(distro_release)
+    if distro_name in ('centos', 'redhat'):
+        source = source_file or 'com.redhat.rhsa-RHEL{0}.xml'.format(distro_release)
         base = base_url or 'https://www.redhat.com/security/data/oval/'
-    elif distro_name == 'ubuntu':
+    elif distro_name in ('ubuntu'):
         source = source_file or 'com.ubuntu.{0}.cve.oval.xml'.format(distro_codename)
         base = base_url or 'https://people.canonical.com/~ubuntu-security/oval/'
+    elif distro_name in ('debian'):
+        source = source_file or 'oval-definitions-{0}.xml'.format(distro_codename)
+        base = base_url or 'https://www.debian.org/security/oval/'
     url = base + source
     return url
-

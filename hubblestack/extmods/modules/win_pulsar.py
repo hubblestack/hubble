@@ -263,7 +263,7 @@ def readjournal(drive, next_usn=0):
                     dvalue = int(mktime(strptime(dvalue.strip(), pattern)))
                     jd_dict[dkey.strip()] = dvalue
                 elif dkey.strip() == 'Reason':
-                    rvalues = dvalue.split(': ')
+                    rvalues = dvalue.split(': ', 1)
                     if len(rvalues) > 1:
                         rvalues = rvalues[1]
                     rvalues = rvalues.split(' | ')

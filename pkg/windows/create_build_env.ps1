@@ -7,9 +7,9 @@ Param(
   [string]$branch="develop"
 )
 
-[System.Version]$chocoVer = "0.10.5"
-[System.Version]$gitVer = "2.12.0"
-[System.Version]$portGitVer = "2.16.1.4"
+[System.Version]$chocoVer = "0.10.15"
+[System.Version]$gitVer = "2.22.0"
+[System.Version]$portGitVer = "2.19.0"
 # Verify you are running with elevated permission mode (administrator token)
 if (!([bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544"))) {
     Write-Error "You must be running powershell with elevated permissions (run as administrator)"

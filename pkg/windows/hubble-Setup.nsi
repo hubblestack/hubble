@@ -278,12 +278,11 @@
     WriteRegStr HKLM "${PRODUCT_CALL_REGKEY}" "" "$INSTDIR\hubble.exe"
 
     ; Register the Hubble Service
-    nsExec::Exec "nssm.exe install Hubble $INSTDIR\hubble.exe"
-    nsExec::Exec "nssm.exe set Hubble Description Open Source software for security compliance"
-    nsExec::Exec "nssm.exe set Hubble Application $INSTDIR\PortableGit\git-cmd.exe"
-    nsExec::Exec "nssm.exe set Hubble AppDirectory $INSTDIR"
-    nsExec::Exec "nssm.exe set Hubble AppParameters hubble.exe -c .\etc\hubble\hubble.conf"
-    nsExec::Exec "nssm.exe set Hubble Start SERVICE_AUTO_START"
+    nsExec::Exec "sc create Hubble DisplayName= Hubble start= auto"
+    nsExec::Exec "sc description Hubble Open Source software for security compliance"
+    nsExec::Exec "sc config binPath= $INSTDIR\PortableGit\git-cmd.exe $INSTDIR\hubble.exe -c $INSTDIR\etc\hubble\hubble.conf"
+    ; Reset Hubble failure flags after 1 week of successfull run. On first failure restart after 5mins, second failure restart 10mins
+    nsExec::Exec "sc failure Hubble reset= 604800 actions= restart/300000/restart/600000"
 
     ExecWait 'powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File .\osqueryd_safe_permissions.ps1 "$INSTDIR" -FFFeatureOff'
     RMDir /R "$INSTDIR\var\cache" ; removing cache from old version
@@ -340,8 +339,8 @@
     ${EndIf}
 
     ; Stop and Remove hubble service
-    nsExec::Exec 'net stop hubble'
-    nsExec::Exec 'sc delete hubble'
+    nsExec::Exec 'sc stop Hubble'
+    nsExec::Exec 'sc delete Hubble'
     nsExec::Exec 'sc delete hubble_osqueryd'
 
     ; Remove files
@@ -450,12 +449,12 @@
 
     ; If StartHubbleDelayed is 1, then set the service to start delayed
     ${If} $StartHubbleDelayed == 1
-        nsExec::Exec "nssm.exe set hubble Start SERVICE_DELAYED_AUTO_START"
+        nsExec::Exec "sc config Hubble start= delayed-auto"
     ${EndIf}
 
     ; If start-hubble is 1, then start the service
     ${If} $StartHubble == 1
-        nsExec::Exec 'net start hubble'
+        nsExec::Exec 'sc start Hubble'
     ${EndIf}
 
   FunctionEnd
@@ -733,6 +732,7 @@
         FileWrite $9 "        index: $IndexName_State$\r$\n"
         FileWrite $9 "        sourcetype_nova: hubble_audit$\r$\n"
         FileWrite $9 "        sourcetype_nebula: hubble_osquery$\r$\n"
+        FileWrite $9 "        sourcetype_osqueryd: hubble_osqd$\r$\n"
         FileWrite $9 "        sourcetype_pulsar: hubble_fim$\r$\n"
         FileWrite $9 "        sourcetype_log: hubble_log$\r$\n"
             goto EndOfFile

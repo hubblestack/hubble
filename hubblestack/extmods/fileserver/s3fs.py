@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Amazon S3 Fileserver Backend
 
 .. versionadded:: 0.16.0
@@ -76,7 +76,7 @@ structure::
 
     More info here:
     https://docs.aws.amazon.com/AmazonS3/latest/API/RESTCommonResponseHeaders.html
-'''
+"""
 
 # Import python libs
 from __future__ import absolute_import, print_function, unicode_literals
@@ -108,10 +108,10 @@ S3_SYNC_ON_UPDATE = True  # sync cache on update rather than jit
 
 
 def envs():
-    '''
+    """
     Return a list of directories within the bucket that can be
     used as environments.
-    '''
+    """
 
     # update and grab the envs from the metadata keys
     metadata = _init()
@@ -119,9 +119,9 @@ def envs():
 
 
 def update():
-    '''
+    """
     Update the cache file for the bucket.
-    '''
+    """
 
     metadata = _init()
 
@@ -142,11 +142,11 @@ def update():
 
 
 def find_file(path, saltenv='base', **kwargs):
-    '''
+    """
     Look through the buckets cache file for a match.
     If the field is found, it is retrieved from S3 only if its cached version
     is missing, or if the MD5 does not match.
-    '''
+    """
     if 'env' in kwargs:
         # "env" is not supported; Use "saltenv".
         kwargs.pop('env')
@@ -190,9 +190,9 @@ def find_file(path, saltenv='base', **kwargs):
 
 
 def file_hash(load, fnd):
-    '''
+    """
     Return an MD5 file hash
-    '''
+    """
     if 'env' in load:
         # "env" is not supported; Use "saltenv".
         load.pop('env')
@@ -218,9 +218,9 @@ def file_hash(load, fnd):
 
 
 def serve_file(load, fnd):
-    '''
+    """
     Return a chunk from a file based on the data received
-    '''
+    """
     if 'env' in load:
         # "env" is not supported; Use "saltenv".
         load.pop('env')
@@ -257,9 +257,9 @@ def serve_file(load, fnd):
 
 
 def file_list(load):
-    '''
+    """
     Return a list of all files on the file server in a specified environment
-    '''
+    """
     if 'env' in load:
         # "env" is not supported; Use "saltenv".
         load.pop('env')
@@ -283,9 +283,9 @@ def file_list(load):
 
 
 def file_list_emptydirs(load):
-    '''
+    """
     Return a list of all empty directories on the master
-    '''
+    """
     # TODO - implement this
     _init()
 
@@ -293,9 +293,9 @@ def file_list_emptydirs(load):
 
 
 def dir_list(load):
-    '''
+    """
     Return a list of all directories on the master
-    '''
+    """
     if 'env' in load:
         # "env" is not supported; Use "saltenv".
         load.pop('env')
@@ -323,9 +323,9 @@ def dir_list(load):
 
 
 def _get_s3_key():
-    '''
+    """
     Get AWS keys from pillar or config
-    '''
+    """
 
     key = __opts__['s3.key'] if 's3.key' in __opts__ else None
     keyid = __opts__['s3.keyid'] if 's3.keyid' in __opts__ else None
@@ -350,10 +350,10 @@ def _get_s3_key():
 
 
 def _init():
-    '''
+    """
     Connect to S3 and download the metadata for each file in all buckets
     specified and cache the data to disk.
-    '''
+    """
     cache_file = _get_buckets_cache_filename()
     exp = time.time() - S3_CACHE_EXPIRE
 
@@ -384,18 +384,18 @@ def _init():
 
 
 def _get_cache_dir():
-    '''
+    """
     Return the path to the s3cache dir
-    '''
+    """
 
     # Or is that making too many assumptions?
     return os.path.join(__opts__['cachedir'], 's3cache')
 
 
 def _get_cached_file_name(bucket_name, saltenv, path):
-    '''
+    """
     Return the cached file name for a bucket path file
-    '''
+    """
 
     file_path = os.path.join(_get_cache_dir(), saltenv, bucket_name, path)
 
@@ -407,10 +407,10 @@ def _get_cached_file_name(bucket_name, saltenv, path):
 
 
 def _get_buckets_cache_filename():
-    '''
+    """
     Return the filename of the cache for bucket contents.
     Create the path if it does not exist.
-    '''
+    """
 
     cache_dir = _get_cache_dir()
     if not os.path.exists(cache_dir):
@@ -420,10 +420,10 @@ def _get_buckets_cache_filename():
 
 
 def _refresh_buckets_cache_file(cache_file):
-    '''
+    """
     Retrieve the content of all buckets and cache the metadata to the buckets
     cache file
-    '''
+    """
 
     log.debug('Refreshing buckets cache file')
 
@@ -569,9 +569,9 @@ def _refresh_buckets_cache_file(cache_file):
 
 
 def _read_buckets_cache_file(cache_file):
-    '''
+    """
     Return the contents of the buckets cache file
-    '''
+    """
 
     log.debug('Reading buckets cache file')
 
@@ -586,9 +586,9 @@ def _read_buckets_cache_file(cache_file):
 
 
 def _find_files(metadata):
-    '''
+    """
     Looks for all the files in the S3 bucket cache metadata
-    '''
+    """
 
     ret = []
     found = {}
@@ -609,12 +609,12 @@ def _find_files(metadata):
 
 
 def _find_dirs(metadata):
-    '''
+    """
     Looks for all the directories in the S3 bucket cache metadata.
 
     Supports trailing '/' keys (as created by S3 console) as well as
     directories discovered in the path of file keys.
-    '''
+    """
 
     ret = []
     found = {}
@@ -641,9 +641,9 @@ def _find_dirs(metadata):
 
 
 def _find_file_meta(metadata, bucket_name, saltenv, path):
-    '''
+    """
     Looks for a file's metadata in the S3 bucket cache file
-    '''
+    """
     env_meta = metadata[saltenv] if saltenv in metadata else {}
     bucket_meta = {}
     for bucket in env_meta:
@@ -662,18 +662,18 @@ def _find_file_meta(metadata, bucket_name, saltenv, path):
 
 
 def _get_buckets():
-    '''
+    """
     Return the configuration buckets
-    '''
+    """
 
     return __opts__['s3.buckets'] if 's3.buckets' in __opts__ else {}
 
 
 def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
-    '''
+    """
     Checks the local cache for the file, if it's old or missing go grab the
     file from S3 and update the cache
-    '''
+    """
     key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable = _get_s3_key()
 
     # check the local cache...
@@ -752,9 +752,9 @@ def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
 
 
 def _trim_env_off_path(paths, saltenv, trim_slash=False):
-    '''
+    """
     Return a list of file paths with the saltenv directory removed
-    '''
+    """
     env_len = None if _is_env_per_bucket() else len(saltenv) + 1
     slash_len = -1 if trim_slash else None
 
@@ -762,10 +762,10 @@ def _trim_env_off_path(paths, saltenv, trim_slash=False):
 
 
 def _is_env_per_bucket():
-    '''
+    """
     Return the configuration mode, either buckets per environment or a list of
     buckets that have environment dirs in their root
-    '''
+    """
 
     buckets = _get_buckets()
     if isinstance(buckets, dict):

@@ -1,9 +1,9 @@
-'''
+"""
 HubbleStack Custom Grains and Pillar
 
 Allows for fetching custom grain and pillar data from a local salt-minion via
 salt-call
-'''
+"""
 
 import re
 import salt.modules.cmdmod
@@ -18,7 +18,7 @@ __salt__ = {
 
 
 def populate_custom_grains_and_pillar():
-    '''
+    """
     Populate local salt-minion grains and pillar fields values as specified in
     config file.
 
@@ -33,7 +33,7 @@ def populate_custom_grains_and_pillar():
 
     Note that the core grains are already included in hubble grains -- this
     is only necessary for custom grains and pillar data.
-    '''
+    """
     log.debug('Fetching custom grains and pillar details')
     grains = {}
     salt.modules.config.__opts__ = __opts__

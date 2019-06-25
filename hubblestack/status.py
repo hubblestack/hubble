@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 hubblestack.status aims to be a very lightweight stats tracker for the purposes
 of verifying the health of daemon. It piggybacks the normal hubble operations,
 increments counters, tracks function call times (and averages), and can dump to
@@ -28,7 +28,7 @@ hubblestack.status options:
     hubble:status:good_time
         If any counter has advanced or updated in the last (default) 60s, then
         the status dump will report the status as "yes."
-'''
+"""
 
 from collections import namedtuple
 from functools import wraps
@@ -50,7 +50,7 @@ DEFAULTS = {
 }
 
 def t_bucket(t=None, bucket_len=None):
-    ''' convert a time into a bucket id '''
+    """ convert a time into a bucket id """
     if t is None:
         t = time.time()
     if bucket_len is None:
@@ -62,13 +62,13 @@ def t_bucket(t=None, bucket_len=None):
 
 __opts__ = dict()
 def get_hubble_status_opt(name, require_type=None):
-    ''' try to locate HubbleStatus options in
+    """ try to locate HubbleStatus options in
         * __opts__['hubble_status'][name]
         * __opts__['hubble']['status'][name]
         * or __opts__['hubble_status_' + name]
 
         Various defaults are defined in hubblestack.status.DEFAULTS
-    '''
+    """
     r = None
     for kl in (('hubble_status',name), ('hubble','status',name), ('hubble_status_'+name)):
         t = __opts__
@@ -95,12 +95,12 @@ def get_hubble_or_salt_opt(name):
             return __opts__['hubble'][name]
 
 class HubbleStatusResourceNotFound(Exception):
-    ''' Exception caused by trying to mark() a counter that wasn't explicitly defined
-    '''
+    """ Exception caused by trying to mark() a counter that wasn't explicitly defined
+    """
     pass
 
 class ResourceTimer(object):
-    ''' described in HubbleStatus.resource_timer '''
+    """ described in HubbleStatus.resource_timer """
     def __init__(self, hubble_status, hs_key):
         self.hubble_status = hubble_status
         self.hs_key = hs_key
@@ -112,7 +112,7 @@ class ResourceTimer(object):
         self.hubble_status.fin(self.hs_key)
 
 class HubbleStatus(object):
-    '''
+    """
         The values tracked by this package (and output by this method) are
         as follows:
 
@@ -159,12 +159,12 @@ class HubbleStatus(object):
                 do_things_that_last_a_while()
                 hubble_status.fin('f4') # mark the duration in the counter stack
                 return
-    '''
+    """
     _signaled = False
     dat = dict()
     resources = list()
     class Stat(object):
-        ''' Data sample container for a named mark.
+        """ Data sample container for a named mark.
             Stat objects have the following properties
 
             * first_t: the first time the counter was marked
@@ -173,7 +173,7 @@ class HubbleStatus(object):
             * ema_dt: the average time between marks (updated at mark() time only)
             * dur: the duration of the last mark()/fin() cycle
             * ema_dur: the average duration between mark()/fin() cycles
-        '''
+        """
 
         def __init__(self, t=None):
             self.bucket, self.bucket_len = t_bucket(t=t)
@@ -206,7 +206,7 @@ class HubbleStatus(object):
 
         @property
         def dt(self):
-            ''' a computed attribute: the time since the last mark() '''
+            """ a computed attribute: the time since the last mark() """
             return time.time() - self.last_t
 
         @property
@@ -217,9 +217,9 @@ class HubbleStatus(object):
             return sorted(r)
 
         def asdict(self, bucket=None):
-            ''' return a copy of the various stat object properties
+            """ return a copy of the various stat object properties
                 (optionally for the given bucket)
-            '''
+            """
             if bucket is not None:
                 self = self.find_bucket(bucket)
             r = { 'count': self.count, 'last_t': self.last_t,
@@ -231,11 +231,11 @@ class HubbleStatus(object):
             return r
 
         def mark(self, t=None):
-            ''' mark a counter (ie, increment the count, mark the last_t =
+            """ mark a counter (ie, increment the count, mark the last_t =
                 time.time(), and update the ema_dt)
 
                 optional param "t": integer timestampjof mark
-            '''
+            """
             if t is None:
                 t = time.time()
                 self = self.get_bucket(t)
@@ -257,12 +257,12 @@ class HubbleStatus(object):
             return self
 
         def fin(self):
-            ''' mark a counter duration (ie, mark the time since the last mark, and update the ema_dur)
+            """ mark a counter duration (ie, mark the time since the last mark, and update the ema_dur)
 
                 NOTE: because the stats are bucketed (for searching purposes), it's important to fin()
                 the right stat object. For this reason, mark() returns a stat object, which is the right one
                 upon which to call fin()
-            '''
+            """
             self.dur = self.dt
             self.ema_dur  = self.dur if self.ema_dur is None else 0.5*self.ema_dur + 0.5*self.dur
 
@@ -273,7 +273,7 @@ class HubbleStatus(object):
             yield self
 
     def __init__(self, namespace, *resources):
-        ''' params:
+        """ params:
             * namespace: a namespace for the counters tracked by the instance (usually __name__)
             * *resources: an argument list of names for counters tracked by the instance
 
@@ -283,7 +283,7 @@ class HubbleStatus(object):
                 hs.mark('gizmo')
                 long_operation()
                 hs.dur('gizmo')
-        '''
+        """
         if namespace is None:
             namespace = '_'
         self.namespace = namespace
@@ -300,10 +300,10 @@ class HubbleStatus(object):
             self.dat[r] = self.Stat()
 
     def _namespaced(self, n):
-        ''' resolve `n` as a namespaced resource identifier
+        """ resolve `n` as a namespaced resource identifier
             e.g.: hs._namespaced('blah') → 'hubblestack.daemon.blah'
             prefixing is aborted if the argument `n` is already namespaced
-        '''
+        """
         if self.namespace is None or self.namespace.startswith('_'):
             return n
         if n.startswith(self.namespace + '.'):
@@ -311,14 +311,14 @@ class HubbleStatus(object):
         return self.namespace + '.' + n
 
     def _checkmark(self, n):
-        ''' ensure the resource `n` is tracked by the instance '''
+        """ ensure the resource `n` is tracked by the instance """
         m = self._namespaced(n)
         if m not in self.resources:
             raise HubbleStatusResourceNotFound('"{}" is not a resource of this HubbleStatus instance')
         return m
 
     def _check_depth(self, n):
-        ''' make sure we never have more than max_depth memory of past buckets '''
+        """ make sure we never have more than max_depth memory of past buckets """
         max_depth = int(get_hubble_status_opt('max_buckets'))
         n = self._namespaced(n)
         node = self.dat[n]
@@ -331,8 +331,8 @@ class HubbleStatus(object):
             self.dat[n] = nb_list[0]
 
     def mark(self, n, t=None):
-        ''' mark the named resource `n` — meaning increment the counters, update the last_t, etc
-        '''
+        """ mark the named resource `n` — meaning increment the counters, update the last_t, etc
+        """
         n = self._checkmark(n)
         r = self.dat[n].mark(t=t)
         self._check_depth(n)
@@ -354,7 +354,7 @@ class HubbleStatus(object):
         return sorted(r)
 
     def watch(self, mark_name):
-        ''' wrap a decorated function with a mark/fin pattern
+        """ wrap a decorated function with a mark/fin pattern
             .. code-block:: python
                 hs1 = HubbleStatus(__name__, 'thing1')
                 @hs1.watch
@@ -373,7 +373,7 @@ class HubbleStatus(object):
                     hs1.mark('thing1')
                     time.sleep(2)
                     hs1.fin('thing1')
-        '''
+        """
         invoke = False
         if callable(mark_name) and hasattr(mark_name, '__name__'):
             # if mark_name is actually a function, invoke the decorator
@@ -394,7 +394,7 @@ class HubbleStatus(object):
 
     @classmethod
     def stats(cls):
-        ''' Produce a data structure suitable for output as json/yaml —
+        """ Produce a data structure suitable for output as json/yaml —
             intended to be invoked during SIGUSR1.
 
             The output includes a section (dict key/value) for each tracked
@@ -443,7 +443,7 @@ class HubbleStatus(object):
                     }
                   }
                 }
-        '''
+        """
 
         r = cls.short()
 
@@ -489,14 +489,14 @@ class HubbleStatus(object):
 
     @classmethod
     def short(cls, bucket=None):
-        ''' return a shortened stats listing (no docs or health guesses)
+        """ return a shortened stats listing (no docs or health guesses)
 
             optionally, give parameter bucket:
                 some number in epoch time - to return the stats in that bucket
                 or the word 'all' or the string '*' - to return all but the
                   last bucket as a list
 
-        '''
+        """
         if bucket in ('*', 'all'):
             return [ cls.short(b) for b in cls.buckets() ]
         return { k: v.asdict(bucket) for k,v in cls.dat.iteritems() if v.first_t > 0 }
@@ -507,11 +507,11 @@ class HubbleStatus(object):
 
     @classmethod
     def dumpster_fire(cls, *a, **kw):
-        ''' dump the status.json file to cachedir
+        """ dump the status.json file to cachedir
 
             Location and filename can be adjusted with the cachedir and
             hubble:status:dumpster options (see above).
-        '''
+        """
         try:
             if __salt__['config.get']('splunklogging', False):
                 # lazy load to avoid circular import
@@ -534,10 +534,10 @@ class HubbleStatus(object):
 
     @classmethod
     def start_sigusr1_signal_handler(cls):
-        ''' start the signal.SIGUSR1 handler (dumps status to
+        """ start the signal.SIGUSR1 handler (dumps status to
             /var/cache/hubble/status.json or whatever is specified in
             cachedir + hubble:status:dumpster configs)
-        '''
+        """
         if not cls._signaled:
             cls._signaled = True
             if not hasattr(signal, 'SIGUSR1'):
@@ -547,7 +547,7 @@ class HubbleStatus(object):
             signal.signal(signal.SIGUSR1, cls.dumpster_fire)
 
     def resource_timer(self, hs_key):
-        ''' return an object suitable for a with-block for timing code
+        """ return an object suitable for a with-block for timing code
 
             instead of writing:
                 hs_key = 'resource-name-here'
@@ -561,7 +561,7 @@ class HubbleStatus(object):
                 with hubble_status.resource_timer('resource-name-here'):
                     do_things()
                     do_other_things()
-        '''
+        """
         self.add_resource(hs_key)
         return ResourceTimer(self, hs_key)
 

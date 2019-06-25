@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Pulsar-to-Logstash (http input) returner
 
 Deliver HubbleStack Pulsar event data into Logstash using the HTTP input
@@ -21,7 +21,7 @@ plugin. Required config/pillar settings:
             custom_fields:
               - site
               - product_group
-'''
+"""
 
 import os
 import json
@@ -39,8 +39,8 @@ def _dedupList(l):
 
 
 def returner(ret):
-    '''
-    '''
+    """
+    """
     if isinstance(ret, dict) and not ret.get('return'):
         return
 

@@ -16,14 +16,14 @@ def __virtual__():
     return True
 
 def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
-    ''' returns counter data formatted for the splunk_generic_return returner
+    """ returns counter data formatted for the splunk_generic_return returner
 
         params:
             pat        - the key matching algorithm is a simple regular expression
                          (default: hstatus.MSG_COUNTS_PAT)
             emit_self  - whether to emit sourcetype counters (default: False)
             sourcetype - the sourcetype for the accounting messages (default: hstatus.SOURCETYPE)
-    '''
+    """
 
     # NOTE: any logging in here *will* mess up the summary count of hubble_log
     # (assuming hubble_log is reporting in and the logs are above the logging
@@ -72,9 +72,9 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
         return { 'time': now, 'sourcetype': sourcetype, 'events': ret }
 
 def dump():
-    ''' trigger a dump to the status.json file as described in hubblestack.status
+    """ trigger a dump to the status.json file as described in hubblestack.status
 
         This is intended to be invoked from a daemon schedule and is probably
         not useful outside that context.
-    '''
+    """
     return hubblestack.status.HubbleStatus.dumpster_fire()

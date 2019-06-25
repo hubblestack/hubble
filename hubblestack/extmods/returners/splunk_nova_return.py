@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova-to-Splunk returner
 
 Deliver HubbleStack Nova result data into Splunk using the HTTP
@@ -37,7 +37,7 @@ gateway is not defined.
             custom_fields:
               - site
               - product_group
-'''
+"""
 import socket
 
 # Imports for http event forwarder
@@ -255,13 +255,13 @@ def returner(ret):
 
 
 def event_return(event):
-    '''
+    """
     When called from the master via event_return.
 
     Note that presently the master won't see returners in file_roots/_returners
     so you need to put it in a returners/ subdirectory and configure
     custom_modules in your master config.
-    '''
+    """
     for e in event:
         if not('salt/job/' in e['tag']):
             continue  # not a salt job event. Not relevant to hubble

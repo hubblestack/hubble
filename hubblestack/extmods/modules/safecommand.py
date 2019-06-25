@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 Safe Command
 ============
 
@@ -13,7 +13,7 @@ hubblestack_data. But what you don't want is the ability to execute arbitrary
 commands from hubblestack_data. You also want to avoid command injection.
 
 This module allows for this functionality.
-'''
+"""
 from __future__ import absolute_import
 import logging
 
@@ -23,7 +23,7 @@ log = logging.getLogger(__name__)
 
 
 def run(command, args=None, override_file=None, timeout=30):
-    '''
+    """
     This function allows a specific command to be run, with the option to have
     command-line arguments for the command to be defined in hubblestack_data.
 
@@ -44,7 +44,7 @@ def run(command, args=None, override_file=None, timeout=30):
 
     timeout
         Limit the cmd.run to ``timeout`` seconds. Default 30
-    '''
+    """
     # Convert a list of args to a string
     if isinstance(args, (list, tuple)):
         args = ' '.join(args)

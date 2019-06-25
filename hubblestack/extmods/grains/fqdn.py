@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Custom grains around fqdn
-'''
+"""
 import salt.grains.core
 import salt.modules.cmdmod
 import salt.utils
@@ -13,10 +13,10 @@ __salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet,
 
 
 def fqdn():
-    '''
+    """
     Generate a secondary fqdn with `hostname --fqdn` since socket.getfqdn()
     appears to be susceptible to issues with DNS
-    '''
+    """
     grains = {}
     local_fqdn = None
     if not salt.utils.platform.is_windows():
@@ -27,11 +27,11 @@ def fqdn():
 
 
 def dest_ip():
-    '''
+    """
     Generate a best-guess at the IP on the interface that is the default
     gateway for the host. This is because the current methods can result in
     various IPs due to round robin DNS.
-    '''
+    """
     grains = {}
     interfaces = salt.grains.core.ip4_interfaces()['ip4_interfaces']
     try:

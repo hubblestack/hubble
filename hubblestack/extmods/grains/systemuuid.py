@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Gather the system uuid via osquery
-'''
+"""
 import logging
 import os
 import salt.utils.path
@@ -12,12 +12,12 @@ log = logging.getLogger(__name__)
 
 
 def get_system_uuid():
-    '''
+    """
     Gather the system uuid via osquery and store it on disk.
 
     If osquery can't get a hardware-based value, it'll just randomly generate a new uuid every time.
     If that happens, fall back to the hubble_uuid.
-    '''
+    """
     # Provides:
     #   system_uuid
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Populates grains which describe whether a server has a default gateway
 configured or not. Uses `ip -4 route show` and `ip -6 route show` and greps
 for a `default` at the beginning of any line.
@@ -14,7 +14,7 @@ List of grains:
     ip4_gw: True  # True/False if default ipv4 gateway
     ip6_gw: True  # True/False if default ipv6 gateway
     ip_gw: True    # True if either of the above is True, False otherwise
-'''
+"""
 from __future__ import absolute_import
 
 import logging
@@ -31,7 +31,7 @@ log = logging.getLogger(__name__)
 
 
 def default_gateway():
-    '''
+    """
     Populates grains which describe whether a server has a default gateway
     configured or not. Uses `ip -4 route show` and `ip -6 route show` and greps
     for a `default` at the beginning of any line. Assuming the standard
@@ -45,7 +45,7 @@ def default_gateway():
         ip4_gw: True  # ip/True/False if default ipv4 gateway
         ip6_gw: True  # ip/True/False if default ipv6 gateway
         ip_gw: True   # True if either of the above is True, False otherwise
-    '''
+    """
     grains = {}
     if not salt.utils.path.which('ip'):
         return {}

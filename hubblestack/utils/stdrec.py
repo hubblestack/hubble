@@ -1,17 +1,17 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 This is intended to generate data for splunk returners in a standard way.
 Currently each returner seems to generate these data by hand in their own way.
 This is being tested/used in the generic returner and probably only from
 hstatus exec module (for now).
-'''
+"""
 import socket
 
 
 def std_info():
-    ''' Generate and return hubble standard host data for use in events:
+    """ Generate and return hubble standard host data for use in events:
           minion_id, dest_host, dest_ip, dest_fqdn and system_uuid
-    '''
+    """
     minion_id = __opts__['id']
     fqdn = __grains__['fqdn']
     fqdn = fqdn if fqdn else minion_id
@@ -52,8 +52,8 @@ def std_info():
     return ret
 
 def index_extracted(payload):
-    ''' generate index extracted fields dictionary from the given payload based
-    on the options in the config file '''
+    """ generate index extracted fields dictionary from the given payload based
+    on the options in the config file """
     if not isinstance(payload.get('event'), dict):
         return
     index_extracted_fields = []
@@ -71,8 +71,8 @@ def index_extracted(payload):
     return fields
 
 def update_payload(payload):
-    ''' update the given payload with index extracted fields (if applicable)
-    and append std host data to the event (iff it's a dictionary) '''
+    """ update the given payload with index extracted fields (if applicable)
+    and append std host data to the event (iff it's a dictionary) """
     if 'event' not in payload:
         payload['event'] = dict()
     if isinstance(payload['event'], dict):

@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Pulsar-to-graylog (http input) returner
 
 Deliver HubbleStack Pulsar event data into graylog using the HTTP input
@@ -19,7 +19,7 @@ hubblestack:
         sourcetype_nova: hubble_audit
         gelfhttp: https://graylog-gelf-http-input-addr
 
-'''
+"""
 
 import os
 import json
@@ -35,8 +35,8 @@ def _dedupList(l):
 
 
 def returner(ret):
-    '''
-    '''
+    """
+    """
     if isinstance(ret, dict) and not ret.get('return'):
         return
 

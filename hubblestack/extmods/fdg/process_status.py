@@ -1,10 +1,10 @@
-'''
+"""
 Flexible Data Gathering: process_status
 =================================
 
 This fdg module allows for displaying the currently-running
 processes, with various options for filtering
-'''
+"""
 
 from __future__ import absolute_import
 import logging
@@ -14,12 +14,12 @@ log = logging.getLogger(__name__)
 
 
 def list_processes(chained=None, chained_status=None):
-    '''
+    """
     Return a list of processes containing the name of the currently running processes.
 
     The first return value (status) will be True if the osquery query is successful
     and False otherwise. The second argument will be the the ouput (list of strings).
-    '''
+    """
     res = _run_query('SELECT name FROM processes')
     try:
         ret = _convert_to_str(res['data'])
@@ -31,12 +31,12 @@ def list_processes(chained=None, chained_status=None):
 
 
 def _convert_to_str(process_data):
-    '''
+    """
     Convert list of dicts containing items as unicode or other data type to str.
 
     process_data
         input list of dicts to convert to str
-    '''
+    """
     if not process_data:
         return None
     ret = []
@@ -52,12 +52,12 @@ def _convert_to_str(process_data):
 
 
 def _run_query(query_sql):
-    '''
+    """
     Send the ``query_sql`` to osquery and return the results.
 
     query_sql
         The query to be executed
-    '''
+    """
     res = __salt__['nebula.query'](query_sql)
     try:
         if not res['result']:
@@ -71,7 +71,7 @@ def _run_query(query_sql):
 
 
 def find_process(filter_sql, fields=None, format_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Return a list of processes matching the filter criteria.
 
     By default, the ``filter_sql`` will have ``.format()`` called on it with
@@ -103,7 +103,7 @@ def find_process(filter_sql, fields=None, format_chained=True, chained=None, cha
 
     ``note``
         If no processes matched the filter or an invalid field is passed, the function returns an empty list.
-    '''
+    """
     if format_chained:
         try:
             filter_sql = filter_sql.format(chained)
@@ -127,7 +127,7 @@ def find_process(filter_sql, fields=None, format_chained=True, chained=None, cha
 
 
 def is_running(filter_sql, format_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Check if the process matching the filter is running or not.
     Returns `True` if it is running and `False` otherwise.
 
@@ -146,7 +146,7 @@ def is_running(filter_sql, format_chained=True, chained=None, chained_status=Non
 
     ``note``
         If more than one process matches the search, the function returns `False` and reports an error.
-    '''
+    """
     if format_chained:
         try:
             filter_sql = filter_sql.format(chained)
@@ -171,7 +171,7 @@ def is_running(filter_sql, format_chained=True, chained=None, chained_status=Non
 
 
 def find_children(parent_filter, parent_field=None, returned_fields=None, format_chained=False, chained=None, chained_status=None):
-    '''
+    """
     Returns a list of processes (dict with process data) that match the filter criteria.
 
     The first return value (status) will be True if the query is successful and False othewise.
@@ -193,7 +193,7 @@ def find_children(parent_filter, parent_field=None, returned_fields=None, format
         path,cmdline,state,cwd,root,uid,gid,euid,egid,suid,sgid,on_disk,wired_size,resident_size,
         total_size,user_time,system_time,disk_bytes_read,disk_bytes_written,start_time,
         parent,pgroup,threads,nice
-    '''
+    """
     if format_chained:
         try:
             parent_filter = parent_filter.format(chained)

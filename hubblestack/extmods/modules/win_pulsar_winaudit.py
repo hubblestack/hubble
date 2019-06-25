@@ -1,8 +1,8 @@
 #win_notify
-'''
+"""
 This will setup your computer to enable auditing for specified folders inputted into a yaml file. It will
 then scan the event log for changes to those folders and report when it finds one.
-'''
+"""
 
 
 from __future__ import absolute_import
@@ -40,7 +40,7 @@ def __virtual__():
 
 def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.yaml',
             verbose=False):
-    r'''
+    r"""
     Watch the configured files
 
     Example yaml config on fileserver (targeted by configfile option)
@@ -97,7 +97,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         Note that directory excludes should *not* have a trailing slash.
 
     :return:
-    '''
+    """
     config = __salt__['config.get']('hubblestack_pulsar', {})
     if isinstance(configfile, list):
         config['paths'] = configfile
@@ -226,13 +226,13 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     return ret
 
 def canary(change_file=None):
-    '''
+    """
     Simple module to change a file to trigger a FIM event (daily, etc)
 
     THE SPECIFIED FILE WILL BE CREATED AND DELETED
 
     Defaults to CONF_DIR/fim_canary.tmp, i.e. /etc/hubble/fim_canary.tmp
-    '''
+    """
     if change_file is None:
         conf_dir = os.path.dirname(__opts__['conf_file'])
         change_file = os.path.join(conf_dir, 'fim_canary.tmp')
@@ -287,7 +287,7 @@ def _check_acl(path, mask, wtype, recurse):
 
 
 def _add_acl(path, mask, wtype, recurse):
-    '''
+    """
     This will apply the needed audit ALC to the folder in question using PowerShells access to the .net library and
     WMI with the code below:
      $path = "C:\Path\here"
@@ -365,7 +365,7 @@ def _add_acl(path, mask, wtype, recurse):
 
     This calls The function _get_ace_translation() to return the number it needs to set.
     :return:
-    '''
+    """
     path = path.replace('\\','\\\\')
     audit_user = 'Everyone'
     audit_rules = ','.join(mask)
@@ -400,13 +400,13 @@ def _add_acl(path, mask, wtype, recurse):
 
 
 def _remove_acl(path):
-    '''
+    """
     This will remove a currently configured ACL on the folder submited as item.  This will be needed when you have
     a sub file or folder that you want to explicitly ignore within a folder being monitored.  You need to pass in the
     full folder path name for this to work properly
     :param item:
     :return:
-    '''
+    """
     if os.path.exists(path):
         path = path.replace('\\','\\\\')
         __salt__['cmd.run']('$SD = ([WMIClass] "Win32_SecurityDescriptor").CreateInstance();'
@@ -443,11 +443,11 @@ def _pull_events(time_frame):
 
 
 def _get_ace_translation(value, *args):
-    '''
+    """
     This will take the ace name and return the total number accosciated to all the ace accessmasks and flags
     Below you will find all the names accosiated to the numbers:
 
-    '''
+    """
     ret = 0
     ace_dict = {'ReadData': 1, 'CreateFiles': 2, 'AppendData': 4, 'ReadExtendedAttributes': 8,
                 'WriteExtendedAttributes': 16, 'ExecuteFile': 32, 'DeleteSubdirectoriesAndFiles': 64,
@@ -466,7 +466,7 @@ def _get_ace_translation(value, *args):
 
 
 def _get_access_translation(access):
-    '''
+    """
     This will take the access number within the event, and return back a meaningful translation.
     These are all the translations of accesses:
         1537 DELETE - used to grant or deny delete access.
@@ -492,7 +492,7 @@ def _get_access_translation(access):
         6931 Print
     :param access:
     :return access_return:
-    '''
+    """
     access_dict = {'1537': 'Delete', '1538': 'Read Control', '1539': 'Write DAC', '1540': 'Write Owner',
                    '1541': 'Synchronize', '1542': 'Access Sys Sec', '4416': 'Read Data', '4417': 'Write Data',
                    '4418': 'Append Data', '4419': 'Read EA', '4420': 'Write EA', '4421': 'Execute/Traverse',
@@ -522,7 +522,7 @@ def _get_item_hash(item, checksum):
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
-    '''
+    """
     Recursive version of the default dict.update
 
     Merges upd recursively into dest
@@ -533,7 +533,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
     If merge_lists=True, will aggregate list object types instead of replace.
     This behavior is only activated when recursive_update=True. By default
     merge_lists=False.
-    '''
+    """
     if (not isinstance(dest, collections.Mapping)) \
             or (not isinstance(upd, collections.Mapping)):
         raise TypeError('Cannot update using non-dict types in dictupdate.update()')

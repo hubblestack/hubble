@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Return salt data via slack
 
 This version of the returner is designed to be used with hubblestack pulsar, as
@@ -53,7 +53,7 @@ Slack settings may also be configured as:
         profile: slack_profile
         channel: RoomName
 
-'''
+"""
 from __future__ import absolute_import
 
 # Import Python libs
@@ -75,9 +75,9 @@ __virtualname__ = 'slack_pulsar'
 
 
 def _get_options(ret=None):
-    '''
+    """
     Get the slack options from salt.
-    '''
+    """
 
     defaults = {'channel': '#general'}
 
@@ -107,11 +107,11 @@ def _get_options(ret=None):
 
 
 def __virtual__():
-    '''
+    """
     Return virtual name of the module.
 
     :return: The virtual name of the module.
-    '''
+    """
     return __virtualname__
 
 
@@ -121,7 +121,7 @@ def _query(function,
            method='GET',
            header_dict=None,
            data=None):
-    '''
+    """
     Slack object method function to construct and execute on the API URL.
 
     :param api_key:     The Slack api key.
@@ -129,7 +129,7 @@ def _query(function,
     :param method:      The HTTP method, e.g. GET or POST.
     :param data:        The data to be sent for POST method.
     :return:            The json response from the API call or False.
-    '''
+    """
     query_params = {}
 
     ret = {'message': '',
@@ -217,7 +217,7 @@ def _post_message(channel,
                   username,
                   as_user,
                   api_key=None):
-    '''
+    """
     Send a message to a Slack room.
     :param channel:     The room name.
     :param message:     The message to send to the Slack room.
@@ -226,7 +226,7 @@ def _post_message(channel,
     :param api_key:     The Slack api key, if not specified in the configuration.
     :param api_version: The Slack api version, if not specified in the configuration.
     :return:            Boolean if message was sent successfully.
-    '''
+    """
 
     parameters = dict()
     parameters['channel'] = channel
@@ -249,9 +249,9 @@ def _post_message(channel,
 
 
 def returner(ret):
-    '''
+    """
     Send an slack message with the data
-    '''
+    """
 
     _options = _get_options(ret)
 

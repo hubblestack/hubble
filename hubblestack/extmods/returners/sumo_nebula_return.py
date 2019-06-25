@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nebula-to-sumo (http input) returner
 
 Deliver HubbleStack Nebula query data into sumo using the HTTP input
@@ -16,7 +16,7 @@ hubblestack:
         sumo_pulsar_return: https://yoursumo.sumologic.com/endpointhere
         sumo_nova_return: https://yoursumo.sumologic.com/endpointhere
 
-'''
+"""
 
 import json
 import time
@@ -25,8 +25,8 @@ from datetime import datetime
 
 
 def returner(ret):
-    '''
-    '''
+    """
+    """
     opts_list = _get_options()
 
     # Get cloud details

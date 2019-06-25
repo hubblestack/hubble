@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Module to send config options to splunk
-'''
+"""
 import logging
 import hubblestack.log
 import copy
@@ -12,7 +12,7 @@ log = logging.getLogger(__name__)
 
 def publish(report_directly_to_splunk=True, remove_dots=True, *args):
 
-    '''
+    """
     Publishes config to splunk at an interval defined in schedule
 
     report_directly_to_splunk
@@ -28,7 +28,7 @@ def publish(report_directly_to_splunk=True, remove_dots=True, *args):
        would be published, keys for which are in *args If not passed, entire
        __opts__ (excluding password/token) would be published
 
-    '''
+    """
     log.debug('Started publishing config to splunk')
 
     opts_to_log = {}
@@ -51,9 +51,9 @@ def publish(report_directly_to_splunk=True, remove_dots=True, *args):
 
 
 def _filter_config(opts_to_log, remove_dots=True):
-    '''
+    """
     Filters out keys containing certain patterns to avoid sensitive information being sent to splunk
-    '''
+    """
     patterns_to_filter = ["password", "token", "passphrase", "privkey", "keyid", "s3.key"]
     filtered_conf = _remove_sensitive_info(opts_to_log, patterns_to_filter)
     if remove_dots:
@@ -64,9 +64,9 @@ def _filter_config(opts_to_log, remove_dots=True):
 
 
 def _remove_sensitive_info(obj, patterns_to_filter):
-    '''
+    """
     Filter known sensitive info
-    '''
+    """
     if isinstance(obj, dict):
          obj = {
              key: _remove_sensitive_info(value, patterns_to_filter)

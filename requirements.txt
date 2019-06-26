@@ -1,3 +1,4 @@
+ntplib
 pyinstaller==3.3.1
 Crypto
 pyopenssl>=16.2.0

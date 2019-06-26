@@ -21,5 +21,6 @@ smmap2
 tornado
 urllib3
 vulners
+ntplib
 pytest-pythonpath
 pycrypto

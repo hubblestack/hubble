@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Logging for the hubble daemon
-'''
+"""
 
 from __future__ import print_function
 
@@ -88,9 +88,9 @@ logging.root.handlers.insert(0, TEMP_HANDLER)
 
 
 def _remove_temp_handler():
-    '''
+    """
     Remove temporary handler if it exists
-    '''
+    """
     if TEMP_HANDLER and TEMP_HANDLER in logging.root.handlers:
         logging.root.handlers.remove(TEMP_HANDLER)
 
@@ -98,10 +98,10 @@ def _remove_temp_handler():
 def setup_console_logger(log_level='error',
                          log_format='%(asctime)s [%(levelname)-5s] %(message)s',
                          date_format='%H:%M:%S'):
-    '''
+    """
     Sets up logging to STDERR, allowing for configurable level, format, and
     date format.
-    '''
+    """
     _remove_temp_handler()
     rootlogger = logging.getLogger()
 
@@ -121,10 +121,10 @@ def setup_file_logger(log_file,
                       date_format='%Y-%m-%d %H:%M:%S',
                       max_bytes=100000000,
                       backup_count=1):
-    '''
+    """
     Sets up logging to a file. By default will auto-rotate those logs every
     100MB and keep one backup.
-    '''
+    """
     _remove_temp_handler()
     rootlogger = logging.getLogger()
 
@@ -139,9 +139,9 @@ def setup_file_logger(log_file,
 
 
 def setup_splunk_logger():
-    '''
+    """
     Sets up logging to splunk.
-    '''
+    """
     _remove_temp_handler()
     rootlogger = logging.getLogger()
 
@@ -155,9 +155,9 @@ def setup_splunk_logger():
 
 
 def emit_to_splunk(message, level, name):
-    '''
+    """
     Emit a single message to splunk
-    '''
+    """
     if SPLUNK_HANDLER is None:
         return False
     handler = SPLUNK_HANDLER

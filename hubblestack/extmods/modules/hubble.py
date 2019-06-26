@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 Loader and primary interface for nova modules
 
 See README for documentation
@@ -10,7 +10,7 @@ Configuration:
     - hubblestack:nova:saltenv
     - hubblestack:nova:autoload
     - hubblestack:nova:autosync
-'''
+"""
 from __future__ import absolute_import
 import logging
 
@@ -49,7 +49,7 @@ def audit(configs=None,
           debug=None,
           labels=None,
           **kwargs):
-    '''
+    """
     Primary entry point for audit calls.
 
     configs
@@ -110,7 +110,7 @@ def audit(configs=None,
         salt '*' hubble.audit foo
         salt '*' hubble.audit foo,bar tags='CIS*'
         salt '*' hubble.audit foo,bar.baz verbose=True
-    '''
+    """
     if configs is None:
         return top(verbose=verbose,
                    show_success=show_success,
@@ -365,7 +365,7 @@ def top(topfile='top.nova',
         show_profile=None,
         debug=None,
         labels=None):
-    '''
+    """
     Compile and run all yaml data from the specified nova topfile.
 
     Nova topfiles look very similar to saltstack topfiles, except the top-level
@@ -433,7 +433,7 @@ def top(topfile='top.nova',
         salt '*' hubble.top
         salt '*' hubble.top foo/bar/top.nova
         salt '*' hubble.top foo/bar.nova verbose=True
-    '''
+    """
     if __salt__['config.get']('hubblestack:nova:autoload', True):
         load()
     if not __nova__:
@@ -519,7 +519,7 @@ def top(topfile='top.nova',
 
 
 def sync(clean=False):
-    '''
+    """
     Sync the nova audit modules and profiles from the saltstack fileserver.
 
     The modules should be stored in the salt fileserver. By default nova will
@@ -546,7 +546,7 @@ def sync(clean=False):
 
         salt '*' nova.sync
         salt '*' nova.sync saltenv=hubble
-    '''
+    """
     log.debug('syncing nova modules')
     nova_profile_dir = __salt__['config.get']('hubblestack:nova:profile_dir',
                                               'salt://hubblestack_nova_profiles')
@@ -586,9 +586,9 @@ def sync(clean=False):
 
 
 def load():
-    '''
+    """
     Load the synced audit modules.
-    '''
+    """
     if __salt__['config.get']('hubblestack:nova:autosync', True):
         sync()
 
@@ -609,20 +609,20 @@ def load():
 
 
 def version():
-    '''
+    """
     Report the version of this module
-    '''
+    """
     return __version__
 
 
 def _hubble_dir():
-    '''
+    """
     Generate the local minion directories to which nova modules and profiles
     are synced
 
     Returns a tuple of two paths, the first for nova modules, the second for
     nova profiles
-    '''
+    """
     nova_profile_dir = __salt__['config.get']('hubblestack:nova:profile_dir',
                                               'salt://hubblestack_nova_profiles')
     nova_module_dir = os.path.join(__opts__['install_dir'], 'files', 'hubblestack_nova')
@@ -639,9 +639,9 @@ def _hubble_dir():
 
 
 def _calculate_compliance(results):
-    '''
+    """
     Calculate compliance numbers given the results of audits
-    '''
+    """
     success = len(results.get('Success', []))
     failure = len(results.get('Failure', []))
     control = len(results.get('Controlled', []))
@@ -656,9 +656,9 @@ def _calculate_compliance(results):
 
 
 def _get_top_data(topfile):
-    '''
+    """
     Helper method to retrieve and parse the nova topfile
-    '''
+    """
     topfile = os.path.join(_hubble_dir()[1], topfile)
 
     try:

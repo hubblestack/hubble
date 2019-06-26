@@ -77,7 +77,7 @@ def _get_splunk_options(space, modality, **kw):
     return ret
 
 def get_splunk_options(*spaces, **kw):
-    '''
+    """
     params:
       *spaces: non-keyword arguments are config namespaces to search
                the default is 'hubblestack:returner:splunk' (if nothing else is specified)
@@ -119,7 +119,7 @@ def get_splunk_options(*spaces, **kw):
        get_splunk_options(sourcetype_nebula='blah', _nick={'sourcetype_nebula': 'sourcetype'})
        [ { ... 'sourcetype': 'hubble_osquery' ... } ]
 
-    '''
+    """
     if not spaces:
         spaces = ['hubblestack:returner:splunk']
 
@@ -134,7 +134,7 @@ def get_splunk_options(*spaces, **kw):
 def make_hec_args(opts):
     if isinstance(opts, (tuple,list)):
         return [ make_hec_args(i) for i in opts ]
-    a  = (opts['token'], opts['indexer'])
+    a  = (opts['token'], opts['index'], opts['indexer'])
     kw = {
         'http_event_port': opts['port'],
         'http_event_server_ssl': opts['http_event_server_ssl'],

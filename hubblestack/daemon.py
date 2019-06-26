@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Main entry point for the hubble daemon
-'''
+"""
 
 from __future__ import print_function
 
@@ -11,7 +11,8 @@ import copy
 import logging
 import time
 import pprint
-import os, re
+import os
+import re
 import random
 import signal
 import sys
@@ -52,9 +53,9 @@ SESSION_UUID = str(uuid.uuid4())
 
 
 def run():
-    '''
+    """
     Set up program, daemonize if needed
-    '''
+    """
     try:
         load_config()
     except Exception as e:
@@ -74,9 +75,9 @@ def run():
 
 
 def main():
-    '''
+    """
     Run the main hubble loop
-    '''
+    """
     # Initial fileclient setup
     # Clear old locks
     if 'gitfs' in __opts__['fileserver_backend'] or 'git' in __opts__['fileserver_backend']:
@@ -183,14 +184,17 @@ def main():
                 log.debug('Executed %d schedule item(s)', sf_count)
                 hubblestack.log.workaround_salt_log_handler_queues()
         except Exception as e:
-            log.exception('Error executing schedule')
+            log.exception('Error executing schedule: {0}'.format(e))
+            if isinstance(e, KeyboardInterrupt):
+                raise e
+
         time.sleep(__opts__.get('scheduler_sleep_frequency', 0.5))
 
 def getsecondsbycronexpression(base, cron_exp):
-    '''
+    """
     this function will return the seconds according to the cron
     expression provided in the hubble config
-    '''
+    """
     cron_iter = croniter(cron_exp, base)
     next_datetime  = cron_iter.get_next(datetime)
     epoch_base_datetime = time.mktime(base.timetuple())
@@ -199,10 +203,10 @@ def getsecondsbycronexpression(base, cron_exp):
     return seconds
 
 def getlastrunbycron(base, seconds):
-    '''
+    """
     this function will use the cron_exp provided in the hubble config to
     execute the hubble processes as per the scheduled cron time
-    '''
+    """
     epoch_base_datetime = time.mktime(base.timetuple())
     epoch_datetime = epoch_base_datetime
     current_time = time.time()
@@ -212,10 +216,10 @@ def getlastrunbycron(base, seconds):
     return last_run
 
 def getlastrunbybuckets(buckets, seconds):
-    '''
+    """
     this function will use the host's ip to place the host in a bucket
     where each bucket executes hubble processes at a different time
-    '''
+    """
     buckets = int(buckets) if int(buckets)!=0 else 256
     host_ip = socket.gethostbyname(socket.gethostname())
     ips = host_ip.split('.')
@@ -236,7 +240,7 @@ def getlastrunbybuckets(buckets, seconds):
 
 @hubble_status.watch
 def schedule():
-    '''
+    """
     Rudimentary single-pass scheduler
 
     If we find we miss some of the salt scheduler features we could potentially
@@ -298,7 +302,7 @@ def schedule():
     run_on_start
         Whether to run the scheduled job on daemon start. Defaults to False.
         Optional.
-    '''
+    """
     sf_count = 0
     base = datetime(2018, 1, 1, 0, 0)
     schedule_config = __opts__.get('schedule', {})
@@ -396,9 +400,9 @@ def schedule():
 
 
 def run_function():
-    '''
+    """
     Run a single function requested by the user
-    '''
+    """
     # Parse the args
     args = []
     kwargs = {}
@@ -446,9 +450,9 @@ def run_function():
 
 
 def load_config():
-    '''
+    """
     Load the config from configfile and load into imported salt modules
-    '''
+    """
     # Parse arguments
     parsed_args = parse_args()
 
@@ -717,9 +721,9 @@ def load_config():
 @hangtime_wrapper(timeout=600, repeats=True, tag='hubble:rg')
 @hubble_status.watch
 def refresh_grains(initial=False):
-    '''
+    """
     Refresh the grains, pillar, utils, modules, and returners
-    '''
+    """
     global __opts__
     global __grains__
     global __utils__
@@ -798,9 +802,9 @@ def refresh_grains(initial=False):
         hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
 
 def emit_to_syslog(grains_to_emit):
-    '''
+    """
     Emit grains and their values to syslog
-    '''
+    """
     try:
         # Avoid a syslog line to be longer than 1024 characters
         # Build syslog message
@@ -820,9 +824,9 @@ def emit_to_syslog(grains_to_emit):
         log.exception('An exception occurred on emitting a message to syslog: {0}'.format(e))
 
 def parse_args():
-    '''
+    """
     Parse command line arguments
-    '''
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument('-d', '--daemonize',
                         action='store_true',
@@ -866,7 +870,7 @@ def parse_args():
     return vars(parser.parse_args())
 
 def check_pidfile(kill_other=False, scan_proc=True):
-    '''
+    """
     Check to see if there's already a pidfile. If so, check to see if the
     indicated process is alive and is Hubble.
 
@@ -874,7 +878,7 @@ def check_pidfile(kill_other=False, scan_proc=True):
         Default false, if set to true, attempt to kill detected running Hubble
         processes; otherwise exit with an error.
 
-    '''
+    """
     pidfile = __opts__['pidfile']
     if os.path.isfile(pidfile):
         with open(pidfile, 'r') as f:
@@ -892,7 +896,7 @@ def check_pidfile(kill_other=False, scan_proc=True):
         scan_proc_for_hubbles(kill_other=kill_other)
 
 def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_other=True, no_pgrp=True):
-    ''' Attempt to locate other hubbles using a cmdline regular expression and kill them when found.
+    """ Attempt to locate other hubbles using a cmdline regular expression and kill them when found.
         If killing the other processes fails (or kill_other is False), sys.exit instead.
 
         params:
@@ -917,7 +921,7 @@ def kill_other_or_sys_exit(xpid, hname=r'hubble', ksig=signal.SIGTERM, kill_othe
             the invocation text the kernel stored at launch. That text is not
             immutable and should not (normally) be relied upon for any purpose
             -- and this method does rely on it.
-    '''
+    """
 
     if no_pgrp is True:
         no_pgrp = os.getpgrp()
@@ -974,9 +978,9 @@ def scan_proc_for_hubbles(proc_path='/proc', hname=r'^/\S+python.*?/opt/.*?hubbl
                 break
 
 def create_pidfile():
-    '''
+    """
     Create a pidfile after daemonizing
-    '''
+    """
     if not __opts__.get('ignore_running', False):
         pid = os.getpid()
         with open(__opts__['pidfile'], 'w') as f:
@@ -984,10 +988,10 @@ def create_pidfile():
 
 
 def clean_up_process(received_signal, frame):
-    '''
+    """
     Log any signals received. If a SIGTERM or SIGINT is received, clean up
     pidfile and anything else that needs to be cleaned up.
-    '''
+    """
     if received_signal is None and frame is None:
         if not __opts__.get('ignore_running', False):
             if __opts__['daemonize']:

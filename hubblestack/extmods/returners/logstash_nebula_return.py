@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nebula-to-Logstash (http input) returner
 
 Deliver HubbleStack Nebula query data into Logstash using the HTTP input
@@ -21,7 +21,7 @@ plugin. Required config/pillar settings:
             custom_fields:
               - site
               - product_group
-'''
+"""
 
 import json
 import time
@@ -31,8 +31,8 @@ from requests.auth import HTTPBasicAuth
 
 
 def returner(ret):
-    '''
-    '''
+    """
+    """
     opts_list = _get_options()
 
     # Get cloud details
@@ -52,7 +52,6 @@ def returner(ret):
         data = ret['return']
         minion_id = ret['id']
         jid = ret['jid']
-        master = __grains__['master']
         fqdn = __grains__['fqdn']
         fqdn = fqdn if fqdn else minion_id
         try:
@@ -76,7 +75,6 @@ def returner(ret):
                         event.update(query_result)
                         event.update({'query': query_name})
                         event.update({'job_id': jid})
-                        event.update({'master': master})
                         event.update({'minion_id': minion_id})
                         event.update({'dest_host': fqdn})
                         event.update({'dest_ip': fqdn_ip4})

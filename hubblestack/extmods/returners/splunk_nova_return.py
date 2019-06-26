@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova-to-Splunk returner
 
 Deliver HubbleStack Nova result data into Splunk using the HTTP
@@ -37,7 +37,7 @@ gateway is not defined.
             custom_fields:
               - site
               - product_group
-'''
+"""
 import socket
 
 # Imports for http event forwarder
@@ -83,7 +83,6 @@ def returner(ret):
             fqdn = __grains__['fqdn']
             # Sometimes fqdn is blank. If it is, replace it with minion_id
             fqdn = fqdn if fqdn else minion_id
-            master = __grains__['master']
             try:
                 fqdn_ip4 = __grains__.get('local_ip4')
                 if not fqdn_ip4:
@@ -108,11 +107,6 @@ def returner(ret):
                     new_fqdn = fqdn_ip4
                 fqdn = new_fqdn
 
-            if __grains__['master']:
-                master = __grains__['master']
-            else:
-                master = socket.gethostname()  # We *are* the master, so use our hostname
-
             if not isinstance(data, dict):
                 log.error('Data sent to splunk_nova_return was not formed as a '
                           'dict:\n{0}'.format(data))
@@ -134,7 +128,6 @@ def returner(ret):
                     for key, value in fai[check_id].iteritems():
                         if key not in ['tag']:
                             event[key] = value
-                event.update({'master': master})
                 event.update({'minion_id': minion_id})
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
@@ -180,7 +173,6 @@ def returner(ret):
                     for key, value in suc[check_id].iteritems():
                         if key not in ['tag']:
                             event[key] = value
-                event.update({'master': master})
                 event.update({'minion_id': minion_id})
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
@@ -224,7 +216,6 @@ def returner(ret):
                 event = {}
                 event.update({'job_id': jid})
                 event.update({'compliance_percentage': data['Compliance']})
-                event.update({'master': master})
                 event.update({'minion_id': minion_id})
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})
@@ -264,13 +255,13 @@ def returner(ret):
 
 
 def event_return(event):
-    '''
+    """
     When called from the master via event_return.
 
     Note that presently the master won't see returners in file_roots/_returners
     so you need to put it in a returners/ subdirectory and configure
     custom_modules in your master config.
-    '''
+    """
     for e in event:
         if not('salt/job/' in e['tag']):
             continue  # not a salt job event. Not relevant to hubble

@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nebula-osqueryd-to-Splunk returner
 
 Deliver HubbleStack Nebula osqueryd query data into Splunk using the HTTP
@@ -37,7 +37,7 @@ gateway is not defined.
             custom_fields:
               - site
               - product_group
-'''
+"""
 import socket
 
 # Imports for http event forwarder
@@ -83,7 +83,6 @@ def returner(ret):
             jid = ret['jid']
             global RETRY
             RETRY = ret['retry']
-            master = __grains__['master']
             fqdn = __grains__['fqdn']
             # Sometimes fqdn is blank. If it is, replace it with minion_id
             fqdn = fqdn if fqdn else minion_id
@@ -122,7 +121,6 @@ def returner(ret):
                     query_name = query_results['name']
                     event.update({'query': query_name})
                     event.update({'job_id': jid})
-                    event.update({'master': master})
                     event.update({'minion_id': minion_id})
                     event.update({'dest_host': fqdn})
                     event.update({'dest_ip': fqdn_ip4})

@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Pulsar-to-Splunk returner
 
 Deliver HubbleStack Pulsar event data into Splunk using the HTTP
@@ -37,7 +37,7 @@ gateway is not defined.
             custom_fields:
               - site
               - product_group
-'''
+"""
 import socket
 
 # Imports for http event forwarder
@@ -93,7 +93,6 @@ def returner(ret):
             fqdn = __grains__['fqdn']
             # Sometimes fqdn is blank. If it is, replace it with minion_id
             fqdn = fqdn if fqdn else minion_id
-            master = __grains__['master']
             try:
                 fqdn_ip4 = __grains__.get('local_ip4')
                 if not fqdn_ip4:
@@ -252,7 +251,6 @@ def returner(ret):
                             event['file_hash'] = chk
                             event['file_hash_type'] = alert.get('checksum_type', 'unknown')
 
-                event.update({'master': master})
                 event.update({'minion_id': minion_id})
                 event.update({'dest_host': fqdn})
                 event.update({'dest_ip': fqdn_ip4})

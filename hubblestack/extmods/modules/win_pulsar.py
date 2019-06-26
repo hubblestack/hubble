@@ -1,8 +1,8 @@
 #win_notify
-'''
+"""
 This will setup your computer to enable auditing for specified folders inputted into a yaml file. It will
 then scan the ntfs journal for changes to those folders and report when it finds one.
-'''
+"""
 
 
 from __future__ import absolute_import
@@ -40,7 +40,7 @@ def __virtual__():
 
 def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.yaml',
             verbose=False):
-    r'''
+    r"""
     Watch the configured files
 
     Example yaml config on fileserver (targeted by configfile option)
@@ -101,7 +101,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         not have a trailing slash**
 
     :return:
-    '''
+    """
     config = __salt__['config.get']('hubblestack_pulsar' , {})
     if isinstance(configfile, list):
         config['paths'] = configfile
@@ -188,7 +188,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
 
 
 def queryjournal(drive):
-    '''
+    """
     Gets information on the journal prosiding on the drive passed into the method
     returns a dictionary with the following information:
       USN Journal ID
@@ -202,7 +202,7 @@ def queryjournal(drive):
       Minimum record version supported
       Maximum record version supported
       Write range tracking (enabled or disabled)
-    '''
+    """
     qjournal =  (__salt__['cmd.run']('fsutil usn queryjournal {0}'.format(drive))).split('\r\n')
     qj_dict = {}
     #format into dictionary
@@ -215,7 +215,7 @@ def queryjournal(drive):
     return qj_dict
 
 def readjournal(drive, next_usn=0):
-    '''
+    """
     Reads the data inside the journal.  Default is to start from the beginning,
     but you can pass an argument to start from whichever usn you want
     Returns a list of dictionaries with the following information
@@ -236,7 +236,7 @@ def readjournal(drive, next_usn=0):
         Major version
         Minor version
         Record length
-    '''
+    """
     jdata = (__salt__['cmd.run']('fsutil usn readjournal {0} startusn={1}'.format(drive, next_usn))).split('\r\n\r\n')
     jd_list = []
     pattern = '%m/%d/%Y %H:%M:%S'
@@ -263,7 +263,7 @@ def readjournal(drive, next_usn=0):
                     dvalue = int(mktime(strptime(dvalue.strip(), pattern)))
                     jd_dict[dkey.strip()] = dvalue
                 elif dkey.strip() == 'Reason':
-                    rvalues = dvalue.split(': ')
+                    rvalues = dvalue.split(': ', 1)
                     if len(rvalues) > 1:
                         rvalues = rvalues[1]
                     rvalues = rvalues.split(' | ')
@@ -282,9 +282,9 @@ def readjournal(drive, next_usn=0):
 
 
 def getfilepath(pfid, fname, drive):
-    '''
+    """
     Gets file name and path from a File ID
-    '''
+    """
     if pfid in __context__['win_pulsar_file_map']:
         retpath = __context__['win_pulsar_file_map'][pfid] + '\\' + fname
         return retpath
@@ -303,9 +303,9 @@ def getfilepath(pfid, fname, drive):
 
 
 def usnfilter(usn_list, config_paths):
-    '''
+    """
     Iterates through each change in the list and throws out any change not specified in the win_pulsar.yaml
-    '''
+    """
     ret_usns = []
 
     # iterate through active portion of the NTFS change journal
@@ -364,9 +364,9 @@ def usnfilter(usn_list, config_paths):
     return ret_usns
 
 def get_file_hash(usn_file, checksum):
-    '''
+    """
     Simple function to grab the hash for each file that has been flagged
-    '''
+    """
     try:
         hashy = __salt__['file.get_hash']('{0}'.format(usn_file), form=checksum)
         return hashy
@@ -374,13 +374,13 @@ def get_file_hash(usn_file, checksum):
         return ''
 
 def canary(change_file=None):
-    '''
+    """
     Simple module to change a file to trigger a FIM event (daily, etc)
 
     THE SPECIFIED FILE WILL BE CREATED AND DELETED
 
     Defaults to CONF_DIR/fim_canary.tmp, i.e. /etc/hubble/fim_canary.tmp
-    '''
+    """
     if change_file is None:
         conf_dir = os.path.dirname(__opts__['conf_file'])
         change_file = os.path.join(conf_dir, 'fim_canary.tmp')
@@ -388,7 +388,7 @@ def canary(change_file=None):
     os.remove(change_file)
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
-    '''
+    """
     Recursive version of the default dict.update
 
     Merges upd recursively into dest
@@ -399,7 +399,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
     If merge_lists=True, will aggregate list object types instead of replace.
     This behavior is only activated when recursive_update=True. By default
     merge_lists=False.
-    '''
+    """
     if (not isinstance(dest, collections.Mapping)) \
             or (not isinstance(upd, collections.Mapping)):
         raise TypeError('Cannot update using non-dict types in dictupdate.update()')
@@ -439,7 +439,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
 
 def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
         verbose=False):
-    '''
+    """
     Execute pulsar using a top.pulsar file to decide which configs to use for
     this host.
 
@@ -454,7 +454,7 @@ def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
 
     Paths in the topfile should be relative to `salt://hubblestack_pulsar`, and
     the .yaml should not be included.
-    '''
+    """
     configs = get_top_data(topfile)
 
     configs = ['salt://hubblestack_pulsar/' + config.replace('.','/') + '.yaml'
@@ -464,9 +464,9 @@ def top(topfile='salt://hubblestack_pulsar/win_top.pulsar',
 
 
 def get_top_data(topfile):
-    '''
+    """
     Cache the topfile and process the list of configs this host should use.
-    '''
+    """
     # Get topdata from filesystem if we don't have them already
     global TOP
     global TOP_STALENESS

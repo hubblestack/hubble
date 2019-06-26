@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 osquery wrapper for HubbleStack Nebula
 
 Designed to run sets of osquery queries defined in pillar. These sets will have
@@ -20,7 +20,7 @@ nebula_osquery:
   day:
     - query_name: rpm_packages
       query: select rpm.*, t.iso_8601 from rpm_packages as rpm join time as t;
-'''
+"""
 from __future__ import absolute_import
 
 import collections
@@ -64,7 +64,7 @@ def queries(query_group,
             report_version_with_day=True,
             topfile_for_mask=None,
             mask_passwords=False):
-    '''
+    """
     Run the set of queries represented by ``query_group`` from the
     configuration in the file query_file
 
@@ -93,7 +93,7 @@ def queries(query_group,
         salt '*' nebula.queries day
         salt '*' nebula.queries hour verbose=True
         salt '*' nebula.queries hour pillar_key=sec_osqueries
-    '''
+    """
     query_data = {}
     MAX_FILE_SIZE = 104857600
     if query_file is None:
@@ -260,7 +260,7 @@ def osqueryd_monitor(configfile=None,
                      pidfile=None,
                      hashfile=None,
                      daemonize=True):
-    '''
+    """
     This function will monitor whether osqueryd is running on the system or not.
     Whenever it detects that osqueryd is not running, it will start the osqueryd.
     Also, it checks for conditions that would require osqueryd to restart(such as changes in flag file content)
@@ -290,7 +290,7 @@ def osqueryd_monitor(configfile=None,
     daemonize
         daemonize osquery daemon. Default is True. Applicable for posix system only
 
-    '''
+    """
     log.info("Starting osqueryd monitor")
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
     osqueryd_path = 'salt://hubblestack_nebula_v2'
@@ -356,7 +356,7 @@ def osqueryd_log_parser(osqueryd_logdir=None,
                         enablediskstatslogging=False,
                         topfile_for_mask=None,
                         mask_passwords=False):
-    '''
+    """
     Parse osquery daemon logs and perform log rotation based on specified parameters
 
     osqueryd_logdir
@@ -387,7 +387,7 @@ def osqueryd_log_parser(osqueryd_logdir=None,
         Defaults to False. If set to True, passwords mentioned in the
         return object are masked
 
-    '''
+    """
     ret = []
     if osqueryd_logdir:
         result_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.results.log'))
@@ -462,7 +462,7 @@ def osqueryd_log_parser(osqueryd_logdir=None,
 
 
 def check_disk_usage(path=None):
-    '''
+    """
     Check disk usage of specified path.
     If no path is specified, path will default to '/var/log'
 
@@ -473,7 +473,7 @@ def check_disk_usage(path=None):
     path
         Defaults to '/var/log'
 
-    '''
+    """
     disk_stats = {}
     if salt.utils.platform.is_windows():
         log.info("Platform is windows, skipping disk usage stats")
@@ -492,11 +492,11 @@ def check_disk_usage(path=None):
                                                                                                 avail,
                                                                                                 used,
                                                                                                 per_used))
-        disk_stats = {'Total': total,
-                      'Available': avail,
-                      'Used': used,
-                      'Use_percent': per_used,
-                      'Path': path
+        disk_stats = {'total': total,
+                      'available': avail,
+                      'used': used,
+                      'use_percent': per_used,
+                      'path': path
                       }
 
         if __salt__['config.get']('splunklogging', False):
@@ -508,7 +508,7 @@ def check_disk_usage(path=None):
 
 
 def fields(*args):
-    '''
+    """
     Use config.get to retrieve custom data based on the keys in the `*args`
     list.
 
@@ -516,7 +516,7 @@ def fields(*args):
 
     *args
         List of keys to retrieve
-    '''
+    """
     ret = {}
     for field in args:
         ret['custom_{0}'.format(field)] = __salt__['config.get'](field)
@@ -530,16 +530,16 @@ def fields(*args):
 
 
 def version():
-    '''
+    """
     Report version of this module
-    '''
+    """
     return __version__
 
 
 def hubble_versions():
-    '''
+    """
     Report version of all hubble modules as query
-    '''
+    """
     versions = {'nova': __version__,
                 'nebula': __version__,
                 'pulsar': __version__,
@@ -606,11 +606,11 @@ def _get_top_data(topfile):
 
 
 def _generate_osquery_conf_file(conftopfile):
-    '''
+    """
     Function to dynamically create osquery configuration file in JSON format.
     This function would load osquery configuration in YAML format and
     make use of topfile to selectively load file(s) based on grains
-    '''
+    """
 
     log.info("Generating osquery conf file using topfile: {0}".format(conftopfile))
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
@@ -654,11 +654,11 @@ def _generate_osquery_conf_file(conftopfile):
 
 
 def _generate_osquery_flags_file(flagstopfile):
-    '''
+    """
     Function to dynamically create osquery flags file.
     This function would load osquery flags in YAML format and
     make use of topfile to selectively load file(s) based on grains
-    '''
+    """
 
     log.info("Generating osquery flags file using topfile: {0}".format(flagstopfile))
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
@@ -704,7 +704,7 @@ def _generate_osquery_flags_file(flagstopfile):
 
 
 def _mask_object(object_to_be_masked, topfile):
-    '''
+    """
     Given an object with potential secrets (or other data that should not be
     returned), mask the contents of that object as configured in the mask
     configuration file. The mask configuration file used is defined by the
@@ -767,7 +767,7 @@ def _mask_object(object_to_be_masked, topfile):
         be ``ETCDCTL_READ_PASSWORD``. The attribute_to_mask would be ``value``.
         All dicts with ``variable_name`` in the list of blacklisted_patterns
         would have the value under their ``value`` key masked.
-    '''
+    """
     try:
         mask = {}
         if topfile is None:
@@ -915,7 +915,7 @@ def _mask_object(object_to_be_masked, topfile):
 
 
 def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object, mask_with, globbing_enabled):
-    '''
+    """
     This method is responsible for masking potential secrets in event data generated by
     osquery daemon. This will handle logs format of both differential and snapshot types
 
@@ -938,7 +938,7 @@ def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object
 
     globbing_enabled
         enable globbing in specified blacklisted patterns of mask file
-    '''
+    """
     if not query_name:
         query_name = object_to_be_masked['name']
     # Name of column that stores environment variables
@@ -1022,7 +1022,7 @@ def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object
 
 
 def _perform_masking(object_to_mask, blacklisted_object, mask_with, globbing_enabled):
-    '''
+    """
     This function is used as a wrapper to _recursively_mask_objects function.
     It's main usage is to set 'blacklisted_patterns'. If custom blacklisted patterns are present they will used.
 
@@ -1042,7 +1042,7 @@ def _perform_masking(object_to_mask, blacklisted_object, mask_with, globbing_ena
 
     globbing_enabled
         enable globbing in specified blacklisted patterns of mask file
-    '''
+    """
     enable_local_masking = blacklisted_object.get('enable_local_masking', False)
     enable_global_masking = blacklisted_object.get('enable_global_masking', False)
     blacklisted_patterns = None
@@ -1079,7 +1079,7 @@ def _perform_masking(object_to_mask, blacklisted_object, mask_with, globbing_ena
 
 
 def _recursively_mask_objects(object_to_mask, blacklisted_object, blacklisted_patterns, mask_with, globbing_enabled):
-    '''
+    """
     This function is used by ``_mask_object()`` to mask passwords contained in
     an osquery data structure (formed as a list of dicts, usually). Since the
     lists can sometimes be nested, recurse through the lists.
@@ -1098,7 +1098,7 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, blacklisted_pa
 
     globbing_enabled
         enable globbing in specified blacklisted patterns of mask file
-    '''
+    """
     if isinstance(object_to_mask, list):
         for child in object_to_mask:
             log.debug("Recursing object {0}".format(child))
@@ -1123,7 +1123,7 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, blacklisted_pa
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
-    '''
+    """
     Recursive version of the default dict.update
 
     Merges upd recursively into dest
@@ -1134,7 +1134,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
     If merge_lists=True, will aggregate list object types instead of replace.
     This behavior is only activated when recursive_update=True. By default
     merge_lists=False.
-    '''
+    """
     if (not isinstance(dest, collections.Mapping)) \
             or (not isinstance(upd, collections.Mapping)):
         raise TypeError('Cannot update using non-dict types in dictupdate.update()')
@@ -1173,9 +1173,9 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
 
 
 def _osqueryd_running_status(pidfile, servicename):
-    '''
+    """
     This function will check whether osqueryd is running in *nix systems
-    '''
+    """
     log.info("checking if osqueryd is already running or not")
     osqueryd_running = False
     if os.path.isfile(pidfile):
@@ -1214,12 +1214,12 @@ def _osqueryd_running_status(pidfile, servicename):
 
 
 def _osqueryd_restart_required(hashfile, flagfile):
-    '''
+    """
     This function will check whether osqueryd needs to be restarted
-    '''
+    """
+    global OSQUERYD_NEEDS_RESTART
     log.info("checking if osqueryd needs to be restarted or not")
     if OSQUERYD_NEEDS_RESTART:
-        global OSQUERYD_NEEDS_RESTART
         OSQUERYD_NEEDS_RESTART = False
         return True
     try:
@@ -1249,9 +1249,9 @@ def _osqueryd_restart_required(hashfile, flagfile):
 
 
 def _osqueryd_running_status_windows(servicename):
-    '''
+    """
     This function will check whether osqueryd is running in windows systems
-    '''
+    """
     log.info("checking if osqueryd is already running or not")
     osqueryd_running = False
     cmd_status = "(Get-Service -Name " + servicename + ").Status"
@@ -1272,9 +1272,9 @@ def _start_osqueryd(pidfile,
                     logdir,
                     databasepath,
                     servicename):
-    '''
+    """
     This function will start osqueryd
-    '''
+    """
     log.info("osqueryd is not running, attempting to start osqueryd")
     if salt.utils.platform.is_windows():
         log.info("requesting service manager to start osqueryd")
@@ -1298,9 +1298,9 @@ def _restart_osqueryd(pidfile,
                       databasepath,
                       hashfile,
                       servicename):
-    '''
+    """
     This function will restart osqueryd
-    '''
+    """
     log.info("osqueryd needs to be restarted, restarting now")
 
     with open(flagfile, "r") as open_file:
@@ -1351,10 +1351,10 @@ def _parse_log(path_to_logfile,
                maxlogfilesizethreshold,
                backuplogfilescount,
                enablediskstatslogging):
-    '''
+    """
     Parse logs generated by osquery daemon.
     Path to log file to be parsed should be specified
-    '''
+    """
     event_data = []
     file_offset = offset
     rotateLog = False
@@ -1410,17 +1410,17 @@ def _parse_log(path_to_logfile,
 
 
 def _set_cache_offset(path_to_logfile, offset):
-    '''
+    """
     Cache file offset in memory
-    '''
+    """
     cachefilekey = os.path.basename(path_to_logfile)
     __RESULT_LOG_OFFSET__[cachefilekey] = offset
 
 
 def _get_file_offset(path_to_logfile):
-    '''
+    """
     Fetch file offset for specified file
-    '''
+    """
     cachefilekey = os.path.basename(path_to_logfile)
     offset = __RESULT_LOG_OFFSET__.get(cachefilekey, 0)
     return offset
@@ -1432,9 +1432,9 @@ def _perform_log_rotation(path_to_logfile,
                           backuplogfilescount,
                           enablediskstatslogging,
                           readResidueEvents):
-    '''
+    """
     Perform log rotation on specified file and create backup of file under specified backup directory.
-    '''
+    """
     residue_events = []
     if os.path.exists(path_to_logfile):
         logfilename = os.path.basename(path_to_logfile)
@@ -1471,9 +1471,9 @@ def _perform_log_rotation(path_to_logfile,
 
 
 def _read_residue_logs(path_to_logfile, offset):
-    '''
+    """
     Read any logs that might have been written while creating backup log file
-    '''
+    """
     event_data = []
     if os.path.exists(path_to_logfile):
         with open(path_to_logfile, "r") as fileDes:
@@ -1487,13 +1487,13 @@ def _read_residue_logs(path_to_logfile, offset):
 
 
 def query(query):
-    '''
+    """
     Run the osquery `query` and return the results.
 
     query
         String containgin `SQL` query to be run by osquery
 
-    '''
+    """
     MAX_FILE_SIZE = 104857600
     if 'attach' in query.lower() or 'curl' in query.lower():
         log.critical(
@@ -1517,7 +1517,7 @@ def query(query):
 
 
 def extensions(extensions_topfile=None, extensions_loadfile=None):
-    '''
+    """
     Given a topfile location, parse the topfile and lay down osquery extensions
     and other files as shown in the targeted profiles.
 
@@ -1559,7 +1559,7 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
               mode: '600'                # optional, default shown
               user: root                 # optional, default shown
               group: root                # optional, default shown
-    '''
+    """
     if salt.utils.is_windows():
         log.error('Windows is not supported for nebula.extensions')
         return False
@@ -1657,10 +1657,10 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
 
 
 def _get_file(path, dest, mode='600', user='root', group='root', **kwargs):
-    '''
+    """
     Cache a file from a salt ``path`` to a local ``dest`` with the given
     attributes.
-    '''
+    """
     try:
         mode = str(mode)
         local_path = __salt__['cp.cache_file'](path)

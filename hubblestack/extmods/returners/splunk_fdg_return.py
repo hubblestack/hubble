@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack FDG-to-Splunk returner
 
 Deliver HubbleStack FDG query data into Splunk using the HTTP
@@ -41,7 +41,7 @@ gateway is not defined.
             custom_fields:
               - site
               - product_group
-'''
+"""
 import socket
 
 # Imports for http event forwarder
@@ -49,7 +49,7 @@ import requests
 import json
 import time
 from datetime import datetime
-from hubblestack.hec import http_event_collector, get_splunk_options
+from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
 
 import logging
 
@@ -67,14 +67,7 @@ def returner(ret):
 
         for opts in opts_list:
             logging.debug('Options: %s' % json.dumps(opts))
-            http_event_collector_key = opts['token']
-            http_event_collector_host = opts['indexer']
-            http_event_collector_port = opts['port']
-            hec_ssl = opts['http_event_server_ssl']
-            proxy = opts['proxy']
-            timeout = opts['timeout']
             custom_fields = opts['custom_fields']
-            http_event_collector_ssl_verify = opts['http_event_collector_ssl_verify']
 
             # Set up the fields to be extracted at index time. The field values must be strings.
             # Note that these fields will also still be available in the event data
@@ -84,11 +77,8 @@ def returner(ret):
             except TypeError:
                 pass
 
-            # Set up the collector
-            hec = http_event_collector(http_event_collector_key, http_event_collector_host,
-                                       http_event_port=http_event_collector_port, http_event_server_ssl=hec_ssl,
-                                       http_event_collector_ssl_verify=http_event_collector_ssl_verify,
-                                       proxy=proxy, timeout=timeout)
+            args, kwargs = make_hec_args(opts)
+            hec = http_event_collector(*args, **kwargs)
 
             data = ret['return']
             minion_id = ret['id']
@@ -96,7 +86,6 @@ def returner(ret):
             fun = ret['fun']
             global RETRY
             RETRY = ret['retry']
-            master = __grains__['master']
             fqdn = __grains__['fqdn']
             # Sometimes fqdn is blank. If it is, replace it with minion_id
             fqdn = fqdn if fqdn else minion_id
@@ -148,7 +137,6 @@ def returner(ret):
                         event.update({'fdg_file': fdg_file})
                         event.update({'fdg_starting_chained': starting_chained})
                         event.update({'job_id': jid})
-                        event.update({'master': master})
                         event.update({'minion_id': minion_id})
                         event.update({'dest_host': fqdn})
                         event.update({'dest_ip': fqdn_ip4})

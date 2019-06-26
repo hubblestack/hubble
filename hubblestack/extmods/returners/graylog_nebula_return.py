@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nebula-to-graylog (http input) returner
 
 Deliver HubbleStack Nebula query data into graylog using the HTTP input
@@ -19,7 +19,7 @@ hubblestack:
         sourcetype_nova: hubble_audit
         gelfhttp: https://graylog-gelf-http-input-addr
 
-'''
+"""
 
 import json
 import time
@@ -28,8 +28,8 @@ from datetime import datetime
 
 
 def returner(ret):
-    '''
-    '''
+    """
+    """
     opts_list = _get_options()
 
     # Get cloud details
@@ -46,12 +46,11 @@ def returner(ret):
         data = ret['return']
         minion_id = ret['id']
         jid = ret['jid']
-        master = __grains__['master']
         fqdn = __grains__['fqdn']
         fqdn = fqdn if fqdn else minion_id
         try:
             fqdn_ip4 = __grains__['fqdn_ip4'][0]
-        except gelfhttpror:
+        except IndexError:
             fqdn_ip4 = __grains__['ipv4'][0]
         if fqdn_ip4.startswith('127.'):
             for ip4_addr in __grains__['ipv4']:
@@ -63,18 +62,16 @@ def returner(ret):
             return
         else:
             for query in data:
-                for query_name, query_results in query.iteritems():
-                    for query_result in query_results['data']:
+                for query_name, value in query.items():
+                    for d in value['data']:
                         event = {}
                         payload = {}
-                        event.update(query_result)
+                        event.update(d)
                         event.update({'query': query_name})
                         event.update({'job_id': jid})
-                        event.update({'master': master})
                         event.update({'minion_id': minion_id})
                         event.update({'dest_host': fqdn})
                         event.update({'dest_ip': fqdn_ip4})
-
                         event.update(cloud_details)
 
                         for custom_field in custom_fields:
@@ -93,7 +90,7 @@ def returner(ret):
 
                         # If the osquery query includes a field called 'time' it will be checked.
                         # If it's within the last year, it will be used as the eventtime.
-                        event_time = query_result.get('time', '')
+                        event_time = d.get('time', '')
                         try:
                             if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
                                 event_time = ''

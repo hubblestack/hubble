@@ -4,32 +4,56 @@
 # The resulting image is ready to run the pyinstaller on container start and drop hubble<version>-coreos.tar.gz
 # in the /data directory. Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
+# Requires docker 17.05 or higher
 
+# Set this argument to "local" if you want to build osquery for local code.
+# In that case, osquery folder must exist besides Dockerfile
+ARG OSQUERY_BUILD_ENV=remote
+
+#--------------- TEMP CONTAINER FOR LOCAL OSQUERY -------------------------
+FROM alpine as osquery_local
+ONBUILD COPY osquery /osquery
+ONBUILD RUN echo "Copying osquery from local folder"
+
+
+
+#--------------- TEMP CONTAINER FOR GIT OSQUERY ----------------------------
+FROM alpine/git as osquery_remote
+#to pin osquery to a different version change the following envirnment variable
+ENV OSQUERY_SRC_VERSION=3.3.2
+ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
+ONBUILD RUN cd / \
+ && git clone "$OSQUERY_GIT_URL" \
+ && cd osquery/ \
+ && git checkout "$OSQUERY_SRC_VERSION" \
+ && echo "Fetching osquery from git"
+
+
+#--------------- TEMP CONTAINER FOR OSQUERY ( BASED ON ARGUMENT ) ---------------
+FROM osquery_"$OSQUERY_BUILD_ENV" as osquery_image
+
+
+#--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
 FROM centos:7
 
 RUN yum makecache fast && yum -y update
 
 #paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
-
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
-#to pin to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=0314871908273b2770129da9f5a7c3206f224f68
 ENV OSQUERY_BUILD_USER=osquerybuilder
-ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 RUN yum -y install git make python ruby sudo which
 RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
  && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
+COPY --from=osquery_image /osquery /home/"$OSQUERY_BUILD_USER"/osquery
 RUN mkdir -p /usr/local/osquery/ \
- && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/
+ && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/ \
+ && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /home/"$OSQUERY_BUILD_USER"/osquery
 USER $OSQUERY_BUILD_USER
 ENV SKIP_TESTS=1
-RUN cd /home/"$OSQUERY_BUILD_USER" \
- && git clone "$OSQUERY_GIT_URL" \
- && cd osquery/ \
- && git checkout "$OSQUERY_SRC_VERSION" \
+RUN cd /home/"$OSQUERY_BUILD_USER"/osquery \
  && make sysprep \
 #have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
  && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
@@ -57,7 +81,7 @@ RUN yum -y install  \
 #install libcurl to avoid depending on host version
 #requires autoconf libtool libssh2-devel zlib-devel autoconf
 ENV LIBCURL_SRC_URL=https://github.com/curl/curl.git
-ENV LIBCURL_SRC_VERSION=curl-7_61_0
+ENV LIBCURL_SRC_VERSION=curl-7_64_1
 ENV LIBCURL_TEMP=/tmp/libcurl
 ENV PATH=/opt/hubble/bin/:/opt/hubble/include:/opt/hubble/lib:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 RUN mkdir -p "$LIBCURL_TEMP" \
@@ -74,7 +98,7 @@ RUN mkdir -p "$LIBCURL_TEMP" \
 #install git so that git package won't be a package dependency
 #requires make git libcurl-devel autoconf zlib-devel gcc
 ENV GIT_SRC_URL=https://github.com/git/git.git
-ENV GIT_SRC_VERSION=v2.16.4
+ENV GIT_SRC_VERSION=v2.21.0
 ENV GITTEMP=/tmp/gittemp
 RUN mkdir -p "$GITTEMP" \
  && cd "$GITTEMP" \
@@ -125,8 +149,8 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v3.0.0
-ENV HUBBLE_VERSION=3.0.0
+ENV HUBBLE_CHECKOUT=v3.0.1
+ENV HUBBLE_VERSION=3.0.1
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."

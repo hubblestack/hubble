@@ -1,4 +1,4 @@
-'''
+"""
 Hubblestack python log handler for splunk
 
 Uses the same configuration as the rest of the splunk returners, returns to
@@ -33,7 +33,7 @@ be skipped:
             custom_fields:
               - site
               - product_group
-'''
+"""
 import socket
 
 # Imports for http event forwarder
@@ -47,9 +47,9 @@ import hubblestack.utils.stdrec
 import logging
 
 class SplunkHandler(logging.Handler):
-    '''
+    """
     Log handler for splunk
-    '''
+    """
     def __init__(self):
         super(SplunkHandler, self).__init__()
 
@@ -72,7 +72,6 @@ class SplunkHandler(logging.Handler):
             hec = http_event_collector(*args, **kwargs)
 
             minion_id = __grains__['id']
-            master = __grains__['master']
             fqdn = __grains__['fqdn']
             # Sometimes fqdn is blank. If it is, replace it with minion_id
             fqdn = fqdn if fqdn else minion_id
@@ -127,10 +126,10 @@ class SplunkHandler(logging.Handler):
             self.endpoint_list.append((hec, event, payload))
 
     def emit(self, record):
-        '''
+        """
         Emit a single record using the hec/event template/payload template
         generated in __init__()
-        '''
+        """
 
         # NOTE: poor man's filtering ... goal: prevent logging loops and
         # various objects from logging to splunk in an infinite spiral of spam.
@@ -140,8 +139,15 @@ class SplunkHandler(logging.Handler):
         # splunk; so any logging.Filter would need to be very carefully added
         # to work right.
 
-        rpn = getattr(record, 'pathname', '')
-        filtered = ('hubblestack/splunklogging', 'hubblestack/hec/', 'urllib3/connectionpool')
+        # NOTE: we used to use 'pathname', rather than 'name' here.  That can't
+        # be made to work when hubble is packaged in a binary (every single
+        # 'pathname' comes through as logging/__init__.py for some reason).
+        #
+        # Matching 'name' works, but relies on devs using getLogger(__name__)
+        # and not some other arbitrary string.
+
+        filtered = ('hubblestack.splunklogging', 'hubblestack.hec', 'urllib3.connectionpool')
+        rpn = getattr(record, 'name', '')
         for i in filtered:
             if i in rpn:
                 return
@@ -158,10 +164,10 @@ class SplunkHandler(logging.Handler):
         return True
 
     def format_record(self, record):
-        '''
+        """
         Format the log record into a dictionary for easy insertion into a
         splunk event dictionary
-        '''
+        """
         try:
             log_entry = {'message': record.message,
                          'level': record.levelname,

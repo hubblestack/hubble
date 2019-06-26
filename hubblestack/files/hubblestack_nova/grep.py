@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova plugin for using grep to verify settings in files.
 
 Supports both blacklisting and whitelisting patterns. Blacklisted patterns must
@@ -50,7 +50,7 @@ the file is missing, then it will be considered a match (success for whitelist,
 failure for blacklist). If it's set to False and the file is missing, then it
 will be considered a non-match (success for blacklist, failure for whitelist).
 If the file exists, this setting is ignored.
-'''
+"""
 from __future__ import absolute_import
 import logging
 
@@ -73,9 +73,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    '''
+    """
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    '''
+    """
     labelled_data = {}
     if labels:
         labelled_data['grep'] = {}
@@ -94,9 +94,9 @@ def apply_labels(__data__, labels):
     return labelled_data
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    '''
+    """
     Run the grep audits contained in the YAML files processed by __virtual__
-    '''
+    """
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -201,9 +201,9 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    '''
+    """
     Merge two yaml dicts together at the grep:blacklist and grep:whitelist level
-    '''
+    """
     if 'grep' not in ret:
         ret['grep'] = {}
     for topkey in ('blacklist', 'whitelist'):
@@ -218,9 +218,9 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    '''
+    """
     Retrieve all the tags for this distro from the yaml
-    '''
+    """
     ret = {}
     distro = __grains__.get('osfinger')
     for toplist, toplevel in data.get('grep', {}).iteritems():
@@ -275,7 +275,7 @@ def _get_tags(data):
 def _grep(path,
           pattern,
           *args):
-    '''
+    """
     Grep for a string in the specified file
 
     .. note::
@@ -310,7 +310,7 @@ def _grep(path,
         salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr -- -i
         salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr -- -i -B2
         salt '*' file.grep "/etc/sysconfig/network-scripts/*" ipaddr -- -i -l
-    '''
+    """
     path = os.path.expanduser(path)
 
     if args:

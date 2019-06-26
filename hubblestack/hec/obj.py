@@ -38,7 +38,7 @@ def count_input(payload):
     # (without this, the accounting likely wouldn't work)
 
 class Payload(object):
-    ''' formatters for final payload stringification
+    """ formatters for final payload stringification
         and a convenient place to store retry counter information
 
         note that formatting a payload is different from formatting an event
@@ -53,7 +53,7 @@ class Payload(object):
         For reasons regarding the above, we provide a classmethod to format events:
 
         p = Payload.format_event({'blah': 'happened'}, sourcetype='blah')
-    '''
+    """
     host = None
 
     @classmethod
@@ -130,7 +130,7 @@ class HEC(object):
             return r
 
 
-    def __init__(self, token, http_event_server, host='', http_event_port='8088',
+    def __init__(self, token, index, http_event_server, host='', http_event_port='8088',
                  http_event_server_ssl=True, http_event_collector_ssl_verify=True,
                  max_bytes=_max_content_bytes, proxy=None, timeout=9.05,
                  disk_queue=False,
@@ -141,6 +141,7 @@ class HEC(object):
 
         self.timeout = timeout
         self.token = token
+        self.default_index = index
         self.batchEvents = []
         self.maxByteLength = max_bytes
         self.currentByteLength = 0
@@ -217,7 +218,8 @@ class HEC(object):
 
     def _payload_msg(self, message, *a):
         event = dict(loggername='hubblestack.hec.obj', message=message % a)
-        payload = dict(time=int(time.time()), sourcetype='hubble_log', event=event)
+        payload = dict(index=self.default_index,
+            time=int(time.time()), sourcetype='hubble_log', event=event)
         update_payload(payload)
         return str(Payload(payload))
 
@@ -254,6 +256,7 @@ class HEC(object):
         if self.queue.cn < 1:
             log.debug('nothing in queue')
             return
+        self.flushing_queue = True
         self._direct_send_msg('queue(flush) eventscount=%d', self.queue.cn)
         dt = time.time() - self.last_flush
         if dt >= self.retry_diskqueue_interval and self.queue.cn:
@@ -261,7 +264,6 @@ class HEC(object):
             log.error('flushing queue eventscount=%d; NOTE: queued events may contain more than one payload/event',
                 self.queue.cn)
         self.last_flush = time.time()
-        self.flushing_queue = True
         while self.flushing_queue:
             x = self.queue.getz()
             if not x:

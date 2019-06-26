@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova-to-graylog (http input) returner
 
 Deliver HubbleStack Nova data into graylog using the HTTP input
@@ -20,7 +20,7 @@ hubblestack:
         http_event_collector_ssl_verify: True
         gelfhttp: https://graylog-gelf-http-input-addr
 
-'''
+"""
 
 import json
 import socket
@@ -28,8 +28,8 @@ import requests
 
 
 def returner(ret):
-    '''
-    '''
+    """
+    """
     opts_list = _get_options()
 
     # Get cloud details
@@ -48,21 +48,15 @@ def returner(ret):
         fqdn = __grains__['fqdn']
         # Sometimes fqdn is blank. If it is, replace it with minion_id
         fqdn = fqdn if fqdn else minion_id
-        master = __grains__['master']
         try:
             fqdn_ip4 = __grains__['fqdn_ip4'][0]
-        except gelfhttpror:
+        except IndexError:
             fqdn_ip4 = __grains__['ipv4'][0]
         if fqdn_ip4.startswith('127.'):
             for ip4_addr in __grains__['ipv4']:
                 if ip4_addr and not ip4_addr.startswith('127.'):
                     fqdn_ip4 = ip4_addr
                     break
-
-        if __grains__['master']:
-            master = __grains__['master']
-        else:
-            master = socket.gethostname()  # We *are* the master, so use our hostname
 
         if not isinstance(data, dict):
             log.error('Data sent to graylog_nova_return was not formed as a '
@@ -82,7 +76,6 @@ def returner(ret):
                 for key, value in fai[check_id].iteritems():
                     if key not in ['tag']:
                         event[key] = value
-            event.update({'master': master})
             event.update({'minion_id': minion_id})
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})
@@ -119,7 +112,6 @@ def returner(ret):
                 for key, value in suc[check_id].iteritems():
                     if key not in ['tag']:
                         event[key] = value
-            event.update({'master': master})
             event.update({'minion_id': minion_id})
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})
@@ -148,7 +140,6 @@ def returner(ret):
             event = {}
             event.update({'job_id': jid})
             event.update({'compliance_percentage': data['Compliance']})
-            event.update({'master': master})
             event.update({'minion_id': minion_id})
             event.update({'dest_host': fqdn})
             event.update({'dest_ip': fqdn_ip4})

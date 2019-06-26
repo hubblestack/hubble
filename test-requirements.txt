@@ -22,3 +22,5 @@ tornado
 urllib3
 vulners
 ntplib
+pytest-pythonpath
+pycrypto

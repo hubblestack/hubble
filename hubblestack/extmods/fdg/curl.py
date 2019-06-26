@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 Flexible Data Gathering: curl
 =============================
 
@@ -12,7 +12,7 @@ Also note that this module doesn't support chaining from other fdg modules.
 This is due to security concerns -- because fdg can collect arbitrary data from
 a system, we don't want an attacker to be able to send that data to arbitrary
 endpoints.
-'''
+"""
 from __future__ import absolute_import
 import json
 import logging
@@ -35,7 +35,7 @@ def request(url,
             decode_json=True,
             chained=None,
             chained_status=None):
-    '''
+    """
     Given a series of arguments, make a request using ``requests``.
 
     Note that this function doesn't support chained values (they are thrown
@@ -96,7 +96,7 @@ def request(url,
 
     chained
         Ignored
-    '''
+    """
     if chained:
         log.warn('Chained value detected in curl.request module. Chained '
                  'values are unsupported in the curl fdg module.')

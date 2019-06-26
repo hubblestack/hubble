@@ -66,43 +66,43 @@ class MemQueue(OKTypesMixin):
         self.mq = deque()
 
     def accept(self, item):
-        ''' test to see whether the given item would fit in the queue under the queue's size restraints '''
+        """ test to see whether the given item would fit in the queue under the queue's size restraints """
         if len(item) + self.sz > self.size:
             return False
         return True
 
     def put(self, item):
-        ''' Put an item in the queue at the end (FIFO order) '''
+        """ Put an item in the queue at the end (FIFO order) """
         self.check_type(item)
         if not self.accept(item):
             raise QueueCapacityError('refusing to accept item due to size')
         self.mq.append(item)
 
     def unget(self, item):
-        ''' Put an item (back) in the queue at the front (LIFO order)
+        """ Put an item (back) in the queue at the front (LIFO order)
 
             This is meant to reverse a previous .get() that later turns out to
             be un-needed.
-        '''
+        """
         self.check_type(item)
         self.mq.appendleft(item)
 
     def get(self):
-        ''' get the next item from the queue '''
+        """ get the next item from the queue """
         if len(self.mq) > 0:
             return self.mq.popleft()
 
     def pop(self):
-        ''' pop an item from the queue '''
+        """ pop an item from the queue """
         self.mq.popleft()
 
     def getz(self, sz=SPLUNK_MAX_MSG):
-        ''' get items from the queue and concatenate them together using the
+        """ get items from the queue and concatenate them together using the
         spacer ' ' until the size reaches (but does not exceed) the kwarg sz.
 
             kwargs:
                 sz : the maxsize of the queue fetch (default: SPLUNK_MAX_MSG=100k)
-        '''
+        """
         r = b''
         while len(self.mq) > 0 and len(r) + len(self.sep) + len(self.peek()) < sz:
             if r:
@@ -111,13 +111,13 @@ class MemQueue(OKTypesMixin):
         return r
 
     def peek(self):
-        ''' look at the next item in the queue, but don't actually remove it from the queue '''
+        """ look at the next item in the queue, but don't actually remove it from the queue """
         if len(self.mq) > 0:
             return self.mq[0]
 
     @property
     def sz(self):
-        ''' the size of the queue in bytes (not counting any needed spacers) '''
+        """ the size of the queue in bytes (not counting any needed spacers) """
         s = 0
         for i in self.mq:
             s += len(i)
@@ -125,12 +125,12 @@ class MemQueue(OKTypesMixin):
 
     @property
     def cn(self):
-        ''' the size of the queue in items (the count) '''
+        """ the size of the queue in items (the count) """
         return len(self.mq)
 
     @property
     def msz(self):
-        ''' The size of the queue as it would be returned from getz() iff getz had no size limit '''
+        """ The size of the queue as it would be returned from getz() iff getz had no size limit """
         return self.sz + max(0, len(self.sep) * (self.cn -1))
 
     def __len__(self):
@@ -183,7 +183,7 @@ class DiskQueue(OKTypesMixin):
         return d
 
     def clear(self):
-        ''' clear the queue '''
+        """ clear the queue """
         if os.path.isdir(self.directory):
             shutil.rmtree(self.directory)
 
@@ -191,13 +191,13 @@ class DiskQueue(OKTypesMixin):
         return (name[0:4], name[4:])
 
     def accept(self, item):
-        ''' test to see whether the given item would fit in the queue under the queue's size restraints '''
+        """ test to see whether the given item would fit in the queue under the queue's size restraints """
         if len(item) + self.sz > self.size:
             return False
         return True
 
     def put(self, item):
-        ''' Put an item in the queue at the end (FIFO order) '''
+        """ Put an item in the queue at the end (FIFO order) """
         self.check_type(item)
         if not self.accept(item):
             raise QueueCapacityError('refusing to accept item due to size')
@@ -210,13 +210,13 @@ class DiskQueue(OKTypesMixin):
         self._count()
 
     def peek(self):
-        ''' look at the next item in the queue, but don't actually remove it from the queue '''
+        """ look at the next item in the queue, but don't actually remove it from the queue """
         for fname in self.files:
             with open(fname, 'rb') as fh:
                 return self.decompress(fh.read())
 
     def get(self):
-        ''' get the next item from the queue '''
+        """ get the next item from the queue """
         for fname in self.files:
             with open(fname, 'rb') as fh:
                 ret = self.decompress(fh.read())
@@ -225,22 +225,22 @@ class DiskQueue(OKTypesMixin):
             return ret
 
     def getz(self, sz=SPLUNK_MAX_MSG):
-        ''' fetch items from the queue and concatenate them together using the
+        """ fetch items from the queue and concatenate them together using the
             spacer ' ' until the size reaches (but does not exceed) the size
             kwargs (sz).
 
             kwargs:
                 sz : the maxsize of the queue fetch (default: SPLUNK_MAX_MSG=100k)
-        '''
+        """
         # Is it "dangerous" to unlink files during the os.walk (via generator)?
         # .oO( probably doesn't matter )
         r = b''
         for fname in self.files:
             with open(fname, 'rb') as fh:
                 p = self.decompress(fh.read())
-            if len(r) + len(self.sep) + len(p) > sz:
-                break
             if r:
+                if len(r) + len(self.sep) + len(p) > sz:
+                    break
                 r += self.sep
             r += p
             os.unlink(fname)
@@ -248,7 +248,7 @@ class DiskQueue(OKTypesMixin):
         return r
 
     def pop(self):
-        ''' remove the next item from the queue (do not return it); useful with .peek() '''
+        """ remove the next item from the queue (do not return it); useful with .peek() """
         for fname in self.files:
             os.unlink(fname)
             break
@@ -256,7 +256,7 @@ class DiskQueue(OKTypesMixin):
 
     @property
     def files(self):
-        ''' generate all filenames in the diskqueue (returns iterable) '''
+        """ generate all filenames in the diskqueue (returns iterable) """
         def _k(x):
             try:
                 return [ int(i) for i in x.split('.') ]
@@ -277,7 +277,7 @@ class DiskQueue(OKTypesMixin):
 
     @property
     def msz(self):
-        ''' The size of the queue as it would be returned from getz() iff getz had no size limit '''
+        """ The size of the queue as it would be returned from getz() iff getz had no size limit """
         return self.sz + max(0, len(self.sep) * (self.cn -1))
 
     def __len__(self):
@@ -295,14 +295,14 @@ class DiskBackedQueue:
     __nonzero__ = __bool__ # stupid python2
 
     def put(self, item):
-        ''' Put an item in the queue at the end (FIFO order) '''
+        """ Put an item in the queue at the end (FIFO order) """
         try:
             self.mq.put(item)
         except QueueCapacityError:
             self.dq.put(item)
 
     def peek(self):
-        ''' look at the next item in the queue, but don't actually remove it from the queue '''
+        """ look at the next item in the queue, but don't actually remove it from the queue """
         r = self.mq.peek()
         if r is None:
             r = self.dq.peek()
@@ -315,11 +315,11 @@ class DiskBackedQueue:
             self.dq.pop()
 
     def unget(self, msg):
-        ''' Put an item (back) in the queue at the front (LIFO order)
+        """ Put an item (back) in the queue at the front (LIFO order)
 
             This is meant to reverse a previous .get() that later turns out to
             be un-needed.
-        '''
+        """
         self.mq.unget(msg)
 
     def _disk_to_mem(self):
@@ -337,7 +337,7 @@ class DiskBackedQueue:
                 break
 
     def get(self):
-        ''' get the next item from the queue '''
+        """ get the next item from the queue """
         r = self.mq.get()
         if r is None:
             r = self.dq.get()
@@ -345,13 +345,13 @@ class DiskBackedQueue:
         return r
 
     def getz(self, sz=SPLUNK_MAX_MSG):
-        ''' fetch items from the queue and concatenate them together using the
+        """ fetch items from the queue and concatenate them together using the
             spacer ' ' until the size reaches (but does not exceed) the size
             kwargs (sz).
 
             kwargs:
                 sz : the maxsize of the queue fetch (default: SPLUNK_MAX_MSG=100k)
-        '''
+        """
         r = self.mq.getz(sz)
         if r is None:
             r = self.dq.getz(sz)
@@ -364,12 +364,12 @@ class DiskBackedQueue:
 
     @property
     def cn(self):
-        ''' the size of the queue in items (the count) '''
+        """ the size of the queue in items (the count) """
         return self.mq.cn + self.dq.cn
 
     @property
     def msz(self):
-        ''' The size of the queue as it would be returned from getz() iff getz had no size limit '''
+        """ The size of the queue as it would be returned from getz() iff getz had no size limit """
         mq_msz = self.mq.msz
         dq_msz = self.dq.msz
         if mq_msz and dq_msz:
@@ -382,5 +382,5 @@ class DiskBackedQueue:
 
     @property
     def sz(self):
-        ''' the size of the queue in bytes (not counting any needed spacers) '''
+        """ the size of the queue in bytes (not counting any needed spacers) """
         return self.mq.sz + self.dq.sz

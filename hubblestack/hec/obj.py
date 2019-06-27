@@ -148,11 +148,11 @@ class HEC(object):
         self.server_uri = []
 
         if proxy and http_event_server_ssl:
-            self.proxy = {'https': 'https://{0}'.format(proxy)}
+            self.proxy = 'https://{0}'.format(proxy)
         elif proxy:
-            self.proxy = {'http': 'http://{0}'.format(proxy)}
+            self.proxy = 'http://{0}'.format(proxy)
         else:
-            self.proxy = {}
+            self.proxy = None
 
         # Set host to specified value or default to localhostname if no value provided
         if host:

@@ -50,6 +50,7 @@ setup(
         'gitpython',
         'pyinotify',
         'vulners == 1.3.0',
+        'ntplib',
     ],
     data_files=data_files,
     options={

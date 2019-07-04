@@ -36,5 +36,5 @@ def createUserConf(__opts__):
             print(value)
             inner_most['token'] = splunk_token
     with open(outputFile, 'w') as outfile:
-        yaml.safe_dump(encodedsplunkConf, outfile, default_flow_style=False)
+        yaml.safe_dump(yamlSplunkConf, outfile, default_flow_style=False)
     outfile.close()

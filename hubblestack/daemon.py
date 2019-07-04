@@ -510,7 +510,7 @@ def load_config():
     __opts__['conf_file'] = parsed_args.get('configfile')
     __opts__['install_dir'] = install_dir
 
-    if __opts__['configureConf']:
+    if __opts__.get('configureConf', None):
         print('creating user conf')
         createUserConf()
         clean_up_process(None, None)

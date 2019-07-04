@@ -4,6 +4,7 @@ import logging
 import hubblestack.log
 
 log = logging.getLogger(__name__)
+global __opts__
 
 def createUserConf():
     print('inside create user conf')

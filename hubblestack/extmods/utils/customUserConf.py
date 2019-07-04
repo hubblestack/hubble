@@ -10,11 +10,11 @@ def createUserConf(__opts__):
     splunkIndex = 'mera_personal_index'
     splunk_token = 'mera_personal_token'
     splunkIndexer = 'mera_indexer'
-    log.info(type(splunkConf))
     log.info('Moody')
     log.info(__opts__)
     splunkConf = __opts__.get('hubblestack', [])
     log.info(splunkConf)
+    log.info(type(splunkConf))
     basePath = '/etc/hubble/hubble.d/'
     outputFile = basePath + 'abc.conf'
     encodedsplunkConf = eval(json.dumps(splunkConf))

@@ -19,7 +19,9 @@ def createUserConf(__opts__):
     outputFile = basePath + 'abc.conf'
     encodedsplunkConf = json.dumps(splunkConf)
     log.info(encodedsplunkConf)
-    inner_most = encodedsplunkConf['returner']['splunk'][0]
+    log.info(type(encodedsplunkConf))
+    yamlSplunkConf = yaml.safe_load(encodedsplunkConf)
+    inner_most = yamlSplunkConf['returner']['splunk'][0]
     log.info(inner_most)
     for key, value in inner_most.items():
         if key == 'index':

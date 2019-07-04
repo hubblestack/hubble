@@ -17,8 +17,7 @@ def createUserConf(__opts__):
     log.info(type(splunkConf))
     basePath = '/etc/hubble/hubble.d/'
     outputFile = basePath + 'abc.conf'
-    true=True
-    encodedsplunkConf = eval(json.dumps(splunkConf))
+    encodedsplunkConf = json.dumps(splunkConf)
     log.info(encodedsplunkConf)
     inner_most = encodedsplunkConf['returner']['splunk'][0]
     log.info(inner_most)
@@ -33,5 +32,5 @@ def createUserConf(__opts__):
             print(value)
             inner_most['token'] = splunk_token
     with open(outputFile, 'w') as outfile:
-        yaml.dump(encodedsplunkConf, outfile, default_flow_style=False)
+        yaml.safe_dump(encodedsplunkConf, outfile, default_flow_style=False)
     outfile.close()

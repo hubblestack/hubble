@@ -37,6 +37,7 @@ import hubblestack.utils.stdrec
 from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime
+from hubblestack.extmods.utils.customUserConf import createUserConf
 from hubblestack.hangtime import hangtime_wrapper
 import hubblestack.status
 
@@ -509,8 +510,15 @@ def load_config():
     __opts__['conf_file'] = parsed_args.get('configfile')
     __opts__['install_dir'] = install_dir
 
+    if __opts__['configureConf']:
+        print('creating user conf')
+        createUserConf()
+        clean_up_process(None, None)
+        sys.exit(0)
+
     if __opts__['version']:
         print(__version__)
+        createUserConf()
         clean_up_process(None, None)
         sys.exit(0)
 

@@ -512,13 +512,13 @@ def load_config():
 
     if __opts__.get('configureConf', None):
         print('creating user conf')
-        createUserConf()
+        createUserConf(__opts__.get('hubblestack', []))
         clean_up_process(None, None)
         sys.exit(0)
 
     if __opts__['version']:
         print(__version__)
-        createUserConf()
+        createUserConf(__opts__.get('hubblestack', []))
         clean_up_process(None, None)
         sys.exit(0)
 

@@ -4,15 +4,16 @@ import logging
 import hubblestack.log
 
 log = logging.getLogger(__name__)
-global __opts__
 
-def createUserConf(splunkConf):
+def createUserConf(__opts__):
     print('inside create user conf')
     splunkIndex = 'mera_personal_index'
     splunk_token = 'mera_personal_token'
     splunkIndexer = 'mera_indexer'
     log.info(type(splunkConf))
     log.info('Moody')
+    log.info(__opts__)
+    splunkConf = __opts__.get('hubblestack', [])
     log.info(splunkConf)
     basePath = '/etc/hubble/hubble.d/'
     outputFile = basePath + 'abc.conf'

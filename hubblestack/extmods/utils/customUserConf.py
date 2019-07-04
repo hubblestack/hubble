@@ -17,8 +17,11 @@ def createUserConf(__opts__):
     log.info(type(splunkConf))
     basePath = '/etc/hubble/hubble.d/'
     outputFile = basePath + 'abc.conf'
+    true=True
     encodedsplunkConf = eval(json.dumps(splunkConf))
+    log.info(encodedsplunkConf)
     inner_most = encodedsplunkConf['returner']['splunk'][0]
+    log.info(inner_most)
     for key, value in inner_most.items():
         if key == 'index':
             print(value)

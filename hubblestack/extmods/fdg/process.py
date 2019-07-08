@@ -15,10 +15,11 @@ import re
 import salt.ext.six as six
 from salt.exceptions import ArgumentValueError
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
-def filter_dict(starting_dict=None, filter_values=False, update_chained=True, chained=None, chained_status=None, **kwargs):
+def filter_dict(starting_dict=None, filter_values=False, update_chained=True,
+                chained=None, chained_status=None, **kwargs):
     """
     Given a target dictionary, filter it and return the result.
 
@@ -34,13 +35,16 @@ def filter_dict(starting_dict=None, filter_values=False, update_chained=True, ch
 
     ``kwargs`` is a dictionary mapping comparison types to values to compare against.
     """
-    try:
-        if update_chained:
-            if starting_dict:
-                chained.update(starting_dict)
-    except (AttributeError, TypeError, ValueError):
-        log.error('Invalid argument type - dict required')
-        return False, None
+    if chained_status:
+        try:
+            if update_chained:
+                if starting_dict:
+                    chained.update(starting_dict)
+        except (AttributeError, TypeError, ValueError):
+            LOG.error('Invalid argument type - dict required', exc_info=True)
+            return False, None
+    else:
+        chained = starting_dict
     ret = _filter_dict(chained, filter_values, kwargs)
     status = bool(ret)
 
@@ -102,7 +106,7 @@ def _compare(comp, val1, val2):
     if comp == "ne":
         return val1 != val2
 
-    log.error("Invalid argument '{}' - should be in [gt, ge, lt, le, eq, ne]".format(comp))
+    LOG.error("Invalid argument '%s' - should be in [gt, ge, lt, le, eq, ne]", comp)
     raise ArgumentValueError
 
 
@@ -130,19 +134,22 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_sta
             lt:5
     Outputs: [3, 4]
     """
-    if extend_chained:
-        try:
-            if starting_seq and isinstance(chained, set):
-                chained.update(starting_seq)
-            elif starting_seq and isinstance(chained, list):
-                chained.extend(starting_seq)
-            elif starting_seq and isinstance(chained, str):
-                chained = starting_seq.format(chained)
-            else:
-                raise AttributeError
-        except (AttributeError, TypeError, ValueError) as exc:
-            log.error("Invalid argument type")
-            return False, None
+    if chained_status:
+        if extend_chained:
+            try:
+                if starting_seq and isinstance(chained, set):
+                    chained.update(starting_seq)
+                elif starting_seq and isinstance(chained, list):
+                    chained.extend(starting_seq)
+                elif starting_seq and isinstance(chained, str):
+                    chained = starting_seq.format(chained)
+                else:
+                    raise AttributeError
+            except (AttributeError, TypeError, ValueError):
+                LOG.error("Invalid argument type", exc_info=True)
+                return False, None
+    else:
+        chained = starting_seq
     ret = _filter(seq=chained, filter_rules=kwargs)
     status = bool(ret)
 
@@ -165,7 +172,7 @@ def _filter(seq,
         not equal to 2.
     """
     if not isinstance(filter_rules, dict):
-        log.error("``filter_rules`` should be of type dict")
+        LOG.error("``filter_rules`` should be of type dict")
         return None
     ret = seq
     for comp, value in filter_rules.iteritems():
@@ -191,20 +198,23 @@ def get_index(index=0, starting_list=None, extend_chained=True, chained=None, ch
     If set to False, ``starting_list`` is ignored.
 
     """
-    if extend_chained:
-        if starting_list:
-            try:
-                chained.extend(starting_list)
-            except (AttributeError, TypeError) as exc:
-                log.error("Invalid argument type")
-                return False, None
+    if chained_status:
+        if extend_chained:
+            if starting_list:
+                try:
+                    chained.extend(starting_list)
+                except (AttributeError, TypeError):
+                    LOG.error("Invalid argument type", exc_info=True)
+                    return False, None
+    else:
+        chained = starting_list
     try:
         ret = chained[index]
     except IndexError:
-        log.error('List index out of range {}'.format(index))
+        LOG.error('List index out of range %d', index, exc_info=True)
         return False, None
     except TypeError:
-        log.error('Arguments should be of type list')
+        LOG.error('Arguments should be of type list', exc_info=True)
         return False, None
     status = bool(ret)
 
@@ -223,20 +233,23 @@ def get_key(key, starting_dict=None, update_chained=True, chained=None, chained_
     False othewise. The second argument will be the value found by the key or
     None if the key is not present in the dictionary.
     """
-    if update_chained:
-        if starting_dict:
-            try:
-                chained.update(starting_dict)
-            except (TypeError, ValueError):
-                log.error("Arguments should be of type dict")
-                return False, None
+    if chained_status:
+        if update_chained:
+            if starting_dict:
+                try:
+                    chained.update(starting_dict)
+                except (TypeError, ValueError):
+                    LOG.error("Arguments should be of type dict.", exc_info=True)
+                    return False, None
+    else:
+        chained = starting_dict
     try:
         ret = chained[key]
     except KeyError:
-        log.error("Key not found: {}".format(key))
+        LOG.error("Key not found: %s", key, exc_info=True)
         return False, None
     except TypeError:
-        log.error("Arguments should be of type dict")
+        LOG.error("Arguments should be of type dict.", exc_info=True)
         return False, None
     status = bool(ret)
 
@@ -257,24 +270,28 @@ def join(words=None, sep='', extend_chained=True, chained=None, chained_status=N
     ``extend_chained`` is set to True when ``chained`` should be extended with ``words``.
     If set to False, ``words`` is ignored.
     """
-    if extend_chained:
-        if words:
-            try:
-                chained.extend(words)
-            except (AttributeError, TypeError) as exc:
-                log.error("Arguments should be of type list")
-                return False, None
+    if chained_status:
+        if extend_chained:
+            if words:
+                try:
+                    chained.extend(words)
+                except (AttributeError, TypeError):
+                    LOG.error("Arguments should be of type list.", exc_info=True)
+                    return False, None
+    else:
+        chained = words
     try:
         ret = sep.join(chained)
     except (TypeError, AttributeError):
-        log.error("Invalid arguments type")
+        LOG.error("Invalid arguments type.", exc_info=True)
         ret = None
     status = bool(ret)
 
     return status, ret
 
 
-def sort(seq=None, desc=False, lexico=False, extend_chained=True, chained=None, chained_status=None):
+def sort(seq=None, desc=False, lexico=False, extend_chained=True,
+         chained=None, chained_status=None):
     """
     Given a target sequence, sort it and return the sorted result.
 
@@ -285,17 +302,20 @@ def sort(seq=None, desc=False, lexico=False, extend_chained=True, chained=None, 
     The first return value (status) will be True if the sort is successful, and
     False othewise. The second argument will be the sorted sequence.
     """
-    if extend_chained:
-        try:
-            if seq and isinstance(chained, (dict, set)):
-                chained.update(seq)
-            elif seq and isinstance(chained, list):
-                chained.extend(seq)
-            elif seq and isinstance(chained, str):
-                chained = seq.format(chained)
-        except (AttributeError, TypeError, ValueError):
-            log.error("Invalid arguments type")
-            return False, None
+    if chained_status:
+        if extend_chained:
+            try:
+                if seq and isinstance(chained, (dict, set)):
+                    chained.update(seq)
+                elif seq and isinstance(chained, list):
+                    chained.extend(seq)
+                elif seq and isinstance(chained, str):
+                    chained = seq.format(chained)
+            except (AttributeError, TypeError, ValueError):
+                LOG.error("Invalid arguments type.", exc_info=True)
+                return False, None
+    else:
+        chained = seq
     ret = _sort(chained, desc, lexico)
     status = bool(ret)
 
@@ -324,7 +344,7 @@ def _sort(seq,
     try:
         ret = sorted(seq, reverse=desc, key=key)
     except TypeError:
-        log.error("Invalid argument type")
+        LOG.error("Invalid argument type.", exc_info=True)
         return None
 
     return ret
@@ -346,13 +366,14 @@ def split(phrase, sep=None, regex=False, format_chained=True, chained=None, chai
     ``regex`` will be set to True if ``sep`` is a regex instead of a pattern.
 
     """
-    if format_chained:
-        if chained:
-            try:
-                phrase = phrase.format(chained)
-            except AttributeError:
-                log.error("Invalid attributes type")
-                return False, None
+    if chained_status:
+        if format_chained:
+            if chained:
+                try:
+                    phrase = phrase.format(chained)
+                except AttributeError:
+                    LOG.error("Invalid attributes type.", exc_info=True)
+                    return False, None
     ret = _split(phrase, sep, regex)
     status = bool(ret) and len(ret) > 1
 
@@ -375,14 +396,13 @@ def _split(phrase,
     regex
         Set to True if ``sep`` should be treated as a regex instead of a delimiter.
     """
-    ret = []
     try:
         if regex:
             ret = re.split(sep, phrase)
         else:
             ret = phrase.split(sep)
     except (AttributeError, TypeError):
-        log.error("Invalid argument type")
+        LOG.error("Invalid argument type.", exc_info=True)
         return None
 
     return ret
@@ -399,13 +419,16 @@ def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_
     The first return value (status) will be True if the conversion is successful,
     and False othewise. The second argument will be the list of tuples.
     """
-    if update_chained:
-        if starting_dict:
-            try:
-                chained.update(starting_dict)
-            except (AttributeError, ValueError, TypeError):
-                log.error("Invalid arguments type")
-                return False, None
+    if chained_status:
+        if update_chained:
+            if starting_dict:
+                try:
+                    chained.update(starting_dict)
+                except (AttributeError, ValueError, TypeError):
+                    LOG.error("Invalid arguments type.", exc_info=True)
+                    return False, None
+    else:
+        chained = starting_dict
     ret = [(key, value) for key, value in chained.iteritems()]
     status = bool(ret)
 
@@ -414,29 +437,34 @@ def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_
 
 def dict_convert_none(starting_seq=None, extend_chained=True, chained=None, chained_status=None):
     """
-    Given a target sequence, look for dictionary keys that have empty string values and replace them with None
+    Given a target sequence, look for dictionary keys that have empty string values
+     and replace them with None.
 
     By default, ``chained`` will have ``.extend()`` or  ``.update()``  called on it with
-    ``starting_seq`` as the only argument. Set ``extend_chained`` to False to ignore ``starting_seq``.
+    ``starting_seq`` as the only argument.
+    Set ``extend_chained`` to False to ignore ``starting_seq``.
 
     The first return value (status) will be True if the replacing is successful, and
     False othewise. The second argument will be the updated sequence.
     """
-    if extend_chained:
-        try:
-            if starting_seq and isinstance(chained, (set, dict)):
-                chained.update(starting_seq)
-            elif starting_seq and isinstance(chained, list):
-                chained.extend(starting_seq)
-        except (AttributeError, TypeError, ValueError):
-            log.error("Invalid type of arguments")
-            return False, None
+    if chained_status:
+        if extend_chained:
+            try:
+                if starting_seq and isinstance(chained, (set, dict)):
+                    chained.update(starting_seq)
+                elif starting_seq and isinstance(chained, list):
+                    chained.extend(starting_seq)
+            except (AttributeError, TypeError, ValueError):
+                LOG.error("Invalid type of arguments", exc_info=True)
+                return False, None
+    else:
+        chained = starting_seq
     if isinstance(chained, dict):
         ret = _dict_convert_none(chained)
     elif isinstance(chained, (set, list, tuple)):
         ret = _seq_convert_none(chained)
     else:
-        log.error("Invalid arguments type - dict or sequence expected")
+        LOG.error("Invalid arguments type - dict or sequence expected")
         ret = None
     status = bool(ret)
 
@@ -452,7 +480,7 @@ def _dict_convert_none(dictionary):
         The input dict to sterilize
     """
     if not isinstance(dictionary, dict):
-        log.error("Invalid argument type - should be dict")
+        LOG.error("Invalid argument type - should be dict")
         return None
     updated_dict = {}
     for key, value in dictionary.iteritems():
@@ -478,7 +506,7 @@ def _seq_convert_none(seq):
         The input sequence to sterilize
     """
     if not isinstance(seq, (list, set, tuple)):
-        log.error("Invalid argument type - list set or tuple expected")
+        LOG.error("Invalid argument type - list set or tuple expected")
         return None
     updated_seq = []
     for element in seq:
@@ -503,14 +531,15 @@ def print_string(starting_string, format_chained=True, chained=None, chained_sta
 
     The first return value (status) will be False only if an error will occur.
     """
-    if format_chained:
-        try:
-            starting_string = starting_string.format(chained)
-        except AttributeError:
-            log.error("Invalid type for starting_string - has to be string.")
-            return False, None
+    if chained_status:
+        if format_chained:
+            try:
+                starting_string = starting_string.format(chained)
+            except AttributeError:
+                LOG.error("Invalid type for starting_string - has to be string.", exc_info=True)
+                return False, None
     if not isinstance(starting_string, str):
-        log.error('Invalid arguments - starting_string should be a string')
+        LOG.error('Invalid arguments - starting_string should be a string')
         return False, None
 
     return bool(starting_string), starting_string
@@ -518,29 +547,34 @@ def print_string(starting_string, format_chained=True, chained=None, chained_sta
 
 def dict_remove_none(starting_seq=None, extend_chained=True, chained=None, chained_status=None):
     """
-    Given a target sequence, look for dictionary keys that have values of None and remove those keys.
+    Given a target sequence, look for dictionary keys that have values of None and remove them.
 
     By default, ``chained`` will have ``.extend()`` or ``.update()`` called on it with
-    ``starting_seq`` as the only argument. Set ``extend_chained`` to False to ignore ``starting_seq``.
+    ``starting_seq`` as the only argument.
+    Set ``extend_chained`` to False to ignore ``starting_seq``.
 
-    The first return value (status) will be True if the sterilizing is successful, and False otherwise.
+    The first return value (status) will be True if the sterilizing is successful,
+    and False otherwise.
     The second argument will be the sterilized sequence.
     """
-    if extend_chained:
-        try:
-            if starting_seq and isinstance(chained, (set, dict)):
-                chained.update(starting_seq)
-            elif starting_seq and isinstance(chained, list):
-                chained.extend(starting_seq)
-        except (AttributeError, TypeError, ValueError):
-            log.error("Invalid arguments type")
-            return False, None
+    if chained_status:
+        if extend_chained:
+            try:
+                if starting_seq and isinstance(chained, (set, dict)):
+                    chained.update(starting_seq)
+                elif starting_seq and isinstance(chained, list):
+                    chained.extend(starting_seq)
+            except (AttributeError, TypeError, ValueError):
+                LOG.error("Invalid arguments type", exc_info=True)
+                return False, None
+    else:
+        chained = starting_seq
     if isinstance(chained, dict):
         ret = _sterilize_dict(chained)
     elif isinstance(chained, (list, set, tuple)):
         ret = _sterilize_seq(chained)
     else:
-        log.error("Invalid arguments type - dict, list, set or tuple expected")
+        LOG.error("Invalid arguments type - dict, list, set or tuple expected")
         ret = None
     status = bool(ret)
 
@@ -556,7 +590,7 @@ def _sterilize_dict(dictionary):
         The input dict to sterilize
     """
     if not isinstance(dictionary, dict):
-        log.error("Invalid argument type - should be dict")
+        LOG.error("Invalid argument type - should be dict")
         return None
     updated_dict = {}
     for key, value in dictionary.iteritems():
@@ -579,7 +613,7 @@ def _sterilize_seq(seq):
         The input sequence to sterilize
     """
     if not isinstance(seq, (list, set, tuple)):
-        log.error('Invalid argument type - should be list, set or tuple')
+        LOG.error('Invalid argument type - should be list, set or tuple')
         return None
     updated_seq = []
     for element in seq:
@@ -604,14 +638,15 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
 
     The first return value (status) will be False only if an error will occur.
     """
-    if format_chained:
-        try:
-            starting_string = starting_string.format(chained)
-        except AttributeError:
-            log.error("Invalid type for starting_string - has to be string.")
-            return False, None
+    if chained_status:
+        if format_chained:
+            try:
+                starting_string = starting_string.format(chained)
+            except AttributeError:
+                LOG.error("Invalid type for starting_string - has to be string.", exc_info=True)
+                return False, None
     if not isinstance(starting_string, str):
-        log.error('Invalid arguments - starting_string should be a string')
+        LOG.error('Invalid arguments - starting_string should be a string')
         return False, None
     # compatbility with python2 & 3
     if six.PY3:

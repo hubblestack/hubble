@@ -24,10 +24,8 @@ import salt.utils.path
 
 import salt.modules.cmdmod
 
-__salt__ = {
-        'cmd.run': salt.modules.cmdmod._run_quiet,
-}
-log = logging.getLogger(__name__)
+__salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet}
+LOG = logging.getLogger(__name__)
 
 
 def default_gateway():
@@ -56,16 +54,19 @@ def default_gateway():
         grains['ip_gw'] = True
         grains['ip4_gw'] = True
         try:
-            gateway_ip = __salt__['cmd.run']('ip -4 route show | grep "^default via"', python_shell=True).split(' ')[2].strip()
+            gateway_ip = __salt__['cmd.run']('ip -4 route show | grep "^default via"',
+                                             python_shell=True).split(' ')[2].strip()
             grains['ip4_gw'] = gateway_ip if gateway_ip else True
-        except Exception as exc:
+        except Exception:
             pass
     if __salt__['cmd.run']('ip -6 route show | grep "^default"', python_shell=True):
         grains['ip_gw'] = True
         grains['ip6_gw'] = True
         try:
-            gateway_ip = __salt__['cmd.run']('ip -6 route show | grep "^default via"', python_shell=True).split(' ')[2].strip()
+            gateway_ip = __salt__['cmd.run']('ip -6 route show | grep "^default via"',
+                                             python_shell=True).split(' ')[2].strip()
             grains['ip6_gw'] = gateway_ip if gateway_ip else True
-        except Exception as exc:
+        except Exception:
             pass
+
     return grains

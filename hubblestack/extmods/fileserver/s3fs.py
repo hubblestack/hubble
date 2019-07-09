@@ -180,9 +180,9 @@ def find_file(path, saltenv='base', **kwargs):
     try:
         # jit load the file from S3 if it's not in the cache or it's old
         _get_file_from_s3(metadata, saltenv, fnd['bucket'], path, cached_file_path)
-    except Exception:
+    except Exception as exc:
         if not os.path.isfile(cached_file_path):
-            raise IOError
+            raise exc
 
     return fnd
 

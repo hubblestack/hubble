@@ -16,7 +16,7 @@ import yaml as _yaml
 
 from hubblestack.extmods.fdg.process import encode_base64
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def json(path, subkey=None, sep=None, chained=None, chained_status=None):
@@ -39,22 +39,26 @@ def json(path, subkey=None, sep=None, chained=None, chained_status=None):
     chained
         Value passed in via chaining in fdg. Will be called with ``.format()``
         on the path and subkey if defined.
+
+    chained_status
+        The status returned by the chained function.
     """
-    if chained is not None:
-        path = path.format(chained)
-        if subkey:
-            subkey = subkey.format(chained)
+    if chained_status:
+        if chained is not None:
+            path = path.format(chained)
+            if subkey:
+                subkey = subkey.format(chained)
 
     if not os.path.isfile(path):
-        log.error('Path {0} not found.'.format(path))
+        LOG.error('Path %s not found.', path)
         return False, None
 
     ret = None
     try:
-        with open(path, 'r') as f:
-            ret = _json.load(f)
-    except Exception as exc:
-        log.error('Error reading file {0}: {1}'.format(path, exc))
+        with open(path, 'r') as jfile:
+            ret = _json.load(jfile)
+    except Exception:
+        LOG.error('Error reading file %s.', path, exc_info=True)
 
     if subkey:
         if sep is not None:
@@ -68,8 +72,8 @@ def json(path, subkey=None, sep=None, chained=None, chained_status=None):
                     # If it's not a dict, assume it's a list and that `key` is an int
                     key = int(key)
                 ret = ret[key]
-        except Exception as exc:
-            log.error('Error traversing dict: {0}'.format(exc))
+        except (KeyError, TypeError, ValueError):
+            LOG.error('Error traversing dict.', exc_info=True)
             return False, None
 
     return True, ret
@@ -95,22 +99,26 @@ def yaml(path, subkey=None, sep=None, chained=None, chained_status=None):
     chained
         Value passed in via chaining in fdg. Will be called with ``.format()``
         on the path and subkey if defined.
+
+    chained_status
+        Status returned by the chained function.
     """
-    if chained is not None:
-        path = path.format(chained)
-        if subkey:
-            subkey = subkey.format(chained)
+    if chained_status:
+        if chained is not None:
+            path = path.format(chained)
+            if subkey:
+                subkey = subkey.format(chained)
 
     if not os.path.isfile(path):
-        log.error('Path {0} not found.'.format(path))
+        LOG.error('Path %s not found.', path)
         return False, None
 
     ret = None
     try:
-        with open(path, 'r') as f:
-            ret = _yaml.safe_load(f)
-    except Exception as exc:
-        log.error('Error reading file {0}: {1}'.format(path, exc))
+        with open(path, 'r') as yaml_file:
+            ret = _yaml.safe_load(yaml_file)
+    except Exception:
+        LOG.error('Error reading file %s.', path, exc_info=True)
 
     if subkey:
         if sep is not None:
@@ -124,8 +132,8 @@ def yaml(path, subkey=None, sep=None, chained=None, chained_status=None):
                     # If it's not a dict, assume it's a list and that `key` is an int
                     key = int(key)
                 ret = ret[key]
-        except Exception as exc:
-            log.error('Error traversing dict: {0}'.format(exc))
+        except (TypeError, ValueError, KeyError):
+            LOG.error('Error traversing dict.', exc_info=True)
             return False, None
 
     return True, ret
@@ -186,6 +194,9 @@ def config(path,
     chained
         Chained values will be called with ``.format()`` on the ``path``.
 
+    chained_status
+        Status returned by the chained function.
+
 
     Example:
 
@@ -221,59 +232,82 @@ def config(path,
             ]
         }
     """
-    if chained is not None:
-        path = path.format(chained)
+    if chained_status:
+        if chained is not None:
+            path = path.format(chained)
 
     if not os.path.isfile(path):
-        log.error('Path {0} not found.'.format(path))
+        LOG.error('Path %s not found.', path)
         return False, None
+
+    if dictsep is None:
+        ret = _lines_as_list(path, pattern, ignore_pattern)
+    else:
+        # Lines as key/value pairs in a dict
+        ret = _lines_as_dict(path, pattern, ignore_pattern, dictsep, valsep, subsep)
+
+    return bool(ret), ret
+
+
+def _lines_as_list(path, pattern, ignore_pattern):
+    """
+    Helper function for config. Process lines as list of strings.
+    """
+    try:
+        # All lines as list of strings
+        if not pattern and not ignore_pattern:
+            with open(path, 'r') as input_file:
+                ret = input_file.readlines()
+                ret = [s.strip() for s in ret]
+                return ret
+        # Some lines as a list of strings
+        ret = []
+        with open(path, 'r') as input_file:
+            for line in input_file:
+                line = line.strip()
+                if not _check_pattern(line, pattern, ignore_pattern):
+                    continue
+                ret.append(line)
+    except Exception:
+        LOG.error('Error while processing readfile.config for file %s.', path, exc_info=True)
+        return None
+
+    return ret
+
+
+def _lines_as_dict(path, pattern, ignore_pattern, dictsep, valsep, subsep):
+    """
+    Helper function for congig. Process lines as dict.
+    """
+    ret = {}
+    found_keys = set()
+    processed_keys = set()
 
     try:
-        if dictsep is None:
-            # All lines as list of strings
-            if not pattern and not ignore_pattern:
-                with open(path, 'r') as fh:
-                    ret = fh.readlines()
-                    ret = [s.strip() for s in ret]
-                    return True, ret
-            # Some lines as a list of strings
-            ret = []
-            with open(path, 'r') as fh:
-                for line in fh:
-                    line = line.strip()
-                    if not _check_pattern(line, pattern, ignore_pattern):
-                        continue
-                    ret.append(line)
-        else:
-            # Lines as key/value pairs in a dict
-            ret = {}
-            found_keys = set()
-            processed_keys = set()
-            with open(path, 'r') as fh:
-                for line in fh:
-                    line = line.strip()
-                    if not _check_pattern(line, pattern, ignore_pattern):
-                        continue
-                    key, val = _process_line(line, dictsep, valsep, subsep)
-                    if key in found_keys and key not in processed_keys:
-                        # Duplicate keys, make it a list of values underneath
-                        # and add to list of values
-                        ret[key] = [ret[key]]
-                        ret[key].append(val)
-                        processed_keys.add(key)
-                    elif key in found_keys and key in processed_keys:
-                        # Duplicate keys, add to list of values
-                        ret[key].append(val)
-                    else:
-                        # First found, add to dict as normal
-                        ret[key] = val
-                        found_keys.add(key)
-        return True, ret
-    except Exception as exc:
-        log.error('Error while processing readfile.config for file {0}: {1}'
-                  .format(path, exc))
-        return False, None
+        with open(path, 'r') as input_file:
+            for line in input_file:
+                line = line.strip()
+                if not _check_pattern(line, pattern, ignore_pattern):
+                    continue
+                key, val = _process_line(line, dictsep, valsep, subsep)
+                if key in found_keys and key not in processed_keys:
+                    # Duplicate keys, make it a list of values underneath
+                    # and add to list of values
+                    ret[key] = [ret[key]]
+                    ret[key].append(val)
+                    processed_keys.add(key)
+                elif key in found_keys and key in processed_keys:
+                    # Duplicate keys, add to list of values
+                    ret[key].append(val)
+                else:
+                    # First found, add to dict as normal
+                    ret[key] = val
+                    found_keys.add(key)
+    except Exception:
+        LOG.error('Error while processing readfile.config for file %s.', path, exc_info=True)
+        return None
 
+    return ret
 
 def _check_pattern(line, pattern, ignore_pattern):
     """
@@ -303,7 +337,7 @@ def _process_line(line, dictsep, valsep, subsep):
 
     try:
         key, val = line.split(dictsep, 1)
-    except:
+    except (AttributeError, ValueError, TypeError):
         return line, None
 
     if valsep is not None:
@@ -312,21 +346,21 @@ def _process_line(line, dictsep, valsep, subsep):
 
         # List of key-value pairs to form into a dict
         if subsep is not None:
-            newval = {}
+            new_val = {}
             for subval in val:
                 try:
-                    valkey, valval = subval.split(subsep, 1)
-                except:
-                    valkey, valval = subval, None
-                newval[valkey] = valval
-            val = newval
+                    val_key, val_val = subval.split(subsep, 1)
+                except (AttributeError, ValueError, TypeError):
+                    val_key, val_val = subval, None
+                new_val[val_key] = val_val
+            val = new_val
     elif subsep is not None:
         # Single key-value pair to form into a dict
         try:
-            valkey, valval = val.split(subsep, 1)
-        except:
-            valkey, valval = val, None
-        val = {valkey: valval}
+            val_key, val_val = val.split(subsep, 1)
+        except (AttributeError, ValueError, TypeError):
+            val_key, val_val = val, None
+        val = {val_key: val_val}
 
     return key, val
 
@@ -347,17 +381,22 @@ def readfile_string(path, encode_b64=False, chained=None, chained_status=None):
     chained
         Value passed in via chaining in fdg. Will be called with ``.format()``
         on the path if defined.
+
+    chained_status
+        Status returned by the chained function.
     """
-    if chained is not None:
-        path = path.format(chained)
+    if chained_status:
+        if chained is not None:
+            path = path.format(chained)
+
     if not os.path.isfile(path):
-        log.error('Path {0} not found.'.format(path))
+        LOG.error('Path %s not found.', path)
         return False, None
     try:
         with open(path, 'r') as input_file:
             ret = input_file.read()
-    except Exception as exc:
-        log.error('Error reading file {0}: {1}'.format(path, exc))
+    except Exception:
+        LOG.error('Error reading file %s', path, exc_info=True)
         return False, None
     status = bool(ret)
     if encode_b64:

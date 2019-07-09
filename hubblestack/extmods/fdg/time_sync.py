@@ -11,7 +11,7 @@ import salt.utils.platform
 
 if not salt.utils.platform.is_windows():
     import ntplib
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def time_check(ntp_servers, max_offset=15, nb_servers=4,
@@ -44,14 +44,14 @@ def time_check(ntp_servers, max_offset=15, nb_servers=4,
     chained
         The value chained from the previous call
     '''
-    if extend_chained:
-        if chained:
-            if ntp_servers:
-                ntp_servers.extend(chained)
-            else:
-                ntp_servers = chained
+    if chained_status:
+        if extend_chained:
+                if ntp_servers:
+                    ntp_servers.extend(chained)
+                else:
+                    ntp_servers = chained
     if not ntp_servers:
-        log.error("No NTP servers provided")
+        LOG.error("No NTP servers provided")
         return False, None
 
     checked_servers = 0
@@ -64,7 +64,7 @@ def time_check(ntp_servers, max_offset=15, nb_servers=4,
             return True, False
         checked_servers += 1
     if checked_servers < nb_servers:
-        log.error("%d/%d required servers reached", checked_servers, nb_servers)
+        LOG.error("%d/%d required servers reached", checked_servers, nb_servers)
         return False, False
 
     return True, True
@@ -86,7 +86,7 @@ def _query_ntp_server(ntp_server):
         try:
             return float(ret.split('\n')[-1].split()[1][:-1])
         except (ValueError, AttributeError, IndexError):
-            log.error("An error occured while querying the server: %s", ret)
+            LOG.error("An error occured while querying the server: %s", ret)
             return None
 
     ret = None
@@ -95,6 +95,6 @@ def _query_ntp_server(ntp_server):
         response = ntp_client.request(ntp_server, version=3)
         ret = response.offset
     except Exception:
-        log.error("Unexpected error occured while querying the server.", exc_info=True)
+        LOG.error("Unexpected error occured while querying the server.", exc_info=True)
 
     return ret

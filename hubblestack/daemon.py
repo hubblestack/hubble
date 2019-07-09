@@ -512,15 +512,14 @@ def load_config():
 
     if __opts__.get('configureConf', None):
         print('creating user conf')
-        configureoptions = __opts__.get('configureConf', None)
-        print(configureoptions)
-        createUserConf(__opts__)
+        configure_options = __opts__.get('configureConf', None)
+        print(configure_options)
+        createUserConf(__opts__, configure_options)
         clean_up_process(None, None)
         sys.exit(0)
 
     if __opts__['version']:
         print(__version__)
-        createUserConf(__opts__)
         clean_up_process(None, None)
         sys.exit(0)
 

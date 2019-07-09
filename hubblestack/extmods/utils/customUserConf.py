@@ -4,7 +4,7 @@ import logging
 import hubblestack.log
 
 log = logging.getLogger(__name__)
-basePath = '/etc/hubble/hubble.d/'
+base_path = '/etc/hubble/hubble.d/'
 default_config_name = 'user.conf'
 
 def parse_configure_option(configure_options):
@@ -19,17 +19,17 @@ def parse_configure_option(configure_options):
         print('some error occured, parameters format incorrect')
     return configure_options_dict
 
-def createUserConf(__opts__, configure_options):
-    print('inside createUserConf')
+def create_user_conf(__opts__, configure_options):
+    print('inside create_user_conf')
     configure_options_dict = parse_configure_option(configure_options)
-    splunkConf = __opts__.get('hubblestack', [])
-    if('filename' in configure_options_dict):
-        user_config_filename = basePath + configure_options_dict['filename']
+    splunk_conf = __opts__.get('hubblestack', [])
+    if('confname' in configure_options_dict):
+        user_config_filename = base_path + configure_options_dict['confname']
     else:
-        user_config_filename = basePath + default_config_name
-    encodedsplunkConf = json.dumps(splunkConf)
-    yamlSplunkConf = yaml.safe_load(encodedsplunkConf)
-    inner_most = yamlSplunkConf['returner']['splunk'][0]
+        user_config_filename = base_path + default_config_name
+    encoded_splunk_conf = json.dumps(splunk_conf)
+    yaml_splunk_conf = yaml.safe_load(encoded_splunk_conf)
+    inner_most = yaml_splunk_conf['returner']['splunk'][0]
     if 'splunkIndex' in configure_options_dict:
         inner_most['index'] = configure_options_dict['splunkIndex']
     if 'splunkIndexer' in configure_options_dict:
@@ -41,5 +41,5 @@ def createUserConf(__opts__, configure_options):
     if 'splunkPort' in configure_options_dict:
         inner_most['port'] = int(configure_options_dict['splunkPort'])
     with open(user_config_filename, 'w') as outfile:
-        yaml.safe_dump(yamlSplunkConf, outfile, default_flow_style=False, sort_keys=False)
+        yaml.safe_dump(yaml_splunk_conf, outfile, default_flow_style=False, sort_keys=False)
     outfile.close()

@@ -20,9 +20,7 @@ def createUserConf(__opts__):
     encodedsplunkConf = json.dumps(splunkConf)
     log.info(encodedsplunkConf)
     log.info(type(encodedsplunkConf))
-    print("a")
     yamlSplunkConf = yaml.safe_load(encodedsplunkConf)
-    print("a")
     inner_most = yamlSplunkConf['returner']['splunk'][0]
     log.info(inner_most)
     for key, value in inner_most.items():
@@ -36,5 +34,5 @@ def createUserConf(__opts__):
             print(value)
             inner_most['token'] = splunk_token
     with open(outputFile, 'w') as outfile:
-        yaml.safe_dump(yamlSplunkConf, outfile, default_flow_style=False)
+        yaml.safe_dump(yamlSplunkConf, outfile, default_flow_style=False, sort_keys=False)
     outfile.close()

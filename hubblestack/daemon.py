@@ -856,6 +856,9 @@ def parse_args():
     parser.add_argument('--version',
                         action='store_true',
                         help='Show version information')
+    parser.add_argument('--configureConf',
+                        action='configure_conf',
+                        help='configure hubble conf properties')
     parser.add_argument('--buildinfo',
                         action='store_true',
                         help='Show build information')

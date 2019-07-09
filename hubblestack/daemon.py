@@ -512,6 +512,8 @@ def load_config():
 
     if __opts__.get('configureConf', None):
         print('creating user conf')
+        configureoptions = __opts__.get('configureConf', None)
+        print(configureoptions)
         createUserConf(__opts__)
         clean_up_process(None, None)
         sys.exit(0)
@@ -857,7 +859,6 @@ def parse_args():
                         action='store_true',
                         help='Show version information')
     parser.add_argument('--configureConf',
-                        action='configure_conf',
                         help='configure hubble conf properties')
     parser.add_argument('--buildinfo',
                         action='store_true',

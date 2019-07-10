@@ -1,7 +1,7 @@
 import json
 import yaml
 import logging
-base_path_linux = '/etc/hubble/hubble.d'
+base_path_linux = '/etc/hubble/hubble.d/'
 base_path_windows = 'C:\\Program Files (x86)\\Hubble\\etc\\hubble\\hubble.d\\'
 log = logging.getLogger(__name__)
 default_config_name = 'user.conf'
@@ -15,13 +15,26 @@ def parse_configure_option(configure_options):
             value = str.split("=")[1]
             configure_options_dict[key] = value
     except:
-        print('some error occured, parameters format incorrect')
+        raise Exception('some error occured, parameters format incorrect')
     return configure_options_dict
 
 
 def create_user_conf(splunk_conf, configure_options, is_windows):
+    '''
+    Function to create a user conf based on the parameters provided in the
+    command line.
+    Usage : hubble --configure "splunk_token=customToken splunk_index=customIndex confname=mycustom.conf"
+    :param splunk_conf: splunk config as mentioned in the main hubble conf
+    :param configure_options: command line args passed to the --configure method
+    :param is_windows: boolean that tells whether the OS is windows or not
+    :return: void
+    '''
     print('creating custom conf')
-    configure_options_dict = parse_configure_option(configure_options)
+    try:
+        configure_options_dict = parse_configure_option(configure_options)
+    except Exception as e:
+        print(e)
+        return
     base_path = base_path_windows if is_windows else base_path_linux
     if('confname' in configure_options_dict):
         user_config_filename = base_path + configure_options_dict['confname']

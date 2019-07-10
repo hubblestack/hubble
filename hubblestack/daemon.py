@@ -511,10 +511,9 @@ def load_config():
     __opts__['install_dir'] = install_dir
 
     if __opts__.get('configure', None):
-        print('creating user conf')
         configure_options = __opts__.get('configure', None)
-        print(configure_options)
-        create_user_conf(__opts__, configure_options)
+        splunk_conf = __opts__.get('hubblestack', [])
+        create_user_conf(splunk_conf, configure_options, salt.utils.platform.is_windows())
         clean_up_process(None, None)
         sys.exit(0)
 

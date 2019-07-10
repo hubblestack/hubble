@@ -111,6 +111,8 @@ def request(url,
         kwargs['auth'] = (username, password)
     if verify is not None:
         kwargs['verify'] = verify
+    if headers is not None:
+        kwargs['headers'] = headers
     kwargs['timeout'] = int(timeout)
     if function not in ('GET', 'PUT', 'POST'):
         log.error('Invalid request type {0}'.format(function))

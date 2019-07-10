@@ -48,10 +48,10 @@ def time_check(ntp_servers, max_offset=15, nb_servers=4,
         Status returned by the chained method.
     '''
     if extend_chained and chained_status:
-            if ntp_servers:
-                ntp_servers.extend(chained)
-            else:
-                ntp_servers = chained
+        if ntp_servers:
+            ntp_servers.extend(chained)
+        else:
+            ntp_servers = chained
     if not ntp_servers:
         LOG.error("No NTP servers provided")
         return False, None

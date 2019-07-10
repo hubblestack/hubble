@@ -43,6 +43,9 @@ def time_check(ntp_servers, max_offset=15, nb_servers=4,
 
     chained
         The value chained from the previous call
+
+    chained_status
+        Status returned by the chained method.
     '''
     if chained_status:
         if extend_chained:

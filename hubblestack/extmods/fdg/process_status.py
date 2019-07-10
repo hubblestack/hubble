@@ -17,6 +17,9 @@ def list_processes(chained=None, chained_status=None):
     """
     Return a list of processes containing the name of the currently running processes.
 
+    ``chain`` and ``chain_status`` are ignored; they represent the value and status
+        returned by the previous call.
+
     The first return value (status) will be True if the osquery query is successful
     and False otherwise. The second argument will be the the ouput (list of strings).
     """
@@ -100,6 +103,9 @@ def find_process(filter_sql, fields=None, format_chained=True, chained=None, cha
 
     chained
         The value chained from the previous call.
+
+    chained_status
+        Status returned by the chained method.
 
     ``note``
         If no processes matched the filter or an invalid field is passed,
@@ -197,6 +203,9 @@ def find_children(parent_filter, parent_field=None, returned_fields=None,
         path,cmdline,state,cwd,root,uid,gid,euid,egid,suid,sgid,on_disk,wired_size,resident_size,
         total_size,user_time,system_time,disk_bytes_read,disk_bytes_written,start_time,
         parent,pgroup,threads,nice
+
+    chained_status
+        Status returned by the chained method.
     """
     if chained_status:
         if format_chained:

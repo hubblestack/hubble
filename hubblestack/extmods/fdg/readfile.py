@@ -72,7 +72,7 @@ def json(path, subkey=None, sep=None, chained=None, chained_status=None):
                     # If it's not a dict, assume it's a list and that `key` is an int
                     key = int(key)
                 ret = ret[key]
-        except (KeyError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError, IndexError):
             LOG.error('Error traversing dict.', exc_info=True)
             return False, None
 
@@ -132,7 +132,7 @@ def yaml(path, subkey=None, sep=None, chained=None, chained_status=None):
                     # If it's not a dict, assume it's a list and that `key` is an int
                     key = int(key)
                 ret = ret[key]
-        except (TypeError, ValueError, KeyError):
+        except (TypeError, ValueError, KeyError, IndexError):
             LOG.error('Error traversing dict.', exc_info=True)
             return False, None
 
@@ -246,7 +246,7 @@ def config(path,
         # Lines as key/value pairs in a dict
         ret = _lines_as_dict(path, pattern, ignore_pattern, dictsep, valsep, subsep)
 
-    return bool(ret), ret
+    return ret is not None, ret
 
 
 def _lines_as_list(path, pattern, ignore_pattern):

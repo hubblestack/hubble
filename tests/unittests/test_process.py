@@ -131,11 +131,11 @@ class TestProcess():
         """
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.filter_dict(
-            starting_dict=[1, 2, 3], chained={1: 'a', 2: 'b'})
+            starting_dict=[1, 2, 3], chained={1: 'a', 2: 'b'}, chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
         status, ret = hubblestack.extmods.fdg.process.filter_dict(
-            starting_dict={1: 'a', 2: 'b'}, chained=[1, 2])
+            starting_dict={1: 'a', 2: 'b'}, chained=[1, 2], chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
 
@@ -147,7 +147,7 @@ class TestProcess():
         expected_status, expected_ret = True, {1: 'a', 2: 'b', 4: 'd'}
         status, ret = hubblestack.extmods.fdg.process.filter_dict(
             starting_dict={1: 'a', 2: 'b', 3: 'c'}, chained={1: 'b', 3: 'd', 4: 'd'},
-            ge=1, ne=3)
+            ge=1, ne=3, chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
 
@@ -159,7 +159,8 @@ class TestProcess():
         expected_status, expected_ret = True, {3: 'c', 4: 'd'}
         status, ret = hubblestack.extmods.fdg.process.filter_dict(
             starting_dict={1: 'a', 2: 'b', 3: 'c'}, filter_values=True,
-            chained={1: 'b', 3: 'd', 4: 'd'}, gt='a', ne='b', le='d')
+            chained={1: 'b', 3: 'd', 4: 'd'}, gt='a', ne='b', le='d',
+            chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
 
@@ -201,12 +202,12 @@ class TestProcess():
         # invalid ``starting_seq``
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.filter_seq(
-            starting_seq=1, chained=[2, 3, 4], ge=1, lt=4)
+            starting_seq=1, chained=[2, 3, 4], ge=1, lt=4, chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
         # invalid ``chained``
         status, ret = hubblestack.extmods.fdg.process.filter_seq(
-            starting_seq=[1, 2], chained=4, ge=1, lt=4)
+            starting_seq=[1, 2], chained=4, ge=1, lt=4, chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
 
@@ -220,7 +221,7 @@ class TestProcess():
         chained = [1, 2]
         seq = [3, 4]
         status, ret = hubblestack.extmods.fdg.process.filter_seq(
-            starting_seq=seq, chained=chained, gt=1, ne=3, le=4)
+            starting_seq=seq, chained=chained, gt=1, ne=3, le=4, chained_status=True)
         assert expected_ret == ret
         assert expected_status == status
         # set
@@ -228,7 +229,7 @@ class TestProcess():
         seq = set(seq)
         chained = set(chained)
         status, ret = hubblestack.extmods.fdg.process.filter_seq(
-            starting_seq=seq, chained=chained, ge=1, ne=2, lt=4, eq=3)
+            starting_seq=seq, chained=chained, ge=1, ne=2, lt=4, eq=3, chained_status=True)
         assert expected_ret == ret
         assert expected_status == status
         # string
@@ -236,7 +237,7 @@ class TestProcess():
         seq = 'test {}'
         chained = 'string'
         status, ret = hubblestack.extmods.fdg.process.filter_seq(
-            starting_seq=seq, chained=chained, ne='t')
+            starting_seq=seq, chained=chained, ne='t', chained_status=True)
         assert expected_ret == ret
         assert expected_status == status
 
@@ -254,13 +255,13 @@ class TestProcess():
         # index out of range
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.get_index(
-            index=4, chained=[1, 2, 3])
+            index=4, chained=[1, 2, 3], chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
         # invalid ``chained`` type
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.get_index(
-            chained=set([1, 2, 3]))
+            chained=set([1, 2, 3]), chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
 
@@ -272,15 +273,15 @@ class TestProcess():
         """
         expected_status = True
         status, ret = hubblestack.extmods.fdg.process.get_index(
-            index=-1, starting_list=[1, 2], chained=[3, 4])
+            index=-1, starting_list=[1, 2], chained=[3, 4], chained_status=True)
         assert expected_status == status
         assert ret == 2
         status, ret = hubblestack.extmods.fdg.process.get_index(
-            starting_list=[1, 2], chained=[3, 4])
+            starting_list=[1, 2], chained=[3, 4], chained_status=True)
         assert expected_status == status
         assert ret == 3
         status, ret = hubblestack.extmods.fdg.process.get_index(
-            index=2, starting_list=[1, 2], chained=[3, 4])
+            index=2, starting_list=[1, 2], chained=[3, 4], chained_status=True)
         assert expected_status == status
         assert ret == 1
 
@@ -292,13 +293,13 @@ class TestProcess():
         # invalid ``chained`` type
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.get_key(
-            key='a', chained=['a', 'b', 'c'])
+            key='a', chained=['a', 'b', 'c'], chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
         # invalid key
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.get_key(
-            key='d', chained=['a', 'b', 'c'])
+            key='d', chained=['a', 'b', 'c'], chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
 
@@ -311,7 +312,7 @@ class TestProcess():
         expected_status, expected_ret = True, 1
         status, ret = hubblestack.extmods.fdg.process.get_key(
             key='b', starting_dict={'b': 1, 'c': 2},
-            chained={'a': 1, 'b': 2})
+            chained={'a': 1, 'b': 2}, chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
 
@@ -324,12 +325,12 @@ class TestProcess():
         # invalid ``chained``
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.join(
-            chained=1)
+            chained=1, chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
         # invalid ``sep``
         status, ret = hubblestack.extmods.fdg.process.join(
-            sep=[1, 2], chained=['foo', 'bar'])
+            sep=[1, 2], chained=['foo', 'bar'], chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
 
@@ -342,12 +343,12 @@ class TestProcess():
         # no ``sep``
         expected_status, expected_ret = True, 'testwordstogether'
         status, ret = hubblestack.extmods.fdg.process.join(
-            words='together', chained=['test', 'words'])
+            words='together', chained=['test', 'words'], chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
         # valid ``sep``
         status, ret = hubblestack.extmods.fdg.process.join(
-            words=['words', 'together'], sep='-', chained=['test', 'more'])
+            words=['words', 'together'], sep='-', chained=['test', 'more'], chained_status=True)
         assert expected_status == status
         assert ret == 'test-more-words-together'
 
@@ -393,17 +394,17 @@ class TestProcess():
         """
         expected_status, expected_ret = False, None
         # invalid ``chained``
-        status, ret = hubblestack.extmods.fdg.process.sort(seq=2, chained=1)
+        status, ret = hubblestack.extmods.fdg.process.sort(seq=2, chained=1, chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
         # invalid ``desc``
         status, ret = hubblestack.extmods.fdg.process.sort(
-            chained=[1, 2, 3], desc='yes')
+            chained=[1, 2, 3], desc='yes', chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
         # invalid ``lexico``
         status, ret = hubblestack.extmods.fdg.process.sort(
-            chained=[1, 2, 3], lexico=True)
+            chained=[1, 2, 3], lexico=True, chained_status=True)
         assert expected_status == status
         assert expected_ret == ret
 
@@ -420,17 +421,18 @@ class TestProcess():
         assert expected_status == status
         assert ret == [3, 2, 1]
         # dict
-        status, ret = hubblestack.extmods.fdg.process.sort(chained={2: 'a', 1: 'b', 3: 'c'})
+        status, ret = hubblestack.extmods.fdg.process.sort(chained={2: 'a', 1: 'b', 3: 'c'},
+                                                           chained_status=True)
         assert expected_status == status
         assert ret == [1, 2, 3]
         # desc set
         status, ret = hubblestack.extmods.fdg.process.sort(
-            seq=['A', 'B'], chained=set(['a', 'b']), desc=True)
+            seq=['A', 'B'], chained=set(['a', 'b']), desc=True, chained_status=True)
         assert expected_status == status
         assert ret == ['b', 'a', 'B', 'A']
         # lexicographic string
         status, ret = hubblestack.extmods.fdg.process.sort(
-            seq='A{}B', chained='ab', lexico=True)
+            seq='A{}B', chained='ab', lexico=True, chained_status=True)
         assert expected_status == status
         assert ret == ['A', 'a', 'b', 'B']
 
@@ -477,10 +479,12 @@ class TestProcess():
         """
         expected_status, expected_ret = False, None
         # invalid ``words``
-        status, ret = hubblestack.extmods.fdg.process.split([1, 2, 3], chained='ab')
+        status, ret = hubblestack.extmods.fdg.process.split([1, 2, 3], chained='ab',
+                                                            chained_status=True)
         assert ret == expected_ret
         assert status == expected_status
-        status, ret = hubblestack.extmods.fdg.process.split({1: 'a', 2: 'b'}, chained='ab')
+        status, ret = hubblestack.extmods.fdg.process.split({1: 'a', 2: 'b'}, chained='ab',
+                                                            chained_status=True)
         assert ret == expected_ret
         assert status == expected_status
         # invalid ``words`` & ``chained``
@@ -504,17 +508,17 @@ class TestProcess():
         assert ret == ['a', 'b', 'c', 'd']
         # invalid regex
         status, ret = hubblestack.extmods.fdg.process.split(
-            phrase="a1b2{}", sep="\d+", regex=False, chained='c3d')
+            phrase="a1b2{}", sep="\d+", regex=False, chained='c3d', chained_status=True)
         assert status is False
         assert ret == ['a1b2c3d']
         # simple sep
         status, ret = hubblestack.extmods.fdg.process.split(
-            phrase="a1 b2 {}", sep=" ", chained='c3 d')
+            phrase="a1 b2 {}", sep=" ", chained='c3 d', chained_status=True)
         assert status is True
         assert ret == ['a1', 'b2', 'c3', 'd']
         # no sep
         status, ret = hubblestack.extmods.fdg.process.split(
-            phrase="a1    b2    \n{}", chained='c3 d')
+            phrase="a1    b2    \n{}", chained='c3 d', chained_status=True)
         assert status is True
         assert ret == ['a1', 'b2', 'c3', 'd']
 
@@ -526,11 +530,11 @@ class TestProcess():
         """
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.dict_to_list(
-            starting_dict={1: 'a'}, chained=[1, 2, 3])
+            starting_dict={1: 'a'}, chained=[1, 2, 3], chained_status=True)
         assert status == expected_status
         assert ret == expected_ret
         status, ret = hubblestack.extmods.fdg.process.dict_to_list(
-            starting_dict='foo', chained={1: 'a', 2: 'b'})
+            starting_dict='foo', chained={1: 'a', 2: 'b'}, chained_status=True)
         assert status == expected_status
         assert ret == expected_ret
 
@@ -542,16 +546,17 @@ class TestProcess():
         """
         # flat dict
         status, ret = hubblestack.extmods.fdg.process.dict_to_list(
-            starting_dict={1: 'a'}, update_chained=False, chained={1: 'b', 2: 'c'})
+            starting_dict={1: 'a'}, update_chained=False, chained={1: 'b', 2: 'c'},
+            chained_status=True)
         assert status is True
         assert ret == [(1, 'b'), (2, 'c')]
         # nested dict
         status, ret = hubblestack.extmods.fdg.process.dict_to_list(
-            starting_dict={1: 'a', 3: {1: 'a'}}, chained={1: 'b', 2: 'c'})
+            starting_dict={1: 'a', 3: {1: 'a'}}, chained={1: 'b', 2: 'c'}, chained_status=True)
         assert status is True
         assert ret == [(1, 'a'), (2, 'c'), (3, {1: 'a'})]
         # empty dict
-        status, ret = hubblestack.extmods.fdg.process.dict_to_list(chained={})
+        status, ret = hubblestack.extmods.fdg.process.dict_to_list(chained={}, chained_status=True)
         assert status is False
         assert ret == []
 
@@ -623,15 +628,15 @@ class TestProcess():
         """
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
-            chained='foo bar')
+            chained='foo bar', chained_status=True)
         assert status == expected_status
         assert ret == expected_ret
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
-            chained={1: 'a'}, starting_seq=[1, 2])
+            chained={1: 'a'}, starting_seq=[1, 2], chained_status=True)
         assert status == expected_status
         assert ret == expected_ret
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
-            chained=[])
+            chained=[], chained_status=True)
         assert status == expected_status
         assert ret == []
 
@@ -643,24 +648,27 @@ class TestProcess():
         """
         # flat dict
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
-            chained={1: 'a', 2: '', 3: 'b', 4: ''})
+            chained={1: 'a', 2: '', 3: 'b', 4: ''}, chained_status=True)
         assert ret == {1: 'a', 2: None, 3: 'b', 4: None}
         assert status is True
         # nested dict & tuple
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
             chained={'a': [{'b': ({'c': {'e': ''}, 'f' : ''}, {'g': ''}),
-                            'h': ''}, 'i']}, starting_seq={'j': ''})
+                            'h': ''}, 'i']}, starting_seq={'j': ''},
+            chained_status=True)
         assert status is True
         assert ret == {'a': [{'b': [{'c': {'e': None}, 'f' : None}, {'g': None}],
                               'h': None}, 'i'], 'j': None}
         # nested dict, list & tuple
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
-            chained=('a', [{1: '', 2: [3, (4, {1:'', 2: {3: ''}})]}, 'b'], 'c'))
+            chained=('a', [{1: '', 2: [3, (4, {1:'', 2: {3: ''}})]}, 'b'], 'c'),
+            chained_status=True)
         assert status is True
         assert ret == ['a', [{1: None, 2: [3, [4, {1:None, 2: {3: None}}]]}, 'b'], 'c']
         # nested dict & list
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
-            chained=['a', {1: ''}, 'b'], starting_seq=[{1: ''}, 'c'])
+            chained=['a', {1: ''}, 'b'], starting_seq=[{1: ''}, 'c'],
+            chained_status=True)
         assert status is True
         assert ret == ['a', {1: None}, 'b', {1: None}, 'c']
 
@@ -685,11 +693,12 @@ class TestProcess():
         Test that given valid arguments, the function returns the correct string
         """
         status, ret = hubblestack.extmods.fdg.process.print_string(
-            starting_string='foo', chained='bar')
+            starting_string='foo', chained='bar', chained_status=True)
         assert status is True
         assert ret == 'foo'
         status, ret = hubblestack.extmods.fdg.process.print_string(
-            starting_string='foo {}', chained=['b', 'a', 'r'])
+            starting_string='foo {}', chained=['b', 'a', 'r'],
+            chained_status=True)
         assert status is True
         assert ret == "foo ['b', 'a', 'r']"
 
@@ -700,13 +709,13 @@ class TestProcess():
         """
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             dictionary=[1, 2])
-        assert ret == None
+        assert ret is None
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             dictionary={})
         assert ret == {}
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             dictionary=12)
-        assert ret == None
+        assert ret is None
 
 
     def test__sterilizeDict_validArgumentRecursive_returnDict(self):
@@ -764,17 +773,18 @@ class TestProcess():
         # invalid ``starting_seq``
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
-            starting_seq=[1, 2, 3], chained={1: 'a', 2: 'b'})
+            starting_seq=[1, 2, 3], chained={1: 'a', 2: 'b'},
+            chained_status=True)
         assert status == expected_status
         assert ret == expected_ret
         # invalid ``chained`` & valid ``starting_seq``
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
-            starting_seq=[1, 2, 3], chained="123")
+            starting_seq=[1, 2, 3], chained="123", chained_status=True)
         assert status == expected_status
         assert ret == expected_ret
         # invalid ``chained``
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
-            chained="123")
+            chained="123", chained_status=True)
         assert status == expected_status
         assert ret == expected_ret
 
@@ -792,20 +802,20 @@ class TestProcess():
         # flat seq
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
             chained=[{1: None}, {2: 'a', 3: None}],
-            starting_seq=[5, None, {4: 'b'}])
+            starting_seq=[5, None, {4: 'b'}], chained_status=True)
         assert status is True
         assert ret == [{}, {2: 'a'}, 5, None, {4: 'b'}]
         # nested sequences & dicts
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
             starting_seq=[{1: None, 2: {3: ({4: None, 5: 'a'},
                                             [None, {6: None, 7: 'b'}]), 8: 'c'}}],
-            chained=[{9: {10: None, 11: set([1, 2, 1])}}, 11])
+            chained=[{9: {10: None, 11: set([1, 2, 1])}}, 11], chained_status=True)
         assert status is True
         assert ret == [{9: {11: [1, 2]}}, 11, {2: {3: [{5: 'a'}, [None, {7: 'b'}]], 8: 'c'}}]
         # nested dicts & sequences
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
             starting_seq={1: None, 2: {3: ({4: None, 5: 'a'}, [None, {6: None, 7: 'b'}]), 8: 'c'}},
-            chained={9: {10: None, 11: set([1, 2, 1])}, 11: None})
+            chained={9: {10: None, 11: set([1, 2, 1])}, 11: None}, chained_status=True)
         assert status is True
         assert ret == {2: {3: [{5: 'a'}, [None, {7: 'b'}]], 8: 'c'}, 9: {11: [1, 2]}}
 
@@ -817,7 +827,7 @@ class TestProcess():
         # invalid `starting_string`
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
-            starting_string=123, chained="foo")
+            starting_string=123, chained="foo", chained_status=True)
         assert status == expected_status
         assert ret == expected_ret
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
@@ -836,14 +846,14 @@ class TestProcess():
         and returns it
         """
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
-            starting_string="foo {}", chained="bar")
+            starting_string="foo {}", chained="bar", chained_status=True)
         assert status
         assert ret == 'Zm9vIGJhcg=='
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
-            starting_string="foo", chained="bar")
+            starting_string="foo", chained="bar", chained_status=True)
         assert status
         assert ret == 'Zm9v'
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
-            starting_string="foo {}", format_chained=False, chained="bar")
+            starting_string="foo {}", format_chained=False, chained="bar", chained_status=True)
         assert status
         assert ret == 'Zm9vIHt9'

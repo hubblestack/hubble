@@ -38,16 +38,13 @@ def filter_dict(starting_dict=None, filter_values=False, update_chained=True,
     chained_status
         The status returned by the chained method.
     """
-    if chained_status:
-        try:
-            if update_chained:
-                if starting_dict:
-                    chained.update(starting_dict)
-        except (AttributeError, TypeError, ValueError):
-            LOG.error('Invalid argument type - dict required', exc_info=True)
-            return False, None
-    else:
-        chained = starting_dict
+    try:
+        if update_chained and chained_status:
+            if starting_dict:
+                chained.update(starting_dict)
+    except (AttributeError, TypeError, ValueError):
+        LOG.error('Invalid argument type - dict required', exc_info=True)
+        return False, None
     ret = _filter_dict(chained, filter_values, kwargs)
     status = bool(ret)
 
@@ -140,22 +137,19 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_sta
     chained_status
         Status returned by the chained method.
     """
-    if chained_status:
-        if extend_chained:
-            try:
-                if starting_seq and isinstance(chained, set):
-                    chained.update(starting_seq)
-                elif starting_seq and isinstance(chained, list):
-                    chained.extend(starting_seq)
-                elif starting_seq and isinstance(chained, str):
-                    chained = starting_seq.format(chained)
-                else:
-                    raise AttributeError
-            except (AttributeError, TypeError, ValueError):
-                LOG.error("Invalid argument type", exc_info=True)
-                return False, None
-    else:
-        chained = starting_seq
+    if extend_chained and chained_status:
+        try:
+            if starting_seq and isinstance(chained, set):
+                chained.update(starting_seq)
+            elif starting_seq and isinstance(chained, list):
+                chained.extend(starting_seq)
+            elif starting_seq and isinstance(chained, str):
+                chained = starting_seq.format(chained)
+            else:
+                raise AttributeError
+        except (AttributeError, TypeError, ValueError):
+            LOG.error("Invalid argument type", exc_info=True)
+            return False, None
     ret = _filter(seq=chained, filter_rules=kwargs)
     status = bool(ret)
 
@@ -207,16 +201,13 @@ def get_index(index=0, starting_list=None, extend_chained=True, chained=None, ch
         Status returned by the chained method.
 
     """
-    if chained_status:
-        if extend_chained:
-            if starting_list:
-                try:
-                    chained.extend(starting_list)
-                except (AttributeError, TypeError):
-                    LOG.error("Invalid argument type", exc_info=True)
-                    return False, None
-    else:
-        chained = starting_list
+    if extend_chained and chained_status:
+        if starting_list:
+            try:
+                chained.extend(starting_list)
+            except (AttributeError, TypeError):
+                LOG.error("Invalid argument type", exc_info=True)
+                return False, None
     try:
         ret = chained[index]
     except IndexError:
@@ -245,16 +236,13 @@ def get_key(key, starting_dict=None, update_chained=True, chained=None, chained_
     chained_status
         Status returned by the chained method.
     """
-    if chained_status:
-        if update_chained:
-            if starting_dict:
-                try:
-                    chained.update(starting_dict)
-                except (TypeError, ValueError):
-                    LOG.error("Arguments should be of type dict.", exc_info=True)
-                    return False, None
-    else:
-        chained = starting_dict
+    if update_chained and chained_status:
+        if starting_dict:
+            try:
+                chained.update(starting_dict)
+            except (TypeError, ValueError):
+                LOG.error("Arguments should be of type dict.", exc_info=True)
+                return False, None
     try:
         ret = chained[key]
     except KeyError:
@@ -285,16 +273,13 @@ def join(words=None, sep='', extend_chained=True, chained=None, chained_status=N
     chained_status
         Status returned by the chained method.
     """
-    if chained_status:
-        if extend_chained:
-            if words:
-                try:
-                    chained.extend(words)
-                except (AttributeError, TypeError):
-                    LOG.error("Arguments should be of type list.", exc_info=True)
-                    return False, None
-    else:
-        chained = words
+    if extend_chained and chained_status:
+        if words:
+            try:
+                chained.extend(words)
+            except (AttributeError, TypeError):
+                LOG.error("Arguments should be of type list.", exc_info=True)
+                return False, None
     try:
         ret = sep.join(chained)
     except (TypeError, AttributeError):
@@ -320,20 +305,17 @@ def sort(seq=None, desc=False, lexico=False, extend_chained=True,
     chained_status
         Status returned by the chained method.
     """
-    if chained_status:
-        if extend_chained:
-            try:
-                if seq and isinstance(chained, (dict, set)):
-                    chained.update(seq)
-                elif seq and isinstance(chained, list):
-                    chained.extend(seq)
-                elif seq and isinstance(chained, str):
-                    chained = seq.format(chained)
-            except (AttributeError, TypeError, ValueError):
-                LOG.error("Invalid arguments type.", exc_info=True)
-                return False, None
-    else:
-        chained = seq
+    if extend_chained and chained_status:
+        try:
+            if seq and isinstance(chained, (dict, set)):
+                chained.update(seq)
+            elif seq and isinstance(chained, list):
+                chained.extend(seq)
+            elif seq and isinstance(chained, str):
+                chained = seq.format(chained)
+        except (AttributeError, TypeError, ValueError):
+            LOG.error("Invalid arguments type.", exc_info=True)
+            return False, None
     ret = _sort(chained, desc, lexico)
     status = bool(ret)
 
@@ -386,14 +368,13 @@ def split(phrase, sep=None, regex=False, format_chained=True, chained=None, chai
     chained_status
         Status returned by the chained method.
     """
-    if chained_status:
-        if format_chained:
-            if chained:
-                try:
-                    phrase = phrase.format(chained)
-                except AttributeError:
-                    LOG.error("Invalid attributes type.", exc_info=True)
-                    return False, None
+    if format_chained and chained_status:
+        if chained:
+            try:
+                phrase = phrase.format(chained)
+            except AttributeError:
+                LOG.error("Invalid attributes type.", exc_info=True)
+                return False, None
     ret = _split(phrase, sep, regex)
     status = bool(ret) and len(ret) > 1
 
@@ -442,16 +423,13 @@ def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_
     chained_status
         Status returned by the chained method.
     """
-    if chained_status:
-        if update_chained:
-            if starting_dict:
-                try:
-                    chained.update(starting_dict)
-                except (AttributeError, ValueError, TypeError):
-                    LOG.error("Invalid arguments type.", exc_info=True)
-                    return False, None
-    else:
-        chained = starting_dict
+    if update_chained and chained_status:
+        if starting_dict:
+            try:
+                chained.update(starting_dict)
+            except (AttributeError, ValueError, TypeError):
+                LOG.error("Invalid arguments type.", exc_info=True)
+                return False, None
     ret = [(key, value) for key, value in chained.iteritems()]
     status = bool(ret)
 
@@ -473,18 +451,15 @@ def dict_convert_none(starting_seq=None, extend_chained=True, chained=None, chai
     chained_status
         Status returned by the chained method.
     """
-    if chained_status:
-        if extend_chained:
-            try:
-                if starting_seq and isinstance(chained, (set, dict)):
-                    chained.update(starting_seq)
-                elif starting_seq and isinstance(chained, list):
-                    chained.extend(starting_seq)
-            except (AttributeError, TypeError, ValueError):
-                LOG.error("Invalid type of arguments", exc_info=True)
-                return False, None
-    else:
-        chained = starting_seq
+    if extend_chained and chained_status:
+        try:
+            if starting_seq and isinstance(chained, (set, dict)):
+                chained.update(starting_seq)
+            elif starting_seq and isinstance(chained, list):
+                chained.extend(starting_seq)
+        except (AttributeError, TypeError, ValueError):
+            LOG.error("Invalid type of arguments", exc_info=True)
+            return False, None
     if isinstance(chained, dict):
         ret = _dict_convert_none(chained)
     elif isinstance(chained, (set, list, tuple)):
@@ -560,13 +535,12 @@ def print_string(starting_string, format_chained=True, chained=None, chained_sta
 
     The first return value (status) will be False only if an error will occur.
     """
-    if chained_status:
-        if format_chained:
-            try:
-                starting_string = starting_string.format(chained)
-            except AttributeError:
-                LOG.error("Invalid type for starting_string - has to be string.", exc_info=True)
-                return False, None
+    if format_chained and chained_status:
+        try:
+            starting_string = starting_string.format(chained)
+        except AttributeError:
+            LOG.error("Invalid type for starting_string - has to be string.", exc_info=True)
+            return False, None
     if not isinstance(starting_string, str):
         LOG.error('Invalid arguments - starting_string should be a string')
         return False, None
@@ -589,18 +563,15 @@ def dict_remove_none(starting_seq=None, extend_chained=True, chained=None, chain
     and False otherwise.
     The second argument will be the sterilized sequence.
     """
-    if chained_status:
-        if extend_chained:
-            try:
-                if starting_seq and isinstance(chained, (set, dict)):
-                    chained.update(starting_seq)
-                elif starting_seq and isinstance(chained, list):
-                    chained.extend(starting_seq)
-            except (AttributeError, TypeError, ValueError):
-                LOG.error("Invalid arguments type", exc_info=True)
-                return False, None
-    else:
-        chained = starting_seq
+    if extend_chained and chained_status:
+        try:
+            if starting_seq and isinstance(chained, (set, dict)):
+                chained.update(starting_seq)
+            elif starting_seq and isinstance(chained, list):
+                chained.extend(starting_seq)
+        except (AttributeError, TypeError, ValueError):
+            LOG.error("Invalid arguments type", exc_info=True)
+            return False, None
     if isinstance(chained, dict):
         ret = _sterilize_dict(chained)
     elif isinstance(chained, (list, set, tuple)):
@@ -673,13 +644,12 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
 
     The first return value (status) will be False only if an error will occur.
     """
-    if chained_status:
-        if format_chained:
-            try:
-                starting_string = starting_string.format(chained)
-            except AttributeError:
-                LOG.error("Invalid type for starting_string - has to be string.", exc_info=True)
-                return False, None
+    if format_chained and chained_status:
+        try:
+            starting_string = starting_string.format(chained)
+        except AttributeError:
+            LOG.error("Invalid type for starting_string - has to be string.", exc_info=True)
+            return False, None
     if not isinstance(starting_string, str):
         LOG.error('Invalid arguments - starting_string should be a string')
         return False, None

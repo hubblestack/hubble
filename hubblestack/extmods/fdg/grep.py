@@ -11,7 +11,7 @@ import os.path
 
 from salt.exceptions import CommandExecutionError
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def file(path, pattern, grep_args=None, format_chained=True, chained=None, chained_status=None):
@@ -24,6 +24,9 @@ def file(path, pattern, grep_args=None, format_chained=True, chained=None, chain
     substitute the chained value.) If you want to avoid having to escape curly braces,
     set ``format_chained=False``.
 
+    chained_status
+        Status returned by the chained method.
+
     The first return value (status) will be True if the pattern is found, and
     False othewise. The second argument will be the output of the ``grep``
     command.
@@ -31,16 +34,19 @@ def file(path, pattern, grep_args=None, format_chained=True, chained=None, chain
     ``grep_args`` can be used to pass in arguments to grep.
     """
     if format_chained:
-        pattern = pattern.format(chained)
-        path = path.format(chained)
+        if chained_status:
+            pattern = pattern.format(chained)
+            path = path.format(chained)
     if grep_args is None:
         grep_args = []
     ret = _grep(pattern=pattern, path=path, *grep_args)
     status = bool(ret)
+
     return status, ret
 
 
-def stdin(pattern, starting_string=None, grep_args=None, format_chained=True, chained=None, chained_status=None):
+def stdin(pattern, starting_string=None, grep_args=None,
+          format_chained=True, chained=None, chained_status=None):
     """
     Given a target string, call ``grep`` to search for for ``pattern`` in that
     string.
@@ -49,6 +55,9 @@ def stdin(pattern, starting_string=None, grep_args=None, format_chained=True, ch
     ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
     substitute the chained value.) If you want to avoid having to escape
     curly braces, set ``format_chained=False``.
+
+    chained_status
+        Status returned by the chained method.
 
     .. note::
         If no ``starting_string`` is provided, the ``chained``value  will be used.
@@ -60,12 +69,17 @@ def stdin(pattern, starting_string=None, grep_args=None, format_chained=True, ch
     ``grep_args`` can be used to pass in arguments to grep.
     """
     if format_chained:
-        if starting_string:
-            chained = starting_string.format(chained)
+        if chained_status:
+            if starting_string:
+                chained = starting_string.format(chained)
+        else:
+            chained = starting_string
+
     if grep_args is None:
         grep_args = []
     ret = _grep(pattern=pattern, string=chained, *grep_args)
     status = bool(ret)
+
     return status, ret
 
 

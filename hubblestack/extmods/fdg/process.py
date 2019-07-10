@@ -34,6 +34,9 @@ def filter_dict(starting_dict=None, filter_values=False, update_chained=True,
     False othewise. The second argument will be the filtered dictionary.
 
     ``kwargs`` is a dictionary mapping comparison types to values to compare against.
+
+    chained_status
+        The status returned by the chained method.
     """
     if chained_status:
         try:
@@ -133,6 +136,9 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_sta
             ne: 2
             lt:5
     Outputs: [3, 4]
+
+    chained_status
+        Status returned by the chained method.
     """
     if chained_status:
         if extend_chained:
@@ -197,6 +203,9 @@ def get_index(index=0, starting_list=None, extend_chained=True, chained=None, ch
     ``extend_chained`` is set to True when ``chained`` should be extended with ``starting_list``.
     If set to False, ``starting_list`` is ignored.
 
+    chained_status
+        Status returned by the chained method.
+
     """
     if chained_status:
         if extend_chained:
@@ -232,6 +241,9 @@ def get_key(key, starting_dict=None, update_chained=True, chained=None, chained_
     The first return value (status) will be True if the key is found, and
     False othewise. The second argument will be the value found by the key or
     None if the key is not present in the dictionary.
+
+    chained_status
+        Status returned by the chained method.
     """
     if chained_status:
         if update_chained:
@@ -269,6 +281,9 @@ def join(words=None, sep='', extend_chained=True, chained=None, chained_status=N
 
     ``extend_chained`` is set to True when ``chained`` should be extended with ``words``.
     If set to False, ``words`` is ignored.
+
+    chained_status
+        Status returned by the chained method.
     """
     if chained_status:
         if extend_chained:
@@ -301,6 +316,9 @@ def sort(seq=None, desc=False, lexico=False, extend_chained=True,
 
     The first return value (status) will be True if the sort is successful, and
     False othewise. The second argument will be the sorted sequence.
+
+    chained_status
+        Status returned by the chained method.
     """
     if chained_status:
         if extend_chained:
@@ -365,6 +383,8 @@ def split(phrase, sep=None, regex=False, format_chained=True, chained=None, chai
 
     ``regex`` will be set to True if ``sep`` is a regex instead of a pattern.
 
+    chained_status
+        Status returned by the chained method.
     """
     if chained_status:
         if format_chained:
@@ -418,6 +438,9 @@ def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_
 
     The first return value (status) will be True if the conversion is successful,
     and False othewise. The second argument will be the list of tuples.
+
+    chained_status
+        Status returned by the chained method.
     """
     if chained_status:
         if update_chained:
@@ -446,6 +469,9 @@ def dict_convert_none(starting_seq=None, extend_chained=True, chained=None, chai
 
     The first return value (status) will be True if the replacing is successful, and
     False othewise. The second argument will be the updated sequence.
+
+    chained_status
+        Status returned by the chained method.
     """
     if chained_status:
         if extend_chained:
@@ -529,6 +555,9 @@ def print_string(starting_string, format_chained=True, chained=None, chained_sta
     substitute the chained value.) If you want to avoid having to escape curly braces,
     set ``format_chained=False``.
 
+    chained_status
+        Status returned by the chained method.
+
     The first return value (status) will be False only if an error will occur.
     """
     if chained_status:
@@ -552,6 +581,9 @@ def dict_remove_none(starting_seq=None, extend_chained=True, chained=None, chain
     By default, ``chained`` will have ``.extend()`` or ``.update()`` called on it with
     ``starting_seq`` as the only argument.
     Set ``extend_chained`` to False to ignore ``starting_seq``.
+
+    chained_status
+        Status returned by the chained method.
 
     The first return value (status) will be True if the sterilizing is successful,
     and False otherwise.
@@ -635,6 +667,9 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
     with ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
     substitute the chained value.) If you want to avoid having to escape curly braces,
     set ``format_chained=False``.
+
+    chained_status
+        Status returned by the chained method.
 
     The first return value (status) will be False only if an error will occur.
     """

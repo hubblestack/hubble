@@ -54,6 +54,6 @@ def create_user_conf(splunk_conf, configure_options, is_windows):
     if 'splunk_port' in configure_options_dict:
         inner_most['port'] = int(configure_options_dict['splunk_port'])
     with open(user_config_filename, 'w') as outfile:
-        yaml.safe_dump(yaml_splunk_conf, outfile, default_flow_style=False, sort_keys=False)
+        yaml.safe_dump(yaml_splunk_conf, outfile, default_flow_style=False)
     print('custom conf created at {0}'.format(user_config_filename))
     outfile.close()

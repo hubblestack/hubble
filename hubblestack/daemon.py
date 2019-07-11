@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 '''
-Main entry point for the hubble daemon
+ Main entry point for the hubble daemon
 '''
 from __future__ import print_function
 

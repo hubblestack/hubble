@@ -25,6 +25,7 @@ def request(url,
             function='GET',
             params=None,
             data=None,
+            headers=None,
             username=None,
             password=None,
             timeout=9,
@@ -94,7 +95,7 @@ def request(url,
     chained_status
         Ignored
     """
-    if chained or chained_status:
+    if chained:
         LOG.warn('Chained value detected in curl.request module. Chained '
                  'values are unsupported in the curl fdg module.')
 

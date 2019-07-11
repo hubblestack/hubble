@@ -72,7 +72,7 @@ def request(url,
 
     data
         Payload to include for POST/PUT
-    
+
     headers
         A dict of custom headers in the form {"user-agent": "hubble"}
 

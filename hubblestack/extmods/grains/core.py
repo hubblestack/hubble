@@ -2009,9 +2009,8 @@ def hostname():
         __FQDN__ = 'localhost.localdomain'
 
     grains['fqdn'] = __FQDN__
-    log.error(grains['fqdn'])
     (grains['host'], grains['domain']) = grains['fqdn'].partition('.')[::2]
-    log.error(grains)
+    
     return grains
 
 

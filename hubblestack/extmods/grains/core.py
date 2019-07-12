@@ -116,8 +116,8 @@ def hostname():
             log.debug('Failed to get FQDN from dns server with error: %s', err)
             local_fqdn = __salt__['cmd.run']('hostname --fqdn')
             domain_name = __salt__['cmd.run']('domainname')
-            if domainname.strip() == '':
-                domainname = '(none)'
+            if domain_name.strip() == '':
+                domain_name = '(none)'
             __FQDN__ = "{0}.{1}".format(local_fqdn, domain_name)
             log.debug('FQDN manually set to : %s', __FQDN__)
 

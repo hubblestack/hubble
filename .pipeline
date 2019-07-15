@@ -21,6 +21,7 @@ pipeline {
                     source /etc/profile.d/kersplat.sh
                     pyenv local 2.7.14
                     pyenv shell 2.7.14
+                    rm -rf ./vlib ./venv
                     pip install --cache-dir ./pip.cache -t ./vlib virtualenv
                     PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv
                     source ./venv/bin/activate

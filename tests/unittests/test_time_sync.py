@@ -62,7 +62,7 @@ class TestTimesync():
         Test that when a valid NTP server is passed,
         the query is successful
         '''
-        offset = hubblestack.extmods.fdg.time_sync._query_ntp_server('0.ro.pool.ntp.org')
+        offset = hubblestack.extmods.fdg.time_sync._query_ntp_server('0.pool.ntp.org')
         assert offset is not None
         assert isinstance(offset, float)
 

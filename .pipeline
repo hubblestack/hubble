@@ -52,6 +52,9 @@ pipeline {
                         sh '''#!/bin/bash
                             source ./venv/bin/activate
                             pytest --log-cli-level INFO tests/unittests --html=tests/unittests/output/pytest.html
+                            x=$?
+                            cp tests/unittests/output/combined.svg tests/unittests/output/profile-diagram.svg
+                            exit $x
                             '''
                     }
                 }
@@ -60,10 +63,10 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             sh '''#!/bin/bash
                                 source ./venv/bin/activate
-                                cp tests/static/pylint.* tests/unittests/output/
                                 < relevant-files.txt  xargs -r pylint --output-format=json \
                                     > tests/unittests/output/pylint.json
                                 x=$?
+                                python ./tests/automation/pylint-json-to-html tests/unittests/output/pylint.json
                                 exit $x
                                 '''
                         }
@@ -90,33 +93,8 @@ pipeline {
                 alwaysLinkToLastBuild: false,
                 keepAll: true,
                 reportDir: 'tests/unittests/output',
-                reportFiles: 'pytest.html',
-                reportName: "Test Report"
-            ])
-            //archiveArtifacts artifacts: 'tests/unittests/output/pylint.json', allowEmptyArchive: true
-            publishHTML (target: [
-                allowMissing: false,
-                alwaysLinkToLastBuild: false,
-                keepAll: true,
-                reportDir: 'tests/unittests/output',
-                reportFiles: 'pylint.html, pylint.json',
-                reportName: "Lint Report"
-            ])
-            publishHTML (target: [
-                allowMissing: false,
-                alwaysLinkToLastBuild: false,
-                keepAll: true,
-                reportDir: 'tests/unittests/output/coverage',
-                reportFiles: 'index.html',
-                reportName: "Coverage Report"
-            ])
-            publishHTML (target: [
-                allowMissing: false,
-                alwaysLinkToLastBuild: false,
-                keepAll: true,
-                reportDir: 'tests/unittests/output',
-                reportFiles: 'combined.svg',
-                reportName: "Profile Diagram"
+                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg',
+                reportName: "Test Reports"
             ])
         }
     }

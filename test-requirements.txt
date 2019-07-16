@@ -19,6 +19,7 @@ pylint
 pytest
 pytest-cov
 pytest-html
+ansi2html
 pytest-pythonpath
 python-dateutil
 pyyaml

@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 '''
+
+This core.py file has been copied from /opt/hubble/hubble-libs/salt/grains/core.py
+from version 2018.3.3
+This file overrides the "hostname" to avoid a bug related to FQDN.
+
 The static grains, these are the core, or built in grains.
 
 When grains are loaded they are not loaded in the same way that modules are
@@ -1991,10 +1996,8 @@ def hostname():
             __FQDN__ = salt.utils.network.get_fqhostname()
         except (socket.gaierror, socket.error) as err:
             log.debug('Failed to get FQDN from dns server with error: %s', err)
-            local_fqdn = __salt__['cmd.run']('hostname')
-            domain_name = __salt__['cmd.run']('domainname')
-            if domain_name.strip() == '':
-                domain_name = '(none)'
+            local_fqdn = socket.getfqdn()
+            domain_name = "NOT_SET"
             __FQDN__ = "{0}.{1}".format(local_fqdn, domain_name)
             log.debug('FQDN manually set to : %s', __FQDN__)
 

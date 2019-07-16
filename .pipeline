@@ -78,7 +78,12 @@ pipeline {
                             sh '''#!/bin/bash
                                 source ./venv/bin/activate
                                 < relevant-files.txt  xargs -r bandit -lif html \
-                                > tests/unittests/output/bandit.html
+                                  > tests/unittests/output/bandit.html
+                                x=$?
+                                cp tests/static/bandit.css tests/unittests/output/bandit.css
+                                sed -i -e '/<style/,/<.style/c<link rel="stylesheet" href="bandit.css">' \
+                                  tests/unittests/output/bandit.html
+                                exit $x
                                 '''
                         }
                     }

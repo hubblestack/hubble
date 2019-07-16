@@ -1996,9 +1996,7 @@ def hostname():
             __FQDN__ = salt.utils.network.get_fqhostname()
         except (socket.gaierror, socket.error) as err:
             log.debug('Failed to get FQDN from dns server with error: %s', err)
-            local_fqdn = socket.getfqdn()
-            domain_name = "NOT_SET"
-            __FQDN__ = "{0}.{1}".format(local_fqdn, domain_name)
+            __FQDN__ = socket.getfqdn()
             log.debug('FQDN manually set to : %s', __FQDN__)
 
 

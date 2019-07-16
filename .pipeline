@@ -77,7 +77,8 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             sh '''#!/bin/bash
                                 source ./venv/bin/activate
-                                < relevant-files.txt  xargs -r bandit -lif screen
+                                < relevant-files.txt  xargs -r bandit -lif html \
+                                > tests/unittests/output/bandit.html
                                 '''
                         }
                     }
@@ -93,7 +94,7 @@ pipeline {
                 alwaysLinkToLastBuild: false,
                 keepAll: true,
                 reportDir: 'tests/unittests/output',
-                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg',
+                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg, bandit.html',
                 reportName: "Test Reports"
             ])
         }

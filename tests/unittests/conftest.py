@@ -1,3 +1,4 @@
+# coding: utf-8
 
 import os
 import sys
@@ -14,10 +15,18 @@ SaltLoaders = collections.namedtuple("SaltLoaders", 'opts salt grains utils'.spl
 tests_dir = os.path.dirname(os.path.realpath(__file__))
 sources_dir = os.path.dirname(os.path.dirname(tests_dir))
 hubble_dir = os.path.join(sources_dir, 'hubblestack')
+output_dir = os.path.join(tests_dir, 'output')
 ext_dir = os.path.join(hubble_dir, 'extmods')
 
 if sources_dir not in sys.path:
     sys.path.insert(0, sources_dir)
+
+# docker as root, developer homedir as 1000
+# set HS_CHOWN_BACK=1000:1000 to chown -R $HS_CHOWN_BACK sources_dir
+please_chown_my_files_back_to_me = 'HS_CHOWN_BACK'
+
+# if true (in the string sense), attempt to profile hubble during testing
+profile_enabling_env_var = 'HS_PROFILE'
 
 import hubblestack.daemon
 
@@ -163,3 +172,70 @@ def __salt__(salt_loaders):
 @pytest.fixture(scope='session')
 def __grains__(salt_loaders):
     return salt_loaders.grains
+
+
+
+##### profiling
+prof = None
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_pyfunc_call(pyfuncitem):
+    if prof:
+        prof.enable()
+
+    yield
+
+    if prof:
+        prof.disable()
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_protocol(item):
+    global prof
+
+    prof_filename = prof = False
+
+    if os.environ.get(profile_enabling_env_var):
+        import cProfile
+        filename, lineno, funcname = item.location # item.name is just the function name
+        profile_name = filename.split('/')[-1][:-3]
+        profile_name += '-' + funcname + '.pstats'
+        prof_filename = os.path.join(output_dir, profile_name)
+        try:
+            os.makedirs(output_dir)
+        except OSError:
+            pass
+        prof = cProfile.Profile()
+
+    yield # give control back to pytest, run the test, then come back here
+
+    if prof:
+        prof.dump_stats(prof_filename)
+        prof = None
+
+def pytest_sessionfinish(session, exitstatus):
+    if os.environ.get(profile_enabling_env_var):
+        # shamelessly ripped from pytest-profiling — then modified to taste
+        import glob, pstats, subprocess
+        pstat_fnamegen = glob.glob(os.path.join(output_dir, '*.pstats'))
+        pstat_filenames = [ x for x in pstat_fnamegen if not x.endswith('combined.pstats') ]
+        if pstat_filenames:
+            combined = pstats.Stats(pstat_filenames[0])
+            for pfname in pstat_filenames[1:]:
+                combined.add(pfname)
+
+            cfilename = os.path.join(output_dir, 'combined.pstats')
+            csvg      = os.path.join(output_dir, 'combined.svg')
+            combined.dump_stats(cfilename)
+
+            gp_cmd = [ 'gprof2dot', '-f', 'pstats', cfilename ]
+
+            gp = subprocess.Popen(gp_cmd, stdout=subprocess.PIPE)
+            dp = subprocess.Popen(['dot', '-Tsvg', '-o', csvg], stdin=gp.stdout)
+            dp.communicate()
+
+    pcmf = os.environ.get(please_chown_my_files_back_to_me)
+    if pcmf:
+        import subprocess
+        p = subprocess.Popen(['chown', '-R', pcmf, sources_dir])
+        p.communicate()
+        print('\nchowned back files to {}'.format(pcmf))

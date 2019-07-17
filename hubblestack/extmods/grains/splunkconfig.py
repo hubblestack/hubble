@@ -52,13 +52,13 @@ def _splunkindex(grains=None):
 
     # Opts, new-style config
     try:
-        index = opts['hubblestack']['returner']['splunk'][0]['index']
+        index = __opts__['hubblestack']['returner']['splunk'][0]['index']
     except Exception:
         pass
 
     # Opts, old-style config
     try:
-        index = opts['hubblestack']['returner']['splunk']['index']
+        index = __opts__['hubblestack']['returner']['splunk']['index']
     except Exception:
         pass
 

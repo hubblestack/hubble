@@ -39,35 +39,45 @@ def _splunkindex(grains=None):
     """
     If splunk config is found, set the ``index`` to the ``splunkindex`` grain.
 
-    Search grains (passed in), then config.
+    Grains take priority over opts.
+
+    If the grains and opts splunk index differ, set ``splunk_grains_fallback``
+    grain so that we know that splunk config has changed (via grains) since
+    hubble startup.
     """
     if grains is None:
         grains = {}
+    index = None
 
-    # Grains, old-style config
+    # Opts, new-style config
     try:
-        grains['splunkindex'] = grains['hubblestack']['returner']['splunk']['index']
-        return grains
-    except Exception:
-        pass
-
-    # Grains, new-style config
-    try:
-        grains['splunkindex'] = grains['hubblestack']['returner']['splunk'][0]['index']
-        return grains
+        index = opts['hubblestack']['returner']['splunk'][0]['index']
     except Exception:
         pass
 
     # Opts, old-style config
     try:
-        grains['splunkindex'] = opts['hubblestack']['returner']['splunk']['index']
-        return grains
+        index = opts['hubblestack']['returner']['splunk']['index']
     except Exception:
         pass
 
-    # Opts, new-style config
+    opts_index = index
+
+    # Grains, new-style config
     try:
-        grains['splunkindex'] = opts['hubblestack']['returner']['splunk'][0]['index']
-        return grains
+        index = grains['hubblestack']['returner']['splunk'][0]['index']
     except Exception:
         pass
+
+    # Grains, old-style config
+    try:
+        index = grains['hubblestack']['returner']['splunk']['index']
+    except Exception:
+        pass
+
+    if index:
+        grains['splunkindex'] = index
+        # Check if grains differ from opts, and note if that's the case
+        if opts_index != index:
+            grains['splunk_grains_fallback'] = True
+    return grains

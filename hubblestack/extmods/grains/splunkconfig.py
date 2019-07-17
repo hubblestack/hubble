@@ -16,6 +16,7 @@ def splunkconfig():
     configdir = os.path.join(os.path.dirname(__opts__['configfile']), 'hubble.d')
     ret = {}
     if not os.path.isdir(configdir):
+        ret = _splunkindex(ret)
         return ret
     try:
         for root, dirs, files in os.walk(configdir):
@@ -42,8 +43,8 @@ def _splunkindex(grains=None):
     Grains take priority over opts.
 
     If the grains and opts splunk index differ, set ``splunk_grains_fallback``
-    grain so that we know that splunk config has changed (via grains) since
-    hubble startup.
+    grain (with the old index) so that we know that splunk config has changed
+    (via grains) since hubble startup.
     """
     if grains is None:
         grains = {}
@@ -79,5 +80,5 @@ def _splunkindex(grains=None):
         grains['splunkindex'] = index
         # Check if grains differ from opts, and note if that's the case
         if opts_index != index:
-            grains['splunk_grains_fallback'] = True
+            grains['splunk_grains_fallback'] = opts_index
     return grains

@@ -33,4 +33,6 @@ def get_fqhostname():
         fqdn = socket.getfqdn()
     return fqdn
 
+# Overriding the default function of salt becuase it lacks handling of
+# socket.error exception
 salt.utils.network.get_fqhostname = get_fqhostname

@@ -146,9 +146,6 @@ fileserver_backend:
 #splunklogging: True
 #splunk_index_extracted_fields: []
 
-#config_to_grains:
-#  - splunkindex: "hubblestack:returner:splunk:0:index"
-
 #Set log level
 log_level: info
 

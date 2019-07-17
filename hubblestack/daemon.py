@@ -812,7 +812,8 @@ def emit_to_syslog(grains_to_emit):
                 if bool(__grains__[grain]) and isinstance(__grains__[grain], dict):
                     for key, value in __grains__[grain].iteritems():
                         syslog_list.append('{0}={1}'.format(key, value))
-                syslog_list.append('{0}={1}'.format(grain, __grains__[grain]))
+                else:
+                    syslog_list.append('{0}={1}'.format(grain, __grains__[grain]))
         syslog_message = ' '.join(syslog_list)
         log.info('Emitting some grains to syslog')
         syslog.openlog(logoption = syslog.LOG_PID)

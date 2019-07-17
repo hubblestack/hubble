@@ -11,7 +11,7 @@ import copy
 
 import hubblestack.splunklogging
 
-# These patterns will not be logged by "conf_publisher" module and emit_to_splunk
+# These patterns will not be logged by "conf_publisher" and "emit_to_splunk"
 PATTERNS_TO_FILTER = ["password", "token", "passphrase", "privkey", "keyid", "s3.key"]
 
 # While hubble doesn't use these, salt modules can, so let's define them anyway
@@ -158,12 +158,12 @@ def setup_splunk_logger():
     SPLUNK_HANDLER = handler
 
 
-def emit_to_splunk(message, level, name, filter_logs=False):
+def emit_to_splunk(message, level, name, remove_sensitive_logs=False):
     '''
     Emit a single message to splunk
     '''
 
-    if filter_logs:
+    if remove_sensitive_logs:
         # copying the original message so that it does not
         # get modified while filtering
         copy_of_message = copy.deepcopy(message)

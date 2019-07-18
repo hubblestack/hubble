@@ -34,9 +34,8 @@ def file(path, pattern, grep_args=None, format_chained=True, chained=None, chain
     ``grep_args`` can be used to pass in arguments to grep.
     """
     if format_chained:
-        if chained_status:
-            pattern = pattern.format(chained)
-            path = path.format(chained)
+        pattern = pattern.format(chained)
+        path = path.format(chained)
     if grep_args is None:
         grep_args = []
     ret = _grep(pattern=pattern, path=path, *grep_args)
@@ -69,11 +68,8 @@ def stdin(pattern, starting_string=None, grep_args=None,
     ``grep_args`` can be used to pass in arguments to grep.
     """
     if format_chained:
-        if chained_status:
-            if starting_string:
-                chained = starting_string.format(chained)
-        else:
-            chained = starting_string
+        if starting_string:
+            chained = starting_string.format(chained)
 
     if grep_args is None:
         grep_args = []

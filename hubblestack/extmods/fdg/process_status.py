@@ -111,7 +111,7 @@ def find_process(filter_sql, fields=None, format_chained=True, chained=None, cha
         If no processes matched the filter or an invalid field is passed,
         the function returns an empty list.
     """
-    if format_chained and chained_status:
+    if format_chained:
         try:
             filter_sql = filter_sql.format(chained)
         except (AttributeError, TypeError):
@@ -154,7 +154,7 @@ def is_running(filter_sql, format_chained=True, chained=None, chained_status=Non
         If more than one process matches the search, the function returns `False`
          and reports an error.
     """
-    if format_chained and chained_status:
+    if format_chained:
         try:
             filter_sql = filter_sql.format(chained)
         except (AttributeError, TypeError):
@@ -205,7 +205,7 @@ def find_children(parent_filter, parent_field=None, returned_fields=None,
     chained_status
         Status returned by the chained method.
     """
-    if format_chained and chained_status:
+    if format_chained:
         try:
             parent_filter = parent_filter.format(chained)
         except (AttributeError, TypeError):

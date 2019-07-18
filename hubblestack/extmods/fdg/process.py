@@ -39,7 +39,7 @@ def filter_dict(starting_dict=None, filter_values=False, update_chained=True,
         The status returned by the chained method.
     """
     try:
-        if update_chained and chained_status:
+        if update_chained:
             if starting_dict:
                 chained.update(starting_dict)
     except (AttributeError, TypeError, ValueError):
@@ -137,7 +137,7 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_sta
     chained_status
         Status returned by the chained method.
     """
-    if extend_chained and chained_status:
+    if extend_chained:
         try:
             if starting_seq and isinstance(chained, set):
                 chained.update(starting_seq)
@@ -201,7 +201,7 @@ def get_index(index=0, starting_list=None, extend_chained=True, chained=None, ch
         Status returned by the chained method.
 
     """
-    if extend_chained and chained_status:
+    if extend_chained:
         if starting_list:
             try:
                 chained.extend(starting_list)
@@ -236,7 +236,7 @@ def get_key(key, starting_dict=None, update_chained=True, chained=None, chained_
     chained_status
         Status returned by the chained method.
     """
-    if update_chained and chained_status:
+    if update_chained:
         if starting_dict:
             try:
                 chained.update(starting_dict)
@@ -273,7 +273,7 @@ def join(words=None, sep='', extend_chained=True, chained=None, chained_status=N
     chained_status
         Status returned by the chained method.
     """
-    if extend_chained and chained_status:
+    if extend_chained:
         if words:
             try:
                 chained.extend(words)
@@ -305,7 +305,7 @@ def sort(seq=None, desc=False, lexico=False, extend_chained=True,
     chained_status
         Status returned by the chained method.
     """
-    if extend_chained and chained_status:
+    if extend_chained:
         try:
             if seq and isinstance(chained, (dict, set)):
                 chained.update(seq)
@@ -337,7 +337,6 @@ def _sort(seq,
     lexico
         Set to True if the sorting thould be in lexicographical order.
     """
-    ret = []
     key = None
     if lexico:
         key = str.lower
@@ -368,7 +367,7 @@ def split(phrase, sep=None, regex=False, format_chained=True, chained=None, chai
     chained_status
         Status returned by the chained method.
     """
-    if format_chained and chained_status:
+    if format_chained:
         if chained:
             try:
                 phrase = phrase.format(chained)
@@ -423,7 +422,7 @@ def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_
     chained_status
         Status returned by the chained method.
     """
-    if update_chained and chained_status:
+    if update_chained:
         if starting_dict:
             try:
                 chained.update(starting_dict)
@@ -451,7 +450,7 @@ def dict_convert_none(starting_seq=None, extend_chained=True, chained=None, chai
     chained_status
         Status returned by the chained method.
     """
-    if extend_chained and chained_status:
+    if extend_chained:
         try:
             if starting_seq and isinstance(chained, (set, dict)):
                 chained.update(starting_seq)
@@ -535,7 +534,7 @@ def print_string(starting_string, format_chained=True, chained=None, chained_sta
 
     The first return value (status) will be False only if an error will occur.
     """
-    if format_chained and chained_status:
+    if format_chained:
         try:
             starting_string = starting_string.format(chained)
         except AttributeError:
@@ -563,7 +562,7 @@ def dict_remove_none(starting_seq=None, extend_chained=True, chained=None, chain
     and False otherwise.
     The second argument will be the sterilized sequence.
     """
-    if extend_chained and chained_status:
+    if extend_chained:
         try:
             if starting_seq and isinstance(chained, (set, dict)):
                 chained.update(starting_seq)
@@ -644,7 +643,7 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
 
     The first return value (status) will be False only if an error will occur.
     """
-    if format_chained and chained_status:
+    if format_chained:
         try:
             starting_string = starting_string.format(chained)
         except AttributeError:

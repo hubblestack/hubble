@@ -48,7 +48,7 @@ def query(query_sql, osquery_args=None, osquery_path=None,
     chained_status
         The status returned by the chained call.
     """
-    if format_chained and chained_status:
+    if format_chained:
         query_sql = query_sql.format(chained)
     if osquery_args is None:
         osquery_args = []

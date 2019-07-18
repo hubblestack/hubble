@@ -43,11 +43,10 @@ def json(path, subkey=None, sep=None, chained=None, chained_status=None):
     chained_status
         The status returned by the chained function.
     """
-    if chained_status:
-        if chained is not None:
-            path = path.format(chained)
-            if subkey:
-                subkey = subkey.format(chained)
+    if chained is not None:
+        path = path.format(chained)
+        if subkey:
+            subkey = subkey.format(chained)
 
     if not os.path.isfile(path):
         LOG.error('Path %s not found.', path)
@@ -103,11 +102,10 @@ def yaml(path, subkey=None, sep=None, chained=None, chained_status=None):
     chained_status
         Status returned by the chained function.
     """
-    if chained_status:
-        if chained is not None:
-            path = path.format(chained)
-            if subkey:
-                subkey = subkey.format(chained)
+    if chained is not None:
+        path = path.format(chained)
+        if subkey:
+            subkey = subkey.format(chained)
 
     if not os.path.isfile(path):
         LOG.error('Path %s not found.', path)
@@ -232,9 +230,8 @@ def config(path,
             ]
         }
     """
-    if chained_status:
-        if chained is not None:
-            path = path.format(chained)
+    if chained is not None:
+        path = path.format(chained)
 
     if not os.path.isfile(path):
         LOG.error('Path %s not found.', path)
@@ -308,6 +305,7 @@ def _lines_as_dict(path, pattern, ignore_pattern, dictsep, valsep, subsep):
         return None
 
     return ret
+
 
 def _check_pattern(line, pattern, ignore_pattern):
     """
@@ -385,9 +383,8 @@ def readfile_string(path, encode_b64=False, chained=None, chained_status=None):
     chained_status
         Status returned by the chained function.
     """
-    if chained_status:
-        if chained is not None:
-            path = path.format(chained)
+    if chained is not None:
+        path = path.format(chained)
 
     if not os.path.isfile(path):
         LOG.error('Path %s not found.', path)

@@ -16,7 +16,7 @@ LOG = logging.getLogger(__name__)
 
 def time_check(ntp_servers, max_offset=15, nb_servers=4,
                extend_chained=True, chained=None, chained_status=None):
-    '''
+    """
     Function that queries a list of NTP servers and checks if the
     offset is bigger than `max_offset` minutes. It expects the results from
     at least `nb_servers` servers in the list, otherwise the check fails.
@@ -46,8 +46,8 @@ def time_check(ntp_servers, max_offset=15, nb_servers=4,
 
     chained_status
         Status returned by the chained method.
-    '''
-    if extend_chained and chained_status:
+    """
+    if extend_chained:
         if ntp_servers:
             ntp_servers.extend(chained)
         else:
@@ -73,14 +73,14 @@ def time_check(ntp_servers, max_offset=15, nb_servers=4,
 
 
 def _query_ntp_server(ntp_server):
-    '''
+    """
     Query the `ntp_server`, extracts and returns the offset in seconds.
     If an error occurs, or the server does not return the expected output -
     if it cannot be reached for example - it returns None.
 
     ntp_server
         string containing the NTP server to query
-    '''
+    """
     # use w32tm instead of ntplib
     if salt.utils.platform.is_windows():
         ret = __salt__['cmd.run']('w32tm /stripchart /computer:{0} /dataonly /samples:1'.format(

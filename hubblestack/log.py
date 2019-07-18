@@ -163,11 +163,8 @@ def emit_to_splunk(message, level, name, remove_sensitive_logs=False):
     Emit a single message to splunk
     '''
 
-    if remove_sensitive_logs:
-        # copying the original message so that it does not
-        # get modified while filtering
-        copy_of_message = copy.deepcopy(message)
-        message = filter_logs(copy_of_message, remove_dots=True)
+    if isinstance(message, (list, dict)):
+        message = filter_logs(copy_of_message, remove_dots=False)
 
     if SPLUNK_HANDLER is None:
         return False

@@ -699,7 +699,7 @@ def load_config():
 
     if __salt__['config.get']('splunklogging', False):
         hubblestack.log.setup_splunk_logger()
-        hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
+        hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report', remove_sensitive_logs=True)
 
 # 600s is a long time to get stuck loading grains and *not* be doing things
 # like nova/pulsar. The SIGALRM will get caught by salt.loader.raw_mod as an
@@ -796,7 +796,7 @@ def refresh_grains(initial=False):
     hubble_status.start_sigusr1_signal_handler()
 
     if not initial and __salt__['config.get']('splunklogging', False):
-        hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
+        hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report', remove_sensitive_logs=True)
 
 def emit_to_syslog(grains_to_emit):
     '''

@@ -7,8 +7,12 @@ from __future__ import print_function
 
 import logging
 import time
+import copy
 
 import hubblestack.splunklogging
+
+# These patterns will not be logged by "conf_publisher" and "emit_to_splunk"
+PATTERNS_TO_FILTER = ["password", "token", "passphrase", "privkey", "keyid", "s3.key"]
 
 # While hubble doesn't use these, salt modules can, so let's define them anyway
 SPLUNK = logging.SPLUNK = 25
@@ -154,10 +158,14 @@ def setup_splunk_logger():
     SPLUNK_HANDLER = handler
 
 
-def emit_to_splunk(message, level, name):
+def emit_to_splunk(message, level, name, remove_sensitive_logs=False):
     '''
     Emit a single message to splunk
     '''
+
+    if isinstance(message, (list, dict)):
+        message = filter_logs(message, remove_dots=False)
+
     if SPLUNK_HANDLER is None:
         return False
     handler = SPLUNK_HANDLER
@@ -177,3 +185,31 @@ def workaround_salt_log_handler_queues():
     sls.LOGGING_NULL_HANDLER.sync_with_handlers([flh])
     # if flh.count > 0:
     #     log.info("pretended to handle %d logging record(s) for salt.log.setup.LOGGING_*_HANDLER", flh.count)
+
+def filter_logs(opts_to_log, remove_dots=True):
+    '''
+    Filters out keys containing certain patterns to avoid sensitive information being sent to logs
+    Works on dictionaries and lists
+    This function was located at extmods/modules/conf_publisher.py previously
+    '''
+    filtered_conf = _remove_sensitive_info(opts_to_log, PATTERNS_TO_FILTER)
+    if remove_dots:
+        for key in filtered_conf.keys():
+            if '.' in key:
+                filtered_conf[key.replace('.', '_')] = filtered_conf.pop(key)
+    return filtered_conf
+
+
+def _remove_sensitive_info(obj, patterns_to_filter):
+    '''
+    Filter known sensitive info
+    '''
+    if isinstance(obj, dict):
+         obj = {
+             key: _remove_sensitive_info(value, patterns_to_filter)
+             for key, value in obj.iteritems()
+             if not any(patt in key for patt in patterns_to_filter)}
+    elif isinstance(obj, list):
+         obj = [_remove_sensitive_info(item, patterns_to_filter)
+                    for item in obj]
+    return obj

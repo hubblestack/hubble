@@ -164,7 +164,7 @@ def emit_to_splunk(message, level, name, remove_sensitive_logs=False):
     '''
 
     if isinstance(message, (list, dict)):
-        message = filter_logs(copy_of_message, remove_dots=False)
+        message = filter_logs(message, remove_dots=False)
 
     if SPLUNK_HANDLER is None:
         return False

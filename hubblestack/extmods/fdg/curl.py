@@ -120,7 +120,7 @@ def request(url,
         return False, {}
 
     # Make the request
-    status, response = __make_request(function, url, **kwargs)
+    status, response = _make_request(function, url, **kwargs)
     if not status:
         return status, response
 
@@ -135,7 +135,7 @@ def request(url,
         return False, ret
 
 
-def __make_request(function, url, **kwargs):
+def _make_request(function, url, **kwargs):
     """
     Helper function that makes the HTTP request
     """

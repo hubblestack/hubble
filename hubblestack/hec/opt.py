@@ -29,7 +29,7 @@ class Required(object):
 REQUIRED = Required()
 del Required
 
-MODALITIES = ('config.get',) # used to house grains.get before config.get
+MODALITIES = ('grains.get','config.get',) # search in grains first, fallback to config.get
 
 def _get_splunk_options(space, modality, **kw):
     ret = list()

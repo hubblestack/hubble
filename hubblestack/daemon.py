@@ -40,6 +40,7 @@ from croniter import croniter
 from datetime import datetime
 from hubblestack.hangtime import hangtime_wrapper
 import hubblestack.status
+import hubblestack.saltoverrides
 
 log = logging.getLogger(__name__)
 hubble_status = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
@@ -703,7 +704,7 @@ def load_config():
 
     if __salt__['config.get']('splunklogging', False):
         hubblestack.log.setup_splunk_logger()
-        hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
+        hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report', remove_sensitive_logs=True)
 
 # 600s is a long time to get stuck loading grains and *not* be doing things
 # like nova/pulsar. The SIGALRM will get caught by salt.loader.raw_mod as an
@@ -800,7 +801,7 @@ def refresh_grains(initial=False):
     hubble_status.start_sigusr1_signal_handler()
 
     if not initial and __salt__['config.get']('splunklogging', False):
-        hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
+        hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report', remove_sensitive_logs=True)
 
 def emit_to_syslog(grains_to_emit):
     """
@@ -816,7 +817,8 @@ def emit_to_syslog(grains_to_emit):
                 if bool(__grains__[grain]) and isinstance(__grains__[grain], dict):
                     for key, value in __grains__[grain].iteritems():
                         syslog_list.append('{0}={1}'.format(key, value))
-                syslog_list.append('{0}={1}'.format(grain, __grains__[grain]))
+                else:
+                    syslog_list.append('{0}={1}'.format(grain, __grains__[grain]))
         syslog_message = ' '.join(syslog_list)
         log.info('Emitting some grains to syslog')
         syslog.openlog(logoption = syslog.LOG_PID)

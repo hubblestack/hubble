@@ -41,7 +41,7 @@ def publish(report_directly_to_splunk=True, remove_dots=True, *args):
             if arg in  __opts__:
                 opts_to_log[arg] = __opts__[arg]
 
-    filtered_conf = _filter_config(opts_to_log, remove_dots=remove_dots)
+    filtered_conf = hubblestack.log.filter_logs(opts_to_log, remove_dots=remove_dots)
 
     if report_directly_to_splunk:
         hubblestack.log.emit_to_splunk(filtered_conf, 'INFO', 'hubblestack.hubble_config')

@@ -19,7 +19,7 @@ import logging
 
 from salt.exceptions import CommandExecutionError
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def run(command, args=None, override_file=None, timeout=30):
@@ -58,10 +58,10 @@ def run(command, args=None, override_file=None, timeout=30):
         override = __salt__['cp.cache_file'](override_file)
         if override:
             try:
-                with open(override, 'r') as fh:
-                    override_args = fh.read().strip()
+                with open(override, 'r') as args_file:
+                    override_args = args_file.read().strip()
             except Exception as exc:
-                log.exception('Error caching file {0}'.format(override_file))
+                LOG.exception('Error caching file %s', override_file)
                 raise CommandExecutionError(exc)
 
     # Use override_args if we found any
@@ -72,6 +72,7 @@ def run(command, args=None, override_file=None, timeout=30):
     if not args:
         ret = __salt__['cmd.run'](command, python_shell=False, timeout=timeout)
     else:
-        ret = __salt__['cmd.run']('{0} {1}'.format(command, args), python_shell=False, timeout=timeout)
+        ret = __salt__['cmd.run']('{0} {1}'.format(command, args),
+                                  python_shell=False, timeout=timeout)
 
     return ret

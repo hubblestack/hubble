@@ -3,11 +3,10 @@
 Module to send config options to splunk
 """
 import logging
-import hubblestack.log
 import copy
-import time
+import hubblestack.log
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def publish(report_directly_to_splunk=True, remove_dots=True, *args):
@@ -29,7 +28,7 @@ def publish(report_directly_to_splunk=True, remove_dots=True, *args):
        __opts__ (excluding password/token) would be published
 
     """
-    log.debug('Started publishing config to splunk')
+    LOG.debug('Started publishing config to splunk')
 
     opts_to_log = {}
     if not args:
@@ -45,7 +44,7 @@ def publish(report_directly_to_splunk=True, remove_dots=True, *args):
 
     if report_directly_to_splunk:
         hubblestack.log.emit_to_splunk(filtered_conf, 'INFO', 'hubblestack.hubble_config')
-        log.debug('Published config to splunk')
+        LOG.debug('Published config to splunk')
 
     return filtered_conf
 
@@ -68,11 +67,10 @@ def _remove_sensitive_info(obj, patterns_to_filter):
     Filter known sensitive info
     """
     if isinstance(obj, dict):
-         obj = {
-             key: _remove_sensitive_info(value, patterns_to_filter)
-             for key, value in obj.iteritems()
-             if not any(patt in key for patt in patterns_to_filter)}
+        obj = {
+            key: _remove_sensitive_info(value, patterns_to_filter)
+            for key, value in obj.iteritems()
+            if not any(patt in key for patt in patterns_to_filter)}
     elif isinstance(obj, list):
-         obj = [_remove_sensitive_info(item, patterns_to_filter)
-                    for item in obj]
+        obj = [_remove_sensitive_info(item, patterns_to_filter) for item in obj]
     return obj

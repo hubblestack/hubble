@@ -117,13 +117,13 @@ call chain.
 from __future__ import absolute_import
 import logging
 import os
-import salt.loader
-import salt.utils
 import yaml
 
+import salt.loader
+import salt.utils
 from salt.exceptions import CommandExecutionError
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 __fdg__ = None
 __returners__ = None
 
@@ -166,10 +166,10 @@ def fdg(fdg_file, starting_chained=None):
     # Instantiate fdg modules
     global __fdg__
     __fdg__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'fdg'),
-                                                              __opts__,
-                                                              tag='fdg',
-                                                              pack={'__salt__': __salt__,
-                                                                    '__grains__': __grains__})
+                                     __opts__,
+                                     tag='fdg',
+                                     pack={'__salt__': __salt__,
+                                           '__grains__': __grains__})
 
     # Recursive execution of the blocks
     ret = _fdg_execute('main', block_data, chained=starting_chained)
@@ -232,15 +232,16 @@ def _fdg_execute(block_id, block_data, chained=None, chained_status=None):
     Recursive function which executes a block and any blocks chained by that
     block (by calling itself).
     """
-    log.debug('Executing fdg block with id {0} and chained value {1}'.format(block_id, chained))
+    LOG.debug('Executing fdg block with id %s and chained value %s', block_id, chained)
     block = block_data.get(block_id)
 
     _check_block(block, block_id)
 
     # Status is used for the conditional chaining keywords
-    status, ret = __fdg__[block['module']](*block.get('args', []), chained=chained, chained_status=chained_status, **block.get('kwargs', {}))
+    status, ret = __fdg__[block['module']](*block.get('args', []), chained=chained,
+                                           chained_status=chained_status, **block.get('kwargs', {}))
 
-    log.debug('fdg execution "{0}" returned {1}'.format(block_id, (status, ret)))
+    LOG.debug('fdg execution "%s" returned %s', block_id, (status, ret))
 
     if 'return' in block:
         returner = block['return']
@@ -248,25 +249,25 @@ def _fdg_execute(block_id, block_data, chained=None, chained_status=None):
         returner = None
 
     if 'xpipe_on_true' in block and status:
-        log.debug('Piping via chaining keyword xpipe_on_true.')
+        LOG.debug('Piping via chaining keyword xpipe_on_true.')
         return _xpipe(ret, status, block_data, block['xpipe_on_true'], returner)
     elif 'xpipe_on_false' in block and not status:
-        log.debug('Piping via chaining keyword xpipe_on_false.')
+        LOG.debug('Piping via chaining keyword xpipe_on_false.')
         return _xpipe(ret, status, block_data, block['xpipe_on_false'], returner)
     elif 'pipe_on_true' in block and status:
-        log.debug('Piping via chaining keyword pipe_on_true.')
+        LOG.debug('Piping via chaining keyword pipe_on_true.')
         return _pipe(ret, status, block_data, block['pipe_on_true'], returner)
     elif 'pipe_on_false' in block and not status:
-        log.debug('Piping via chaining keyword pipe_on_false.')
+        LOG.debug('Piping via chaining keyword pipe_on_false.')
         return _pipe(ret, status, block_data, block['pipe_on_false'], returner)
     elif 'xpipe' in block:
-        log.debug('Piping via chaining keyword xpipe.')
+        LOG.debug('Piping via chaining keyword xpipe.')
         return _xpipe(ret, status, block_data, block['xpipe'], returner)
     elif 'pipe' in block:
-        log.debug('Piping via chaining keyword pipe.')
+        LOG.debug('Piping via chaining keyword pipe.')
         return _pipe(ret, status, block_data, block['pipe'], returner)
     else:
-        log.debug('No valid chaining keyword matched. Returning.')
+        LOG.debug('No valid chaining keyword matched. Returning.')
         if returner:
             _return((ret, status), returner)
         return ret, status
@@ -311,9 +312,9 @@ def _return(data, returner, returner_retry=None):
 
     returner += '.returner'
     if returner not in __returners__:
-        log.error('Could not find {0} returner.'.format(returner))
+        LOG.error('Could not find %s returner.', returner)
         return False
-    log.debug('Returning job data to {0}'.format(returner))
+    LOG.debug('Returning job data to %s', returner)
     returner_ret = {'id': __grains__['id'],
                     'jid': salt.utils.jid.gen_jid(__opts__),
                     'fun': 'fdg.fdg',
@@ -322,6 +323,7 @@ def _return(data, returner, returner_retry=None):
                     'return_status': data[1],
                     'retry': returner_retry}
     __returners__[returner](returner_ret)
+    return True
 
 
 def _check_block(block, block_id):
@@ -335,16 +337,16 @@ def _check_block(block, block_id):
         raise CommandExecutionError('Could not execute block \'{0}\': no \'module\' found.'
                                     .format(block_id))
     acceptable_block_args = {
-            'return',
-            'module',
-            'xpipe_on_true',
-            'xpipe_on_false',
-            'xpipe',
-            'pipe',
-            'pipe_on_true',
-            'pipe_on_false',
-            'args',
-            'kwargs',
+        'return',
+        'module',
+        'xpipe_on_true',
+        'xpipe_on_false',
+        'xpipe',
+        'pipe',
+        'pipe_on_true',
+        'pipe_on_false',
+        'args',
+        'kwargs',
     }
     for key in block:
         if key not in acceptable_block_args:
@@ -359,14 +361,14 @@ def _get_top_data(topfile):
     cached_topfile = __salt__['cp.cache_file'](topfile)
 
     if not cached_topfile:
-        log.debug('FDG topfile {0} not found from fileserver. Aborting.'.format(topfile))
+        LOG.debug('FDG topfile %s not found from fileserver. Aborting.', topfile)
         return []
 
     try:
         with open(cached_topfile) as handle:
             topdata = yaml.safe_load(handle)
-    except Exception as e:
-        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
+    except Exception as exc:
+        raise CommandExecutionError('Could not load topfile: {0}'.format(exc))
 
     if not isinstance(topdata, dict) or 'fdg' not in topdata:
         raise CommandExecutionError('fdg topfile not formatted correctly: '

@@ -20,6 +20,7 @@ import time
 import hubblestack.utils.stdrec as stdrec
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
 
+
 def _get_key(dat, key, default_value=None):
     """
     Function that emulates the `dict.pop` behavior.
@@ -87,7 +88,7 @@ def returner(retdata):
 
         for event in events:
             payload = {
-                'host': __grains__.get('fqdn', __grains__.get('id')),
+                'host': stdrec.get_fqdn(),
                 'event': event,
                 'sourcetype': _get_key(event, 'sourcetype', t_sourcetype),
                 'time': str(int(_get_key(event, 'time', t_time)))}

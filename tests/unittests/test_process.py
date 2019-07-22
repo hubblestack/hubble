@@ -73,7 +73,6 @@ class TestProcess():
         ret = hubblestack.extmods.fdg.process._compare('ne', 1, 1)
         assert ret is False
 
-
     def test__filterDict_invalidFilterRules_returnNone(self):
         """
         Test that given invalid ``filter_values``, the function returns None
@@ -83,7 +82,6 @@ class TestProcess():
             {1: 'a', 2: 'b'}, False, {'invalid': 1, 'data': 2})
         assert expected_ret == ret
 
-
     def test__filterDict_filterKeysValidFilterRules_returnFilteredDict(self):
         """
         Test that given valid ``filter_values``,
@@ -91,13 +89,12 @@ class TestProcess():
         """
         expected_ret = {2: 'b', 4: 'd'}
         ret = hubblestack.extmods.fdg.process._filter_dict(
-            {1: 'a', 2: 'b', 3:'c', 4:'d'}, False, {'gt': 1, 'le': 4, 'ne': 3})
+            {1: 'a', 2: 'b', 3: 'c', 4: 'd'}, False, {'gt': 1, 'le': 4, 'ne': 3})
         assert expected_ret == ret
         expected_ret = {'a': 1, 'b': 2}
         ret = hubblestack.extmods.fdg.process._filter_dict(
             {'a': 1, 'b': 2, 'c': 3, 'd': 4}, False, {'ge': 'a', 'lt': 'd', 'ne': 'c'})
         assert expected_ret == ret
-
 
     def test__filterDict_filterValuesValidFilterRules_returnFilteredDict(self):
         """
@@ -110,9 +107,8 @@ class TestProcess():
         assert expected_ret == ret
         expected_ret = {1: 'a', 2: 'b'}
         ret = hubblestack.extmods.fdg.process._filter_dict(
-            {1: 'a', 2: 'b', 3:'c', 4:'d'}, True, {'ge': 'a', 'lt': 'd', 'ne': 'c'})
+            {1: 'a', 2: 'b', 3: 'c', 4: 'd'}, True, {'ge': 'a', 'lt': 'd', 'ne': 'c'})
         assert expected_ret == ret
-
 
     def test__filterDict_emptyFilterRules_returnUnfilteredDict(self):
         """
@@ -122,7 +118,6 @@ class TestProcess():
         expected_ret = {1: 'a', 2: 'b'}
         ret = hubblestack.extmods.fdg.process._filter_dict({1: 'a', 2: 'b'}, True, {})
         assert expected_ret == ret
-
 
     def test_filterDict_invalidDict_emptyReturn(self):
         """
@@ -139,7 +134,6 @@ class TestProcess():
         assert expected_status == status
         assert expected_ret == ret
 
-
     def test_filterDict_validDictFilterKeys_returnFilteredDict(self):
         """
         Test that given correct input, the function correctly filters by keys
@@ -150,7 +144,6 @@ class TestProcess():
             ge=1, ne=3)
         assert expected_status == status
         assert expected_ret == ret
-
 
     def test_filterDict_validDictFilterValues_returnFilteredDict(self):
         """
@@ -163,7 +156,6 @@ class TestProcess():
         assert expected_status == status
         assert expected_ret == ret
 
-
     def test__filter_invalidComp_returnNone(self):
         """
         Test that given invalid input, the function returns None
@@ -171,7 +163,6 @@ class TestProcess():
         expected_ret = None
         ret = hubblestack.extmods.fdg.process._filter([1, 2, 3], {'foo': 1})
         assert expected_ret == ret
-
 
     def test__filter_validArguments_returnFilteredSeq(self):
         """
@@ -193,7 +184,6 @@ class TestProcess():
         ret = hubblestack.extmods.fdg.process._filter(seq, {"ne": 't'})
         assert expected_ret == ret
 
-
     def test_filterSeq_invalidSeq_returnNone(self):
         """
         Test that given invalid input, the function returns None
@@ -209,7 +199,6 @@ class TestProcess():
             starting_seq=[1, 2], chained=4, ge=1, lt=4)
         assert expected_status == status
         assert expected_ret == ret
-
 
     def test_filterSeq_validSeq_returnFilteredSeq(self):
         """Test that given valid input of different types,
@@ -240,7 +229,6 @@ class TestProcess():
         assert expected_ret == ret
         assert expected_status == status
 
-
     def test_getIndex_invalidArguments_returnNone(self):
         """
         Test that given invalid arguments, the function returns None
@@ -264,7 +252,6 @@ class TestProcess():
         assert expected_status == status
         assert expected_ret == ret
 
-
     def test_getIndex_validData_returnValue(self):
         """
         Test that given valid arguments,
@@ -284,7 +271,6 @@ class TestProcess():
         assert expected_status == status
         assert ret == 1
 
-
     def test_getKey_invalidArguments_returnNone(self):
         """
         Test that given invalid arguments, the function returns None
@@ -302,7 +288,6 @@ class TestProcess():
         assert expected_status == status
         assert expected_ret == ret
 
-
     def test_getKey_validKey_returnValue(self):
         """
         Test that given valid arguments,
@@ -314,7 +299,6 @@ class TestProcess():
             chained={'a': 1, 'b': 2})
         assert expected_status == status
         assert expected_ret == ret
-
 
     def test_join_invalidArgumentType_returnNone(self):
         """
@@ -333,7 +317,6 @@ class TestProcess():
         assert expected_status == status
         assert expected_ret == ret
 
-
     def test_join_validArguments_returnString(self):
         """
         Test that given valid arguments,
@@ -350,7 +333,6 @@ class TestProcess():
             words=['words', 'together'], sep='-', chained=['test', 'more'])
         assert expected_status == status
         assert ret == 'test-more-words-together'
-
 
     def test__sort_invalidSeq_returnNone(self):
         """
@@ -370,7 +352,6 @@ class TestProcess():
             seq=[1, 2, 12, 13], desc=False, lexico=True)
         assert expected_ret == ret
 
-
     def test__sort_validArguments_returnSortedSeq(self):
         """
         Test that given valid arguments,
@@ -385,7 +366,6 @@ class TestProcess():
         ret = hubblestack.extmods.fdg.process._sort(
             seq=set(['b', 'A', 'C']), desc=False, lexico=True)
         assert ret == ['A', 'b', 'C']
-
 
     def test_sort_invalidArgument_returnNone(self):
         """
@@ -406,7 +386,6 @@ class TestProcess():
             chained=[1, 2, 3], lexico=True)
         assert expected_status == status
         assert expected_ret == ret
-
 
     def test_sort_validArguments_returnSortedSeq(self):
         """
@@ -433,7 +412,6 @@ class TestProcess():
             seq='A{}B', chained='ab', lexico=True)
         assert expected_status == status
         assert ret == ['A', 'a', 'b', 'B']
-
 
     def test__split_invalidArguments_returnNone(self):
         """
@@ -469,7 +447,6 @@ class TestProcess():
         ret = hubblestack.extmods.fdg.process._split("foo bar", "?", False)
         assert ret == ['foo bar']
 
-
     def test_split_invalidArguments_returnNone(self):
         """
         Test that given invalid arguments,
@@ -490,7 +467,6 @@ class TestProcess():
         status, ret = hubblestack.extmods.fdg.process.split('foo bar', regex=True)
         assert ret == expected_ret
         assert status == expected_status
-
 
     def test_split_validArguments_returnList(self):
         """
@@ -518,7 +494,6 @@ class TestProcess():
         assert status is True
         assert ret == ['a1', 'b2', 'c3', 'd']
 
-
     def test_dictToList_invalidArguments_returnNone(self):
         """
         Test that given invalid arguments,
@@ -533,7 +508,6 @@ class TestProcess():
             starting_dict='foo', chained={1: 'a', 2: 'b'})
         assert status == expected_status
         assert ret == expected_ret
-
 
     def test_dictToList_validArguments_returnList(self):
         """
@@ -555,7 +529,6 @@ class TestProcess():
         assert status is False
         assert ret == []
 
-
     def test__dictConvertNone_invalidArguments_returnNone(self):
         """
         Test that given invalid arguments, the function returns None
@@ -566,7 +539,6 @@ class TestProcess():
         assert ret == None
         ret = hubblestack.extmods.fdg.process._dict_convert_none(defaultdict())
         assert ret == {}
-
 
     def test__dictConvertNone_validArgumentRecursive_returnDict(self):
         """
@@ -585,9 +557,9 @@ class TestProcess():
                                     'ccc': None}, 'bb': None}, 'b': None}
         # nested dicts & seqs
         ret = hubblestack.extmods.fdg.process._dict_convert_none(
-            {'a': [{'b': ({'c': ['d', {'e': ''}], 'f' : ''}, {'g': ''}),
+            {'a': [{'b': ({'c': ['d', {'e': ''}], 'f': ''}, {'g': ''}),
                     'h': ''}, 'i'], 'j': ''})
-        assert ret == {'a': [{'b': [{'c': ['d', {'e': None}], 'f' : None}, {'g': None}],
+        assert ret == {'a': [{'b': [{'c': ['d', {'e': None}], 'f': None}, {'g': None}],
                               'h': None}, 'i'], 'j': None}
 
     def test__seqConvertNone_invalidArguments_returnNone(self):
@@ -601,7 +573,6 @@ class TestProcess():
         ret = hubblestack.extmods.fdg.process._seq_convert_none(True)
         assert ret == None
 
-
     def test__seqConvertNone_validArgumentRecursive_returnList(self):
         """
         Test that given valid arguments,
@@ -613,9 +584,8 @@ class TestProcess():
         assert ret == ['a', {1: None}, 'b', {1: None}, 'c']
         # nested seq & dict
         ret = hubblestack.extmods.fdg.process._seq_convert_none(
-            ('a', [{1: '', 2: [3, (4, {1:'', 2: {3: ''}})]}, 'b'], 'c'))
-        assert ret == ['a', [{1: None, 2: [3, [4, {1:None, 2: {3: None}}]]}, 'b'], 'c']
-
+            ('a', [{1: '', 2: [3, (4, {1: '', 2: {3: ''}})]}, 'b'], 'c'))
+        assert ret == ['a', [{1: None, 2: [3, [4, {1: None, 2: {3: None}}]]}, 'b'], 'c']
 
     def test_dictConvertNone_invalidArgument_returnNone(self):
         """
@@ -635,7 +605,6 @@ class TestProcess():
         assert status == expected_status
         assert ret == []
 
-
     def test_dictConvertNone_validArguments_returnDict(self):
         """
         Test that given valid arguments,
@@ -648,22 +617,21 @@ class TestProcess():
         assert status is True
         # nested dict & tuple
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
-            chained={'a': [{'b': ({'c': {'e': ''}, 'f' : ''}, {'g': ''}),
+            chained={'a': [{'b': ({'c': {'e': ''}, 'f': ''}, {'g': ''}),
                             'h': ''}, 'i']}, starting_seq={'j': ''})
         assert status is True
-        assert ret == {'a': [{'b': [{'c': {'e': None}, 'f' : None}, {'g': None}],
+        assert ret == {'a': [{'b': [{'c': {'e': None}, 'f': None}, {'g': None}],
                               'h': None}, 'i'], 'j': None}
         # nested dict, list & tuple
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
-            chained=('a', [{1: '', 2: [3, (4, {1:'', 2: {3: ''}})]}, 'b'], 'c'))
+            chained=('a', [{1: '', 2: [3, (4, {1: '', 2: {3: ''}})]}, 'b'], 'c'))
         assert status is True
-        assert ret == ['a', [{1: None, 2: [3, [4, {1:None, 2: {3: None}}]]}, 'b'], 'c']
+        assert ret == ['a', [{1: None, 2: [3, [4, {1: None, 2: {3: None}}]]}, 'b'], 'c']
         # nested dict & list
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
             chained=['a', {1: ''}, 'b'], starting_seq=[{1: ''}, 'c'])
         assert status is True
         assert ret == ['a', {1: None}, 'b', {1: None}, 'c']
-
 
     def test_printString_invalidArguments_returnNone(self):
         """
@@ -679,7 +647,6 @@ class TestProcess():
         assert status == expected_status
         assert ret == ''
 
-
     def test_printString_validArguments_returnString(self):
         """
         Test that given valid arguments, the function returns the correct string
@@ -693,21 +660,19 @@ class TestProcess():
         assert status is True
         assert ret == "foo ['b', 'a', 'r']"
 
-
     def test__sterilizeDict_invalidArguments_returnNone(self):
         """
         Test that given invalid arguments, the function returns None
         """
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             dictionary=[1, 2])
-        assert ret == None
+        assert ret is None
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             dictionary={})
         assert ret == {}
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             dictionary=12)
-        assert ret == None
-
+        assert ret is None
 
     def test__sterilizeDict_validArgumentRecursive_returnDict(self):
         """
@@ -727,7 +692,6 @@ class TestProcess():
             {1: None, 2: {3: [4, {5: None}], 6: {7: ('b', {9: None}), 8: None}}})
         assert ret == {2: {3: [4, {}], 6: {7: ['b', {}]}}}
 
-
     def test__sterilizeSeq_invalidArguments_returnNone(self):
         """
         Test that given invalid arguments, the function returns None
@@ -739,7 +703,6 @@ class TestProcess():
         assert ret == None
         ret = hubblestack.extmods.fdg.process._sterilize_seq([])
         assert ret == []
-
 
     def test__sterilizeSeq_validArgumentRecursive_returnNone(self):
         """
@@ -755,7 +718,6 @@ class TestProcess():
             [{1: None, 2: {3: ({4: None, 5: 'a'}, [None, {6: None, 7: 'b'}]),
                            8: 'c', 9: {10: None}}}])
         assert ret == [{2: {3: [{5: 'a'}, [None, {7: 'b'}]], 8: 'c', 9: {}}}]
-
 
     def test_removeDictNone_invalidArgument_returnNone(self):
         """
@@ -777,7 +739,6 @@ class TestProcess():
             chained="123")
         assert status == expected_status
         assert ret == expected_ret
-
 
     def test_dictRemoveNone_validArguments_returnSeq(self):
         """
@@ -809,7 +770,6 @@ class TestProcess():
         assert status is True
         assert ret == {2: {3: [{5: 'a'}, [None, {7: 'b'}]], 8: 'c'}, 9: {11: [1, 2]}}
 
-
     def test_encodeBase64_invalidArguments_emptyReturn(self):
         """
         Test that given invalid arguments, the function returns None
@@ -828,7 +788,6 @@ class TestProcess():
             starting_string='', format_chained=False)
         assert status == expected_status
         assert ret == ''
-
 
     def test_encodeBase64_validArguments_returnString(self):
         """

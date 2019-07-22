@@ -20,7 +20,8 @@ class TestTimesync():
         and not enough servers are verified, the function returns False, False
         '''
         mock_offset.return_value = None
-        status, ret = hubblestack.extmods.fdg.time_sync.time_check(['dummy.ntp.org'])
+        status, ret = hubblestack.extmods.fdg.time_sync.time_check(['dummy.ntp.org'],
+                                                                   extend_chained=False)
         assert status is False
         assert ret is False
 
@@ -41,7 +42,7 @@ class TestTimesync():
         '''
         mock_offset.return_value = 123
         status, ret = hubblestack.extmods.fdg.time_sync.time_check(
-            ntp_servers=['dummy.ntp.org'], max_offset=0.01, nb_servers=1)
+            ntp_servers=['dummy.ntp.org'], max_offset=0.01, nb_servers=1, extend_chained=False)
         assert status is True
         assert ret is False
 
@@ -53,7 +54,7 @@ class TestTimesync():
         '''
         mock_offset.return_value = 0.001
         status, ret = hubblestack.extmods.fdg.time_sync.time_check(
-            ntp_servers=['dummy.ntp.org'], max_offset=1, nb_servers=4)
+            ntp_servers=['dummy.ntp.org'], max_offset=1, nb_servers=4, extend_chained=False)
         assert status is False
         assert ret is False
 

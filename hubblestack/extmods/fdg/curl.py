@@ -14,13 +14,11 @@ a system, we don't want an attacker to be able to send that data to arbitrary
 endpoints.
 """
 from __future__ import absolute_import
-import json
 import logging
 import requests
 
-from salt.exceptions import CommandExecutionError
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def request(url,
@@ -96,9 +94,12 @@ def request(url,
 
     chained
         Ignored
+
+    chained_status
+        Ignored
     """
     if chained:
-        log.warn('Chained value detected in curl.request module. Chained '
+        LOG.warn('Chained value detected in curl.request module. Chained '
                  'values are unsupported in the curl fdg module.')
 
     # Data validation and preparation
@@ -115,34 +116,54 @@ def request(url,
         kwargs['headers'] = headers
     kwargs['timeout'] = int(timeout)
     if function not in ('GET', 'PUT', 'POST'):
-        log.error('Invalid request type {0}'.format(function))
+        LOG.error('Invalid request type %s', function)
         return False, {}
 
     # Make the request
-    try:
-        if function == 'GET':
-            r = requests.get(url, **kwargs)
-        elif function == 'PUT':
-            r = requests.put(url, **kwargs)
-        elif function == 'POST':
-            r = requests.post(url, **kwargs)
-    except Exception as e:
-        return False, str(e)
+    status, response = _make_request(function, url, **kwargs)
+    if not status:
+        return status, response
 
     # Pull out the pieces we want
-    ret = {}
-    ret['status'] = r.status_code
-    if decode_json:
-        try:
-            ret['response'] = r.json()
-        except ValueError:
-            ret['response'] = r.text
-    else:
-        ret['response'] = r.text
+    ret = _parse_response(response, decode_json)
 
     # Status in the return is based on http status
     try:
-        r.raise_for_status()
+        response.raise_for_status()
         return True, ret
-    except requests.exceptions.HTTPError as e:
+    except requests.exceptions.HTTPError:
         return False, ret
+
+
+def _make_request(function, url, **kwargs):
+    """
+    Helper function that makes the HTTP request
+    """
+    try:
+        if function == 'GET':
+            response = requests.get(url, **kwargs)
+        elif function == 'PUT':
+            response = requests.put(url, **kwargs)
+        elif function == 'POST':
+            response = requests.post(url, **kwargs)
+    except Exception as exc:
+        return False, str(exc)
+
+    return True, response
+
+
+def _parse_response(response, decode_json):
+    """
+    Helper function that extracts the status code and
+    parses the response text.
+    """
+    ret = {'status': response.status_code}
+    if decode_json:
+        try:
+            ret['response'] = response.json()
+        except ValueError:
+            ret['response'] = response.text
+    else:
+        ret['response'] = response.text
+
+    return ret

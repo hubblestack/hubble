@@ -345,7 +345,6 @@ def schedule():
         returners = jobdata.get('returner', [])
         if not isinstance(returners, list):
             returners = [returners]
-        returner_retry = jobdata.get('returner_retry', False)
 
         # Actually process the job
         run = False
@@ -395,8 +394,7 @@ def schedule():
                                 'jid': salt.utils.jid.gen_jid(__opts__),
                                 'fun': func,
                                 'fun_args': args + ([kwargs] if kwargs else []),
-                                'return': ret,
-                                'retry': returner_retry}
+                                'return': ret}
                 __returners__[returner](returner_ret)
     return sf_count
 
@@ -435,10 +433,7 @@ def run_function():
                             'jid': salt.utils.jid.gen_jid(__opts__),
                             'fun': __opts__['function'],
                             'fun_args': args + ([kwargs] if kwargs else []),
-                            'return': ret,
-                            'retry': False}
-            if __opts__.get('returner_retry', False):
-                returner_ret['retry'] = True
+                            'return': ret}
             __returners__[returner](returner_ret)
 
     # TODO instantiate the salt outputter system?
@@ -867,9 +862,6 @@ def parse_args():
     parser.add_argument('--ignore_running',
                         action='store_true',
                         help='Ignore any running hubble processes. This disables the pidfile.')
-    parser.add_argument('--returner_retry',
-                        action='store_true',
-                        help='Enable retry on the returner for one-off jobs')
     return vars(parser.parse_args())
 
 def check_pidfile(kill_other=False, scan_proc=True):

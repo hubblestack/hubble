@@ -29,7 +29,7 @@ class Required(object):
 REQUIRED = Required()
 del Required
 
-MODALITIES = ('config.get',) # used to house grains.get before config.get
+MODALITIES = ('grains.get','config.get',) # search in grains first, fallback to config.get
 
 def _get_splunk_options(space, modality, **kw):
     ret = list()
@@ -44,7 +44,7 @@ def _get_splunk_options(space, modality, **kw):
         'custom_fields': [],
         'sourcetype': 'hubble_log',
         'http_event_server_ssl': True,
-        'proxy': {},
+        'proxy': None,
         'timeout': 9.05,
         'index_extracted_fields': [],
         'http_event_collector_ssl_verify': True,
@@ -77,7 +77,7 @@ def _get_splunk_options(space, modality, **kw):
     return ret
 
 def get_splunk_options(*spaces, **kw):
-    '''
+    """
     params:
       *spaces: non-keyword arguments are config namespaces to search
                the default is 'hubblestack:returner:splunk' (if nothing else is specified)
@@ -119,7 +119,7 @@ def get_splunk_options(*spaces, **kw):
        get_splunk_options(sourcetype_nebula='blah', _nick={'sourcetype_nebula': 'sourcetype'})
        [ { ... 'sourcetype': 'hubble_osquery' ... } ]
 
-    '''
+    """
     if not spaces:
         spaces = ['hubblestack:returner:splunk']
 

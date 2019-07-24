@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova-to-Logstash (http input) returner
 
 Deliver HubbleStack Nova data into Logstash using the HTTP input
@@ -21,7 +21,7 @@ plugin. Required config/pillar settings:
             custom_fields:
               - site
               - product_group
-'''
+"""
 
 import json
 import socket
@@ -30,8 +30,8 @@ from requests.auth import HTTPBasicAuth
 
 
 def returner(ret):
-    '''
-    '''
+    """
+    """
     opts_list = _get_options()
 
     # Get cloud details

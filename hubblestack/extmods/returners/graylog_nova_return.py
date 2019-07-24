@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova-to-graylog (http input) returner
 
 Deliver HubbleStack Nova data into graylog using the HTTP input
@@ -20,7 +20,7 @@ hubblestack:
         http_event_collector_ssl_verify: True
         gelfhttp: https://graylog-gelf-http-input-addr
 
-'''
+"""
 
 import json
 import socket
@@ -28,8 +28,8 @@ import requests
 
 
 def returner(ret):
-    '''
-    '''
+    """
+    """
     opts_list = _get_options()
 
     # Get cloud details

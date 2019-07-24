@@ -38,7 +38,7 @@ def count_input(payload):
     # (without this, the accounting likely wouldn't work)
 
 class Payload(object):
-    ''' formatters for final payload stringification
+    """ formatters for final payload stringification
         and a convenient place to store retry counter information
 
         note that formatting a payload is different from formatting an event
@@ -53,7 +53,7 @@ class Payload(object):
         For reasons regarding the above, we provide a classmethod to format events:
 
         p = Payload.format_event({'blah': 'happened'}, sourcetype='blah')
-    '''
+    """
     host = None
 
     @classmethod
@@ -148,11 +148,11 @@ class HEC(object):
         self.server_uri = []
 
         if proxy and http_event_server_ssl:
-            self.proxy = {'https': 'https://{0}'.format(proxy)}
+            self.proxy = 'https://{0}'.format(proxy)
         elif proxy:
-            self.proxy = {'http': 'http://{0}'.format(proxy)}
+            self.proxy = 'http://{0}'.format(proxy)
         else:
-            self.proxy = {}
+            self.proxy = None
 
         # Set host to specified value or default to localhostname if no value provided
         if host:

@@ -313,7 +313,7 @@ class TestPulsar2():
         assert s2 == s0b
 
     def config_make_files_watch_process_reconfig(self, config, reconfig=None, mk_files=0):
-        '''
+        """
             create a config (arg0),
             make tdir and tfile,
             watch the tdir,
@@ -325,7 +325,7 @@ class TestPulsar2():
             execute process(),
             store watch_db in s2
             return s0, s1, s2 as a tuple
-        '''
+        """
         self.reset(**config)
         self.mk_tdir_and_write_tfile()
         self.wm.watch(self.tdir)

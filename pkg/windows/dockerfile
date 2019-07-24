@@ -17,7 +17,7 @@ ENV SALT_SRC_PATH='C:/temp/salt/'
 ENV SALT_GIT_URL=https://github.com/saltstack/salt
 ENV SALT_CHECKOUT=v2018.11
 #All the variables used for hubble
-ARG HUBBLE_CHECKOUT=v3.0.1
+ARG HUBBLE_CHECKOUT=v3.0.4
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 ENV _HOOK_DIR='./pkg/'
@@ -33,7 +33,7 @@ COPY hubble.conf C:/temp/
 #install Chocolatey, then git and git.portable, and osquery
 RUN powershell.exe -Command Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString("$env:CHOCO_URL"))
 RUN powershell.exe -Command choco install git nssm -y;
-RUN powershell.exe -Command choco install osquery --version 3.3.2 -y;
+RUN powershell.exe -Command choco install osquery --version 3.4.0 -y;
 RUN powershell.exe -Command choco install git.portable --version 2.19.0 -y;
 
 #RUN powershell.exe $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
@@ -83,8 +83,10 @@ CMD powershell.exe -Command Push-Location C:/temp/hubble; \
   Move-Item hubble.conf -Destination ./hubble/dist/hubble/etc/hubble/; \
   Move-Item 'hubble/PortableGit' -Destination './hubble/dist/hubble/' -Force; \
   Move-Item 'C:/ProgramData/chocolatey/lib/NSSM/tools/nssm.exe' -Destination './hubble/dist/hubble/' -Force; \
-  Move-Item 'C:/ProgramData/osquery/osqueryi.exe' -Destination './hubble/dist/hubble/' -Force; \
-  Move-Item 'C:/ProgramData/osquery/osqueryd/osqueryd.exe' -Destination './hubble/dist/hubble/osqueryd/' -Force; \
+  If (Test-Path C:/ProgramData/osquery/osqueryi.exe) {Copy-Item 'C:/ProgramData/osquery/osqueryi.exe' -Destination './hubble/dist/hubble/' -Force} \
+  Else {Copy-Item 'C:/Program Files/osquery/osqueryi.exe' -Destination './hubble/dist/hubble/' -Force}; \
+  If (Test-Path C:/ProgramData/osquery/osqueryd/osqueryd.exe) {Copy-Item 'C:/ProgramData/osquery/osqueryd/osqueryd.exe' -Destination './hubble/dist/hubble/osqueryd/' -Force} \
+  Else {Copy-Item 'C:/Program Files/osquery/osqueryd/osqueryd.exe' -Destination './hubble/dist/hubble/osqueryd/' -Force}; \
   If (Test-Path C:/data/hubble.conf) {Copy-Item  C:/data/hubble.conf -Destination ./hubble/dist/hubble/etc/hubble/ -Force}; \
   If (Test-Path C:/data/opt) {Copy-Item  C:/data/opt -Destination './hubble/dist/hubble/' -Recurse -Force}; \
   Move-Item 'C:/temp/hubble/pkg/windows/osqueryd_safe_permissions.ps1' -Destination './hubble/dist/hubble/' -Force; \

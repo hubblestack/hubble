@@ -8,9 +8,9 @@ __salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet}
 
 
 def osquerygrain():
-    '''
+    """
     Return osquery version in grain
-    '''
+    """
     # Provides:
     #   osqueryversion
     #   osquerybinpath

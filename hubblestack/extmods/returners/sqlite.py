@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Return hubble data to sqlite (intended for testing)
-'''
+"""
 from __future__ import absolute_import
 
 import salt.returners
@@ -21,21 +21,21 @@ log = logging.getLogger(__virtualname__)
 _conn = None
 
 def __virtual__():
-    '''
+    """
     Return virtual name of the module.
 
     :return: The virtual name of the module.
-    '''
+    """
     if GOT_SQLI:
         return __virtualname__
     return False, "sqlite3 module is missing"
 
 def _get_options(ret=None):
-    '''
+    """
     Get the sqlite dumpster options from configs
 
     :return: options
-    '''
+    """
 
     defaults = {'dumpster': '/var/log/hubblestack/returns.sqlite'}
 
@@ -51,11 +51,11 @@ def _get_options(ret=None):
     return _options
 
 def _get_conn():
-    '''
+    """
     Establish a connection (if not connected) and return it
 
     :return: connection
-    '''
+    """
     _options = _get_options()
     global _conn
     if not _conn:

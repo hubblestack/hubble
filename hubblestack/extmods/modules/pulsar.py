@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Watch files and translate the changes into salt events
 
 :depends:   - pyinotify Python module >= 0.9.5
@@ -10,7 +10,7 @@ Watch files and translate the changes into salt events
             setting the `disable_during_state_run` flag to `True` in
             the beacon configuration.
 
-'''
+"""
 # Import Python libs
 from __future__ import absolute_import
 import types
@@ -61,16 +61,16 @@ def __virtual__():
     return True
 
 def _get_mask(mask):
-    '''
+    """
     Return the int that represents the mask
-    '''
+    """
     return MASKS.get(mask, 0)
 
 
 def _enqueue(revent):
-    '''
+    """
     Enqueue the event
-    '''
+    """
     __context__['pulsar.queue'].append(revent)
 
 class ConfigManager(object):
@@ -179,7 +179,7 @@ class ConfigManager(object):
         self._abspathify()
 
 class PulsarWatchManager(pyinotify.WatchManager):
-    ''' Subclass of pyinotify.WatchManager for the purposes:
+    """ Subclass of pyinotify.WatchManager for the purposes:
         * adding dict() based watch_db (for faster lookups)
         * adding file watches (to notice changes to hardlinks outside the watched locations)
         * adding various convenience functions
@@ -192,7 +192,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
             for path in path_list:
                 wd = wm.get_wd(i) # search watch-list in an internal for loop
-    '''
+    """
 
     def __init__(self, *a, **kw):
         # because the salt loader periodically reloads everything,
@@ -210,8 +210,8 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
     @classmethod
     def _iterate_anything(cls, x, discard_none=True):
-        ''' iterate any amount of list/tuple nesting
-        '''
+        """ iterate any amount of list/tuple nesting
+        """
         if isinstance(x, (types.GeneratorType,list,tuple,set,dict)):
             # ∀ item ∈ x: listify(item)
             for list_or_item in x:
@@ -226,9 +226,9 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
     @classmethod
     def _listify_anything(cls, x, discard_none=True):
-        ''' _iterate_anything, then uniquify and force a list return; because,
+        """ _iterate_anything, then uniquify and force a list return; because,
             pyinotify's __format_param, checks only isinstance(item,list)
-        '''
+        """
         s = set( cls._iterate_anything(x, discard_none=discard_none) )
         return list(s)
 
@@ -248,9 +248,9 @@ class PulsarWatchManager(pyinotify.WatchManager):
             self.parent_db[parent].update(todo)
 
     def _get_wdl(self, *pathlist):
-        ''' inverse pathlist and return a flat list of wd's for the paths and their child paths
+        """ inverse pathlist and return a flat list of wd's for the paths and their child paths
             probably O( (N+M)^2 ); use sparingly
-        '''
+        """
         super_list = self._listify_anything(pathlist,
             [ x if isinstance(x,int) else self.parent_db.get(x) for x in self._iterate_anything(pathlist) ])
         return self._listify_anything([ x if isinstance(x,int) else self.watch_db.get(x) for x in super_list ])
@@ -260,12 +260,12 @@ class PulsarWatchManager(pyinotify.WatchManager):
         return self._listify_anything([ k for k,v in salt.ext.six.iteritems(self.watch_db) if v in wdl ])
 
     def update_config(self):
-        ''' (re)check the config files for inotify_limits:
+        """ (re)check the config files for inotify_limits:
             * inotify_limits:update - whether we should try to manage fs.inotify.max_user_watches
             * inotify_limits:highwater - the highest we should set MUW (default: 1000000)
             * inotify_limits:increment - the amount we should increase MUW when applicable
             * inotify_limits:initial   - if given, and if MUW is initially lower at startup: set MUW to this
-        '''
+        """
 
         if not hasattr(self, 'cm'):
             self.cm = ConfigManager()
@@ -285,8 +285,8 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
     @property
     def max_user_watches(self):
-        ''' getter/setter for fs.inotify.max_user_watches
-        '''
+        """ getter/setter for fs.inotify.max_user_watches
+        """
         with open('/proc/sys/fs/inotify/max_user_watches', 'r') as fh:
             l = fh.readline()
             muw = int(l.strip())
@@ -327,9 +327,9 @@ class PulsarWatchManager(pyinotify.WatchManager):
             raise Exception("_add_recursed_file_watch('{0}') must be located in a watched directory".format(path))
 
     def watch(self, path, mask=None, **kw):
-        ''' Automatically select add_watch()/update_watch() and try to do the right thing.
+        """ Automatically select add_watch()/update_watch() and try to do the right thing.
             Also add 'new_file' argument: add an IN_MODIFY watch for the named filepath and track it
-        '''
+        """
         path     = os.path.abspath(path)
         new_file = kw.pop('new_file', False)
 
@@ -393,11 +393,11 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
 
     def add_watch(self, path, mask, **kw):
-        ''' Curry of pyinotify.WatchManager.add_notify
+        """ Curry of pyinotify.WatchManager.add_notify
             * override - quiet = False
             * automatic absolute path
             * implicit retries
-        '''
+        """
         no_db = kw.pop('no_db', False)
         path = os.path.abspath(path)
         res = {}
@@ -502,25 +502,25 @@ class PulsarWatchManager(pyinotify.WatchManager):
             del self.parent_db[item]
 
     def del_watch(self, wd):
-        ''' remove a watch from the watchmanager database
-        '''
+        """ remove a watch from the watchmanager database
+        """
         if not isinstance(wd, int):
             wd = self._get_wdl(wd)[0]
         self.__super.del_watch(wd)
         self._rm_db(wd)
 
     def rm_watch(self, *wd, **kw):
-        ''' recursively unwatch things
-        '''
+        """ recursively unwatch things
+        """
         wdl = self._get_wdl(wd)
         res = self.__super.rm_watch(wdl, **kw)
         self._rm_db(wdl)
         return res
 
 def _get_notifier():
-    '''
+    """
     Check the context for the notifier and construct it if not present
-    '''
+    """
     if 'pulsar.notifier' not in __context__:
         __context__['pulsar.queue'] = collections.deque()
         log.info("creating new watch manager")
@@ -529,9 +529,9 @@ def _get_notifier():
     return __context__['pulsar.notifier']
 
 def _preprocess_excludes(excludes):
-    '''
+    """
     Wrap excludes in simple decision curry functions.
-    '''
+    """
 
     # silently discard non-list excludes
     if not isinstance(excludes, (list,tuple)) or not excludes:
@@ -619,7 +619,7 @@ class delta_t(object):
 @hubble_status.watch
 def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
             verbose=False):
-    '''
+    """
     Watch the configured files
 
     Example pillar config
@@ -704,7 +704,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
     If pillar/grains/minion config key `hubblestack:pulsar:maintenance` is set to
     True, then changes will be discarded.
-    '''
+    """
 
     dt = delta_t()
     dt.mark('read_config')
@@ -899,13 +899,13 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
 
 def canary(change_file=None):
-    '''
+    """
     Simple module to change a file to trigger a FIM event (daily, etc)
 
     THE SPECIFIED FILE WILL BE CREATED AND DELETED
 
     Defaults to CONF_DIR/fim_canary.tmp, i.e. /etc/hubble/fim_canary.tmp
-    '''
+    """
     if change_file is None:
         conf_dir = os.path.dirname(__opts__['conf_file'])
         change_file = os.path.join(conf_dir, 'fim_canary.tmp')
@@ -914,7 +914,7 @@ def canary(change_file=None):
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
-    '''
+    """
     Recursive version of the default dict.update
 
     Merges upd recursively into dest
@@ -925,7 +925,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
     If merge_lists=True, will aggregate list object types instead of replace.
     This behavior is only activated when recursive_update=True. By default
     merge_lists=False.
-    '''
+    """
     if (not isinstance(dest, collections.Mapping)) \
             or (not isinstance(upd, collections.Mapping)):
         raise TypeError('Cannot update using non-dict types in dictupdate.update()')
@@ -970,7 +970,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
 
 def top(topfile='salt://hubblestack_pulsar/top.pulsar',
         verbose=False):
-    '''
+    """
     Execute pulsar using a top.pulsar file to decide which configs to use for
     this host.
 
@@ -985,7 +985,7 @@ def top(topfile='salt://hubblestack_pulsar/top.pulsar',
 
     Paths in the topfile should be relative to `salt://hubblestack_pulsar`, and
     the .yaml should not be included.
-    '''
+    """
     configs = get_top_data(topfile)
 
     configs = ['salt://hubblestack_pulsar/' + config.replace('.', '/') + '.yaml'
@@ -995,9 +995,9 @@ def top(topfile='salt://hubblestack_pulsar/top.pulsar',
 
 
 def get_top_data(topfile):
-    '''
+    """
     Cache the topfile and process the list of configs this host should use.
-    '''
+    """
     # Get topdata from filesystem if we don't have them already
     global TOP
     global TOP_STALENESS

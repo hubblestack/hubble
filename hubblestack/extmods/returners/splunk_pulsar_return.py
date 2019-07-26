@@ -50,8 +50,6 @@ from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_a
 
 import logging
 
-RETRY = False
-
 log = logging.getLogger(__name__)
 
 def returner(ret):
@@ -88,8 +86,6 @@ def returner(ret):
             data = _dedupList(data)
             minion_id = __opts__['id']
             jid = ret['jid']
-            global RETRY
-            RETRY = ret['retry']
             fqdn = __grains__['fqdn']
             # Sometimes fqdn is blank. If it is, replace it with minion_id
             fqdn = fqdn if fqdn else minion_id

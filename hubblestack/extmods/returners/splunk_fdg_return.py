@@ -55,7 +55,6 @@ import logging
 
 _max_content_bytes = 100000
 http_event_collector_debug = False
-RETRY = False
 
 log = logging.getLogger(__name__)
 
@@ -84,8 +83,6 @@ def returner(ret):
             minion_id = ret['id']
             jid = ret['jid']
             fun = ret['fun']
-            global RETRY
-            RETRY = ret['retry']
             fqdn = __grains__['fqdn']
             # Sometimes fqdn is blank. If it is, replace it with minion_id
             fqdn = fqdn if fqdn else minion_id

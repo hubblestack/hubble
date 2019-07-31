@@ -17,8 +17,8 @@ ENV SALT_SRC_PATH='C:/temp/salt/'
 ENV SALT_GIT_URL=https://github.com/saltstack/salt
 ENV SALT_CHECKOUT=v2018.11
 #All the variables used for hubble
-ARG HUBBLE_CHECKOUT=3.0
-ARG HUBBLE_GIT_URL=https://github.com/praksinha/hubble.git
+ARG HUBBLE_CHECKOUT=v3.0.5
+ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 ENV _HOOK_DIR='./pkg/'
 ENV NSIS_LOC='C:/Program Files (x86)/NSIS'
@@ -95,5 +95,4 @@ CMD powershell.exe -Command Push-Location C:/temp/hubble; \
   ./makensis.exe /DHubbleVersion="$env:HUBBLE_CHECKOUT" 'C:/temp/hubble/pkg/windows/hubble-Setup.nsi'; \
   Get-FileHash -Path C:/temp/hubble/pkg/windows/Hubble*exe -Algorithm SHA256 ^| Out-File C:/temp/hubble/pkg/windows/hubble_windows.sha256; \
   Copy-Item C:/temp/hubble/pkg/windows/Hubble*exe -Destination C:/data/; \
-  Copy-Item C:/temp/hubble/pkg/windows/hubble_windows.sha256 -Destination C:/data/; 
-  
+  Copy-Item C:/temp/hubble/pkg/windows/hubble_windows.sha256 -Destination C:/data/;

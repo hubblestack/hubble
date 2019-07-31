@@ -79,6 +79,9 @@ else {
 }
 Copy-Item $confFile -Destination '.\dist\hubble\etc\hubble\'
 
+# Copy PortableGit to correct location
+Move-Item '.\PortableGit' -Destination '.\dist\hubble\' -Force
+
 # Copy nssm.exe to correct location
 if (Test-Path '..\salt\pkg\windows\buildenv\nssm.exe') {
     Copy-Item '..\salt\pkg\windows\buildenv\nssm.exe' -Destination '.\dist\hubble\'

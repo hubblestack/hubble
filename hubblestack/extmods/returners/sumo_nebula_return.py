@@ -56,26 +56,27 @@ def returner(ret):
             return
         else:
             for query in data:
-                for query_name, value in query.items():
-                    for d in value['data']:
-                        event = {}
-                        event.update(d)
-                        event.update({'query': query_name})
-                        event.update({'job_id': jid})
-                        event.update({'minion_id': minion_id})
-                        event.update({'dest_host': fqdn})
-                        event.update({'dest_ip': fqdn_ip4})
-                        event.update(cloud_details)
-                        event_time = d.get('time', '')
-                        try:
-                            if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(
-                                    float(event_time))).days > 365:
+                for key, value in query.items():
+                    if key == 'query_result':
+                        for d in value['data']:
+                            event = {}
+                            event.update({'query': query['query_name']})
+                            event.update({'job_id': jid})
+                            event.update({'minion_id': minion_id})
+                            event.update({'dest_host': fqdn})
+                            event.update({'dest_ip': fqdn_ip4})
+                            event.update(cloud_details)
+                            event.update(d)
+                            event_time = d.get('time', '')
+                            try:
+                                if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(
+                                        float(event_time))).days > 365:
+                                    event_time = ''
+                            except:
                                 event_time = ''
-                        except:
-                            event_time = ''
-                        finally:
-                            rdy = json.dumps(event)
-                            requests.post('{}/'.format(sumo_nebula_return), rdy)
+                            finally:
+                                rdy = json.dumps(event)
+                                requests.post('{}/'.format(sumo_nebula_return), rdy)
     return
 
 

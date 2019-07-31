@@ -285,6 +285,7 @@
     nsExec::Exec "nssm.exe set Hubble AppParameters -c .\etc\hubble\hubble.conf"
     nsExec::Exec "nssm.exe set Hubble Start SERVICE_AUTO_START"
 
+    ExecWait 'powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File .\prerequisites.ps1 "$INSTDIR" -FFFeatureOff'
     ExecWait 'powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File .\osqueryd_safe_permissions.ps1 "$INSTDIR" -FFFeatureOff'
     RMDir /R "$INSTDIR\var\cache" ; removing cache from old version
 
@@ -733,6 +734,7 @@
         FileWrite $9 "        index: $IndexName_State$\r$\n"
         FileWrite $9 "        sourcetype_nova: hubble_audit$\r$\n"
         FileWrite $9 "        sourcetype_nebula: hubble_osquery$\r$\n"
+        FileWrite $9 "        sourcetype_osqueryd: hubble_osqd$\r$\n"
         FileWrite $9 "        sourcetype_pulsar: hubble_fim$\r$\n"
         FileWrite $9 "        sourcetype_log: hubble_log$\r$\n"
             goto EndOfFile

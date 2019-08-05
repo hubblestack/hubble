@@ -846,7 +846,14 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                 continue
             if isinstance(config[path], dict):
                 mask = config[path].get('mask', DEFAULT_MASK)
-                watch_files = config[path].get('watch_files', DEFAULT_MASK)
+             ## commented out on 2019-08-05
+             #  watch_files = config[path].get('watch_files', DEFAULT_MASK)
+             ## note: it seems like the below was commented out because the above seems to be bugged
+             ## clearly watch_files should default to False, not DEFAULT_MASK
+             ## (aka true); that probably seemd like spurious watches from ##
+             ## duplications or whatever caused the below to be commented out.
+             ## Regardless, the above is probably wrong *and* seems unused.
+             ## commented out previous to 2019-08-05
              #  if watch_files:
              #      # we're going to get dup modify events if watch_files is set
              #      # and we still monitor modify for the dir

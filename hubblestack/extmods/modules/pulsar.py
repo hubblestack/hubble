@@ -670,21 +670,24 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
     * attrib            - File metadata changed
     * close_nowrite     - Unwritable file closed
     * close_write       - Writable file closed
-    * create            - File created in watched directory
-    * delete            - File deleted from watched directory
+    * create      [def] - File created in watched directory
+    * delete      [def] - File deleted from watched directory
     * delete_self       - Watched file or directory deleted
-    * modify            - File modified
+    * modify      [def] - File modified
     * moved_from        - File moved out of watched directory
     * moved_to          - File moved into watched directory
     * move_self         - Watched file moved
     * open              - File opened
 
-    The mask can also contain the following options:
+    The mask can also contain the following options (none enabled by default):
 
     * dont_follow       - Don't dereference symbolic links
     * excl_unlink       - Omit events for children after they have been unlinked
     * oneshot           - Remove watch after one event
     * onlydir           - Operate only if name is directory
+
+    All the below options regarding further recursion and file watches default
+    to False.
 
     recurse:
       Recursively watch directories under the named directory
@@ -701,6 +704,9 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
       Can use regex if regex is set to True
     contents:
       Retrieve the contents of changed files based on checksums (which must be enabled)
+      When enabled, the options contents_size (default 20480) is also used to
+      decide, "Don't fetch contents for any file over contents_size or where
+      the checksum is unchanged."
 
     If pillar/grains/minion config key `hubblestack:pulsar:maintenance` is set to
     True, then changes will be discarded.
@@ -840,7 +846,14 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                 continue
             if isinstance(config[path], dict):
                 mask = config[path].get('mask', DEFAULT_MASK)
-                watch_files = config[path].get('watch_files', DEFAULT_MASK)
+             ## commented out on 2019-08-05
+             #  watch_files = config[path].get('watch_files', DEFAULT_MASK)
+             ## note: it seems like the below was commented out because the above seems to be bugged
+             ## clearly watch_files should default to False, not DEFAULT_MASK
+             ## (aka true); that probably seemd like spurious watches from ##
+             ## duplications or whatever caused the below to be commented out.
+             ## Regardless, the above is probably wrong *and* seems unused.
+             ## commented out previous to 2019-08-05
              #  if watch_files:
              #      # we're going to get dup modify events if watch_files is set
              #      # and we still monitor modify for the dir

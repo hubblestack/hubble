@@ -101,6 +101,8 @@ from salt.ext.six.moves import filter
 from salt.ext.six.moves.urllib.parse import quote as _quote
 # pylint: enable=import-error,no-name-in-module,redefined-builtin
 
+from hubblestack.utils.signing import find_wrapf
+
 log = logging.getLogger(__name__)
 
 S3_CACHE_EXPIRE = 30  # cache for 30 seconds
@@ -139,6 +141,7 @@ def update():
         log.info('Sync local cache from S3 completed.')
 
 
+@find_wrapf(not_found={'bucket': None, 'path': None}, real_path='cpath')
 def find_file(path, saltenv='base', **kwargs):
     """
     Look through the buckets cache file for a match.
@@ -175,13 +178,13 @@ def find_file(path, saltenv='base', **kwargs):
     if not fnd['path'] or not fnd['bucket']:
         return fnd
 
-    cached_file_path = _get_cached_file_name(fnd['bucket'], saltenv, path)
+    fnd['cpath'] = _get_cached_file_name(fnd['bucket'], saltenv, path)
 
     try:
         # jit load the file from S3 if it's not in the cache or it's old
-        _get_file_from_s3(metadata, saltenv, fnd['bucket'], path, cached_file_path)
+        _get_file_from_s3(metadata, saltenv, fnd['bucket'], path, fnd['cpath'])
     except Exception as exc:
-        if not os.path.isfile(cached_file_path):
+        if not os.path.isfile(fnd['cpath']):
             raise exc
 
     return fnd

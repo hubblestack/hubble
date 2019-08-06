@@ -123,3 +123,12 @@ relevant-files.txt
 # sometimes when I stop docker with a sigquit, hubble drops core (??)
 core
 core.*
+
+# contrib/gen-pretend-certs.sh data dumptory
+.pretend-certs
+MANIFEST
+SIGNATURE
+test-*.file
+
+# certificate bundles for binary distributions
+pre_packaged_certificates.py

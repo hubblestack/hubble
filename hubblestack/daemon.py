@@ -22,7 +22,6 @@ import time
 import uuid
 from datetime import datetime
 
-import salt.fileclient
 import salt.fileserver
 import salt.fileserver.gitfs
 import salt.modules.cmdmod
@@ -32,6 +31,8 @@ import salt.utils.jid
 import salt.utils.gitfs
 import salt.utils.path
 from croniter import croniter
+
+import hubblestack.utils.signing
 import hubblestack.splunklogging
 import hubblestack.log
 import hubblestack.hec.opt
@@ -793,6 +794,9 @@ def refresh_grains(initial=False):
     hubblestack.status.__opts__ = __opts__
     hubblestack.status.__salt__ = __salt__
     hubble_status.start_sigusr1_signal_handler()
+
+    hubblestack.utils.signing.__opts__ = __opts__
+    hubblestack.utils.signing.__salt__ = __salt__
 
     if not initial and __salt__['config.get']('splunklogging', False):
         hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')

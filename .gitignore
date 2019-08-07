@@ -113,3 +113,6 @@ tests/unittests/*cache*
 tests/unittests/*log*
 tests/unittests/output
 relevant-files.txt
+
+# PyCharm project
+.idea/

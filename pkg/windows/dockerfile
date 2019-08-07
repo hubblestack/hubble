@@ -30,11 +30,10 @@ VOLUME C:/data
 #Copy local files to working directory
 COPY pyinstaller-requirements.txt c:/temp/
 COPY hubble.conf C:/temp/
-#install Chocolatey, then git and git.portable, and osquery
+#install Chocolatey, then git and osquery
 RUN powershell.exe -Command Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString("$env:CHOCO_URL"))
 RUN powershell.exe -Command choco install git nssm -y;
 RUN powershell.exe -Command choco install osquery --version 3.4.0 -y;
-RUN powershell.exe -Command choco install git.portable --version 2.19.0 -y;
 
 #RUN powershell.exe $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 #Git clone salt and run packages
@@ -56,10 +55,6 @@ RUN powershell.exe -Command git clone "$env:HUBBLE_GIT_URL"; \
 #Use pip to install hubble dependencies
 RUN powershell.exe -Command pip install -r pyinstaller-requirements.txt;
   
-#Move portable git to a new location
-RUN powershell.exe -Command New-Item C:/temp/hubble/PortableGit -ItemType Directory; \
-  Copy-Item -Path C:/tools/git/* -Destination C:/temp/hubble/PortableGit/ -Recurse;
-  
 # Modify gitfs fix for incorrect path variables until fix has been upstreamed
 RUN powershell.exe -Command If (!(Test-Path C:/Python27/Lib/site-packages/salt)) {Copy-Item C:/temp/salt/salt -Destination C:/Python27/Lib/site-packages/ -Recurse -Force}; \
   $gitfsFile = Get-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py; \
@@ -77,11 +72,10 @@ CMD powershell.exe -Command Push-Location C:/temp/hubble; \
   Set-Content -Path ./hubble.spec -Value $specFile -Force; \
   pyinstaller ./hubble.spec; \
   Pop-Location; \
-#Move the hubble.conf, PortableGit, nssm, and osquery to the corerect location
+#Move the hubble.conf, nssm, and osquery to the corerect location
   New-Item './hubble/dist/hubble/etc/hubble' -ItemType Directory; \
   New-Item './hubble/dist/hubble/osqueryd' -ItemType Directory; \
   Move-Item hubble.conf -Destination ./hubble/dist/hubble/etc/hubble/; \
-  Move-Item 'hubble/PortableGit' -Destination './hubble/dist/hubble/' -Force; \
   Move-Item 'C:/ProgramData/chocolatey/lib/NSSM/tools/nssm.exe' -Destination './hubble/dist/hubble/' -Force; \
   If (Test-Path C:/ProgramData/osquery/osqueryi.exe) {Copy-Item 'C:/ProgramData/osquery/osqueryi.exe' -Destination './hubble/dist/hubble/' -Force} \
   Else {Copy-Item 'C:/Program Files/osquery/osqueryi.exe' -Destination './hubble/dist/hubble/' -Force}; \
@@ -90,6 +84,7 @@ CMD powershell.exe -Command Push-Location C:/temp/hubble; \
   If (Test-Path C:/data/hubble.conf) {Copy-Item  C:/data/hubble.conf -Destination ./hubble/dist/hubble/etc/hubble/ -Force}; \
   If (Test-Path C:/data/opt) {Copy-Item  C:/data/opt -Destination './hubble/dist/hubble/' -Recurse -Force}; \
   Move-Item 'C:/temp/hubble/pkg/windows/osqueryd_safe_permissions.ps1' -Destination './hubble/dist/hubble/' -Force; \
+  Move-Item 'C:/temp/hubble/pkg/windows/prerequisites.ps1' -Destination './hubble/dist/hubble/' -Force; \
 #Build the installer
   Push-Location 'C:/Program Files (x86)/NSIS'; \
   ./makensis.exe /DHubbleVersion="$env:HUBBLE_CHECKOUT" 'C:/temp/hubble/pkg/windows/hubble-Setup.nsi'; \

@@ -9,7 +9,6 @@ Param(
 
 [System.Version]$chocoVer = "0.10.5"
 [System.Version]$gitVer = "2.12.0"
-[System.Version]$portGitVer = "2.16.1.4"
 # Verify you are running with elevated permission mode (administrator token)
 if (!([bool](([System.Security.Principal.WindowsIdentity]::GetCurrent()).groups -match "S-1-5-32-544"))) {
     Write-Error "You must be running powershell with elevated permissions (run as administrator)"
@@ -101,17 +100,6 @@ foreach ($line in $lines) {
 }
 Pop-Location
 
-# Download PortableGit.  Requirement for Hubble
-$port_git = choco list --localonly | Where-Object {$_ -like "git.portable *"}
-if (!($port_git)) {
-    choco install git.portable -y
-    reloadEnv
-} else {
-    if ([System.Version]($port_git -replace "git.portable ","") -lt $portgitVer) {
-        choco upgrade git.portable -y
-    }
-}
-#Moves Portable Git into the correct location to work with hubble. 
 set-location C:\Temp
 Import-Module "$env:ChocolateyInstall\helpers\chocolateyInstaller.psm1" -Force;
 $ChocoTools = Get-ToolsLocation
@@ -119,12 +107,6 @@ $ChocoTools = Get-ToolsLocation
 if (!($ChocoTools)) {
     $ChocoTools = $env:ChocolateyToolsLocation
 }
-
-if(!(test-path .\hubble\PortableGit\)) {
-    mkdir C:\Temp\hubble\PortableGit\
-}
-
-Copy-Item -Path $ChocoTools\git\* -Destination C:\Temp\hubble\PortableGit\ 
 
 # Install osquery for executible
 if (!(Test-path C:\ProgramData\osquery)) {

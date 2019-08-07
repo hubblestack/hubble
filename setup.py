@@ -45,11 +45,11 @@ setup(
         'mock',
     ],
     install_requires=[
-        'salt-ssh >= 2015.8.0',
+        'salt-ssh >= 2019.2.0',
         'croniter',
-        'gitpython',
         'pyinotify',
         'vulners == 1.3.0',
+        'azure',
         'ntplib',
     ],
     data_files=data_files,

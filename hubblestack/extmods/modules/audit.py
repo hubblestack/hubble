@@ -234,17 +234,16 @@ def _get_top_data(topfile):
         raise CommandExecutionError('Could not load topfile: {0}'.format(e))
 
     if not isinstance(topdata, dict) or 'audit' not in topdata or \
-            not isinstance(topdata['audit'], list):
+            not isinstance(topdata['audit'], dict):
         raise CommandExecutionError('Audit topfile not formatted correctly.')
 
     topdata = topdata['audit']
 
     ret = []
 
-    for topmatch in topdata:
-        for match, data in topmatch.iteritems():
-            if __salt__['match.compound'](match):
-                ret.extend(data)
+    for match, data in topdata.iteritems():
+        if __salt__['match.compound'](match):
+            ret.extend(data)
 
     return ret
 

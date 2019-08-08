@@ -306,7 +306,7 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
             continue
 
         # Process target
-        target = data.get(target, '*')
+        target = data.get('target', '*')
         if not __salt__['match.compound'](target):
             LOG.debug('Skipping audit {0} due to target mismatch: {1}'.format(target))
             continue

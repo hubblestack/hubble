@@ -131,6 +131,8 @@ def audit(audit_files=None,
     audit_files = ['salt://hubblestack_audit/' + audit_file.replace('.', '/') + '.yaml'
                    for audit_file in audit_files]
 
+    if labels is None:
+        labels = []
     if not isinstance(labels, list):
         labels = [labels]
 

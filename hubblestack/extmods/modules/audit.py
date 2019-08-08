@@ -128,13 +128,14 @@ def audit(audit_files=None,
     if not isinstance(audit_files, list):
         audit_files = [audit_files]
 
+    audit_files = ['salt://hubblestack_audit/' + audit_file.replace('.', '/') + '.yaml'
+                   for audit_file in audit_files]
+
     if not isinstance(labels, list):
         labels = [labels]
 
     for audit_file in audit_files:
         # Cache audit file
-        if not audit_file.startswith('salt://'):
-            audit_file = 'salt://' + audit_file
         path = __salt__['cp.cache_file'](audit_file)
 
         # Fileserver will return False if the file is not found

@@ -178,7 +178,7 @@ def audit(audit_files=None,
 
 
 @hubble_status.watch
-def top(topfile=None,
+def top(topfile='salt://hubblestack_audit/top.audit',
         tags='*',
         labels=None,
         verbose=True,

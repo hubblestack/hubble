@@ -212,9 +212,6 @@ def top(topfile=None,
     """
     audit_files = _get_top_data(topfile)
 
-    audit_files = ['salt://hubblestack_audit/' + audit_file.replace('.', '/') + '.yaml'
-                   for audit_file in audit_files]
-
     return audit(audit_files,
                  tags=tags,
                  labels=labels,

@@ -35,7 +35,6 @@ tag if a tag is not explicitly provided.
         description: <description>
         tag: <tag>  # Uses <id> if not defined
         target: <target>
-        control: <reason>
         labels:
           - <label>
 
@@ -111,15 +110,13 @@ def audit(audit_files=None,
         True by default. If set to False, results will be trimmed to just tags
         and descriptions.
     :param show_success:
-        Whether to show successes and controlled checks, or just failures.
-        Defaults to True
+        Whether to show successes or just failures. Defaults to True
     :return:
-        Returns dictionary with Success, Failure, and Controlled keys and the
-        results of the checks
+        Returns dictionary with Success and Failure keys and the results of the
+        checks
     """
     ret = {'Success': [],
-           'Failure': [],
-           'Control': []}
+           'Failure': []}
 
     if not audit_files:
         LOG.warning('audit.audit called without any audit_files')
@@ -163,16 +160,14 @@ def audit(audit_files=None,
     # If verbose=False, reduce each check to a dictionary with {tag: description}
     if not verbose:
         succinct_ret = {'Success': [],
-                        'Failure': [],
-                        'Control': []}
+                        'Failure': []}
         for success_type, checks in ret.iteritems():
             for check in checks:
                 succinct_ret[success_type].append({check['tag']: check.get('description', '<no description>')})
 
-    # Remove successes and controlled checks if show_success is False
+    # Remove successes if show_success is False
     if not show_success:
         ret.pop('Success')
-        ret.pop('Control')
 
     return ret
 
@@ -207,8 +202,8 @@ def top(topfile='salt://hubblestack_audit/top.audit',
     :param show_success:
         See audit()
     :return:
-        Returns dictionary with Success, Failure, and Controlled keys and the
-        results of the checks
+        Returns dictionary with Success and Failure keys and the results of the
+        checks
     """
     audit_files = _get_top_data(topfile)
 
@@ -308,13 +303,6 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
         target = data.get('target', '*')
         if not __salt__['match.compound'](target):
             LOG.debug('Skipping audit {0} due to target mismatch: {1}'.format(target))
-            continue
-
-        # Check for control
-        if 'control' in data:
-            LOG.debug('Skipping audit {0} due to control being set with reason {1}'
-                      .format(audit_id, data['control']))
-            ret['Control'].append({audit_id: data})
             continue
 
         args = data.get('args', [])

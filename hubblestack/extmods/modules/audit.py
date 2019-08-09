@@ -121,13 +121,13 @@ def audit(audit_files=None,
     Execute one or more audit files, and return the cumulative results.
 
     :param audit_files:
-        Which audit files to execute. Can be formed as a string (single file) or
-        as a list (one or more files).
+        Which audit files to execute. Can contain multiple files (list or
+        comma-separated).
     :param tags:
         Can be used to target a subset of tags via glob targeting.
     :param labels:
-        Only run the checks with the given label(s). Can be formed as a string
-        (single label) or a list (one or more labels).
+        Only run the checks with the given label(s). Can contain multiple
+        labels (comma-separated).
     :param verbose:
         True by default. If set to False, results will be trimmed to just tags
         and descriptions.
@@ -145,7 +145,7 @@ def audit(audit_files=None,
         return ret
 
     if not isinstance(audit_files, list):
-        audit_files = [audit_files]
+        audit_files = audit_files.split(',')
 
     audit_files = ['salt://hubblestack_audit/' + audit_file.replace('.', '/') + '.yaml'
                    for audit_file in audit_files]
@@ -153,7 +153,7 @@ def audit(audit_files=None,
     if labels is None:
         labels = []
     if not isinstance(labels, list):
-        labels = [labels]
+        labels = labels.split(',')
 
     for audit_file in audit_files:
         # Cache audit file
@@ -180,15 +180,17 @@ def audit(audit_files=None,
         ret = _run_audit(ret, audit_data, tags, labels, audit_file)
 
     # If verbose=False, reduce each check to a dictionary with {tag: description}
-    if not verbose:
+    if not verbose or verbose == 'False':
         succinct_ret = {'Success': [],
                         'Failure': []}
         for success_type, checks in ret.iteritems():
             for check in checks:
                 succinct_ret[success_type].append({check['tag']: check.get('description', '<no description>')})
 
+        ret = succinct_ret
+
     # Remove successes if show_success is False
-    if not show_success:
+    if not show_success or show_success == 'False':
         ret.pop('Success')
 
     return ret

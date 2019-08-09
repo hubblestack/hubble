@@ -11,7 +11,7 @@ are formed via YAML files in your hubblestack_data source:
 .. code-block:: yaml
 
     CIS-6.2.4:
-      grep.file:
+      grep.grep:
         args:
           - /etc/group
         kwargs:
@@ -95,6 +95,8 @@ from __future__ import absolute_import
 import fnmatch
 import logging
 import os
+import salt.loader
+import salt.utils
 import yaml
 
 import hubblestack.extmods.audit.grep
@@ -106,9 +108,7 @@ LOG = logging.getLogger(__name__)
 
 hubble_status = HubbleStatus(__name__, 'top', 'audit')
 
-audit_modules = {
-    'grep.file': hubblestack.extmods.audit.grep.grep
-}
+__audit__ = None
 
 
 @hubble_status.watch
@@ -154,6 +154,14 @@ def audit(audit_files=None,
         labels = []
     if not isinstance(labels, list):
         labels = labels.split(',')
+
+    # Load audit modules
+    global __audit__
+    __audit__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'audit'),
+                                       __opts__,
+                                       tag='audit',
+                                       pack={'__salt__': __salt__,
+                                             '__grains__': __grains__})
 
     for audit_file in audit_files:
         # Cache audit file
@@ -344,10 +352,6 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
                           'correctly'.format(audit_id, audit_file))
             continue
 
-        if module not in audit_modules:
-            LOG.error('Audit module {0} not found'.format(module))
-            continue
-
         tag = data.get('tag', audit_id)
         data['tag'] = tag
         data['id'] = audit_id
@@ -398,7 +402,7 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
 
         # Run the audit
         try:
-            success, data_dict = audit_modules[module](*args, **kwargs)
+            success, data_dict = __audit__[module](*args, **kwargs)
         except Exception as e:
             LOG.error('Audit {0} from file {1} failed with exception {2}'
                       .format(audit_id, audit_file, e))

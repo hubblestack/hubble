@@ -7,7 +7,7 @@ Sample YAML data:
 .. code-block:: yaml
 
     CIS-6.2.4:
-      grep.file:
+      grep.grep:
         args:
           - /etc/group
         kwargs:
@@ -47,7 +47,6 @@ from __future__ import absolute_import
 import logging
 import os
 import re
-import salt.modules.cmdmod
 
 from salt.exceptions import CommandExecutionError
 
@@ -154,7 +153,7 @@ def _grep(path,
                                                     path=path)
 
     try:
-        ret = salt.modules.cmdmod.run(cmd, python_shell=False, ignore_retcode=True)
+        ret = __salt__['cmd.run'](cmd, python_shell=False, ignore_retcode=True)
     except (IOError, OSError) as exc:
         raise CommandExecutionError(exc.strerror)
 

@@ -33,6 +33,7 @@ tag if a tag is not explicitly provided.
         kwargs:
           foo: bar
         description: <description>
+        version: <version>
         tag: <tag>  # Uses <id> if not defined
         target: <target>
         labels:
@@ -50,6 +51,26 @@ labels:
     Allows labels to be applied to a check. Labels will be reported in the
     results, and can also be targeted by audit runs so only checks with a given
     label will be executed.
+
+version:
+    Allows checks to be limited to certain versions of hubble. Version
+    requirements can be of the following forms:
+
+    <3.0.0
+    <=3.0.0
+    >3.0.0
+    >=3.0.0
+
+    Multiple version requirements can be used, separated by commas and
+    semicolons. Commas will be processed first, and will result in AND logic.
+    Semicolons will then be processed, using OR logic to combine any existing
+    results. So, to have a check only run on version 3.0 and 3.2 and later
+    (but not run on 3.1) you might do something like this:
+
+    version: '>=3.0.0,<3.1.0;>=3.2.0'
+
+    Note that all checks use distutils.StrictVersion, so this will not work with
+    non-standard hubble releases.
 
 Like many pieces of Hubble, you can utilize topfiles to target files with one
 or more audit check to specific sets of hosts. Targeting is done via Salt-style
@@ -77,6 +98,7 @@ import os
 import yaml
 
 import hubblestack.extmods.audit.grep
+from distutils.version import StrictVersion
 from hubblestack.status import HubbleStatus
 from salt.exceptions import CommandExecutionError
 
@@ -243,6 +265,55 @@ def _get_top_data(topfile):
     return ret
 
 
+def _version_cmp(version):
+    """
+    Handle version comparison for audit checks
+
+    :param version:
+        Version comparison string. See module-level documentation for more
+        details.
+    :return:
+        Boolean as to whether the versions match
+    """
+    # '>=3.0.0,<3.1.0;>=3.2.0'
+    versions = version.split(';')
+    # ['>=3.0.0,<3.1.0', '>=3.2.0']
+    versions = [item.split(',') for item in versions]
+    # [['>=3.0.0', '<3.1.0'], ['>=3.2.0']]
+    processed_versions = []
+    for item in versions:
+        # Inner matches (comma separator) are AND
+        overall_match = True
+        for comparison in item:
+            if not comparison:
+                match = False
+            elif comparison.startswith('<='):
+                comparison = comparison[2:]
+                match = StrictVersion(__grains__['hubble_version']) <= StrictVersion(comparison)
+            elif comparison.startswith('<'):
+                comparison = comparison[1:]
+                match = StrictVersion(__grains__['hubble_version']) < StrictVersion(comparison)
+            elif comparison.startswith('>='):
+                comparison = comparison[2:]
+                match = StrictVersion(__grains__['hubble_version']) >= StrictVersion(comparison)
+            elif comparison.startswith('>'):
+                comparison = comparison[1:]
+                match = StrictVersion(__grains__['hubble_version']) > StrictVersion(comparison)
+            else:  # Equals, by default
+                match = StrictVersion(__grains__['hubble_version']) == StrictVersion(comparison)
+            # If we ever get a False, this whole AND block will be marked as False
+            overall_match = overall_match and match
+        processed_versions.append(overall_match)
+
+    # Outer matches (semicolon separator) are OR
+    version_match = False
+    for item in processed_versions:
+        if item:
+            version_match = True
+
+    return version_match
+
+
 def _run_audit(ret, audit_data, tags, labels, audit_file):
     """
 
@@ -280,6 +351,21 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
         data['id'] = audit_id
         data['file'] = audit_file
         label_list = data.get('labels', [])
+        version = data.get('version')
+
+        # Process any version targeting
+        if version and 'hubble_version' not in __grains__:
+            LOG.error('Audit {0} calls for version checking {1} but cannot '
+                      'find `hubble_version` in __grains__. Skipping.'
+                      .format(audit_id, version))
+            continue
+        elif version:
+            version_match = _version_cmp(version)
+            if not version_match:
+                LOG.debug('Skipping audit {0} due to version {1} not matching '
+                          'version requirements {2}'
+                          .format(audit_id, __grains__['hubble_version'], version))
+                continue
 
         # Process tags via globbing
         if not fnmatch.fnmatch(tag, tags):

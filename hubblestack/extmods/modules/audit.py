@@ -72,6 +72,10 @@ version:
     Note that all checks use distutils.StrictVersion, so this will not work with
     non-standard hubble releases.
 
+    Checks skipped by version checks will be returned in a separate 'Skipped'
+    key, so that you can track when hosts are skipping targeted checks because
+    they haven't updated Hubble
+
 Like many pieces of Hubble, you can utilize topfiles to target files with one
 or more audit check to specific sets of hosts. Targeting is done via Salt-style
 compound matching:
@@ -131,13 +135,14 @@ def audit(audit_files=None,
         True by default. If set to False, results will be trimmed to just tags
         and descriptions.
     :param show_success:
-        Whether to show successes or just failures. Defaults to True
+        Whether to show successes/skipped or just failures. Defaults to True
     :return:
-        Returns dictionary with Success and Failure keys and the results of the
-        checks
+        Returns dictionary with Success, Skipped, and Failure keys and the
+        results of the checks
     """
     ret = {'Success': [],
-           'Failure': []}
+           'Failure': [],
+           'Skipped': []}
 
     if not audit_files:
         LOG.warning('audit.audit called without any audit_files')
@@ -189,16 +194,21 @@ def audit(audit_files=None,
     # If verbose=False, reduce each check to a dictionary with {tag: description}
     if not verbose or verbose == 'False':
         succinct_ret = {'Success': [],
-                        'Failure': []}
+                        'Failure': [],
+                        'Skipped': []}
         for success_type, checks in ret.iteritems():
             for check in checks:
                 succinct_ret[success_type].append({check['tag']: check.get('description', '<no description>')})
 
         ret = succinct_ret
 
-    # Remove successes if show_success is False
+    # Remove successes/skipped if show_success is False
     if not show_success or show_success == 'False':
         ret.pop('Success')
+        ret.pop('Skipped')
+    elif not ret['Skipped']:
+        ret.pop('Skipped')
+
 
     return ret
 
@@ -358,20 +368,6 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
         label_list = data.get('labels', [])
         version = data.get('version')
 
-        # Process any version targeting
-        if version and 'hubble_version' not in __grains__:
-            LOG.error('Audit {0} calls for version checking {1} but cannot '
-                      'find `hubble_version` in __grains__. Skipping.'
-                      .format(audit_id, version))
-            continue
-        elif version:
-            version_match = _version_cmp(version)
-            if not version_match:
-                LOG.debug('Skipping audit {0} due to version {1} not matching '
-                          'version requirements {2}'
-                          .format(audit_id, __grains__['hubble_version'], version))
-                continue
-
         # Process tags via globbing
         if not fnmatch.fnmatch(tag, tags):
             LOG.debug('Skipping audit {0} due to tag {1} not matching tags {2}'
@@ -395,6 +391,22 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
         if not __salt__['match.compound'](target):
             LOG.debug('Skipping audit {0} due to target mismatch: {1}'.format(target))
             continue
+
+        # Process any version targeting
+        if version and 'hubble_version' not in __grains__:
+            LOG.error('Audit {0} calls for version checking {1} but cannot '
+                      'find `hubble_version` in __grains__. Skipping.'
+                      .format(audit_id, version))
+            ret['Skipped'].append({audit_id: data})
+            continue
+        elif version:
+            version_match = _version_cmp(version)
+            if not version_match:
+                LOG.debug('Skipping audit {0} due to version {1} not matching '
+                          'version requirements {2}'
+                          .format(audit_id, __grains__['hubble_version'], version))
+                ret['Skipped'].append({audit_id: data})
+                continue
 
         args = data.get('args', [])
         kwargs = data.get('kwargs', {})

@@ -412,6 +412,8 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
 
         if data_dict and isinstance(data_dict, dict):
             data_dict.update(data)
+        else:
+            data_dict = data
 
         if success:
             ret['Success'].append({audit_id: data_dict})

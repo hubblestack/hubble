@@ -99,7 +99,6 @@ import salt.loader
 import salt.utils
 import yaml
 
-import hubblestack.extmods.audit.grep
 from distutils.version import StrictVersion
 from hubblestack.status import HubbleStatus
 from salt.exceptions import CommandExecutionError

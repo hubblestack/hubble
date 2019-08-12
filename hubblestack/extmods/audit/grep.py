@@ -87,7 +87,9 @@ def grep(path,
     """
     if not os.path.isfile(path):
         if success_on_file_missing:
-            return True, {}
+            return True, {'reason': 'File missing'}
+        else:
+            return False, {'reason': 'File missing'}
 
     if not grep_args:
         grep_args = []

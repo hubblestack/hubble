@@ -130,7 +130,8 @@ def audit(audit_files=None,
         Can be used to target a subset of tags via glob targeting.
     :param labels:
         Only run the checks with the given label(s). Can contain multiple
-        labels (comma-separated).
+        labels (comma-separated). If multiple labels are provided, a check
+        with any label in the list will be run.
     :param verbose:
         True by default. If set to False, results will be trimmed to just tags
         and descriptions.

@@ -41,7 +41,7 @@ class TestNebula():
         assert 'os_info' in os_info[0]
         assert 'data' in os_info[0]['os_info']
         assert 'version' in os_info[0]['os_info']['data'][0]
-        assert __grains__['os'] in os_info[0]['os_info']['data'][0]['version']
+        assert __grains__['os'] in os_info[0]['os_info']['data'][0]['name']
 
     def test_queries_for_report_version_with_day(self, __salt__):
         query_group = 'day'
@@ -71,4 +71,4 @@ class TestNebula():
         assert 'os_info' in os_info[0]
         assert 'data' in os_info[0]['os_info']
         assert 'version' in os_info[0]['os_info']['data'][0]
-        assert __grains__['os'] in os_info[0]['os_info']['data'][0]['version']
+        assert __grains__['os'] in os_info[0]['os_info']['data'][0]['name']

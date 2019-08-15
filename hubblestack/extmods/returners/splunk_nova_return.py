@@ -53,7 +53,7 @@ log = logging.getLogger(__name__)
 
 def returner(ret):
     try:
-        opts_list = get_splunk_options( sourcetype_nova='hubble_audit',
+        opts_list = get_splunk_options( sourcetype='hubble_audit',
             _nick={'sourcetype_nova': 'sourcetype'})
 
         for opts in opts_list:

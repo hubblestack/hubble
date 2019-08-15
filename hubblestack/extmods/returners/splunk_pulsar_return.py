@@ -60,7 +60,7 @@ def returner(ret):
             # Empty single return, let's not do any setup or anything
             return
 
-        opts_list = get_splunk_options( sourcetype_pulsar='hubble_fim',
+        opts_list = get_splunk_options( sourcetype='hubble_fim',
             _nick={'sourcetype_pulsar': 'sourcetype'})
 
         for opts in opts_list:

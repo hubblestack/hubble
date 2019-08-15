@@ -5,9 +5,16 @@ Module to send config options to splunk
 import logging
 import copy
 import hubblestack.log
+from hubblestack.hec import get_splunk_options as gso
 
 LOG = logging.getLogger(__name__)
 
+def get_splunk_options(**kwargs):
+    if not kwargs:
+        kwargs['sourcetype'] = 'hubble_osquery'
+    if '_nick' not in kwargs or not isinstance(kwargs['_nick'], dict):
+        kwargs['_nick'] = {'sourcetype_nebula': 'sourcetype'}
+    return gso(**kwargs)
 
 def publish(report_directly_to_splunk=True, remove_dots=True, *args):
 

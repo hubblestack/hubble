@@ -58,7 +58,7 @@ log = logging.getLogger(__name__)
 
 def returner(ret):
     try:
-        opts_list = get_splunk_options( sourcetype_osqueryd='hubble_osqueryd',
+        opts_list = get_splunk_options( sourcetype='hubble_osqueryd',
             add_query_to_sourcetype=True, _nick={'sourcetype_osqueryd': 'sourcetype'})
 
         for opts in opts_list:

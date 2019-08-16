@@ -126,6 +126,7 @@ from salt.exceptions import CommandExecutionError
 log = logging.getLogger(__name__)
 __fdg__ = None
 __returners__ = None
+RETURNER_ID_BLOCK = None
 
 
 def fdg(fdg_file, starting_chained=None):
@@ -171,9 +172,13 @@ def fdg(fdg_file, starting_chained=None):
                                                               pack={'__salt__': __salt__,
                                                                     '__grains__': __grains__})
 
+    # RETURNER_ID_BLOCK is used for intermediate returns. We use a global
+    # so that we don't have to pass new arguments everywhere
+    global RETURNER_ID_BLOCK
+    RETURNER_ID_BLOCK = (fdg_file, str(starting_chained))
     # Recursive execution of the blocks
     ret = _fdg_execute('main', block_data, chained=starting_chained)
-    return (fdg_file, str(starting_chained)), ret
+    return RETURNER_ID_BLOCK, ret
 
 
 def top(fdg_topfile='salt://fdg/top.fdg'):
@@ -314,12 +319,12 @@ def _return(data, returner, returner_retry=None):
         log.error('Could not find {0} returner.'.format(returner))
         return False
     log.debug('Returning job data to {0}'.format(returner))
+    global RETURNER_ID_BLOCK
     returner_ret = {'id': __grains__['id'],
                     'jid': salt.utils.jid.gen_jid(__opts__),
                     'fun': 'fdg.fdg',
                     'fun_args': [],
-                    'return': data[0],
-                    'return_status': data[1],
+                    'return': (RETURNER_ID_BLOCK, data),
                     'retry': returner_retry}
     __returners__[returner](returner_ret)
 

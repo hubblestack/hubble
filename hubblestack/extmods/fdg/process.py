@@ -622,3 +622,14 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
         ret = base64.b64encode(starting_string)
 
     return bool(ret), ret
+
+
+def nop(format_chained=True, chained=None, chained_status=None):
+    """
+    This function just returns the chained value. It is a nop/no operation.
+
+    This can be useful if you want to do a pipe_on_true to filter out
+    False values -- you can pipe_on_true to process.nop, and stick a
+    returner on the nop operation to just return the True values.
+    """
+    return chained

@@ -14,7 +14,7 @@ import re
 
 import yaml as _yaml
 
-from hubblestack.extmods.fdg.process import encode_base64
+from . process import encode_base64
 
 LOG = logging.getLogger(__name__)
 

@@ -8,11 +8,10 @@ the data outputted by a module to serve it to another module.
 """
 from __future__ import absolute_import
 
-import base64
 import logging
 import re
 
-import salt.ext.six as six
+from hubblestack.utils.encoding import encode_base64 as utils_encode_base64
 from salt.exceptions import ArgumentValueError
 
 LOG = logging.getLogger(__name__)
@@ -643,21 +642,5 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
 
     The first return value (status) will be False only if an error will occur.
     """
-    if format_chained:
-        try:
-            starting_string = starting_string.format(chained)
-        except AttributeError:
-            LOG.error("Invalid type for starting_string - has to be string.", exc_info=True)
-            return False, None
-    if not isinstance(starting_string, str):
-        LOG.error('Invalid arguments - starting_string should be a string')
-        return False, None
-    # compatbility with python2 & 3
-    if six.PY3:
-        ret = base64.b64encode(bytes(starting_string, 'utf-8'))
-        # convert from bytes to str
-        ret = ret.decode('ascii')
-    else:
-        ret = base64.b64encode(starting_string)
-
-    return bool(ret), ret
+    return utils_encode_base64(starting_string, format_chained=format_chained,
+        chained=chained, chained_status=chained_status)

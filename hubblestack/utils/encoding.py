@@ -1,8 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import logging
 import base64
 import salt.ext.six as six
+
+log = logging.getLogger(__name__)
 
 def encode_base64(starting_string, format_chained=True, chained=None, chained_status=None):
     """
@@ -22,10 +25,10 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
         try:
             starting_string = starting_string.format(chained)
         except AttributeError:
-            LOG.error("Invalid type for starting_string - has to be string.", exc_info=True)
+            log.error("Invalid type for starting_string - has to be string.", exc_info=True)
             return False, None
     if not isinstance(starting_string, str):
-        LOG.error('Invalid arguments - starting_string should be a string')
+        log.error('Invalid arguments - starting_string should be a string')
         return False, None
     # compatbility with python2 & 3
     if six.PY3:

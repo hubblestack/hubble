@@ -94,4 +94,6 @@ ENV/
 # Visual Studio Code settings
 .vscode
 
+# PyCharm settings
+.idea/
 doc/_build

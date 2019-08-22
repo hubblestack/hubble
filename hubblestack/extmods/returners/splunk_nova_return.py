@@ -207,6 +207,57 @@ def returner(ret):
 
                 hec.batchEvent(payload)
 
+            for con in data.get('Controlled', []):
+                check_id = con.keys()[0]
+                payload = {}
+                event = {}
+                event.update({'check_result': 'Controlled'})
+                event.update({'check_id': check_id})
+                event.update({'job_id': jid})
+                if not isinstance(con[check_id], dict):
+                    event.update({'description': con[check_id]})
+                elif 'description' in con[check_id]:
+                    for key, value in con[check_id].iteritems():
+                        if key not in ['tag']:
+                            event[key] = value
+                event.update({'minion_id': minion_id})
+                event.update({'dest_host': fqdn})
+                event.update({'dest_ip': fqdn_ip4})
+                event.update({'dest_fqdn': local_fqdn})
+                event.update({'system_uuid': __grains__.get('system_uuid')})
+
+                event.update(cloud_details)
+
+                for custom_field in custom_fields:
+                    custom_field_name = 'custom_' + custom_field
+                    custom_field_value = __salt__['config.get'](custom_field, '')
+                    if isinstance(custom_field_value, (str, unicode)):
+                        event.update({custom_field_name: custom_field_value})
+                    elif isinstance(custom_field_value, list):
+                        custom_field_value = ','.join(custom_field_value)
+                        event.update({custom_field_name: custom_field_value})
+
+                payload.update({'host': fqdn})
+                payload.update({'sourcetype': opts['sourcetype']})
+                payload.update({'index': opts['index']})
+
+                # Remove any empty fields from the event payload
+                remove_keys = [k for k in event if event[k] == ""]
+                for k in remove_keys:
+                    del event[k]
+
+                payload.update({'event': event})
+
+                # Potentially add metadata fields:
+                fields = {}
+                for item in index_extracted_fields:
+                    if item in payload['event'] and not isinstance(payload['event'][item], (list, dict, tuple)):
+                        fields["meta_%s" % item] = str(payload['event'][item])
+                if fields:
+                    payload.update({'fields': fields})
+
+                hec.batchEvent(payload)
+
             if data.get('Compliance', None):
                 payload = {}
                 event = {}

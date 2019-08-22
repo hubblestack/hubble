@@ -8,11 +8,10 @@ the data outputted by a module to serve it to another module.
 '''
 from __future__ import absolute_import
 
-import base64
 import logging
 import re
 
-import salt.ext.six as six
+from hubblestack.utils.encoding import encode_base64 as utils_encode_base64
 from salt.exceptions import ArgumentValueError
 
 log = logging.getLogger(__name__)
@@ -593,37 +592,6 @@ def _sterilize_seq(seq):
     return updated_seq
 
 
-def encode_base64(starting_string, format_chained=True, chained=None, chained_status=None):
-    '''
-    Given a string, base64 encode it and return it.
-
-    By default, ``starting_string`` will have ``.format()`` called on it
-    with ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
-    substitute the chained value.) If you want to avoid having to escape curly braces,
-    set ``format_chained=False``.
-
-    The first return value (status) will be False only if an error will occur.
-    '''
-    if format_chained:
-        try:
-            starting_string = starting_string.format(chained)
-        except AttributeError:
-            log.error("Invalid type for starting_string - has to be string.")
-            return False, None
-    if not isinstance(starting_string, str):
-        log.error('Invalid arguments - starting_string should be a string')
-        return False, None
-    # compatbility with python2 & 3
-    if six.PY3:
-        ret = base64.b64encode(bytes(starting_string, 'utf-8'))
-        # convert from bytes to str
-        ret = ret.decode('ascii')
-    else:
-        ret = base64.b64encode(starting_string)
-
-    return bool(ret), ret
-
-
 def nop(format_chained=True, chained=None, chained_status=None):
     """
     This function just returns the chained value. It is a nop/no operation.
@@ -633,3 +601,18 @@ def nop(format_chained=True, chained=None, chained_status=None):
     returner on the nop operation to just return the True values.
     """
     return chained
+
+
+def encode_base64(starting_string, format_chained=True, chained=None, chained_status=None):
+    """
+    Given a string, base64 encode it and return it.
+
+    By default, ``starting_string`` will have ``.format()`` called on it
+    with ``chained`` as the only argument. (So, use ``{0}`` in your pattern to
+    substitute the chained value.) If you want to avoid having to escape curly braces,
+    set ``format_chained=False``.
+
+    The first return value (status) will be False only if an error will occur.
+    """
+    return utils_encode_base64(starting_string, format_chained=format_chained,
+        chained=chained, chained_status=chained_status)

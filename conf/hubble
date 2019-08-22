@@ -149,6 +149,12 @@ fileserver_backend:
 #Set log level
 log_level: info
 
+# Set HTTPS proxy which should be used to communicate with AzureFS and Splunk server
+# Simple 'proxy' keyword cannot be used as it conflict's with salt's loader.py in-built behavior
+# Only domain name or IP should be used. Example: 10.10.10.10:4444 or xyz.com:4444
+#https_proxy: myawesomeproxy.example.com:1234
+
+
 ## If you are instead using the slack returner, you'll need a block similar to
 ## this:
 

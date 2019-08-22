@@ -147,6 +147,7 @@ class HEC(object):
         self.currentByteLength = 0
         self.server_uri = []
 
+        # If 'proxy' isn't specified in splunk config block, check if 'https_proxy' is set.
         proxy =  proxy or __opts__.get('https_proxy', None)
         if proxy and http_event_server_ssl:
             self.proxy = 'https://{0}'.format(proxy)

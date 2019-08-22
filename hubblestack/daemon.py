@@ -786,7 +786,6 @@ def refresh_grains(initial=False):
     hubblestack.hec.opt.__grains__ = __grains__
     hubblestack.hec.opt.__salt__ = __salt__
     hubblestack.hec.opt.__opts__ = __opts__
-    hubblestack.hec.obj.__opts__ = __opts__
 
     hubblestack.splunklogging.__grains__ = __grains__
     hubblestack.splunklogging.__salt__ = __salt__

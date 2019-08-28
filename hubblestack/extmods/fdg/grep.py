@@ -38,7 +38,7 @@ def file(path, pattern, grep_args=None, format_chained=True, chained=None, chain
         path = path.format(chained)
     if grep_args is None:
         grep_args = []
-    ret = _grep(pattern=pattern, path=path, *grep_args)
+    ret = _grep(pattern, path=path, args=grep_args)
     status = bool(ret)
 
     return status, ret
@@ -73,16 +73,13 @@ def stdin(pattern, starting_string=None, grep_args=None,
 
     if grep_args is None:
         grep_args = []
-    ret = _grep(pattern=pattern, string=chained, *grep_args)
+    ret = _grep(pattern, string=chained, args=grep_args)
     status = bool(ret)
 
     return status, ret
 
 
-def _grep(pattern,
-          path=None,
-          string=None,
-          *args):
+def _grep(pattern, path=None, string=None, args=None):
     """
     Grep for a string in the specified file or string
 
@@ -105,7 +102,7 @@ def _grep(pattern,
         String to search
 
     args
-        Additional command-line flags to pass to the grep command. For example:
+        Optionally pass a list of flags to pass to the grep command. For example:
         ``-v`` or ``-i`` or ``-B2``
 .. note::
             The options should come after a double-dash (as shown in the
@@ -117,9 +114,9 @@ def _grep(pattern,
     .. code-block:: bash
 
         salt '*' file.grep /etc/passwd nobody
-        salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr -- -i
-        salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr -- -i -B2
-        salt '*' file.grep "/etc/sysconfig/network-scripts/*" ipaddr -- -i -l
+        salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr '[-i, -B2]'
+        salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr '[-i, -B2]'
+        salt '*' file.grep "/etc/sysconfig/network-scripts/*" ipaddr '[-i, -B2]'
     """
     if path:
         path = os.path.expanduser(path)

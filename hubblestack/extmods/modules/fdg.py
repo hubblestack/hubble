@@ -123,9 +123,10 @@ import salt.loader
 import salt.utils
 from salt.exceptions import CommandExecutionError
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 __fdg__ = None
 __returners__ = None
+RETURNER_ID_BLOCK = None
 
 
 def fdg(fdg_file, starting_chained=None):
@@ -171,9 +172,13 @@ def fdg(fdg_file, starting_chained=None):
                                      pack={'__salt__': __salt__,
                                            '__grains__': __grains__})
 
+    # RETURNER_ID_BLOCK is used for intermediate returns. We use a global
+    # so that we don't have to pass new arguments everywhere
+    global RETURNER_ID_BLOCK
+    RETURNER_ID_BLOCK = (fdg_file, str(starting_chained))
     # Recursive execution of the blocks
     ret = _fdg_execute('main', block_data, chained=starting_chained)
-    return (fdg_file, str(starting_chained)), ret
+    return RETURNER_ID_BLOCK, ret
 
 
 def top(fdg_topfile='salt://fdg/top.fdg'):
@@ -232,7 +237,7 @@ def _fdg_execute(block_id, block_data, chained=None, chained_status=None):
     Recursive function which executes a block and any blocks chained by that
     block (by calling itself).
     """
-    LOG.debug('Executing fdg block with id %s and chained value %s', block_id, chained)
+    log.debug('Executing fdg block with id %s and chained value %s', block_id, chained)
     block = block_data.get(block_id)
 
     _check_block(block, block_id)
@@ -241,7 +246,7 @@ def _fdg_execute(block_id, block_data, chained=None, chained_status=None):
     status, ret = __fdg__[block['module']](*block.get('args', []), chained=chained,
                                            chained_status=chained_status, **block.get('kwargs', {}))
 
-    LOG.debug('fdg execution "%s" returned %s', block_id, (status, ret))
+    log.debug('fdg execution "%s" returned %s', block_id, (status, ret))
 
     if 'return' in block:
         returner = block['return']
@@ -249,25 +254,25 @@ def _fdg_execute(block_id, block_data, chained=None, chained_status=None):
         returner = None
 
     if 'xpipe_on_true' in block and status:
-        LOG.debug('Piping via chaining keyword xpipe_on_true.')
+        log.debug('Piping via chaining keyword xpipe_on_true.')
         return _xpipe(ret, status, block_data, block['xpipe_on_true'], returner)
     elif 'xpipe_on_false' in block and not status:
-        LOG.debug('Piping via chaining keyword xpipe_on_false.')
+        log.debug('Piping via chaining keyword xpipe_on_false.')
         return _xpipe(ret, status, block_data, block['xpipe_on_false'], returner)
     elif 'pipe_on_true' in block and status:
-        LOG.debug('Piping via chaining keyword pipe_on_true.')
+        log.debug('Piping via chaining keyword pipe_on_true.')
         return _pipe(ret, status, block_data, block['pipe_on_true'], returner)
     elif 'pipe_on_false' in block and not status:
-        LOG.debug('Piping via chaining keyword pipe_on_false.')
+        log.debug('Piping via chaining keyword pipe_on_false.')
         return _pipe(ret, status, block_data, block['pipe_on_false'], returner)
     elif 'xpipe' in block:
-        LOG.debug('Piping via chaining keyword xpipe.')
+        log.debug('Piping via chaining keyword xpipe.')
         return _xpipe(ret, status, block_data, block['xpipe'], returner)
     elif 'pipe' in block:
-        LOG.debug('Piping via chaining keyword pipe.')
+        log.debug('Piping via chaining keyword pipe.')
         return _pipe(ret, status, block_data, block['pipe'], returner)
     else:
-        LOG.debug('No valid chaining keyword matched. Returning.')
+        log.debug('No valid chaining keyword matched. Returning.')
         if returner:
             _return((ret, status), returner)
         return ret, status
@@ -310,9 +315,9 @@ def _return(data, returner):
 
     returner += '.returner'
     if returner not in __returners__:
-        LOG.error('Could not find %s returner.', returner)
+        log.error('Could not find %s returner.', returner)
         return False
-    LOG.debug('Returning job data to %s', returner)
+    log.debug('Returning job data to %s', returner)
     returner_ret = {'id': __grains__['id'],
                     'jid': salt.utils.jid.gen_jid(__opts__),
                     'fun': 'fdg.fdg',
@@ -358,7 +363,7 @@ def _get_top_data(topfile):
     cached_topfile = __salt__['cp.cache_file'](topfile)
 
     if not cached_topfile:
-        LOG.debug('FDG topfile %s not found from fileserver. Aborting.', topfile)
+        log.debug('FDG topfile %s not found from fileserver. Aborting.', topfile)
         return []
 
     try:

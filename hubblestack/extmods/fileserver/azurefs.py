@@ -412,6 +412,9 @@ def _get_container_service(container):
     blob_service = account.create_block_blob_service()
     if 'proxy' in container and len(container['proxy'].split(':')) == 2:
         blob_service.set_proxy(container['proxy'].split(':')[0], container['proxy'].split(':')[1])
+    # If 'proxy' isn't specified in container block, check if 'https_proxy' is set.
+    elif 'https_proxy' in __opts__ and len(__opts__['https_proxy'].split(':')) == 2:
+        blob_service.set_proxy(__opts__['https_proxy'].split(':')[0], __opts__['https_proxy'].split(':')[1])
     return blob_service
 
 

@@ -91,6 +91,9 @@ celerybeat-schedule
 
 # Visual Studio Code settings
 .vscode
+
+# PyCharm settings
+.idea/
 doc/_build
 
 # misc setup.py output

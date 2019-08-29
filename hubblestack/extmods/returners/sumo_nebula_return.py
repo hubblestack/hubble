@@ -42,6 +42,7 @@ def returner(ret):
         jid = ret['jid']
         fqdn = __grains__['fqdn']
         fqdn = fqdn if fqdn else minion_id
+        local_fqdn = __grains__.get('local_fqdn', __grains__['fqdn'])
         try:
             fqdn_ip4 = __grains__['fqdn_ip4'][0]
         except IndexError:
@@ -56,27 +57,27 @@ def returner(ret):
             return
         else:
             for query in data:
-                for key, value in query.items():
-                    if key == 'query_result':
-                        for d in value['data']:
-                            event = {}
-                            event.update({'query': query['query_name']})
-                            event.update({'job_id': jid})
-                            event.update({'minion_id': minion_id})
-                            event.update({'dest_host': fqdn})
-                            event.update({'dest_ip': fqdn_ip4})
-                            event.update(cloud_details)
-                            event.update(d)
-                            event_time = d.get('time', '')
-                            try:
-                                if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(
-                                        float(event_time))).days > 365:
-                                    event_time = ''
-                            except:
-                                event_time = ''
-                            finally:
-                                rdy = json.dumps(event)
-                                requests.post('{}/'.format(sumo_nebula_return), rdy)
+                for query_name, query_results in query.iteritems():
+                    if 'data' not in query_results:
+                        query_results['data'] = [{'error': 'result missing'}]
+                    for query_result in query_results['data']:
+                        event = {}
+                        event.update(query_result)
+                        event.update({'query': query_name})
+                        event.update({'job_id': jid})
+                        event.update({'minion_id': minion_id})
+                        event.update({'dest_host': fqdn})
+                        event.update({'dest_ip': fqdn_ip4})
+                        event.update({'dest_fqdn': local_fqdn})
+                        event.update({'system_uuid': __grains__.get('system_uuid')})
+
+                        event.update(cloud_details)
+                        try:
+                            rdy = json.dumps(event)
+                            requests.post('{}/'.format(sumo_nebula_return), rdy)
+                        except:
+                            print('Hit an exception trying to send to sumo! continuing')
+                            continue
     return
 
 

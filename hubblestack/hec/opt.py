@@ -36,11 +36,22 @@ def _get_splunk_options(space, modality, **kw):
 
     confg = __salt__['config.get']
 
+    # both index and token must be specified if at all overriding in /etc/hubble/hubble
+    # is taking place using the variables splunk_token and splunk_index
+
+    if bool(confg('splunk_token', None)) != bool(confg('splunk_index', None)):
+        raise Exception('Both index and token must be specified together or not '
+                        'specified at all in case of overriding')
+
+    # additionally overriding can be carried out using 'splunk_index', 'splunk_token' and 'splunk_port'
+    # in the /etc/hubble/hubble file
+    # these are given priority over the data in 'hubblestack:returner:splunk' block in the default config
+
     base_opts = {
-        'token': REQUIRED,
+        'token': confg('splunk_token', REQUIRED),
         'indexer': REQUIRED,
-        'index': REQUIRED,
-        'port': '8088',
+        'index': confg('splunk_index', REQUIRED),
+        'port': confg('splunk_port', '8088'),
         'custom_fields': [],
         'sourcetype': 'hubble_log',
         'http_event_server_ssl': True,
@@ -69,7 +80,14 @@ def _get_splunk_options(space, modality, **kw):
             for k in opt:
                 j = nicknames.get(k, k)
                 if j in final_opts:
-                    final_opts[j] = opt[k]
+                    # if j is one of the args that can be overridden and has been provided then do not update it
+                    if j in {'token', 'index', 'port'}:
+                        if not bool(confg("splunk_" + j, None)):
+                            final_opts[j] = opt[k]
+                            # print final_opts
+                    else:
+                        final_opts[j] = opt[k]
+
             if REQUIRED in final_opts.values():
                 raise Exception('{0} must be specified in the {1} configs!'.format(req, space))
             ret.append(final_opts)
@@ -118,7 +136,6 @@ def get_splunk_options(*spaces, **kw):
 
        get_splunk_options(sourcetype_nebula='blah', _nick={'sourcetype_nebula': 'sourcetype'})
        [ { ... 'sourcetype': 'hubble_osquery' ... } ]
-
     """
     if not spaces:
         spaces = ['hubblestack:returner:splunk']

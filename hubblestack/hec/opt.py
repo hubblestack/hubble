@@ -30,17 +30,38 @@ REQUIRED = Required()
 del Required
 
 MODALITIES = ('grains.get','config.get',) # search in grains first, fallback to config.get
+options_for_grains_config = {'token', 'index', 'port'}
 
 def _get_splunk_options(space, modality, **kw):
     ret = list()
 
     confg = __salt__['config.get']
 
+    # both index and token must be specified if at all overriding in /etc/hubble/hubble
+    # is taking place using the variables splunk_token and splunk_index
+
+    if bool(confg('splunk_token', None)) != bool(confg('splunk_index', None)):
+        raise Exception('Both index and token must be specified together or not '
+                        'specified at all in case of overriding')
+
+    if confg('splunk_token', None) and not str(confg('splunk_token', None)).strip():
+        raise Exception('splunk_token cannot be an empty field')
+
+    if confg('splunk_index', None) and not str(confg('splunk_index', None)).strip():
+        raise Exception('splunk_index cannot be an empty field')
+
+    if confg('splunk_port', None) and not str(confg('splunk_port', None)).strip():
+        raise Exception('splunk_port cannot be an empty field')
+
+    # additionally overriding can be carried out using 'splunk_index', 'splunk_token' and 'splunk_port'
+    # in the /etc/hubble/hubble file
+    # these are given priority over the data in 'hubblestack:returner:splunk' block in the default config
+
     base_opts = {
-        'token': REQUIRED,
+        'token': confg('splunk_token', REQUIRED),
         'indexer': REQUIRED,
-        'index': REQUIRED,
-        'port': '8088',
+        'index': confg('splunk_index', REQUIRED),
+        'port': confg('splunk_port', '8088'),
         'custom_fields': [],
         'sourcetype': 'hubble_log',
         'http_event_server_ssl': True,
@@ -61,16 +82,32 @@ def _get_splunk_options(space, modality, **kw):
     req = [ k for k in base_opts if base_opts[k] is REQUIRED ]
 
     sfr = __salt__[modality](space)
+
     if sfr:
         if not isinstance(sfr, list):
             sfr = [sfr]
         for opt in sfr:
             final_opts = base_opts.copy()
-            for k in opt:
+            if modality is 'grains.get':
+                options_for_grains_config &= set(opt.keys())
+                options = options_for_grains_config
+            elif 'grains.get' in MODALITIES:
+                options = set(opt.keys()) - options_for_grains_config
+            else:
+                options = set(opt.keys())
+            for k in options:
                 j = nicknames.get(k, k)
                 if j in final_opts:
-                    final_opts[j] = opt[k]
+                    # if j is one of the args that can be overridden and has been provided then do not update it
+                    if j in options_for_grains_config:
+                        if not confg("splunk_" + j, None):
+                            final_opts[j] = opt[k]
+                    else:
+                        final_opts[j] = opt[k]
+
             if REQUIRED in final_opts.values():
+                    final_opts[j] = opt[k]
+            if modality is 'config.get' and REQUIRED in final_opts.values():
                 raise Exception('{0} must be specified in the {1} configs!'.format(req, space))
             ret.append(final_opts)
 
@@ -118,7 +155,6 @@ def get_splunk_options(*spaces, **kw):
 
        get_splunk_options(sourcetype_nebula='blah', _nick={'sourcetype_nebula': 'sourcetype'})
        [ { ... 'sourcetype': 'hubble_osquery' ... } ]
-
     '''
     if not spaces:
         spaces = ['hubblestack:returner:splunk']

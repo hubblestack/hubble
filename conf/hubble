@@ -130,6 +130,13 @@ fileserver_backend:
 ## In order for the sample scheduler config to work, you must configure the
 ## returners which are being used. In the case of the Splunk returners, you
 ## must add index, token, and endpoint information
+## this can be specified in the hubblestack:returner:splunk space or can be overridden
+## overriding can be done using the 'splunk_index', 'splunk_token' and 'splunk_port' as shown below
+## whenever overriding make sure that both index and token are specified or not specified at all
+
+#splunk_token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+#splunk_index: hubble
+#splunk_port: 8088
 
 #hubblestack:
 #  returner:

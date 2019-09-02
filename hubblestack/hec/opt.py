@@ -30,6 +30,7 @@ REQUIRED = Required()
 del Required
 
 MODALITIES = ('grains.get','config.get',) # search in grains first, fallback to config.get
+options_for_grains_config = {'token', 'index', 'port'}
 
 def _get_splunk_options(space, modality, **kw):
     ret = list()
@@ -72,6 +73,7 @@ def _get_splunk_options(space, modality, **kw):
     req = [ k for k in base_opts if base_opts[k] is REQUIRED ]
 
     sfr = __salt__[modality](space)
+
     if sfr:
         if not isinstance(sfr, list):
             sfr = [sfr]
@@ -137,16 +139,17 @@ def get_splunk_options(*spaces, **kw):
        get_splunk_options(sourcetype_nebula='blah', _nick={'sourcetype_nebula': 'sourcetype'})
        [ { ... 'sourcetype': 'hubble_osquery' ... } ]
     """
+    ret = []
     if not spaces:
         spaces = ['hubblestack:returner:splunk']
 
     for space in spaces:
         for modality in MODALITIES:
             ret = _get_splunk_options(space, modality, **copy.deepcopy(kw))
-            if ret:
-                return ret
+            # if ret:
+            #     return ret
 
-    return []
+    return ret
 
 def make_hec_args(opts):
     if isinstance(opts, (tuple,list)):

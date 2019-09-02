@@ -84,9 +84,8 @@ def _get_splunk_options(space, modality, **kw):
                 if j in final_opts:
                     # if j is one of the args that can be overridden and has been provided then do not update it
                     if j in {'token', 'index', 'port'}:
-                        if not bool(confg("splunk_" + j, None)):
+                        if not confg("splunk_" + j, None):
                             final_opts[j] = opt[k]
-                            # print final_opts
                     else:
                         final_opts[j] = opt[k]
 
@@ -139,17 +138,16 @@ def get_splunk_options(*spaces, **kw):
        get_splunk_options(sourcetype_nebula='blah', _nick={'sourcetype_nebula': 'sourcetype'})
        [ { ... 'sourcetype': 'hubble_osquery' ... } ]
     """
-    ret = []
     if not spaces:
         spaces = ['hubblestack:returner:splunk']
 
     for space in spaces:
         for modality in MODALITIES:
             ret = _get_splunk_options(space, modality, **copy.deepcopy(kw))
-            # if ret:
-            #     return ret
+            if ret:
+                return ret
 
-    return ret
+    return []
 
 def make_hec_args(opts):
     if isinstance(opts, (tuple,list)):

@@ -83,7 +83,7 @@ def _get_splunk_options(space, modality, **kw):
                 j = nicknames.get(k, k)
                 if j in final_opts:
                     # if j is one of the args that can be overridden and has been provided then do not update it
-                    if j in {'token', 'index', 'port'}:
+                    if j in options_for_grains_config:
                         if not confg("splunk_" + j, None):
                             final_opts[j] = opt[k]
                     else:

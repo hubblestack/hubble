@@ -9,7 +9,8 @@ MODULE_TO_DEFAULTS = {'pulsar': Defaults(port='12202', sourcetype='hubble_fim'),
                       'nova': Defaults(port='12201', sourcetype='hubble_audit'),
                       'nebula': Defaults(port='12022', sourcetype='hubble_osquery')}
 
-def _get_options(module_name):
+
+def get_options(module_name):
     """
     Function that aggregates the configs for graylog and returns them as a list of dicts.
     ``module_name``: a string that tells the module from which the function is called, should be

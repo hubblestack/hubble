@@ -49,16 +49,16 @@ def query(query_sql, osquery_args=None, osquery_path=None, format_chained=True, 
         query_sql = query_sql.format(chained)
     if osquery_args is None:
         osquery_args = []
-    return _osquery(query_sql, *osquery_args, osquery_path=osquery_path)
+    return _osquery(query_sql, args=osquery_args, osquery_path=osquery_path)
 
 
-def _osquery(query_sql, osquery_path=None, *args):
-    '''
+def _osquery(query_sql, osquery_path=None, args=None):
+    """
     Format the osquery command and run it
 
     Returns a tuple, (status, ret) where status is True if the retcode is 0,
     False otherwise, and ``ret`` is the stdout of the osquery command
-    '''
+    """
     MAX_FILE_SIZE = 104857600
     if not query_sql:
         return False, ''
@@ -84,7 +84,8 @@ def _osquery(query_sql, osquery_path=None, *args):
             log.error('osquery binary not found: {0}'.format(osquery_path))
             return False, ''
         cmd = [osquery_path, '--read_max', MAX_FILE_SIZE, '--json', query_sql]
-    cmd.extend(args)
+    if isinstance(args, (list,tuple)):
+        cmd.extend(args)
 
     # Run the command
     res = __salt__['cmd.run_all'](cmd, timeout=10000, python_shell=False)

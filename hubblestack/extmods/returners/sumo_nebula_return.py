@@ -22,6 +22,9 @@ import json
 import time
 import requests
 from datetime import datetime
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def returner(ret):
@@ -76,7 +79,7 @@ def returner(ret):
                             rdy = json.dumps(event)
                             requests.post('{}/'.format(sumo_nebula_return), rdy)
                         except:
-                            print('Hit an exception trying to send to sumo! continuing')
+                            log.error('Hit an exception trying to send to sumo! continuing')
                             continue
     return
 

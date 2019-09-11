@@ -40,7 +40,7 @@ def _get_splunk_options(space, modality, **kw):
     # both index and token must be specified if at all overriding in /etc/hubble/hubble
     # is taking place using the variables splunk_token and splunk_index
 
-    if bool(confg('splunk_token', None)) != bool(confg('splunk_index', None)):
+    if bool(confg('splunk_token', "").strip()) != bool(confg('splunk_index', "").strip()):
         raise Exception('Both index and token must be specified together or not '
                         'specified at all in case of overriding')
 
@@ -84,7 +84,7 @@ def _get_splunk_options(space, modality, **kw):
                 if j in final_opts:
                     # if j is one of the args that can be overridden and has been provided then do not update it
                     if j in options_for_grains_config:
-                        if not confg("splunk_" + j, None):
+                        if not confg("splunk_" + j, "").strip():
                             final_opts[j] = opt[k]
                     else:
                         final_opts[j] = opt[k]

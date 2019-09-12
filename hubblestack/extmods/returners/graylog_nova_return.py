@@ -26,156 +26,50 @@ import json
 import logging
 import requests
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 
 def returner(ret):
     """
     Aggregates the configuration options related to graylog and returns a dict containing them.
     """
+    data = ret['return']
+    # sanity check
+    if not isinstance(data, dict):
+        LOG.error('Data sent to graylog_nova_return was not formed as a dict:\n%s', data)
+        return
+
     opts_list = _get_options()
 
     # Get cloud details
     cloud_details = __grains__.get('cloud_details', {})
 
+    args = _build_args(ret)
+
     for opts in opts_list:
-        proxy = opts['proxy']
-        timeout = opts['timeout']
-        custom_fields = opts['custom_fields']
+        # Failure data
+        _publish_data(args=args, checks=data.get(['Failure'], []), check_result='Failure',
+                      cloud_details=cloud_details, opts=opts)
 
-        gelfhttp = opts['gelfhttp']
-        port = opts['port']
-        data = ret['return']
-        minion_id = ret['id']
-        jid = ret['jid']
-        fqdn = __grains__['fqdn']
-        # Sometimes fqdn is blank. If it is, replace it with minion_id
-        fqdn = fqdn if fqdn else minion_id
-        try:
-            fqdn_ip4 = __grains__['fqdn_ip4'][0]
-        except IndexError:
-            fqdn_ip4 = __grains__['ipv4'][0]
-        if fqdn_ip4.startswith('127.'):
-            for ip4_addr in __grains__['ipv4']:
-                if ip4_addr and not ip4_addr.startswith('127.'):
-                    fqdn_ip4 = ip4_addr
-                    break
+        # Success data
+        _publish_data(args=args, checks=data.get(['Success'], []), check_result='Success',
+                      cloud_details=cloud_details, opts=opts)
 
-        args = {'check_id': check_id,
-                    'job_id': jid,
-                    'minion_id': minion_id,
-                    'fqdn': fqdn,
-                    'fqdn_ip4': fqdn_ip4
-        if not isinstance(data, dict):
-            log.error('Data sent to graylog_nova_return was not formed as a '
-                      'dict:\n{0}'.format(data))
-            return
-
-        for fai in data.get('Failure', []):
-            check_id = fai.keys()[0]
-            args = {'check_result': 'Failure',
-}
-            event = {
-            'check_result': 'Failure',
-            'check_id': check_id,
-            'job_id': jid}
-            if not isinstance(fai[check_id], dict):
-                event.update({'description': fai[check_id]})
-            elif 'description' in fai[check_id]:
-                for key, value in fai[check_id].iteritems():
-                    if key not in ['tag']:
-                        event[key] = value
-            event.update({'minion_id': minion_id,
-            'dest_host': fqdn,
-            'dest_ip': fqdn_ip4})
-
-            event.update(cloud_details)
-
-            for custom_field in custom_fields:
-                custom_field_name = 'custom_' + custom_field
-                custom_field_value = __salt__['config.get'](custom_field, '')
-                if isinstance(custom_field_value, str):
-                    event.update({custom_field_name: custom_field_value})
-                elif isinstance(custom_field_value, list):
-                    custom_field_value = ','.join(custom_field_value)
-                    event.update({custom_field_name: custom_field_value})
-
-            payload = {'host': fqdn,
-                       '_sourcetype': opts['sourcetype'],
-                       'short_message': 'hubblestack',
-                       'hubblemsg': event}
-
-            rdy = json.dumps(payload)
-            requests.post('{}:{}/gelf'.format(gelfhttp, port), rdy)
-
-        for suc in data.get('Success', []):
-            check_id = suc.keys()[0]
-            event = {}
-            event.update({'check_result': 'Success'})
-            event.update({'check_id': check_id})
-            event.update({'job_id': jid})
-            if not isinstance(suc[check_id], dict):
-                event.update({'description': suc[check_id]})
-            elif 'description' in suc[check_id]:
-                for key, value in suc[check_id].iteritems():
-                    if key not in ['tag']:
-                        event[key] = value
-            event.update({'minion_id': minion_id})
-            event.update({'dest_host': fqdn})
-            event.update({'dest_ip': fqdn_ip4})
-
-            event.update(cloud_details)
-
-            for custom_field in custom_fields:
-                custom_field_name = 'custom_' + custom_field
-                custom_field_value = __salt__['config.get'](custom_field, '')
-                if isinstance(custom_field_value, str):
-                    event.update({custom_field_name: custom_field_value})
-                elif isinstance(custom_field_value, list):
-                    custom_field_value = ','.join(custom_field_value)
-                    event.update({custom_field_name: custom_field_value})
-
-            payload = {}
-            payload.update({'host': fqdn})
-            payload.update({'_sourcetype': opts['sourcetype']})
-            payload.update({'short_message': 'hubblestack'})
-            payload.update({'hubblemsg': event})
-
-            rdy = json.dumps(payload)
-            requests.post('{}:{}/gelf'.format(gelfhttp, port), rdy)
-
+        # Compliance data
         if data.get('Compliance', None):
-            payload = {}
-            event = {}
-            event.update({'job_id': jid})
-            event.update({'compliance_percentage': data['Compliance']})
-            event.update({'minion_id': minion_id})
-            event.update({'dest_host': fqdn})
-            event.update({'dest_ip': fqdn_ip4})
-
-            event.update(cloud_details)
-
-            for custom_field in custom_fields:
-                custom_field_name = 'custom_' + custom_field
-                custom_field_value = __salt__['config.get'](custom_field, '')
-                if isinstance(custom_field_value, str):
-                    event.update({custom_field_name: custom_field_value})
-                elif isinstance(custom_field_value, list):
-                    custom_field_value = ','.join(custom_field_value)
-                    event.update({custom_field_name: custom_field_value})
-
-            payload.update({'host': fqdn})
-            payload.update({'_sourcetype': opts['sourcetype']})
-            payload.update({'short_message': 'hubblestack'})
-            payload.update({'hubblemsg': event})
-
-            rdy = json.dumps(payload)
-            requests.post('{}:{}/gelf'.format(gelfhttp, port), rdy)
+            args['compliance_percentage'] = data['Compliance']
+            event = _generate_event(args=args, cloud_details=cloud_details,
+                                    custom_fields=opts['custom_fields'], compliance=True)
+            _publish_event(fqdn=args['fqdn'], sourcetype=opts['sourcetype'], event=event,
+                           gelfhttp=opts['gelfhttp'], port=opts['port'])
 
     return
 
 
 def _get_options():
+    """
+    Function that aggregates the configs for graylog and returns them as a list of dicts.
+    """
     if __salt__['config.get']('hubblestack:returner:graylog'):
         returner_opts = __salt__['config.get']('hubblestack:returner:graylog')
         if not isinstance(returner_opts, list):
@@ -212,32 +106,86 @@ def _process_opt(opt):
             'timeout': opt.get('timeout', 9.05)}
 
 
-def _generate_event(data, args, cloud_details, opt, ret):
+def _generate_event(args, cloud_details, custom_fields, compliance=False, data=None):
     """
     Helper function that builds and returns the event dict
     """
-    event = {'check_result': args['check_result'],
-             'check_id': args['check_id'],
-             'job_id': args['job_id']}
-    if not isinstance(data[args['check_id']], dict):
-        event.update({'description': data[args['check_id']]})
-    elif 'description' in data[args['check_id']]:
-        for key, value in data[args['check_id']].iteritems():
-            if key not in ['tag']:
-                event[key] = value
+    event = {'job_id': args['job_id']}
+    if not compliance:
+        # compliance checks don't require all this data
+        event.update({'check_result': args['check_result'],
+                      'check_id': args['check_id']})
+        if not isinstance(data[args['check_id']], dict):
+            event.update({'description': data[args['check_id']]})
+        elif 'description' in data[args['check_id']]:
+            for key, value in data[args['check_id']].iteritems():
+                if key not in ['tag']:
+                    event[key] = value
+    else:
+        event['compliance_percentage'] = args['compliance_percentage']
     event.update({'minion_id': args['minion_id'],
                   'dest_host': args['fqdn'],
                   'dest_ip': args['fqdn_ip4']})
 
     event.update(cloud_details)
 
-    for custom_field in opt['custom_fields']:
+    for custom_field in custom_fields:
         custom_field_name = 'custom_' + custom_field
         custom_field_value = __salt__['config.get'](custom_field, '')
-        if isinstance(custom_field_value, str):
-            event.update({custom_field_name: custom_field_value})
-        elif isinstance(custom_field_value, list):
+        if isinstance(custom_field_value, list):
             custom_field_value = ','.join(custom_field_value)
+        if isinstance(custom_field_value, str):
             event.update({custom_field_name: custom_field_value})
 
     return event
+
+
+def _publish_event(fqdn, sourcetype, event, gelfhttp, port):
+    """
+    Helper function that builds the payload and publishes it to graylog using POST
+    """
+    payload = {'host': fqdn,
+               '_sourcetype': sourcetype,
+               'short_message': 'hubblestack',
+               'hubblemsg': event}
+
+    rdy = json.dumps(payload)
+    requests.post('{}:{}/gelf'.format(gelfhttp, port), rdy)
+
+
+def _build_args(ret):
+    """
+    Helper function that builds the args that will be passed on to the event - cleaner way of
+    processing the variables we care about
+    """
+    # Sometimes fqdn is blank. If it is, replace it with minion_id
+    fqdn = __grains__['fqdn'] if __grains__['fqdn'] else ret['id']
+    try:
+        fqdn_ip4 = __grains__['fqdn_ip4'][0]
+    except IndexError:
+        fqdn_ip4 = __grains__['ipv4'][0]
+    if fqdn_ip4.startswith('127.'):
+        for ip4_addr in __grains__['ipv4']:
+            if ip4_addr and not ip4_addr.startswith('127.'):
+                fqdn_ip4 = ip4_addr
+                break
+
+    return {'job_id': ret['jid'],
+            'minion_id': ret['id'],
+            'fqdn': fqdn,
+            'fqdn_ip4': fqdn_ip4}
+
+
+def _publish_data(args, checks, check_result, cloud_details, opts):
+    """
+    Helper function that goes over the failure/success checks and publishes the event to the
+    graylog server
+    """
+    for data in checks:
+        check_id = data.keys()[0]
+        args['check_result'] = check_result
+        args['check_id'] = check_id
+        event = _generate_event(data=data, args=args, cloud_details=cloud_details,
+                                custom_fields=opts['custom_fields'])
+        _publish_event(fqdn=args['fqdn'], sourcetype=opts['sourcetype'], event=event,
+                       gelfhttp=opts['gelfhttp'], port=opts['port'])

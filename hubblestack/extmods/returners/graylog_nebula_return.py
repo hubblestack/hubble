@@ -25,7 +25,6 @@ from __future__ import absolute_import
 
 import json
 import requests
-import hubblestack.extmods.returners.common.graylog as graylog
 
 
 def returner(ret):
@@ -36,7 +35,7 @@ def returner(ret):
     if not ret['return']:
         return
 
-    opts_list = graylog.get_options('nebula')
+    opts_list = _get_options()
 
     # Get cloud details
     cloud_details = __grains__.get('cloud_details', {})
@@ -53,7 +52,6 @@ def returner(ret):
                 break
 
     for opts in opts_list:
-
         for query in ret['return']:
             for query_name, value in query.items():
                 for query_data in value['data']:
@@ -93,3 +91,45 @@ def _generate_event(custom_fields, args, cloud_details, query_data):
             event.update({custom_field_name: custom_field_value})
 
     return event
+
+
+def _get_options():
+    """
+    Function that aggregates the configs for graylog and returns them as a list of dicts.
+    """
+    if __salt__['config.get']('hubblestack:returner:graylog'):
+        returner_opts = __salt__['config.get']('hubblestack:returner:graylog')
+        if not isinstance(returner_opts, list):
+            returner_opts = [returner_opts]
+        return [_process_opt(opt) for opt in returner_opts]
+
+    try:
+        graylog_opts = {
+            'gelfhttp': __salt__['config.get']('hubblestack:returner:graylog:gelfhttp'),
+            'sourcetype': __salt__['config.get']('hubblestack:nebula:returner:graylog:sourcetype'),
+            'custom_fields': __salt__['config.get'](
+                'hubblestack:nebula:returner:graylog:custom_fields', []),
+            'port': __salt__['config.get']('hubblestack:returner:graylog:port'),
+            'http_input_server_ssl': __salt__['config.get'](
+                'hubblestack:nebula:returner:graylog:gelfhttp_ssl', True),
+            'proxy': __salt__['config.get']('hubblestack:nebula:returner:graylog:proxy', {}),
+            'timeout': __salt__['config.get']('hubblestack:nebula:returner:graylog:timeout', 9.05)
+        }
+
+    except Exception:
+        return None
+
+    return [graylog_opts]
+
+
+def _process_opt(opt):
+    """
+    Helper function that extracts certain fields from the opt dict and assembles the processed dict
+    """
+    return {'gelfhttp': opt.get('gelfhttp'),
+            'port': str(opt.get('port', '12022')),
+            'custom_fields': opt.get('custom_fields', []),
+            'sourcetype': opt.get('sourcetype_nebula', 'hubble_osquery'),
+            'gelfhttp_ssl': opt.get('gelfhttp_ssl', True),
+            'proxy': opt.get('proxy', {}),
+            'timeout': opt.get('timeout', 9.05)}

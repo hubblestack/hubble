@@ -23,12 +23,15 @@ hubblestack:
 """
 
 import json
-import socket
+import logging
 import requests
+
+log = logging.getLogger(__name__)
 
 
 def returner(ret):
     """
+    Aggregates the configuration options related to graylog and returns a dict containing them.
     """
     opts_list = _get_options()
 
@@ -58,6 +61,11 @@ def returner(ret):
                     fqdn_ip4 = ip4_addr
                     break
 
+        args = {'check_id': check_id,
+                    'job_id': jid,
+                    'minion_id': minion_id,
+                    'fqdn': fqdn,
+                    'fqdn_ip4': fqdn_ip4
         if not isinstance(data, dict):
             log.error('Data sent to graylog_nova_return was not formed as a '
                       'dict:\n{0}'.format(data))
@@ -65,20 +73,21 @@ def returner(ret):
 
         for fai in data.get('Failure', []):
             check_id = fai.keys()[0]
-            payload = {}
-            event = {}
-            event.update({'check_result': 'Failure'})
-            event.update({'check_id': check_id})
-            event.update({'job_id': jid})
+            args = {'check_result': 'Failure',
+}
+            event = {
+            'check_result': 'Failure',
+            'check_id': check_id,
+            'job_id': jid}
             if not isinstance(fai[check_id], dict):
                 event.update({'description': fai[check_id]})
             elif 'description' in fai[check_id]:
                 for key, value in fai[check_id].iteritems():
                     if key not in ['tag']:
                         event[key] = value
-            event.update({'minion_id': minion_id})
-            event.update({'dest_host': fqdn})
-            event.update({'dest_ip': fqdn_ip4})
+            event.update({'minion_id': minion_id,
+            'dest_host': fqdn,
+            'dest_ip': fqdn_ip4})
 
             event.update(cloud_details)
 
@@ -91,17 +100,16 @@ def returner(ret):
                     custom_field_value = ','.join(custom_field_value)
                     event.update({custom_field_name: custom_field_value})
 
-            payload.update({'host': fqdn})
-            payload.update({'_sourcetype': opts['sourcetype']})
-            payload.update({'short_message': 'hubblestack'})
-            payload.update({'hubblemsg': event})
+            payload = {'host': fqdn,
+                       '_sourcetype': opts['sourcetype'],
+                       'short_message': 'hubblestack',
+                       'hubblemsg': event}
 
             rdy = json.dumps(payload)
             requests.post('{}:{}/gelf'.format(gelfhttp, port), rdy)
 
         for suc in data.get('Success', []):
             check_id = suc.keys()[0]
-            payload = {}
             event = {}
             event.update({'check_result': 'Success'})
             event.update({'check_id': check_id})
@@ -127,6 +135,7 @@ def returner(ret):
                     custom_field_value = ','.join(custom_field_value)
                     event.update({custom_field_name: custom_field_value})
 
+            payload = {}
             payload.update({'host': fqdn})
             payload.update({'_sourcetype': opts['sourcetype']})
             payload.update({'short_message': 'hubblestack'})
@@ -168,36 +177,67 @@ def returner(ret):
 
 def _get_options():
     if __salt__['config.get']('hubblestack:returner:graylog'):
-        graylog_opts = []
         returner_opts = __salt__['config.get']('hubblestack:returner:graylog')
         if not isinstance(returner_opts, list):
             returner_opts = [returner_opts]
-        for opt in returner_opts:
-            processed = {}
-            processed['gelfhttp'] = opt.get('gelfhttp')
-            processed['port'] = str(opt.get('port', '12201'))
-            processed['custom_fields'] = opt.get('custom_fields', [])
-            processed['sourcetype'] = opt.get('sourcetype_nova', 'hubble_audit')
-            processed['http_input_server_ssl'] = opt.get('gelfhttp_ssl', True)
-            processed['proxy'] = opt.get('proxy', {})
-            processed['timeout'] = opt.get('timeout', 9.05)
-            graylog_opts.append(processed)
-        return graylog_opts
-    else:
-        try:
-            port = __salt__['config.get']('hubblestack:returner:graylog:port')
-            user = __salt__['config.get']('hubblestack:returner:graylog:user')
-            gelfhttp = __salt__['config.get']('hubblestack:returner:graylog:gelfhttp')
-            sourcetype = __salt__['config.get']('hubblestack:returner:graylog:sourcetype')
-            custom_fields = __salt__['config.get']('hubblestack:returner:graylog:custom_fields', [])
-        except:
-            return None
+        return [_process_opt(opt) for opt in returner_opts]
+    try:
+        graylog_opts = {
+            'gelfhttp': __salt__['config.get']('hubblestack:returner:graylog:gelfhttp'),
+            'sourcetype': __salt__['config.get']('hubblestack:returner:graylog:sourcetype'),
+            'custom_fields': __salt__['config.get']('hubblestack:returner:graylog:custom_fields',
+                                                    []),
+            'port': __salt__['config.get']('hubblestack:returner:graylog:port'),
+            'user': __salt__['config.get']('hubblestack:returner:graylog:user'),
+            'http_input_server_ssl': __salt__['config.get'](
+                'hubblestack:nova:returner:graylog:gelfhttp_ssl', True),
+            'proxy': __salt__['config.get']('hubblestack:nova:returner:graylog:proxy', {}),
+            'timeout': __salt__['config.get']('hubblestack:nova:returner:graylog:timeout', 9.05)}
 
-        graylog_opts = {'gelfhttp': gelfhttp, 'sourcetype': sourcetype, 'custom_fields': custom_fields}
+    except Exception:
+        return None
+    return [graylog_opts]
 
-        gelfhttp_ssl = __salt__['config.get']('hubblestack:nova:returner:graylog:gelfhttp_ssl', True)
-        graylog_opts['http_input_server_ssl'] = gelfhttp_ssl
-        graylog_opts['proxy'] = __salt__['config.get']('hubblestack:nova:returner:graylog:proxy', {})
-        graylog_opts['timeout'] = __salt__['config.get']('hubblestack:nova:returner:graylog:timeout', 9.05)
 
-        return [graylog_opts]
+def _process_opt(opt):
+    """
+    Helper function that extracts certain fields from the opt dict and assembles the processed dict
+    """
+    return {'gelfhttp': opt.get('gelfhttp'),
+            'port': str(opt.get('port', '12201')),
+            'custom_fields': opt.get('custom_fields', []),
+            'sourcetype': opt.get('sourcetype_nova', 'hubble_audit'),
+            'http_input_server_ssl': opt.get('gelfhttp_ssl', True),
+            'proxy': opt.get('proxy', {}),
+            'timeout': opt.get('timeout', 9.05)}
+
+
+def _generate_event(data, args, cloud_details, opt, ret):
+    """
+    Helper function that builds and returns the event dict
+    """
+    event = {'check_result': args['check_result'],
+             'check_id': args['check_id'],
+             'job_id': args['job_id']}
+    if not isinstance(data[args['check_id']], dict):
+        event.update({'description': data[args['check_id']]})
+    elif 'description' in data[args['check_id']]:
+        for key, value in data[args['check_id']].iteritems():
+            if key not in ['tag']:
+                event[key] = value
+    event.update({'minion_id': args['minion_id'],
+                  'dest_host': args['fqdn'],
+                  'dest_ip': args['fqdn_ip4']})
+
+    event.update(cloud_details)
+
+    for custom_field in opt['custom_fields']:
+        custom_field_name = 'custom_' + custom_field
+        custom_field_value = __salt__['config.get'](custom_field, '')
+        if isinstance(custom_field_value, str):
+            event.update({custom_field_name: custom_field_value})
+        elif isinstance(custom_field_value, list):
+            custom_field_value = ','.join(custom_field_value)
+            event.update({custom_field_name: custom_field_value})
+
+    return event

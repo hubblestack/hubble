@@ -21,6 +21,9 @@ hubblestack:
 import json
 import socket
 import requests
+import logging
+
+log = logging.getLogger(__name__)
 
 
 def returner(ret):

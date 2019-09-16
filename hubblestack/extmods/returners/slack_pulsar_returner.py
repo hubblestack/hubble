@@ -62,16 +62,35 @@ import logging
 import urllib
 
 # pylint: disable=import-error,no-name-in-module,redefined-builtin
-from salt.ext.six.moves.urllib.parse import urljoin as _urljoin  # pylint: disable=import-error,no-name-in-module
+from salt.ext.six.moves.urllib.parse import urljoin as _urljoin
+# pylint: disable=import-error,no-name-in-module
 import salt.ext.six.moves.http_client
 # pylint: enable=import-error,no-name-in-module,redefined-builtin
 
 # Import Salt Libs
 import salt.returners
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 __virtualname__ = 'slack_pulsar'
+
+
+API_URL = 'https://slack.com'
+
+SLACK_FUNCTIONS = {
+    'rooms': {
+        'request': 'channels.list',
+        'response': 'channels',
+        },
+    'users': {
+        'request': 'users.list',
+        'response': 'members',
+        },
+    'message': {
+        'request': 'chat.postMessage',
+        'response': 'channel',
+        },
+}
 
 
 def _get_options(ret=None):
@@ -86,14 +105,14 @@ def _get_options(ret=None):
              'username': 'username',
              'as_user': 'as_user',
              'api_key': 'api_key',
-             }
+            }
 
     profile_attr = 'slack_profile'
 
     profile_attrs = {'from_jid': 'from_jid',
                      'api_key': 'api_key',
                      'api_version': 'api_key'
-                     }
+                    }
 
     _options = salt.returners.get_returner_options(__virtualname__,
                                                    ret,
@@ -135,35 +154,19 @@ def _query(function,
     ret = {'message': '',
            'res': True}
 
-    slack_functions = {
-        'rooms': {
-            'request': 'channels.list',
-            'response': 'channels',
-        },
-        'users': {
-            'request': 'users.list',
-            'response': 'members',
-        },
-        'message': {
-            'request': 'chat.postMessage',
-            'response': 'channel',
-        },
-    }
-
     if not api_key:
         try:
             options = __salt__['config.option']('slack')
             if not api_key:
                 api_key = options.get('api_key')
         except (NameError, KeyError, AttributeError):
-            log.error('No Slack api key found.')
+            LOG.error('No Slack api key found.')
             ret['message'] = 'No Slack api key found.'
             ret['res'] = False
             return ret
 
-    api_url = 'https://slack.com'
-    base_url = _urljoin(api_url, '/api/')
-    path = slack_functions.get(function).get('request')
+    base_url = _urljoin(API_URL, '/api/')
+    path = SLACK_FUNCTIONS.get(function).get('request')
     url = _urljoin(base_url, path, False)
 
     if not isinstance(args, dict):
@@ -189,7 +192,7 @@ def _query(function,
 
     if result.get('status', None) == salt.ext.six.moves.http_client.OK:
         _result = result['dict']
-        response = slack_functions.get(function).get('response')
+        response = SLACK_FUNCTIONS.get(function).get('response')
         if 'error' in _result:
             ret['message'] = _result['error']
             ret['res'] = False
@@ -198,18 +201,17 @@ def _query(function,
         return ret
     elif result.get('status', None) == salt.ext.six.moves.http_client.NO_CONTENT:
         return True
-    else:
-        log.debug(url)
-        log.debug(query_params)
-        log.debug(data)
-        log.debug(result)
-        _result = result['dict']
-        if 'error' in _result:
-            ret['message'] = _result['error']
-            ret['res'] = False
-            return ret
-        ret['message'] = _result.get(response)
+    LOG.debug(url)
+    LOG.debug(query_params)
+    LOG.debug(data)
+    LOG.debug(result)
+    _result = result['dict']
+    if 'error' in _result:
+        ret['message'] = _result['error']
+        ret['res'] = False
         return ret
+    ret['message'] = _result.get('response')
+    return ret
 
 
 def _post_message(channel,
@@ -241,11 +243,9 @@ def _post_message(channel,
                     header_dict={'Content-Type': 'application/x-www-form-urlencoded'},
                     data=urllib.urlencode(parameters))
 
-    log.debug('result {0}'.format(result))
-    if result:
-        return True
-    else:
-        return False
+    LOG.debug('result %s', result)
+
+    return bool(result)
 
 
 def returner(ret):
@@ -261,20 +261,20 @@ def returner(ret):
     api_key = _options.get('api_key')
 
     if not channel:
-        log.error('slack_pulsar.channel not defined in salt config')
-        return
+        LOG.error('slack_pulsar.channel not defined in salt config')
+        return None
 
     if not username:
-        log.error('slack_pulsar.username not defined in salt config')
-        return
+        LOG.error('slack_pulsar.username not defined in salt config')
+        return None
 
     if not as_user:
-        log.error('slack_pulsar.as_user not defined in salt config')
-        return
+        LOG.error('slack_pulsar.as_user not defined in salt config')
+        return None
 
     if not api_key:
-        log.error('slack_pulsar.api_key not defined in salt config')
-        return
+        LOG.error('slack_pulsar.api_key not defined in salt config')
+        return None
 
     if ret and isinstance(ret, dict):
         message = ('id: {0}\r\n'
@@ -282,12 +282,12 @@ def returner(ret):
                                              pprint.pformat(ret.get('return')))
     elif ret and isinstance(ret, list):
         message = 'id: {0}\r\n'
-        for r in ret:
-            message += pprint.pformat(r.get('return'))
+        for return_data in ret:
+            message += pprint.pformat(return_data.get('return'))
             message += '\r\n'
     else:
-        log.error('Data sent to slack_pulsar formatted incorrectly')
-        return
+        LOG.error('Data sent to slack_pulsar formatted incorrectly')
+        return None
 
     slack = _post_message(channel,
                           message,

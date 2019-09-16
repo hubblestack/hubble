@@ -137,7 +137,7 @@ def _process_opt(opt):
 
 def _build_linux_actions():
     """
-    Helpet function that builds the actions defaultdict for Linux - pulsar
+    Helper function that builds the actions defaultdict for Linux - pulsar
     """
     actions = defaultdict(lambda: 'unknown')
     actions['IN_ACCESS'] = 'read'
@@ -160,7 +160,7 @@ def _build_linux_actions():
 
 def _build_windows_actions():
     """
-    Helpet function that builds the actions defaultdict for Windows - win_pulsar
+    Helper function that builds the actions defaultdict for Windows - win_pulsar
     """
     actions = defaultdict(lambda: 'unknown')
     actions['Delete'] = 'deleted'
@@ -186,6 +186,7 @@ def _build_windows_actions():
     actions['Print'] = 'read'
 
     return actions
+
 
 def _build_windows_event(alert, change):
     """"
@@ -224,8 +225,8 @@ def _build_linux_event(alert, change):
              'file_path': alert['tag']}
     if 'contents' in alert:
         event['contents'] = alert['contents']
-
-    if alert['stats']:  # Gather more data if the change wasn't a delete
+    # Gather more data if the change wasn't a delete
+    if alert['stats']:
         stats = alert['stats']
         event.update({'object_id': stats['inode'],
                       'file_acl': stats['mode'],
@@ -240,9 +241,10 @@ def _build_linux_event(alert, change):
 
     return event
 
+
 def _build_alerts(data):
     """
-    Helper function that extracts all the alerts from data and returnes them as a list
+    Helper function that extracts all the alerts from data and returns them as a list
     """
     alerts = []
     for item in data:

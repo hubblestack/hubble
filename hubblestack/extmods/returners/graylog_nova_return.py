@@ -48,11 +48,11 @@ def returner(ret):
 
     for opts in opts_list:
         # Failure data
-        _publish_data(args=args, checks=data.get(['Failure'], []), check_result='Failure',
+        _publish_data(args=args, checks=data.get('Failure', []), check_result='Failure',
                       cloud_details=cloud_details, opts=opts)
 
         # Success data
-        _publish_data(args=args, checks=data.get(['Success'], []), check_result='Success',
+        _publish_data(args=args, checks=data.get('Success', []), check_result='Success',
                       cloud_details=cloud_details, opts=opts)
 
         # Compliance data

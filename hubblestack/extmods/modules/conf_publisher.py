@@ -7,7 +7,7 @@ import copy
 import hubblestack.log
 from hubblestack.hec import get_splunk_options as gso
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 def get_splunk_options(**kwargs):
     if not kwargs:
@@ -35,7 +35,7 @@ def publish(report_directly_to_splunk=True, remove_dots=True, *args):
        __opts__ (excluding password/token) would be published
 
     """
-    LOG.debug('Started publishing config to splunk')
+    log.debug('Started publishing config to splunk')
 
     opts_to_log = {}
     if not args:
@@ -51,7 +51,7 @@ def publish(report_directly_to_splunk=True, remove_dots=True, *args):
 
     if report_directly_to_splunk:
         hubblestack.log.emit_to_splunk(filtered_conf, 'INFO', 'hubblestack.hubble_config')
-        LOG.debug('Published config to splunk')
+        log.debug('Published config to splunk')
 
     return filtered_conf
 

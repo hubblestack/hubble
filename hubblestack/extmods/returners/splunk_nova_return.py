@@ -84,6 +84,7 @@ def returner(ret):
 
             # Compliance checks
             if data.get('Compliance', None):
+                host_args['Compliance'] = data['Compliance']
                 event = _generate_event(args=host_args, cloud_details=cloud_details,
                                         custom_fields=custom_fields, check_type='compliance')
                 _publish_event(fqdn=host_args['fqdn'], event=event, opts=opts, hec=hec)

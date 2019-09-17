@@ -47,7 +47,7 @@ import os
 from collections import defaultdict
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def returner(ret):
@@ -101,7 +101,7 @@ def returner(ret):
 
             hec.flushBatch()
     except Exception:
-        LOG.exception('Error ocurred in splunk_pulsar_return')
+        log.exception('Error ocurred in splunk_pulsar_return')
     return
 
 

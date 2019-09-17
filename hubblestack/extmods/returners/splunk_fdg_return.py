@@ -52,7 +52,7 @@ from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_a
 _MAX_CONTENT_BYTES = 100000
 HTTP_EVENT_COLLECTOR_DEBUG = False
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def returner(ret):
@@ -66,7 +66,7 @@ def returner(ret):
     host_args = _build_args(ret)
     if host_args['fun'] != 'fdg.top':
         if len(data) < 2:
-            LOG.error('Non-fdg data found in splunk_fdg_return: %s', data)
+            log.error('Non-fdg data found in splunk_fdg_return: %s', data)
             return
         data = {data[0]: data[1]}
 
@@ -106,7 +106,7 @@ def returner(ret):
 
             hec.flushBatch()
     except Exception:
-        LOG.exception('Error ocurred in splunk_fdg_return')
+        log.exception('Error ocurred in splunk_fdg_return')
     return
 
 

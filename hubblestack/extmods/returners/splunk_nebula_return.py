@@ -50,7 +50,7 @@ from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_a
 _MAX_CONTENT_BYTES = 100000
 HTTP_EVENT_COLLECTOR_DEBUG = False
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def returner(ret):
@@ -97,7 +97,7 @@ def returner(ret):
                         hec.batchEvent(payload, eventtime=event_time)
             hec.flushBatch()
     except Exception:
-        LOG.exception('Error ocurred in splunk_nebula_return')
+        log.exception('Error ocurred in splunk_nebula_return')
     return
 
 

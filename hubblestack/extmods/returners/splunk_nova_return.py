@@ -46,7 +46,7 @@ import logging
 
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def returner(ret):
@@ -56,7 +56,7 @@ def returner(ret):
     # st = 'salt:hubble:nova'
     data = ret['return']
     if not isinstance(data, dict):
-        LOG.error('Data sent to splunk_nova_return was not formed as a dict:\n%s', data)
+        log.error('Data sent to splunk_nova_return was not formed as a dict:\n%s', data)
         return
     host_args = _build_args(ret)
     # Get cloud details
@@ -67,7 +67,7 @@ def returner(ret):
                                        _nick={'sourcetype_nova': 'sourcetype'})
 
         for opts in opts_list:
-            LOG.debug('Options: %s', json.dumps(opts))
+            log.debug('Options: %s', json.dumps(opts))
             custom_fields = opts['custom_fields']
             # Set up the collector
             args, kwargs = make_hec_args(opts)
@@ -91,7 +91,7 @@ def returner(ret):
 
             hec.flushBatch()
     except Exception:
-        LOG.exception('Error ocurred in splunk_nova_return')
+        log.exception('Error ocurred in splunk_nova_return')
     return
 
 
@@ -109,7 +109,7 @@ def event_return(event):
         elif event_data['data']['fun'] != 'hubble.audit':
             continue  # not a call to hubble.audit, so not relevant
         else:
-            LOG.debug('Logging event: %s', str(event_data))
+            log.debug('Logging event: %s', str(event_data))
             returner(event_data['data'])  # Call the standard returner
     return
 

@@ -50,7 +50,7 @@ from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_a
 _MAX_CONTENT_BYTES = 100000
 HTTP_EVENT_COLLECTOR_DEBUG = False
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def returner(ret):
@@ -87,10 +87,10 @@ def returner(ret):
                         _generate_and_send_payload(hec=hec, host_args=host_args, opts=opts,
                                                    event=n_event, query_results=query_results)
                 else:
-                    LOG.error("Incompatible event data captured")
+                    log.error("Incompatible event data captured")
             hec.flushBatch()
     except Exception:
-        LOG.exception('Error ocurred in splunk_osqueryd_return')
+        log.exception('Error ocurred in splunk_osqueryd_return')
     return
 
 
@@ -134,7 +134,7 @@ def _generate_and_send_payload(hec, host_args, opts, event, query_results):
     if fields:
         payload['fields'] = fields
     # Send payload to hec
-    LOG.debug("Sending logs to splunk: %s", payload)
+    log.debug("Sending logs to splunk: %s", payload)
     hec.batchEvent(payload, eventtime=event_time)
 
 

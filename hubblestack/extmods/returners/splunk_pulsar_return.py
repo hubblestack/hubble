@@ -65,7 +65,8 @@ def returner(ret):
     # Sometimes there are duplicate events in the list. Dedup them:
     data = _dedup_list(data)
     host_args = _build_args(ret)
-
+    alerts = _build_alerts(data)
+    
     # Get cloud details
     cloud_details = __grains__.get('cloud_details', {})
     try:
@@ -84,7 +85,6 @@ def returner(ret):
             args, kwargs = make_hec_args(opts)
             hec = http_event_collector(*args, **kwargs)
 
-            alerts = _build_alerts(data)
             for alert in alerts:
                 if 'change' in alert:  # Linux, normal pulsar
                     # The second half of the change will be '|IN_ISDIR' for directories

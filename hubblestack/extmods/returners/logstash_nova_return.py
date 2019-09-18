@@ -147,7 +147,7 @@ def _generate_event(args, cloud_details, custom_fields, compliance=False, data=N
                 if key not in ['tag']:
                     event[key] = value
     else:
-        event['compliance_percentage'] = data['Compliance']
+        event['compliance_percentage'] = args['compliance_percentage']
     event.update({'minion_id': args['minion_id'],
                   'dest_host': args['fqdn'],
                   'dest_ip': args['fqdn_ip4']})

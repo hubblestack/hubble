@@ -182,15 +182,18 @@ class HEC(object):
         self.headers.update({ 'Content-Type': 'application/json',
             'Authorization': 'Splunk {0}'.format(self.token) })
 
-        # retries can be made much more flexible than shown here theoretically,
-        # it could take the load off overloaded servers through the backoff and
-        # improve overall throughput at those (usually transient) bottlenecks
-        # -- the number 3 was chosen essentially at random
+        # 2019-09-24: lowered retries from 3 (9s + 3*9s = 36s) to 1 (9s + 9s = 18s)
+        # Each new event could potentially take half a minute with 3 retries.
+        # Since Hubble is single threaded, that seems like a horribly long time.
+        # (When retries fail, we potentially queue to disk anyway.)
         pm_kw = {
             'timeout': self.timeout,
             'retries': urllib3.util.retry.Retry(
-                total=3, redirect=10, backoff_factor=3,
-                connect=self.timeout, read=self.timeout,
+                total=1,   # total retries; overrides other counts below
+                connect=3, # number of retires on connection errors
+                read=3,    # number of retires on read errors
+                status=3,  # number of retires on bad status codes
+                redirect=10, # avoid redirect loops by limiting redirects to 10
                 respect_retry_after_header=True)
         }
 

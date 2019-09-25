@@ -5,6 +5,7 @@ import os
 import logging
 import time
 import shutil
+import json
 from collections import deque
 
 __all__ = [
@@ -108,8 +109,11 @@ class DiskQueue(OKTypesMixin):
             return False
         return True
 
-    def put(self, item):
-        """ Put an item in the queue at the end (FIFO order) """
+    def put(self, item, **meta):
+        """ Put an item in the queue at the end (FIFO order)
+            put() also takes an arbitrary number of meta data items (kwargs); which,
+            if given, it will write to a meta data file describing the entry.
+        """
         self.check_type(item)
         if not self.accept(item):
             raise QueueCapacityError('refusing to accept item due to size')
@@ -119,6 +123,9 @@ class DiskQueue(OKTypesMixin):
         with open(f, 'wb') as fh:
             log.debug('writing item to disk cache')
             fh.write(self.compress(item))
+        if meta:
+            with open(f + '.meta', 'w') as fh:
+                json.dump(meta, fh)
         self._count()
 
     def peek(self):

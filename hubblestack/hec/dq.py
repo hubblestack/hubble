@@ -75,6 +75,12 @@ class DiskQueue(OKTypesMixin):
             return d + b.flush()
         return _bz2(dat)
 
+    def unlink_(self.fname):
+        names = (fname, fname + '.meta')
+        for name in names:
+            if os.path.isfile(name):
+                os.unlink(fname)
+
     def decompress(self, dat):
         if dat.startswith('BZ'):
             try:
@@ -139,7 +145,7 @@ class DiskQueue(OKTypesMixin):
         for fname in self.files:
             with open(fname, 'rb') as fh:
                 ret = self.decompress(fh.read())
-            os.unlink(fname)
+            self.unlink_(fname)
             self._count()
             return ret
 
@@ -162,14 +168,14 @@ class DiskQueue(OKTypesMixin):
                     break
                 r += self.sep
             r += p
-            os.unlink(fname)
+            self.unlink_(fname)
         self._count()
         return r
 
     def pop(self):
         """ remove the next item from the queue (do not return it); useful with .peek() """
         for fname in self.files:
-            os.unlink(fname)
+            self.unlink_(fname)
             break
         self._count()
 

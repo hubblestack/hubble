@@ -134,20 +134,36 @@ class DiskQueue(OKTypesMixin):
                 json.dump(meta, fh)
         self._count()
 
+    def read_meta(self, fname):
+        try:
+            with open(fname, 'r') as fh:
+                return json.load(fh)
+            except ValueError:
+                # can't quite read the json
+                pass
+            except IOError:
+                # no such file
+                pass
+        return dict()
+
     def peek(self):
-        """ look at the next item in the queue, but don't actually remove it from the queue """
+        """ look at the next item in the queue, but don't actually remove it from the queue
+            returns: data_octets, meta_data_dict
+        """
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                return self.decompress(fh.read())
+                return self.decompress(fh.read()), self.read_meta(fname)
 
     def get(self):
-        """ get the next item from the queue """
+        """ get the next item from the queue
+            returns: data_octets, meta_data_dict
+        """
         for fname in self.files:
             with open(fname, 'rb') as fh:
                 ret = self.decompress(fh.read())
             self.unlink_(fname)
             self._count()
-            return ret
+            return ret, self.read_meta(fname)
 
     def getz(self, sz=SPLUNK_MAX_MSG):
         """ fetch items from the queue and concatenate them together using the
@@ -156,21 +172,23 @@ class DiskQueue(OKTypesMixin):
 
             kwargs:
                 sz : the maxsize of the queue fetch (default: SPLUNK_MAX_MSG=100k)
+
+            returns: data_octets, meta_data_dict
         """
         # Is it "dangerous" to unlink files during the os.walk (via generator)?
         # .oO( probably doesn't matter )
-        r = b''
+        ret = b''
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                p = self.decompress(fh.read())
-            if r:
-                if len(r) + len(self.sep) + len(p) > sz:
+                partial_data = self.decompress(fh.read())
+            if ret:
+                if len(ret) + len(self.sep) + len(partial_data) > sz:
                     break
-                r += self.sep
-            r += p
+                ret += self.sep
+            ret += partial_data
             self.unlink_(fname)
         self._count()
-        return r
+        return ret, self.read_meta(fname)
 
     def pop(self):
         """ remove the next item from the queue (do not return it); useful with .peek() """

@@ -229,7 +229,7 @@ class HEC(object):
     def _direct_send_msg(self, message, *a):
         self._send(self._payload_msg(message, *a))
 
-    def _queue_event(self, payload):
+    def _queue_event(self, payload, meta_data=None):
         if self.queue.cn < 1 and not self.direct_logging:
             self.direct_logging = True
             self._direct_send_msg('queue(start)')
@@ -238,7 +238,13 @@ class HEC(object):
         # should be at info level; error for production logging:
         log.error('Sending to Splunk failed, queueing %d octets to disk', len(p))
         try:
-            self.queue.put(p)
+            if meta_data is None:
+                meta_data = dict()
+        `   if 'queued_to_disk' not in meta_data:
+                meta_data['queued_to_disk'] = 0
+            else:
+                meta_data['queued_to_disk'] += 1
+            self.queue.put(p, **meta_data)
         except QueueCapacityError:
             # was at info level, but this is an error condition worth logging
             log.error("disk queue is full, dropping payload")
@@ -268,17 +274,17 @@ class HEC(object):
                 self.queue.cn)
         self.last_flush = time.time()
         while self.flushing_queue:
-            x = self.queue.getz()
+            x, meta_data = self.queue.getz()
             if not x:
                 break
-            self._send(x)
+            self._send(x, meta_data=meta_data)
         self.flushing_queue = False
         if self.queue.cn < 1:
             self._direct_send_msg('queue(end)')
             log.error('flushing complete eventscount=%d', self.queue.cn)
 
 
-    def _send(self, *payload):
+    def _send(self, *payload, meta_data=None):
         data = ' '.join([ str(x) for x in payload ])
 
         servers = [ x for x in self.server_uri if not x.bad ]
@@ -312,6 +318,7 @@ class HEC(object):
         #          message bundle to to the disk-queue (if any)
 
         possible_queue = False
+        possible_bad_payload = False
         for server in sorted(servers, key=lambda u: u.fails):
             log.debug('trying to send %d octets to %s', len(data), server.uri)
             try:
@@ -332,15 +339,25 @@ class HEC(object):
                 log.debug('octets accepted')
                 return r
             elif r.status == 400 and r.reason.lower() == 'bad request':
-                log.error('message not accepted (%d %s), dropping payload: %s', r.status, r.reason, r.data)
-                return r
+                log.info('message not accepted (%d %s); incrementing attempt counter',
+                    r.status, r.reason, r.data)
+                possible_bad_payload = True
 
         # if we get here and something above thinks a queue is a good idea
         # then queue it! \o/
         if possible_queue:
             log.debug('possible_queue indicated')
             if self.queue:
-                self._queue_event(data)
+                if meta_data is None:
+                    meta_data = dict()
+                for i in ('send_attempts', 'bad_request'):
+                    if i not in meta_data:
+                        meta_data[i] = 0
+                meta_data['send_attempts'] = 0
+                if possible_bad_payload:
+                    meta_data['bad_request'] += 1
+                meta_data['send_attempts'] += 1
+                self._queue_event(data, meta_data)
             else:
                 log.debug('queue is NoQueue, not actually queueing anything')
 

@@ -178,6 +178,7 @@ class DiskQueue(OKTypesMixin):
         # Is it "dangerous" to unlink files during the os.walk (via generator)?
         # .oO( probably doesn't matter )
         ret = b''
+        meta_data = dict()
         for fname in self.files:
             with open(fname, 'rb') as fh:
                 partial_data = self.decompress(fh.read())
@@ -186,9 +187,26 @@ class DiskQueue(OKTypesMixin):
                     break
                 ret += self.sep
             ret += partial_data
+            _md = self.read_meta(fname)
+            for k in _md:
+                if k not in meta_data:
+                    meta_data[k] = list()
+                meta_data[k].push( _md[k] )
             self.unlink_(fname)
         self._count()
-        return ret, self.read_meta(fname)
+        for k in meta_data:
+            # probably tracking the meta_data for each payload is more work
+            # than it's worth; so we just max the meta_data items and assume
+            # this only comes up once in a while
+            #
+            # The usual case is probably:
+            # 1. queue 20 or 30 things to disk
+            # 2. combine them up on the next loop
+            # 3. returning the max of [1,1,1,1,1,1] is 1
+            #
+            # occasionally this will return something pessimistic
+            meta_data[k] = max(meta_data[k])
+        return ret, meta_data
 
     def pop(self):
         """ remove the next item from the queue (do not return it); useful with .peek() """

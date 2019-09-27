@@ -284,7 +284,8 @@ class HEC(object):
             log.error('flushing complete eventscount=%d', self.queue.cn)
 
 
-    def _send(self, *payload, meta_data=None):
+    def _send(self, *payload, **kwargs):
+        meta_data = kwargs.get('meta_data')
         data = ' '.join([ str(x) for x in payload ])
 
         servers = [ x for x in self.server_uri if not x.bad ]

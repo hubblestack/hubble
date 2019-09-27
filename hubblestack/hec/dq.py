@@ -75,7 +75,7 @@ class DiskQueue(OKTypesMixin):
             return d + b.flush()
         return _bz2(dat)
 
-    def unlink_(self.fname):
+    def unlink_(self, fname):
         names = (fname, fname + '.meta')
         for name in names:
             if os.path.isfile(name):

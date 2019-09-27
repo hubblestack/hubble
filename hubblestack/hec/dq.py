@@ -138,12 +138,12 @@ class DiskQueue(OKTypesMixin):
         try:
             with open(fname, 'r') as fh:
                 return json.load(fh)
-            except ValueError:
-                # can't quite read the json
-                pass
-            except IOError:
-                # no such file
-                pass
+        except ValueError:
+            # can't quite read the json
+            pass
+        except IOError:
+            # no such file
+            pass
         return dict()
 
     def peek(self):

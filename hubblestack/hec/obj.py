@@ -240,7 +240,7 @@ class HEC(object):
         try:
             if meta_data is None:
                 meta_data = dict()
-        `   if 'queued_to_disk' not in meta_data:
+            if 'queued_to_disk' not in meta_data:
                 meta_data['queued_to_disk'] = 0
             else:
                 meta_data['queued_to_disk'] += 1

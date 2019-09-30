@@ -226,6 +226,8 @@ class DiskQueue(OKTypesMixin):
             return x
         for path, dirs, files in sorted(os.walk(self.directory)):
             for fname in [ os.path.join(path, f) for f in sorted(files, key=_k) ]:
+                if fname.endswith('.meta'):
+                    continue
                 yield fname
 
     def _count(self):

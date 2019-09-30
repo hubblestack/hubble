@@ -358,7 +358,7 @@ class HEC(object):
                 if possible_bad_payload:
                     meta_data['bad_request'] += 1
                 meta_data['send_attempts'] += 1
-                self._queue_event(data, meta_data)
+                self._queue_event(data, meta_data=meta_data)
             else:
                 log.debug('queue is NoQueue, not actually queueing anything')
 

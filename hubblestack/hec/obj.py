@@ -242,8 +242,7 @@ class HEC(object):
                 meta_data = dict()
             if 'queued_to_disk' not in meta_data:
                 meta_data['queued_to_disk'] = 0
-            else:
-                meta_data['queued_to_disk'] += 1
+            meta_data['queued_to_disk'] += 1
             log.debug(' meta_data: %s', meta_data)
             self.queue.put(p, **meta_data)
         except QueueCapacityError:

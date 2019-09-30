@@ -79,7 +79,7 @@ class DiskQueue(OKTypesMixin):
         names = (fname, fname + '.meta')
         for name in names:
             if os.path.isfile(name):
-                os.unlink(fname)
+                os.unlink(name)
 
     def decompress(self, dat):
         if dat.startswith('BZ'):

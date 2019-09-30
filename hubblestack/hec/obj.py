@@ -277,6 +277,7 @@ class HEC(object):
             x, meta_data = self.queue.getz()
             if not x:
                 break
+            log.debug('pulled %d octets from queue; meta_data: %s', len(x), meta_data)
             self._send(x, meta_data=meta_data)
         self.flushing_queue = False
         if self.queue.cn < 1:

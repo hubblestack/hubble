@@ -191,7 +191,7 @@ class DiskQueue(OKTypesMixin):
             for k in _md:
                 if k not in meta_data:
                     meta_data[k] = list()
-                meta_data[k].push( _md[k] )
+                meta_data[k].append( _md[k] )
             self.unlink_(fname)
         self._count()
         for k in meta_data:

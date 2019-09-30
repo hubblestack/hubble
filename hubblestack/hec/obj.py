@@ -244,6 +244,7 @@ class HEC(object):
                 meta_data['queued_to_disk'] = 0
             else:
                 meta_data['queued_to_disk'] += 1
+            log.debug(' meta_data: %s', meta_data)
             self.queue.put(p, **meta_data)
         except QueueCapacityError:
             # was at info level, but this is an error condition worth logging

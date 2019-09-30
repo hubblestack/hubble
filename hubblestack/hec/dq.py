@@ -136,7 +136,7 @@ class DiskQueue(OKTypesMixin):
 
     def read_meta(self, fname):
         try:
-            with open(fname, 'r') as fh:
+            with open(fname + '.meta', 'r') as fh:
                 return json.load(fh)
         except ValueError:
             # can't quite read the json

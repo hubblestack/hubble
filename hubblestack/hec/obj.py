@@ -108,8 +108,8 @@ class Payload(object):
 # occur if next event payload will exceed limit
 
 class HEC(object):
-    flushing_queue = False
     last_flush = 0
+    flushing_queue = False
     direct_logging = False
 
     class Server(object):
@@ -267,12 +267,12 @@ class HEC(object):
             return
         HEC.flushing_queue = True
         self._direct_send_msg('queue(flush) eventscount=%d', self.queue.cn)
-        dt = time.time() - self.last_flush
+        dt = time.time() - HEC.last_flush
         if dt >= self.retry_diskqueue_interval and self.queue.cn:
             # was at debug level. bumped to error level for production logging
             log.error('flushing queue eventscount=%d; NOTE: queued events may contain more than one payload/event',
                 self.queue.cn)
-        self.last_flush = time.time()
+        HEC.last_flush = time.time()
         while HEC.flushing_queue:
             x, meta_data = self.queue.getz()
             if not x:

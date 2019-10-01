@@ -101,6 +101,21 @@ class Payload(object):
         return len(self.dat)
 
 
+class OutageInfo(object):
+    def __init__(self):
+        self.last_check = self.start = time.time()
+
+    def checking(self):
+        self.last_check = time.time()
+
+    @property
+    def last_check_age(self):
+        return time.time() - self.last_check
+
+    @property
+    def age(self):
+        return time.time() - self.start
+
 # Thanks to George Starcher for the http_event_collector class (https://github.com/georgestarcher/)
 # Default batch max size to match splunk's default limits for max byte
 # See http_input stanza in limits.conf; note in testing I had to limit to
@@ -111,9 +126,12 @@ class HEC(object):
     last_flush = 0
     flushing_queue = False
     direct_logging = False
+    outages = dict()
+    fails = dict()
 
     class Server(object):
         bad = False
+
         def __init__(self, host, port=8080, proto='https'):
             if '://' in host:
                 proto,host = host.split('://')
@@ -121,7 +139,16 @@ class HEC(object):
                 host,port = host.split(':')
             self.uri = '{proto}://{host}:{port}/services/collector/event'.format(
                 proto=proto, host=host, port=port)
-            self.fails = 0
+            if self.uri not in HEC.fails:
+                HEC.fails[self.uri] = 0
+
+        @property
+        def fails(self):
+            return HEC.fails[self.uri]
+
+        @fails.setter
+        def fails(self, v):
+            HEC.fails[self.uri] = v
 
         def __str__(self):
             r = self.uri
@@ -129,13 +156,26 @@ class HEC(object):
                 r += ' (fails: {0})'.format(self.fails)
             return r
 
+        @property
+        def outage(self):
+            if self.uri in HEC.outages:
+                return HEC.outages.get(self.uri)
+
+        @outage.setter
+        def outage(self, v):
+            if v:
+                HEC.outages[self.uri] = OutageInfo()
+            elif self.uri in HEC.outages:
+                del HEC.outages[self.uri]
+                self.fails = 0
+
 
     def __init__(self, token, index, http_event_server, host='', http_event_port='8088',
                  http_event_server_ssl=True, http_event_collector_ssl_verify=True,
                  max_bytes=_max_content_bytes, proxy=None, timeout=9.05,
-                 disk_queue=False,
-                 disk_queue_size=max_diskqueue_size,
-                 disk_queue_compression=5):
+                 disk_queue=False, disk_queue_size=max_diskqueue_size,
+                 disk_queue_compression=5, max_queue_cycles=50, max_bad_request_cycles=30,
+                 outage_recheck_time=300, num_fails_indicate_outage=10):
 
         self.retry_diskqueue_interval = 60
 
@@ -286,11 +326,13 @@ class HEC(object):
 
 
     def _send(self, *payload, **kwargs):
+        now = time.time()
         meta_data = kwargs.get('meta_data')
         data = ' '.join([ str(x) for x in payload ])
 
         servers = [ x for x in self.server_uri if not x.bad ]
         if not servers:
+            # NOTE: the only "bad" condition is an urllib3 LocationParseError (config typo)
             log.error("all servers are marked 'bad', aborting send")
             return
 
@@ -323,9 +365,19 @@ class HEC(object):
         possible_bad_payload = False
         for server in sorted(servers, key=lambda u: u.fails):
             log.debug('trying to send %d octets to %s', len(data), server.uri)
+            if server.outage:
+                if server.outage.last_check_age < outage_recheck_time:
+                    log.debug('%s is flagged as having an outage marking message as possible queue item', server.uri)
+                    possible_queue = True
+                    continue
+                else:
+                    log.info('%s is flagged as having an outage -- but it is time for a recheck')
+                    server.outage.checking()
             try:
                 r = self.pool_manager.request('POST', server.uri, body=data, headers=self.headers)
                 server.fails = 0
+                if server.outage:
+                    server.outage = False
             except urllib3.exceptions.LocationParseError as e:
                 log.error('server uri parse error "%s": %s', server.uri, e)
                 server.bad = True
@@ -335,30 +387,56 @@ class HEC(object):
                     server.uri, repr(e), exc_info=True)
                 possible_queue = True
                 server.fails += 1
+                if not server.outage and server.fails >= num_fails_indicate_outage:
+                    log.info("flagging %s as having an outage", server)
+                    server.outage = True
                 continue
 
             if r.status < 400:
                 log.debug('octets accepted')
                 return r
+
             elif r.status == 400 and r.reason.lower() == 'bad request':
                 log.info('message not accepted (%d %s); incrementing attempt counter',
                     r.status, r.reason, r.data)
                 possible_bad_payload = True
+                possible_queue = True
 
         # if we get here and something above thinks a queue is a good idea
         # then queue it! \o/
         if possible_queue:
             log.debug('possible_queue indicated')
+
             if self.queue:
-                if meta_data is None:
+                # make sure meta_data is in a rational state
+                if not isinstance(meta_data, dict):
                     meta_data = dict()
                 for i in ('send_attempts', 'bad_request'):
                     if i not in meta_data:
                         meta_data[i] = 0
-                meta_data['send_attempts'] = 0
+
+                # If we've already tried to send this more than max_queue_cycles times,
+                # we consider that Splunk doesn't want it for some reason.
+                if meta_data['send_attempts'] > max_queue_cycles:
+                    log.error('dropping message that appears to have cycled more than %d times',
+                        meta_data['send_attempts'])
+                    return None
+
+                # If Splunk actually says it doesn't want it more than
+                # max_bad_request_cycles, we consider that Splunk may have actually
+                # said so (and it wasn't just an opinionated load balancer or
+                # something).
+                if meta_data.get['bad_requests'] > max_bad_request_cycles:
+                    log.error('dropping message that Splunk said (%d times) it does not want',
+                        meta_data['bad_requests'])
+                    return None
+
+                # If Splunk said it doesn't want this message, increment the opinion counter
                 if possible_bad_payload:
                     meta_data['bad_request'] += 1
+                # Remember that we tried this another time
                 meta_data['send_attempts'] += 1
+                # Drop these infos to disk.
                 self._queue_event(data, meta_data=meta_data)
             else:
                 log.debug('queue is NoQueue, not actually queueing anything')

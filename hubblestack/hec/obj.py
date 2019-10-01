@@ -230,10 +230,10 @@ class HEC(object):
         self._send(self._payload_msg(message, *a))
 
     def _queue_event(self, payload, meta_data=None):
-        if self.queue.cn < 1 and not self.direct_logging:
-            self.direct_logging = True
+        if self.queue.cn < 1 and not HEC.direct_logging:
+            HEC.direct_logging = True
             self._direct_send_msg('queue(start)')
-            self.direct_logging = False
+            HEC.direct_logging = False
         p = str(payload)
         # should be at info level; error for production logging:
         log.error('Sending to Splunk failed, queueing %d octets to disk', len(p))
@@ -259,13 +259,13 @@ class HEC(object):
         self._queue_event(dat)
 
     def flushQueue(self):
-        if self.flushing_queue:
+        if HEC.flushing_queue:
             log.debug('already flushing queue')
             return
         if self.queue.cn < 1:
             log.debug('nothing in queue')
             return
-        self.flushing_queue = True
+        HEC.flushing_queue = True
         self._direct_send_msg('queue(flush) eventscount=%d', self.queue.cn)
         dt = time.time() - self.last_flush
         if dt >= self.retry_diskqueue_interval and self.queue.cn:
@@ -273,13 +273,13 @@ class HEC(object):
             log.error('flushing queue eventscount=%d; NOTE: queued events may contain more than one payload/event',
                 self.queue.cn)
         self.last_flush = time.time()
-        while self.flushing_queue:
+        while HEC.flushing_queue:
             x, meta_data = self.queue.getz()
             if not x:
                 break
             log.debug('pulled %d octets from queue; meta_data: %s', len(x), meta_data)
             self._send(x, meta_data=meta_data)
-        self.flushing_queue = False
+        HEC.flushing_queue = False
         if self.queue.cn < 1:
             self._direct_send_msg('queue(end)')
             log.error('flushing complete eventscount=%d', self.queue.cn)

@@ -125,6 +125,7 @@ class OutageInfo(object):
 class HEC(object):
     last_flush = 0
     flushing_queue = False
+    abort_flush    = False
     direct_logging = False
     outages = dict()
     fails = dict()
@@ -276,6 +277,8 @@ class HEC(object):
         self._send(self._payload_msg(message, *a))
 
     def _queue_event(self, payload, meta_data=None):
+        if HEC.flushing_queue:
+            HEC.abort_flush = True
         if self.queue.cn < 1 and not HEC.direct_logging:
             HEC.direct_logging = True
             self._direct_send_msg('queue(start)')
@@ -312,6 +315,7 @@ class HEC(object):
             log.debug('nothing in queue')
             return
         HEC.flushing_queue = True
+        HEC.abort_flush = False
         self._direct_send_msg('queue(flush) eventscount=%d', self.queue.cn)
         dt = time.time() - HEC.last_flush
         if dt >= self.retry_diskqueue_interval and self.queue.cn:
@@ -325,6 +329,9 @@ class HEC(object):
                 break
             log.debug('pulled %d octets from queue; meta_data: %s', len(x), meta_data)
             self._send(x, meta_data=meta_data)
+            if HEC.abort_flush:
+                log.error('aborting flush (probably due to new queue item)')
+                break
         HEC.flushing_queue = False
         if self.queue.cn < 1:
             self._direct_send_msg('queue(end)')

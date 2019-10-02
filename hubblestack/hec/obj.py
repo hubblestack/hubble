@@ -177,6 +177,12 @@ class HEC(object):
                  disk_queue_compression=5, max_queue_cycles=50, max_bad_request_cycles=30,
                  outage_recheck_time=300, num_fails_indicate_outage=10):
 
+
+        self.max_queue_cycles = max_queue_cycles
+        self.max_bad_request_cycles = max_bad_request_cycles
+        self.outage_recheck_time = outage_recheck_time
+        self.num_fails_indicate_outage = num_fails_indicate_outage
+
         self.retry_diskqueue_interval = 60
 
         self.timeout = timeout
@@ -366,7 +372,7 @@ class HEC(object):
         for server in sorted(servers, key=lambda u: u.fails):
             log.debug('trying to send %d octets to %s', len(data), server.uri)
             if server.outage:
-                if server.outage.last_check_age < outage_recheck_time:
+                if server.outage.last_check_age < self.outage_recheck_time:
                     log.debug('%s is flagged as having an outage marking message as possible queue item', server.uri)
                     possible_queue = True
                     continue
@@ -387,7 +393,7 @@ class HEC(object):
                     server.uri, repr(e), exc_info=True)
                 possible_queue = True
                 server.fails += 1
-                if not server.outage and server.fails >= num_fails_indicate_outage:
+                if not server.outage and server.fails >= self.num_fails_indicate_outage:
                     log.info("flagging %s as having an outage", server)
                     server.outage = True
                 continue
@@ -417,7 +423,7 @@ class HEC(object):
 
                 # If we've already tried to send this more than max_queue_cycles times,
                 # we consider that Splunk doesn't want it for some reason.
-                if meta_data['send_attempts'] > max_queue_cycles:
+                if meta_data['send_attempts'] > self.max_queue_cycles:
                     log.error('dropping message that appears to have cycled more than %d times',
                         meta_data['send_attempts'])
                     return None
@@ -426,9 +432,9 @@ class HEC(object):
                 # max_bad_request_cycles, we consider that Splunk may have actually
                 # said so (and it wasn't just an opinionated load balancer or
                 # something).
-                if meta_data.get['bad_requests'] > max_bad_request_cycles:
+                if meta_data['bad_request'] > self.max_bad_request_cycles:
                     log.error('dropping message that Splunk said (%d times) it does not want',
-                        meta_data['bad_requests'])
+                        meta_data['bad_request'])
                     return None
 
                 # If Splunk said it doesn't want this message, increment the opinion counter

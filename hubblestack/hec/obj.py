@@ -382,7 +382,7 @@ class HEC(object):
             log.debug('trying to send %d octets to %s', len(data), server.uri)
             if server.outage:
                 if server.outage.last_check_age < self.outage_recheck_time:
-                    log.debug('flagged as having an outage, skipping send attempt', server.uri)
+                    log.debug('flagged as having an outage, skipping send attempt')
                     possible_queue = True
                     continue
                 else:

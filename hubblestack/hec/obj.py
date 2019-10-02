@@ -174,7 +174,7 @@ class HEC(object):
                  http_event_server_ssl=True, http_event_collector_ssl_verify=True,
                  max_bytes=_max_content_bytes, proxy=None, timeout=9.05,
                  disk_queue=False, disk_queue_size=max_diskqueue_size,
-                 disk_queue_compression=5, max_queue_cycles=50, max_bad_request_cycles=30,
+                 disk_queue_compression=5, max_queue_cycles=80, max_bad_request_cycles=40,
                  outage_recheck_time=300, num_fails_indicate_outage=10):
 
 
@@ -333,7 +333,6 @@ class HEC(object):
 
     def _send(self, *payload, **kwargs):
         now = time.time()
-        meta_data = kwargs.get('meta_data')
         data = ' '.join([ str(x) for x in payload ])
 
         servers = [ x for x in self.server_uri if not x.bad ]
@@ -341,6 +340,17 @@ class HEC(object):
             # NOTE: the only "bad" condition is an urllib3 LocationParseError (config typo)
             log.error("all servers are marked 'bad', aborting send")
             return
+
+        # make sure meta_data is in a rational state.
+        # (meta_data is written to disk alongside the payload(s) if
+        # diskqueueing is enabled and the payloads are destined to disk, rather
+        # than Splunk)
+        meta_data = kwargs.get('meta_data')
+        if not isinstance(meta_data, dict):
+            meta_data = dict()
+        for i in ('send_attempts', 'bad_request'):
+            if i not in meta_data:
+                meta_data[i] = 0
 
         # This logic is overly complicated originally the plan was to have the
         # HEC() object manage multiple servers and choose the successful one to
@@ -368,18 +378,19 @@ class HEC(object):
         #          message bundle to to the disk-queue (if any)
 
         possible_queue = False
-        possible_bad_payload = False
         for server in sorted(servers, key=lambda u: u.fails):
             log.debug('trying to send %d octets to %s', len(data), server.uri)
             if server.outage:
                 if server.outage.last_check_age < self.outage_recheck_time:
-                    log.debug('%s is flagged as having an outage marking message as possible queue item', server.uri)
+                    log.debug('flagged as having an outage, skipping send attempt', server.uri)
                     possible_queue = True
                     continue
                 else:
-                    log.info('%s is flagged as having an outage -- but it is time for a recheck')
+                    log.info('flagged as having an outage -- but it is time for a recheck')
                     server.outage.checking()
             try:
+                # Remember that we tried to send this
+                meta_data['send_attempts'] += 1
                 r = self.pool_manager.request('POST', server.uri, body=data, headers=self.headers)
                 server.fails = 0
                 if server.outage:
@@ -394,7 +405,7 @@ class HEC(object):
                 possible_queue = True
                 server.fails += 1
                 if not server.outage and server.fails >= self.num_fails_indicate_outage:
-                    log.info("flagging %s as having an outage", server)
+                    log.info("flagging server outage (%d fails, %s)", server.fails, server.uri)
                     server.outage = True
                 continue
 
@@ -403,10 +414,12 @@ class HEC(object):
                 return r
 
             elif r.status == 400 and r.reason.lower() == 'bad request':
-                log.info('message not accepted (%d %s); incrementing attempt counter',
-                    r.status, r.reason, r.data)
-                possible_bad_payload = True
+                log.info('message not accepted (%d %s); incrementing bad_request counter',
+                    r.status, r.reason)
+                # try to queue the message if we don't find some other way to send it
                 possible_queue = True
+                # If Splunk said it doesn't want this message, increment the opinion counter
+                meta_data['bad_request'] += 1
 
         # if we get here and something above thinks a queue is a good idea
         # then queue it! \o/
@@ -414,13 +427,6 @@ class HEC(object):
             log.debug('possible_queue indicated')
 
             if self.queue:
-                # make sure meta_data is in a rational state
-                if not isinstance(meta_data, dict):
-                    meta_data = dict()
-                for i in ('send_attempts', 'bad_request'):
-                    if i not in meta_data:
-                        meta_data[i] = 0
-
                 # If we've already tried to send this more than max_queue_cycles times,
                 # we consider that Splunk doesn't want it for some reason.
                 if meta_data['send_attempts'] > self.max_queue_cycles:
@@ -437,11 +443,6 @@ class HEC(object):
                         meta_data['bad_request'])
                     return None
 
-                # If Splunk said it doesn't want this message, increment the opinion counter
-                if possible_bad_payload:
-                    meta_data['bad_request'] += 1
-                # Remember that we tried this another time
-                meta_data['send_attempts'] += 1
                 # Drop these infos to disk.
                 self._queue_event(data, meta_data=meta_data)
             else:

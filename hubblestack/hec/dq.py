@@ -161,9 +161,10 @@ class DiskQueue(OKTypesMixin):
         for fname in self.files:
             with open(fname, 'rb') as fh:
                 ret = self.decompress(fh.read())
+            ret = ret, self.read_meta(fname)
             self.unlink_(fname)
             self._count()
-            return ret, self.read_meta(fname)
+            return ret
 
     def getz(self, sz=SPLUNK_MAX_MSG):
         """ fetch items from the queue and concatenate them together using the

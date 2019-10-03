@@ -109,7 +109,11 @@ def _dedup_list(input_list):
     """
     Function that removes duplicates from a list
     """
-    return list(set(input_list))
+    deduped = []
+    for idx, item in enumerate(input_list):
+        if item not in input_list[idx + 1:]:
+            deduped.append(item)
+    return deduped
 
 
 def _build_linux_actions():

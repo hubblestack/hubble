@@ -29,7 +29,11 @@ def _dedup_list(input_list):
     """
     Remove duplicates from the input list
     """
-    return list(set(input_list))
+    deduped = []
+    for idx, item in enumerate(input_list):
+        if item not in input_list[idx + 1:]:
+            deduped.append(item)
+    return deduped
 
 
 def returner(ret):

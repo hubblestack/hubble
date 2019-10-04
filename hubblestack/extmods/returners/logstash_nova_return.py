@@ -28,7 +28,7 @@ import logging
 import requests
 from requests.auth import HTTPBasicAuth
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def returner(ret):
@@ -37,7 +37,7 @@ def returner(ret):
     """
     data = ret['return']
     if not isinstance(data, dict):
-        LOG.error('Data sent to splunk_nova_return was not formed as a dict:\n%s', data)
+        log.error('Data sent to splunk_nova_return was not formed as a dict:\n%s', data)
         return
 
     opts_list = _get_options()

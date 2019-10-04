@@ -70,7 +70,7 @@ import salt.ext.six.moves.http_client
 # Import Salt Libs
 import salt.returners
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 __virtualname__ = 'slack_pulsar'
 
@@ -160,7 +160,7 @@ def _query(function,
             if not api_key:
                 api_key = options.get('api_key')
         except (NameError, KeyError, AttributeError):
-            LOG.error('No Slack api key found.')
+            log.error('No Slack api key found.')
             ret['message'] = 'No Slack api key found.'
             ret['res'] = False
             return ret
@@ -201,10 +201,10 @@ def _query(function,
         return ret
     elif result.get('status', None) == salt.ext.six.moves.http_client.NO_CONTENT:
         return True
-    LOG.debug(url)
-    LOG.debug(query_params)
-    LOG.debug(data)
-    LOG.debug(result)
+    log.debug(url)
+    log.debug(query_params)
+    log.debug(data)
+    log.debug(result)
     _result = result['dict']
     if 'error' in _result:
         ret['message'] = _result['error']
@@ -243,7 +243,7 @@ def _post_message(channel,
                     header_dict={'Content-Type': 'application/x-www-form-urlencoded'},
                     data=urllib.urlencode(parameters))
 
-    LOG.debug('result %s', result)
+    log.debug('result %s', result)
 
     return bool(result)
 
@@ -261,19 +261,19 @@ def returner(ret):
     api_key = _options.get('api_key')
 
     if not channel:
-        LOG.error('slack_pulsar.channel not defined in salt config')
+        log.error('slack_pulsar.channel not defined in salt config')
         return None
 
     if not username:
-        LOG.error('slack_pulsar.username not defined in salt config')
+        log.error('slack_pulsar.username not defined in salt config')
         return None
 
     if not as_user:
-        LOG.error('slack_pulsar.as_user not defined in salt config')
+        log.error('slack_pulsar.as_user not defined in salt config')
         return None
 
     if not api_key:
-        LOG.error('slack_pulsar.api_key not defined in salt config')
+        log.error('slack_pulsar.api_key not defined in salt config')
         return None
 
     if ret and isinstance(ret, dict):
@@ -286,7 +286,7 @@ def returner(ret):
             message += pprint.pformat(return_data.get('return'))
             message += '\r\n'
     else:
-        LOG.error('Data sent to slack_pulsar formatted incorrectly')
+        log.error('Data sent to slack_pulsar formatted incorrectly')
         return None
 
     slack = _post_message(channel,

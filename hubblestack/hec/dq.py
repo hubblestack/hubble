@@ -162,8 +162,10 @@ class DiskQueue(OKTypesMixin):
             with open(fname, 'rb') as fh:
                 ret = self.decompress(fh.read())
             ret = ret, self.read_meta(fname)
+            sz = os.stat(fname).st_size
             self.unlink_(fname)
-            self._count()
+            self.cn -= 1
+            self.sz -= sz
             return ret
 
     def getz(self, sz=SPLUNK_MAX_MSG):

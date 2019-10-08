@@ -26,7 +26,7 @@ import json
 import logging
 import requests
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def returner(ret):
@@ -36,7 +36,7 @@ def returner(ret):
     data = ret['return']
     # sanity check
     if not isinstance(data, dict):
-        LOG.error('Data sent to graylog_nova_return was not formed as a dict:\n%s', data)
+        log.error('Data sent to graylog_nova_return was not formed as a dict:\n%s', data)
         return
 
     opts_list = _get_options()

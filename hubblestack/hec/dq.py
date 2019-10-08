@@ -128,11 +128,13 @@ class DiskQueue(OKTypesMixin):
         f = os.path.join(d, remainder)
         with open(f, 'wb') as fh:
             log.debug('writing item to disk cache')
-            fh.write(self.compress(item))
+            bstr = self.compress(item)
+            fh.write(bstr)
         if meta:
             with open(f + '.meta', 'w') as fh:
                 json.dump(meta, fh)
-        self._count()
+        self.cn += 1
+        self.sz += len(bstr)
 
     def read_meta(self, fname):
         try:

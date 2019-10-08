@@ -212,9 +212,11 @@ class DiskQueue(OKTypesMixin):
     def pop(self):
         """ remove the next item from the queue (do not return it); useful with .peek() """
         for fname in self.files:
+            sz = os.stat(fname).st_size
             self.unlink_(fname)
+            self.cn -= 1
+            self.sz -= sz
             break
-        self._count()
 
     @property
     def files(self):

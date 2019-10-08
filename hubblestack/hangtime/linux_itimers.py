@@ -110,7 +110,7 @@ class HangTime(Exception):
             signal.setitimer(signal.ITIMER_REAL, 0)
             signal.signal(signal.SIGALRM, signal.SIG_DFL)
 
-    def fire_timer(self):
+    def fire_timer(self, *_sig_param):
         """ when an itimer fires, execution enters this method
             which either clears timers, sets up the next timer in a nest, or
             repeats the last timer as specified by the options.

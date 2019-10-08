@@ -89,7 +89,7 @@ def test_bucket_len():
         # … of course, if we get really unlucky, we'll hit just the right time of
         # day to rollover the short B second bucket window. Assuming that might happen,
         # check for either:
-        assert buckets[-1] in (very_last_bucket, very_last_bucket + B)
+        assert buckets[-1] in (very_last_bucket - B, very_last_bucket, very_last_bucket + B)
 
         c = 0
         for i,bucket in enumerate(buckets[:-1]):

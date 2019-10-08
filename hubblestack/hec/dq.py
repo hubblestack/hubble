@@ -52,6 +52,7 @@ class NoQueue(object):
 
 class DiskQueue(OKTypesMixin):
     sep = b' '
+    cn = sz = 0
 
     def __init__(self, directory, size=DEFAULT_DISK_SIZE, ok_types=OK_TYPES, fresh=False, compression=0):
         self.init_types(ok_types)
@@ -61,6 +62,7 @@ class DiskQueue(OKTypesMixin):
         if fresh:
             self.clear()
         self._count()
+        self.double_check_cnsz = bool(os.environ.get('DOUBLE_CHECK_CNSZ'))
 
     def __bool__(self):
         return True
@@ -135,6 +137,8 @@ class DiskQueue(OKTypesMixin):
                 json.dump(meta, fh)
         self.cn += 1
         self.sz += len(bstr)
+        if self.double_check_cnsz:
+            self._count(double_check_only=True, tag='put')
 
     def read_meta(self, fname):
         try:
@@ -168,6 +172,8 @@ class DiskQueue(OKTypesMixin):
             self.unlink_(fname)
             self.cn -= 1
             self.sz -= sz
+            if self.double_check_cnsz:
+                self._count(double_check_only=True, tag='get')
             return ret
 
     def getz(self, sz=SPLUNK_MAX_MSG):
@@ -220,6 +226,8 @@ class DiskQueue(OKTypesMixin):
             self.unlink_(fname)
             self.cn -= 1
             self.sz -= sz
+            if self.double_check_cnsz:
+                self._count(double_check_only=True, tag='pop')
             break
 
     @property
@@ -237,13 +245,19 @@ class DiskQueue(OKTypesMixin):
                     continue
                 yield fname
 
-    def _count(self):
-        self.cn = 0
-        self.sz = 0
+    def _count(self, double_check_only=False, tag='unknown'):
+        cn = 0
+        sz = 0
         for fname in self.files:
-            self.sz += os.stat(fname).st_size
-            self.cn += 1
-        log.debug('disk cache sizes: cn=%d sz=%d', self.cn, self.sz)
+            sz += os.stat(fname).st_size
+            cn += 1
+        if double_check_only:
+            log.debug('disk cache sizes: [double check %s] presumed<cn=%d sz=%d> vs actual<cn=%d sz=%d>',
+                tag, self.cn, self.sz, cn, sz)
+        else:
+            self.sz = sz
+            self.cn = cn
+            log.debug('disk cache sizes: cn=%d sz=%d', self.cn, self.sz)
 
     @property
     def msz(self):

@@ -24,189 +24,169 @@ plugin. Required config/pillar settings:
 """
 
 import json
-import socket
+import logging
 import requests
 from requests.auth import HTTPBasicAuth
+
+log = logging.getLogger(__name__)
 
 
 def returner(ret):
     """
+    Gather data for nova and post it to logstash according to the config
     """
-    opts_list = _get_options()
+    data = ret['return']
+    if not isinstance(data, dict):
+        log.error('Data sent to splunk_nova_return was not formed as a dict:\n%s', data)
+        return
 
+    opts_list = _get_options()
+    args = _build_args(ret)
     # Get cloud details
     cloud_details = __grains__.get('cloud_details', {})
 
     for opts in opts_list:
-        proxy = opts['proxy']
-        timeout = opts['timeout']
-        custom_fields = opts['custom_fields']
+        # Failure data
+        _publish_data(args=args, checks=data.get('Failure', []), check_result='Failure',
+                      cloud_details=cloud_details, opts=opts)
 
-        indexer = opts['indexer']
-        port = opts['port']
-        password = opts['password']
-        user = opts['user']
+        # Success data
+        _publish_data(args=args, checks=data.get('Success', []), check_result='Success',
+                      cloud_details=cloud_details, opts=opts)
 
-        data = ret['return']
-        minion_id = ret['id']
-        jid = ret['jid']
-        fqdn = __grains__['fqdn']
-        # Sometimes fqdn is blank. If it is, replace it with minion_id
-        fqdn = fqdn if fqdn else minion_id
-        try:
-            fqdn_ip4 = __grains__['fqdn_ip4'][0]
-        except IndexError:
-            fqdn_ip4 = __grains__['ipv4'][0]
-        if fqdn_ip4.startswith('127.'):
-            for ip4_addr in __grains__['ipv4']:
-                if ip4_addr and not ip4_addr.startswith('127.'):
-                    fqdn_ip4 = ip4_addr
-                    break
-
-        if not isinstance(data, dict):
-            log.error('Data sent to splunk_nova_return was not formed as a '
-                      'dict:\n{0}'.format(data))
-            return
-
-        for fai in data.get('Failure', []):
-            check_id = fai.keys()[0]
-            payload = {}
-            event = {}
-            event.update({'check_result': 'Failure'})
-            event.update({'check_id': check_id})
-            event.update({'job_id': jid})
-            if not isinstance(fai[check_id], dict):
-                event.update({'description': fai[check_id]})
-            elif 'description' in fai[check_id]:
-                for key, value in fai[check_id].iteritems():
-                    if key not in ['tag']:
-                        event[key] = value
-            event.update({'minion_id': minion_id})
-            event.update({'dest_host': fqdn})
-            event.update({'dest_ip': fqdn_ip4})
-
-            event.update(cloud_details)
-
-            for custom_field in custom_fields:
-                custom_field_name = 'custom_' + custom_field
-                custom_field_value = __salt__['config.get'](custom_field, '')
-                if isinstance(custom_field_value, str):
-                    event.update({custom_field_name: custom_field_value})
-                elif isinstance(custom_field_value, list):
-                    custom_field_value = ','.join(custom_field_value)
-                    event.update({custom_field_name: custom_field_value})
-
-            payload.update({'host': fqdn})
-            payload.update({'index': opts['index']})
-            payload.update({'sourcetype': opts['sourcetype']})
-            payload.update({'event': event})
-
-            rdy = json.dumps(payload)
-            requests.post('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
-
-        for suc in data.get('Success', []):
-            check_id = suc.keys()[0]
-            payload = {}
-            event = {}
-            event.update({'check_result': 'Success'})
-            event.update({'check_id': check_id})
-            event.update({'job_id': jid})
-            if not isinstance(suc[check_id], dict):
-                event.update({'description': suc[check_id]})
-            elif 'description' in suc[check_id]:
-                for key, value in suc[check_id].iteritems():
-                    if key not in ['tag']:
-                        event[key] = value
-            event.update({'minion_id': minion_id})
-            event.update({'dest_host': fqdn})
-            event.update({'dest_ip': fqdn_ip4})
-
-            event.update(cloud_details)
-
-            for custom_field in custom_fields:
-                custom_field_name = 'custom_' + custom_field
-                custom_field_value = __salt__['config.get'](custom_field, '')
-                if isinstance(custom_field_value, str):
-                    event.update({custom_field_name: custom_field_value})
-                elif isinstance(custom_field_value, list):
-                    custom_field_value = ','.join(custom_field_value)
-                    event.update({custom_field_name: custom_field_value})
-
-            payload.update({'host': fqdn})
-            payload.update({'index': opts['index']})
-            payload.update({'sourcetype': opts['sourcetype']})
-            payload.update({'event': event})
-
-            rdy = json.dumps(payload)
-            requests.post('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
-
+        # Compliance data
         if data.get('Compliance', None):
-            payload = {}
-            event = {}
-            event.update({'job_id': jid})
-            event.update({'compliance_percentage': data['Compliance']})
-            event.update({'minion_id': minion_id})
-            event.update({'dest_host': fqdn})
-            event.update({'dest_ip': fqdn_ip4})
-
-            event.update(cloud_details)
-
-            for custom_field in custom_fields:
-                custom_field_name = 'custom_' + custom_field
-                custom_field_value = __salt__['config.get'](custom_field, '')
-                if isinstance(custom_field_value, str):
-                    event.update({custom_field_name: custom_field_value})
-                elif isinstance(custom_field_value, list):
-                    custom_field_value = ','.join(custom_field_value)
-                    event.update({custom_field_name: custom_field_value})
-
-            payload.update({'host': fqdn})
-            payload.update({'index': opts['index']})
-            payload.update({'sourcetype': opts['sourcetype']})
-            payload.update({'event': event})
-
-            rdy = json.dumps(payload)
-            requests.post('{}:{}/hubble/nova'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
+            args['compliance_percentage'] = data['Compliance']
+            event = _generate_event(args=args, cloud_details=cloud_details, compliance=True,
+                                    custom_fields=opts['custom_fields'])
+            _publish_event(opts=opts, fqdn=args['fqdn'], event=event)
 
     return
 
 
 def _get_options():
+    """
+    Function that aggregates the configs for logstash and returns them as a list of dicts.
+    """
     if __salt__['config.get']('hubblestack:returner:logstash'):
-        logstash_opts = []
         returner_opts = __salt__['config.get']('hubblestack:returner:logstash')
         if not isinstance(returner_opts, list):
             returner_opts = [returner_opts]
-        for opt in returner_opts:
-            processed = {}
-            processed['password'] = opt.get('password')
-            processed['user'] = opt.get('user')
-            processed['indexer'] = opt.get('indexer')
-            processed['port'] = str(opt.get('port', '8080'))
-            processed['index'] = opt.get('index')
-            processed['custom_fields'] = opt.get('custom_fields', [])
-            processed['sourcetype'] = opt.get('sourcetype_nova', 'hubble_audit')
-            processed['http_input_server_ssl'] = opt.get('indexer_ssl', True)
-            processed['proxy'] = opt.get('proxy', {})
-            processed['timeout'] = opt.get('timeout', 9.05)
-            logstash_opts.append(processed)
-        return logstash_opts
+        return [_process_opt(opt) for opt in returner_opts]
+    try:
+        logstash_opts = {
+            'password': __salt__['config.get']('hubblestack:returner:logstash:password'),
+            'indexer': __salt__['config.get']('hubblestack:returner:logstash:indexer'),
+            'sourcetype': __salt__['config.get']('hubblestack:returner:logstash:sourcetype'),
+            'user': __salt__['config.get']('hubblestack:returner:logstash:user'),
+            'port': __salt__['config.get']('hubblestack:returner:logstash:port'),
+            'custom_fields': __salt__['config.get'](
+                'hubblestack:returner:logstash:custom_fields', []),
+            'http_input_server_ssl': __salt__['config.get'](
+                'hubblestack:nova:returner:logstash:indexer_ssl', True),
+            'proxy': __salt__['config.get']('hubblestack:nova:returner:logstash:proxy', {}),
+            'timeout': __salt__['config.get']('hubblestack:nova:returner:logstash:timeout',
+                                              9.05)}
+    except Exception:
+        return None
+
+    return [logstash_opts]
+
+
+def _process_opt(opt):
+    """
+    Helper function that extracts certain fields from the opt dict and assembles the processed dict
+    """
+    return {'password': opt.get('password'),
+            'user': opt.get('user'),
+            'indexer': opt.get('indexer'),
+            'port': str(opt.get('port', '8080')),
+            'index': opt.get('index'),
+            'custom_fields': opt.get('custom_fields', []),
+            'sourcetype': opt.get('sourcetype_nova', 'hubble_audit'),
+            'http_input_server_ssl': opt.get('indexer_ssl', True),
+            'proxy': opt.get('proxy', {}),
+            'timeout': opt.get('timeout', 9.05)}
+
+
+def _build_args(ret):
+    """
+    Helper function that builds the args that will be passed on to the event - cleaner way of
+    processing the variables we care about
+    """
+    # Sometimes fqdn is blank. If it is, replace it with minion_id
+    fqdn = __grains__['fqdn'] if __grains__['fqdn'] else ret['id']
+    try:
+        fqdn_ip4 = __grains__['fqdn_ip4'][0]
+    except IndexError:
+        fqdn_ip4 = __grains__['ipv4'][0]
+    if fqdn_ip4.startswith('127.'):
+        for ip4_addr in __grains__['ipv4']:
+            if ip4_addr and not ip4_addr.startswith('127.'):
+                fqdn_ip4 = ip4_addr
+                break
+
+    return {'job_id': ret['jid'],
+            'minion_id': ret['id'],
+            'fqdn': fqdn,
+            'fqdn_ip4': fqdn_ip4}
+
+
+def _generate_event(args, cloud_details, custom_fields, compliance=False, data=None):
+    """
+    Helper function that builds and returns the event dict
+    """
+    event = {'job_id': args['job_id']}
+    if not compliance:
+        event.update({'check_result': args['check_result'],
+                      'check_id': args['check_id']})
+        if not isinstance(data[args['check_id']], dict):
+            event.update({'description': data[args['check_id']]})
+        elif 'description' in data[args['check_id']]:
+            for key, value in data[args['check_id']].iteritems():
+                if key not in ['tag']:
+                    event[key] = value
     else:
-        try:
-            port = __salt__['config.get']('hubblestack:returner:logstash:port')
-            user = __salt__['config.get']('hubblestack:returner:logstash:user')
-            indexer = __salt__['config.get']('hubblestack:returner:logstash:indexer')
-            password = __salt__['config.get']('hubblestack:returner:logstash:password')
-            sourcetype = __salt__['config.get']('hubblestack:returner:logstash:sourcetype')
-            custom_fields = __salt__['config.get']('hubblestack:returner:logstash:custom_fields', [])
-        except:
-            return None
+        event['compliance_percentage'] = args['compliance_percentage']
+    event.update({'minion_id': args['minion_id'],
+                  'dest_host': args['fqdn'],
+                  'dest_ip': args['fqdn_ip4']})
 
-        logstash_opts = {'password': password, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}
+    event.update(cloud_details)
 
-        indexer_ssl = __salt__['config.get']('hubblestack:nova:returner:logstash:indexer_ssl', True)
-        logstash_opts['http_input_server_ssl'] = indexer_ssl
-        logstash_opts['proxy'] = __salt__['config.get']('hubblestack:nova:returner:logstash:proxy', {})
-        logstash_opts['timeout'] = __salt__['config.get']('hubblestack:nova:returner:logstash:timeout', 9.05)
+    for custom_field in custom_fields:
+        custom_field_name = 'custom_' + custom_field
+        custom_field_value = __salt__['config.get'](custom_field, '')
+        if isinstance(custom_field_value, list):
+            custom_field_value = ','.join(custom_field_value)
+        if isinstance(custom_field_value, str):
+            event.update({custom_field_name: custom_field_value})
 
-        return [logstash_opts]
+    return event
+
+
+def _publish_data(args, checks, check_result, cloud_details, opts):
+    """
+    Helper function that goes over the failure/success checks and publishes the event to logstash
+    """
+    for data in checks:
+        check_id = data.keys()[0]
+        args['check_result'] = check_result
+        args['check_id'] = check_id
+        event = _generate_event(custom_fields=opts['custom_fields'], data=data, args=args,
+                                cloud_details=cloud_details)
+        _publish_event(opts, args['fqdn'], event)
+
+
+def _publish_event(opts, fqdn, event):
+    """
+    Helper function that builds the payload and publishes it to logstash using POST
+    """
+    payload = {'host': fqdn,
+               'index': opts['index'],
+               'sourcetype': opts['sourcetype'],
+               'event': event}
+
+    rdy = json.dumps(payload)
+    requests.post('{}:{}/hubble/nova'.format(opts['indexer'], opts['port']), rdy,
+                  auth=HTTPBasicAuth(opts['user'], opts['password']))

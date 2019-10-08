@@ -24,36 +24,25 @@ plugin. Required config/pillar settings:
 """
 
 import json
-import time
 import requests
-from datetime import datetime
 from requests.auth import HTTPBasicAuth
 
 
 def returner(ret):
     """
+    Gather data for nebula and post it to logstash according to the config
     """
     opts_list = _get_options()
+
+    if not ret['return']:
+        return
 
     # Get cloud details
     cloud_details = __grains__.get('cloud_details', {})
 
     for opts in opts_list:
-        proxy = opts['proxy']
-        timeout = opts['timeout']
-        custom_fields = opts['custom_fields']
-
-        indexer = opts['indexer']
-        port = opts['port']
-        password = opts['password']
-        user = opts['user']
-
         # assign all the things
-        data = ret['return']
-        minion_id = ret['id']
-        jid = ret['jid']
-        fqdn = __grains__['fqdn']
-        fqdn = fqdn if fqdn else minion_id
+        fqdn = __grains__['fqdn'] if __grains__['fqdn'] else ret['id']
         try:
             fqdn_ip4 = __grains__['fqdn_ip4'][0]
         except IndexError:
@@ -64,87 +53,88 @@ def returner(ret):
                     fqdn_ip4 = ip4_addr
                     break
 
-        if not data:
-            return
-        else:
-            for query in data:
-                for query_name, query_results in query.iteritems():
-                    for query_result in query_results['data']:
-                        event = {}
-                        payload = {}
-                        event.update(query_result)
-                        event.update({'query': query_name})
-                        event.update({'job_id': jid})
-                        event.update({'minion_id': minion_id})
-                        event.update({'dest_host': fqdn})
-                        event.update({'dest_ip': fqdn_ip4})
+        for query in ret['return']:
+            for query_name, query_results in query.iteritems():
+                for query_result in query_results['data']:
+                    args = {'query': query_name,
+                            'job_id': ret['jid'],
+                            'minion_id': ret['id'],
+                            'dest_host': fqdn,
+                            'dest_ip': fqdn_ip4}
+                    event = _generate_event(custom_fields=opts['custom_fields'], args=args,
+                                            cloud_details=cloud_details,
+                                            query_result=query_result)
 
-                        event.update(cloud_details)
+                    payload = {'host': fqdn,
+                               'index': opts['index'],
+                               'sourcetype': opts['sourcetype'],
+                               'event': event}
 
-                        for custom_field in custom_fields:
-                            custom_field_name = 'custom_' + custom_field
-                            custom_field_value = __salt__['config.get'](custom_field, '')
-                            if isinstance(custom_field_value, str):
-                                event.update({custom_field_name: custom_field_value})
-                            elif isinstance(custom_field_value, list):
-                                custom_field_value = ','.join(custom_field_value)
-                                event.update({custom_field_name: custom_field_value})
-
-                        payload.update({'host': fqdn})
-                        payload.update({'index': opts['index']})
-                        payload.update({'sourcetype': opts['sourcetype']})
-                        payload.update({'event': event})
-
-                        # If the osquery query includes a field called 'time' it will be checked.
-                        # If it's within the last year, it will be used as the eventtime.
-                        event_time = query_result.get('time', '')
-                        try:
-                            if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
-                                event_time = ''
-                        except:
-                            event_time = ''
-                        finally:
-                            rdy = json.dumps(payload)
-                            requests.post('{}:{}/hubble/nebula'.format(indexer, port), rdy, auth=HTTPBasicAuth(user, password))
+                    rdy = json.dumps(payload)
+                    requests.post('{}:{}/hubble/nebula'.format(opts['indexer'], opts['port']), rdy,
+                                  auth=HTTPBasicAuth(opts['user'], opts['password']))
     return
 
 
 def _get_options():
     if __salt__['config.get']('hubblestack:returner:logstash'):
-        logstash_opts = []
         returner_opts = __salt__['config.get']('hubblestack:returner:logstash')
         if not isinstance(returner_opts, list):
             returner_opts = [returner_opts]
-        for opt in returner_opts:
-            processed = {}
-            processed['password'] = opt.get('password')
-            processed['user'] = opt.get('user')
-            processed['indexer'] = opt.get('indexer')
-            processed['port'] = str(opt.get('port', '8080'))
-            processed['index'] = opt.get('index')
-            processed['custom_fields'] = opt.get('custom_fields', [])
-            processed['sourcetype'] = opt.get('sourcetype_nebula', 'hubble_osquery')
-            processed['indexer_ssl'] = opt.get('indexer_ssl', True)
-            processed['proxy'] = opt.get('proxy', {})
-            processed['timeout'] = opt.get('timeout', 9.05)
-            logstash_opts.append(processed)
-        return logstash_opts
-    else:
-        try:
-            port = __salt__['config.get']('hubblestack:returner:logstash:port')
-            user = __salt__['config.get']('hubblestack:returner:logstash:user')
-            indexer = __salt__['config.get']('hubblestack:returner:logstash:indexer')
-            password = __salt__['config.get']('hubblestack:returner:logstash:password')
-            sourcetype = __salt__['config.get']('hubblestack:nebula:returner:logstash:sourcetype')
-            custom_fields = __salt__['config.get']('hubblestack:nebula:returner:logstash:custom_fields', [])
-        except:
-            return None
+        return [_process_opt(opt) for opt in returner_opts]
+    try:
+        logstash_opts = {
+            'password': __salt__['config.get']('hubblestack:returner:logstash:password'),
+            'indexer': __salt__['config.get']('hubblestack:returner:logstash:indexer'),
+            'sourcetype': __salt__['config.get'](
+                'hubblestack:nebula:returner:logstash:sourcetype'),
+            'custom_fields': __salt__['config.get'](
+                'hubblestack:nebula:returner:logstash:custom_fields', []),
+            'port': __salt__['config.get']('hubblestack:returner:logstash:port'),
+            'user': __salt__['config.get']('hubblestack:returner:logstash:user'),
+            'http_input_server_ssl': __salt__['config.get'](
+                'hubblestack:nebula:returner:logstash:indexer_ssl', True),
+            'proxy': __salt__['config.get']('hubblestack:nebula:returner:logstash:proxy', {}),
+            'timeout': __salt__['config.get']('hubblestack:nebula:returner:logstash:timeout',
+                                              9.05)}
+    except Exception:
+        return None
 
-        logstash_opts = {'password': password, 'indexer': indexer, 'sourcetype': sourcetype, 'index': index, 'custom_fields': custom_fields}
+    return [logstash_opts]
 
-        indexer_ssl = __salt__['config.get']('hubblestack:nebula:returner:logstash:indexer_ssl', True)
-        logstash_opts['http_input_server_ssl'] = indexer_ssl
-        logstash_opts['proxy'] = __salt__['config.get']('hubblestack:nebula:returner:logstash:proxy', {})
-        logstash_opts['timeout'] = __salt__['config.get']('hubblestack:nebula:returner:logstash:timeout', 9.05)
 
-        return [logstash_opts]
+def _process_opt(opt):
+    """
+    Helper function that extracts certain fields from the opt dict and assembles the processed dict
+    """
+    return {'password': opt.get('password'),
+            'user': opt.get('user'),
+            'indexer': opt.get('indexer'),
+            'port': str(opt.get('port', '8080')),
+            'index': opt.get('index'),
+            'custom_fields': opt.get('custom_fields', []),
+            'sourcetype': opt.get('sourcetype_nebula', 'hubble_osquery'),
+            'indexer_ssl': opt.get('indexer_ssl', True),
+            'proxy': opt.get('proxy', {}),
+            'timeout': opt.get('timeout', 9.05)}
+
+
+def _generate_event(custom_fields, args, cloud_details, query_result):
+    """
+    Helper function that builds and returns the event dict
+    """
+    event = {}
+    event.update(query_result)
+    event.update(args)
+    event.update(cloud_details)
+
+    for custom_field in custom_fields:
+        custom_field_name = 'custom_' + custom_field
+        custom_field_value = __salt__['config.get'](custom_field, '')
+        if isinstance(custom_field_value, str):
+            event.update({custom_field_name: custom_field_value})
+        elif isinstance(custom_field_value, list):
+            custom_field_value = ','.join(custom_field_value)
+            event.update({custom_field_name: custom_field_value})
+
+    return event

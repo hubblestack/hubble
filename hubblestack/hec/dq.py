@@ -123,14 +123,14 @@ class DiskQueue(OKTypesMixin):
             if given, it will write to a meta data file describing the entry.
         """
         self.check_type(item)
-        if not self.accept(item):
+        bstr = self.compress(item)
+        if not self.accept(bstr):
             raise QueueCapacityError('refusing to accept item due to size')
         fanout, remainder = self._fanout('{0}.{1}'.format(int(time.time()), self.cn))
         d = self._mkdir(fanout)
         f = os.path.join(d, remainder)
         with open(f, 'wb') as fh:
             log.debug('writing item to disk cache')
-            bstr = self.compress(item)
             fh.write(bstr)
         if meta:
             with open(f + '.meta', 'w') as fh:

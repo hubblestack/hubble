@@ -7,15 +7,20 @@ import signal
 import time
 
 import logging
+
 log = logging.getLogger('hangtime')
 
+
 class HangTime(Exception):
+    """
+    HangTime exception that should handle timeouts in code by clearing/resetting/setting timers.
     # NOTE: this will break completely in multithreading
     # it should work just fine in multiprocessing
+    """
 
     prev = list()
 
-    def __init__(self, msg="hang timeout detected", timeout=300, tag=None, repeats=False, decay=1.0):
+    def __init__(self, timeout=300, tag=None, repeats=False, decay=1.0):
         """ HangTime wraps code via with block.
 
         ... code-block:: python
@@ -90,21 +95,22 @@ class HangTime(Exception):
         while self.prev and self in self.prev:
             self.prev.pop()
         if self.prev:
-            p = self.prev[-1]
-            dt = time.time() - p.started
-            tr = p.timeout - dt
-            if tr > 0:
-                log.debug("time remaining on previous timer %s tr=%f, restarting itimer", repr(p), tr)
-                signal.signal(signal.SIGALRM, p.fire_timer)
-                signal.setitimer(signal.ITIMER_REAL, tr)
+            prev = self.prev[-1]
+            time_diff = time.time() - prev.started
+            time_remaining = prev.timeout - time_diff
+            if time_remaining > 0:
+                log.debug("time remaining on previous timer %s tr=%f, restarting itimer",
+                          repr(prev), time_remaining)
+                signal.signal(signal.SIGALRM, prev.fire_timer)
+                signal.setitimer(signal.ITIMER_REAL, time_remaining)
             else:
-                p.restore()
+                prev.restore()
         else:
             log.debug("timer stack empty after %s, resetting signals/itimers", repr(self))
             signal.setitimer(signal.ITIMER_REAL, 0)
             signal.signal(signal.SIGALRM, signal.SIG_DFL)
 
-    def fire_timer(self, *sig_param):
+    def fire_timer(self, *_sig_param):
         """ when an itimer fires, execution enters this method
             which either clears timers, sets up the next timer in a nest, or
             repeats the last timer as specified by the options.
@@ -152,17 +158,22 @@ def hangtime_wrapper(**ht_kw):
         options:
     """
     callback = ht_kw.pop('callback', None)
+
     def _decorator(actual):
         def _frobnicator(*a, **kw):
             try:
                 with HangTime(**ht_kw):
                     return actual(*a, **kw)
-            except HangTime as ht:
+            except HangTime as hangtime_exception:
                 res = False
                 if callback:
-                    try: res = callback(ht)
-                    except: pass
+                    try:
+                        res = callback(hangtime_exception)
+                    except Exception:
+                        pass
                 if not res:
-                    log.error(ht, exc_info=True)
+                    log.error(hangtime_exception, exc_info=True)
+
         return _frobnicator
+
     return _decorator

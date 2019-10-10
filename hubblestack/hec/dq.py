@@ -5,6 +5,7 @@ import os
 import logging
 import time
 import shutil
+import json
 from collections import deque
 
 __all__ = [
@@ -48,94 +49,6 @@ class NoQueue(object):
         return False
     __nonzero__ = __bool__ # stupid python2
 
-class MemQueue(OKTypesMixin):
-    sep = b' '
-
-    def __init__(self, size=DEFAULT_MEMORY_SIZE, ok_types=OK_TYPES):
-        self.init_types(ok_types)
-        self.init_mq(size)
-
-    def __bool__(self):
-        return True
-    __nonzero__ = __bool__ # stupid python2
-
-    def init_mq(self, size):
-        self.size = size
-        # compose rather than inherit to limit operations to append()/popleft() and
-        # ignore the rest of the deque() functionality
-        self.mq = deque()
-
-    def accept(self, item):
-        """ test to see whether the given item would fit in the queue under the queue's size restraints """
-        if len(item) + self.sz > self.size:
-            return False
-        return True
-
-    def put(self, item):
-        """ Put an item in the queue at the end (FIFO order) """
-        self.check_type(item)
-        if not self.accept(item):
-            raise QueueCapacityError('refusing to accept item due to size')
-        self.mq.append(item)
-
-    def unget(self, item):
-        """ Put an item (back) in the queue at the front (LIFO order)
-
-            This is meant to reverse a previous .get() that later turns out to
-            be un-needed.
-        """
-        self.check_type(item)
-        self.mq.appendleft(item)
-
-    def get(self):
-        """ get the next item from the queue """
-        if len(self.mq) > 0:
-            return self.mq.popleft()
-
-    def pop(self):
-        """ pop an item from the queue """
-        self.mq.popleft()
-
-    def getz(self, sz=SPLUNK_MAX_MSG):
-        """ get items from the queue and concatenate them together using the
-        spacer ' ' until the size reaches (but does not exceed) the kwarg sz.
-
-            kwargs:
-                sz : the maxsize of the queue fetch (default: SPLUNK_MAX_MSG=100k)
-        """
-        r = b''
-        while len(self.mq) > 0 and len(r) + len(self.sep) + len(self.peek()) < sz:
-            if r:
-                r += self.sep
-            r += self.mq.popleft()
-        return r
-
-    def peek(self):
-        """ look at the next item in the queue, but don't actually remove it from the queue """
-        if len(self.mq) > 0:
-            return self.mq[0]
-
-    @property
-    def sz(self):
-        """ the size of the queue in bytes (not counting any needed spacers) """
-        s = 0
-        for i in self.mq:
-            s += len(i)
-        return s
-
-    @property
-    def cn(self):
-        """ the size of the queue in items (the count) """
-        return len(self.mq)
-
-    @property
-    def msz(self):
-        """ The size of the queue as it would be returned from getz() iff getz had no size limit """
-        return self.sz + max(0, len(self.sep) * (self.cn -1))
-
-    def __len__(self):
-        return self.msz
-
 
 class DiskQueue(OKTypesMixin):
     sep = b' '
@@ -161,6 +74,12 @@ class DiskQueue(OKTypesMixin):
             d = b.compress(x)
             return d + b.flush()
         return _bz2(dat)
+
+    def unlink_(self, fname):
+        names = (fname, fname + '.meta')
+        for name in names:
+            if os.path.isfile(name):
+                os.unlink(name)
 
     def decompress(self, dat):
         if dat.startswith('BZ'):
@@ -196,8 +115,11 @@ class DiskQueue(OKTypesMixin):
             return False
         return True
 
-    def put(self, item):
-        """ Put an item in the queue at the end (FIFO order) """
+    def put(self, item, **meta):
+        """ Put an item in the queue at the end (FIFO order)
+            put() also takes an arbitrary number of meta data items (kwargs); which,
+            if given, it will write to a meta data file describing the entry.
+        """
         self.check_type(item)
         if not self.accept(item):
             raise QueueCapacityError('refusing to accept item due to size')
@@ -207,20 +129,40 @@ class DiskQueue(OKTypesMixin):
         with open(f, 'wb') as fh:
             log.debug('writing item to disk cache')
             fh.write(self.compress(item))
+        if meta:
+            with open(f + '.meta', 'w') as fh:
+                json.dump(meta, fh)
         self._count()
 
+    def read_meta(self, fname):
+        try:
+            with open(fname + '.meta', 'r') as fh:
+                return json.load(fh)
+        except ValueError:
+            # can't quite read the json
+            pass
+        except IOError:
+            # no such file
+            pass
+        return dict()
+
     def peek(self):
-        """ look at the next item in the queue, but don't actually remove it from the queue """
+        """ look at the next item in the queue, but don't actually remove it from the queue
+            returns: data_octets, meta_data_dict
+        """
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                return self.decompress(fh.read())
+                return self.decompress(fh.read()), self.read_meta(fname)
 
     def get(self):
-        """ get the next item from the queue """
+        """ get the next item from the queue
+            returns: data_octets, meta_data_dict
+        """
         for fname in self.files:
             with open(fname, 'rb') as fh:
                 ret = self.decompress(fh.read())
-            os.unlink(fname)
+            ret = ret, self.read_meta(fname)
+            self.unlink_(fname)
             self._count()
             return ret
 
@@ -231,26 +173,46 @@ class DiskQueue(OKTypesMixin):
 
             kwargs:
                 sz : the maxsize of the queue fetch (default: SPLUNK_MAX_MSG=100k)
+
+            returns: data_octets, meta_data_dict
         """
         # Is it "dangerous" to unlink files during the os.walk (via generator)?
         # .oO( probably doesn't matter )
-        r = b''
+        ret = b''
+        meta_data = dict()
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                p = self.decompress(fh.read())
-            if r:
-                if len(r) + len(self.sep) + len(p) > sz:
+                partial_data = self.decompress(fh.read())
+            if ret:
+                if len(ret) + len(self.sep) + len(partial_data) > sz:
                     break
-                r += self.sep
-            r += p
-            os.unlink(fname)
+                ret += self.sep
+            ret += partial_data
+            _md = self.read_meta(fname)
+            for k in _md:
+                if k not in meta_data:
+                    meta_data[k] = list()
+                meta_data[k].append( _md[k] )
+            self.unlink_(fname)
         self._count()
-        return r
+        for k in meta_data:
+            # probably tracking the meta_data for each payload is more work
+            # than it's worth; so we just max the meta_data items and assume
+            # this only comes up once in a while
+            #
+            # The usual case is probably:
+            # 1. queue 20 or 30 things to disk
+            # 2. combine them up on the next loop
+            # 3. returning the max of [1,1,1,1,1,1] is 1
+            #
+            # occasionally this will return something pessimistic
+            meta_data[k] = max(meta_data[k])
+        return ret, meta_data
 
     def pop(self):
         """ remove the next item from the queue (do not return it); useful with .peek() """
         for fname in self.files:
-            os.unlink(fname)
+            self.unlink_(fname)
             break
         self._count()
 
@@ -265,6 +227,8 @@ class DiskQueue(OKTypesMixin):
             return x
         for path, dirs, files in sorted(os.walk(self.directory)):
             for fname in [ os.path.join(path, f) for f in sorted(files, key=_k) ]:
+                if fname.endswith('.meta'):
+                    continue
                 yield fname
 
     def _count(self):
@@ -282,105 +246,3 @@ class DiskQueue(OKTypesMixin):
 
     def __len__(self):
         return self.msz
-
-class DiskBackedQueue:
-    def __init__(self, directory, mem_size=DEFAULT_MEMORY_SIZE,
-            disk_size=DEFAULT_DISK_SIZE, ok_types=OK_TYPES, fresh=False):
-
-        self.dq = DiskQueue(directory, size=disk_size, ok_types=ok_types, fresh=fresh)
-        self.mq = MemQueue(size=mem_size, ok_types=ok_types)
-
-    def __bool__(self):
-        return True
-    __nonzero__ = __bool__ # stupid python2
-
-    def put(self, item):
-        """ Put an item in the queue at the end (FIFO order) """
-        try:
-            self.mq.put(item)
-        except QueueCapacityError:
-            self.dq.put(item)
-
-    def peek(self):
-        """ look at the next item in the queue, but don't actually remove it from the queue """
-        r = self.mq.peek()
-        if r is None:
-            r = self.dq.peek()
-        return r
-
-    def pop(self):
-        if self.mq.cn:
-            self.mq.pop()
-        elif self.dq.cn:
-            self.dq.pop()
-
-    def unget(self, msg):
-        """ Put an item (back) in the queue at the front (LIFO order)
-
-            This is meant to reverse a previous .get() that later turns out to
-            be un-needed.
-        """
-        self.mq.unget(msg)
-
-    def _disk_to_mem(self):
-        while self.dq.cn > 0:
-            # NOTE: dq.peek() read()s the file but doesn't unlink()
-            # dq.get() read()s the file and unlink()s it
-            # dq.pop() just unlink()s the file
-            # we attempt here to read each file exactly once — until the
-            # stopping condition
-            p = self.dq.peek()
-            if self.mq.accept(p):
-                self.mq.put(p)
-                self.dq.pop()
-            else:
-                break
-
-    def get(self):
-        """ get the next item from the queue """
-        r = self.mq.get()
-        if r is None:
-            r = self.dq.get()
-        self._disk_to_mem()
-        return r
-
-    def getz(self, sz=SPLUNK_MAX_MSG):
-        """ fetch items from the queue and concatenate them together using the
-            spacer ' ' until the size reaches (but does not exceed) the size
-            kwargs (sz).
-
-            kwargs:
-                sz : the maxsize of the queue fetch (default: SPLUNK_MAX_MSG=100k)
-        """
-        r = self.mq.getz(sz)
-        if r is None:
-            r = self.dq.getz(sz)
-        elif len(r) < sz-1:
-            r2 = self.dq.getz(sz-(len(r)+1))
-            if r2:
-                r += b' ' + r2
-        self._disk_to_mem()
-        return r
-
-    @property
-    def cn(self):
-        """ the size of the queue in items (the count) """
-        return self.mq.cn + self.dq.cn
-
-    @property
-    def msz(self):
-        """ The size of the queue as it would be returned from getz() iff getz had no size limit """
-        mq_msz = self.mq.msz
-        dq_msz = self.dq.msz
-        if mq_msz and dq_msz:
-            return 1 + mq_msz + dq_msz
-        if mq_msz:
-            return mq_msz
-        if dq_msz:
-            return dq_msz
-        return 0
-
-    @property
-    def sz(self):
-        """ the size of the queue in bytes (not counting any needed spacers) """
-        return self.mq.sz + self.dq.sz

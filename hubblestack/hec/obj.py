@@ -427,6 +427,9 @@ class HEC(object):
                 possible_queue = True
                 # If Splunk said it doesn't want this message, increment the opinion counter
                 meta_data['bad_request'] += 1
+            elif r.status == 403:
+                log.error('invalid or expired token (%d %s)', r.status, r.reason)
+                possible_queue = True
 
         # if we get here and something above thinks a queue is a good idea
         # then queue it! \o/

@@ -119,3 +119,7 @@ relevant-files.txt
 
 # PyCharm project
 .idea/
+
+# sometimes when I stop docker with a sigquit, hubble drops core (??)
+core
+core.*

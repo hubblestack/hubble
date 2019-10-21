@@ -42,7 +42,7 @@ Optional kwargs:
         True/False. Whether to use multiline flag for regex matching with
         match_output_regex set to True. Defaults to True.
 """
-from __future__ import absolute_import
+
 
 import logging
 import os

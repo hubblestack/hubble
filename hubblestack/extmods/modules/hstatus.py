@@ -40,7 +40,7 @@ def msg_counts(pat=MSG_COUNTS_PAT, emit_self=False, sourcetype=SOURCETYPE):
     pat = re.compile(pat)
     ret = list()  # events to return
     for bucket_set in hubblestack.status.HubbleStatus.short('all'):
-        for key, val in bucket_set.iteritems():
+        for key, val in bucket_set.items():
             try:
                 # should be at least one count
                 if val['count'] < 1:

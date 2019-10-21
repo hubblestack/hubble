@@ -92,7 +92,7 @@ def returner(ret):
             args, kwargs = make_hec_args(opts)
             hec = http_event_collector(*args, **kwargs)
 
-            for fdg_info, fdg_results in data.iteritems():
+            for fdg_info, fdg_results in data.items():
 
                 if not isinstance(fdg_results, list):
                     fdg_results = [fdg_results]
@@ -132,7 +132,7 @@ def _generate_event(fdg_args, args, starting_chained, cloud_details, custom_fiel
         custom_field_value = __salt__['config.get'](custom_field, '')
         if isinstance(custom_field_value, list):
             custom_field_value = ','.join(custom_field_value)
-        if isinstance(custom_field_value, (str, unicode)):
+        if isinstance(custom_field_value, str):
             event.update({custom_field_name: custom_field_value})
 
     return event

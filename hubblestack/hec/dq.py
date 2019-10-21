@@ -84,7 +84,7 @@ class DiskQueue(OKTypesMixin):
                 os.unlink(name)
 
     def decompress(self, dat):
-        if dat.startswith('BZ'):
+        if str(dat).startswith('BZ'):
             try:
                 return bz2.BZ2Decompressor().decompress(dat)
             except IOError:
@@ -131,6 +131,8 @@ class DiskQueue(OKTypesMixin):
         f = os.path.join(d, remainder)
         with open(f, 'wb') as fh:
             log.debug('writing item to disk cache')
+            if isinstance(bstr, str):
+                bstr = str.encode(bstr)
             fh.write(bstr)
         if meta:
             with open(f + '.meta', 'w') as fh:
@@ -235,12 +237,12 @@ class DiskQueue(OKTypesMixin):
         """ generate all filenames in the diskqueue (returns iterable) """
         def _k(x):
             try:
-                return [ int(i) for i in x.split('.') ]
+                return [int(i) for i in x.split('.')]
             except:
                 pass
             return x
         for path, dirs, files in sorted(os.walk(self.directory)):
-            for fname in [ os.path.join(path, f) for f in sorted(files, key=_k) ]:
+            for fname in [os.path.join(path, f) for f in sorted(files, key=_k)]:
                 if fname.endswith('.meta'):
                     continue
                 yield fname

@@ -222,10 +222,9 @@ class HubbleStatus(object):
             """
             if bucket is not None:
                 self = self.find_bucket(bucket)
-            r = { 'count': self.count, 'last_t': self.last_t,
+            r = {'count': self.count, 'last_t': self.last_t,
                 'dt': self.dt, 'ema_dt': self.ema_dt, 'first_t': self.first_t,
-                'bucket': self.bucket, 'bucket_len': self.bucket_len
-                }
+                'bucket': self.bucket, 'bucket_len': self.bucket_len}
             if self.dur is not None:
                 r.update({'dur': self.dur, 'ema_dur': self.ema_dur})
             return r
@@ -240,7 +239,7 @@ class HubbleStatus(object):
                 t = time.time()
                 self = self.get_bucket(t)
             else:
-                if isinstance(t, (str,unicode)):
+                if isinstance(t, str):
                     t = int(t)
                 self = self.get_bucket(t)
                 if t < self.first_t:
@@ -349,7 +348,7 @@ class HubbleStatus(object):
         if n is not None:
             return self.dat[n].buckets
         r = set()
-        for item in cls.dat.values():
+        for item in list(cls.dat.values()):
             r.update(item.buckets)
         return sorted(r)
 
@@ -447,12 +446,12 @@ class HubbleStatus(object):
 
         r = cls.short()
 
-        min_dt = min([ x['dt'] for x in r.values() ])
-        max_t  = max([ x['last_t'] for x in r.values() ])
-        min_t  = min([ x['first_t'] for x in r.values() if x['first_t'] > 0 ])
+        min_dt = min([ x['dt'] for x in list(r.values()) ])
+        max_t  = max([ x['last_t'] for x in list(r.values()) ])
+        min_t  = min([ x['first_t'] for x in list(r.values()) if x['first_t'] > 0 ])
         h1 = {'time': max_t, 'dt': min_dt, 'start': min_t}
         r['HEALTH'] = h2 = {
-            'buckets': { k: n.buckets for k,n in cls.dat.iteritems() },
+            'buckets': { k: n.buckets for k,n in cls.dat.items() },
             'last_activity': h1,
         }
         r['__doc__'] = {
@@ -499,7 +498,7 @@ class HubbleStatus(object):
         """
         if bucket in ('*', 'all'):
             return [ cls.short(b) for b in cls.buckets() ]
-        return { k: v.asdict(bucket) for k,v in cls.dat.iteritems() if v.first_t > 0 }
+        return { k: v.asdict(bucket) for k,v in cls.dat.items() if v.first_t > 0 }
 
     @classmethod
     def as_json(cls, indent=2):

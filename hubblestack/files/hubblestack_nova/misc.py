@@ -38,7 +38,7 @@ misc:
     # Description will be output with the results
     description: '/home should be nodev'
 """
-from __future__ import absolute_import
+
 import logging
 
 import fnmatch
@@ -136,7 +136,7 @@ def _merge_yaml(ret, data, profile=None):
     if 'misc' not in ret:
         ret['misc'] = []
     if 'misc' in data:
-        for key, val in data['misc'].iteritems():
+        for key, val in data['misc'].items():
             if profile and isinstance(val, dict):
                 val['nova_profile'] = profile
             ret['misc'].append({key: val})
@@ -151,7 +151,7 @@ def _get_tags(data):
     distro = __grains__.get('osfinger')
     for audit_dict in data.get('misc', []):
         # misc:0
-        for audit_id, audit_data in audit_dict.iteritems():
+        for audit_id, audit_data in audit_dict.items():
             # misc:0:nodev
             tags_dict = audit_data.get('data', {})
             # misc:0:nodev:data
@@ -449,7 +449,7 @@ def check_duplicate_uids(reason=''):
     """
     uids = _execute_shell_command("cat /etc/passwd | cut -f3 -d\":\"", python_shell=True).strip()
     uids = uids.split('\n') if uids != "" else []
-    duplicate_uids = [k for k, v in Counter(uids).items() if v > 1]
+    duplicate_uids = [k for k, v in list(Counter(uids).items()) if v > 1]
     if duplicate_uids is None or duplicate_uids == []:
         return True
     return str(duplicate_uids)
@@ -461,7 +461,7 @@ def check_duplicate_gids(reason=''):
     """
     gids = _execute_shell_command("cat /etc/group | cut -f3 -d\":\"", python_shell=True).strip()
     gids = gids.split('\n') if gids != "" else []
-    duplicate_gids = [k for k, v in Counter(gids).items() if v > 1]
+    duplicate_gids = [k for k, v in list(Counter(gids).items()) if v > 1]
     if duplicate_gids is None or duplicate_gids == []:
         return True
     return str(duplicate_gids)
@@ -473,7 +473,7 @@ def check_duplicate_unames(reason=''):
     """
     unames = _execute_shell_command("cat /etc/passwd | cut -f1 -d\":\"", python_shell=True).strip()
     unames = unames.split('\n') if unames != "" else []
-    duplicate_unames = [k for k, v in Counter(unames).items() if v > 1]
+    duplicate_unames = [k for k, v in list(Counter(unames).items()) if v > 1]
     if duplicate_unames is None or duplicate_unames == []:
         return True
     return str(duplicate_unames)
@@ -485,7 +485,7 @@ def check_duplicate_gnames(reason=''):
     """
     gnames = _execute_shell_command("cat /etc/group | cut -f1 -d\":\"", python_shell=True).strip()
     gnames = gnames.split('\n') if gnames != "" else []
-    duplicate_gnames = [k for k, v in Counter(gnames).items() if v > 1]
+    duplicate_gnames = [k for k, v in list(Counter(gnames).items()) if v > 1]
     if duplicate_gnames is None or duplicate_gnames == []:
         return True
     return str(duplicate_gnames)
@@ -963,7 +963,7 @@ def mail_conf_check(reason=''):
     mail_addresses = _execute_shell_command("grep '^[[:blank:]]*inet_interfaces' /etc/postfix/main.cf | awk -F'=' '{print $2}'", python_shell=True).strip()
     mail_addresses = str(mail_addresses)
     mail_addresses = mail_addresses.split(',') if mail_addresses != "" else []
-    mail_addresses = map(str.strip, mail_addresses)
+    mail_addresses = list(map(str.strip, mail_addresses))
     invalid_addresses = list(set(mail_addresses) - set(valid_addresses))
 
     return str(invalid_addresses) if invalid_addresses != [] else True

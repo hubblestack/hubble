@@ -66,7 +66,7 @@ def _get_aws_details():
             r = requests.get('http://169.254.169.254/latest/meta-data/local-hostname', timeout=3, proxies=proxies)
             if r.status_code == requests.codes.ok:
                 aws_extra['cloud_private_hostname'] = r.text
-            for key in aws_extra.keys():
+            for key in list(aws_extra.keys()):
                 if not aws_extra[key]:
                     aws_extra.pop(key)
 
@@ -123,7 +123,7 @@ def _get_azure_details():
                 grain_name_mac = "cloud_interface_{0}_mac_address".format(counter)
                 azure_extra[grain_name_mac] = value['macAddress']
 
-            for key in azure_extra.keys():
+            for key in list(azure_extra.keys()):
                 if not azure_extra[key]:
                     azure_extra.pop(key)
 
@@ -194,7 +194,7 @@ def _get_gcp_details():
                 external_ips_list = [ item['externalIp'] for item in value['accessConfigs'] if 'externalIp' in item ]
                 gcp_extra[grain_name_accessconfig_external_ips] = ','.join(external_ips_list)
 
-            for key in gcp_extra.keys():
+            for key in list(gcp_extra.keys()):
                 if not gcp_extra[key]:
                     gcp_extra.pop(key)
 

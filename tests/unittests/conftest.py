@@ -238,4 +238,4 @@ def pytest_sessionfinish(session, exitstatus):
         import subprocess
         p = subprocess.Popen(['chown', '-R', pcmf, sources_dir])
         p.communicate()
-        print('\nchowned back files to {}'.format(pcmf))
+        print(('\nchowned back files to {}'.format(pcmf)))

@@ -133,7 +133,7 @@ class HubbleStatusContext(object):
         max_buckets = self.kwargs.pop('max_buckets', 1e3)
         namespace = self.kwargs.pop('namespace', 'x')
         if self.kwargs:
-            raise ValueError('unknown arguments: {}', ', '.join(self.kwargs.keys()))
+            raise ValueError('unknown arguments: {}', ', '.join(list(self.kwargs.keys())))
         opts = dict(bucket_len=bucket_len, max_buckets=max_buckets)
 
         # setup hubble_status

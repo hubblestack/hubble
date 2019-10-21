@@ -221,9 +221,9 @@ class TestPulsar2():
     def test_listify_anything(self):
         la = pulsar.PulsarWatchManager._listify_anything
         def lla(x,e):
-            assert len( la(x) ) == e
+            assert len(la(x)) == e
         def sla(x,e):
-            assert str(sorted(la(x))) == str(sorted(e))
+            assert str(sorted(la(x), key=lambda x: str(x))) == str(sorted(e, key=lambda x: str(x)))
         lla(None, 0)
         lla([None], 0)
         lla(set([None]), 0)

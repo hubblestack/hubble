@@ -11,7 +11,7 @@ Configuration:
     - hubblestack:nova:autoload
     - hubblestack:nova:autosync
 """
-from __future__ import absolute_import
+
 
 import logging
 import os
@@ -298,7 +298,7 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
     # have available with the data list, so data will be processed multiple
     # times. However, for the scale we're working at this should be fine.
     # We can revisit if this ever becomes a big bottleneck
-    for key, func in __nova__._dict.iteritems():
+    for key, func in __nova__._dict.items():
         try:
             ret = func(data_list, tags, labels, **kwargs)
         except Exception:
@@ -318,7 +318,7 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
                 continue
 
         # Merge in the results
-        for ret_key, ret_val in ret.iteritems():
+        for ret_key, ret_val in ret.items():
             if ret_key not in results:
                 results[ret_key] = []
             results[ret_key].extend(ret_val)
@@ -333,7 +333,7 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
     for failure_index in reversed(sorted(set(failures_to_remove))):
         results['Failure'].pop(failure_index)
 
-    for key in results.keys():
+    for key in list(results.keys()):
         if not results[key]:
             results.pop(key)
 
@@ -381,7 +381,7 @@ def _build_processed_controls(data_list, debug):
             if isinstance(control, str):
                 processed_controls[control] = {}
             else:  # dict
-                for control_tag, control_data in control.iteritems():
+                for control_tag, control_data in control.items():
                     if isinstance(control_data, str):
                         processed_controls[control_tag] = {'reason': control_data}
                     else:  # dict
@@ -517,7 +517,7 @@ def top(topfile='top.nova',
         return results
 
     # Run the audits
-    for tag, data in data_by_tag.iteritems():
+    for tag, data in data_by_tag.items():
         ret = audit(configs=data,
                     tags=tag,
                     verbose=verbose,
@@ -527,7 +527,7 @@ def top(topfile='top.nova',
                     labels=labels)
 
         # Merge in the results
-        for key, val in ret.iteritems():
+        for key, val in ret.items():
             if key not in results:
                 results[key] = []
             results[key].extend(val)
@@ -553,12 +553,12 @@ def _build_data_by_tag(topfile, results):
     top_data = _get_top_data(topfile)
 
     for data in top_data:
-        if isinstance(data, basestring):
+        if isinstance(data, str):
             if '*' not in data_by_tag:
                 data_by_tag['*'] = []
             data_by_tag['*'].append(data)
         elif isinstance(data, dict):
-            for key, tag in data.iteritems():
+            for key, tag in data.items():
                 if tag not in data_by_tag:
                     data_by_tag[tag] = []
                 data_by_tag[tag].append(key)
@@ -581,7 +581,7 @@ def _clean_up_results(results, show_success):
     if show_success was not passed, adding an error message if
     results is empty
     """
-    for key in results.keys():
+    for key in list(results.keys()):
         if not results[key]:
             results.pop(key)
 
@@ -675,9 +675,9 @@ def load():
     global __nova__
     __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __grains__, __pillar__, __salt__)
 
-    ret = {'loaded': __nova__._dict.keys(),
+    ret = {'loaded': list(__nova__._dict.keys()),
            'missing': __nova__.missing_modules,
-           'data': __nova__.__data__.keys(),
+           'data': list(__nova__.__data__.keys()),
            'missing_data': __nova__.__missing_data__}
     return ret
 
@@ -749,7 +749,7 @@ def _get_top_data(topfile):
 
     ret = []
 
-    for match, data in topdata.iteritems():
+    for match, data in topdata.items():
         if __salt__['match.compound'](match):
             ret.extend(data)
 

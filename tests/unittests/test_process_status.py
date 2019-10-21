@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import mock
 import os
@@ -22,8 +22,8 @@ class TestProcessStatus():
         mock_query
             mock function for the `_run_query` function
         """
-        mock_query.return_value = {'data': [{u'pid': u'123', u'name': u'foo'},
-                                            {u'pid': u'321', u'name': u'bar'}],
+        mock_query.return_value = {'data': [{'pid': '123', 'name': 'foo'},
+                                            {'pid': '321', 'name': 'bar'}],
                                    'result': True}
         status, ret = hubblestack.extmods.fdg.process_status.list_processes()
         assert status
@@ -47,14 +47,14 @@ class TestProcessStatus():
         """
         Test that when passed in valid data, it returns a dict with keys and values converted to string.
         """
-        ret = hubblestack.extmods.fdg.process_status._convert_to_str([{u'pid': 123}, {'data': [1, 2, 3]}])
+        ret = hubblestack.extmods.fdg.process_status._convert_to_str([{'pid': 123}, {'data': [1, 2, 3]}])
         assert ret == [{'pid': '123'}, {'data': '[1, 2, 3]'}]
 
     def test__convertToStr_invalidArguments_returnsNone(self):
         """
         Test that when passed in an invalid data type, the function returns none
         """
-        ret = hubblestack.extmods.fdg.process_status._convert_to_str({u'pid': 123, 'data': [1, 2, 3]})
+        ret = hubblestack.extmods.fdg.process_status._convert_to_str({'pid': 123, 'data': [1, 2, 3]})
         assert ret is None
         ret = hubblestack.extmods.fdg.process_status._convert_to_str([123, 321, 'foo'])
         assert ret is None
@@ -87,15 +87,15 @@ class TestProcessStatus():
         mock_query
             mock function for the `_run_query` function
         """
-        mock_query.return_value = {'data': [{u'pid': u'123', u'name': u'bar'},
-                                            {u'pid': u'321', u'name': u'foo'}],
+        mock_query.return_value = {'data': [{'pid': '123', 'name': 'bar'},
+                                            {'pid': '321', 'name': 'foo'}],
                                    'result': True}
 
         status, ret = hubblestack.extmods.fdg.process_status.find_process("state == 'S'")
         assert status
         assert ret == [{'pid': '123', 'name': 'bar'}, {'pid': '321', 'name': 'foo'}]
-        mock_query.return_value = {'data': [{u'pid': u'123', u'name': u'bar', u'parent': u'1', u'state': u'S'},
-                                            {u'pid': u'321', u'name': u'foo', u'parent': u'1', u'state': u'S'}],
+        mock_query.return_value = {'data': [{'pid': '123', 'name': 'bar', 'parent': '1', 'state': 'S'},
+                                            {'pid': '321', 'name': 'foo', 'parent': '1', 'state': 'S'}],
                                    'result': True}
         status, ret = hubblestack.extmods.fdg.process_status.find_process("parent == 1 and state == 'S'",
                                                                           fields='parent,state')
@@ -122,7 +122,7 @@ class TestProcessStatus():
         assert status is False
         assert ret is None
         # multiple processes returned by query
-        mock_query.return_value = {'data': [{u'state': 'S'}, {u'state': 'R'}]}
+        mock_query.return_value = {'data': [{'state': 'S'}, {'state': 'R'}]}
         status, ret = hubblestack.extmods.fdg.process_status.is_running('parent > 1')
         assert status is False
         assert ret is None
@@ -141,12 +141,12 @@ class TestProcessStatus():
             mock function for the `_run_query` function
         """
         # process is running
-        mock_query.return_value = {'data': [{u'state': u'R'}]}
+        mock_query.return_value = {'data': [{'state': 'R'}]}
         status, ret = hubblestack.extmods.fdg.process_status.is_running('pid == 123')
         assert status
         assert ret
         # process is not running
-        mock_query.return_value = {'data': [{u'state': u'S'}]}
+        mock_query.return_value = {'data': [{'state': 'S'}]}
         status, ret = hubblestack.extmods.fdg.process_status.is_running("name == 'foo'")
         assert status
         assert ret is False
@@ -177,8 +177,8 @@ class TestProcessStatus():
         mock_query
             mock function for the `_run_query` function
         """
-        mock_query.return_value = {'data': [{u'pid': u'123', u'name': u'foo', u'uid': u'123'},
-                                            {u'pid': u'321', u'name': u'bar', u'uid': u'123'}],
+        mock_query.return_value = {'data': [{'pid': '123', 'name': 'foo', 'uid': '123'},
+                                            {'pid': '321', 'name': 'bar', 'uid': '123'}],
                                    'result': True}
         status, ret = hubblestack.extmods.fdg.process_status.find_children('foo', returned_fields='uid')
         assert status

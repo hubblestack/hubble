@@ -8,7 +8,7 @@ TEST_DQ_DIR = os.environ.get('TEST_DQ_DIR', '/tmp/dq.{0}'.format(os.getuid()))
 
 @pytest.fixture
 def samp():
-    return tuple(b'one two three four five'.split())
+    return tuple('one two three four five'.split())
 
 @pytest.fixture
 def dq():
@@ -17,9 +17,9 @@ def dq():
 def test_disk_queue(dq):
     borked = False
 
-    dq.put(b'one', testinator=3)
-    dq.put(b'two', testinator=4)
-    dq.put(b'three', testinator=5)
+    dq.put('one', testinator=3)
+    dq.put('two', testinator=4)
+    dq.put('three', testinator=5)
 
     assert len(dq) == 13
     assert dq.peek() == (b'one', {'testinator': 3})
@@ -27,21 +27,21 @@ def test_disk_queue(dq):
     assert dq.peek() == (b'two', {'testinator': 4})
     assert len(dq) == 9
 
-    assert dq.getz() == (b'two three', {'testinator': 5})
+    assert dq.getz() == ('two three', {'testinator': 5})
     assert len(dq) == 0
 
-    dq.put(b'one')
-    dq.put(b'two')
-    dq.put(b'three')
+    dq.put('one')
+    dq.put('two')
+    dq.put('three')
 
-    assert dq.getz(8) == (b'one two', {})
-    assert dq.getz(8) == (b'three', {})
+    assert dq.getz(8) == ('one two', {})
+    assert dq.getz(8) == ('three', {})
 
 def _test_pop(samp,q):
     for i in samp:
         q.put(i)
     for i in samp:
-        assert q.peek() == (i, {})
+        assert q.peek() == (str.encode(i), {})
         q.pop()
 
 def test_dq_pop(samp,dq):

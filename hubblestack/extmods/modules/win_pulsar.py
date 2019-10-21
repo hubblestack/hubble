@@ -4,7 +4,7 @@ This will setup your computer to enable auditing for specified folders inputted 
 It will then scan the ntfs journal for changes to those folders and report when it finds one.
 """
 
-from __future__ import absolute_import
+
 from time import mktime, strptime, time
 
 import collections
@@ -535,7 +535,7 @@ def get_top_data(topfile):
 
     ret = []
 
-    for match, data in topdata.iteritems():
+    for match, data in topdata.items():
         if __salt__['match.compound'](match):
             ret.extend(data)
 

@@ -55,7 +55,7 @@ def _find_addr(interfaces):
     # Fallback to "best guess"
     filtered_interfaces = {}
     # filter out empty, lo, and docker0
-    for interface, ips in interfaces.iteritems():
+    for interface, ips in interfaces.items():
         if not ips or interface in ('lo', 'docker0'):
             continue
         filtered_interfaces[interface] = ips
@@ -65,16 +65,15 @@ def _find_addr(interfaces):
             if ip_addr != '127.0.0.1':
                 return {'local_ip4': ip_addr}
     # Use .*0 if present
-    for interface, ips in filtered_interfaces.iteritems():
+    for interface, ips in filtered_interfaces.items():
         if '0' in interface:
             for ip_addr in ips:
                 if ip_addr != '127.0.0.1':
                     return {'local_ip4': ip_addr}
     # Use whatever isn't 127.0.0.1
-    for interface, ips in filtered_interfaces.iteritems():
+    for interface, ips in filtered_interfaces.items():
         for ip_addr in ips:
             if ip_addr != '127.0.0.1':
                 return {'local_ip4': ip_addr}
-
     # Give up
     return {'local_ip4', ''}

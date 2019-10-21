@@ -63,7 +63,7 @@ command:
     # Description will be output with the results
     description: '/home should be nodev'
 """
-from __future__ import absolute_import
+
 import logging
 
 import fnmatch
@@ -115,7 +115,7 @@ def audit(data_list, tags, labels, **kwargs):
                     continue
                 command_results = []
                 for command_data in tag_data['commands']:
-                    for command, command_args in command_data.iteritems():
+                    for command, command_args in command_data.items():
                         if 'shell' in command_args:
                             cmd_ret = __salt__['cmd.run'](command,
                                                           python_shell=True,
@@ -173,7 +173,7 @@ def _merge_yaml(ret, data, profile=None):
     if 'command' not in ret:
         ret['command'] = []
     if 'command' in data:
-        for key, val in data['command'].iteritems():
+        for key, val in data['command'].items():
             if profile and isinstance(val, dict):
                 val['nova_profile'] = profile
             ret['command'].append({key: val})
@@ -188,7 +188,7 @@ def _get_tags(data):
     distro = __grains__.get('osfinger')
     for audit_dict in data.get('command', []):
         # command:0
-        for audit_id, audit_data in audit_dict.iteritems():
+        for audit_id, audit_data in audit_dict.items():
             # command:0:nodev
             tags_dict = audit_data.get('data', {})
             # command:0:nodev:data

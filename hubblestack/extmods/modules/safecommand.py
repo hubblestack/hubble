@@ -14,7 +14,7 @@ commands from hubblestack_data. You also want to avoid command injection.
 
 This module allows for this functionality.
 """
-from __future__ import absolute_import
+
 import logging
 
 from salt.exceptions import CommandExecutionError

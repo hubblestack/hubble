@@ -1,5 +1,5 @@
 # Updates yaml with PDF Table of Contents.  Create new file with changes to most recent file labeled with CIS document version
-from __future__ import print_function
+
 
 from glob import glob
 import os
@@ -28,7 +28,7 @@ if pdffiles:
         print("There is more than 1 pdf in the folder")
         truefile = False
         while not truefile:
-            filename = input('Path to PDF: ')
+            filename = eval(input('Path to PDF: '))
             if os.path.isfile(filename):
                 truefile = True
             else:
@@ -38,7 +38,7 @@ if pdffiles:
 else:
     truefile = False
     while not truefile:
-        filename = input('Path to PDF: ')
+        filename = eval(input('Path to PDF: '))
         if os.path.isfile(filename):
             truefile = True
         else:
@@ -80,7 +80,7 @@ if yamlfiles:
         print("There is more than 1 pdf in the folder")
         truefile = False
         while not truefile:
-            yamlname = input('Path to YAML: ')
+            yamlname = eval(input('Path to YAML: '))
             if os.path.isfile(filename):
                 truefile = True
             else:
@@ -90,7 +90,7 @@ if yamlfiles:
 else:
     truefile = False
     while not truefile:
-        yamlname = input('Path to yaml: ')
+        yamlname = eval(input('Path to yaml: '))
         if os.path.isfile(filename):
             truefile = True
         else:
@@ -105,20 +105,20 @@ with open(yamlname, 'r') as stream:
 
 # flatenize the yaml
 flat_yaml = {}
-for toplist, toplevel in hubyaml.iteritems():
+for toplist, toplevel in hubyaml.items():
     # toplist windows sections win_secedit, toplevel is data inside toplist
-    for audit_dict, audit_info in toplevel.iteritems():
+    for audit_dict, audit_info in toplevel.items():
         # audit_dict = blacklist & whitelist data inside each toplist, audit_info = title dictionary
-        for audit_title, audit_data1 in audit_info.iteritems():
+        for audit_title, audit_data1 in audit_info.items():
             # audit_title is title of the check, audit_data is data dictionary
             audit_data = audit_data1.get('data', {})
             audit_description = audit_data1.get('description', {})
             if '(l1)' in audit_description.lower():
                 audit_description = audit_description[4:]
-            for audit_osfinger, audit_key1 in audit_data.iteritems():
+            for audit_osfinger, audit_key1 in audit_data.items():
                 # osfinger server version
                 for audit_other1 in audit_key1:
-                    for audit_key, audit_other in audit_other1.iteritems():
+                    for audit_key, audit_other in audit_other1.items():
                         # flatenize!
                         stag = audit_other['tag'].replace('CIS-', '')
                         flat_yaml[stag] = {'value_type': audit_other['value_type'], 'match_output': audit_other['match_output'], 'section': toplist, 'tlist': audit_dict, 'check_title': audit_title, 'description': audit_description, 'os': audit_osfinger, 'audit_key': audit_key}

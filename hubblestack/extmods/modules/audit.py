@@ -94,7 +94,7 @@ Audit modules take arbitrary args and kwargs and return a tuple
 it was a success or a failure, and ``data_dict`` is a dictionary of any
 information that should be added to the check's data dictionary in the return.
 """
-from __future__ import absolute_import
+
 
 import fnmatch
 import logging
@@ -189,7 +189,7 @@ def audit(audit_files=None,
         succinct_ret = {'Success': [],
                         'Failure': [],
                         'Skipped': []}
-        for success_type, checks in ret.iteritems():
+        for success_type, checks in ret.items():
             for check in checks:
                 succinct_ret[success_type].append(
                     {check['tag']: check.get('description', '<no description>')})
@@ -285,7 +285,7 @@ def _get_top_data(topfile):
 
     ret = []
 
-    for match, data in topdata.iteritems():
+    for match, data in topdata.items():
         if __salt__['match.compound'](match):
             ret.extend(data)
 
@@ -355,10 +355,10 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
     :return:
         Returns the updated ``ret`` object
     """
-    for audit_id, data in audit_data.iteritems():
+    for audit_id, data in audit_data.items():
         log.debug('Executing audit id %s in audit file %s', audit_id, audit_file)
         try:
-            module = data.keys()[0]
+            module = list(data.keys())[0]
             data = data[module]
             if not isinstance(data, dict):
                 log.error('Audit data with id %s from file %s not formatted correctly',

@@ -12,7 +12,7 @@ Watch files and translate the changes into salt events
 
 """
 # Import Python libs
-from __future__ import absolute_import
+
 import types
 import base64
 import collections
@@ -558,8 +558,8 @@ def _preprocess_excludes(excludes):
     the_list = []
     for e in excludes:
         if isinstance(e,dict):
-            if e.values()[0].get('regex'):
-                r = e.keys()[0]
+            if list(e.values())[0].get('regex'):
+                r = list(e.keys())[0]
                 try:
                     c = re.compile(r)
                     the_list.append(re_wrapper(c))
@@ -567,7 +567,7 @@ def _preprocess_excludes(excludes):
                     log.warn('Failed to compile regex "%s": %s', r,e)
                 continue
             else:
-                e = e.keys()[0]
+                e = list(e.keys())[0]
         if '*' in e:
             the_list.append(fn_wrapper(e))
         else:
@@ -972,7 +972,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
         return dest
     else:
         try:
-            for k in upd.keys():
+            for k in list(upd.keys()):
                 dest[k] = upd[k]
         except AttributeError:
             # this mapping is not a dict
@@ -1036,7 +1036,7 @@ def get_top_data(topfile):
 
     ret = []
 
-    for match, data in topdata.iteritems():
+    for match, data in topdata.items():
         if __salt__['match.compound'](match):
             ret.extend(data)
 

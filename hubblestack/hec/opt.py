@@ -98,7 +98,7 @@ def _get_splunk_options(space, modality, **kw):
                     else:
                         final_opts[j] = opt[k]
 
-            if REQUIRED in final_opts.values():
+            if REQUIRED in list(final_opts.values()):
                 raise Exception('{0} must be specified in the {1} configs!'.format(req, space))
             ret.append(final_opts)
 

@@ -70,7 +70,7 @@ def _get_aws_details():
             r = requests.get('http://169.254.169.254/latest/meta-data/local-hostname', headers=aws_token_header, timeout=3, proxies=proxies)
             if r.status_code == requests.codes.ok:
                 aws_extra['cloud_private_hostname'] = r.text
-            for key in aws_extra.keys():
+            for key in list(aws_extra.keys()):
                 if not aws_extra[key]:
                     aws_extra.pop(key)
 

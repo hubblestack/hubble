@@ -79,7 +79,7 @@ structure::
 """
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
+
 import datetime
 import os
 import time
@@ -683,7 +683,7 @@ def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
             path_style=s3_key_kwargs['path_style'],
             https_enable=s3_key_kwargs['https_enable'])
         if ret:
-            for header_name, header_value in ret['headers'].items():
+            for header_name, header_value in list(ret['headers'].items()):
                 header_name = header_name.strip()
                 header_value = header_value.strip()
                 if six.text_type(header_name).lower() == 'last-modified':

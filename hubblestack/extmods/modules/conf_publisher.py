@@ -63,7 +63,7 @@ def _filter_config(opts_to_log, remove_dots=True):
     patterns_to_filter = ["password", "token", "passphrase", "privkey", "keyid", "s3.key"]
     filtered_conf = _remove_sensitive_info(opts_to_log, patterns_to_filter)
     if remove_dots:
-        for key in filtered_conf.keys():
+        for key in list(filtered_conf.keys()):
             if '.' in key:
                 filtered_conf[key.replace('.', '_')] = filtered_conf.pop(key)
     return filtered_conf
@@ -76,7 +76,7 @@ def _remove_sensitive_info(obj, patterns_to_filter):
     if isinstance(obj, dict):
         obj = {
             key: _remove_sensitive_info(value, patterns_to_filter)
-            for key, value in obj.iteritems()
+            for key, value in obj.items()
             if not any(patt in key for patt in patterns_to_filter)}
     elif isinstance(obj, list):
         obj = [_remove_sensitive_info(item, patterns_to_filter) for item in obj]

@@ -21,7 +21,7 @@ hubblestack:
 
 """
 
-from __future__ import absolute_import
+
 
 import json
 import requests
@@ -53,7 +53,7 @@ def returner(ret):
 
     for opts in opts_list:
         for query in ret['return']:
-            for query_name, value in query.items():
+            for query_name, value in list(query.items()):
                 for query_data in value['data']:
                     args = {'query': query_name,
                             'job_id': ret['jid'],

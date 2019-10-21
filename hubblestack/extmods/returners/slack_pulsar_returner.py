@@ -54,12 +54,12 @@ Slack settings may also be configured as:
         channel: RoomName
 
 """
-from __future__ import absolute_import
+
 
 # Import Python libs
 import pprint
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 # pylint: disable=import-error,no-name-in-module,redefined-builtin
 from salt.ext.six.moves.urllib.parse import urljoin as _urljoin
@@ -241,7 +241,7 @@ def _post_message(channel,
                     api_key=api_key,
                     method='POST',
                     header_dict={'Content-Type': 'application/x-www-form-urlencoded'},
-                    data=urllib.urlencode(parameters))
+                    data=urllib.parse.urlencode(parameters))
 
     log.debug('result %s', result)
 

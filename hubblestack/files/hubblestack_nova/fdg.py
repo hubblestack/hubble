@@ -40,7 +40,7 @@ the fdg run will be considered. If it is False, only the actual result of the
 fdg run will be considered. Regardless, the ``true_for_success`` argument
 will be respected.
 """
-from __future__ import absolute_import
+
 import logging
 
 import fnmatch
@@ -121,7 +121,7 @@ def _merge_yaml(ret, data, profile=None):
     """
     if 'fdg' not in ret:
         ret['fdg'] = []
-    for key, val in data.get('fdg', {}).iteritems():
+    for key, val in data.get('fdg', {}).items():
         if profile and isinstance(val, dict):
             val['nova_profile'] = profile
         ret['fdg'].append({key: val})
@@ -136,7 +136,7 @@ def _get_tags(data):
     distro = __grains__.get('osfinger')
     for audit_dict in data.get('fdg', {}):
         # fdg:0
-        for audit_id, audit_data in audit_dict.iteritems():
+        for audit_id, audit_data in audit_dict.items():
             # fdg:0:id
             tags_dict = audit_data.get('data', {})
             # fdg:0:id:data

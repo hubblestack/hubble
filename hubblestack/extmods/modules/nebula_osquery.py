@@ -21,7 +21,7 @@ nebula_osquery:
     - query_name: rpm_packages
       query: select rpm.*, t.iso_8601 from rpm_packages as rpm join time as t;
 """
-from __future__ import absolute_import
+
 
 import collections
 import copy
@@ -171,7 +171,7 @@ def _build_baseline_osquery_data(report_version_with_day):
         ret.append(
             {'fallback_pkgs': {
                 'data': [{'name': k, 'version': v}
-                         for k, v in __salt__['pkg.list_pkgs']().iteritems()],
+                         for k, v in __salt__['pkg.list_pkgs']().items()],
                 'result': True}})
     uptime = __salt__['status.uptime']()
     if isinstance(uptime, dict):
@@ -224,7 +224,7 @@ def _run_osquery_queries(query_data, verbose):
     ret = []
     timing = {}
     success = True
-    for name, query in query_data.iteritems():
+    for name, query in query_data.items():
         query['query_name'] = name
         query_sql = query.get('query')
         if not query_sql:
@@ -254,12 +254,12 @@ def _update_osquery_results(ret):
     Returns the updated version.
     """
     for data in ret:
-        for _query_name, query_ret in data.iteritems():
+        for _query_name, query_ret in data.items():
             if 'data' not in query_ret:
                 continue
             for result in query_ret['data']:
-                for key, value in result.iteritems():
-                    if value and isinstance(value, basestring) and\
+                for key, value in result.items():
+                    if value and isinstance(value, str) and\
                             value.startswith('__JSONIFY__'):
                         result[key] = json.loads(value[len('__JSONIFY__'):])
 
@@ -472,13 +472,13 @@ def _update_event_data(ret):
         obj = json.loads(event_data)
         if 'action' in obj and obj['action'] == 'snapshot':
             for result in obj['snapshot']:
-                for key, value in result.iteritems():
-                    if value and isinstance(value, basestring) and \
+                for key, value in result.items():
+                    if value and isinstance(value, str) and \
                             value.startswith('__JSONIFY__'):
                         result[key] = json.loads(value[len('__JSONIFY__'):])
         elif 'action' in obj:
-            for key, value in obj['columns'].iteritems():
-                if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
+            for key, value in obj['columns'].items():
+                if value and isinstance(value, str) and value.startswith('__JSONIFY__'):
                     obj['columns'][key] = json.loads(value[len('__JSONIFY__'):])
         n_ret.append(obj)
 
@@ -621,7 +621,7 @@ def _get_top_data(topfile):
     ret = []
 
     for topmatch in topdata:
-        for match, data in topmatch.iteritems():
+        for match, data in topmatch.items():
             if __salt__['match.compound'](match):
                 ret.extend(data)
 
@@ -875,7 +875,7 @@ def _mask_object_helper(object_to_be_masked, perform_masking_kwargs, column, que
                 _mask_interactive_shell_data(data, kwargs)
             else:
                 kwargs['custom_args']['log_error'] = False
-                for query_name, query_ret in obj.iteritems():
+                for query_name, query_ret in obj.items():
                     data = query_ret['data']
                     _mask_interactive_shell_data(data, kwargs)
 
@@ -995,14 +995,14 @@ def _mask_event_data_helper(event_data, query_name, column, perform_masking_kwar
         if mask_column and isinstance(mask_column, list):
             blacklisted_object = _custom_blacklisted_object(blacklisted_object, mask_column)
     if column not in event_data or \
-            (isinstance(event_data[column], basestring) and
+            (isinstance(event_data[column], str) and
              event_data[column].strip() != ''):
         if custom_args['log_error']:
             log.error('masking data references a missing column %s in query %s',
                       column, query_name)
         if custom_args['should_break']:
             return False, blacklisted_object, event_data
-    if isinstance(event_data[column], basestring):
+    if isinstance(event_data[column], str):
         # If column is of 'string' type, then replace pattern in-place
         # No need for recursion here
         value = event_data[column]

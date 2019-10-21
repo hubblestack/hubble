@@ -6,7 +6,7 @@ This fdg module allows for displaying the currently-running
 processes, with various options for filtering
 """
 
-from __future__ import absolute_import
+
 import logging
 
 
@@ -45,7 +45,7 @@ def _convert_to_str(process_data):
     ret = []
     try:
         for process in process_data:
-            str_process = {str(name): str(val) for name, val in process.iteritems()}
+            str_process = {str(name): str(val) for name, val in process.items()}
             ret.append(str_process)
     except (TypeError, AttributeError):
         log.error('Invalid argument type; must be list of dicts.', exc_info=True)

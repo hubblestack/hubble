@@ -166,7 +166,7 @@ def _generate_event(args, cloud_details, custom_fields, check_type=None, data=No
         if not isinstance(data[args['check_id']], dict):
             event.update({'description': data[args['check_id']]})
         elif 'description' in data[args['check_id']]:
-            for key, value in data[args['check_id']].iteritems():
+            for key, value in data[args['check_id']].items():
                 if key not in ['tag']:
                     event[key] = value
     event.update({'minion_id': args['minion_id'],
@@ -181,7 +181,7 @@ def _generate_event(args, cloud_details, custom_fields, check_type=None, data=No
         custom_field_value = __salt__['config.get'](custom_field, '')
         if isinstance(custom_field_value, list):
             custom_field_value = ','.join(custom_field_value)
-        if isinstance(custom_field_value, (str, unicode)):
+        if isinstance(custom_field_value, str):
             event.update({custom_field_name: custom_field_value})
 
     if check_type == 'Success':
@@ -226,7 +226,7 @@ def _publish_data(args, checks, check_result, cloud_details, opts):
     Helper function that goes over the failure/success checks and publishes the event to Splunk
     """
     for data in checks:
-        check_id = data.keys()[0]
+        check_id = list(data.keys())[0]
         args['check_result'] = check_result
         args['check_id'] = check_id
         event = _generate_event(data=data, args=args, cloud_details=cloud_details,

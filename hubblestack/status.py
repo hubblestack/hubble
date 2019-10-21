@@ -253,7 +253,7 @@ class HubbleStatus(object):
                 timestamp = time.time()
                 self = self.get_bucket(timestamp)
             else:
-                if isinstance(timestamp, (str, unicode)):
+                if isinstance(timestamp, str):
                     timestamp = int(timestamp)
                 self = self.get_bucket(timestamp)
                 if timestamp < self.first_t:
@@ -479,7 +479,7 @@ class HubbleStatus(object):
         min_t = min([x['first_t'] for x in stats_short.values() if x['first_t'] > 0])
         time_stats = {'time': max_t, 'dt': min_dt, 'start': min_t}
         stats_short['HEALTH'] = health_stats = {
-            'buckets': {k: n.buckets for k, n in cls.dat.iteritems()},
+            'buckets': {k: n.buckets for k, n in cls.dat.items()},
             'last_activity': time_stats,
         }
         stats_short['__doc__'] = {
@@ -526,7 +526,7 @@ class HubbleStatus(object):
         """
         if bucket in ('*', 'all'):
             return [cls.short(b) for b in cls.buckets()]
-        return {k: v.asdict(bucket) for k, v in cls.dat.iteritems() if v.first_t > 0}
+        return {k: v.asdict(bucket) for k, v in cls.dat.items() if v.first_t > 0}
 
     @classmethod
     def as_json(cls, indent=2):

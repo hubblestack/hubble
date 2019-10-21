@@ -47,7 +47,7 @@ permissions. Proxy can also be provided in the configuration.
 """
 
 # Import python libs
-from __future__ import absolute_import
+
 from distutils.version import LooseVersion
 import base64
 import json

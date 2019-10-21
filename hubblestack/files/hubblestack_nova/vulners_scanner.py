@@ -17,7 +17,7 @@ It does not matter what `<random data>` is, as long as the top key of the file i
 This allows the module to run under a certain profile, as all of the other Nova modules do.
 """
 
-from __future__ import absolute_import
+
 import logging
 
 import sys
@@ -139,5 +139,5 @@ def _process_vulners(vulners):
 
     return [{'tag': 'Vulnerable package: {0}'.format(pkg),
              'vulnerabilities': packages[pkg],
-             'description': ', '.join(packages[pkg].keys())}
+             'description': ', '.join(list(packages[pkg].keys()))}
             for pkg in packages]

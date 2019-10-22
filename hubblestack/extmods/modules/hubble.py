@@ -333,7 +333,7 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
     for failure_index in reversed(sorted(set(failures_to_remove))):
         results['Failure'].pop(failure_index)
 
-    for key in list(results.keys()):
+    for key in results.keys():
         if not results[key]:
             results.pop(key)
 
@@ -581,7 +581,7 @@ def _clean_up_results(results, show_success):
     if show_success was not passed, adding an error message if
     results is empty
     """
-    for key in list(results.keys()):
+    for key in results.keys():
         if not results[key]:
             results.pop(key)
 

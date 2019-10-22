@@ -558,16 +558,18 @@ def _preprocess_excludes(excludes):
     the_list = []
     for e in excludes:
         if isinstance(e,dict):
-            if list(e.values())[0].get('regex'):
-                r = list(e.keys())[0]
+            first_val = list(e.values())[0]
+            first_key = list(e.keys())[0]
+            if first_val.get('regex'):
+                r = first_key
                 try:
                     c = re.compile(r)
                     the_list.append(re_wrapper(c))
                 except Exception as e:
-                    log.warn('Failed to compile regex "%s": %s', r,e)
+                    log.warning('Failed to compile regex "%s": %s', r, e)
                 continue
             else:
-                e = list(e.keys())[0]
+                e = first_key
         if '*' in e:
             the_list.append(fn_wrapper(e))
         else:
@@ -576,7 +578,7 @@ def _preprocess_excludes(excludes):
     # finally, wrap the whole decision set in a decision wrapper
     def _final(val):
         for i in the_list:
-            if i( val ):
+            if i(val):
                 return True
         return False
     return _final
@@ -972,7 +974,7 @@ def _dict_update(dest, upd, recursive_update=True, merge_lists=False):
         return dest
     else:
         try:
-            for k in list(upd.keys()):
+            for k in upd.keys():
                 dest[k] = upd[k]
         except AttributeError:
             # this mapping is not a dict

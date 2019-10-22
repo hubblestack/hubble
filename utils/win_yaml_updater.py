@@ -28,7 +28,7 @@ if pdffiles:
         print("There is more than 1 pdf in the folder")
         truefile = False
         while not truefile:
-            filename = eval(input('Path to PDF: '))
+            filename = input('Path to PDF: ')
             if os.path.isfile(filename):
                 truefile = True
             else:
@@ -38,7 +38,7 @@ if pdffiles:
 else:
     truefile = False
     while not truefile:
-        filename = eval(input('Path to PDF: '))
+        filename = input('Path to PDF: ')
         if os.path.isfile(filename):
             truefile = True
         else:
@@ -80,7 +80,7 @@ if yamlfiles:
         print("There is more than 1 pdf in the folder")
         truefile = False
         while not truefile:
-            yamlname = eval(input('Path to YAML: '))
+            yamlname = input('Path to YAML: ')
             if os.path.isfile(filename):
                 truefile = True
             else:
@@ -90,7 +90,7 @@ if yamlfiles:
 else:
     truefile = False
     while not truefile:
-        yamlname = eval(input('Path to yaml: '))
+        yamlname = input('Path to yaml: ')
         if os.path.isfile(filename):
             truefile = True
         else:

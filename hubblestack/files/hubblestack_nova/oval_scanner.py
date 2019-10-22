@@ -90,7 +90,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 def parse_impact_report(report, local_pkgs, hubble_format, impacted_pkgs=[]):
     """Parse into Hubble friendly format"""
-    for key, value in list(report.items()):
+    for key, value in report.items():
         pkg_desc = 'Vulnerable Package(s): '
         for pkg in value['installed']:
             pkg_desc += '{0}-{1}, '.format(pkg['name'], pkg['version'])
@@ -125,7 +125,7 @@ def get_impact_report(vulns, local_pkgs, distro_name):
 def build_impact(vulns, local_pkgs, distro_name, result={}):
     """Build impacts based on pkg comparisons"""
     logging.debug('build_impact')
-    for data in list(vulns.values()):
+    for data in vulns.values():
         for pkg in data['pkg']:
             name = pkg['name']
             ver = pkg['version']
@@ -152,7 +152,7 @@ def build_impact(vulns, local_pkgs, distro_name, result={}):
 def build_impact_report(impact, report={}):
     """Build a report based on impacts"""
     logging.debug('build_impact_report')
-    for adv, detail in list(impact.items()):
+    for adv, detail in impact.items():
         if adv not in report:
             report[adv] = {
                 'updated_pkg': [],
@@ -187,7 +187,7 @@ def create_vulns(oval_and_maps, vulns={}):
     logging.debug('create_vulns')
     id_maps = oval_and_maps[0]
     oval = oval_and_maps[1]
-    for definition, data in list(id_maps.items()):
+    for definition, data in id_maps.items():
         if definition in oval['definitions']:
             vulns[definition] = oval['definitions'][definition]
             vulns[definition]['pkg'] = []
@@ -217,7 +217,7 @@ def create_vulns(oval_and_maps, vulns={}):
 def map_oval_ids(oval, id_maps={}):
     """For every test, grab only tests with both state and obj references"""
     logging.debug('map_oval_ids')
-    for definition, data in list(oval['definitions'].items()):
+    for definition, data in oval['definitions'].items():
         id_maps[definition] = {'objects': []}
         objects = id_maps[definition]['objects']
         tests = data['tests']

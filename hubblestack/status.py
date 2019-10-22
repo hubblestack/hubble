@@ -90,6 +90,7 @@ def get_hubble_status_opt(name, require_type=None):
     return opts
 
 
+
 def get_hubble_or_salt_opt(name):
     """return the option specified by name found in __opts__ or __opts__['hubble'] """
     if name in __opts__:
@@ -98,6 +99,7 @@ def get_hubble_or_salt_opt(name):
         if name in __opts__['hubble']:
             return __opts__['hubble'][name]
     return None
+
 
 
 class HubbleStatusResourceNotFound(Exception):
@@ -411,9 +413,7 @@ class HubbleStatus(object):
                 ret = func(*a, **kw)
                 stat_handle.fin()
                 return ret
-
             return inner
-
         if invoke:
             return decorator(invoke)
         return decorator

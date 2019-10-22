@@ -99,7 +99,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                     current = _find_option_value_in_reg(reg_dict['hive'], reg_dict['key'], reg_dict['value'])
                     if isinstance(current, dict):
                         tag_data['value_found'] = current
-                        if any(x is False for x in list(current.values())):
+                        if any(x is False for x in current.values()):
                             ret['Failure'].append(tag_data)
                         else:
                             answer_list = []

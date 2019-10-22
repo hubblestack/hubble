@@ -194,7 +194,7 @@ def filter_logs(opts_to_log, remove_dots=True):
     '''
     filtered_conf = _remove_sensitive_info(opts_to_log, PATTERNS_TO_FILTER)
     if remove_dots:
-        for key in list(filtered_conf.keys()):
+        for key in filtered_conf.keys():
             if '.' in key:
                 filtered_conf[key.replace('.', '_')] = filtered_conf.pop(key)
     return filtered_conf

@@ -449,7 +449,7 @@ def check_duplicate_uids(reason=''):
     """
     uids = _execute_shell_command("cat /etc/passwd | cut -f3 -d\":\"", python_shell=True).strip()
     uids = uids.split('\n') if uids != "" else []
-    duplicate_uids = [k for k, v in list(Counter(uids).items()) if v > 1]
+    duplicate_uids = [k for k, v in Counter(uids).items() if v > 1]
     if duplicate_uids is None or duplicate_uids == []:
         return True
     return str(duplicate_uids)
@@ -461,7 +461,7 @@ def check_duplicate_gids(reason=''):
     """
     gids = _execute_shell_command("cat /etc/group | cut -f3 -d\":\"", python_shell=True).strip()
     gids = gids.split('\n') if gids != "" else []
-    duplicate_gids = [k for k, v in list(Counter(gids).items()) if v > 1]
+    duplicate_gids = [k for k, v in Counter(gids).items() if v > 1]
     if duplicate_gids is None or duplicate_gids == []:
         return True
     return str(duplicate_gids)
@@ -473,7 +473,7 @@ def check_duplicate_unames(reason=''):
     """
     unames = _execute_shell_command("cat /etc/passwd | cut -f1 -d\":\"", python_shell=True).strip()
     unames = unames.split('\n') if unames != "" else []
-    duplicate_unames = [k for k, v in list(Counter(unames).items()) if v > 1]
+    duplicate_unames = [k for k, v in Counter(unames).items() if v > 1]
     if duplicate_unames is None or duplicate_unames == []:
         return True
     return str(duplicate_unames)
@@ -485,7 +485,7 @@ def check_duplicate_gnames(reason=''):
     """
     gnames = _execute_shell_command("cat /etc/group | cut -f1 -d\":\"", python_shell=True).strip()
     gnames = gnames.split('\n') if gnames != "" else []
-    duplicate_gnames = [k for k, v in list(Counter(gnames).items()) if v > 1]
+    duplicate_gnames = [k for k, v in Counter(gnames).items() if v > 1]
     if duplicate_gnames is None or duplicate_gnames == []:
         return True
     return str(duplicate_gnames)

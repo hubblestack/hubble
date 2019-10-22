@@ -41,13 +41,14 @@ import os
 log = logging.getLogger(__name__)
 
 DEFAULTS = {
-    'dumpster': 'status.json', # '/var/cache/hubble/status.json',
-    'hung_time':   900,
-    'warn_time':   300,
-    'good_time':    60,
+    'dumpster': 'status.json',  # '/var/cache/hubble/status.json',
+    'hung_time': 900,
+    'warn_time': 300,
+    'good_time': 60,
     'bucket_len': 3600,
-    'max_buckets':   3,
+    'max_buckets': 3,
 }
+
 
 def t_bucket(t=None, bucket_len=None):
     """ convert a time into a bucket id """
@@ -57,10 +58,13 @@ def t_bucket(t=None, bucket_len=None):
         bucket_len = int(get_hubble_status_opt('bucket_len'))
     t = int(t)
     r = t % bucket_len
-    b = ( (t - r), bucket_len )
+    b = ((t - r), bucket_len)
     return b
 
+
 __opts__ = dict()
+
+
 def get_hubble_status_opt(name, require_type=None):
     """ try to locate HubbleStatus options in
         * __opts__['hubble_status'][name]
@@ -70,7 +74,7 @@ def get_hubble_status_opt(name, require_type=None):
         Various defaults are defined in hubblestack.status.DEFAULTS
     """
     r = None
-    for kl in (('hubble_status',name), ('hubble','status',name), ('hubble_status_'+name)):
+    for kl in (('hubble_status', name), ('hubble', 'status', name), ('hubble_status_' + name)):
         t = __opts__
         for k in kl:
             if isinstance(t, dict):
@@ -87,6 +91,7 @@ def get_hubble_status_opt(name, require_type=None):
             pass
     return t
 
+
 def get_hubble_or_salt_opt(name):
     if name in __opts__:
         return __opts__[name]
@@ -94,13 +99,16 @@ def get_hubble_or_salt_opt(name):
         if name in __opts__['hubble']:
             return __opts__['hubble'][name]
 
+
 class HubbleStatusResourceNotFound(Exception):
     """ Exception caused by trying to mark() a counter that wasn't explicitly defined
     """
     pass
 
+
 class ResourceTimer(object):
     """ described in HubbleStatus.resource_timer """
+
     def __init__(self, hubble_status, hs_key):
         self.hubble_status = hubble_status
         self.hs_key = hs_key
@@ -110,6 +118,7 @@ class ResourceTimer(object):
 
     def __exit__(self):
         self.hubble_status.fin(self.hs_key)
+
 
 class HubbleStatus(object):
     """
@@ -163,6 +172,7 @@ class HubbleStatus(object):
     _signaled = False
     dat = dict()
     resources = list()
+
     class Stat(object):
         """ Data sample container for a named mark.
             Stat objects have the following properties
@@ -179,7 +189,7 @@ class HubbleStatus(object):
             self.bucket, self.bucket_len = t_bucket(t=t)
             self.next = None
             self.last_t = self.first_t = 0
-            self.count  = 0
+            self.count = 0
             self.ema_dt = None
             self.dur = None
             self.ema_dur = None
@@ -211,7 +221,7 @@ class HubbleStatus(object):
 
         @property
         def buckets(self):
-            r = {self.bucket,}
+            r = {self.bucket, }
             if self.next is not None:
                 r.update(self.next.buckets)
             return sorted(r)
@@ -223,8 +233,8 @@ class HubbleStatus(object):
             if bucket is not None:
                 self = self.find_bucket(bucket)
             r = {'count': self.count, 'last_t': self.last_t,
-                'dt': self.dt, 'ema_dt': self.ema_dt, 'first_t': self.first_t,
-                'bucket': self.bucket, 'bucket_len': self.bucket_len}
+                 'dt': self.dt, 'ema_dt': self.ema_dt, 'first_t': self.first_t,
+                 'bucket': self.bucket, 'bucket_len': self.bucket_len}
             if self.dur is not None:
                 r.update({'dur': self.dur, 'ema_dur': self.ema_dur})
             return r
@@ -251,7 +261,7 @@ class HubbleStatus(object):
             self.count += 1
             dt = self.dt
             self.last_t = t
-            self.ema_dt = dt if self.ema_dt is None else 0.5*self.ema_dt + 0.5*dt
+            self.ema_dt = dt if self.ema_dt is None else 0.5 * self.ema_dt + 0.5 * dt
             self.reported = list()
             return self
 
@@ -263,7 +273,7 @@ class HubbleStatus(object):
                 upon which to call fin()
             """
             self.dur = self.dt
-            self.ema_dur  = self.dur if self.ema_dur is None else 0.5*self.ema_dur + 0.5*self.dur
+            self.ema_dur = self.dur if self.ema_dur is None else 0.5 * self.ema_dur + 0.5 * self.dur
 
         def __iter__(self):
             if self.next is not None:
@@ -286,7 +296,7 @@ class HubbleStatus(object):
         if namespace is None:
             namespace = '_'
         self.namespace = namespace
-        if len(resources) == 1 and isinstance(resources[0], (list,tuple,dict)):
+        if len(resources) == 1 and isinstance(resources[0], (list, tuple, dict)):
             resources = tuple(resources)
         for r in resources:
             self.add_resource(r)
@@ -313,7 +323,8 @@ class HubbleStatus(object):
         """ ensure the resource `n` is tracked by the instance """
         m = self._namespaced(n)
         if m not in self.resources:
-            raise HubbleStatusResourceNotFound('"{}" is not a resource of this HubbleStatus instance')
+            raise HubbleStatusResourceNotFound(
+                '"{}" is not a resource of this HubbleStatus instance')
         return m
 
     def _check_depth(self, n):
@@ -324,8 +335,8 @@ class HubbleStatus(object):
         bl = node.buckets
         if len(bl) > max_depth:
             nb_list = sorted(node, key=lambda x: x.bucket)[-max_depth:]
-            for idx,nb_node in enumerate(nb_list[:-1]):
-                nb_node.next = nb_list[idx+1]
+            for idx, nb_node in enumerate(nb_list[:-1]):
+                nb_node.next = nb_list[idx + 1]
             nb_list[-1].next = None
             self.dat[n] = nb_list[0]
 
@@ -348,7 +359,7 @@ class HubbleStatus(object):
         if n is not None:
             return self.dat[n].buckets
         r = set()
-        for item in list(cls.dat.values()):
+        for item in cls.dat.values():
             r.update(item.buckets)
         return sorted(r)
 
@@ -379,6 +390,7 @@ class HubbleStatus(object):
             # and return the decorated function (see below)
             invoke = mark_name
             mark_name = mark_name.__name__
+
         def decorator(f):
             @wraps(f)
             def inner(*a, **kw):
@@ -386,7 +398,9 @@ class HubbleStatus(object):
                 r = f(*a, **kw)
                 stat_handle.fin()
                 return r
+
             return inner
+
         if invoke:
             return decorator(invoke)
         return decorator
@@ -446,12 +460,12 @@ class HubbleStatus(object):
 
         r = cls.short()
 
-        min_dt = min([ x['dt'] for x in list(r.values()) ])
-        max_t  = max([ x['last_t'] for x in list(r.values()) ])
-        min_t  = min([ x['first_t'] for x in list(r.values()) if x['first_t'] > 0 ])
+        min_dt = min([x['dt'] for x in r.values()])
+        max_t = max([x['last_t'] for x in r.values()])
+        min_t = min([x['first_t'] for x in r.values() if x['first_t'] > 0])
         h1 = {'time': max_t, 'dt': min_dt, 'start': min_t}
         r['HEALTH'] = h2 = {
-            'buckets': { k: n.buckets for k,n in cls.dat.items() },
+            'buckets': {k: n.buckets for k, n in cls.dat.items()},
             'last_activity': h1,
         }
         r['__doc__'] = {
@@ -470,10 +484,10 @@ class HubbleStatus(object):
                     "time": 'the time of the most recent counter',
                 },
                 "alive": {
-                        'yes': 'something was called within the last 60s',
-                        'warn': 'something was called within the last 300s',
-                        'hung': 'nothing has been called in 600s minutes',
-                        'unknown': 'unknown — probably not a good sign though',
+                    'yes': 'something was called within the last 60s',
+                    'warn': 'something was called within the last 300s',
+                    'hung': 'nothing has been called in 600s minutes',
+                    'unknown': 'unknown — probably not a good sign though',
                 },
             },
         }
@@ -497,8 +511,8 @@ class HubbleStatus(object):
 
         """
         if bucket in ('*', 'all'):
-            return [ cls.short(b) for b in cls.buckets() ]
-        return { k: v.asdict(bucket) for k,v in cls.dat.items() if v.first_t > 0 }
+            return [cls.short(b) for b in cls.buckets()]
+        return {k: v.asdict(bucket) for k, v in cls.dat.items() if v.first_t > 0}
 
     @classmethod
     def as_json(cls, indent=2):
@@ -563,6 +577,7 @@ class HubbleStatus(object):
         """
         self.add_resource(hs_key)
         return ResourceTimer(self, hs_key)
+
 
 def _setup_for_testing():
     global __opts__

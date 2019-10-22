@@ -112,7 +112,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                     if e in tag_data:
                         expected[e] = tag_data[e]
 
-                if 'allow_more_strict' in list(expected.keys()) and 'mode' not in list(expected.keys()):
+                if 'allow_more_strict' in expected.keys() and 'mode' not in expected.keys():
                     reason_dict = {}
                     reason = "'allow_more_strict' tag can't be specified without 'mode' tag." \
                              " Seems like a bug in hubble profile."
@@ -129,7 +129,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 if not salt_ret:
                     if not expected:
                         ret['Success'].append(tag_data)
-                    elif 'match_on_file_missing' in list(expected.keys()) and expected['match_on_file_missing']:
+                    elif 'match_on_file_missing' in expected.keys() and expected['match_on_file_missing']:
                         ret['Success'].append(tag_data)
                     else:
                         tag_data['failure_reason'] = "Could not get access any file at '{0}'. " \
@@ -140,7 +140,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
                 passed = True
                 reason_dict = {}
-                for e in list(expected.keys()):
+                for e in expected.keys():
                     if e == 'allow_more_strict' or e == 'match_on_file_missing':
                         continue
                     r = salt_ret[e]
@@ -149,7 +149,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                         if r != '0':
                             r = r[1:]
                         allow_more_strict = False
-                        if 'allow_more_strict' in list(expected.keys()):
+                        if 'allow_more_strict' in expected.keys():
                             allow_more_strict = expected['allow_more_strict']
                         if not isinstance(allow_more_strict, bool):
                             passed = False

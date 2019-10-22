@@ -139,5 +139,5 @@ def _process_vulners(vulners):
 
     return [{'tag': 'Vulnerable package: {0}'.format(pkg),
              'vulnerabilities': packages[pkg],
-             'description': ', '.join(list(packages[pkg].keys()))}
+             'description': ', '.join(packages[pkg].keys())}
             for pkg in packages]

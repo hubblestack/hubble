@@ -333,7 +333,7 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
     for failure_index in reversed(sorted(set(failures_to_remove))):
         results['Failure'].pop(failure_index)
 
-    for key in results.keys:
+    for key in results:
         if not results[key]:
             results.pop(key)
 

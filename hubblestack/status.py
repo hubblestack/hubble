@@ -60,7 +60,6 @@ def t_bucket(timestamp=None, bucket_len=None):
     bucket = ((timestamp - seed), bucket_len)
     return bucket
 
-
 __opts__ = dict()
 
 
@@ -90,6 +89,7 @@ def get_hubble_status_opt(name, require_type=None):
     return opts
 
 
+
 def get_hubble_or_salt_opt(name):
     """return the option specified by name found in __opts__ or __opts__['hubble'] """
     if name in __opts__:
@@ -98,6 +98,7 @@ def get_hubble_or_salt_opt(name):
         if name in __opts__['hubble']:
             return __opts__['hubble'][name]
     return None
+
 
 
 class HubbleStatusResourceNotFound(Exception):

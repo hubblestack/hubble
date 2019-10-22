@@ -152,7 +152,7 @@ def build_impact(vulns, local_pkgs, distro_name, result={}):
 def build_impact_report(impact, report={}):
     """Build a report based on impacts"""
     logging.debug('build_impact_report')
-    for adv, detail in list(impact.items()):
+    for adv, detail in impact.items():
         if adv not in report:
             report[adv] = {
                 'updated_pkg': [],

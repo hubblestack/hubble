@@ -3,18 +3,18 @@ import ssl
 from socket import setdefaulttimeout
 import logging
 from datetime import datetime
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 setdefaulttimeout(3)
 
 def load_certificate(ip, port):
     try:
-        LOG.info("checking for ssl cert on {0}:{1}".format(ip,port))
+        log.info("checking for ssl cert on {0}:{1}".format(ip,port))
         hostport = (ip, port)
         c = ssl.get_server_certificate(hostport)
     except Exception as e:
         message = "Couldn't get cert: {0}".format(e)
-        LOG.info(message)
+        log.info(message)
         return {'result':False,'data':message}
     else:
         return {'result':True,'data':c}
@@ -73,10 +73,10 @@ def get_cert_details(format_chained=True, chained=None, chained_status=None):
     cert = load_certificate(host, port)
     if not cert['result']:
         message = "cert details not found"
-        LOG.info(message)
+        log.info(message)
         cert_details = fill_na(port, message)
     else:
-        LOG.info('cert found, parsing certificate')
+        log.info('cert found, parsing certificate')
         cert_details = parse_cert(cert, port)
     return True, cert_details
 

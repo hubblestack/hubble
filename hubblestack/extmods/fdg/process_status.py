@@ -10,7 +10,7 @@ from __future__ import absolute_import
 import logging
 
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def list_processes(chained=None, chained_status=None):
@@ -27,7 +27,7 @@ def list_processes(chained=None, chained_status=None):
     try:
         ret = _convert_to_str(res['data'])
     except (KeyError, TypeError):
-        LOG.error('Invalid data type returned by osquery call %s.', res, exc_info=True)
+        log.error('Invalid data type returned by osquery call %s.', res, exc_info=True)
         return False, None
 
     return bool(ret), ret
@@ -48,7 +48,7 @@ def _convert_to_str(process_data):
             str_process = {str(name): str(val) for name, val in process.iteritems()}
             ret.append(str_process)
     except (TypeError, AttributeError):
-        LOG.error('Invalid argument type; must be list of dicts.', exc_info=True)
+        log.error('Invalid argument type; must be list of dicts.', exc_info=True)
         return None
 
     return ret
@@ -64,10 +64,10 @@ def _run_query(query_sql):
     res = __salt__['nebula.query'](query_sql)
     try:
         if not res['result']:
-            LOG.error("Error executing the osquery query: %s", res['error'])
+            log.error("Error executing the osquery query: %s", res['error'])
             return None
     except (KeyError, TypeError):
-        LOG.error('Invalid data type returned by osquery call %s.', res, exc_info=True)
+        log.error('Invalid data type returned by osquery call %s.', res, exc_info=True)
         return None
 
     return res
@@ -115,7 +115,7 @@ def find_process(filter_sql, fields=None, format_chained=True, chained=None, cha
         try:
             filter_sql = filter_sql.format(chained)
         except (AttributeError, TypeError):
-            LOG.error("Invalid arguments.", exc_info=True)
+            log.error("Invalid arguments.", exc_info=True)
     # default fields to `name` and `PID`
     if fields:
         fields += ',name,pid'
@@ -126,7 +126,7 @@ def find_process(filter_sql, fields=None, format_chained=True, chained=None, cha
     try:
         ret = _convert_to_str(res['data'])
     except (KeyError, TypeError):
-        LOG.error('Invalid data type returned by osquery call %s.', res, exc_info=True)
+        log.error('Invalid data type returned by osquery call %s.', res, exc_info=True)
         return False, None
 
     return bool(ret), ret
@@ -158,14 +158,14 @@ def is_running(filter_sql, format_chained=True, chained=None, chained_status=Non
         try:
             filter_sql = filter_sql.format(chained)
         except (AttributeError, TypeError):
-            LOG.error('Invalid arguments.', exc_info=True)
+            log.error('Invalid arguments.', exc_info=True)
     query = 'SELECT state FROM processes where {0}'.format(filter_sql)
     res = _run_query(query)
     if not res:
         return False, None
     # more than one process
     if len(res['data']) > 1:
-        LOG.error('Search outputs %d results. Should output only 1', len(res['data']))
+        log.error('Search outputs %d results. Should output only 1', len(res['data']))
         return False, None
     # no processses matched the search
     if not res['data']:
@@ -209,7 +209,7 @@ def find_children(parent_filter, parent_field=None, returned_fields=None,
         try:
             parent_filter = parent_filter.format(chained)
         except (AttributeError, TypeError):
-            LOG.error('Invalid arguments.', exc_info=True)
+            log.error('Invalid arguments.', exc_info=True)
             return False, None
     # default returned_fields to `name` and `PID`
     if returned_fields:
@@ -226,7 +226,7 @@ def find_children(parent_filter, parent_field=None, returned_fields=None,
     try:
         ret = _convert_to_str(res['data'])
     except (KeyError, TypeError):
-        LOG.error('Invalid data type returned by osquery call %s.', res, exc_info=True)
+        log.error('Invalid data type returned by osquery call %s.', res, exc_info=True)
         return False, None
 
     return bool(ret), ret

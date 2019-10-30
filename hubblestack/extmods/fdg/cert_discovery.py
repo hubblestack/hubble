@@ -1,3 +1,25 @@
+# -*- encoding: utf-8 -*-
+"""
+Flexible Data Gathering: cert_discovery
+=============================
+Intention -
+This fdg module allows connecting to open ports on a system and retrieving
+certificate details that might be attached on those ports.
+
+Testing -
+    1. Configure this module through Hubble's schedule using the following configuration
+        fdg_cert_discovery:
+        function: fdg.fdg
+        seconds: __seconds__
+        splay: __splay__
+        returner: __returner__
+        run_on_start: __run_on_start__
+        args:
+          - <path to fdg profile>
+    Make sure that cert_discovery.fdg profile exists and contains Osquery as the first
+    module and this module as the second module.
+    2. Alternately, execute hubble fdg.fdg <path to fdg profile> to run this module via cmd.
+"""
 import OpenSSL
 import ssl
 from socket import setdefaulttimeout
@@ -8,18 +30,26 @@ log = logging.getLogger(__name__)
 setdefaulttimeout(3)
 
 def load_certificate(ip, port):
+    """
+    fetch server certificate details and return Json with the first value being the
+    status of ssl.get_server_certificate function and second value being the actual
+    certificate data.
+    """
     try:
-        log.info("checking for ssl cert on {0}:{1}".format(ip,port))
+        log.info("FDG's cert_discovery is checking for ssl cert on {0}:{1}".format(ip,port))
         hostport = (ip, port)
-        c = ssl.get_server_certificate(hostport)
+        cert_details = ssl.get_server_certificate(hostport)
     except Exception as e:
-        message = "Couldn't get cert: {0}".format(e)
+        message = "FDG's cert_discovery Couldn't get cert: {0}".format(e)
         log.info(message)
         return {'result':False,'data':message}
     else:
-        return {'result':True,'data':c}
+        return {'result':True,'data':cert_details}
 
 def parse_cert(cert, port):
+    """
+    load the certificate using OpenSSL and parse needed params.
+    """
     try:
         x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert['data'])
         cert_details = {}
@@ -48,7 +78,9 @@ def parse_cert(cert, port):
     return cert_details
 
 def fill_na(port, message):
-
+    """
+    Fill 'NA' in case of 'no cert found' on the input port.
+    """
     cert_details = {}
     cert_details['country_name'] = 'NA'
     cert_details['organisation_name'] = 'NA'
@@ -67,16 +99,41 @@ def fill_na(port, message):
 
     return cert_details
 
-def get_cert_details(format_chained=True, chained=None, chained_status=None):
+def get_cert_details(chained=None, chained_status=None):
+    """
+    This module is used in conjunction with osquery as the first module
+    in the chain. Given that osquery fetches information about the open
+    ports on a system and provides a 'host_port' (or a list of host_port)
+    to this module, this module will connect to the host and port and fetch
+    certificate details if a certificate is attached on the port. As an example,
+    Osquery needs to provide the value of 'chained' in the following format.
+    +------------------+
+    | host_port        |
+    +------------------+
+    | 127.0.0.1:80     |
+    | 127.0.0.1:443    |
+    +------------------+
+    The first return value (status) will be True if the module is able to
+        1. Connect to the port and fetch certificate details.
+        2. Connect to the port and exit if no certificate is attached on the port.
+    The first return value (status) will be False if the module encounters some
+    exception in python's ssl.get_server_certificate function.
+
+    chained
+        The value chained from the previous call.
+
+    chained_status
+        The status returned by the chained call.
+    """
     hostname = chained['host_port']
     host, port = get_hostport(hostname)
     cert = load_certificate(host, port)
     if not cert['result']:
-        message = "cert details not found"
+        message = "FDG's cert_discovery - cert details not found"
         log.info(message)
         cert_details = fill_na(port, message)
     else:
-        log.info('cert found, parsing certificate')
+        log.info("FDG's cert_discovery - cert found, parsing certificate")
         cert_details = parse_cert(cert, port)
     return True, cert_details
 
@@ -88,6 +145,9 @@ def format_components(x509name):
     return items;
 
 def get_hostport(host_port):
+    """
+    split the input (example - 127.0.0.1:443) value into hostname and port.
+    """
     host = host_port.split(":")
     hostname = host[0]
     port = 443

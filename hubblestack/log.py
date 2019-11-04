@@ -7,12 +7,12 @@ from __future__ import print_function
 
 import logging
 import time
-import copy
 
 import hubblestack.splunklogging
 
 # These patterns will not be logged by "conf_publisher" and "emit_to_splunk"
-PATTERNS_TO_FILTER = ["password", "token", "passphrase", "privkey", "keyid", "s3.key", "splunk_token"]
+PATTERNS_TO_FILTER = ["password", "token", "passphrase", "privkey",
+                      "keyid", "s3.key", "splunk_token"]
 
 # While hubble doesn't use these, salt modules can, so let's define them anyway
 SPLUNK = logging.SPLUNK = 25
@@ -76,6 +76,7 @@ SPLUNK_HANDLER = None
 
 
 class MockRecord(object):
+    """ Fake record that mimicks a logging record """
     def __init__(self, message, levelname, asctime, name):
         self.message = message
         self.levelname = levelname
@@ -87,7 +88,7 @@ class MockRecord(object):
 # Will be removed when we set up the console or file logger.
 TEMP_HANDLER = logging.StreamHandler()
 TEMP_HANDLER.setLevel(logging.INFO)
-TEMP_HANDLER.setFormatter( logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s') )
+TEMP_HANDLER.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s'))
 logging.root.handlers.insert(0, TEMP_HANDLER)
 
 
@@ -121,7 +122,8 @@ def setup_console_logger(log_level='error',
 
 def setup_file_logger(log_file,
                       log_level='error',
-                      log_format='%(asctime)s,%(msecs)03d [%(levelname)-5s] [%(name)s:%(lineno)d]  %(message)s',
+                      log_format='%(asctime)s,%(msecs)03d [%(levelname)-5s] [%(name)s:%(lineno)d] '
+                                 ' %(message)s',
                       date_format='%Y-%m-%d %H:%M:%S',
                       max_bytes=100000000,
                       backup_count=1):
@@ -132,7 +134,8 @@ def setup_file_logger(log_file,
     _remove_temp_handler()
     rootlogger = logging.getLogger()
 
-    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=max_bytes, backupCount=backup_count)
+    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=max_bytes,
+                                                   backupCount=backup_count)
     handler.setLevel(LOG_LEVELS.get(log_level, logging.ERROR))
 
     formatter = logging.Formatter(log_format, date_format)
@@ -158,7 +161,7 @@ def setup_splunk_logger():
     SPLUNK_HANDLER = handler
 
 
-def emit_to_splunk(message, level, name, remove_sensitive_logs=False):
+def emit_to_splunk(message, level, name):
     """
     Emit a single message to splunk
     """
@@ -169,29 +172,38 @@ def emit_to_splunk(message, level, name, remove_sensitive_logs=False):
     if SPLUNK_HANDLER is None:
         return False
     handler = SPLUNK_HANDLER
-
     handler.emit(MockRecord(message, level, time.asctime(), name))
+
+    return True
 
 
 def workaround_salt_log_handler_queues():
+    """
+    Build a fake log handler and add it to LOGGING_STORE_HANDLER and LOGGING_NULL_HANDLER
+    """
     class _FakeLogHandler(object):
         level = 10
         count = 0
-        def handle(self, record):
+
+        def handle(self, _record):
+            """ Receive a record and increase the count """
             self.count += 1
+
     flh = _FakeLogHandler()
     import salt.log.setup as sls
     sls.LOGGING_STORE_HANDLER.sync_with_handlers([flh])
     sls.LOGGING_NULL_HANDLER.sync_with_handlers([flh])
     # if flh.count > 0:
-    #     log.info("pretended to handle %d logging record(s) for salt.log.setup.LOGGING_*_HANDLER", flh.count)
+    #     log.info("pretended to handle %d logging record(s)
+    #     for salt.log.setup.LOGGING_*_HANDLER", flh.count)
+
 
 def filter_logs(opts_to_log, remove_dots=True):
-    '''
+    """
     Filters out keys containing certain patterns to avoid sensitive information being sent to logs
     Works on dictionaries and lists
     This function was located at extmods/modules/conf_publisher.py previously
-    '''
+    """
     filtered_conf = _remove_sensitive_info(opts_to_log, PATTERNS_TO_FILTER)
     if remove_dots:
         for key in filtered_conf.keys():
@@ -201,15 +213,15 @@ def filter_logs(opts_to_log, remove_dots=True):
 
 
 def _remove_sensitive_info(obj, patterns_to_filter):
-    '''
+    """
     Filter known sensitive info
-    '''
+    """
     if isinstance(obj, dict):
-         obj = {
-             key: _remove_sensitive_info(value, patterns_to_filter)
-             for key, value in obj.iteritems()
-             if not any(patt in key for patt in patterns_to_filter)}
+        obj = {
+            key: _remove_sensitive_info(value, patterns_to_filter)
+            for key, value in obj.iteritems()
+            if not any(patt in key for patt in patterns_to_filter)}
     elif isinstance(obj, list):
-         obj = [_remove_sensitive_info(item, patterns_to_filter)
-                    for item in obj]
+        obj = [_remove_sensitive_info(item, patterns_to_filter)
+               for item in obj]
     return obj

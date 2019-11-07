@@ -101,7 +101,7 @@ from salt.ext.six.moves import filter
 from salt.ext.six.moves.urllib.parse import quote as _quote
 # pylint: enable=import-error,no-name-in-module,redefined-builtin
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 S3_CACHE_EXPIRE = 30  # cache for 30 seconds
 S3_SYNC_ON_UPDATE = True  # sync cache on update rather than jit
@@ -125,18 +125,18 @@ def update():
 
     if S3_SYNC_ON_UPDATE:
         # sync the buckets to the local cache
-        LOG.info('Syncing local cache from S3...')
+        log.info('Syncing local cache from S3...')
         for saltenv, env_meta in six.iteritems(metadata):
             for bucket_files in _find_files(env_meta):
                 for bucket, files in six.iteritems(bucket_files):
                     for file_path in files:
                         cached_file_path = _get_cached_file_name(bucket, saltenv, file_path)
-                        LOG.info('%s - %s : %s', bucket, saltenv, file_path)
+                        log.info('%s - %s : %s', bucket, saltenv, file_path)
 
                         # load the file from S3 if it's not in the cache or it's old
                         _get_file_from_s3(metadata, saltenv, bucket, file_path, cached_file_path)
 
-        LOG.info('Sync local cache from S3 completed.')
+        log.info('Sync local cache from S3 completed.')
 
 
 def find_file(path, saltenv='base', **kwargs):
@@ -420,7 +420,7 @@ def _refresh_buckets_cache_file(cache_file):
     Retrieve the content of all buckets and cache the metadata to the buckets
     cache file
     """
-    LOG.debug('Refreshing buckets cache file')
+    log.debug('Refreshing buckets cache file')
 
     s3_key_kwargs = _get_s3_key()
     metadata = {}
@@ -481,17 +481,17 @@ def _refresh_buckets_cache_file(cache_file):
                         meta_response.update(k)
                 # attempt use of human readable output first.
                 try:
-                    LOG.warning(
+                    log.warning(
                         "'%s' response for bucket '%s'", meta_response['Message'], bucket_name)
                     continue
                 except KeyError:
                     # no human readable error message provided
                     if 'Code' in meta_response:
-                        LOG.warning(
+                        log.warning(
                             "'%s' response for bucket '%s'", meta_response['Code'], bucket_name)
                         continue
                     else:
-                        LOG.warning('S3 Error! Do you have any files in your S3 bucket?')
+                        log.warning('S3 Error! Do you have any files in your S3 bucket?')
                         return {}
 
             # one environment per bucket, nothing left to parse
@@ -548,7 +548,7 @@ def _refresh_buckets_cache_file(cache_file):
     if os.path.isfile(cache_file):
         os.remove(cache_file)
 
-    LOG.debug('Writing buckets cache file')
+    log.debug('Writing buckets cache file')
 
     with salt.utils.files.fopen(cache_file, 'w') as fp_:
         pickle.dump(metadata, fp_)
@@ -560,7 +560,7 @@ def _read_buckets_cache_file(cache_file):
     """
     Return the contents of the buckets cache file
     """
-    LOG.debug('Reading buckets cache file')
+    log.debug('Reading buckets cache file')
 
     with salt.utils.files.fopen(cache_file, 'rb') as fp_:
         try:
@@ -693,7 +693,7 @@ def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
                     s3_file_size = int(header_value)
             if cached_file_data['size'] == s3_file_size and \
                     cached_file_data['mtime'] > s3_file_mtime:
-                LOG.info(
+                log.info(
                     '%s - %s : %s skipped download since cached file size '
                     'equal to and mtime after s3 values',
                     bucket_name, saltenv, path)
@@ -720,7 +720,7 @@ def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
 
                 if (cached_file_data['size'] == int(file_meta['Size']) and
                         cached_file_data['mtime'] > cached_file_data['lastmod']):
-                    LOG.debug('cached file size equal to metadata size and '
+                    log.debug('cached file size equal to metadata size and '
                               'cached file mtime later than metadata last '
                               'modification time.')
                     if not _get_file():

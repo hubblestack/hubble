@@ -16,7 +16,7 @@ import yaml as _yaml
 
 from hubblestack.utils.encoding import encode_base64
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def json(path, subkey=None, sep=None, chained=None, chained_status=None):
@@ -49,7 +49,7 @@ def json(path, subkey=None, sep=None, chained=None, chained_status=None):
             subkey = subkey.format(chained)
 
     if not os.path.isfile(path):
-        LOG.error('Path %s not found.', path)
+        log.error('Path %s not found.', path)
         return False, None
 
     ret = None
@@ -57,7 +57,7 @@ def json(path, subkey=None, sep=None, chained=None, chained_status=None):
         with open(path, 'r') as jfile:
             ret = _json.load(jfile)
     except Exception:
-        LOG.error('Error reading file %s.', path, exc_info=True)
+        log.error('Error reading file %s.', path, exc_info=True)
 
     if subkey:
         if sep is not None:
@@ -72,7 +72,7 @@ def json(path, subkey=None, sep=None, chained=None, chained_status=None):
                     key = int(key)
                 ret = ret[key]
         except (KeyError, TypeError, ValueError, IndexError):
-            LOG.error('Error traversing dict.', exc_info=True)
+            log.error('Error traversing dict.', exc_info=True)
             return False, None
 
     return True, ret
@@ -108,7 +108,7 @@ def yaml(path, subkey=None, sep=None, chained=None, chained_status=None):
             subkey = subkey.format(chained)
 
     if not os.path.isfile(path):
-        LOG.error('Path %s not found.', path)
+        log.error('Path %s not found.', path)
         return False, None
 
     ret = None
@@ -116,7 +116,7 @@ def yaml(path, subkey=None, sep=None, chained=None, chained_status=None):
         with open(path, 'r') as yaml_file:
             ret = _yaml.safe_load(yaml_file)
     except Exception:
-        LOG.error('Error reading file %s.', path, exc_info=True)
+        log.error('Error reading file %s.', path, exc_info=True)
 
     if subkey:
         if sep is not None:
@@ -131,7 +131,7 @@ def yaml(path, subkey=None, sep=None, chained=None, chained_status=None):
                     key = int(key)
                 ret = ret[key]
         except (TypeError, ValueError, KeyError, IndexError):
-            LOG.error('Error traversing dict.', exc_info=True)
+            log.error('Error traversing dict.', exc_info=True)
             return False, None
 
     return True, ret
@@ -234,7 +234,7 @@ def config(path,
         path = path.format(chained)
 
     if not os.path.isfile(path):
-        LOG.error('Path %s not found.', path)
+        log.error('Path %s not found.', path)
         return False, None
 
     if dictsep is None:
@@ -266,7 +266,7 @@ def _lines_as_list(path, pattern, ignore_pattern):
                     continue
                 ret.append(line)
     except Exception:
-        LOG.error('Error while processing readfile.config for file %s.', path, exc_info=True)
+        log.error('Error while processing readfile.config for file %s.', path, exc_info=True)
         return None
 
     return ret
@@ -301,7 +301,7 @@ def _lines_as_dict(path, pattern, ignore_pattern, dictsep, valsep, subsep):
                     ret[key] = val
                     found_keys.add(key)
     except Exception:
-        LOG.error('Error while processing readfile.config for file %s.', path, exc_info=True)
+        log.error('Error while processing readfile.config for file %s.', path, exc_info=True)
         return None
 
     return ret
@@ -387,13 +387,13 @@ def readfile_string(path, encode_b64=False, chained=None, chained_status=None):
         path = path.format(chained)
 
     if not os.path.isfile(path):
-        LOG.error('Path %s not found.', path)
+        log.error('Path %s not found.', path)
         return False, None
     try:
         with open(path, 'r') as input_file:
             ret = input_file.read()
     except Exception:
-        LOG.error('Error reading file %s', path, exc_info=True)
+        log.error('Error reading file %s', path, exc_info=True)
         return False, None
     status = bool(ret)
     if encode_b64:

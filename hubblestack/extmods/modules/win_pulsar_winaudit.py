@@ -20,7 +20,7 @@ import salt.utils.platform
 
 from salt.exceptions import CommandExecutionError
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 DEFAULT_MASK = ['ExecuteFile', 'Write', 'Delete', 'DeleteSubdirectoriesAndFiles',
                 'ChangePermissions', 'TakeOwnership']  # ExecuteFile Is really chatty
 DEFAULT_TYPE = 'all'
@@ -105,8 +105,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     global CONFIG_STALENESS
     global CONFIG
     if config.get('verbose'):
-        LOG.debug('Pulsar module called.')
-        LOG.debug('Pulsar module config from pillar:\n%s', config)
+        log.debug('Pulsar module called.')
+        log.debug('Pulsar module config from pillar:\n%s', config)
     sys_check = 0
 
     # Get config(s) from filesystem if we don't have them already
@@ -118,7 +118,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         config = CONFIG
     else:
         if config.get('verbose'):
-            LOG.debug('No cached config found for pulsar, retrieving fresh from fileserver.')
+            log.debug('No cached config found for pulsar, retrieving fresh from fileserver.')
         new_config = _get_config_from_fileserver(config)
 
         update_acls = True
@@ -129,7 +129,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         CONFIG = config
 
     if config.get('verbose'):
-        LOG.debug('Pulsar beacon config (compiled from config list):\n%s', config)
+        log.debug('Pulsar beacon config (compiled from config list):\n%s', config)
 
     # Validate Global Auditing with Auditpol
     global_check = __salt__['cmd.run']('auditpol /get /category:"Object Access" /r | '
@@ -146,7 +146,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     # Read in events since last call.  Time_frame in minutes
     ret = _pull_events(config['win_notify_interval'])
     if sys_check == 1:
-        LOG.error('The ACLs were not setup correctly, or global auditing is not enabled.'
+        log.error('The ACLs were not setup correctly, or global auditing is not enabled.'
                   ' This could have been remedied, but GP might need to be changed')
 
     if __salt__['config.get']('hubblestack:pulsar:maintenance', False):
@@ -175,9 +175,9 @@ def _get_config_from_fileserver(config):
                                               recursive_update=True,
                                               merge_lists=True)
             else:
-                LOG.error('Path %s does not exist or is not a file', path)
+                log.error('Path %s does not exist or is not a file', path)
     else:
-        LOG.error('Pulsar beacon \'paths\' data improperly formatted. Should be list of paths')
+        log.error('Pulsar beacon \'paths\' data improperly formatted. Should be list of paths')
 
     return new_config
 
@@ -191,7 +191,7 @@ def _validate_paths(config, sys_check):
                     'stats', 'paths', 'verbose']:
             return sys_check
         if not os.path.exists(path):
-            LOG.info('The folder path %s does not exist', path)
+            log.info('The folder path %s does not exist', path)
             return sys_check
         if isinstance(config[path], dict):
             mask = config[path].get('mask', DEFAULT_MASK)

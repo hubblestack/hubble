@@ -25,7 +25,7 @@ import salt.utils.path
 import salt.modules.cmdmod
 
 __salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet}
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def default_gateway():

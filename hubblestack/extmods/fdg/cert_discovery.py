@@ -29,6 +29,15 @@ log = logging.getLogger(__name__)
 
 setdefaulttimeout(3)
 
+def get_certificate_san(x509cert):
+    san = ''
+    ext_count = x509cert.get_extension_count()
+    for i in range(0, ext_count):
+        ext = x509cert.get_extension(i)
+        if 'subjectAltName' in str(ext.get_short_name()):
+            san = ext.__str__()
+    return san
+
 def load_certificate(ip, port):
     """
     fetch server certificate details and return Json with the first value being the
@@ -37,7 +46,7 @@ def load_certificate(ip, port):
     """
     try:
         log.info("FDG's cert_discovery is checking for ssl cert on {0}:{1}".format(ip,port))
-        hostport = (ip, port)
+        hostport = (str(ip), int(port))
         cert_details = ssl.get_server_certificate(hostport)
     except Exception as e:
         message = "FDG's cert_discovery Couldn't get cert: {0}".format(e)
@@ -46,14 +55,15 @@ def load_certificate(ip, port):
     else:
         return {'result':True,'data':cert_details}
 
-def parse_cert(cert, port):
+def parse_cert(cert, host, port):
     """
     load the certificate using OpenSSL and parse needed params.
     """
     try:
         x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert['data'])
         cert_details = {}
-        cert_details['port'] = port
+        cert_details['dest_port'] = str(port)
+        cert_details['dest_ip'] = str(host)
         if x509.get_issuer():
             issuer_components = format_components(x509.get_issuer())
             cert_details['issuer'] = issuer_components.get('CN', "None")
@@ -73,11 +83,12 @@ def parse_cert(cert, port):
         cert_details['issue_date'] = str(not_before)
         cert_details['signature_algo'] = str(x509.get_signature_algorithm())
         cert_details['pem_cert'] = str(cert['data'])
+        cert_details['SAN'] = get_certificate_san(x509) 
     except Exception as e:
         cert_details['error'] = "some error occurred while parsing certificate - {0}".format(e)
     return cert_details
 
-def fill_na(port, message):
+def fill_na(host, port, message):
     """
     Fill 'NA' in case of 'no cert found' on the input port.
     """
@@ -94,25 +105,29 @@ def fill_na(port, message):
     cert_details['issue_date'] = 'NA'
     cert_details['signature_algo'] = 'NA'
     cert_details['pem_cert'] = 'NA'
-    cert_details['port'] = port
+    cert_details['dest_port'] = str(port)
     cert_details['error'] = message
+    cert_details['dest_ip'] = str(host)
 
     return cert_details
 
-def get_cert_details(chained=None, chained_status=None):
+def get_cert_details(host_ip='', host_port='', chained=None, chained_status=None):
     """
-    This module is used in conjunction with osquery as the first module
+    This module is used to fetch certificate details on a host and port.
+    This module can also be used in conjunction with osquery as the first module
     in the chain. Given that osquery fetches information about the open
-    ports on a system and provides a 'host_port' (or a list of host_port)
+    ports on a system and provides a 'host, port' tuple (or a list of host, port tuples)
     to this module, this module will connect to the host and port and fetch
     certificate details if a certificate is attached on the port. As an example,
     Osquery needs to provide the value of 'chained' in the following format.
-    +------------------+
-    | host_port        |
-    +------------------+
-    | 127.0.0.1:80     |
-    | 127.0.0.1:443    |
-    +------------------+
+    +-------------------------------+-----------+
+    | host_ip                       | host_port |
+    +-------------------------------+-----------+
+    | 127.0.0.1                     | 80        |
+    | 2001:db8:85a3::8a2e:370:7334  | 80        |
+    | 127.0.0.1                     | 443       |
+    | 2001:db8:85a3::8a2e:370:7334  | 443       |
+    +-------------------------------+-----------+
     The first return value (status) will be True if the module is able to
         1. Connect to the port and fetch certificate details.
         2. Connect to the port and exit if no certificate is attached on the port.
@@ -125,16 +140,22 @@ def get_cert_details(chained=None, chained_status=None):
     chained_status
         The status returned by the chained call.
     """
-    hostname = chained['host_port']
-    host, port = get_hostport(hostname)
+    if host_ip['host_ip'] == "":
+        host = chained['host_ip']
+    else:
+        host = host_ip['host_ip']
+    if host_port['host_port'] == "":
+        port = chained['host_port']
+    else:
+        port = host_port['host_port']
     cert = load_certificate(host, port)
     if not cert['result']:
         message = "FDG's cert_discovery - cert details not found"
         log.info(message)
-        cert_details = fill_na(port, message)
+        cert_details = fill_na(host, port, message)
     else:
         log.info("FDG's cert_discovery - cert found, parsing certificate")
-        cert_details = parse_cert(cert, port)
+        cert_details = parse_cert(cert, host, port)
     return True, cert_details
 
 
@@ -143,15 +164,4 @@ def format_components(x509name):
     for item in x509name.get_components():
         items[item[0]] = item[1]
     return items;
-
-def get_hostport(host_port):
-    """
-    split the input (example - 127.0.0.1:443) value into hostname and port.
-    """
-    host = host_port.split(":")
-    hostname = host[0]
-    port = 443
-    if len(host) == 2:
-        port = int(host[1])
-    return hostname, port
 

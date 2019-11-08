@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+""" Handle metadata about osquery: return version and path as grains """
 
 import salt.utils
 import salt.utils.path

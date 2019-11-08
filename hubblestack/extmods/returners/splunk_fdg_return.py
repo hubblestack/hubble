@@ -43,7 +43,7 @@ gateway is not defined.
               - product_group
 """
 import socket
-
+import re
 import json
 import logging
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
@@ -186,7 +186,15 @@ def _generate_payload(args, fdg_args, cloud_details, opts, index_extracted_field
     fdg_file = fdg_file.lower().replace(' ', '_')
     payload = {'host': args['fqdn'], 'index': opts['index']}
     if opts['add_query_to_sourcetype']:
-        payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], fdg_file)})
+        extended_sourcetype = fdg_file
+        if extended_sourcetype.startswith('salt://'):
+            extended_sourcetype = extended_sourcetype[6:]
+        if extended_sourcetype.startswith('/fdg/'):
+            extended_sourcetype = extended_sourcetype[5:]
+        if extended_sourcetype.endswith('.fdg'):
+            extended_sourcetype = extended_sourcetype[:-4]
+        extended_sourcetype = re.sub(r'[^\w\d]+', '_', extended_sourcetype)
+        payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], extended_sourcetype)})
     else:
         payload.update({'sourcetype': opts['sourcetype']})
 

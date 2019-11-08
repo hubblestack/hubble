@@ -140,11 +140,11 @@ def get_cert_details(host_ip='', host_port='', chained=None, chained_status=None
     chained_status
         The status returned by the chained call.
     """
-    if host_ip['host_ip'] == "":
+    if host_ip == "":
         host = chained['host_ip']
     else:
         host = host_ip['host_ip']
-    if host_port['host_port'] == "":
+    if host_port == "":
         port = chained['host_port']
     else:
         port = host_port['host_port']

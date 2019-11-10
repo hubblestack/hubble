@@ -177,6 +177,14 @@ def _build_args(ret):
 
     return args
 
+def _file_url_to_sourcetype_tag(filename):
+    if filename.startswith('salt://'):
+        filename = filename[7:]
+    if filename.startswith('fdg/'):
+        filename = filename[4:]
+    if filename.endswith('.fdg'):
+        filename = filename[:-4]
+    return re.sub(r'[^\w\d]+', '_', filename)
 
 def _generate_payload(args, fdg_args, cloud_details, opts, index_extracted_fields):
     """
@@ -186,15 +194,10 @@ def _generate_payload(args, fdg_args, cloud_details, opts, index_extracted_field
     fdg_file = fdg_file.lower().replace(' ', '_')
     payload = {'host': args['fqdn'], 'index': opts['index']}
     if opts['add_query_to_sourcetype']:
-        extended_sourcetype = fdg_file
-        if extended_sourcetype.startswith('salt://'):
-            extended_sourcetype = extended_sourcetype[6:]
-        if extended_sourcetype.startswith('/fdg/'):
-            extended_sourcetype = extended_sourcetype[5:]
-        if extended_sourcetype.endswith('.fdg'):
-            extended_sourcetype = extended_sourcetype[:-4]
-        extended_sourcetype = re.sub(r'[^\w\d]+', '_', extended_sourcetype)
-        payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], extended_sourcetype)})
+
+        payload.update({'sourcetype': "{sourcetype}_{extension}".format(
+            sourcetype=opts['sourcetype'],
+            extension=_file_url_to_sourcetype_tag(fdg_file))})
     else:
         payload.update({'sourcetype': opts['sourcetype']})
 

@@ -18,7 +18,7 @@ import logging
 import requests
 
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def request(url,
@@ -99,7 +99,7 @@ def request(url,
         Ignored
     """
     if chained:
-        LOG.warn('Chained value detected in curl.request module. Chained '
+        log.warn('Chained value detected in curl.request module. Chained '
                  'values are unsupported in the curl fdg module.')
 
     # Data validation and preparation
@@ -116,7 +116,7 @@ def request(url,
         kwargs['headers'] = headers
     kwargs['timeout'] = int(timeout)
     if function not in ('GET', 'PUT', 'POST'):
-        LOG.error('Invalid request type %s', function)
+        log.error('Invalid request type %s', function)
         return False, {}
 
     # Make the request

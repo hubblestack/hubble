@@ -50,7 +50,7 @@ import re
 
 from salt.exceptions import CommandExecutionError
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def grep(path,

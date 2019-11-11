@@ -11,7 +11,7 @@ import logging
 import os
 
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def query(query_sql, osquery_args=None, osquery_path=None,
@@ -67,19 +67,19 @@ def _osquery(query_sql, osquery_path=None, args=None):
     if not query_sql:
         return False, ''
     if 'attach' in query_sql.lower() or 'curl' in query_sql.lower():
-        LOG.critical('Skipping potentially malicious osquery query \'%s\' '
+        log.critical('Skipping potentially malicious osquery query \'%s\' '
                      'which contains either \'attach\' or \'curl\'', query_sql)
         return False, ''
 
     # Prep the command
     if not osquery_path:
         if not os.path.isfile(__grains__['osquerybinpath']):
-            LOG.error('osquery binary not found: %s', __grains__['osquerybinpath'])
+            log.error('osquery binary not found: %s', __grains__['osquerybinpath'])
             return False, ''
         cmd = [__grains__['osquerybinpath'], '--read_max', max_file_size, '--json', query_sql]
     else:
         if not os.path.isfile(osquery_path):
-            LOG.error('osquery binary not found: %s', osquery_path)
+            log.error('osquery binary not found: %s', osquery_path)
             return False, ''
         cmd = [osquery_path, '--read_max', max_file_size, '--json', query_sql]
     if isinstance(args, (list,tuple)):

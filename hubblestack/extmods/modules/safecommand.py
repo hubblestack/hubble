@@ -19,7 +19,7 @@ import logging
 
 from salt.exceptions import CommandExecutionError
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def run(command, args=None, override_file=None, timeout=30):
@@ -61,7 +61,7 @@ def run(command, args=None, override_file=None, timeout=30):
                 with open(override, 'r') as args_file:
                     override_args = args_file.read().strip()
             except Exception as exc:
-                LOG.exception('Error caching file %s', override_file)
+                log.exception('Error caching file %s', override_file)
                 raise CommandExecutionError(exc)
 
     # Use override_args if we found any

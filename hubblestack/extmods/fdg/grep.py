@@ -11,7 +11,7 @@ import os.path
 
 from salt.exceptions import CommandExecutionError
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def file(path, pattern, grep_args=None, format_chained=True, chained=None, chained_status=None):

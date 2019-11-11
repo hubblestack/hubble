@@ -22,7 +22,7 @@ from salt.exceptions import CommandExecutionError
 from hubblestack import __version__
 from hubblestack.status import HubbleStatus
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 hubble_status = HubbleStatus(__name__, 'top', 'audit')
 
@@ -127,7 +127,7 @@ def audit(configs=None,
     if show_compliance is None:
         show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
     if show_profile is not None:
-        LOG.warning(
+        log.warning(
             'Keyword argument \'show_profile\' is no longer supported'
         )
     if debug is None:
@@ -144,7 +144,7 @@ def audit(configs=None,
     # Pass any module parameters through to the Nova module
     nova_kwargs = _get_nova_kwargs(**kwargs)
 
-    LOG.debug('nova_kwargs: %s', str(nova_kwargs))
+    log.debug('nova_kwargs: %s', str(nova_kwargs))
 
     ret = _run_audit(configs, tags, debug, labels, **nova_kwargs)
     results = _build_results(verbose, ret, show_success, show_compliance, called_from_top)
@@ -289,10 +289,10 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
     data_list = _build_audit_data(configs, results)
 
     if debug:
-        LOG.debug('hubble.py configs:')
-        LOG.debug(configs)
-        LOG.debug('hubble.py data_list:')
-        LOG.debug(data_list)
+        log.debug('hubble.py configs:')
+        log.debug(configs)
+        log.debug('hubble.py data_list:')
+        log.debug(data_list)
     # Run the audits
     # This is currently pretty brute-force -- we just run all the modules we
     # have available with the data list, so data will be processed multiple
@@ -302,8 +302,8 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
         try:
             ret = func(data_list, tags, labels, **kwargs)
         except Exception:
-            LOG.error('Exception occurred in nova module:')
-            LOG.error(traceback.format_exc())
+            log.error('Exception occurred in nova module:')
+            log.error(traceback.format_exc())
             if 'Errors' not in results:
                 results['Errors'] = []
             results['Errors'].append({key: {'error': 'exception occurred',
@@ -387,8 +387,8 @@ def _build_processed_controls(data_list, debug):
                     else:  # dict
                         processed_controls[control_tag] = control_data
     if debug:
-        LOG.debug('hubble.py control data:')
-        LOG.debug(processed_controls)
+        log.debug('hubble.py control data:')
+        log.debug(processed_controls)
 
     return processed_controls
 
@@ -501,7 +501,7 @@ def top(topfile='top.nova',
     if show_compliance is None:
         show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
     if show_profile is not None:
-        LOG.warning(
+        log.warning(
             'Keyword argument \'show_profile\' is no longer supported'
         )
 
@@ -568,7 +568,7 @@ def _build_data_by_tag(topfile, results):
             error_log = 'topfile malformed, list entries must be strings or ' \
                         'dicts: {0} | {1}'.format(data, type(data))
             results['Errors'][topfile] = {'error': error_log}
-            LOG.error(error_log)
+            log.error(error_log)
             continue
 
     return data_by_tag
@@ -621,7 +621,7 @@ def sync(clean=False):
         salt '*' nova.sync
         salt '*' nova.sync saltenv=hubble
     """
-    LOG.debug('syncing nova modules')
+    log.debug('syncing nova modules')
     nova_profile_dir = __salt__['config.get']('hubblestack:nova:profile_dir',
                                               'salt://hubblestack_nova_profiles')
     _nova_module_dir, cached_profile_dir = _hubble_dir()
@@ -670,7 +670,7 @@ def load():
         if not os.path.isdir(nova_dir):
             return False, 'No synced nova modules/profiles found'
 
-    LOG.debug('loading nova modules')
+    log.debug('loading nova modules')
 
     global __nova__
     __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __grains__, __pillar__, __salt__)

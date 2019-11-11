@@ -7,7 +7,7 @@ import logging
 import os
 import uuid
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def hubble_uuid():
@@ -23,7 +23,7 @@ def hubble_uuid():
                 cached_uuid = uuid_file.read()
                 # Check if it's changed out from under us -- problem!
                 if existing_uuid and cached_uuid != existing_uuid:
-                    LOG.error('hubble_uuid changed on disk unexpectedly!'
+                    log.error('hubble_uuid changed on disk unexpectedly!'
                               '\nPrevious: %s\nNew: %s\nKeeping previous.',
                               existing_uuid, cached_uuid)
                     # Write the previous UUID to the cache file
@@ -31,18 +31,18 @@ def hubble_uuid():
                         with open(cached_uuid_path, 'w') as cache_file:
                             cache_file.write(existing_uuid)
                     except Exception:
-                        LOG.exception('Problem writing cached hubble uuid to file: %s',
+                        log.exception('Problem writing cached hubble uuid to file: %s',
                                       cached_uuid_path)
                     return {'hubble_uuid': existing_uuid}
                 return {'hubble_uuid': cached_uuid}
         elif existing_uuid:
-            LOG.error('hubble_uuid was previously generated, but the cached '
+            log.error('hubble_uuid was previously generated, but the cached '
                       'file is no longer present: %s', cached_uuid_path)
         else:
-            LOG.warning('generating fresh uuid, no cache file found. '
+            log.warning('generating fresh uuid, no cache file found. '
                         '(probably not a problem)')
     except Exception:
-        LOG.exception('Problem retrieving cached hubble uuid from file: %s', cached_uuid_path)
+        log.exception('Problem retrieving cached hubble uuid from file: %s', cached_uuid_path)
 
     # Generate a fresh one if needed
     if not existing_uuid:
@@ -53,6 +53,6 @@ def hubble_uuid():
         with open(cached_uuid_path, 'w') as uuid_file:
             uuid_file.write(existing_uuid)
     except Exception:
-        LOG.exception('Problem writing cached hubble uuid to file: %s', cached_uuid_path)
+        log.exception('Problem writing cached hubble uuid to file: %s', cached_uuid_path)
 
     return {'hubble_uuid': existing_uuid}

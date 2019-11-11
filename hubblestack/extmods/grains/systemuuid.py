@@ -8,7 +8,7 @@ import salt.utils.path
 import salt.modules.cmdmod
 
 __salt__ = {'cmd.run_stdout': salt.modules.cmdmod.run_stdout}
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def get_system_uuid():
@@ -48,19 +48,19 @@ def get_system_uuid():
                 cached_system_uuid = uuid_file.read()
             # Check if it's changed out from under us -- problem!
             if cached_system_uuid != live_system_uuid:
-                LOG.error("system_uuid on disk doesn't match live system value"
+                log.error("system_uuid on disk doesn't match live system value"
                           '\nLive: %s\nOn Disk: %s\nRewriting cached value',
                           live_system_uuid, cached_system_uuid)
                 _write_system_uuid_to_file(cached_system_uuid_path, live_system_uuid)
             return {'system_uuid': live_system_uuid}
         elif previous_system_uuid:
-            LOG.error('system_uuid was previously cached, but the cached '
+            log.error('system_uuid was previously cached, but the cached '
                       'file is no longer present: %s', cached_system_uuid_path)
         else:
-            LOG.warning('no cache file found, caching system_uuid. '
+            log.warning('no cache file found, caching system_uuid. '
                         '(probably not a problem)')
     except Exception:
-        LOG.exception('Problem retrieving cached system uuid from file: %s',
+        log.exception('Problem retrieving cached system uuid from file: %s',
                       cached_system_uuid_path)
 
     # Cache the system uuid if needed
@@ -73,7 +73,7 @@ def _write_system_uuid_to_file(path, uuid):
         with open(path, 'w') as out_file:
             out_file.write(uuid)
     except Exception:
-        LOG.exception('Problem writing cached system uuid to file: %s', path)
+        log.exception('Problem writing cached system uuid to file: %s', path)
 
 
 def _get_uuid_from_system():

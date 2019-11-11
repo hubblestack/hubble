@@ -8,7 +8,7 @@ import math
 import time
 import hubblestack.status
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 __virtualname__ = 'hstatus'
 

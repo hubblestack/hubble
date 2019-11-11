@@ -512,7 +512,6 @@ def _setup_signaling():
         signal.signal(signal.SIGHUP, clean_up_process)
         signal.signal(signal.SIGQUIT, clean_up_process)
 
-
 def _disable_boto_modules():
     """ Disable the unneeded boto modules because they cause issues with the loader """
     # Disable all of salt's boto modules, they give nothing but trouble to the loader
@@ -636,12 +635,13 @@ def _setup_logging(parsed_args):
         if __opts__['daemonize']:
             __opts__['log_level'] = 'info'
     # Handle the explicit -vvv settings
-    if __opts__['verbose'] == 1:
-        __opts__['log_level'] = 'warning'
-    elif __opts__['verbose'] == 2:
-        __opts__['log_level'] = 'info'
-    elif __opts__['verbose'] >= 3:
-        __opts__['log_level'] = 'debug'
+    if __opts__['verbose']:
+        if __opts__['verbose'] == 1:
+            __opts__['log_level'] = 'warning'
+        elif __opts__['verbose'] == 2:
+            __opts__['log_level'] = 'info'
+        elif __opts__['verbose'] >= 3:
+            __opts__['log_level'] = 'debug'
     # Console logging is probably the same, but can be different
     console_logging_opts = {
         'log_level': __opts__.get('console_log_level', __opts__['log_level']),

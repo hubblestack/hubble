@@ -556,12 +556,13 @@ def load_config():
         if __opts__['daemonize']:
             __opts__['log_level'] = 'info'
     # Handle the explicit -vvv settings
-    if __opts__['verbose'] == 1:
-        __opts__['log_level'] = 'warning'
-    elif __opts__['verbose'] == 2:
-        __opts__['log_level'] = 'info'
-    elif __opts__['verbose'] >= 3:
-        __opts__['log_level'] = 'debug'
+    if __opts__['verbose']:
+        if __opts__['verbose'] == 1:
+            __opts__['log_level'] = 'warning'
+        elif __opts__['verbose'] == 2:
+            __opts__['log_level'] = 'info'
+        elif __opts__['verbose'] >= 3:
+            __opts__['log_level'] = 'debug'
 
     # Setup module/grain/returner dirs
     module_dirs = __opts__.get('module_dirs', [])

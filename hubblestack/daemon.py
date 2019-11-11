@@ -635,12 +635,13 @@ def _setup_logging(parsed_args):
         if __opts__['daemonize']:
             __opts__['log_level'] = 'info'
     # Handle the explicit -vvv settings
-    if __opts__['verbose'] == 1:
-        __opts__['log_level'] = 'warning'
-    elif __opts__['verbose'] == 2:
-        __opts__['log_level'] = 'info'
-    elif __opts__['verbose'] >= 3:
-        __opts__['log_level'] = 'debug'
+    if __opts__['verbose']:
+        if __opts__['verbose'] == 1:
+            __opts__['log_level'] = 'warning'
+        elif __opts__['verbose'] == 2:
+            __opts__['log_level'] = 'info'
+        elif __opts__['verbose'] >= 3:
+            __opts__['log_level'] = 'debug'
     # Console logging is probably the same, but can be different
     console_logging_opts = {
         'log_level': __opts__.get('console_log_level', __opts__['log_level']),

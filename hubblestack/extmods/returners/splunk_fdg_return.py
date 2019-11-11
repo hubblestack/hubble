@@ -178,6 +178,14 @@ def _build_args(ret):
     return args
 
 def _file_url_to_sourcetype_tag(filename):
+    """ attempt to turn a file URL into a sourcetype extension description
+        e.g.:
+        'salt://fdg/interesting.operation.fdg'
+        becomes
+        'interesting_operation'
+        (intended for internal use by _generate_payload() to append to the
+        default sourcetype)
+    """
     if filename.startswith('salt://'):
         filename = filename[7:]
     if filename.startswith('fdg/'):

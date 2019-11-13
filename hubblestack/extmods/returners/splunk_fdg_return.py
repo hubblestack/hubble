@@ -177,7 +177,7 @@ def _build_args(ret):
 
     return args
 
-def _file_url_to_sourcetype_tag(filename):
+def _file_url_to_sourcetype(filename, base='hubble_fdg'):
     """ attempt to turn a file URL into a sourcetype extension description
         e.g.:
         'salt://fdg/interesting.operation.fdg'
@@ -186,13 +186,21 @@ def _file_url_to_sourcetype_tag(filename):
         (intended for internal use by _generate_payload() to append to the
         default sourcetype)
     """
-    if filename.startswith('salt://'):
-        filename = filename[7:]
-    if filename.startswith('fdg/'):
-        filename = filename[4:]
-    if filename.endswith('.fdg'):
+    if re.search(r'^\w+://', filename):
+        filename = filename.split('://', 1)[1]
+    if re.search(r'\.fdg$', filename):
         filename = filename[:-4]
-    return re.sub(r'[^\w\d]+', '_', filename)
+    def _no_dups(x):
+        sf = re.split(r'[^a-zA-Z0-9]+', x)
+        last = None
+        for item in sf:
+            if item == last:
+                continue
+            if not item:
+                continue
+            yield item
+            last = item
+    return '_'.join( _no_dups(base + '_' + filename) )
 
 def _generate_payload(args, fdg_args, cloud_details, opts, index_extracted_fields):
     """
@@ -203,9 +211,7 @@ def _generate_payload(args, fdg_args, cloud_details, opts, index_extracted_field
     payload = {'host': args['fqdn'], 'index': opts['index']}
     if opts['add_query_to_sourcetype']:
 
-        payload.update({'sourcetype': "{sourcetype}_{extension}".format(
-            sourcetype=opts['sourcetype'],
-            extension=_file_url_to_sourcetype_tag(fdg_file))})
+        payload.update({'sourcetype': _file_url_to_sourcetype(fdg_file, opts['sourcetype'])})
     else:
         payload.update({'sourcetype': opts['sourcetype']})
 

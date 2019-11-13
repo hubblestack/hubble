@@ -8,14 +8,14 @@ certificate details that might be attached on those ports.
 
 Testing -
     1. Configure this module through Hubble's schedule using the following configuration
-        fdg_cert_discovery:
-        function: fdg.fdg
-        seconds: __seconds__
-        splay: __splay__
-        returner: __returner__
-        run_on_start: __run_on_start__
-        args:
-          - <path to fdg profile>
+       fdg_cert_discovery:
+         function: fdg.fdg
+         seconds: __seconds__
+         splay: __splay__
+         returner: __returner__
+         run_on_start: __run_on_start__
+         args:
+           - <path to fdg profile>
     Make sure that cert_discovery.fdg profile exists and contains Osquery as the first
     module and this module as the second module.
     2. Alternately, execute hubble fdg.fdg <path to fdg profile> to run this module via cmd.
@@ -46,12 +46,12 @@ def load_certificate(ip, port):
     certificate data.
     """
     try:
-        log.info("FDG's cert_discovery is checking for ssl cert on {0}:{1}".format(ip,port))
+        log.debug("FDG's cert_discovery is checking for ssl cert on {0}:{1}".format(ip,port))
         hostport = (str(ip), int(port))
         cert_details = ssl.get_server_certificate(hostport)
     except Exception as e:
         message = "FDG's cert_discovery Couldn't get cert: {0}".format(e)
-        log.info(message)
+        log.error(message)
         return {'result':False,'data':message}
     else:
         return {'result':True,'data':cert_details}
@@ -142,23 +142,43 @@ def get_cert_details(host_ip='', host_port='', chained=None, chained_status=None
         The status returned by the chained call.
     """
     if host_ip == "":
-        host = chained['host_ip']
+        host = str(chained.get('host_ip', ''))
     else:
-        host = host_ip['host_ip']
+        host = str(host_ip.get('host_ip', ''))
     if host_port == "":
-        port = chained['host_port']
+        port = int(chained.get('host_port', ''))
     else:
-        port = host_port['host_port']
-    cert = load_certificate(host, port)
-    if not cert['result']:
-        message = "FDG's cert_discovery - cert details not found"
+        port = int(host_port.get('host_port', ''))
+
+    valid_inputs = check_input_validity(host, port)
+    if valid_inputs:
+        cert = load_certificate(host, port)
+    else:
+        message = "FDG's cert_discovery - invalid inputs"
+        log.error(message)
+        return False, ''
+  
+    if not cert:
+        message = "FDG's cert_discovery - something went wrong while fetching cert"
+        log.error(message)
+        return False, ''
+
+    if 'result' in cert.keys() and not cert.get('result'):
+        message = "FDG's cert_discovery - no certificate found."
         log.info(message)
         cert_details = fill_na(host, port, message)
     else:
         log.info("FDG's cert_discovery - cert found, parsing certificate")
         cert_details = parse_cert(cert, host, port)
     return True, cert_details
+    
 
+def check_input_validity(host, port):
+    if host == '' or port == '':
+        return False
+    if not isinstance(host,str) or not isinstance(port, int):
+        return False
+    return True
 
 def format_components(x509name):
     items = {}

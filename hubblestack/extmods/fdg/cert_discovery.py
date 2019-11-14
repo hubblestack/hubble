@@ -36,8 +36,12 @@ def get_certificate_san(x509cert):
         ext = x509cert.get_extension(i)
         if 'subjectAltName' in str(ext.get_short_name()):
             san = ext.__str__()
-    san = san.split(',')
-    return san
+    san_list = san.split(',')
+    trimmed_san_list = []
+    for san in san_list:
+        trimmed_san = san.lstrip()
+        trimmed_san_list.append(trimmed_san)
+    return trimmed_san_list
 
 def load_certificate(ip, port):
     """

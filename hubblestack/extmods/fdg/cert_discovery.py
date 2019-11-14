@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 
 setdefaulttimeout(3)
 
-def get_certificate_san(x509cert):
+def _get_certificate_san(x509cert):
     san = ''
     ext_count = x509cert.get_extension_count()
     for i in range(0, ext_count):
@@ -43,7 +43,7 @@ def get_certificate_san(x509cert):
         trimmed_san_list.append(trimmed_san)
     return trimmed_san_list
 
-def load_certificate(ip, port):
+def _load_certificate(ip, port):
     """
     fetch server certificate details and return Json with the first value being the
     status of ssl.get_server_certificate function and second value being the actual
@@ -60,7 +60,7 @@ def load_certificate(ip, port):
     else:
         return {'result':True,'data':cert_details}
 
-def parse_cert(cert, host, port):
+def _parse_cert(cert, host, port):
     """
     load the certificate using OpenSSL and parse needed params.
     """
@@ -70,10 +70,10 @@ def parse_cert(cert, host, port):
         cert_details['dest_port'] = str(port)
         cert_details['dest_ip'] = str(host)
         if x509.get_issuer():
-            issuer_components = format_components(x509.get_issuer())
+            issuer_components = _format_components(x509.get_issuer())
             cert_details['issuer'] = issuer_components.get('CN', "None")
         if x509.get_subject():
-            subject_components = format_components(x509.get_subject())
+            subject_components = _format_components(x509.get_subject())
             cert_details['country_name'] = subject_components.get('C', "None")
             cert_details['organisation_name'] = subject_components.get('O', "None")
             cert_details['organisation_unit_name'] = subject_components.get('OU', "None")
@@ -88,12 +88,12 @@ def parse_cert(cert, host, port):
         cert_details['issue_date'] = str(not_before)
         cert_details['signature_algo'] = str(x509.get_signature_algorithm())
         cert_details['pem_cert'] = str(cert['data'])
-        cert_details['SAN'] = get_certificate_san(x509) 
+        cert_details['SAN'] = _get_certificate_san(x509)
     except Exception as e:
         cert_details['error'] = "some error occurred while parsing certificate - {0}".format(e)
     return cert_details
 
-def fill_na(host, port, message):
+def _fill_na(host, port, message):
     """
     Fill 'NA' in case of 'no cert found' on the input port.
     """
@@ -150,13 +150,13 @@ def get_cert_details(host_ip='', host_port='', chained=None, chained_status=None
     else:
         host = str(host_ip.get('host_ip', ''))
     if host_port == "":
-        port = int(chained.get('host_port', ''))
+        port = int(chained.get('host_port', -1))
     else:
-        port = int(host_port.get('host_port', ''))
+        port = int(host_port.get('host_port', -1))
 
-    valid_inputs = check_input_validity(host, port)
+    valid_inputs = _check_input_validity(host, port)
     if valid_inputs:
-        cert = load_certificate(host, port)
+        cert = _load_certificate(host, port)
     else:
         message = "FDG's cert_discovery - invalid inputs"
         log.error(message)
@@ -170,21 +170,21 @@ def get_cert_details(host_ip='', host_port='', chained=None, chained_status=None
     if 'result' in cert.keys() and not cert.get('result'):
         message = "FDG's cert_discovery - no certificate found."
         log.info(message)
-        cert_details = fill_na(host, port, message)
+        cert_details = _fill_na(host, port, message)
     else:
         log.info("FDG's cert_discovery - cert found, parsing certificate")
-        cert_details = parse_cert(cert, host, port)
+        cert_details = _parse_cert(cert, host, port)
     return True, cert_details
     
 
-def check_input_validity(host, port):
-    if host == '' or port == '':
+def _check_input_validity(host, port):
+    if host == '' or port == -1:
         return False
-    if not isinstance(host,str) or not isinstance(port, int):
+    if host.__contains__(" "):
         return False
     return True
 
-def format_components(x509name):
+def _format_components(x509name):
     items = {}
     for item in x509name.get_components():
         items[item[0]] = item[1]

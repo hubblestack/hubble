@@ -22,6 +22,7 @@ Testing -
 """
 import OpenSSL
 import ssl
+import time
 from socket import setdefaulttimeout
 import logging
 from datetime import datetime
@@ -152,6 +153,7 @@ def get_cert_details(params='', chained=None, chained_status=None):
     chained_status
         The status returned by the chained call.
     """
+    start_time = time.time()
     if params != "":
         params = params.get('params')
         host = str(params.get('host_ip', ''))
@@ -183,6 +185,8 @@ def get_cert_details(params='', chained=None, chained_status=None):
     else:
         log.info("FDG's cert_discovery - cert found, parsing certificate")
         cert_details = _parse_cert(cert, host, port)
+    stop_time = time.time()
+    cert_details['execution_time_in_sec'] = stop_time - start_time
     return True, cert_details
 
 def _check_input_validity(host, port, ssl_timeout):

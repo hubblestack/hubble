@@ -97,23 +97,11 @@ def _parse_cert(cert, host, port):
         cert_details['error'] = "some error occurred while parsing certificate - {0}".format(e)
     return cert_details
 
-def _fill_na(host, port, message):
+def _fill_common_details(host, port, message):
     """
-    Fill 'NA' in case of 'no cert found' on the input port.
+    fill ip, port and message for the connection.
     """
     cert_details = {}
-    cert_details['country_name'] = 'NA'
-    cert_details['organisation_name'] = 'NA'
-    cert_details['organisation_unit_name'] = 'NA'
-    cert_details['common_name'] = 'NA'
-    cert_details['version'] = 'NA'
-    cert_details['has_expired'] = 'NA'
-    cert_details['serial_number'] = 'NA'
-    cert_details['issuer'] = 'NA'
-    cert_details['expiry_date'] = 'NA'
-    cert_details['issue_date'] = 'NA'
-    cert_details['signature_algo'] = 'NA'
-    cert_details['pem_cert'] = 'NA'
     cert_details['dest_port'] = str(port)
     cert_details['error'] = message
     cert_details['dest_ip'] = str(host)
@@ -181,7 +169,7 @@ def get_cert_details(params='', chained=None, chained_status=None):
     if 'result' in cert.keys() and not cert.get('result'):
         message = "FDG's cert_discovery - {0}".format(cert.get('data'))
         log.info(message)
-        cert_details = _fill_na(host, port, message)
+        cert_details = _fill_common_details(host, port, message)
     else:
         log.info("FDG's cert_discovery - cert found, parsing certificate")
         cert_details = _parse_cert(cert, host, port)

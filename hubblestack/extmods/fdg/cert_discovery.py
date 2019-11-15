@@ -27,7 +27,6 @@ import logging
 from datetime import datetime
 log = logging.getLogger(__name__)
 
-setdefaulttimeout(3)
 
 def _get_certificate_san(x509cert):
     san = ''
@@ -43,7 +42,7 @@ def _get_certificate_san(x509cert):
         trimmed_san_list.append(trimmed_san)
     return trimmed_san_list
 
-def _load_certificate(ip, port):
+def _load_certificate(ip, port, ssl_timeout):
     """
     fetch server certificate details and return Json with the first value being the
     status of ssl.get_server_certificate function and second value being the actual
@@ -52,6 +51,7 @@ def _load_certificate(ip, port):
     try:
         log.debug("FDG's cert_discovery is checking for ssl cert on {0}:{1}".format(ip,port))
         hostport = (str(ip), int(port))
+        setdefaulttimeout(ssl_timeout)
         cert_details = ssl.get_server_certificate(hostport)
     except Exception as e:
         message = "FDG's cert_discovery Couldn't get cert: {0}".format(e)
@@ -116,7 +116,7 @@ def _fill_na(host, port, message):
 
     return cert_details
 
-def get_cert_details(host_ip='', host_port='', chained=None, chained_status=None):
+def get_cert_details(params='', chained=None, chained_status=None):
     """
     This module is used to fetch certificate details on a host and port.
     This module can also be used in conjunction with osquery as the first module
@@ -145,18 +145,21 @@ def get_cert_details(host_ip='', host_port='', chained=None, chained_status=None
     chained_status
         The status returned by the chained call.
     """
-    if host_ip == "":
+    
+    if params != "":
+        params = params.get('params')
+        host = str(params.get('host_ip', ''))
+        port = int(params.get('host_port', -1))
+        ssl_timeout = int(params.get('ssl_timeout', 3))
+    else:
+        ssl_timeout = 3
+    if chained != None:
         host = str(chained.get('host_ip', ''))
-    else:
-        host = str(host_ip.get('host_ip', ''))
-    if host_port == "":
         port = int(chained.get('host_port', -1))
-    else:
-        port = int(host_port.get('host_port', -1))
 
     valid_inputs = _check_input_validity(host, port)
     if valid_inputs:
-        cert = _load_certificate(host, port)
+        cert = _load_certificate(host, port, ssl_timeout)
     else:
         message = "FDG's cert_discovery - invalid inputs"
         log.error(message)
@@ -168,7 +171,7 @@ def get_cert_details(host_ip='', host_port='', chained=None, chained_status=None
         return False, ''
 
     if 'result' in cert.keys() and not cert.get('result'):
-        message = "FDG's cert_discovery - no certificate found."
+        message = "FDG's cert_discovery - {0}".format(cert.get('data'))
         log.info(message)
         cert_details = _fill_na(host, port, message)
     else:

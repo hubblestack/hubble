@@ -64,9 +64,9 @@ def _parse_cert(cert, host, port):
     """
     load the certificate using OpenSSL and parse needed params.
     """
+    cert_details = {}
     try:
-        x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert['data'])
-        cert_details = {}
+        x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert.get('data', ''))
         cert_details['dest_port'] = str(port)
         cert_details['dest_ip'] = str(host)
         if x509.get_issuer():

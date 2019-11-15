@@ -113,19 +113,19 @@ def test_chained_garbage_value():
 def test_check_input_validity_positive():
     host = 'google.com'
     port = 443
-    val = hubblestack.extmods.fdg.cert_discovery._check_input_validity(host, port)
+    val = hubblestack.extmods.fdg.cert_discovery._check_input_validity(host, port, 3)
     assert val == True
 
 def test_check_input_validity_negative():
     host = ''
     port = -1
-    val = hubblestack.extmods.fdg.cert_discovery._check_input_validity(host, port)
+    val = hubblestack.extmods.fdg.cert_discovery._check_input_validity(host, port, 3)
     assert val == False
 
 def test_check_input_validity_negative_spaces():
     host = 'ag#786asf kjas.{\\}'
     port = 443
-    val = hubblestack.extmods.fdg.cert_discovery._check_input_validity(host, port)
+    val = hubblestack.extmods.fdg.cert_discovery._check_input_validity(host, port, 3)
     assert val == False
 
 def get_pem_file():

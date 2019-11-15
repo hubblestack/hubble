@@ -27,19 +27,22 @@ import logging
 from datetime import datetime
 log = logging.getLogger(__name__)
 
-
 def _get_certificate_san(x509cert):
     san = ''
-    ext_count = x509cert.get_extension_count()
-    for i in range(0, ext_count):
-        ext = x509cert.get_extension(i)
-        if 'subjectAltName' in str(ext.get_short_name()):
-            san = ext.__str__()
-    san_list = san.split(',')
     trimmed_san_list = []
-    for san in san_list:
-        trimmed_san = san.lstrip()
-        trimmed_san_list.append(trimmed_san)
+    try:
+        ext_count = x509cert.get_extension_count()
+        for i in range(0, ext_count):
+            ext = x509cert.get_extension(i)
+            if 'subjectAltName' in str(ext.get_short_name()):
+                san = ext.__str__()
+        san_list = san.split(',')
+        for san in san_list:
+            trimmed_san = san.lstrip()
+            trimmed_san_list.append(trimmed_san)
+    except Exception as e:
+        message = "FDG's cert_discovery Couldn't fetch SANs: {0}".format(e)
+        log.error(message)
     return trimmed_san_list
 
 def _load_certificate(ip, port, ssl_timeout):
@@ -139,13 +142,16 @@ def get_cert_details(params='', chained=None, chained_status=None):
     The first return value (status) will be False if the module encounters some
     exception in python's ssl.get_server_certificate function.
 
+    params
+        :type dict
+        possible keys: host_ip, host_port, ssl_timeout 
+        
     chained
         The value chained from the previous call.
 
     chained_status
         The status returned by the chained call.
     """
-    
     if params != "":
         params = params.get('params')
         host = str(params.get('host_ip', ''))
@@ -157,14 +163,14 @@ def get_cert_details(params='', chained=None, chained_status=None):
         host = str(chained.get('host_ip', ''))
         port = int(chained.get('host_port', -1))
 
-    valid_inputs = _check_input_validity(host, port)
-    if valid_inputs:
-        cert = _load_certificate(host, port, ssl_timeout)
-    else:
+    valid_inputs = _check_input_validity(host, port, ssl_timeout)
+    
+    if not valid_inputs:
         message = "FDG's cert_discovery - invalid inputs"
         log.error(message)
         return False, ''
-  
+    
+    cert = _load_certificate(host, port, ssl_timeout)
     if not cert:
         message = "FDG's cert_discovery - something went wrong while fetching cert"
         log.error(message)
@@ -178,12 +184,13 @@ def get_cert_details(params='', chained=None, chained_status=None):
         log.info("FDG's cert_discovery - cert found, parsing certificate")
         cert_details = _parse_cert(cert, host, port)
     return True, cert_details
-    
 
-def _check_input_validity(host, port):
+def _check_input_validity(host, port, ssl_timeout):
     if host == '' or port == -1:
         return False
     if host.__contains__(" "):
+        return False
+    if ssl_timeout < 0:
         return False
     return True
 

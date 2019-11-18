@@ -17,55 +17,79 @@ class TestProcess():
     Class used to test the functions in ``process.py``
     """
 
-    def test__compare_invalidComp_raiseException(self):
+    def test__compare_raises_exception_if_arguments_have_invalid_type(self):
         """
         Test that given invalid ``comp``,
         the function raises an ArgumentValueError exception
         """
-        with pytest.raises(ArgumentValueError) as e_info:
+        with pytest.raises(ArgumentValueError):
             hubblestack.extmods.fdg.process._compare('foo', 1, 2)
 
-    def test__compare_geCompt_validReturn(self):
+    def test__compare_returns_correctly_with_ge_comparator(self):
         """
-        Test that given correct values,
-        the function outputs the correct result
+        Test that given correct values, the function outputs the correct result with 'ge' comparator
+        ge = greater equal
         """
-        # ge = greater equal
         ret = hubblestack.extmods.fdg.process._compare('ge', 1, 2)
         assert ret is False
         ret = hubblestack.extmods.fdg.process._compare('ge', 2, 2)
         assert ret is True
         ret = hubblestack.extmods.fdg.process._compare('ge', 2, 1)
         assert ret is True
-        # gt = greater than
+
+    def test__compare_returns_correctly_with_gt_comparator(self):
+        """
+        Test that given correct values, the function outputs the correct result with 'gt' comparator
+        gt = greater than
+        """
         ret = hubblestack.extmods.fdg.process._compare('gt', 10, 2)
         assert ret is True
         ret = hubblestack.extmods.fdg.process._compare('gt', 1, 2)
         assert ret is False
         ret = hubblestack.extmods.fdg.process._compare('gt', 2, 2)
         assert ret is False
-        # lt = lower than
+
+    def test__compare_returns_correctly_with_lt_comparator(self):
+        """
+        Test that given correct values, the function outputs the correct result with 'lt' comparator
+        lt = lower than
+        """
         ret = hubblestack.extmods.fdg.process._compare('lt', 1, 2)
         assert ret is True
         ret = hubblestack.extmods.fdg.process._compare('lt', 2, 2)
         assert ret is False
         ret = hubblestack.extmods.fdg.process._compare('lt', 2, 1)
         assert ret is False
-        # le = lower equal
+
+    def test__compare_returns_correctly_with_le_comparator(self):
+        """
+        Test that given correct values, the function outputs the correct result with 'le' comparator
+        le = lower equal
+        """
         ret = hubblestack.extmods.fdg.process._compare('le', 1, 2)
         assert ret is True
         ret = hubblestack.extmods.fdg.process._compare('le', 2, 2)
         assert ret is True
         ret = hubblestack.extmods.fdg.process._compare('le', 2, 1)
         assert ret is False
-        # eq = equal
+
+    def test__compare_returns_correctly_with_eq_comparator(self):
+        """
+        Test that given correct values, the function outputs the correct result with 'eq' comparator
+        eq = equal
+        """
         ret = hubblestack.extmods.fdg.process._compare('eq', 1, 2)
         assert ret is False
         ret = hubblestack.extmods.fdg.process._compare('eq', 1, 1)
         assert ret is True
         ret = hubblestack.extmods.fdg.process._compare('eq', 2, 1)
         assert ret is False
-        # ne = not equal
+
+    def test__compare_returns_correctly_with_ne_comparator(self):
+        """
+        Test that given correct values, the function outputs the correct result with 'ne' comparator
+        ne = not equal
+        """
         ret = hubblestack.extmods.fdg.process._compare('ne', 1, 2)
         assert ret is True
         ret = hubblestack.extmods.fdg.process._compare('ne', 2, 1)
@@ -73,19 +97,18 @@ class TestProcess():
         ret = hubblestack.extmods.fdg.process._compare('ne', 1, 1)
         assert ret is False
 
-    def test__filterDict_invalidFilterRules_returnNone(self):
+    def test__filter_dict_returns_none_if_filter_values_is_invalid(self):
         """
         Test that given invalid ``filter_values``, the function returns None
         """
         expected_ret = None
         ret = hubblestack.extmods.fdg.process._filter_dict(
-            {1: 'a', 2: 'b'}, False, {'invalid': 1, 'data': 2})
+            dct={1: 'a', 2: 'b'}, filter_values=False, filter_rules={'invalid': 1, 'data': 2})
         assert expected_ret == ret
 
-    def test__filterDict_filterKeysValidFilterRules_returnFilteredDict(self):
+    def test__filter_dict_returns_correctly_filtered_dict_by_keys(self):
         """
-        Test that given valid ``filter_values``,
-        the function correctly filters a dict by keys
+        Test that given valid ``filter_values``, the function correctly filters a dict by keys
         """
         expected_ret = {2: 'b', 4: 'd'}
         ret = hubblestack.extmods.fdg.process._filter_dict(
@@ -96,10 +119,9 @@ class TestProcess():
             {'a': 1, 'b': 2, 'c': 3, 'd': 4}, False, {'ge': 'a', 'lt': 'd', 'ne': 'c'})
         assert expected_ret == ret
 
-    def test__filterDict_filterValuesValidFilterRules_returnFilteredDict(self):
+    def test__filter_dict_returns_correctly_filtered_dict_by_values(self):
         """
-        Test that given valid ``filter_values``,
-        the function correctly filters a dict by values
+        Test that given valid ``filter_values``, the function correctly filters a dict by values
         """
         expected_ret = {'b': 2, 'd': 4}
         ret = hubblestack.extmods.fdg.process._filter_dict(
@@ -110,25 +132,26 @@ class TestProcess():
             {1: 'a', 2: 'b', 3: 'c', 4: 'd'}, True, {'ge': 'a', 'lt': 'd', 'ne': 'c'})
         assert expected_ret == ret
 
-    def test__filterDict_emptyFilterRules_returnUnfilteredDict(self):
+    def test__filter_dict_returns_unaltered_dict_if_filter_rules_is_empty(self):
         """
-        Test that given empty ``filter_rules``,
-        the function leaves the dict intact
+        Test that given empty ``filter_rules``, the function leaves the dict intact
         """
         expected_ret = {1: 'a', 2: 'b'}
         ret = hubblestack.extmods.fdg.process._filter_dict({1: 'a', 2: 'b'}, True, {})
         assert expected_ret == ret
 
-    def test_filterDict_invalidDict_emptyReturn(self):
+    def test_filter_dict_returns_none_if_dict_is_invalid(self):
         """
         Test that given invalid types for ``starting_dict`` or ``chained``,
         the function returns False and None
         """
+        # invalid starting_dict - is type list
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.filter_dict(
             starting_dict=[1, 2, 3], chained={1: 'a', 2: 'b'})
         assert expected_status == status
         assert expected_ret == ret
+        # invalid chained dict - is type list
         status, ret = hubblestack.extmods.fdg.process.filter_dict(
             starting_dict={1: 'a', 2: 'b'}, chained=[1, 2])
         assert expected_status == status
@@ -605,23 +628,25 @@ class TestProcess():
         assert status == expected_status
         assert ret == []
 
-    def test_dictConvertNone_validArguments_returnDict(self):
+    def test_dict_convert_none_replaces_empty_string_with_none(self):
         """
         Test that given valid arguments,
         the function returns a valid dict with None instead of empty strings
         """
         # flat dict
+        expected_status, expected_ret = True, {1: 'a', 2: None, 3: 'b', 4: None}
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
             chained={1: 'a', 2: '', 3: 'b', 4: ''})
-        assert ret == {1: 'a', 2: None, 3: 'b', 4: None}
-        assert status is True
+        assert expected_ret == ret
+        assert expected_status == status
         # nested dict & tuple
+        expected_ret = {'a': [{'b': [{'c': {'e': None}, 'f': None}, {'g': None}],
+                              'h': None}, 'i'], 'j': None}
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
             chained={'a': [{'b': ({'c': {'e': ''}, 'f': ''}, {'g': ''}),
                             'h': ''}, 'i']}, starting_seq={'j': ''})
-        assert status is True
-        assert ret == {'a': [{'b': [{'c': {'e': None}, 'f': None}, {'g': None}],
-                              'h': None}, 'i'], 'j': None}
+        assert expected_status == status
+        assert expected_ret == ret
         # nested dict, list & tuple
         status, ret = hubblestack.extmods.fdg.process.dict_convert_none(
             chained=('a', [{1: '', 2: [3, (4, {1: '', 2: {3: ''}})]}, 'b'], 'c'))
@@ -633,93 +658,102 @@ class TestProcess():
         assert status is True
         assert ret == ['a', {1: None}, 'b', {1: None}, 'c']
 
-    def test_printString_invalidArguments_returnNone(self):
+    def test_print_string_returns_none_when_invalid_arguments(self):
         """
         Test that given invalid arguments, the function returns None
         """
-        expected_status, expected_ret = False, None
+        expected_status, expected_ret = False, ''
         status, ret = hubblestack.extmods.fdg.process.print_string(
             starting_string=['foo', 'bar'])
-        assert status == expected_status
-        assert ret == expected_ret
+        assert expected_status == status
+        assert None is ret
         status, ret = hubblestack.extmods.fdg.process.print_string(
             starting_string='')
-        assert status == expected_status
-        assert ret == ''
+        assert expected_status == status
+        assert expected_ret == ret
 
-    def test_printString_validArguments_returnString(self):
+    def test_print_string_returns_correct_string(self):
         """
         Test that given valid arguments, the function returns the correct string
         """
+        expected_status, expected_ret = True, 'foo'
         status, ret = hubblestack.extmods.fdg.process.print_string(
             starting_string='foo', chained='bar')
-        assert status is True
-        assert ret == 'foo'
+        assert expected_status == status
+        assert expected_ret == ret
+        expected_ret = "foo ['b', 'a', 'r']"
         status, ret = hubblestack.extmods.fdg.process.print_string(
             starting_string='foo {}', chained=['b', 'a', 'r'])
-        assert status is True
-        assert ret == "foo ['b', 'a', 'r']"
+        assert expected_status == status
+        assert expected_ret == ret
 
-    def test__sterilizeDict_invalidArguments_returnNone(self):
+    def test__sterilize_dict_returns_none_if_invalid_arguments(self):
         """
         Test that given invalid arguments, the function returns None
         """
+        expected_ret = None
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             dictionary=[1, 2])
-        assert ret is None
+        assert expected_ret == ret
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             dictionary={})
-        assert ret == {}
+        assert {} == ret
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             dictionary=12)
-        assert ret is None
+        assert expected_ret == ret
 
-    def test__sterilizeDict_validArgumentRecursive_returnDict(self):
+    def test__sterilize_dict_removes_none_values_if_nested_dict(self):
         """
-        Test tgat given valid arguments,
+        Test that given valid arguments,
         the function correctly removes keys containing values of None
         """
         # flat dict
+        expected_ret = {2: 'a'}
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             {1: None, 2: 'a'})
-        assert ret == {2: 'a'}
+        assert expected_ret == ret
         # nested dicts
+        expected_ret = {2: {3: {5: 'a'}, 7: 'b'}, 8: 'c', 9: {}}
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             {1: None, 2: {3: {4: None, 5: 'a'}, 6: None, 7: 'b'}, 8: 'c', 9: {10: None}})
-        assert ret == {2: {3: {5: 'a'}, 7: 'b'}, 8: 'c', 9: {}}
+        assert expected_ret == ret
         # nested dicts & sequences
+        expected_ret = {2: {3: [4, {}], 6: {7: ['b', {}]}}}
         ret = hubblestack.extmods.fdg.process._sterilize_dict(
             {1: None, 2: {3: [4, {5: None}], 6: {7: ('b', {9: None}), 8: None}}})
-        assert ret == {2: {3: [4, {}], 6: {7: ['b', {}]}}}
+        assert expected_ret == ret
 
-    def test__sterilizeSeq_invalidArguments_returnNone(self):
+    def test__sterilize_seq_returns_none_if_arguments_are_invalid(self):
         """
         Test that given invalid arguments, the function returns None
         """
+        expected_ret = None
         ret = hubblestack.extmods.fdg.process._sterilize_seq(
             {1: 'a', 2: ['b']})
-        assert ret == None
+        assert expected_ret == ret
         ret = hubblestack.extmods.fdg.process._sterilize_seq(12)
-        assert ret == None
+        assert expected_ret == ret
         ret = hubblestack.extmods.fdg.process._sterilize_seq([])
-        assert ret == []
+        assert [] == ret
 
-    def test__sterilizeSeq_validArgumentRecursive_returnNone(self):
+    def test__sterilize_seq_removes_none_values_from_seq(self):
         """
         Test that given valid arguments,
         the function finds nested dicts and removes keys with values of None
         """
         # flat seq
+        expected_ret = [1, 2, [1, 2], [1, 2]]
         ret = hubblestack.extmods.fdg.process._sterilize_seq(
             [1, 2, set([1, 2, 1]), (1, 2)])
-        assert ret == [1, 2, [1, 2], [1, 2]]
+        assert expected_ret == ret
         # nested dicts & seq
+        expected_ret = [{2: {3: [{5: 'a'}, [None, {7: 'b'}]], 8: 'c', 9: {}}}]
         ret = hubblestack.extmods.fdg.process._sterilize_seq(
             [{1: None, 2: {3: ({4: None, 5: 'a'}, [None, {6: None, 7: 'b'}]),
                            8: 'c', 9: {10: None}}}])
-        assert ret == [{2: {3: [{5: 'a'}, [None, {7: 'b'}]], 8: 'c', 9: {}}}]
+        assert expected_ret == ret
 
-    def test_removeDictNone_invalidArgument_returnNone(self):
+    def test_remove_dict_none_returns_none_if_invalid_arguments(self):
         """
         Test that given invalid arguments, the function returns None
         """
@@ -727,50 +761,54 @@ class TestProcess():
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
             starting_seq=[1, 2, 3], chained={1: 'a', 2: 'b'})
-        assert status == expected_status
-        assert ret == expected_ret
+        assert expected_status == status
+        assert expected_ret == ret
         # invalid ``chained`` & valid ``starting_seq``
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
             starting_seq=[1, 2, 3], chained="123")
-        assert status == expected_status
-        assert ret == expected_ret
+        assert expected_status == status
+        assert expected_ret == ret
         # invalid ``chained``
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
             chained="123")
-        assert status == expected_status
-        assert ret == expected_ret
+        assert expected_status == status
+        assert expected_ret == ret
 
-    def test_dictRemoveNone_validArguments_returnSeq(self):
+    def test_dict_remove_none_returns_valid_sequence(self):
         """
         Test that given valid arguments, the function finds nested dicts
         and removes keys with values of None
         """
         # flat dict
+        expected_status, expected_ret = True, {2: 'a', 4: 'b'}
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
             chained={1: None, 2: 'a', 3: None, 4: 'b'})
-        assert status is True
-        assert ret == {2: 'a', 4: 'b'}
+        assert expected_status == status
+        assert expected_ret == ret
         # flat seq
+        expected_ret = [{}, {2: 'a'}, 5, None, {4: 'b'}]
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
             chained=[{1: None}, {2: 'a', 3: None}],
             starting_seq=[5, None, {4: 'b'}])
-        assert status is True
-        assert ret == [{}, {2: 'a'}, 5, None, {4: 'b'}]
+        assert expected_status == status
+        assert expected_ret == ret
         # nested sequences & dicts
+        expected_ret = [{9: {11: [1, 2]}}, 11, {2: {3: [{5: 'a'}, [None, {7: 'b'}]], 8: 'c'}}]
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
             starting_seq=[{1: None, 2: {3: ({4: None, 5: 'a'},
                                             [None, {6: None, 7: 'b'}]), 8: 'c'}}],
             chained=[{9: {10: None, 11: set([1, 2, 1])}}, 11])
-        assert status is True
-        assert ret == [{9: {11: [1, 2]}}, 11, {2: {3: [{5: 'a'}, [None, {7: 'b'}]], 8: 'c'}}]
+        assert expected_status == status
+        assert expected_ret == ret
         # nested dicts & sequences
+        expected_ret = {2: {3: [{5: 'a'}, [None, {7: 'b'}]], 8: 'c'}, 9: {11: [1, 2]}}
         status, ret = hubblestack.extmods.fdg.process.dict_remove_none(
             starting_seq={1: None, 2: {3: ({4: None, 5: 'a'}, [None, {6: None, 7: 'b'}]), 8: 'c'}},
             chained={9: {10: None, 11: set([1, 2, 1])}, 11: None})
-        assert status is True
-        assert ret == {2: {3: [{5: 'a'}, [None, {7: 'b'}]], 8: 'c'}, 9: {11: [1, 2]}}
+        assert expected_status == status
+        assert expected_ret == ret
 
-    def test_encodeBase64_invalidArguments_emptyReturn(self):
+    def test_encode_base64_returns_none_if_invalid_arguments_type(self):
         """
         Test that given invalid arguments, the function returns None
         """
@@ -778,31 +816,38 @@ class TestProcess():
         expected_status, expected_ret = False, None
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
             starting_string=123, chained="foo")
-        assert status == expected_status
-        assert ret == expected_ret
+        assert expected_status == status
+        assert expected_ret == ret
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
             starting_string=['a', 'c'], format_chained=False)
-        assert status == expected_status
-        assert ret == expected_ret
+        assert expected_status == status
+        assert expected_ret == ret
+        expected_ret = ''
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
             starting_string='', format_chained=False)
-        assert status == expected_status
-        assert ret == ''
+        assert expected_status == status
+        assert expected_ret == ret
 
-    def test_encodeBase64_validArguments_returnString(self):
+    def test_encode_base64_returns_string_if_valid_arguments(self):
         """
         Test that given valid arguments, the function correctly encodes the string
         and returns it
         """
+        # format chained
+        expected_ret = 'Zm9vIGJhcg=='
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
             starting_string="foo {}", chained="bar")
         assert status
-        assert ret == 'Zm9vIGJhcg=='
+        assert expected_ret == ret
+        # don't format chained
+        expected_ret = 'Zm9v'
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
             starting_string="foo", chained="bar")
         assert status
-        assert ret == 'Zm9v'
+        assert expected_ret == ret
+        # no chained
+        expected_ret = 'Zm9vIHt9'
         status, ret = hubblestack.extmods.fdg.process.encode_base64(
             starting_string="foo {}", format_chained=False, chained="bar")
         assert status
-        assert ret == 'Zm9vIHt9'
+        assert expected_ret == ret

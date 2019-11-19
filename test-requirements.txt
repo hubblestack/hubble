@@ -31,3 +31,4 @@ smmap2
 tornado
 urllib3
 vulners
+pyOpenSSL

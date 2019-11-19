@@ -46,7 +46,7 @@ def test_ssl_certificate_positive():
     hubblestack.extmods.fdg.ssl_certificate._parse_cert = mock.Mock(return_value=cert_details)
     val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(params)
     assert val[0] == True
-    assert val[1].get('pem_cert') != 'NA'
+    assert val[1].get('pem_cert') != None
 
 def test_ssl_certificate_negative():
     params = {'params': {'host_ip': '127.0.0.1', 'host_port': 443}}
@@ -54,7 +54,7 @@ def test_ssl_certificate_negative():
     hubblestack.extmods.fdg.ssl_certificate._load_certificate = mock.Mock(return_value=cert)
     val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(params)
     assert val[0] == True
-    assert val[1].get('pem_cert') == 'NA'
+    assert val[1].get('pem_cert') == None
 
 def test_null_value():
     params = {'params': {'host_ip': '', 'host_port': 443}}
@@ -82,7 +82,7 @@ def test_chained_positive():
     hubblestack.extmods.fdg.ssl_certificate._parse_cert = mock.Mock(return_value=cert_details)
     val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(chained=chained)
     assert val[0] == True
-    assert val[1].get('pem_cert') != 'NA'
+    assert val[1].get('pem_cert') != None
 
 def test_chained_negative():
     chained = {'host_ip': '127.0.0.1', 'host_port': 0}
@@ -90,7 +90,7 @@ def test_chained_negative():
     hubblestack.extmods.fdg.ssl_certificate._load_certificate = mock.Mock(return_value=cert)
     val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(chained=chained)
     assert val[0] == True
-    assert val[1].get('pem_cert') == 'NA'
+    assert val[1].get('pem_cert') == None
 
 def test_chained_null_value():
     chained = {'host_ip': '', 'host_port': 443}

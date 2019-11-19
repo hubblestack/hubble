@@ -323,31 +323,32 @@ def dir_list(load):
 
 
 def _get_s3_key():
-    '''
+    """
     Get AWS keys from pillar or config
-    '''
+    """
 
-    key = __opts__['s3.key'] if 's3.key' in __opts__ else None
-    keyid = __opts__['s3.keyid'] if 's3.keyid' in __opts__ else None
-    service_url = __opts__['s3.service_url'] \
-        if 's3.service_url' in __opts__ \
-        else None
-    verify_ssl = __opts__['s3.verify_ssl'] \
-        if 's3.verify_ssl' in __opts__ \
-        else None
-    kms_keyid = __opts__['aws.kmw.keyid'] if 'aws.kms.keyid' in __opts__ else None
-    location = __opts__['s3.location'] \
-        if 's3.location' in __opts__ \
-        else None
-    path_style = __opts__['s3.path_style'] \
-        if 's3.path_style' in __opts__ \
-        else None
-    https_enable = __opts__['s3.https_enable'] \
-        if 's3.https_enable' in __opts__ \
-        else None
+    defaults = {
+        'https_enable': True,
+        'verify_ssl': True,
+        'location': None,
+        'path_style': None,
+        'service_url': None,
+        'keyid': None,
+        'key': None,
+    }
 
-    return key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable
+    ret = dict()
+    for k in defaults:
+        s3k = 's3.' + k
+        ret[k] = __opts__.get(s3k, defaults[k])
 
+    # kms_keyid = __opts__['aws.kmw.keyid'] if 'aws.kms.keyid' in __opts__ else None
+    #
+    # original was likely bugged: aws.kms.keyid is probably right, but people
+    # that needed this may have entered it incorrectly to match. Support both for now.
+    ret['kms_keyid'] = __opts__.get('aws.kms.keyid', __opts__.get('aws.kmw.keyid'))
+
+    return ret
 
 def _init():
     '''

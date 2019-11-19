@@ -5,7 +5,7 @@ This module checks the time of the host against some
 NTP servers for differences bigger than 15 minutes.
 '''
 
-from __future__ import absolute_import
+
 import logging
 import salt.utils.platform
 

@@ -5,7 +5,7 @@ Flexible Data Gathering: readfile
 This fdg module allows for reading in the contents of files, with various
 options for format and filtering.
 """
-from __future__ import absolute_import
+
 
 import json as _json
 import logging

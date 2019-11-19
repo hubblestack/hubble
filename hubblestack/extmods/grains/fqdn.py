@@ -52,7 +52,7 @@ def dest_ip():
     # Fallback to "best guess"
     filtered_interfaces = {}
     # filter out empty, lo, and docker0
-    for interface, ips in interfaces.iteritems():
+    for interface, ips in interfaces.items():
         if not ips:
             continue
         if interface in ('lo', 'docker0'):
@@ -64,13 +64,13 @@ def dest_ip():
             if ip != '127.0.0.1':
                 return {'local_ip4': ip}
     # Use .*0 if present
-    for interface, ips in filtered_interfaces.iteritems():
+    for interface, ips in filtered_interfaces.items():
         if '0' in interface:
             for ip in ips:
                 if ip != '127.0.0.1':
                     return {'local_ip4': ip}
     # Use whatever isn't 127.0.0.1
-    for interface, ips in filtered_interfaces.iteritems():
+    for interface, ips in filtered_interfaces.items():
         for ip in ips:
             if ip != '127.0.0.1':
                 return {'local_ip4': ip}

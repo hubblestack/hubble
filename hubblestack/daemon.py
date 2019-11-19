@@ -4,7 +4,7 @@ Main entry point for the hubble daemon
 """
 
 
-from __future__ import print_function
+
 
 # import lockfile
 import argparse
@@ -310,7 +310,7 @@ def schedule():
     schedule_config = __opts__.get('schedule', {})
     if 'user_schedule' in __opts__ and isinstance(__opts__['user_schedule'], dict):
         schedule_config.update(__opts__['user_schedule'])
-    for jobname, jobdata in schedule_config.iteritems():
+    for jobname, jobdata in schedule_config.items():
         # Error handling galore
         if not jobdata or not isinstance(jobdata, dict):
             log.error('Scheduled job {0} does not have valid data'.format(jobname))
@@ -556,12 +556,13 @@ def load_config():
         if __opts__['daemonize']:
             __opts__['log_level'] = 'info'
     # Handle the explicit -vvv settings
-    if __opts__['verbose'] == 1:
-        __opts__['log_level'] = 'warning'
-    elif __opts__['verbose'] == 2:
-        __opts__['log_level'] = 'info'
-    elif __opts__['verbose'] >= 3:
-        __opts__['log_level'] = 'debug'
+    if __opts__['verbose']:
+        if __opts__['verbose'] == 1:
+            __opts__['log_level'] = 'warning'
+        elif __opts__['verbose'] == 2:
+            __opts__['log_level'] = 'info'
+        elif __opts__['verbose'] >= 3:
+            __opts__['log_level'] = 'debug'
 
     # Setup module/grain/returner dirs
     module_dirs = __opts__.get('module_dirs', [])
@@ -813,7 +814,7 @@ def emit_to_syslog(grains_to_emit):
         for grain in grains_to_emit:
             if grain in __grains__:
                 if bool(__grains__[grain]) and isinstance(__grains__[grain], dict):
-                    for key, value in __grains__[grain].iteritems():
+                    for key, value in __grains__[grain].items():
                         syslog_list.append('{0}={1}'.format(key, value))
                 else:
                     syslog_list.append('{0}={1}'.format(grain, __grains__[grain]))

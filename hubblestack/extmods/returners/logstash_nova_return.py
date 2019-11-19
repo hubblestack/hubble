@@ -143,7 +143,7 @@ def _generate_event(args, cloud_details, custom_fields, compliance=False, data=N
         if not isinstance(data[args['check_id']], dict):
             event.update({'description': data[args['check_id']]})
         elif 'description' in data[args['check_id']]:
-            for key, value in data[args['check_id']].iteritems():
+            for key, value in data[args['check_id']].items():
                 if key not in ['tag']:
                     event[key] = value
     else:
@@ -170,7 +170,7 @@ def _publish_data(args, checks, check_result, cloud_details, opts):
     Helper function that goes over the failure/success checks and publishes the event to logstash
     """
     for data in checks:
-        check_id = data.keys()[0]
+        check_id = list(data.keys())[0]
         args['check_result'] = check_result
         args['check_id'] = check_id
         event = _generate_event(custom_fields=opts['custom_fields'], data=data, args=args,

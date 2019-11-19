@@ -40,7 +40,7 @@ vulnerabilities.
 This scanner currently only supports the Linux platform.
 """
 
-from __future__ import absolute_import
+
 
 import xml.etree.ElementTree as ET
 import json

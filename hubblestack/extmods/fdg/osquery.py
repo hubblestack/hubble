@@ -5,7 +5,7 @@ Flexible Data Gathering: osquery
 
 This fdg module allows for running osquery queries
 """
-from __future__ import absolute_import
+
 import json
 import logging
 import os
@@ -91,8 +91,8 @@ def _osquery(query_sql, osquery_path=None, args=None):
     if res['retcode'] == 0:
         ret = json.loads(res['stdout'])
         for result in ret:
-            for key, value in result.iteritems():
-                if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
+            for key, value in result.items():
+                if value and isinstance(value, str) and value.startswith('__JSONIFY__'):
                     result[key] = json.loads(value[len('__JSONIFY__'):])
         return True, ret
     return False, res['stdout']

@@ -5,14 +5,14 @@ import ssl
 import mock
 myPath = os.path.abspath(os.getcwd())
 sys.path.insert(0, myPath)
-import hubblestack.extmods.fdg.cert_discovery
+import hubblestack.extmods.fdg.ssl_certificate
 
 
 def test_load_certificate_exception():
     host = 'google.com'
     port = 443
     ssl.get_server_certificate = mock.Mock(side_effect=Exception('Test Exception'))
-    val = hubblestack.extmods.fdg.cert_discovery._load_certificate(host, port, 3)
+    val = hubblestack.extmods.fdg.ssl_certificate._load_certificate(host, port, 3)
     assert val.get('result') == False
 
 def test_load_certificate():
@@ -20,7 +20,7 @@ def test_load_certificate():
     port = 443
     cert_details = {'pem_cert': '---BEGIN CERTIFICATE---- ---END CERTIFICATE----'}
     ssl.get_server_certificate = mock.Mock(return_value=cert_details)
-    val = hubblestack.extmods.fdg.cert_discovery._load_certificate(host, port, 3)
+    val = hubblestack.extmods.fdg.ssl_certificate._load_certificate(host, port, 3)
     assert val.get('result') == True
 
 def test_parse_cert_positive():
@@ -28,49 +28,49 @@ def test_parse_cert_positive():
     cert = {'data':pem_file}
     host = 'google.com'
     port = 443
-    val = hubblestack.extmods.fdg.cert_discovery._parse_cert(cert, host, port)
+    val = hubblestack.extmods.fdg.ssl_certificate._parse_cert(cert, host, port)
     assert ('error' not in val.keys())
 
 def test_parse_cert_negative():
     cert = {'data':''}
     host = 'google.com'
     port = 443
-    val = hubblestack.extmods.fdg.cert_discovery._parse_cert(cert, host, port)
+    val = hubblestack.extmods.fdg.ssl_certificate._parse_cert(cert, host, port)
     assert ('error' in val.keys())
 
-def test_cert_discovery_positive():
+def test_ssl_certificate_positive():
     params = {'params': {'host_ip':'google.com', 'host_port':443}}
     cert_details = {'pem_cert':'---BEGIN CERTIFICATE---- ---END CERTIFICATE----'}
     cert = {'result':True,'data':cert_details}
-    hubblestack.extmods.fdg.cert_discovery._load_certificate = mock.Mock(return_value=cert)
-    hubblestack.extmods.fdg.cert_discovery._parse_cert = mock.Mock(return_value=cert_details)
-    val = hubblestack.extmods.fdg.cert_discovery.get_cert_details(params)
+    hubblestack.extmods.fdg.ssl_certificate._load_certificate = mock.Mock(return_value=cert)
+    hubblestack.extmods.fdg.ssl_certificate._parse_cert = mock.Mock(return_value=cert_details)
+    val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(params)
     assert val[0] == True
     assert val[1].get('pem_cert') != 'NA'
 
-def test_cert_discovery_negative():
+def test_ssl_certificate_negative():
     params = {'params': {'host_ip': '127.0.0.1', 'host_port': 443}}
     cert = {'result':False,'data':'cert not found'}
-    hubblestack.extmods.fdg.cert_discovery._load_certificate = mock.Mock(return_value=cert)
-    val = hubblestack.extmods.fdg.cert_discovery.get_cert_details(params)
+    hubblestack.extmods.fdg.ssl_certificate._load_certificate = mock.Mock(return_value=cert)
+    val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(params)
     assert val[0] == True
     assert val[1].get('pem_cert') == 'NA'
 
 def test_null_value():
     params = {'params': {'host_ip': '', 'host_port': 443}}
-    val = hubblestack.extmods.fdg.cert_discovery.get_cert_details(params)
+    val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(params)
     assert val[0] == False
     assert val[1] == ''
 
 def test_garbage_value():
     params = {'params': {'host_ip': 'ag#786asf kjas.{\\}', 'host_port': 443}}
-    val = hubblestack.extmods.fdg.cert_discovery.get_cert_details(params)
+    val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(params)
     assert val[0] == False
     assert val[1] == ''
 
 def test_invalid_input():
     params = {'params': {'host_p': 'google.com', 'host_po': 443}}
-    val = hubblestack.extmods.fdg.cert_discovery.get_cert_details(params)
+    val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(params)
     assert val[0] == False
     assert val[1] == ''
 
@@ -78,54 +78,54 @@ def test_chained_positive():
     chained = {'host_ip': 'google.com', 'host_port': 443}
     cert_details = {'pem_cert': '---BEGIN CERTIFICATE---- ---END CERTIFICATE----'}
     cert = {'result': True, 'data': cert_details}
-    hubblestack.extmods.fdg.cert_discovery._load_certificate = mock.Mock(return_value=cert)
-    hubblestack.extmods.fdg.cert_discovery._parse_cert = mock.Mock(return_value=cert_details)
-    val = hubblestack.extmods.fdg.cert_discovery.get_cert_details(chained=chained)
+    hubblestack.extmods.fdg.ssl_certificate._load_certificate = mock.Mock(return_value=cert)
+    hubblestack.extmods.fdg.ssl_certificate._parse_cert = mock.Mock(return_value=cert_details)
+    val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(chained=chained)
     assert val[0] == True
     assert val[1].get('pem_cert') != 'NA'
 
 def test_chained_negative():
     chained = {'host_ip': '127.0.0.1', 'host_port': 0}
     cert = {'result': False, 'data': 'cert not found'}
-    hubblestack.extmods.fdg.cert_discovery._load_certificate = mock.Mock(return_value=cert)
-    val = hubblestack.extmods.fdg.cert_discovery.get_cert_details(chained=chained)
+    hubblestack.extmods.fdg.ssl_certificate._load_certificate = mock.Mock(return_value=cert)
+    val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(chained=chained)
     assert val[0] == True
     assert val[1].get('pem_cert') == 'NA'
 
 def test_chained_null_value():
     chained = {'host_ip': '', 'host_port': 443}
-    val = hubblestack.extmods.fdg.cert_discovery.get_cert_details(chained=chained)
+    val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(chained=chained)
     assert val[0] == False
     assert val[1] == ''
 
 def test_chained_invalid_input():
     chained = {'host_i': 'google.com', 'host_po': 443}
-    val = hubblestack.extmods.fdg.cert_discovery.get_cert_details(chained=chained)
+    val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(chained=chained)
     assert val[0] == False
     assert val[1] == ''
 
 def test_chained_garbage_value():
     chained = {'host_ip': 'ag#786asf kjas.{\\}', 'host_port': 443}
-    val = hubblestack.extmods.fdg.cert_discovery.get_cert_details(chained=chained)
+    val = hubblestack.extmods.fdg.ssl_certificate.get_cert_details(chained=chained)
     assert val[0] == False
     assert val[1] == ''
 
 def test_check_input_validity_positive():
     host = 'google.com'
     port = 443
-    val = hubblestack.extmods.fdg.cert_discovery._check_input_validity(host, port, 3)
+    val = hubblestack.extmods.fdg.ssl_certificate._check_input_validity(host, port, 3)
     assert val == True
 
 def test_check_input_validity_negative():
     host = ''
     port = -1
-    val = hubblestack.extmods.fdg.cert_discovery._check_input_validity(host, port, 3)
+    val = hubblestack.extmods.fdg.ssl_certificate._check_input_validity(host, port, 3)
     assert val == False
 
 def test_check_input_validity_negative_spaces():
     host = 'ag#786asf kjas.{\\}'
     port = 443
-    val = hubblestack.extmods.fdg.cert_discovery._check_input_validity(host, port, 3)
+    val = hubblestack.extmods.fdg.ssl_certificate._check_input_validity(host, port, 3)
     assert val == False
 
 def get_pem_file():

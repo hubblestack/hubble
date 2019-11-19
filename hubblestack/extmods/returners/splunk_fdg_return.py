@@ -192,14 +192,10 @@ def _file_url_to_sourcetype(filename, base='hubble_fdg'):
         filename = filename[:-4]
     def _no_dups(x):
         sf = re.split(r'[^a-zA-Z0-9]+', x)
-        last = None
         for item in sf:
-            if item == last:
-                continue
             if not item:
                 continue
             yield item
-            last = item
     return '_'.join( _no_dups(base + '_' + filename) )
 
 def _generate_payload(args, fdg_args, cloud_details, opts, index_extracted_fields):

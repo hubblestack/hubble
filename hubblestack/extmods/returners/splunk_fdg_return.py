@@ -188,6 +188,8 @@ def _file_url_to_sourcetype(filename, base='hubble_fdg'):
     """
     if re.search(r'^\w+://', filename):
         filename = filename.split('://', 1)[1]
+    if base.endswith('_fdg') and filename.startswith('fdg/'):
+        filename = filename[4:]
     if re.search(r'\.fdg$', filename):
         filename = filename[:-4]
     def _no_dups(x):

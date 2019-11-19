@@ -7,8 +7,8 @@ def test_s3fs_opts(__opts__):
     hs_s3fs.__opts__ = __opts__
     s3fs_opts = hs_s3fs._get_s3_key()
 
-    assert s3fs_opts['https_enable'] is None
-    assert s3fs_opts['verify_ssl']   is None
+    assert s3fs_opts['https_enable'] is True
+    assert s3fs_opts['verify_ssl']   is True
     assert s3fs_opts['location']     is None
     assert s3fs_opts['path_style']   is None
     assert s3fs_opts['service_url']  is None
@@ -22,3 +22,4 @@ def test_s3fs_opts(__opts__):
     s3fs_opts = hs_s3fs._get_s3_key()
     assert s3fs_opts['location'] == a
     assert s3fs_opts['key']      == b
+

@@ -182,7 +182,7 @@ def _file_url_to_sourcetype(filename, base='hubble_fdg'):
         e.g.:
         'salt://fdg/interesting.operation.fdg'
         becomes
-        'interesting_operation'
+        base + '_' + 'interesting_operation'
         (intended for internal use by _generate_payload() to append to the
         default sourcetype)
     """

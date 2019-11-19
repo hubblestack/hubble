@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-Flexible Data Gathering: cert_discovery
+Flexible Data Gathering: ssl_certificate
 =============================
 Intention -
 This fdg module allows connecting to open ports on a system and retrieving
@@ -8,7 +8,7 @@ certificate details that might be attached on those ports.
 
 Testing -
     1. Configure this module through Hubble's schedule using the following configuration
-       fdg_cert_discovery:
+       fdg_ssl_certificate:
          function: fdg.fdg
          seconds: __seconds__
          splay: __splay__
@@ -42,7 +42,7 @@ def _get_certificate_san(x509cert):
             trimmed_san = san.lstrip()
             trimmed_san_list.append(trimmed_san)
     except Exception as e:
-        message = "FDG's cert_discovery Couldn't fetch SANs: {0}".format(e)
+        message = "FDG ssl_certificate couldn't fetch SANs: {0}".format(e)
         log.error(message)
     return trimmed_san_list
 
@@ -53,12 +53,12 @@ def _load_certificate(ip, port, ssl_timeout):
     certificate data.
     """
     try:
-        log.debug("FDG's cert_discovery is checking for ssl cert on {0}:{1}".format(ip,port))
+        log.debug("FDG ssl_certificate is checking for ssl cert on {0}:{1}".format(ip,port))
         hostport = (str(ip), int(port))
         setdefaulttimeout(ssl_timeout)
         cert_details = ssl.get_server_certificate(hostport)
     except Exception as e:
-        message = "FDG's cert_discovery Couldn't get cert: {0}".format(e)
+        message = "FDG ssl_certificate couldn't get cert: {0}".format(e)
         log.error(message)
         return {'result':False,'data':message}
     else:
@@ -71,30 +71,30 @@ def _parse_cert(cert, host, port):
     cert_details = {}
     try:
         x509 = OpenSSL.crypto.load_certificate(OpenSSL.crypto.FILETYPE_PEM, cert.get('data', ''))
-        cert_details['dest_port'] = str(port)
-        cert_details['dest_ip'] = str(host)
+        cert_details['ssl_src_port'] = str(port)
+        cert_details['ssl_src_host'] = str(host)
         if x509.get_issuer():
             issuer_components = _format_components(x509.get_issuer())
-            cert_details['issuer'] = issuer_components.get('CN', "None")
+            cert_details['ssl_issuer_common_name'] = issuer_components.get('CN', "None")
         if x509.get_subject():
             subject_components = _format_components(x509.get_subject())
-            cert_details['country_name'] = subject_components.get('C', "None")
-            cert_details['organisation_name'] = subject_components.get('O', "None")
-            cert_details['organisation_unit_name'] = subject_components.get('OU', "None")
-            cert_details['common_name'] = subject_components.get('CN', "None")
+            cert_details['ssl_subject_country'] = subject_components.get('C', "None")
+            cert_details['ssl_subject_organisation'] = subject_components.get('O', "None")
+            cert_details['ssl_subject_organisation_unit'] = subject_components.get('OU', "None")
+            cert_details['ssl_subject_common_name'] = subject_components.get('CN', "None")
         not_after = datetime.strptime(x509.get_notAfter().decode('utf-8'), "%Y%m%d%H%M%SZ")
         not_before = datetime.strptime(x509.get_notBefore().decode('utf-8'), "%Y%m%d%H%M%SZ")
         has_expired = x509.has_expired()
-        cert_details['version'] = str(x509.get_version())
-        cert_details['has_expired'] = True if has_expired == 1 else False
-        cert_details['serial_number'] = str(x509.get_serial_number())
-        cert_details['expiry_date'] = str(not_after)
-        cert_details['issue_date'] = str(not_before)
-        cert_details['signature_algo'] = str(x509.get_signature_algorithm())
-        cert_details['pem_cert'] = str(cert['data'])
-        cert_details['SAN'] = _get_certificate_san(x509)
+        cert_details['ssl_cert_version'] = str(x509.get_version())
+        cert_details['ssl_has_expired'] = True if has_expired == 1 else False
+        cert_details['ssl_serial_number'] = str(x509.get_serial_number())
+        cert_details['ssl_end_time'] = str(not_after)
+        cert_details['ssl_start_time'] = str(not_before)
+        cert_details['ssl_signature_algorithm'] = str(x509.get_signature_algorithm())
+        cert_details['ssl_cert_pem'] = str(cert['data'])
+        cert_details['ssl_subject_alternative_names'] = _get_certificate_san(x509)
     except Exception as e:
-        cert_details['error'] = "some error occurred while parsing certificate - {0}".format(e)
+        cert_details['error'] = "An error occurred while parsing certificate - {0}".format(e)
     return cert_details
 
 def _fill_common_details(host, port, message):
@@ -102,9 +102,9 @@ def _fill_common_details(host, port, message):
     fill ip, port and message for the connection.
     """
     cert_details = {}
-    cert_details['dest_port'] = str(port)
+    cert_details['ssl_src_port'] = str(port)
     cert_details['error'] = message
-    cert_details['dest_ip'] = str(host)
+    cert_details['ssl_src_host'] = str(host)
 
     return cert_details
 
@@ -156,25 +156,25 @@ def get_cert_details(params='', chained=None, chained_status=None):
     valid_inputs = _check_input_validity(host, port, ssl_timeout)
     
     if not valid_inputs:
-        message = "FDG's cert_discovery - invalid inputs"
+        message = "FDG ssl_certificate - invalid inputs"
         log.error(message)
         return False, ''
     
     cert = _load_certificate(host, port, ssl_timeout)
     if not cert:
-        message = "FDG's cert_discovery - something went wrong while fetching cert"
+        message = "FDG ssl_certificate - something went wrong while fetching certificate"
         log.error(message)
         return False, ''
 
     if 'result' in cert.keys() and not cert.get('result'):
-        message = "FDG's cert_discovery - {0}".format(cert.get('data'))
+        message = "FDG ssl_certificate - {0}".format(cert.get('data'))
         log.info(message)
         cert_details = _fill_common_details(host, port, message)
     else:
-        log.info("FDG's cert_discovery - cert found, parsing certificate")
+        log.info("FDG ssl_certificate - cert found, parsing certificate")
         cert_details = _parse_cert(cert, host, port)
     stop_time = time.time()
-    cert_details['execution_time_in_sec'] = stop_time - start_time
+    cert_details['execution_time'] = stop_time - start_time
     return True, cert_details
 
 def _check_input_validity(host, port, ssl_timeout):
@@ -190,5 +190,4 @@ def _format_components(x509name):
     items = {}
     for item in x509name.get_components():
         items[item[0]] = item[1]
-    return items;
-
+    return items

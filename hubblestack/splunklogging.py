@@ -44,11 +44,11 @@ from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_a
 import hubblestack.utils.stdrec
 
 
-
 class SplunkHandler(logging.Handler):
     """
     Log handler for splunk
     """
+
     def __init__(self):
         super(SplunkHandler, self).__init__()
 
@@ -101,10 +101,10 @@ class SplunkHandler(logging.Handler):
 
     @staticmethod
     def _get_fqdn(minion_id):
-        '''
+        """
         Extract fqdn from __grains__, check if it is valid and, if not,
         get it using another method.
-        '''
+        """
         fqdn = __grains__['fqdn']
         # Sometimes fqdn is blank. If it is, replace it with minion_id
         fqdn = fqdn if fqdn else minion_id

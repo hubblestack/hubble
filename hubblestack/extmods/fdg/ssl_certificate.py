@@ -19,6 +19,31 @@ Testing -
     Make sure that cert_discovery.fdg profile exists and contains Osquery as the first
     module and this module as the second module.
     2. Alternately, execute hubble fdg.fdg <path to fdg profile> to run this module via cmd.
+       Example Profile 1 :
+	 __________________________________________________________
+	|       main:						   |
+	|           module: ssl_certificate.get_cert_details       |
+	|           args:					   |
+	|             - params:					   |
+	|                 host_ip: google.com                      |
+	|                 host_port: 443  			   |
+	|                 ssl_timeout: 1                           |
+	|__________________________________________________________| 
+       Example Profile 2:
+	 ___________________________________________________________________________________________________________________________
+	|main:															    |
+	|    module: osquery.query												    |
+	|    args:														    |
+	|        - "SELECT lp.address as host_ip, lp.port as host_port FROM listening_ports AS lp;"                                 |
+	|    xpipe:														    |
+	|      fetch_certs													    |
+	| 															    |
+	|fetch_certs:														    |
+	|    module: ssl_certificate.get_cert_details										    |
+	|    args: 														    |
+	|      - params: 													    |
+	|          ssl_timeout: 3												    |
+	|___________________________________________________________________________________________________________________________|
 """
 import OpenSSL
 import ssl

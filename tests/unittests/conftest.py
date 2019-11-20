@@ -173,7 +173,9 @@ def __salt__(salt_loaders):
 def __grains__(salt_loaders):
     return salt_loaders.grains
 
-
+@pytest.fixture(scope='session')
+def __opts__(salt_loaders):
+    return salt_loaders.opts
 
 ##### profiling
 prof = None

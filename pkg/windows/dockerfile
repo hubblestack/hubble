@@ -40,6 +40,7 @@ RUN powershell.exe -Command choco install osquery --version 3.4.0 -y;
 RUN powershell.exe -Command git clone "$env:SALT_GIT_URL"; \
   Push-Location salt/pkg/windows; \
   git checkout "$env:SALT_CHECKOUT"; \
+  [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'; \
   C:/temp/salt/pkg/windows/build_env_2.ps1 -Silent;
 #more salt installs
 RUN powershell.exe -Command Push-Location salt; \

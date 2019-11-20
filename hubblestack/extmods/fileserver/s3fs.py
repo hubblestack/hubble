@@ -338,7 +338,11 @@ def _get_s3_key():
         s3k = 's3.' + k
         ret[k] = __opts__.get(s3k, defaults[k])
 
-    ret['kms_keyid'] = __opts__.get('aws.kmw.keyid')
+    # kms_keyid = __opts__['aws.kmw.keyid'] if 'aws.kms.keyid' in __opts__ else None
+    #
+    # original was likely bugged: aws.kms.keyid is probably right, but people
+    # that needed this may have entered it incorrectly to match. Support both for now.
+    ret['kms_keyid'] = __opts__.get('aws.kms.keyid', __opts__.get('aws.kmw.keyid'))
 
     return ret
 

@@ -1,6 +1,4 @@
 
-############# test requirements ####################
-#
 argparse
 Crypto
 daemon
@@ -12,8 +10,11 @@ pytest
 pyyaml
 requests>=2.13.0
 salt-ssh
-
-############# lint requirements ####################
-#
 pylint
 saltpylint
+singledispatch
+six
+smmap2
+tornado
+urllib3
+vulners

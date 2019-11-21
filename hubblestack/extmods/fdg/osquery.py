@@ -51,7 +51,6 @@ def query(query_sql, osquery_args=None, osquery_path=None, format_chained=True, 
         osquery_args = []
     return _osquery(query_sql, args=osquery_args, osquery_path=osquery_path)
 
-
 def _osquery(query_sql, osquery_path=None, args=None):
     """
     Format the osquery command and run it

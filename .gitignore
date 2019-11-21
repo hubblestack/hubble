@@ -97,3 +97,31 @@ ENV/
 # PyCharm settings
 .idea/
 doc/_build
+
+# misc setup.py output
+setup.txt
+
+# jenkins noise
+*output*.txt
+*manifest*.txt
+setup.txt
+pip.cache
+vlib/
+venv/
+ENV/
+pylint-*.txt
+pytest-*.txt
+bandit-*.txt
+
+# things that populate during tests
+tests/unittests/*cache*
+tests/unittests/*log*
+tests/unittests/output
+relevant-files.txt
+
+# PyCharm project
+.idea/
+
+# sometimes when I stop docker with a sigquit, hubble drops core (??)
+core
+core.*

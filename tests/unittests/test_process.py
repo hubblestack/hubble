@@ -164,7 +164,7 @@ class TestProcess():
         """
         Test that given correct input, the function correctly filters by keys
         """
-        expected_ret = True, {1: 'a', 2: 'b', 4: 'd'}
+        expected_ret = {1: 'a', 2: 'b', 4: 'd'}
         status, ret = hubblestack.extmods.fdg.process.filter_dict(
             starting_dict={1: 'a', 2: 'b', 3: 'c'}, chained={1: 'b', 3: 'd', 4: 'd'},
             ge=1, ne=3)
@@ -510,7 +510,7 @@ class TestProcess():
         expected_ret = ['a1b2c3d']
         status, ret = hubblestack.extmods.fdg.process.split(
             phrase="a1b2{}", sep="\d+", regex=False, chained='c3d')
-        assert status is True
+        assert status is False
         assert expected_ret == ret
 
     def test_dict_to_list_returns_none_if_invalid_arguments(self):

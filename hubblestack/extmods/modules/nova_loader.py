@@ -119,9 +119,9 @@ class LazyDict(collections.MutableMapping):
         # we are zero if dict is empty and loaded is true
         return bool(self._dict or not self.loaded)
 
-    def __bool__(self):
+    def __nonzero__(self):
         # we are zero if dict is empty and loaded is true
-        return self.__nonzero__()
+        return self.__bool__()
 
     def clear(self):
         """

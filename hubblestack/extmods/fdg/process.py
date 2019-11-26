@@ -11,8 +11,8 @@ from __future__ import absolute_import
 import logging
 import re
 
-from hubblestack.utils.encoding import encode_base64 as utils_encode_base64
 from salt.exceptions import ArgumentValueError
+from hubblestack.utils.encoding import encode_base64 as utils_encode_base64
 
 log = logging.getLogger(__name__)
 
@@ -654,4 +654,4 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
     The first return value (status) will be False only if an error will occur.
     """
     return utils_encode_base64(starting_string, format_chained=format_chained,
-        chained=chained, chained_status=chained_status)
+                               chained=chained, chained_status=chained_status)

@@ -48,7 +48,7 @@ def test_max_depth():
     with HubbleStatusContext('test1', bucket_len=B, max_buckets=M) as hubble_status:
         # mark some status, pretending to move through time from t0
         for t in range(t0, t0+N):
-            hubble_status.mark('test1', t=t)
+            hubble_status.mark('test1', timestamp=t)
 
         assert len(hubble_status.buckets()) == M
 
@@ -77,7 +77,7 @@ def test_bucket_len():
         # issue test1 mark N times, pretending one mark per second
         # ranging from t0 to t0+(N-1)
         for t in range(t0, t0+N):
-            hubble_status.mark('test1', t=t)
+            hubble_status.mark('test1', timestamp=t)
 
         # the list of bucket ids
         buckets = hubble_status.buckets()

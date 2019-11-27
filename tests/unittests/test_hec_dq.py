@@ -46,14 +46,3 @@ def _test_pop(samp,q):
 
 def test_dq_pop(samp,dq):
     _test_pop(samp,dq)
-
-def test_disk_queue_put_estimator():
-    dq = DiskQueue(TEST_DQ_DIR, fresh=True)
-    for item in ['hi-there-{}'.format(x) for x in range(20)]:
-        pre = dq.cn, dq.sz
-        dq.put(item)
-        post = dq.cn, dq.sz
-        assert (pre[0]+1, pre[1]+len(item)) == post
-        dq._count()
-        more = dq.cn, dq.sz
-        assert post == more

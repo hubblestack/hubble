@@ -88,14 +88,7 @@ def _get_splunk_options(space, modality, **kw):
             sfr = [sfr]
         for opt in sfr:
             final_opts = base_opts.copy()
-            if modality is 'grains.get':
-                options_for_grains_config &= set(opt.keys())
-                options = options_for_grains_config
-            elif 'grains.get' in MODALITIES:
-                options = set(opt.keys()) - options_for_grains_config
-            else:
-                options = set(opt.keys())
-            for k in options:
+            for k in opt:
                 j = nicknames.get(k, k)
                 if j in final_opts:
                     # if j is one of the args that can be overridden and has been provided then do not update it
@@ -106,8 +99,6 @@ def _get_splunk_options(space, modality, **kw):
                         final_opts[j] = opt[k]
 
             if REQUIRED in final_opts.values():
-                    final_opts[j] = opt[k]
-            if modality is 'config.get' and REQUIRED in final_opts.values():
                 raise Exception('{0} must be specified in the {1} configs!'.format(req, space))
             ret.append(final_opts)
 

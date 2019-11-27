@@ -1,59 +1,112 @@
+
 import pytest
+import shutil
 import os
+from hubblestack.hec.dq import DiskQueue, QueueCapacityError
 
-from hubblestack.hec.dq import DiskQueue
-from hubblestack.hec.dq import QueueTypeError, QueueCapacityError
+DQ_LOCATION = os.environ.get('TEST_DQ_LOC', '/tmp/test-dq')
 
-TEST_DQ_DIR = os.environ.get('TEST_DQ_DIR', '/tmp/dq.{0}'.format(os.getuid()))
+@pytest.fixture(scope='function')
+def summon_dq(request):
+    def fin():
+        if os.path.isdir(DQ_LOCATION):
+            shutil.rmtree('/tmp/test-dq')
+    fin() # make sure we don't have anything before we get started
+    #request.addfinalizer(fin) # but also, make sure we clean up when we're done
+    def _go(**kw):
+        return DiskQueue('/tmp/test-dq', **kw)
+    return _go
 
-@pytest.fixture
-def samp():
-    return tuple(b'one two three four five'.split())
+def test_getz_files(summon_dq):
+    dq = summon_dq()
+    dq.put('one')
+    dq.put('two')
+    assert len(list(dq.files)) == 0
+    assert dq.get() == 'one'
+    assert dq.get() == 'two'
+    assert len(list(dq.files)) == 0
 
-@pytest.fixture
-def dq():
-    return DiskQueue(TEST_DQ_DIR, size=100, fresh=True)
 
-def test_disk_queue(dq):
-    borked = False
+def test_dq_compression0(summon_dq):
+    dq = summon_dq(compression=0)
 
-    dq.put(b'one', testinator=3)
-    dq.put(b'two', testinator=4)
-    dq.put(b'three', testinator=5)
+    source_data = ', '.join(['mah data'] * 10000)
 
-    assert len(dq) == 13
-    assert dq.peek() == (b'one', {'testinator': 3})
-    assert dq.get() == (b'one', {'testinator': 3})
-    assert dq.peek() == (b'two', {'testinator': 4})
-    assert len(dq) == 9
+    x = dq.compress(source_data)
+    assert x == source_data
+    assert dq.decompress(x) == source_data
 
-    assert dq.getz() == (b'two three', {'testinator': 5})
-    assert len(dq) == 0
+    dq.put('one')
+    dq.put('two')
+    assert len(list(dq.files)) == 2
+    assert dq.peek() == 'one'
+    assert dq.get() == 'one'
+    assert dq.get() == 'two'
+    assert len(list(dq.files)) == 0
 
-    dq.put(b'one')
-    dq.put(b'two')
-    dq.put(b'three')
+def test_dq_compression5(summon_dq):
+    dq = summon_dq(compression=5)
 
-    assert dq.getz(8) == (b'one two', {})
-    assert dq.getz(8) == (b'three', {})
+    source_data = ', '.join(['mah data'] * 10000)
 
-def _test_pop(samp,q):
-    for i in samp:
-        q.put(i)
-    for i in samp:
-        assert q.peek() == (i, {})
-        q.pop()
+    x = dq.compress(source_data)
+    assert x != source_data
+    assert x.startswith("BZ")
+    assert dq.decompress(x) == source_data
 
-def test_dq_pop(samp,dq):
-    _test_pop(samp,dq)
+    dq.put('one')
+    dq.put('two')
+    assert len(list(dq.files)) == 2
+    assert dq.peek() == 'one'
+    assert dq.get() == 'one'
+    assert dq.get() == 'two'
+    assert len(list(dq.files)) == 0
 
-def test_disk_queue_put_estimator():
-    dq = DiskQueue(TEST_DQ_DIR, fresh=True)
-    for item in ['hi-there-{}'.format(x) for x in range(20)]:
-        pre = dq.cn, dq.sz
-        dq.put(item)
-        post = dq.cn, dq.sz
-        assert (pre[0]+1, pre[1]+len(item)) == post
-        dq._count()
-        more = dq.cn, dq.sz
-        assert post == more
+def test_dq_max_items(summon_dq):
+    dq = summon_dq(size=100*10)
+
+    for i in range(200):
+        try:
+            dq.put('{:010}'.format(i))
+        except QueueCapacityError:
+            break
+
+    assert dq.cn == 100
+
+    l = list()
+    while True:
+        item = dq.get()
+        if item is not None:
+            l.append(item)
+        else:
+            break
+
+    assert len(l) == 100
+    assert l == [ '{:010}'.format(i) for i in range(100) ]
+
+def test_dq_size(summon_dq):
+    # this is a really small queue size. The journal and other sqlite overhead
+    # will eat up a large portion of this small cache space.
+    SZ = 100 * 1024
+
+    dq = summon_dq(size=SZ)
+    for i in range(200):
+        dq.put(str(i))
+
+    # The size is essentially random, due to sqlite overhead
+    assert dq.sz > 0
+    assert dq.sz <= SZ
+    assert dq.cn == 200
+
+    f = '{:04d} SUPER LONG TEXT TO FILL 100k BUFFER. '
+    sz = len(f.format(0))
+
+    for i in range(200):
+        dq.put(f.format(i) * 10)
+
+    at_most = int(SZ/sz)
+
+    assert dq.sz > 0
+    assert dq.sz <= SZ
+    assert dq.cn < at_most
+    assert dq.cn > 5 # surely we can fit at least 5

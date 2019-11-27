@@ -83,8 +83,8 @@ def _load_certificate(ip, port, ssl_timeout):
         setdefaulttimeout(ssl_timeout)
         cert_details = ssl.get_server_certificate(hostport)
     except Exception as e:
-        message = "FDG ssl_certificate couldn't get cert: {0}".format(e)
-        log.error(message)
+        message = "FDG ssl_certificate couldn't get cert on {0}:{1}, error : {2}".format(ip,port,e)
+        log.debug(message)
         return {'result':False,'data':message}
     else:
         return {'result':True,'data':cert_details}

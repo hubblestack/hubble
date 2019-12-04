@@ -12,5 +12,5 @@ RUN git clone https://github.com/hubblestack/hubble /root/hubble
 WORKDIR /root/hubble
 RUN python setup.py install --force
 RUN git clone https://github.com/MoodyMudit/hubble_testcases.git /root/hubble_test
-\cp -fR /root/hubble_test/hubble /etc/hubble/hubble
-git clone https://github.com/hubblestack/hubblestack_data.git /srv/hubble
+RUN \cp -fR /root/hubble_test/hubble /etc/hubble/hubble
+RUN git clone https://github.com/hubblestack/hubblestack_data.git /srv/hubble

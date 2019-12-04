@@ -6,7 +6,14 @@ distro, version, _ = platform.dist()
 if not distro:
     distro, version, _ = platform.linux_distribution(supported_dists=['system'])
 
-# Default to cent7
+    if not distro:
+        try:
+            import distro
+            distro, version, _ = distro.linux_distribution(full_distribution_name=False)
+        except ModuleNotFoundError:
+            distro = version = ''
+
+# Default to CentOS7
 data_files = [('/usr/lib/systemd/system', ['pkg/source/hubble.service']),
               ('/etc/hubble', ['conf/hubble']), ]
 

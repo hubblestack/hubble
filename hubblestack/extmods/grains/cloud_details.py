@@ -35,7 +35,7 @@ def _get_aws_details():
     proxies = {'http': None}
 
     try:
-        ttl_header = {'X-aws-ec2-metadata-token-ttl-seconds': '21600'}
+        ttl_header = {'X-aws-ec2-metadata-token-ttl-seconds': '300'}
         token_url = 'http://169.254.169.254/latest/api/token'
         token_request = requests.put(token_url, headers=ttl_header)
         token = token_request.text

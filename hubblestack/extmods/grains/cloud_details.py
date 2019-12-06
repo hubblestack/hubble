@@ -144,6 +144,7 @@ def _get_azure_details():
 def _get_gcp_details():
     # Gather google compute platform information if present
     ret = {}
+    gcp_extra = {}
     gcp = {'cloud_instance_id': None, 'cloud_account_id': None, 'cloud_type': 'gcp'}
     gcp_header = {'Metadata-Flavor': 'Google'}
     proxies = {'http': None}

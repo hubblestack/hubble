@@ -37,7 +37,7 @@ def _get_aws_details():
     try:
         ttl_header = {'X-aws-ec2-metadata-token-ttl-seconds': '300'}
         token_url = 'http://169.254.169.254/latest/api/token'
-        token_request = requests.put(token_url, headers=ttl_header)
+        token_request = requests.put(token_url, headers=ttl_header, timeout=3, proxies=proxies)
         token = token_request.text
         aws_token_header = {'X-aws-ec2-metadata-token': token}
         res = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',

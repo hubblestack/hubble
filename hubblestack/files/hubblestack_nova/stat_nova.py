@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova module for using stat to verify ownership & permissions.
 
 This audit module requires yaml data to execute. It will search the local
@@ -42,7 +42,7 @@ the file is missing, then it will be considered a match (success).
 If it's set to False and the file is missing, then it
 will be considered a non-match (failure).
 If the file exists, this setting is ignored.
-'''
+"""
 
 from __future__ import absolute_import
 import logging
@@ -65,9 +65,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    '''
+    """
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    '''
+    """
     ret={}
     if labels:
         labelled_test_cases=[]
@@ -83,9 +83,9 @@ def apply_labels(__data__, labels):
     return ret    
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    '''
+    """
     Run the stat audits contained in the YAML files processed by __virtual__
-    '''
+    """
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -185,9 +185,9 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    '''
+    """
     Merge two yaml dicts together
-    '''
+    """
     if 'stat' not in ret:
         ret['stat'] = []
     for key, val in data.get('stat', {}).iteritems():
@@ -198,9 +198,9 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    '''
+    """
     Retrieve all the tags for this distro from the yaml
-    '''
+    """
     ret = {}
     distro = __grains__.get('osfinger')
     for audit_dict in data.get('stat', []):
@@ -244,7 +244,7 @@ def _get_tags(data):
 
 
 def _check_mode(max_permission, given_permission, allow_more_strict):
-    '''
+    """
     Checks whether a file's permission are equal to a given permission or more restrictive.
     Permission is a string of 3 digits [0-7]. 'given_permission' is the actual permission on file,
     'max_permission' is the expected permission on this file. Set 'allow_more_strict' to True,
@@ -256,7 +256,7 @@ def _check_mode(max_permission, given_permission, allow_more_strict):
     _check_mode('644', '600', True)         returns         True
     _check_mode('644', '655', True)        returns         False
 
-    '''
+    """
 
     if given_permission == '0':
         return True
@@ -271,11 +271,11 @@ def _check_mode(max_permission, given_permission, allow_more_strict):
 
 
 def _is_permission_in_limit(max_permission, given_permission):
-    '''
+    """
     Return true only if given_permission is not more lenient that max_permission. In other words, if
     r or w or x is present in given_permission but absent in max_permission, it should return False
     Takes input two integer values from 0 to 7.
-    '''
+    """
     max_permission = int(max_permission)
     given_permission = int(given_permission)
     allowed_r = False

@@ -1,0 +1,110 @@
+
+def imgname = 'hubblestack/jenkins:centos-v1.0.8'
+
+pipeline {
+    agent { docker { image "${imgname}" } }
+
+    options {
+        timestamps()
+        ansiColor 'xterm'
+        buildDiscarder(logRotator(numToKeepStr: '2', artifactNumToKeepStr: '1'))
+    }
+
+    environment {
+        PY_COLORS = 1
+        HS_PROFILE = 1
+    }
+
+    stages {
+        stage('setup') {
+            steps {
+                sh '''#!/bin/bash
+                    source /etc/profile.d/kersplat.sh
+                    pyenv local $PY_V
+                    pyenv shell $PY_V
+                    set -x -e
+                    rm -rf vlib venv .pytest_cache
+                    pip install --cache-dir ./pip.cache -t ./vlib virtualenv
+                    PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv
+                    source ./venv/bin/activate
+                    pip install --cache-dir ./pip.cache -U pip
+                    pip install --cache-dir ./pip.cache -U -r test-requirements.txt
+                    '''
+                sh '''#!/bin/bash
+                    # NOTE: CHANGE_TARGET and BRANCH_NAME are only populated on multibranch pipeline.
+                    # For other environments, we have to fake it with 'origin/develop' and 'HEAD'
+                    echo "CHANGE_TARGET=$CHANGE_TARGET BRANCH_NAME=$BRANCH_NAME"
+                    /usr/bin/git fetch --no-tags --progress https://github.com/hubblestack/hubble.git +refs/heads/develop:refs/remotes/origin/develop
+                    echo git branch -vva
+                    git branch -vva
+                    echo "LHS=$LHS RHS=$RHS"
+                    LHS="origin/${CHANGE_TARGET:-develop}"
+                    RHS="${BRANCH_NAME:+origin/}${BRANCH_NAME:-HEAD}"
+                    if [[ $(git show -s --format='%s%n%b' "${LHS}..${RHS}") =~ LINT-FULL ]]
+                    then find hubblestack -name "*.py"
+                    else find hubblestack -name "*.py" -print0 | xargs -r0 git diff --name-only "$LHS" "$RHS"
+                    fi > relevant-files.txt
+                    '''
+                sh '''mkdir -vp tests/unittests/output'''
+            }
+        }
+        stage('lint/test') {
+            parallel {
+                stage('pytest') {
+                    steps {
+                        sh '''#!/bin/bash
+                            source ./venv/bin/activate
+                            pytest --log-cli-level INFO tests/unittests --html=tests/unittests/output/pytest.html
+                            x=$?
+                            cp tests/unittests/output/combined.svg tests/unittests/output/profile-diagram.svg
+                            exit $x
+                            '''
+                    }
+                }
+                stage('pylint') {
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            sh '''#!/bin/bash
+                                source ./venv/bin/activate
+                                < relevant-files.txt  xargs -r pylint --output-format=json \
+                                    > tests/unittests/output/pylint.json
+                                x=$?
+                                python ./tests/automation/pylint-json-to-html tests/unittests/output/pylint.json
+                                exit $x
+                                '''
+                        }
+                    }
+                }
+                stage('bandit') {
+                    steps {
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            sh '''#!/bin/bash
+                                source ./venv/bin/activate
+                                < relevant-files.txt  xargs -r bandit -lif html \
+                                  > tests/unittests/output/bandit.html
+                                x=$?
+                                cp tests/static/bandit.css tests/unittests/output/bandit.css
+                                sed -i -e '/<style/,/<.style/c<link rel="stylesheet" href="bandit.css">' \
+                                  tests/unittests/output/bandit.html
+                                exit $x
+                                '''
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            publishHTML (target: [
+                allowMissing: false,
+                alwaysLinkToLastBuild: false,
+                keepAll: true,
+                reportDir: 'tests/unittests/output',
+                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg, bandit.html',
+                reportName: "Test Reports"
+            ])
+        }
+    }
+}

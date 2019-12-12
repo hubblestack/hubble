@@ -1,108 +1,74 @@
 import sys
 import os
+import json
+import pytest
+
 myPath = os.path.abspath(os.getcwd())
 sys.path.insert(0, myPath)
-import hubblestack.extmods.modules.nebula_osquery
 
+__salt__ = None
 
+def dump_var_file(var, name='var', dumpster='tests/unittests/output'):
+    if not os.path.isdir(dumpster):
+        os.makedirs(dumpster)
+    if not name.endswith('.json'):
+        name += '.json'
+    with open(os.path.join(dumpster,name), 'w') as fh:
+        json.dump(var, fh)
+
+@pytest.mark.usefixtures('osqueryd') # starts osqueryd in the background
 class TestNebula():
-
-    def test__virtual__(self):
+    def test___virtual__(self):
+        import hubblestack.extmods.modules.nebula_osquery
         var = hubblestack.extmods.modules.nebula_osquery.__virtual__()
         assert var == 'nebula'
 
-    def test_hubble_versions(self):
-        var = hubblestack.extmods.modules.nebula_osquery.hubble_versions()
+    def test_loader(self, __salt__):
+        assert 'nebula.queries' in __salt__
+
+    def test_hubble_versions(self, __salt__):
+        var = __salt__['nebula.hubble_versions']()
         assert ((var.get('hubble_versions')).get('result')) is True
 
-    def test_queries(self):
+    def test_queries(self, __salt__, __grains__):
         query_group = 'day'
-        query_file = 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
+        query_file = 'salt://hubblestack_nebula_v2/hubblestack_nebula_queries.yaml'
+        var = __salt__['nebula.queries'](query_group, query_file,
+            verbose=False, report_version_with_day=False)
+        dump_var_file(var, 'queries')
+        os_info = [ x for x in var if 'os_info' in x ]
+        assert os_info
+        assert 'os_info' in os_info[0]
+        assert 'data' in os_info[0]['os_info']
+        assert 'version' in os_info[0]['os_info']['data'][0]
+        assert __grains__['os'] in os_info[0]['os_info']['data'][0]['name']
 
-        def cp_cache_file(queryFile):
-            return 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
-
-        def uptime():
-            return {}
-
-        def cmd_run(default):
-            return default
-        __salt__ = {}
-        __salt__['cp.cache_file'] = cp_cache_file
-        __salt__['status.uptime'] = uptime
-        __salt__['cmd.run'] = cmd_run
-        hubblestack.extmods.modules.nebula_osquery.__salt__ = __salt__
-        hubblestack.extmods.modules.nebula_osquery.__grains__ = {'osfinger': 'Ubuntu-16.04'}
-
-        def cmd_run_all(cmd):
-            return {'retcode': 0, 'pid': 3478,
-                    'stdout': '[{"build":"","codename":"xenial","major":"16","minor":"4","name":"Ubuntu","patch":"",'
-                              '"platform":"ubuntu","platform_like":"debian","query_time":"1500395829","version":"16.04.2 LTS (Xenial Xerus)"}]',
-                    'stderr': ''}
-        __salt__['cmd.run_all'] = cmd_run_all
-        var = hubblestack.extmods.modules.nebula_osquery.queries(query_group, query_file, verbose=False, report_version_with_day=False)
-        assert len(var) != 0
-        assert var[0]['fallback_osfinger']['data'][0]['osfinger'] == 'Ubuntu-16.04'
-
-    def test_queries_for_report_version_with_day(self):
+    def test_queries_for_report_version_with_day(self, __salt__):
         query_group = 'day'
-        query_file = 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
+        query_file = 'salt://hubblestack_nebula_v2/hubblestack_nebula_queries.yaml'
+        var = __salt__['nebula.queries'](query_group, query_file,
+            verbose=False, report_version_with_day=True)
+        dump_var_file(var, 'queries_for_report_version_with_day')
+        hvnode = [ x for x in var if 'hubble_versions' in x ]
+        assert len(hvnode) == 1
+        assert 'hubble_versions' in hvnode[0]
+        hubble_versions = hvnode[0]['hubble_versions']
+        assert 'data' in hubble_versions
+        assert len(hubble_versions['data']) == 1
+        for m in 'pulsar nebula nova quasar'.split():
+            assert m in hubble_versions['data'][0]
 
-        def cp_cache_file(queryFile):
-            return 'tests/unittests/resources/hubblestack_nebula_queries.yaml'
-
-        def uptime():
-            return {}
-
-        def cmd_run(default):
-            return default
-        __salt__ = {}
-        __salt__['cp.cache_file'] = cp_cache_file
-        __salt__['status.uptime'] = uptime
-        __salt__['cmd.run'] = cmd_run
-        hubblestack.extmods.modules.nebula_osquery.__salt__ = __salt__
-        hubblestack.extmods.modules.nebula_osquery.__grains__ = {'osfinger': 'Ubuntu-16.04'}
-
-        def cmd_run_all(cmd):
-            return {'retcode': 0, 'pid': 3478,
-                    'stdout': '[{"build":"","codename":"xenial","major":"16","minor":"4","name":"Ubuntu","patch":"",'
-                              '"platform":"ubuntu","platform_like":"debian","query_time":"1500395829","version":"16.04.2 LTS (Xenial Xerus)"}]',
-                    'stderr': ''}
-        __salt__['cmd.run_all'] = cmd_run_all
-        hubblestack.extmods.modules.nebula_osquery.__salt__ = __salt__
-        var = hubblestack.extmods.modules.nebula_osquery.queries(query_group, query_file, verbose=False, report_version_with_day=True)
-        hubblestack.extmods.modules.nebula_osquery.__salt__ = {}
-        assert len(var) != 0
-        assert (var[2]['hubble_versions']) is not None
-
-    def test_hubble_version(self):
-        var = hubblestack.extmods.modules.nebula_osquery.hubble_versions()
-        assert (var['hubble_versions']) is not None
-
-    def test_top(self):
-        __salt__ = {}
+    def test_top(self, __salt__, __grains__):
         query_group = 'day'
-        topfile = 'tests/unittests/resources/top.nebula'
+        topfile = 'salt://top.nebula'
         verbose = False,
         report_version_with_day = True
-
-        def cp_cache_file(queryFile):
-            return 'tests/unittests/resources/top.nebula'
-
-        def match_compound(value):
-            return value
-
-        def status_uptime():
-            return {}
-
-        def cmd_run(default):
-            return default
-        __salt__['status.uptime'] = status_uptime
-        __salt__['cmd.run'] = cmd_run
-        __salt__['cp.cache_file'] = cp_cache_file
-        __salt__['match.compound'] = match_compound
-        hubblestack.extmods.modules.nebula_osquery.__salt__ = __salt__
-        var = hubblestack.extmods.modules.nebula_osquery.top(query_group, topfile, verbose, report_version_with_day)
-        hubblestack.extmods.modules.nebula_osquery.__salt__ = {}
-        assert len(var) != 0
-        assert var[0]['fallback_osfinger']['data'][0]['osfinger'] == 'Ubuntu-16.04'
+        var = __salt__['nebula.top'](query_group, topfile, verbose,
+            report_version_with_day)
+        dump_var_file(var, 'top')
+        os_info = [ x for x in var if 'os_info' in x ]
+        assert os_info
+        assert 'os_info' in os_info[0]
+        assert 'data' in os_info[0]['os_info']
+        assert 'version' in os_info[0]['os_info']['data'][0]
+        assert __grains__['os'] in os_info[0]['os_info']['data'][0]['name']

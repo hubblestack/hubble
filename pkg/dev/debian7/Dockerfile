@@ -1,7 +1,7 @@
 # This Dockerfile aims to make building Hubble v2 packages easier.
 # To build an image: 1. copy pkg/scripts/pyinstaller-requirements.txt to directory with this Dockerfile
 #                    2. docker build -t <image_name> . --build-arg=HUBBLE_GIT_URL=<git_repo_url>
-#                                                      --build-arg=HUBBLE_CHECKOUT=<branch/tag/commit>
+#                                                      --build-arg=HUBBLE_CHECKOUT=<branch/tag/commit> 
 # The resulting image is ready to run the pyinstaller on container start and drop hubble<version>-coreos.tar.gz
 # in the /data directory. Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
@@ -188,9 +188,9 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=3.0
+ARG HUBBLE_CHECKOUT=develop
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=3.0-branch
+ENV HUBBLE_VERSION=3.0.0-develop
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_SRC_PATH=/hubble_src

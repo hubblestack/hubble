@@ -105,7 +105,7 @@ def _get_splunk_options(space, modality, **kw):
     return ret
 
 def get_splunk_options(*spaces, **kw):
-    '''
+    """
     params:
       *spaces: non-keyword arguments are config namespaces to search
                the default is 'hubblestack:returner:splunk' (if nothing else is specified)
@@ -146,7 +146,7 @@ def get_splunk_options(*spaces, **kw):
 
        get_splunk_options(sourcetype_nebula='blah', _nick={'sourcetype_nebula': 'sourcetype'})
        [ { ... 'sourcetype': 'hubble_osquery' ... } ]
-    '''
+    """
     if not spaces:
         spaces = ['hubblestack:returner:splunk']
 

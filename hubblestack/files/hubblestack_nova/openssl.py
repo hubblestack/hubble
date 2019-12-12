@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova module for auditing SSL certificates.
 
 This audit module requires YAML data to execute. It will search the yaml data
@@ -63,7 +63,7 @@ Some notes:
 Known issues: for unknown reasons (yet), the module can fail downloading the certificate from certain endpoints. When
 this happens, the check will be failed.
 
-'''
+"""
 
 from __future__ import absolute_import
 import logging
@@ -98,9 +98,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    '''
+    """
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    '''
+    """
     ret={}
     if labels:
         labelled_test_cases=[]

@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 generic data to splunk returner
 
 Deliver generic HubbleStack event data into Splunk using the HTTP
@@ -14,7 +14,7 @@ event collector. Required config/pillar settings:
             indexer: splunk-indexer.domain.tld
             index: hubble
             sourcetype_pulsar: generic
-'''
+"""
 
 import time
 import hubblestack.utils.stdrec as stdrec
@@ -22,7 +22,7 @@ from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_a
 
 
 def _get_key(dat, key, default_value=None):
-    '''
+    """
     Function that emulates the `dict.pop` behavior.
     Filters out structures that are not dict.
 
@@ -35,7 +35,7 @@ def _get_key(dat, key, default_value=None):
     default_value
         The value to be returned if `key` is not found in `dat`
         or if `dat` is not a dict
-    '''
+    """
     if isinstance(dat, dict):
         return dat.pop(key, default_value)
 
@@ -43,26 +43,26 @@ def _get_key(dat, key, default_value=None):
 
 
 def _build_hec(opts):
-    '''
+    """
     Extract the appropriate parameters from opts,
     create and return the http_event_collector
 
     opts
         dict containing Splunk options to be passed to the `http_event_collector`
-    '''
+    """
     args, kwargs = make_hec_args(opts)
     hec = http_event_collector(*args, **kwargs)
     return hec
 
 
 def returner(retdata):
-    '''
+    """
     Build the event and send it to the http event collector
     to have it published to Splunk
 
     retdata
         A dict containing the data to be returned
-    '''
+    """
     try:
         retdata = retdata['return']
     except KeyError:

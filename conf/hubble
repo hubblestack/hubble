@@ -48,14 +48,12 @@ fileserver_backend:
 #    kwargs:
 #      verbose: True
 #    returner: splunk_nova_return
-#    returner_retry: True # only works on splunk returners for now
 #    run_on_start: False
 #  fdg_top:
 #    function: fdg.top
 #    seconds: 86400
 #    splay: 3600
 #    returner: splunk_fdg_return
-#    returner_retry: True
 #    run_on_start: True
 #  nebula_fifteen_min:
 #    function: nebula.queries
@@ -80,7 +78,6 @@ fileserver_backend:
 #    args:
 #      - day
 #    returner: splunk_nebula_return
-#    returner_retry: True # only works on splunk returners for now
 #    run_on_start: False
 #  nebula_osqueryd_monitor:
 #    function: nebula.osqueryd_monitor
@@ -107,6 +104,11 @@ fileserver_backend:
 #      backuplogfilescount: 5
 #      mask_passwords: True
 #    returner: splunk_osqueryd_return
+#    run_on_start: True
+#  nebula_osquery_extensions:
+#    function: nebula.extensions
+#    seconds: 86400
+#    splay: 3600
 #    run_on_start: True
 #  pulsar:
 #    function: pulsar.process

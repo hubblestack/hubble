@@ -11,6 +11,7 @@ import time
 import hubblestack.splunklogging
 
 # These patterns will not be logged by "conf_publisher" and "emit_to_splunk"
+
 PATTERNS_TO_FILTER = ["password", "token", "passphrase", "privkey",
                       "keyid", "s3.key", "splunk_token"]
 

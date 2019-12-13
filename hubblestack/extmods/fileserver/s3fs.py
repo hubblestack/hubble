@@ -324,6 +324,7 @@ def _get_s3_key():
     """
     Get AWS keys from pillar or config
     """
+
     defaults = {
         'https_enable': True,
         'verify_ssl': True,
@@ -333,6 +334,7 @@ def _get_s3_key():
         'keyid': None,
         'key': None,
     }
+
     ret = dict()
     for k in defaults:
         s3k = 's3.' + k

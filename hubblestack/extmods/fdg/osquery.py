@@ -63,6 +63,7 @@ def _osquery(query_sql, osquery_path=None, args=None):
     False otherwise, and ``ret`` is the stdout of the osquery command
     """
     max_file_size = 104857600
+
     if not query_sql:
         return False, ''
     if 'attach' in query_sql.lower() or 'curl' in query_sql.lower():

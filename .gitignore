@@ -36,9 +36,11 @@ var/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+pytest-output.txt
 
 # Unit test / coverage reports
 htmlcov/
+coverage/
 .tox/
 .coverage
 .coverage.*
@@ -80,10 +82,6 @@ celerybeat-schedule
 
 # dotenv
 .env
-
-# virtualenv
-venv/
-ENV/
 
 # Spyder project settings
 .spyderproject

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Custom config-defined grains module
 
 Allow users to collect a list of config directives and set them as custom
@@ -18,7 +18,7 @@ hubblestack:
         sourcetype_nova: hubble_audit
 config_to_grains:
   - splunkindex: "hubblestack:returner:splunk:0:index"
-'''
+"""
 
 import salt.modules.config
 
@@ -29,7 +29,7 @@ __salt__ = {'config.get': salt.modules.config.get}
 
 
 def configgrains():
-    '''
+    """
     Given a list of config values, create custom grains with custom names.
     The list comes from config.
 
@@ -37,14 +37,14 @@ def configgrains():
 
     config_to_grains:
       - splunkindex: "hubblestack:returner:splunk:0:index"
-    '''
+    """
     grains = {}
     salt.modules.config.__opts__ = __opts__
 
     grains_to_make = __salt__['config.get']('config_to_grains', default=[])
     for grain in grains_to_make:
-        for k, v in grain.iteritems():
-            grain_value = __salt__['config.get'](v, default=None)
+        for grain_key, grain_value in grain.iteritems():
+            grain_value = __salt__['config.get'](grain_value, default=None)
             if grain_value:
-                grains[k] = grain_value
+                grains[grain_key] = grain_value
     return grains

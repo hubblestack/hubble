@@ -1,0 +1,27 @@
+<!-- vi:ft=htmljinja:
+-->
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <link rel="stylesheet" href="pylint.css">
+    <title>PyLint Report</title>
+</head>
+<body>
+    <table id="lint">
+        <thead>
+        {%- for field in fields %}
+            <th>{{ field }}</th>
+        {%- endfor %}
+        </thead>
+        <tbody>
+        {%- for msg in messages %}
+            <tr>
+            {%- for field in fields %}
+                <td>{{ msg[field] | default('') }}</td>
+            {%- endfor %}
+            </tr>
+        {%- endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

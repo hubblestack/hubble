@@ -32,13 +32,13 @@ max_diskqueue_size  = 10 * (1024 ** 2)
 def count_input(payload):
     hs_key = ':'.join(['input', payload.sourcetype])
     hubble_status.add_resource(hs_key)
-    hubble_status.mark(hs_key, t=payload.time)
+    hubble_status.mark(hs_key, timestamp=payload.time)
     # NOTE: t=payload.time is an undocumented mark() argument
     # that ensures the first_t and last_t include the given timestamp
     # (without this, the accounting likely wouldn't work)
 
 class Payload(object):
-    ''' formatters for final payload stringification
+    """ formatters for final payload stringification
         and a convenient place to store retry counter information
 
         note that formatting a payload is different from formatting an event
@@ -53,7 +53,7 @@ class Payload(object):
         For reasons regarding the above, we provide a classmethod to format events:
 
         p = Payload.format_event({'blah': 'happened'}, sourcetype='blah')
-    '''
+    """
     host = None
 
     @classmethod

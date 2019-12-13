@@ -104,7 +104,7 @@ class DiskQueue(OKTypesMixin):
         return d
 
     def clear(self):
-        ''' clear the queue '''
+        """ clear the queue """
         if os.path.isdir(self.directory):
             shutil.rmtree(self.directory)
 
@@ -112,7 +112,7 @@ class DiskQueue(OKTypesMixin):
         return (name[0:4], name[4:])
 
     def accept(self, item):
-        ''' test to see whether the given item would fit in the queue under the queue's size restraints '''
+        """ test to see whether the given item would fit in the queue under the queue's size restraints """
         if len(item) + self.sz > self.size:
             return False
         return True
@@ -220,7 +220,7 @@ class DiskQueue(OKTypesMixin):
         return ret, meta_data
 
     def pop(self):
-        ''' remove the next item from the queue (do not return it); useful with .peek() '''
+        """ remove the next item from the queue (do not return it); useful with .peek() """
         for fname in self.files:
             sz = os.stat(fname).st_size
             self.unlink_(fname)
@@ -232,7 +232,7 @@ class DiskQueue(OKTypesMixin):
 
     @property
     def files(self):
-        ''' generate all filenames in the diskqueue (returns iterable) '''
+        """ generate all filenames in the diskqueue (returns iterable) """
         def _k(x):
             try:
                 return [ int(i) for i in x.split('.') ]
@@ -261,7 +261,7 @@ class DiskQueue(OKTypesMixin):
 
     @property
     def msz(self):
-        ''' The size of the queue as it would be returned from getz() iff getz had no size limit '''
+        """ The size of the queue as it would be returned from getz() iff getz had no size limit """
         return self.sz + max(0, len(self.sep) * (self.cn -1))
 
     def __len__(self):

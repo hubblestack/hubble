@@ -1,0 +1,106 @@
+# vi:filetype=sls:
+
+id: fg-test
+
+grains:
+  fqdn: fg-test
+
+console_log_date_format: '%H:%M:%S'
+console_log_format: '%(name)-20.20s %(levelname)5.5s: %(message)s'
+
+scan_proc: true
+log_file: /hubble/tests/automation/log
+cachedir: /hubble/tests/automation/cache
+pidfile: /hubble/tests/automation/pid
+osquery_dbpath: /hubble/tests/automation/oq/cache
+osquerylogpath: /hubble/tests/automation/oq/log
+osquerylog_backupdir: /hubble//tests/automation/oq/log/bak
+
+grains_refresh_frequency: 300
+
+file_roots:
+  base:
+    - /hubblestack_data
+
+fileserver_backend:
+  - roots
+
+pulsar:
+  inotify_limits:
+    update: true
+    initial: 1000
+    highwater: 10000
+    increment: 123
+  /hubble:
+    watch_files: true
+  /etc:
+    watch_files: true
+
+schedule:
+  audit_daily:
+    function: hubble.top
+    seconds: 86400
+    kwargs:
+      verbose: True
+    returner: sqlite
+    run_on_start: True
+  nebula_fifteen_min:
+    function: nebula.top
+    seconds: 900
+    args:
+      - fifteen_min
+    returner: sqlite
+    run_on_start: True
+  nebula_hour:
+    function: nebula.top
+    seconds: 3600
+    args:
+      - hour
+    returner: sqlite
+    run_on_start: True
+  nebula_day:
+    function: nebula.top
+    seconds: 86400
+    args:
+      - day
+    returner: sqlite
+    run_on_start: True
+  pulsar:
+    function: pulsar.process
+    seconds: 1
+    returner: sqlite
+    run_on_start: False
+    refresh_interval: 30
+  pulsar_canary:
+    function: pulsar.canary
+    seconds: 30
+    returner: sqlite
+    run_on_start: True
+  msg_counts_beacon:
+    function: hstatus.msg_counts
+    seconds: 13
+    returner: sqlite
+    kwargs:
+      reset: True
+  run_for_a_while:
+    function: sysexit.sysexit
+    seconds: 90
+    run_on_start: False
+    kwargs:
+      code: 0
+
+hubblestack:
+  returner:
+    sqlite:
+      - dumpster: /hubble/tests/automation/dumpster.sqlite
+  splunklogging: false
+
+config_to_grains:
+  - splunkindex: "hubblestack:returner:splunk:0:index"
+
+grains_persist:
+  - fqdn
+  - cloud_details
+
+sqlite:
+  dumpster: /hubble/tests/automation/dumpster.sqlite

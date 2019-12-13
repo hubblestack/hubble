@@ -17,3 +17,4 @@ azure-storage-common==2.1.0
 azure-storage-blob==2.1.0
 croniter
 vulners
+ntplib

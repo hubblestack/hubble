@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+""" Handle metadata about osquery: return version and path as grains """
 
 import salt.utils
 import salt.utils.path
@@ -8,9 +9,9 @@ __salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet}
 
 
 def osquerygrain():
-    '''
+    """
     Return osquery version in grain
-    '''
+    """
     # Provides:
     #   osqueryversion
     #   osquerybinpath

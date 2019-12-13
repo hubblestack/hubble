@@ -19,20 +19,21 @@ def splunkconfig():
         ret = _splunkindex(ret)
         return ret
     try:
-        for root, dirs, files in os.walk(configdir):
+        for root, _dirs, files in os.walk(configdir):
             files = [file.lower() for file in files]
             files = sorted(files)
-            for f in files:
-                if f.endswith('.conf'):
-                    fpath = os.path.join(root, f)
-                    try:
-                        with open(fpath, 'r') as fh:
-                            config = yaml.safe_load(fh)
-                        if config.get('hubblestack', {}).get('returner', {}).get('splunk'):
-                            ret = {'hubblestack': config['hubblestack']}
-                    except:
-                        pass
-    except:
+            for conf_file in files:
+                if not conf_file.endswith('.conf'):
+                    pass
+                fpath = os.path.join(root, conf_file)
+                try:
+                    with open(fpath, 'r') as conf_file_handler:
+                        config = yaml.safe_load(conf_file_handler)
+                    if config.get('hubblestack', {}).get('returner', {}).get('splunk'):
+                        ret = {'hubblestack': config['hubblestack']}
+                except Exception:
+                    pass
+    except Exception:
         pass
     ret = _splunkindex(ret)
     return ret

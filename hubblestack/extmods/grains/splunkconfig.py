@@ -20,7 +20,6 @@ def splunkconfig():
         return ret
     try:
         for root, _dirs, files in os.walk(configdir):
-            files = [file.lower() for file in files]
             files = sorted(files)
             for conf_file in files:
                 if not conf_file.endswith('.conf'):

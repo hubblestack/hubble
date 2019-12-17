@@ -175,7 +175,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 if not os.path.exists(name) and 'match_on_file_missing' in tag_data:
                     if tag_data['match_on_file_missing']:
                         found = True
-                        failure_reason = "Found the file '{0}'. This blaclisted file " \
+                        failure_reason = "Found the file '{0}'. This blacklisted file " \
                                          "should not exist.".format(name)
                     else:
                         found = False

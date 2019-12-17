@@ -10,7 +10,6 @@ import json
 import logging
 import os
 
-
 log = logging.getLogger(__name__)
 
 
@@ -64,6 +63,7 @@ def _osquery(query_sql, osquery_path=None, args=None):
     False otherwise, and ``ret`` is the stdout of the osquery command
     """
     max_file_size = 104857600
+
     if not query_sql:
         return False, ''
     if 'attach' in query_sql.lower() or 'curl' in query_sql.lower():
@@ -82,7 +82,7 @@ def _osquery(query_sql, osquery_path=None, args=None):
             log.error('osquery binary not found: %s', osquery_path)
             return False, ''
         cmd = [osquery_path, '--read_max', max_file_size, '--json', query_sql]
-    if isinstance(args, (list,tuple)):
+    if isinstance(args, (list, tuple)):
         cmd.extend(args)
 
     # Run the command

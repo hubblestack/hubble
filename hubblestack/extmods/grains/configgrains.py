@@ -43,8 +43,8 @@ def configgrains():
 
     grains_to_make = __salt__['config.get']('config_to_grains', default=[])
     for grain in grains_to_make:
-        for k, v in grain.items():
-            grain_value = __salt__['config.get'](v, default=None)
+        for grain_key, grain_value in grain.items():
+            grain_value = __salt__['config.get'](grain_value, default=None)
             if grain_value:
-                grains[k] = grain_value
+                grains[grain_key] = grain_value
     return grains

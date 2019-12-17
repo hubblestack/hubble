@@ -43,7 +43,7 @@ gateway is not defined.
               - product_group
 """
 import socket
-
+import re
 import json
 import logging
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
@@ -177,6 +177,28 @@ def _build_args(ret):
 
     return args
 
+def _file_url_to_sourcetype(filename, base='hubble_fdg'):
+    """ attempt to turn a file URL into a sourcetype extension description
+        e.g.:
+        'salt://fdg/interesting.operation.fdg'
+        becomes
+        base + '_' + 'interesting_operation'
+        (intended for internal use by _generate_payload() to append to the
+        default sourcetype)
+    """
+    if re.search(r'^\w+://', filename):
+        filename = filename.split('://', 1)[1]
+    if base.endswith('_fdg') and filename.startswith('fdg/'):
+        filename = filename[4:]
+    if re.search(r'\.fdg$', filename):
+        filename = filename[:-4]
+    def _no_dups(x):
+        sf = re.split(r'[^a-zA-Z0-9]+', x)
+        for item in sf:
+            if not item:
+                continue
+            yield item
+    return '_'.join( _no_dups(base + '_' + filename) )
 
 def _generate_payload(args, fdg_args, cloud_details, opts, index_extracted_fields):
     """
@@ -186,7 +208,8 @@ def _generate_payload(args, fdg_args, cloud_details, opts, index_extracted_field
     fdg_file = fdg_file.lower().replace(' ', '_')
     payload = {'host': args['fqdn'], 'index': opts['index']}
     if opts['add_query_to_sourcetype']:
-        payload.update({'sourcetype': "%s_%s" % (opts['sourcetype'], fdg_file)})
+
+        payload.update({'sourcetype': _file_url_to_sourcetype(fdg_file, opts['sourcetype'])})
     else:
         payload.update({'sourcetype': opts['sourcetype']})
 

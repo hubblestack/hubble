@@ -99,13 +99,13 @@ information that should be added to the check's data dictionary in the return.
 import fnmatch
 import logging
 import os
-import salt.loader
-import salt.utils
 import yaml
 
 from distutils.version import StrictVersion
-from hubblestack.status import HubbleStatus
+import salt.loader
+import salt.utils
 from salt.exceptions import CommandExecutionError
+from hubblestack.status import HubbleStatus
 
 log = logging.getLogger(__name__)
 
@@ -174,20 +174,12 @@ def audit(audit_files=None,
 
         # Fileserver will return False if the file is not found
         if not path:
-            log.error('Could not find audit file {0}'.format(audit_file))
+            log.error('Could not find audit file %s', audit_file)
             continue
 
         # Load current audit file
-        audit_data = None
-        if os.path.isfile(path):
-            try:
-                with open(path, 'r') as fh:
-                    audit_data = yaml.safe_load(fh)
-            except Exception as e:
-                log.exception('Error loading audit file {0}: {1}'.format(audit_file, e))
-                continue
-        if not audit_data or not isinstance(audit_data, dict):
-            log.error('audit data from {0} was not formed as a dict'.format(audit_file))
+        status, audit_data = _load_audit_file(audit_file, path)
+        if not status:
             continue
 
         ret = _run_audit(ret, audit_data, tags, labels, audit_file)
@@ -199,7 +191,8 @@ def audit(audit_files=None,
                         'Skipped': []}
         for success_type, checks in ret.items():
             for check in checks:
-                succinct_ret[success_type].append({check['tag']: check.get('description', '<no description>')})
+                succinct_ret[success_type].append(
+                    {check['tag']: check.get('description', '<no description>')})
 
         ret = succinct_ret
 
@@ -210,8 +203,23 @@ def audit(audit_files=None,
     elif not ret['Skipped']:
         ret.pop('Skipped')
 
-
     return ret
+
+
+def _load_audit_file(audit_file, path):
+    """ Load the current audit file"""
+    audit_data = None
+    if os.path.isfile(path):
+        try:
+            with open(path, 'r') as audit_file_handler:
+                audit_data = yaml.safe_load(audit_file_handler)
+        except Exception as exc:
+            log.exception('Error loading audit file %s: %s', audit_file, exc)
+            return False, audit_data
+    if not audit_data or not isinstance(audit_data, dict):
+        log.error('audit data from %s was not formed as a dict', audit_file)
+        return False, audit_data
+    return True, audit_data
 
 
 @hubble_status.watch
@@ -254,11 +262,10 @@ def top(topfile='salt://hubblestack_audit/top.audit',
                  labels=labels,
                  verbose=verbose,
                  show_success=show_success,
-                 )
+                )
 
 
 def _get_top_data(topfile):
-
     topfile = __salt__['cp.cache_file'](topfile)
 
     if not topfile:
@@ -267,8 +274,8 @@ def _get_top_data(topfile):
     try:
         with open(topfile) as handle:
             topdata = yaml.safe_load(handle)
-    except Exception as e:
-        raise CommandExecutionError('Could not load topfile: {0}'.format(e))
+    except Exception as exc:
+        raise CommandExecutionError('Could not load topfile: {0}'.format(exc))
 
     if not isinstance(topdata, dict) or 'audit' not in topdata or \
             not isinstance(topdata['audit'], dict):
@@ -349,63 +356,39 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
         Returns the updated ``ret`` object
     """
     for audit_id, data in audit_data.iteritems():
-        log.debug('Executing audit id {0} in audit file {1}'.format(audit_id, audit_file))
+        log.debug('Executing audit id %s in audit file %s', audit_id, audit_file)
         try:
             module = list(data.keys())[0]
             data = data[module]
             if not isinstance(data, dict):
-                log.error('Audit data with id {0} from file {1} not formatted '
-                          'correctly'.format(audit_id, audit_file))
+                log.error('Audit data with id %s from file %s not formatted correctly',
+                          audit_id, audit_file)
                 continue
-        except (IndexError, NameError) as e:
-            log.exception('Audit data with id {0} from file {1} not formatted '
-                          'correctly'.format(audit_id, audit_file))
+        except (IndexError, NameError):
+            log.exception('Audit data with id %s from file %s not formatted correctly',
+                          audit_id, audit_file)
             continue
 
-        tag = data.get('tag', audit_id)
-        data['tag'] = tag
+        data['tag'] = data.get('tag', audit_id)
         data['id'] = audit_id
         data['file'] = audit_file
-        label_list = data.get('labels', [])
         version = data.get('version')
 
-        # Process tags via globbing
-        if not fnmatch.fnmatch(tag, tags):
-            log.debug('Skipping audit {0} due to tag {1} not matching tags {2}'
-                      .format(audit_id, tag, tags))
-            continue
-
-        # Process labels
-        matching_label = False
-        if not labels:
-            matching_label = True
-        for label in labels:
-            if label in label_list:
-                matching_label = True
-        if not matching_label:
-            log.debug('Skipping audit {0} due to no matching labels {1} in label list {2}'
-                      .format(audit_id, labels, label_list))
-            continue
-
-        # Process target
-        target = data.get('target', '*')
-        if not __salt__['match.compound'](target):
-            log.debug('Skipping audit {0} due to target mismatch: {1}'.format(target))
+        if not _process_data(data, tags, labels, data.get('labels', [])):
             continue
 
         # Process any version targeting
         if version and 'hubble_version' not in __grains__:
-            log.error('Audit {0} calls for version checking {1} but cannot '
-                      'find `hubble_version` in __grains__. Skipping.'
-                      .format(audit_id, version))
+            log.error('Audit %s calls for version checking %s but cannot '
+                      'find `hubble_version` in __grains__. Skipping.', audit_id, version)
             ret['Skipped'].append({audit_id: data})
             continue
         elif version:
             version_match = _version_cmp(version)
             if not version_match:
-                log.debug('Skipping audit {0} due to version {1} not matching '
-                          'version requirements {2}'
-                          .format(audit_id, __grains__['hubble_version'], version))
+                log.debug(
+                    'Skipping audit %s due to version %s not matching version requirements %s',
+                    audit_id, __grains__['hubble_version'], version)
                 ret['Skipped'].append({audit_id: data})
                 continue
 
@@ -415,11 +398,11 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
         # Run the audit
         try:
             success, data_dict = __audit__[module](*args, **kwargs)
-        except Exception as e:
-            log.error('Audit {0} from file {1} failed with exception {2}'
-                      .format(audit_id, audit_file, e))
+        except Exception as exc:
+            log.error('Audit %s from file %s failed with exception %s',
+                      audit_id, audit_file, exc)
             data['reason'] = 'exception'
-            data['exception'] = str(e)
+            data['exception'] = str(exc)
             ret['Failure'].append({audit_id: data})
             continue
 
@@ -434,3 +417,34 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
             ret['Failure'].append({audit_id: data_dict})
 
     return ret
+
+
+def _process_data(data, tags, labels, label_list):
+    """ Validate data, log if necessary, return False to skip the audit, True to continue """
+    audit_id = data['audit_id']
+    tag = data.get('tag', audit_id)
+
+    # Process tags via globbing
+    if not fnmatch.fnmatch(tag, tags):
+        log.debug('Skipping audit %s due to tag %s not matching tags %s', audit_id, tag, tags)
+        return False
+
+    # Process labels
+    matching_label = False
+    if not labels:
+        matching_label = True
+    for label in labels:
+        if label in label_list:
+            matching_label = True
+    if not matching_label:
+        log.debug('Skipping audit %s due to no matching labels %s in label list %s',
+                  audit_id, labels, label_list)
+        return False
+
+    # Process target
+    target = data.get('target', '*')
+    if not __salt__['match.compound'](target):
+        log.debug('Skipping audit %s due to target mismatch: %s', audit_id, target)
+        return False
+
+    return True

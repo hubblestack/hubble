@@ -17,7 +17,7 @@ ENV SALT_SRC_PATH='C:/temp/salt/'
 ENV SALT_GIT_URL=https://github.com/saltstack/salt
 ENV SALT_CHECKOUT=v2018.11
 #All the variables used for hubble
-ARG HUBBLE_CHECKOUT=v3.0.7
+ARG HUBBLE_CHECKOUT=v3.0.8
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 ENV _HOOK_DIR='./pkg/'
@@ -40,6 +40,7 @@ RUN powershell.exe -Command choco install osquery --version 3.4.0 -y;
 RUN powershell.exe -Command git clone "$env:SALT_GIT_URL"; \
   Push-Location salt/pkg/windows; \
   git checkout "$env:SALT_CHECKOUT"; \
+  [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'; \
   C:/temp/salt/pkg/windows/build_env_2.ps1 -Silent;
 #more salt installs
 RUN powershell.exe -Command Push-Location salt; \

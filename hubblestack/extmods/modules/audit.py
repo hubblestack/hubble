@@ -355,7 +355,7 @@ def _run_audit(ret, audit_data, tags, labels, audit_file):
     :return:
         Returns the updated ``ret`` object
     """
-    for audit_id, data in audit_data.iteritems():
+    for audit_id, data in audit_data.items():
         log.debug('Executing audit id %s in audit file %s', audit_id, audit_file)
         try:
             module = list(data.keys())[0]

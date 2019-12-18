@@ -254,7 +254,7 @@ class HubbleStatus(object):
                 timestamp = time.time()
                 self = self.get_bucket(timestamp)
             else:
-                if isinstance(timestamp, (str, unicode)):
+                if isinstance(timestamp, (str)):
                     timestamp = int(timestamp)
                 self = self.get_bucket(timestamp)
                 if timestamp < self.first_t:

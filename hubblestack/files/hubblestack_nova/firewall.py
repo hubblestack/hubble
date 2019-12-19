@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
+'''
 Hubble Nova plugin for using iptables to verify firewall rules
 
 This audit module requires yaml data to execute. Running hubble.audit will
@@ -73,7 +73,7 @@ Check the following links for more details:
   (https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.iptables.html#salt.modules.iptables.build_rule)
   - iptables salt execution module source code (search for the build_rule function inside):
   (https://github.com/saltstack/salt/blob/develop/salt/modules/iptables.py)
-"""
+'''
 
 from __future__ import absolute_import
 import logging
@@ -98,9 +98,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    """
+    '''
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    """
+    '''
     labelled_data = {}
     if labels:
         labelled_data['firewall'] = {}
@@ -184,9 +184,9 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    """
+    '''
     Merge two yaml dicts together at the pkg:blacklist and pkg:whitelist level
-    """
+    '''
     if 'firewall' not in ret:
         ret['firewall'] = {}
     for topkey in ('blacklist', 'whitelist'):

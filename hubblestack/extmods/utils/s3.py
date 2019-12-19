@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 Connection library for Amazon S3
 
 :depends: requests
-"""
+'''
 from __future__ import absolute_import, print_function, unicode_literals
 
 # Import Python libs
@@ -35,7 +35,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
           verify_ssl=True, full_headers=False, kms_keyid=None,
           location=None, role_arn=None, chunk_size=16384, path_style=False,
           https_enable=True):
-    """
+    '''
     Perform a query against an S3-like API. This function requires that a
     secret key and the id for that key are passed in. For instance:
 
@@ -82,7 +82,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
 
     If region is not specified, an attempt to fetch the region from EC2 IAM
     metadata service will be made. Failing that, default is us-east-1
-    """
+    '''
     if not HAS_REQUESTS:
         log.error('There was an error: requests is required for s3 access')
 

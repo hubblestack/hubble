@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
+'''
 HubbleStack Nova plugin for using fdg to create flexible checks.
 
 This audit module requires yaml data to execute. It will search the local
@@ -39,7 +39,7 @@ result returned from fdg will be used. If this is True, only the status result o
 the fdg run will be considered. If it is False, only the actual result of the
 fdg run will be considered. Regardless, the ``true_for_success`` argument
 will be respected.
-"""
+'''
 from __future__ import absolute_import
 import logging
 
@@ -52,9 +52,9 @@ log = logging.getLogger(__name__)
 
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    """
+    '''
     Run the fdg audits contained in the YAML files in data_list
-    """
+    '''
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -116,9 +116,9 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    """
+    '''
     Merge two yaml dicts together at the fdg level
-    """
+    '''
     if 'fdg' not in ret:
         ret['fdg'] = []
     for key, val in data.get('fdg', {}).iteritems():
@@ -129,9 +129,9 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    """
+    '''
     Retrieve all the tags for this distro from the yaml
-    """
+    '''
     ret = {}
     distro = __grains__.get('osfinger')
     for audit_dict in data.get('fdg', {}):
@@ -172,10 +172,10 @@ def _get_tags(data):
 
 
 def _apply_labels(__data__, labels):
-    """
+    '''
     Filters out the tests whose label doesn't match the labels given when
     running audit and returns a new data structure with only labelled tests.
-    """
+    '''
     if labels:
         labelled_data = []
         for item in __data__['fdg']:

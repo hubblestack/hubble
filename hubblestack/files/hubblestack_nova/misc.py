@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
+'''
 Hubble Nova plugin for running miscellaneous one-off python functions to
 run more complex nova audits without allowing arbitrary command execution
 from within the yaml profiles.
@@ -37,7 +37,7 @@ misc:
           second_kwarg: value
     # Description will be output with the results
     description: '/home should be nodev'
-"""
+'''
 from __future__ import absolute_import
 import logging
 
@@ -56,9 +56,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    """
+    '''
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    """
+    '''
     ret={}
     if labels:
         labelled_test_cases=[]
@@ -74,9 +74,9 @@ def apply_labels(__data__, labels):
     return ret
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    """
+    '''
     Run the misc audits contained in the data_list
-    """
+    '''
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -130,9 +130,9 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
     return ret
 
 def _merge_yaml(ret, data, profile=None):
-    """
+    '''
     Merge two yaml dicts together at the misc level
-    """
+    '''
     if 'misc' not in ret:
         ret['misc'] = []
     if 'misc' in data:
@@ -144,9 +144,9 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    """
+    '''
     Retrieve all the tags for this distro from the yaml
-    """
+    '''
     ret = {}
     distro = __grains__.get('osfinger')
     for audit_dict in data.get('misc', []):
@@ -190,9 +190,9 @@ def _get_tags(data):
 
 
 def _execute_shell_command(cmd, python_shell=False):
-    """
+    '''
     This function will execute passed command in /bin/shell
-    """
+    '''
     return __salt__['cmd.run'](cmd, python_shell=python_shell, shell='/bin/bash', ignore_retcode=True)
 
 
@@ -208,11 +208,11 @@ def _is_valid_home_directory(directory_path, check_slash_home=False):
 
 
 def _is_permission_in_limit(max_permission, given_permission):
-    """
+    '''
     Return true only if given_permission is not more lenient that max_permission. In other words, if
     r or w or x is present in given_permission but absent in max_permission, it should return False
     Takes input two integer values from 0 to 7.
-    """
+    '''
     max_permission = int(max_permission)
     given_permission = int(given_permission)
     allowed_r = False
@@ -251,9 +251,9 @@ def _is_permission_in_limit(max_permission, given_permission):
 
 
 def check_all_ports_firewall_rules(reason=''):
-    """
+    '''
     Ensure firewall rule for all open ports
-    """
+    '''
     start_open_ports = (_execute_shell_command('netstat -ln | grep "Active Internet connections (only servers)" -n | cut -d ":" -f1', python_shell=True)).strip()
     end_open_ports = (_execute_shell_command('netstat -ln | grep "Active UNIX domain sockets (only servers)" -n  | cut -d ":" -f1', python_shell=True)).strip()
     open_ports = (_execute_shell_command('netstat -ln | awk \'FNR > ' + start_open_ports + ' && FNR < ' + end_open_ports + ' && $6 == "LISTEN" && $4 !~ /127.0.0.1/ {print $4}\' | sed -e "s/.*://"', python_shell=True)).strip()
@@ -270,44 +270,44 @@ def check_all_ports_firewall_rules(reason=''):
 
 
 def check_password_fields_not_empty(reason=''):
-    """
+    '''
     Ensure password fields are not empty
-    """
+    '''
     result = _execute_shell_command('cat /etc/shadow | awk -F: \'($2 == "" ) { print $1 " does not have a password "}\'', python_shell=True)
     return True if result == '' else result
 
 
 def ungrouped_files_or_dir(reason=''):
-    """
+    '''
     Ensure no ungrouped files or directories exist
-    """
+    '''
     raise CommandExecutionError('Module disabled due to performance concerns')
     result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nogroup', python_shell=True)
     return True if result == '' else result
 
 
 def unowned_files_or_dir(reason=''):
-    """
+    '''
     Ensure no unowned files or directories exist
-    """
+    '''
     raise CommandExecutionError('Module disabled due to performance concerns')
     result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -nouser', python_shell=True)
     return True if result == '' else result
 
 
 def world_writable_file(reason=''):
-    """
+    '''
     Ensure no world writable files exist
-    """
+    '''
     raise CommandExecutionError('Module disabled due to performance concerns')
     result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type f -perm -0002', python_shell=True)
     return True if result == '' else result
 
 
 def system_account_non_login(non_login_shell='/sbin/nologin', max_system_uid='500', except_for_users=''):
-    """
+    '''
     Ensure system accounts are non-login
-    """
+    '''
 
     users_list = ['root','halt','sync','shutdown']
     for user in except_for_users.split(","):
@@ -323,37 +323,37 @@ def system_account_non_login(non_login_shell='/sbin/nologin', max_system_uid='50
 
 
 def sticky_bit_on_world_writable_dirs(reason=''):
-    """
+    '''
     Ensure sticky bit is set on all world-writable directories
-    """
+    '''
     raise CommandExecutionError('Module disabled due to performance concerns')
     result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null', python_shell=True)
     return True if result == '' else "There are failures"
 
 
 def default_group_for_root(reason=''):
-    """
+    '''
     Ensure default group for the root account is GID 0
-    """
+    '''
     result = _execute_shell_command('grep "^root:" /etc/passwd | cut -f4 -d:', python_shell=True)
     result = result.strip()
     return True if result == '0' else False
 
 
 def root_is_only_uid_0_account(reason=''):
-    """
+    '''
     Ensure root is the only UID 0 account
-    """
+    '''
     result = _execute_shell_command('cat /etc/passwd | awk -F: \'($3 == 0) { print $1 }\'', python_shell=True)
     return True if result.strip() == 'root' else result
 
 
 def test_mount_attrs(mount_name, attribute, check_type='hard'):
-    """
+    '''
     Ensure that a given directory is mounted with appropriate attributes
     If check_type is soft, then in absence of volume, True will be returned
     If check_type is hard, then in absence of volume, False will be returned
-    """
+    '''
     # check that the path exists on system
     command = 'test -e ' + mount_name
     results = __salt__['cmd.run_all'](command, ignore_retcode=True)
@@ -373,9 +373,9 @@ def test_mount_attrs(mount_name, attribute, check_type='hard'):
 
 
 def check_time_synchronization(reason=''):
-    """
+    '''
     Ensure that some service is running to synchronize the system clock
-    """
+    '''
     command = 'systemctl status systemd-timesyncd ntpd | grep "Active: active (running)"'
     output = _execute_shell_command(command, python_shell=True)
     if output.strip() == '':
@@ -385,9 +385,9 @@ def check_time_synchronization(reason=''):
 
 
 def restrict_permissions(path, permission):
-    """
+    '''
     Ensure that the file permissions on path are equal or more strict than the  pemissions given in argument
-    """
+    '''
     path_details = __salt__['file.stats'](path)
     given_permission = path_details.get('mode')
     given_permission = given_permission[-3:]
@@ -398,9 +398,9 @@ def restrict_permissions(path, permission):
 
 
 def check_path_integrity(reason=''):
-    """
+    '''
     Ensure that system PATH variable is not malformed.
-    """
+    '''
 
     script = """
     if [ "`echo $PATH | grep ::`" != "" ]; then
@@ -444,9 +444,9 @@ def check_path_integrity(reason=''):
 
 
 def check_duplicate_uids(reason=''):
-    """
+    '''
     Return False if any duplicate user id exist in /etc/group file, else return True
-    """
+    '''
     uids = _execute_shell_command("cat /etc/passwd | cut -f3 -d\":\"", python_shell=True).strip()
     uids = uids.split('\n') if uids != "" else []
     duplicate_uids = [k for k, v in Counter(uids).items() if v > 1]
@@ -456,9 +456,9 @@ def check_duplicate_uids(reason=''):
 
 
 def check_duplicate_gids(reason=''):
-    """
+    '''
     Return False if any duplicate group id exist in /etc/group file, else return True
-    """
+    '''
     gids = _execute_shell_command("cat /etc/group | cut -f3 -d\":\"", python_shell=True).strip()
     gids = gids.split('\n') if gids != "" else []
     duplicate_gids = [k for k, v in Counter(gids).items() if v > 1]
@@ -468,9 +468,9 @@ def check_duplicate_gids(reason=''):
 
 
 def check_duplicate_unames(reason=''):
-    """
+    '''
     Return False if any duplicate user names exist in /etc/group file, else return True
-    """
+    '''
     unames = _execute_shell_command("cat /etc/passwd | cut -f1 -d\":\"", python_shell=True).strip()
     unames = unames.split('\n') if unames != "" else []
     duplicate_unames = [k for k, v in Counter(unames).items() if v > 1]
@@ -480,9 +480,9 @@ def check_duplicate_unames(reason=''):
 
 
 def check_duplicate_gnames(reason=''):
-    """
+    '''
     Return False if any duplicate group names exist in /etc/group file, else return True
-    """
+    '''
     gnames = _execute_shell_command("cat /etc/group | cut -f1 -d\":\"", python_shell=True).strip()
     gnames = gnames.split('\n') if gnames != "" else []
     duplicate_gnames = [k for k, v in Counter(gnames).items() if v > 1]
@@ -492,9 +492,9 @@ def check_duplicate_gnames(reason=''):
 
 
 def check_directory_files_permission(path, permission):
-    """
+    '''
     Check all files permission inside a directory
-    """
+    '''
     blacklisted_characters = '[^a-zA-Z0-9-_/]'
     if "-exec" in path or re.findall(blacklisted_characters, path):
       raise CommandExecutionError("Profile parameter '{0}' not a safe pattern".format(path))
@@ -509,9 +509,9 @@ def check_directory_files_permission(path, permission):
 
 
 def check_core_dumps(reason=''):
-    """
+    '''
     Ensure core dumps are restricted
-    """
+    '''
     hard_core_dump_value = _execute_shell_command("grep -R -E \"hard +core\" /etc/security/limits.conf /etc/security/limits.d/ | awk '{print $4}'", python_shell=True).strip()
     hard_core_dump_value = hard_core_dump_value.split('\n') if hard_core_dump_value != "" else []
     if '0' in hard_core_dump_value:
@@ -524,11 +524,11 @@ def check_core_dumps(reason=''):
 
 
 def check_service_status(service_name, state):
-    """
+    '''
     Ensure that the given service is in the required state. Return False if it is not in desired state
     Return True otherwise
     state can be enabled or disabled.
-    """
+    '''
     all_services = __salt__['cmd.run']('systemctl list-unit-files')
     if re.search(service_name, all_services, re.M):
         output = __salt__['cmd.retcode']('systemctl is-enabled ' + service_name, ignore_retcode=True)
@@ -544,9 +544,9 @@ def check_service_status(service_name, state):
 
 
 def check_ssh_timeout_config(reason=''):
-    """
+    '''
     Ensure SSH Idle Timeout Interval is configured
-    """
+    '''
 
     client_alive_interval = _execute_shell_command("grep \"^ClientAliveInterval\" /etc/ssh/sshd_config | awk '{print $NF}'", python_shell=True).strip()
     if client_alive_interval != '' and int(client_alive_interval) <= 300:
@@ -560,9 +560,9 @@ def check_ssh_timeout_config(reason=''):
 
 
 def check_unowned_files(reason=''):
-    """
+    '''
     Ensure no unowned files or directories exist
-    """
+    '''
     raise CommandExecutionError('Module disabled due to performance concerns')
     unowned_files = _execute_shell_command("df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nouser 2>/dev/null", python_shell=True).strip()
     unowned_files = unowned_files.split('\n') if unowned_files != "" else []
@@ -576,9 +576,9 @@ def check_unowned_files(reason=''):
 
 
 def check_ungrouped_files(reason=''):
-    """
+    '''
     Ensure no ungrouped files or directories exist
-    """
+    '''
     raise CommandExecutionError('Module disabled due to performance concerns')
     ungrouped_files = _execute_shell_command("df --local -P | awk 'NR!=1 {print $6}' | xargs -I '{}' find '{}' -xdev -nogroup 2>/dev/null", python_shell=True).strip()
     ungrouped_files = ungrouped_files.split('\n') if ungrouped_files != "" else []
@@ -592,9 +592,9 @@ def check_ungrouped_files(reason=''):
 
 
 def check_all_users_home_directory(max_system_uid):
-    """
+    '''
     Ensure all users' home directories exist
-    """
+    '''
 
     max_system_uid = int(max_system_uid)
     users_uids_dirs = _execute_shell_command("cat /etc/passwd | awk -F: '{ print $1 \" \" $3 \" \" $6 \" \" $7}'", python_shell=True).strip()
@@ -614,9 +614,9 @@ def check_all_users_home_directory(max_system_uid):
 
 
 def check_users_home_directory_permissions(max_allowed_permission='750', except_for_users=''):
-    """
+    '''
     Ensure users' home directories permissions are 750 or more restrictive
-    """
+    '''
     users_list = ['root','halt','sync','shutdown']
     for user in except_for_users.split(","):
         if user.strip() != "":
@@ -642,9 +642,9 @@ def check_users_home_directory_permissions(max_allowed_permission='750', except_
 
 
 def check_users_own_their_home(max_system_uid):
-    """
+    '''
     Ensure users own their home directories
-    """
+    '''
 
     max_system_uid = int(max_system_uid)
 
@@ -671,9 +671,9 @@ def check_users_own_their_home(max_system_uid):
 
 
 def check_users_dot_files(reason=''):
-    """
+    '''
     Ensure users' dot files are not group or world writable
-    """
+    '''
 
     users_dirs = _execute_shell_command("cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != \"/sbin/nologin\") {print $1\" \"$6}'", python_shell=True).strip()
     users_dirs = users_dirs.split('\n') if users_dirs != "" else []
@@ -699,9 +699,9 @@ def check_users_dot_files(reason=''):
 
 
 def check_users_forward_files(reason=''):
-    """
+    '''
     Ensure no users have .forward files
-    """
+    '''
 
     users_dirs = _execute_shell_command("cat /etc/passwd | awk -F: '{ print $1\" \"$6 }'", python_shell=True).strip()
     users_dirs = users_dirs.split('\n') if users_dirs != "" else []
@@ -719,9 +719,9 @@ def check_users_forward_files(reason=''):
 
 
 def check_users_netrc_files(reason=''):
-    """
+    '''
     Ensure no users have .netrc files
-    """
+    '''
 
     users_dirs = _execute_shell_command("cat /etc/passwd | awk -F: '{ print $1\" \"$6 }'", python_shell=True).strip()
     users_dirs = users_dirs.split('\n') if users_dirs != "" else []
@@ -739,9 +739,9 @@ def check_users_netrc_files(reason=''):
 
 
 def check_groups_validity(reason=''):
-    """
+    '''
     Ensure all groups in /etc/passwd exist in /etc/group
-    """
+    '''
 
     group_ids_in_passwd = _execute_shell_command("cut -s -d: -f4 /etc/passwd 2>/dev/null", python_shell=True).strip()
     group_ids_in_passwd = group_ids_in_passwd.split('\n') if group_ids_in_passwd != "" else []
@@ -756,9 +756,9 @@ def check_groups_validity(reason=''):
 
 
 def ensure_reverse_path_filtering(reason=''):
-    """
+    '''
     Ensure Reverse Path Filtering is enabled
-    """
+    '''
     error_list = []
     command = "sysctl net.ipv4.conf.all.rp_filter 2> /dev/null"
     output = _execute_shell_command(command, python_shell=True)
@@ -783,9 +783,9 @@ def ensure_reverse_path_filtering(reason=''):
 
 
 def check_users_rhosts_files(reason=''):
-    """
+    '''
     Ensure no users have .rhosts files
-    """
+    '''
 
     users_dirs = _execute_shell_command("cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != \"/sbin/nologin\") {print $1\" \"$6}'", python_shell=True).strip()
     users_dirs = users_dirs.split('\n') if users_dirs != "" else []
@@ -802,9 +802,9 @@ def check_users_rhosts_files(reason=''):
 
 
 def check_netrc_files_accessibility(reason=''):
-    """
+    '''
     Ensure users' .netrc Files are not group or world accessible
-    """
+    '''
 
     script = """
     for dir in `cat /etc/passwd | egrep -v '(root|sync|halt|shutdown)' | awk -F: '($7 != "/sbin/nologin") { print $6 }'`; do
@@ -841,7 +841,7 @@ def check_netrc_files_accessibility(reason=''):
 def _grep(path,
           pattern,
           *args):
-    """
+    '''
     Grep for a string in the specified file
 
     .. note::
@@ -876,7 +876,7 @@ def _grep(path,
         salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr -- -i
         salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr -- -i -B2
         salt '*' file.grep "/etc/sysconfig/network-scripts/*" ipaddr -- -i -l
-    """
+    '''
     path = os.path.expanduser(path)
 
     if args:
@@ -901,7 +901,7 @@ def _grep(path,
 
 
 def check_list_values(file_path, match_pattern, value_pattern, grep_arg, white_list, black_list, value_delimter):
-    """
+    '''
     This function will first get the line matching given match_pattern.
     After this value pattern will be extracted from the above line.
     value pattern will be splitted by value_delimiter to get the list of values.
@@ -925,7 +925,7 @@ def check_list_values(file_path, match_pattern, value_pattern, grep_arg, white_l
            - null
            - ' '
          description: Ensure ntp is configured
-    """
+    '''
 
     list_delimter = ","
 
@@ -956,9 +956,9 @@ def check_list_values(file_path, match_pattern, value_pattern, grep_arg, white_l
 
 
 def mail_conf_check(reason=''):
-    """
+    '''
     Ensure mail transfer agent is configured for local-only mode
-    """
+    '''
     valid_addresses = ["localhost", "127.0.0.1", "::1"]
     mail_addresses = _execute_shell_command("grep '^[[:blank:]]*inet_interfaces' /etc/postfix/main.cf | awk -F'=' '{print $2}'", python_shell=True).strip()
     mail_addresses = str(mail_addresses)
@@ -970,10 +970,10 @@ def mail_conf_check(reason=''):
 
 
 def check_if_any_pkg_installed(args):
-    """
+    '''
     :param args: Comma separated list of packages those needs to be verified
     :return: True if any of the input package is installed else False
-    """
+    '''
     result = False
     for pkg in args.split(','):
         if __salt__['pkg.version'](pkg):
@@ -982,9 +982,9 @@ def check_if_any_pkg_installed(args):
     return result
 
 def ensure_max_password_expiration(allow_max_days, except_for_users=''):
-    """
+    '''
     Ensure max password expiration days is set to the value less than or equal to that given in args
-    """
+    '''
     grep_args = []
     pass_max_days_output = _grep('/etc/login.defs', '^PASS_MAX_DAYS', *grep_args).get('stdout')
     if not pass_max_days_output:
@@ -1022,13 +1022,13 @@ def _is_int(input):
     return True
 
 def check_sshd_parameters(*args, **kwargs):
-    """
+    '''
     Fix spelling while also retaining backwards compatibility
-    """
+    '''
     return check_sshd_paramters(*args, **kwargs)
 
 def check_sshd_paramters(pattern, values=None, comparetype='regex'):
-    """
+    '''
     This function will check if any pattern passed is present in ssh service
     User can also check for the values for that pattern
     To check for values in any order, then use comparetype as 'only'
@@ -1054,7 +1054,7 @@ def check_sshd_paramters(pattern, values=None, comparetype='regex'):
            values: aes256-ctr,aes192-ctr,aes128-ctr
            comparetype: only
       description: Ensure only approved ciphers are used
-    """
+    '''
     output = __salt__['cmd.run']('sshd -T')
     if comparetype == 'only':
         if not values:
@@ -1081,23 +1081,23 @@ def check_sshd_paramters(pattern, values=None, comparetype='regex'):
 
 
 def test_success():
-    """
+    '''
     Automatically returns success
-    """
+    '''
     return True
 
 
 def test_failure():
-    """
+    '''
     Automatically returns failure, no reason
-    """
+    '''
     return False
 
 
 def test_failure_reason(reason):
-    """
+    '''
     Automatically returns failure, with a reason (first arg)
-    """
+    '''
     return reason
 
 

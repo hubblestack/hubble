@@ -1,45 +1,41 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 Return hubble data to sqlite (intended for testing)
-"""
+'''
 from __future__ import absolute_import
 
-import json
+import salt.returners
 import logging
 import os
-import salt.returners
-
+import json
 try:
     import sqlite3
-
     GOT_SQLI = True
-except Exception:
+except:
     GOT_SQLI = False
 
 __virtualname__ = 'sqlite'
 
 log = logging.getLogger(__virtualname__)
 
-_CONN = None
-
+_conn = None
 
 def __virtual__():
-    """
+    '''
     Return virtual name of the module.
 
     :return: The virtual name of the module.
-    """
+    '''
     if GOT_SQLI:
         return __virtualname__
     return False, "sqlite3 module is missing"
 
-
 def _get_options(ret=None):
-    """
+    '''
     Get the sqlite dumpster options from configs
 
     :return: options
-    """
+    '''
 
     defaults = {'dumpster': '/var/log/hubblestack/returns.sqlite'}
 
@@ -51,34 +47,31 @@ def _get_options(ret=None):
                                                    __salt__=__salt__,
                                                    __opts__=__opts__,
                                                    defaults=defaults)
-    log.debug("_options: %s", _options)
+    log.debug("_options: {}".format(_options))
     return _options
 
-
 def _get_conn():
-    """
+    '''
     Establish a connection (if not connected) and return it
 
     :return: connection
-    """
+    '''
     _options = _get_options()
-    global _CONN
-    if not _CONN:
-        _p = _options.get('dumpster', 'hubble-returns.db')
+    global _conn
+    if not _conn:
+        _p = _options.get('dumpster','hubble-returns.db')
         _d = os.path.dirname(_p)
         if _d and not os.path.isdir(_d):
-            log.debug('creating directory %s', _d)
+            log.debug('creating directory {0}'.format(_d))
             os.makedirs(_d, 0o755)
-        log.debug('connecting to database in %s', _p)
-        _CONN = sqlite3.connect(_options.get('dumpster', 'hubble-returns.db'))
+        log.debug('connecting to database in {0}'.format(_p))
+        _conn = sqlite3.connect( _options.get('dumpster', 'hubble-returns.db') )
         log.debug('creating ret table')
-        _CONN.execute('''create table if not exists ret(
+        _conn.execute('''create table if not exists ret(
             jid text, id text, fun text, fun_args json,
             ret json)''')
-    return _CONN
+    return _conn
 
-
-"""
 ##### just for reference
 ## {u'fun': u'hubble.audit',
 ##  u'fun_args': [u'cve.scan-v2'],
@@ -92,46 +85,37 @@ def _get_conn():
 ##    {u'linux-image-generic-4.4.0.109.114': u'Linux kernel regression'},
 ##    {u'libgdk-pixbuf2.0-0-2.32.2-1ubuntu1.4': u'GDK-PixBuf vulnerabilities'}],
 ##   u'Success': []}}
-"""
 
-
-def _put(ret):
-    """
-    Add item to sqlite
-    """
+def _put(x):
     conn = _get_conn()
 
     # identify lists of events
     list_of_events = False
-    if isinstance(ret, (list, tuple)):
-        num_events = sum([0 if isinstance(i, dict) else 1 for i in ret])
-        if num_events == 0:
+    if isinstance(x, (list,tuple)):
+        s = sum([ 0 if isinstance(i,dict) else 1 for i in x ])
+        if s == 0:
             list_of_events = True
 
     if list_of_events:
-        for item in ret:
-            _put(item)
+        for item in x:
+            _put(x)
         return
 
-    for item in ret:
-        if isinstance(ret[item], (list, tuple, dict)):
-            ret[item] = json.dumps(ret[item])
+    for k in x:
+        if isinstance(x[k], (list,tuple,dict)):
+            x[k] = json.dumps(x[k])
 
     # try to get sqlite queries to show not-ints for jids
-    ret['jid'] = str(ret.get('jid', '??'))
-    log.info("logging jid=%s in sqlite dumpster", **ret)
+    x['jid'] = str( x.get('jid', '??') )
+    log.info("logging jid={jid} in sqlite dumpster".format(**x))
 
-    for i in ('id', 'fun', 'fun_args', 'return', 'Failure', 'Success'):
-        if i not in ret:
-            ret[i] = None
+    for i in ('id','fun','fun_args','return','Failure','Success'):
+        if i not in x:
+            x[i] = None
     # conn.execute("insert into ret values(:jid,:id,:fun,json(:fun_args),json(:return))", x)
     # json() isn't added until later than sqlite-3.7.17 (the centos7 version)...
-    conn.execute("insert into ret values(:jid,:id,:fun,:fun_args,:return)", ret)
+    conn.execute("insert into ret values(:jid,:id,:fun,:fun_args,:return)", x)
     conn.commit()
 
-
 def returner(ret):
-    """
-    The main returner function that sends ret data to sqlite
-    """
     _put(ret)

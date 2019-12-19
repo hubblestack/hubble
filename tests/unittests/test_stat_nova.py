@@ -66,8 +66,7 @@ class TestStatNova():
             return {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0, 'target': '/etc/issue', 'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322, 'ctime': 1491870657.914388}
         __salt__['file.stats'] = file_stats
         hubblestack.files.hubblestack_nova.stat_nova.__salt__ = __salt__
-        hubblestack.files.hubblestack_nova.stat_nova.__grains__ = {'osfinger': 'Ubuntu-16.04'}
-        val = hubblestack.files.hubblestack_nova.stat_nova.audit(data_list, __tags__, [], debug=False)
+        val = hubblestack.files.hubblestack_nova.stat_nova.audit(data_list, __tags__, debug=False)
         assert len(val['Success']) != 0
 
     def test_audit_for_incorrect_input(self):
@@ -81,8 +80,7 @@ class TestStatNova():
             return {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0, 'target': '/etc/issue', 'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322, 'ctime': 1491870657.914388}
         __salt__['file.stats'] = file_stats
         hubblestack.files.hubblestack_nova.stat_nova.__salt__ = __salt__
-        hubblestack.files.hubblestack_nova.stat_nova.__grains__ = {'osfinger': 'Ubuntu-16.04'}
-        val = hubblestack.files.hubblestack_nova.stat_nova.audit(data_list, __tags__, [], debug=False)
+        val = hubblestack.files.hubblestack_nova.stat_nova.audit(data_list, __tags__, debug=False)
         assert val == expected_val
 
     def test_audit_for_value_error(self):
@@ -95,9 +93,8 @@ class TestStatNova():
             return {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0, 'target': '/etc/issue', 'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322, 'ctime': 1491870657.914388}
         __salt__['file.stats'] = file_stats
         hubblestack.files.hubblestack_nova.stat_nova.__salt__ = __salt__
-        hubblestack.files.hubblestack_nova.stat_nova.__grains__ = {'osfinger': 'Ubuntu-16.04'}
         try:
-            val = hubblestack.files.hubblestack_nova.stat_nova.audit(data_list, __tags__, [], debug=False)
+            val = hubblestack.files.hubblestack_nova.stat_nova.audit(data_list, __tags__, debug=False)
         except ValueError:
             pass
 

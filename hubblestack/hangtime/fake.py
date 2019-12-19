@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 Defanged fake timer setup that pretends to do all the things HangTime would do
 (by arguments); but actually does nothing at all.
 
 The decorator in particular doesn't even attempt to load the HangTime wrapper
 around code.
-"""
+'''
 
 class HangTime(object):
     def __init__(self, msg="hang timeout detected", timeout=300, tag=None, repeats=False, decay=1.0):

@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
-"""
-"""
+'''
+'''
 
 from __future__ import absolute_import
 import copy
@@ -20,9 +20,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    """
+    '''
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    """
+    '''
     labelled_data = {}
     if labels:
         labelled_data[__virtualname__] = {}
@@ -41,10 +41,10 @@ def apply_labels(__data__, labels):
     return labelled_data
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    """
+    '''
     Runs salt reg query on the local machine and audits the return data
     with the CIS yaml processed by __virtual__
-    """
+    '''
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -152,10 +152,10 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    """
+    '''
     Merge two yaml dicts together at the secedit:blacklist and
     secedit:whitelist level
-    """
+    '''
     if __virtualname__ not in ret:
         ret[__virtualname__] = {}
     for topkey in ('blacklist', 'whitelist'):
@@ -170,9 +170,9 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    """
+    '''
     Retrieve all the tags for this distro from the yaml
-    """
+    '''
     ret = {}
     distro = __grains__.get('osfullname')
     for toplist, toplevel in data.get(__virtualname__, {}).iteritems():
@@ -236,10 +236,10 @@ def _reg_path_splitter(reg_path):
 
 
 def _find_option_value_in_reg(reg_hive, reg_key, reg_value):
-    """
+    '''
     helper function to retrieve Windows registry settings for a particular
     option
-    """
+    '''
     if reg_hive.lower() in ('hku', 'hkey_users'):
         key_list = []
         ret_dict = {}

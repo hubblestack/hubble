@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
+'''
 HubbleStack Nova plugin for verifying attributes associated with a mounted partition.
 
 Supports both blacklisting and whitelisting patterns. Blacklisted patterns must
@@ -26,7 +26,7 @@ mount:
                                 # for such cases  (default: hard)
       labels:
         - critical
-"""
+'''
 from __future__ import absolute_import
 import logging
 
@@ -47,9 +47,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    """
+    '''
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    """
+    '''
     labelled_data = {}
     if labels:
         labelled_data['mount'] = {}
@@ -68,9 +68,9 @@ def apply_labels(__data__, labels):
     return labelled_data
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    """
+    '''
     Run the mount audits contained in the YAML files processed by __virtual__
-    """
+    '''
 
     __data__ = {}
 
@@ -136,9 +136,9 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    """
+    '''
     Merge two yaml dicts together at the mount:blacklist and mount:whitelist level
-    """
+    '''
     if 'mount' not in ret:
         ret['mount'] = {}
     for topkey in ('blacklist', 'whitelist'):
@@ -153,9 +153,9 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    """
+    '''
     Retrieve all the tags for this distro from the yaml
-    """
+    '''
 
     ret = {}
     distro = __grains__.get('osfinger')
@@ -210,11 +210,11 @@ def _get_tags(data):
 
 
 def _check_mount_attribute(path, attribute, check_type):
-    """
+    '''
     This function checks if the partition at a given path is mounted with a particular attribute or not.
     If 'check_type' is 'hard', the function returns False if he specified path does not exist, or if it
     is not a mounted partition. If 'check_type' is 'soft', the functions returns True in such cases.
-    """
+    '''
 
     if not os.path.exists(path):
         if check_type == 'hard':

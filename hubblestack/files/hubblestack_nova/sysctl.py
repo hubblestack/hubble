@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
+'''
 HubbleStack Nova module for using sysctl to verify sysctl parameter.
 
 This audit module requires yaml data to execute. It will search the local
@@ -24,7 +24,7 @@ sysctl:
       - critical
     alert: email
     trigger: state
-"""
+'''
 
 from __future__ import absolute_import
 import logging
@@ -45,9 +45,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    """
+    '''
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    """
+    '''
     ret={}
     if labels:
         labelled_test_cases=[]
@@ -63,9 +63,9 @@ def apply_labels(__data__, labels):
     return ret
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    """
+    '''
     Run the sysctl audits contained in the YAML files processed by __virtual__
-    """
+    '''
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -114,9 +114,9 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    """
+    '''
     Merge two yaml dicts together
-    """
+    '''
     if 'sysctl' not in ret:
         ret['sysctl'] = []
     for key, val in data.get('sysctl', {}).iteritems():
@@ -127,9 +127,9 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    """
+    '''
     Retrieve all the tags for this distro from the yaml
-    """
+    '''
     ret = {}
     distro = __grains__.get('osfinger')
     for audit_dict in data.get('sysctl', []):

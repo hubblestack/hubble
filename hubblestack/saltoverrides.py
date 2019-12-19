@@ -1,18 +1,16 @@
-"""
-Overriding the get_fqhostname function of salt.utils.network
-The fix has been copied from https://github.com/saltstack/salt/pull/49726
-"""
-import logging
-import socket
+# Overriding the get_fqhostname function of salt.utils.network
+# The fix has been copied from https://github.com/saltstack/salt/pull/49726
+
 import salt.utils.network
+import socket
+import logging
 
 log = logging.getLogger(__name__)
 
-
 def get_fqhostname():
-    """
+    '''
     Returns the fully qualified hostname
-    """
+    '''
     # try getaddrinfo()
     fqdn = None
     try:
@@ -34,7 +32,6 @@ def get_fqhostname():
     if fqdn is None:
         fqdn = socket.getfqdn()
     return fqdn
-
 
 # Overriding the default function of salt becuase it lacks handling of
 # socket.error exception

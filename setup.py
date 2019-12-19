@@ -41,14 +41,10 @@ setup(
             'hubble = hubblestack.daemon:run',
         ],
     },
-    tests_require=[
-        'mock',
-    ],
     install_requires=[
         'salt-ssh >= 2019.2.0',
         'croniter',
         'pyinotify',
-        'vulners == 1.3.0',
         'azure',
         'ntplib',
     ],

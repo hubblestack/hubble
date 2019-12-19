@@ -1,7 +1,7 @@
 # -*- encoding: utf-8 -*-
-"""
+'''
 Hubble Nova plugin for FreeBSD pkgng audit
-"""
+'''
 from __future__ import absolute_import
 import logging
 
@@ -15,9 +15,9 @@ def __virtual__():
 
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    """
+    '''
     Run the pkg.audit command
-    """
+    '''
     ret = {'Success': [], 'Failure': []}
 
     __tags__ = []

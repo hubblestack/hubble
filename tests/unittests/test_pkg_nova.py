@@ -49,7 +49,7 @@ class TestPkg():
             return name
         __salt__['pkg.version'] = pkg_version
         hubblestack.files.hubblestack_nova.pkg.__salt__ = __salt__
-        val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, [], debug=False)
+        val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, debug=False)
         assert len(val['Success']) != 0
         assert len(val['Failure']) == 0
 
@@ -65,7 +65,7 @@ class TestPkg():
             return name
         __salt__['pkg.version'] = pkg_version
         hubblestack.files.hubblestack_nova.pkg.__salt__ = __salt__
-        val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, [], debug=False)
+        val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, debug=False)
         assert val == expected_val
 
     def test_audit_for_value_error(self):
@@ -80,7 +80,7 @@ class TestPkg():
         __salt__['pkg.version'] = pkg_version
         hubblestack.files.hubblestack_nova.pkg.__salt__ = __salt__
         try:
-            val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, [], debug=False)
+            val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, debug=False)
         except ValueError:
             pass
 

@@ -20,7 +20,7 @@ def splunkconfig():
         return ret
     try:
         for root, _dirs, files in os.walk(configdir):
-            for conf_file in sorted(files):
+            for conf_file in files:
                 if not conf_file.endswith('.conf'):
                     pass
                 fpath = os.path.join(root, conf_file)

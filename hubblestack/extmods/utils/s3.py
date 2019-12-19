@@ -92,21 +92,16 @@ def query(key, keyid, method='GET', params=None, headers=None,
     if not params:
         params = {}
 
-    log.debug('S3 service_url(0): %s', service_url)
     if not service_url:
         service_url = 's3.amazonaws.com'
-    log.debug('S3 service_url(1): %s', service_url)
 
     if not bucket or path_style:
         endpoint = service_url
     else:
         endpoint = '{0}.{1}'.format(bucket, service_url)
-    log.debug('S3 endpoint: %s', endpoint)
 
-    log.debug('S3 path(0): %s', path)
     if path_style and bucket:
         path = '{0}/{1}'.format(bucket, path)
-    log.debug('S3 path(1): %s', path)
 
     # Try grabbing the credentials from the EC2 instance IAM metadata if available
     if not key:
@@ -133,11 +128,8 @@ def query(key, keyid, method='GET', params=None, headers=None,
         path = ''
     path = _quote(path)
 
-    log.debug('S3 Request(0): %s', requesturl)
-
     if not requesturl:
         requesturl = (('https' if https_enable else 'http')+'://{0}/{1}').format(endpoint, path)
-        log.debug('S3 Request(1): %s', requesturl)
         headers, requesturl = salt.utils.aws.sig4(
             method,
             endpoint,
@@ -153,8 +145,8 @@ def query(key, keyid, method='GET', params=None, headers=None,
             payload_hash=payload_hash,
         )
 
-    log.debug('S3 Request(2): %s', requesturl)
-    log.debug('S3 Headers:')
+    log.debug('S3 Request: %s', requesturl)
+    log.debug('S3 Headers::')
     log.debug('    Authorization: %s', headers['Authorization'])
 
     if not data:

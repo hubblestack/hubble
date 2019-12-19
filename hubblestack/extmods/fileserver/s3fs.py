@@ -346,10 +346,7 @@ def _get_s3_key():
     # that needed this may have entered it incorrectly to match. Support both for now.
     ret['kms_keyid'] = __opts__.get('aws.kms.keyid', __opts__.get('aws.kmw.keyid'))
 
-    # This rather odd return strategy is a result of trying to make a small
-    # change for the incorrect backport of PR740 without it's preceeding
-    # cleanup (which changed the return type from list to dict)
-    return [ ret[x] for x in 'key keyid service_url verify_ssl kms_keyid location path_style https_enable'.split() ]
+    return ret
 
 def _init():
     """

@@ -7,7 +7,6 @@ import salt.ext.six as six
 
 log = logging.getLogger(__name__)
 
-
 def encode_base64(starting_string, format_chained=True, chained=None, chained_status=None):
     """
     Given a string, base64 encode it and return it.

@@ -1,4 +1,4 @@
-"""
+'''
 HubbleStack Nova plugin for auditing installed packages.
 
 The module gets the list of installed packages of the system and queries
@@ -15,7 +15,7 @@ vulners_api_key: REDACTED
 
 It does not matter what `<random data>` is, as long as the top key of the file is named `vulners_scanner`.
 This allows the module to run under a certain profile, as all of the other Nova modules do.
-"""
+'''
 
 from __future__ import absolute_import
 import logging
@@ -61,11 +61,11 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _get_local_packages():
-    """
+    '''
     Get the packages installed on the system.
 
     :return: A nice list of packages.
-    """
+    '''
 
     local_packages = __salt__['pkg.list_pkgs']()
     os_family = __grains__['os_family'].lower()
@@ -91,7 +91,7 @@ def _get_local_packages():
 
 
 def _vulners_query(packages=None, os=None, version=None, api_key=None):
-    """
+    '''
     Query the Vulners.com Linux Vulnerability Audit API for the provided packages.
 
     :param packages: The list on packages to check
@@ -101,7 +101,7 @@ def _vulners_query(packages=None, os=None, version=None, api_key=None):
                 Check the following link for more details:
                     https://blog.vulners.com/linux-vulnerability-audit-in-vulners/
     :return: A dictionary containing the JSON data returned by the HTTP request.
-    """
+    '''
 
     # error dict matching the error dict returned by the requests library
     error = {
@@ -126,12 +126,12 @@ def _vulners_query(packages=None, os=None, version=None, api_key=None):
     return vulners_api.audit(str(os), str(version), packages)
 
 def _process_vulners(vulners):
-    """
+    '''
     Process the data returned by the API into the format accepted by `hubble.py`.
 
     :param vulners: The JSON data returned by the API
     :return: A list of dictionaries as hubble.py swallows
-    """
+    '''
 
     packages = vulners.get('packages')
     if not packages:

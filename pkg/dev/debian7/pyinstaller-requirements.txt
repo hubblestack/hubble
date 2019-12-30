@@ -9,7 +9,7 @@ daemon
 boto3
 botocore
 pygit2<0.27.0
-salt-ssh
+salt-ssh==2019.2.0
 gitpython
 pyinotify
 cffi

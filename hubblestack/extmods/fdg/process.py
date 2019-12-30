@@ -1,25 +1,24 @@
 # -*- encoding: utf-8 -*-
-"""
+'''
 Flexible Data Gathering: data processing
 =============================
 
 This module primarily processes and properly format
 the data outputted by a module to serve it to another module.
-"""
+'''
 from __future__ import absolute_import
 
 import logging
 import re
 
-from salt.exceptions import ArgumentValueError
 from hubblestack.utils.encoding import encode_base64 as utils_encode_base64
+from salt.exceptions import ArgumentValueError
 
 log = logging.getLogger(__name__)
 
 
-def filter_dict(starting_dict=None, filter_values=False, update_chained=True,
-                chained=None, chained_status=None, **kwargs):
-    """
+def filter_dict(starting_dict=None, filter_values=False, update_chained=True, chained=None, chained_status=None, **kwargs):
+    '''
     Given a target dictionary, filter it and return the result.
 
     By default, ``chained`` will have ``.update()`` called on it
@@ -33,16 +32,13 @@ def filter_dict(starting_dict=None, filter_values=False, update_chained=True,
     False othewise. The second argument will be the filtered dictionary.
 
     ``kwargs`` is a dictionary mapping comparison types to values to compare against.
-
-    chained_status
-        The status returned by the chained method.
-    """
+    '''
     try:
         if update_chained:
             if starting_dict:
                 chained.update(starting_dict)
     except (AttributeError, TypeError, ValueError):
-        log.error('Invalid argument type - dict required', exc_info=True)
+        log.error('Invalid argument type - dict required')
         return False, None
     ret = _filter_dict(chained, filter_values, kwargs)
     status = bool(ret)
@@ -53,7 +49,7 @@ def filter_dict(starting_dict=None, filter_values=False, update_chained=True,
 def _filter_dict(dct,
                  filter_values,
                  filter_rules):
-    """
+    '''
     Filter a dictionary.
 
     dct
@@ -70,7 +66,7 @@ def _filter_dict(dct,
                       ``kwargs``={le: 4, gt: 1, ne: 2}
         the function outputs {3: 'c', 4: 'd'} - key values less than or equal to 4, greater than 1,
         not equal to 2.
-    """
+    '''
     ret = dct
     for comp, value in filter_rules.iteritems():
         try:
@@ -84,14 +80,14 @@ def _filter_dict(dct,
 
 
 def _compare(comp, val1, val2):
-    """
+    '''
     Function that compares two values.
 
     comp
         The type of comparison that should be applied.
         Can have values from [gt, lt, ge, le, eq, ne].
         For e.g. "gt" stands for "greater than"
-    """
+    '''
     if comp == "gt":
         return val1 > val2
     if comp == "ge":
@@ -105,12 +101,12 @@ def _compare(comp, val1, val2):
     if comp == "ne":
         return val1 != val2
 
-    log.error("Invalid argument '%s' - should be in [gt, ge, lt, le, eq, ne]", comp)
+    log.error("Invalid argument '{}' - should be in [gt, ge, lt, le, eq, ne]".format(comp))
     raise ArgumentValueError
 
 
 def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_status=None, **kwargs):
-    """
+    '''
     Given a target sequence, filter it and return the result.
 
     By default, ``chained`` will have ``.extend()`` or ``.update()`` or ``.format()``
@@ -132,10 +128,7 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_sta
             ne: 2
             lt:5
     Outputs: [3, 4]
-
-    chained_status
-        Status returned by the chained method.
-    """
+    '''
     if extend_chained:
         try:
             if starting_seq and isinstance(chained, set):
@@ -146,8 +139,8 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_sta
                 chained = starting_seq.format(chained)
             else:
                 raise AttributeError
-        except (AttributeError, TypeError, ValueError):
-            log.error("Invalid argument type", exc_info=True)
+        except (AttributeError, TypeError, ValueError) as exc:
+            log.error("Invalid argument type")
             return False, None
     ret = _filter(seq=chained, filter_rules=kwargs)
     status = bool(ret)
@@ -157,7 +150,7 @@ def filter_seq(starting_seq=None, extend_chained=True, chained=None, chained_sta
 
 def _filter(seq,
             filter_rules):
-    """
+    '''
     Filter a sequence.
 
     seq
@@ -169,7 +162,7 @@ def _filter(seq,
         For e.g. for ``seq`` = [1, 2, 3, 4, 5] ``filter_rules``={le: 4, gt: 1, ne: 2}
         the function outputs [3, 4] - values less than or equal to 4, greater than 1,
         not equal to 2.
-    """
+    '''
     if not isinstance(filter_rules, dict):
         log.error("``filter_rules`` should be of type dict")
         return None
@@ -184,7 +177,7 @@ def _filter(seq,
 
 
 def get_index(index=0, starting_list=None, extend_chained=True, chained=None, chained_status=None):
-    """
+    '''
     Given a list list, return the item found at ``index``.
 
     By default, ``chained`` will have ``.extend()`` called on it with
@@ -196,24 +189,21 @@ def get_index(index=0, starting_list=None, extend_chained=True, chained=None, ch
     ``extend_chained`` is set to True when ``chained`` should be extended with ``starting_list``.
     If set to False, ``starting_list`` is ignored.
 
-    chained_status
-        Status returned by the chained method.
-
-    """
+    '''
     if extend_chained:
         if starting_list:
             try:
                 chained.extend(starting_list)
-            except (AttributeError, TypeError):
-                log.error("Invalid argument type", exc_info=True)
+            except (AttributeError, TypeError) as exc:
+                log.error("Invalid argument type")
                 return False, None
     try:
         ret = chained[index]
     except IndexError:
-        log.error('List index out of range %d', index, exc_info=True)
+        log.error('List index out of range {}'.format(index))
         return False, None
     except TypeError:
-        log.error('Arguments should be of type list', exc_info=True)
+        log.error('Arguments should be of type list')
         return False, None
     status = bool(ret)
 
@@ -221,7 +211,7 @@ def get_index(index=0, starting_list=None, extend_chained=True, chained=None, ch
 
 
 def get_key(key, starting_dict=None, update_chained=True, chained=None, chained_status=None):
-    """
+    '''
     Given a dictionary, return an element by ``key``.
 
     By default, ``chained`` will have ``.update()`` called on it with
@@ -231,24 +221,21 @@ def get_key(key, starting_dict=None, update_chained=True, chained=None, chained_
     The first return value (status) will be True if the key is found, and
     False othewise. The second argument will be the value found by the key or
     None if the key is not present in the dictionary.
-
-    chained_status
-        Status returned by the chained method.
-    """
+    '''
     if update_chained:
         if starting_dict:
             try:
                 chained.update(starting_dict)
             except (TypeError, ValueError):
-                log.error("Arguments should be of type dict.", exc_info=True)
+                log.error("Arguments should be of type dict")
                 return False, None
     try:
         ret = chained[key]
     except KeyError:
-        log.error("Key not found: %s", key, exc_info=True)
+        log.error("Key not found: {}".format(key))
         return False, None
     except TypeError:
-        log.error("Arguments should be of type dict.", exc_info=True)
+        log.error("Arguments should be of type dict")
         return False, None
     status = bool(ret)
 
@@ -256,7 +243,7 @@ def get_key(key, starting_dict=None, update_chained=True, chained=None, chained_
 
 
 def join(words=None, sep='', extend_chained=True, chained=None, chained_status=None):
-    """
+    '''
     Given a list of strings, join them into a string, using ``sep`` as delimiter.
 
     By default, ``chained`` will have ``.extend()`` called on it with
@@ -268,30 +255,26 @@ def join(words=None, sep='', extend_chained=True, chained=None, chained_status=N
 
     ``extend_chained`` is set to True when ``chained`` should be extended with ``words``.
     If set to False, ``words`` is ignored.
-
-    chained_status
-        Status returned by the chained method.
-    """
+    '''
     if extend_chained:
         if words:
             try:
                 chained.extend(words)
-            except (AttributeError, TypeError):
-                log.error("Arguments should be of type list.", exc_info=True)
+            except (AttributeError, TypeError) as exc:
+                log.error("Arguments should be of type list")
                 return False, None
     try:
         ret = sep.join(chained)
     except (TypeError, AttributeError):
-        log.error("Invalid arguments type.", exc_info=True)
+        log.error("Invalid arguments type")
         ret = None
     status = bool(ret)
 
     return status, ret
 
 
-def sort(seq=None, desc=False, lexico=False, extend_chained=True,
-         chained=None, chained_status=None):
-    """
+def sort(seq=None, desc=False, lexico=False, extend_chained=True, chained=None, chained_status=None):
+    '''
     Given a target sequence, sort it and return the sorted result.
 
     By default, ``chained`` will have ``.extend()`` or ``.update()`` or ``.format()``
@@ -300,10 +283,7 @@ def sort(seq=None, desc=False, lexico=False, extend_chained=True,
 
     The first return value (status) will be True if the sort is successful, and
     False othewise. The second argument will be the sorted sequence.
-
-    chained_status
-        Status returned by the chained method.
-    """
+    '''
     if extend_chained:
         try:
             if seq and isinstance(chained, (dict, set)):
@@ -313,7 +293,7 @@ def sort(seq=None, desc=False, lexico=False, extend_chained=True,
             elif seq and isinstance(chained, str):
                 chained = seq.format(chained)
         except (AttributeError, TypeError, ValueError):
-            log.error("Invalid arguments type.", exc_info=True)
+            log.error("Invalid arguments type")
             return False, None
     ret = _sort(chained, desc, lexico)
     status = bool(ret)
@@ -324,7 +304,7 @@ def sort(seq=None, desc=False, lexico=False, extend_chained=True,
 def _sort(seq,
           desc,
           lexico):
-    """
+    '''
     Sort a sequence.
 
     seq
@@ -335,21 +315,22 @@ def _sort(seq,
 
     lexico
         Set to True if the sorting thould be in lexicographical order.
-    """
+    '''
+    ret = []
     key = None
     if lexico:
         key = str.lower
     try:
         ret = sorted(seq, reverse=desc, key=key)
     except TypeError:
-        log.error("Invalid argument type.", exc_info=True)
+        log.error("Invalid argument type")
         return None
 
     return ret
 
 
 def split(phrase, sep=None, regex=False, format_chained=True, chained=None, chained_status=None):
-    """
+    '''
     Given a ``phrase`` string, split it into a list of words by a ``sep`` delimiter.
 
     By default, the ``phrase`` will have ``.format()`` called on it with
@@ -363,15 +344,13 @@ def split(phrase, sep=None, regex=False, format_chained=True, chained=None, chai
 
     ``regex`` will be set to True if ``sep`` is a regex instead of a pattern.
 
-    chained_status
-        Status returned by the chained method.
-    """
+    '''
     if format_chained:
         if chained:
             try:
                 phrase = phrase.format(chained)
             except AttributeError:
-                log.error("Invalid attributes type.", exc_info=True)
+                log.error("Invalid attributes type")
                 return False, None
     ret = _split(phrase, sep, regex)
     status = bool(ret) and len(ret) > 1
@@ -382,7 +361,7 @@ def split(phrase, sep=None, regex=False, format_chained=True, chained=None, chai
 def _split(phrase,
            sep,
            regex):
-    """
+    '''
     Run the split command on the phrase using ``sep`` as a delimiter or regex.
 
     phrase
@@ -394,21 +373,22 @@ def _split(phrase,
 
     regex
         Set to True if ``sep`` should be treated as a regex instead of a delimiter.
-    """
+    '''
+    ret = []
     try:
         if regex:
             ret = re.split(sep, phrase)
         else:
             ret = phrase.split(sep)
     except (AttributeError, TypeError):
-        log.error("Invalid argument type.", exc_info=True)
+        log.error("Invalid argument type")
         return None
 
     return ret
 
 
 def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_status=None):
-    """
+    '''
     Given a target dictionary, convert it to a list of (key, value) tuples.
 
     By default, ``chained`` will have ``.update()`` called on it with
@@ -417,16 +397,13 @@ def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_
 
     The first return value (status) will be True if the conversion is successful,
     and False othewise. The second argument will be the list of tuples.
-
-    chained_status
-        Status returned by the chained method.
-    """
+    '''
     if update_chained:
         if starting_dict:
             try:
                 chained.update(starting_dict)
             except (AttributeError, ValueError, TypeError):
-                log.error("Invalid arguments type.", exc_info=True)
+                log.error("Invalid arguments type")
                 return False, None
     ret = [(key, value) for key, value in chained.iteritems()]
     status = bool(ret)
@@ -435,20 +412,15 @@ def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_
 
 
 def dict_convert_none(starting_seq=None, extend_chained=True, chained=None, chained_status=None):
-    """
-    Given a target sequence, look for dictionary keys that have empty string values
-     and replace them with None.
+    '''
+    Given a target sequence, look for dictionary keys that have empty string values and replace them with None
 
     By default, ``chained`` will have ``.extend()`` or  ``.update()``  called on it with
-    ``starting_seq`` as the only argument.
-    Set ``extend_chained`` to False to ignore ``starting_seq``.
+    ``starting_seq`` as the only argument. Set ``extend_chained`` to False to ignore ``starting_seq``.
 
     The first return value (status) will be True if the replacing is successful, and
     False othewise. The second argument will be the updated sequence.
-
-    chained_status
-        Status returned by the chained method.
-    """
+    '''
     if extend_chained:
         try:
             if starting_seq and isinstance(chained, (set, dict)):
@@ -456,7 +428,7 @@ def dict_convert_none(starting_seq=None, extend_chained=True, chained=None, chai
             elif starting_seq and isinstance(chained, list):
                 chained.extend(starting_seq)
         except (AttributeError, TypeError, ValueError):
-            log.error("Invalid type of arguments", exc_info=True)
+            log.error("Invalid type of arguments")
             return False, None
     if isinstance(chained, dict):
         ret = _dict_convert_none(chained)
@@ -471,13 +443,13 @@ def dict_convert_none(starting_seq=None, extend_chained=True, chained=None, chai
 
 
 def _dict_convert_none(dictionary):
-    """
+    '''
     Look for keys that have values of empty strings and convert them to values of None.
     It recursively looks for nested dictionaries and sterilizes those too
 
     dictionary
         The input dict to sterilize
-    """
+    '''
     if not isinstance(dictionary, dict):
         log.error("Invalid argument type - should be dict")
         return None
@@ -496,14 +468,14 @@ def _dict_convert_none(dictionary):
 
 
 def _seq_convert_none(seq):
-    """
+    '''
     Go over a sequence and look for dictionary keys that have values of empty strings
     and convert them to values of None.
     It recursively looks for nested sequences and sterilizes those too
 
     seq
         The input sequence to sterilize
-    """
+    '''
     if not isinstance(seq, (list, set, tuple)):
         log.error("Invalid argument type - list set or tuple expected")
         return None
@@ -520,7 +492,7 @@ def _seq_convert_none(seq):
 
 
 def print_string(starting_string, format_chained=True, chained=None, chained_status=None):
-    """
+    '''
     Given a string, return it.
 
     By default, ``starting_string`` will have ``.format()`` called on it
@@ -528,16 +500,13 @@ def print_string(starting_string, format_chained=True, chained=None, chained_sta
     substitute the chained value.) If you want to avoid having to escape curly braces,
     set ``format_chained=False``.
 
-    chained_status
-        Status returned by the chained method.
-
     The first return value (status) will be False only if an error will occur.
-    """
+    '''
     if format_chained:
         try:
             starting_string = starting_string.format(chained)
         except AttributeError:
-            log.error("Invalid type for starting_string - has to be string.", exc_info=True)
+            log.error("Invalid type for starting_string - has to be string.")
             return False, None
     if not isinstance(starting_string, str):
         log.error('Invalid arguments - starting_string should be a string')
@@ -547,20 +516,15 @@ def print_string(starting_string, format_chained=True, chained=None, chained_sta
 
 
 def dict_remove_none(starting_seq=None, extend_chained=True, chained=None, chained_status=None):
-    """
-    Given a target sequence, look for dictionary keys that have values of None and remove them.
+    '''
+    Given a target sequence, look for dictionary keys that have values of None and remove those keys.
 
     By default, ``chained`` will have ``.extend()`` or ``.update()`` called on it with
-    ``starting_seq`` as the only argument.
-    Set ``extend_chained`` to False to ignore ``starting_seq``.
+    ``starting_seq`` as the only argument. Set ``extend_chained`` to False to ignore ``starting_seq``.
 
-    chained_status
-        Status returned by the chained method.
-
-    The first return value (status) will be True if the sterilizing is successful,
-    and False otherwise.
+    The first return value (status) will be True if the sterilizing is successful, and False otherwise.
     The second argument will be the sterilized sequence.
-    """
+    '''
     if extend_chained:
         try:
             if starting_seq and isinstance(chained, (set, dict)):
@@ -568,7 +532,7 @@ def dict_remove_none(starting_seq=None, extend_chained=True, chained=None, chain
             elif starting_seq and isinstance(chained, list):
                 chained.extend(starting_seq)
         except (AttributeError, TypeError, ValueError):
-            log.error("Invalid arguments type", exc_info=True)
+            log.error("Invalid arguments type")
             return False, None
     if isinstance(chained, dict):
         ret = _sterilize_dict(chained)
@@ -583,13 +547,13 @@ def dict_remove_none(starting_seq=None, extend_chained=True, chained=None, chain
 
 
 def _sterilize_dict(dictionary):
-    """
+    '''
     Sterilize a dictionary by removing the keys that have values of None.
     It recursively looks for nested dictionaries and sterilizes those too.
 
     dictionary
         The input dict to sterilize
-    """
+    '''
     if not isinstance(dictionary, dict):
         log.error("Invalid argument type - should be dict")
         return None
@@ -606,13 +570,13 @@ def _sterilize_dict(dictionary):
 
 
 def _sterilize_seq(seq):
-    """
+    '''
     Sterilize a sequence by looking for dictionary keys that have values of None and removing them.
     It recursively looks for nested sequences and sterilizes those too.
 
     seq
         The input sequence to sterilize
-    """
+    '''
     if not isinstance(seq, (list, set, tuple)):
         log.error('Invalid argument type - should be list, set or tuple')
         return None
@@ -648,10 +612,7 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
     substitute the chained value.) If you want to avoid having to escape curly braces,
     set ``format_chained=False``.
 
-    chained_status
-        Status returned by the chained method.
-
     The first return value (status) will be False only if an error will occur.
     """
     return utils_encode_base64(starting_string, format_chained=format_chained,
-                               chained=chained, chained_status=chained_status)
+        chained=chained, chained_status=chained_status)

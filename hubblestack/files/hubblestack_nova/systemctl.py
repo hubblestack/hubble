@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
+'''
 HubbleStack Nova plugin for using systemctl to verify status of a given service.
 
 Supports both blacklisting and whitelisting patterns. Blacklisted services must
@@ -26,7 +26,7 @@ systemctl:
       trigger: state
 
 
-"""
+'''
 from __future__ import absolute_import
 import logging
 
@@ -64,9 +64,9 @@ def apply_labels(__data__, labels):
     return labelled_data
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    """
+    '''
     Run the systemctl audits contained in the YAML files processed by __virtual__
-    """
+    '''
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -113,9 +113,9 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    """
+    '''
     Merge two yaml dicts together at the systemctl:blacklist and systemctl:whitelist level
-    """
+    '''
     if 'systemctl' not in ret:
         ret['systemctl'] = {}
     for topkey in ('blacklist', 'whitelist'):
@@ -131,9 +131,9 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    """
+    '''
     Retrieve all the tags for this distro from the yaml
-    """
+    '''
     ret = {}
     distro = __grains__.get('osfinger')
     for toplist, toplevel in data.get('systemctl', {}).iteritems():

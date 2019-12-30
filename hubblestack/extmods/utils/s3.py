@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-"""
+'''
 Connection library for Amazon S3
 
 :depends: requests
-"""
+'''
 from __future__ import absolute_import, print_function, unicode_literals
 
 # Import Python libs
@@ -35,7 +35,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
           verify_ssl=True, full_headers=False, kms_keyid=None,
           location=None, role_arn=None, chunk_size=16384, path_style=False,
           https_enable=True):
-    """
+    '''
     Perform a query against an S3-like API. This function requires that a
     secret key and the id for that key are passed in. For instance:
 
@@ -82,7 +82,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
 
     If region is not specified, an attempt to fetch the region from EC2 IAM
     metadata service will be made. Failing that, default is us-east-1
-    """
+    '''
     if not HAS_REQUESTS:
         log.error('There was an error: requests is required for s3 access')
 
@@ -92,16 +92,21 @@ def query(key, keyid, method='GET', params=None, headers=None,
     if not params:
         params = {}
 
+    log.debug('S3 service_url(0): %s', service_url)
     if not service_url:
         service_url = 's3.amazonaws.com'
+    log.debug('S3 service_url(1): %s', service_url)
 
     if not bucket or path_style:
         endpoint = service_url
     else:
         endpoint = '{0}.{1}'.format(bucket, service_url)
+    log.debug('S3 endpoint: %s', endpoint)
 
+    log.debug('S3 path(0): %s', path)
     if path_style and bucket:
         path = '{0}/{1}'.format(bucket, path)
+    log.debug('S3 path(1): %s', path)
 
     # Try grabbing the credentials from the EC2 instance IAM metadata if available
     if not key:
@@ -128,8 +133,11 @@ def query(key, keyid, method='GET', params=None, headers=None,
         path = ''
     path = _quote(path)
 
+    log.debug('S3 Request(0): %s', requesturl)
+
     if not requesturl:
         requesturl = (('https' if https_enable else 'http')+'://{0}/{1}').format(endpoint, path)
+        log.debug('S3 Request(1): %s', requesturl)
         headers, requesturl = salt.utils.aws.sig4(
             method,
             endpoint,
@@ -145,8 +153,8 @@ def query(key, keyid, method='GET', params=None, headers=None,
             payload_hash=payload_hash,
         )
 
-    log.debug('S3 Request: %s', requesturl)
-    log.debug('S3 Headers::')
+    log.debug('S3 Request(2): %s', requesturl)
+    log.debug('S3 Headers:')
     log.debug('    Authorization: %s', headers['Authorization'])
 
     if not data:

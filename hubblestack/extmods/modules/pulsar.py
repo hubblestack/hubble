@@ -837,7 +837,6 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
         dt.mark('update_watches')
         log.debug("update watches")
         # Update existing watches and add new ones
-        # TODO: make the config handle more options
         for path in config:
             excludes = lambda x: False
             if path in ['return', 'checksum', 'stats', 'batch', 'verbose',

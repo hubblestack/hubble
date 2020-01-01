@@ -2,12 +2,9 @@ from __future__ import absolute_import
 
 import json
 import os
-import sys
 import yaml
 import pytest
 
-myPath = os.path.abspath(os.getcwd())
-sys.path.insert(0, myPath)
 import hubblestack.extmods.fdg.readfile
 
 

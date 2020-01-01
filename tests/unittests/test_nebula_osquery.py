@@ -1,10 +1,6 @@
-import sys
 import os
 import json
 import pytest
-
-myPath = os.path.abspath(os.getcwd())
-sys.path.insert(0, myPath)
 
 __salt__ = None
 

@@ -2,10 +2,6 @@ from __future__ import absolute_import
 
 import mock
 import os
-import sys
-
-myPath = os.path.abspath(os.getcwd())
-sys.path.insert(0, myPath)
 import hubblestack.extmods.fdg.time_sync
 
 class TestTimesync():

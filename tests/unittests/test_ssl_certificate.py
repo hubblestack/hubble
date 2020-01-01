@@ -1,10 +1,7 @@
 # coding: utf-8
-import sys
 import os
 import ssl
 import mock
-myPath = os.path.abspath(os.getcwd())
-sys.path.insert(0, myPath)
 import hubblestack.extmods.fdg.ssl_certificate
 
 

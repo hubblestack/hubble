@@ -1,10 +1,12 @@
 import os
-import hubblestack.extmods.modules.pulsar as pulsar
-from salt.exceptions import CommandExecutionError
-
 import shutil
+import logging
 import six
-import pyinotify
+
+from salt.exceptions import CommandExecutionError
+import hubblestack.extmods.modules.pulsar as pulsar
+
+log = logging.getLogger(__name__)
 
 if os.environ.get('DEBUG_SHOW_PULSAR_LOGS'):
     import logging
@@ -145,17 +147,17 @@ class TestPulsar2():
     atdir  = os.path.abspath(tdir)
     atfile = os.path.abspath(tfile)
 
-    def reset(self, **kw):
+    def reset(self, **kwargs):
         def config_get(value, default):
             return default
 
-        if 'paths' not in kw:
-            kw['paths'] = []
+        if 'paths' not in kwargs:
+            kwargs['paths'] = []
 
         __salt__ = {}
         __salt__['config.get'] = config_get
         pulsar.__salt__ = __salt__
-        pulsar.__opts__ = {'pulsar': kw}
+        pulsar.__opts__ = {'pulsar': kwargs}
         pulsar.__context__ = c = {}
         self.nuke_tdir()
 
@@ -163,8 +165,8 @@ class TestPulsar2():
 
         self.events = []
         self.N = c['pulsar.notifier']
-        self.wm = self.N._watch_manager
-        self.wm.update_config()
+        self.watch_manager = self.N._watch_manager
+        self.watch_manager.update_config()
 
     def process(self):
         self.events.extend([ "{change}(path)".format(**x) for x in pulsar.process() ])
@@ -181,28 +183,28 @@ class TestPulsar2():
         with open(self.tfile, 'w') as fh:
             fh.write(to_write)
 
-    def mk_subdir_files(self, *f, **kw):
-        if len(f) == 1 and isinstance(f[0], (list,tuple)):
-            f = f[0]
-        for _f in f:
-            _f = _f if _f.startswith(self.tdir + '/') else os.path.join(self.tdir, _f)
-            s = _f.split('/')
-            if s:
-                fn = s.pop()
-                b = ''
-                for i in s:
-                    b = os.path.join(b,i)
+    def mk_subdir_files(self, *files, **kwargs):
+        if len(files) == 1 and isinstance(files[0], (list,tuple)):
+            files = files[0]
+        for file in files:
+            file = file if file.startswith(self.tdir + '/') else os.path.join(self.tdir, file)
+            split_file = file.split('/')
+            if split_file:
+                output_fname = split_file.pop()
+                dir_to_make = ''
+                for i in split_file:
+                    dir_to_make = os.path.join(dir_to_make,i)
                     if not os.path.isdir(i):
-                        os.mkdir(b)
-                k = ('{}_out', 'out_{}', '{}_to_write', 'to_write')
-                for _k in k:
-                    to_write = kw.get(_k.format(fn))
+                        os.mkdir(dir_to_make)
+                forms = ('{}_out', 'out_{}', '{}_to_write', 'to_write')
+                for form in forms:
+                    to_write = kwargs.get(form.format(output_fname))
                     if to_write is not None:
                         break
                 if to_write is None:
                     to_write = 'supz\n'
-                fn = os.path.join(b, fn)
-                with open(fn, 'a') as fh:
+                output_fname = os.path.join(dir_to_make, output_fname)
+                with open(output_fname, 'a') as fh:
                     fh.write(to_write if to_write is not None else 'supz\n')
 
     def more_fname(self, number, base=None):
@@ -234,12 +236,12 @@ class TestPulsar2():
 
     def test_add_watch(self, modality='add-watch'):
         o = {}
-        kw = { self.atdir: o }
+        kwargs = { self.atdir: o }
 
         if modality in ('watch_new_files', 'watch_files'):
             o[modality] = True
 
-        self.reset(**kw)
+        self.reset(**kwargs)
 
         # NOTE: without new_files and/or without watch_files parent_db should
         # remain empty, and we shouldn't get a watch on tfile
@@ -247,20 +249,20 @@ class TestPulsar2():
         os.mkdir(self.tdir)
 
         if modality == 'add-watch':
-            self.wm.add_watch(self.tdir, pulsar.DEFAULT_MASK)
+            self.watch_manager.add_watch(self.tdir, pulsar.DEFAULT_MASK)
 
         elif modality in ('watch', 'watch_new_files', 'watch_files'):
-            self.wm.watch(self.tdir)
+            self.watch_manager.watch(self.tdir)
 
         else:
             raise Exception("unknown modality")
 
         self.process()
         assert len(self.events) == 0
-        assert self.wm.watch_db.get(self.tdir) is None
-        assert self.wm.watch_db.get(self.atdir) > 0
-        assert len(self.wm.watch_db) == 1
-        assert not isinstance(self.wm.parent_db.get(self.atdir), set)
+        assert self.watch_manager.watch_db.get(self.tdir) is None
+        assert self.watch_manager.watch_db.get(self.atdir) > 0
+        assert len(self.watch_manager.watch_db) == 1
+        assert not isinstance(self.watch_manager.parent_db.get(self.atdir), set)
 
         self.mk_tdir_and_write_tfile() # write supz to tfile
 
@@ -270,11 +272,11 @@ class TestPulsar2():
         assert self.events[1].startswith('IN_MODIFY')
 
         if modality in ('watch_files', 'watch_new_files'):
-            assert len(self.wm.watch_db) == 2
-            assert isinstance(self.wm.parent_db.get(self.atdir), set)
+            assert len(self.watch_manager.watch_db) == 2
+            assert isinstance(self.watch_manager.parent_db.get(self.atdir), set)
         else:
-            assert len(self.wm.watch_db) == 1
-            assert not isinstance(self.wm.parent_db.get(self.atdir), set)
+            assert len(self.watch_manager.watch_db) == 1
+            assert not isinstance(self.watch_manager.parent_db.get(self.atdir), set)
 
         self.nuke_tdir()
 
@@ -290,15 +292,15 @@ class TestPulsar2():
 
         self.reset(**c1)
         self.mk_subdir_files('blah1','a/b/c/blah2')
-        self.wm.watch(self.tdir)
-        self.wm.prune()
-        s1 = set(self.wm.watch_db)
+        self.watch_manager.watch(self.tdir)
+        self.watch_manager.prune()
+        s1 = set(self.watch_manager.watch_db)
 
         self.reset(**c2)
         self.mk_subdir_files('blah1','a/b/c/blah2')
-        self.wm.watch(self.tdir)
-        self.wm.prune()
-        s2 = set(self.wm.watch_db)
+        self.watch_manager.watch(self.tdir)
+        self.watch_manager.prune()
+        s2 = set(self.watch_manager.watch_db)
 
         s0a = set([self.atdir])
         s0b = [self.atdir]
@@ -325,18 +327,18 @@ class TestPulsar2():
         """
         self.reset(**config)
         self.mk_tdir_and_write_tfile()
-        self.wm.watch(self.tdir)
-        s0 = set(self.wm.watch_db)
+        self.watch_manager.watch(self.tdir)
+        s0 = set(self.watch_manager.watch_db)
         if mk_files > 0:
             self.mk_more_files(count=mk_files)
         self.process()
-        s1 = set(self.wm.watch_db)
+        s1 = set(self.watch_manager.watch_db)
         if reconfig is None:
-            del self.wm.cm.nc_config[ self.atdir ]
+            del self.watch_manager.cm.nc_config[ self.atdir ]
         else:
-            self.wm.cm.nc_config[ self.atdir ] = reconfig
+            self.watch_manager.cm.nc_config[ self.atdir ] = reconfig
         self.process()
-        s2 = set(self.wm.watch_db)
+        s2 = set(self.watch_manager.watch_db)
         return s0,s1,s2
 
     def test_pruning_watch_files_false(self):

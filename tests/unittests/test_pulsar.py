@@ -496,3 +496,56 @@ class TestPulsar2(object):
         events_ = self.get_clear_events()
         assert set_ == set1
         assert events_ == ['IN_MODIFY({})'.format(self.atfile)]
+
+    def test_fim_single_file(self):
+        config = {self.atfile: {}}
+        self.reset(**config)
+        self.mk_tdir_and_write_tfile()
+        self.watch_manager.watch(self.tfile)
+
+        set0 = set(self.watch_manager.watch_db)
+        levents0 = len(self.events)
+        # we should be watching 1 file, no events
+
+        self.process()
+        set1 = set(self.watch_manager.watch_db)
+        levents1 = len(self.events)
+        # we should be watching 1 file, no events
+
+        with open(self.atfile, 'a') as fh:
+            fh.write('supz\n')
+
+        self.process()
+        set2 = set(self.watch_manager.watch_db)
+        levents2 = len(self.events)
+        # we should still be watching 1 file, 1 event
+
+        os.unlink(self.atfile)
+
+        self.process()
+        set3 = set(self.watch_manager.watch_db)
+        levents3 = len(self.events)
+        # we should now be watching 0 files, 2 events
+
+        assert levents0 == 0
+        assert levents1 == 0
+        assert levents2 == 1
+        assert levents3 == 2
+        assert set0 == set([self.atfile])
+        assert set1 == set([self.atfile])
+        assert set2 == set([self.atfile])
+        assert set3 == set()
+        ### BASELINE ###
+
+        # the relevant connundrum: if we put the file back, this config should
+        # somehow know to re-watch the atfile
+        # at the time of this writing, this test fails
+        with open(self.atfile, 'a') as fh:
+            fh.write('supz\n')
+
+        self.process()
+        set4 = set(self.watch_manager.watch_db)
+        levents4 = len(self.events)
+
+        assert set4 == set([self.atfile])
+        assert levents4 == 3 # XXX: 4? CREATE? CREATE_MODIFY? CREATE+MODIFY??

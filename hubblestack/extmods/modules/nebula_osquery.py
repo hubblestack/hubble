@@ -45,7 +45,7 @@ from hubblestack import __version__
 import hubblestack.log
 
 from hubblestack.status import HubbleStatus
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 hubble_status = HubbleStatus(__name__, 'top', 'queries', 'osqueryd_monitor', 'osqueryd_log_parser')
 
@@ -109,13 +109,15 @@ def queries(query_group,
 
     if 'osquerybinpath' not in __grains__:
         if query_group == 'day':
-            LOG.warning('osquery not installed on this host. Returning baseline data')
+            log.warning('osquery not installed on this host. Returning baseline data')
             return _build_baseline_osquery_data(report_version_with_day)
-        LOG.debug('osquery not installed on this host. Skipping.')
+        log.debug('osquery not installed on this host. Skipping.')
         return None
 
     query_data = query_data.get(query_group, {})
 
+    if not query_group:
+        return None
     if not query_data:
         return None
 
@@ -125,7 +127,7 @@ def queries(query_group,
     success, timing, ret = _run_osquery_queries(query_data, verbose)
 
     if success is False and salt.utils.platform.is_windows():
-        LOG.error('osquery does not run on windows versions earlier than Server 2008 and Windows 7')
+        log.error('osquery does not run on windows versions earlier than Server 2008 and Windows 7')
         if query_group == 'day':
             ret = [
                 {'fallback_osfinger': {
@@ -140,7 +142,7 @@ def queries(query_group,
         return None
 
     if __salt__['config.get']('splunklogging', False):
-        LOG.debug('Logging osquery timing data to splunk')
+        log.debug('Logging osquery timing data to splunk')
         timing_data = {'query_run_length': timing,
                        'schedule_time': schedule_time}
         hubblestack.log.emit_to_splunk(timing_data, 'INFO', 'hubblestack.osquery_timing')
@@ -204,7 +206,7 @@ def _run_osqueryi_query(query, query_sql, timing, verbose):
     else:
         if 'Timed out' in res['stdout']:
             # this is really the best way to tell without getting fancy
-            LOG.error('TIMEOUT during osqueryi execution name=%s', query['query_name'])
+            log.error('TIMEOUT during osqueryi execution name=%s', query['query_name'])
         query_ret['result'] = False
         query_ret['error'] = res['stderr']
     if verbose:
@@ -230,7 +232,7 @@ def _run_osquery_queries(query_data, verbose):
         if not query_sql:
             continue
         if 'attach' in query_sql.lower() or 'curl' in query_sql.lower():
-            LOG.critical('Skipping potentially malicious osquery query \'%s\' '
+            log.critical('Skipping potentially malicious osquery query \'%s\' '
                          'which contains either \'attach\' or \'curl\': %s',
                          name, query_sql)
             continue
@@ -276,7 +278,7 @@ def _get_query_data(query_file):
             orig_fh = file_path
             file_path = __salt__['cp.cache_file'](file_path)
         if not file_path:
-            LOG.error('Could not find file %s.', orig_fh)
+            log.error('Could not find file %s.', orig_fh)
             return None
         if os.path.isfile(file_path):
             with open(file_path, 'r') as yaml_file:
@@ -332,9 +334,9 @@ def osqueryd_monitor(configfile=None,
         daemonize osquery daemon. Default is True. Applicable for posix system only
 
     """
-    LOG.info("Starting osqueryd monitor")
+    log.info("Starting osqueryd monitor")
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
-    LOG.debug('Cached nebula files to cachedir')
+    log.debug('Cached nebula files to cachedir')
     cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'hubblestack_nebula_v2')
     base_path = cachedir
     servicename = "hubble_osqueryd"
@@ -412,8 +414,8 @@ def osqueryd_log_parser(osqueryd_logdir=None,
     result_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.results.log'))
     snapshot_logfile = os.path.normpath(os.path.join(osqueryd_logdir, 'osqueryd.snapshots.log'))
 
-    LOG.debug("Result log file resolved to: %s", result_logfile)
-    LOG.debug("Snapshot log file resolved to: %s", snapshot_logfile)
+    log.debug("Result log file resolved to: %s", result_logfile)
+    log.debug("Snapshot log file resolved to: %s", snapshot_logfile)
 
     backuplogdir = backuplogdir or __opts__.get('osquerylog_backupdir')
     logfilethresholdinbytes = logfilethresholdinbytes or __opts__.get('osquery_logfile_maxbytes')
@@ -433,7 +435,7 @@ def osqueryd_log_parser(osqueryd_logdir=None,
         if event_data:
             ret += event_data
     else:
-        LOG.warn("Specified osquery result log file doesn't exist: %s", result_logfile)
+        log.warn("Specified osquery result log file doesn't exist: %s", result_logfile)
 
     if os.path.exists(snapshot_logfile):
         logfile_offset = _get_file_offset(snapshot_logfile)
@@ -447,12 +449,12 @@ def osqueryd_log_parser(osqueryd_logdir=None,
         if event_data:
             ret += event_data
     else:
-        LOG.warn("Specified osquery snapshot log file doesn't exist: %s", snapshot_logfile)
+        log.warn("Specified osquery snapshot log file doesn't exist: %s", snapshot_logfile)
 
     ret = _update_event_data(ret)
 
     if mask_passwords:
-        LOG.info("Perform masking")
+        log.info("Perform masking")
         _mask_object(ret, topfile_for_mask)
     return ret
 
@@ -500,7 +502,7 @@ def check_disk_usage(path=None):
     """
     disk_stats = {}
     if salt.utils.platform.is_windows():
-        LOG.info("Platform is windows, skipping disk usage stats")
+        log.info("Platform is windows, skipping disk usage stats")
         disk_stats = {"Error": "Platform is windows"}
     else:
         if not path:
@@ -512,7 +514,7 @@ def check_disk_usage(path=None):
         avail = df_stat.f_frsize * df_stat.f_bavail
         used = total - avail
         per_used = float(used) / total * 100
-        LOG.info("Stats for path: %s, Total: %f, Available: %f, Used: %f, Used %%: %f", path,
+        log.info("Stats for path: %s, Total: %f, Available: %f, Used: %f, Used %%: %f", path,
                  total, avail, used, per_used)
         disk_stats = {'total': total,
                       'available': avail,
@@ -521,7 +523,7 @@ def check_disk_usage(path=None):
                       'path': path}
 
         if __salt__['config.get']('splunklogging', False):
-            LOG.debug('Logging disk usage stats to splunk')
+            log.debug('Logging disk usage stats to splunk')
             stats = {'disk_stats': disk_stats, 'schedule_time': time.time()}
             hubblestack.log.emit_to_splunk(stats, 'INFO', 'hubblestack.disk_usage')
 
@@ -635,9 +637,9 @@ def _generate_osquery_conf_file(conftopfile):
     make use of topfile to selectively load file(s) based on grains
     """
 
-    LOG.info("Generating osquery conf file using topfile: %s", conftopfile)
+    log.info("Generating osquery conf file using topfile: %s", conftopfile)
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
-    LOG.debug('Cached nebula files to cachedir')
+    log.debug('Cached nebula files to cachedir')
     cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'hubblestack_nebula_v2')
     base_path = cachedir
 
@@ -651,7 +653,7 @@ def _generate_osquery_conf_file(conftopfile):
             orig_fh = osqd_conf
             osqd_conf = __salt__['cp.cache_file'](osqd_conf)
         if not osqd_conf:
-            LOG.error('Could not find file %s.', orig_fh)
+            log.error('Could not find file %s.', orig_fh)
             return None
         if os.path.isfile(osqd_conf):
             with open(osqd_conf, 'r') as yfile:
@@ -665,11 +667,11 @@ def _generate_osquery_conf_file(conftopfile):
                                          merge_lists=True)
     if conf_data:
         try:
-            LOG.debug("Writing config to osquery.conf file")
+            log.debug("Writing config to osquery.conf file")
             with open(configfile, "w") as conf_file:
                 json.dump(conf_data, conf_file)
         except Exception:
-            LOG.error("Failed to generate osquery conf file using topfile.", exc_info=True)
+            log.error("Failed to generate osquery conf file using topfile.", exc_info=True)
 
     return configfile
 
@@ -681,9 +683,9 @@ def _generate_osquery_flags_file(flagstopfile):
     make use of topfile to selectively load file(s) based on grains
     """
 
-    LOG.info("Generating osquery flags file using topfile: %s", flagstopfile)
+    log.info("Generating osquery flags file using topfile: %s", flagstopfile)
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
-    LOG.debug('Cached nebula files to cachedir')
+    log.debug('Cached nebula files to cachedir')
     cachedir = os.path.join(__opts__.get('cachedir'), 'files', saltenv, 'hubblestack_nebula_v2')
     base_path = cachedir
 
@@ -697,7 +699,7 @@ def _generate_osquery_flags_file(flagstopfile):
             orig_fh = out_file
             out_file = __salt__['cp.cache_file'](out_file)
         if not out_file:
-            LOG.error('Could not find file %s.', orig_fh)
+            log.error('Could not find file %s.', orig_fh)
             return None
         if os.path.isfile(out_file):
             with open(out_file, 'r') as yfile:
@@ -711,13 +713,13 @@ def _generate_osquery_flags_file(flagstopfile):
                                           merge_lists=True)
     if flags_data:
         try:
-            LOG.debug("Writing config to osquery.flags file")
+            log.debug("Writing config to osquery.flags file")
             with open(flagfile, "w") as prop_file:
                 for key in flags_data:
                     propdata = "--" + key + "=" + flags_data.get(key) + "\n"
                     prop_file.write(propdata)
         except Exception:
-            LOG.error("Failed to generate osquery flags file using topfile.", exc_info=True)
+            log.error("Failed to generate osquery flags file using topfile.", exc_info=True)
 
     return flagfile
 
@@ -812,7 +814,7 @@ def _mask_object(object_to_be_masked, topfile):
                 orig_fh = mask_file
                 mask_file = __salt__['cp.cache_file'](mask_file)
             if not mask_file:
-                LOG.error('Could not find file %s.', orig_fh)
+                log.error('Could not find file %s.', orig_fh)
                 return None
             if os.path.isfile(mask_file):
                 with open(mask_file, 'r') as yfile:
@@ -822,12 +824,12 @@ def _mask_object(object_to_be_masked, topfile):
                                                     .format(f_data))
                     mask = _dict_update(mask, f_data, recursive_update=True, merge_lists=True)
 
-        LOG.debug('Masking data: %s', mask)
+        log.debug('Masking data: %s', mask)
 
         # Backwards compatibility with mask_by
         mask_with = mask.get('mask_with', mask.get('mask_by', 'REDACTED'))
 
-        LOG.info("Total number of results to check for masking: %d", len(object_to_be_masked))
+        log.info("Total number of results to check for masking: %d", len(object_to_be_masked))
         globbing_enabled = __opts__.get('enable_globbing_in_nebula_masking')
 
         for blacklisted_object in mask.get('blacklisted_objects', []):
@@ -846,7 +848,7 @@ def _mask_object(object_to_be_masked, topfile):
                                         column, query_name)
 
     except Exception:
-        LOG.exception('An error occured while masking the passwords.', exc_info=True)
+        log.exception('An error occured while masking the passwords.', exc_info=True)
 
     # Object masked in place, so we don't need to return the object
     return True
@@ -943,7 +945,7 @@ def _mask_event_data(object_to_be_masked, query_name, column, blacklisted_object
             custom_args={'should_break': False, 'log_error': True})
     else:
         # Unable to match query_name
-        LOG.debug('Skipping masking, as event data is not for query: %s', query_name)
+        log.debug('Skipping masking, as event data is not for query: %s', query_name)
 
 
 def _custom_blacklisted_object(blacklisted_object, mask_column):
@@ -954,17 +956,17 @@ def _custom_blacklisted_object(blacklisted_object, mask_column):
         try:
             if 'variable_name' in column_field and 'value' in column_field and \
                     column_field['variable_name'] == blacklisted_object['custom_mask_key']:
-                LOG.debug("Constructing custom blacklisted patterns based on \
+                log.debug("Constructing custom blacklisted patterns based on \
                           environment variable '%s'", blacklisted_object['custom_mask_key'])
                 blacklisted_object['custom_blacklist'] = [
                     field.strip() for field in column_field['value'].replace(' ', ',').split(',')
                     if field.strip() and field.strip() != blacklisted_object['custom_mask_key']]
             else:
-                LOG.debug("Custom mask variable not set in environment. Custom mask key used: %s",
+                log.debug("Custom mask variable not set in environment. Custom mask key used: %s",
                           blacklisted_object['custom_mask_key'])
         except Exception as exc:
-            LOG.error("Failed to generate custom blacklisted patterns based on hubble mask key")
-            LOG.error("Got error: %s", exc)
+            log.error("Failed to generate custom blacklisted patterns based on hubble mask key")
+            log.error("Got error: %s", exc)
 
     return blacklisted_object
 
@@ -990,7 +992,7 @@ def _mask_event_data_helper(event_data, query_name, column, perform_masking_kwar
     custom_mask_column = blacklisted_object.get('custom_mask_column', '')
     enable_local_masking = blacklisted_object.get('enable_local_masking', False)
     if enable_local_masking is True and custom_mask_column and custom_mask_column in event_data:
-        LOG.debug("Checking if custom mask patterns are set in environment")
+        log.debug("Checking if custom mask patterns are set in environment")
         mask_column = event_data[custom_mask_column]
         if mask_column and isinstance(mask_column, list):
             blacklisted_object = _custom_blacklisted_object(blacklisted_object, mask_column)
@@ -998,7 +1000,7 @@ def _mask_event_data_helper(event_data, query_name, column, perform_masking_kwar
             (isinstance(event_data[column], str) and
              event_data[column].strip() != ''):
         if custom_args['log_error']:
-            LOG.error('masking data references a missing column %s in query %s',
+            log.error('masking data references a missing column %s in query %s',
                       column, query_name)
         if custom_args['should_break']:
             return False, blacklisted_object, event_data
@@ -1054,24 +1056,24 @@ def _perform_masking(object_to_mask, blacklisted_object, mask_with, globbing_ena
                 blacklisted_patterns = blacklisted_object['blacklisted_patterns'] +\
                                        blacklisted_object['custom_blacklist']
                 blacklisted_patterns = list(set(blacklisted_patterns))  # remove duplicates, if any
-                LOG.debug("Appending custom blacklisted patterns in global blacklist for masking")
+                log.debug("Appending custom blacklisted patterns in global blacklist for masking")
             else:
                 blacklisted_patterns = blacklisted_object['custom_blacklist']
-                LOG.debug("Local blacklist missing, using global blacklist for masking")
+                log.debug("Local blacklist missing, using global blacklist for masking")
         else:
             if blacklisted_object.get('blacklisted_patterns', None):
                 blacklisted_patterns = blacklisted_object['blacklisted_patterns']
-                LOG.debug("No local blacklist found, using global blacklist only for masking")
+                log.debug("No local blacklist found, using global blacklist only for masking")
     elif enable_global_masking is True:
         if blacklisted_object.get('blacklisted_patterns', None):
             blacklisted_patterns = blacklisted_object['blacklisted_patterns']
-            LOG.debug("Only global masking is enabled.")
+            log.debug("Only global masking is enabled.")
     elif enable_local_masking is True:
         if 'custom_blacklist' in blacklisted_object and blacklisted_object['custom_blacklist']:
             blacklisted_patterns = blacklisted_object['custom_blacklist']
-            LOG.debug("Only local masking is enabled.")
+            log.debug("Only local masking is enabled.")
     else:
-        LOG.debug("Both global and local masking is disabled, skipping masking of results.")
+        log.debug("Both global and local masking is disabled, skipping masking of results.")
 
     if blacklisted_patterns:
         _recursively_mask_objects(object_to_mask, blacklisted_object, blacklisted_patterns,
@@ -1102,7 +1104,7 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, blacklisted_pa
     """
     if isinstance(object_to_mask, list):
         for child in object_to_mask:
-            LOG.debug("Recursing object %s", child)
+            log.debug("Recursing object %s", child)
             _recursively_mask_objects(child, blacklisted_object, blacklisted_patterns,
                                       mask_with, globbing_enabled)
     elif globbing_enabled and blacklisted_object['attribute_to_check'] in object_to_mask:
@@ -1111,7 +1113,7 @@ def _recursively_mask_objects(object_to_mask, blacklisted_object, blacklisted_pa
             if fnmatch.fnmatch(object_to_mask[blacklisted_object['attribute_to_check']],
                                blacklisted_pattern):
                 mask = True
-                LOG.info("Attribute %s will be masked.",
+                log.info("Attribute %s will be masked.",
                          object_to_mask[blacklisted_object['attribute_to_check']])
                 break
         if mask:
@@ -1173,7 +1175,7 @@ def _osqueryd_running_status(pidfile):
     """
     This function will check whether osqueryd is running in *nix systems
     """
-    LOG.info("checking if osqueryd is already running or not")
+    log.info("checking if osqueryd is already running or not")
     osqueryd_running = False
     if os.path.isfile(pidfile):
         try:
@@ -1183,33 +1185,33 @@ def _osqueryd_running_status(pidfile):
                     xpid = int(xpid)
                 except Exception:
                     xpid = 0
-                    LOG.warn('unable to parse pid="%d" in pidfile=%s', xpid, pidfile)
+                    log.warn('unable to parse pid="%d" in pidfile=%s', xpid, pidfile)
                 if xpid:
-                    LOG.info('pidfile=%s exists and contains pid=%d', pidfile, xpid)
+                    log.info('pidfile=%s exists and contains pid=%d', pidfile, xpid)
                     if os.path.isdir("/proc/{pid}".format(pid=xpid)):
                         try:
                             with open("/proc/{pid}/cmdline".format(pid=xpid), 'r') as cmd_file:
                                 cmdline = cmd_file.readline().strip().strip('\x00').replace(
                                     '\x00', ' ')
                                 if 'osqueryd' in cmdline:
-                                    LOG.info("process folder present and process is osqueryd")
+                                    log.info("process folder present and process is osqueryd")
                                     osqueryd_running = True
                                 else:
-                                    LOG.error("process is not osqueryd,"
+                                    log.error("process is not osqueryd,"
                                               " attempting to start osqueryd")
                         except Exception:
-                            LOG.error("process's cmdline cannot be determined,"
+                            log.error("process's cmdline cannot be determined,"
                                       " attempting to start osqueryd")
                     else:
-                        LOG.error("process folder not present, attempting to start osqueryd")
+                        log.error("process folder not present, attempting to start osqueryd")
                 else:
-                    LOG.error("pid cannot be determined, attempting to start osqueryd")
+                    log.error("pid cannot be determined, attempting to start osqueryd")
         except Exception:
-            LOG.error("unable to open pidfile, attempting to start osqueryd")
+            log.error("unable to open pidfile, attempting to start osqueryd")
     else:
         cmd = ['pkill', 'hubble_osqueryd']
         __salt__['cmd.run'](cmd, timeout=10000)
-        LOG.error("pidfile not found, attempting to start osqueryd")
+        log.error("pidfile not found, attempting to start osqueryd")
     return osqueryd_running
 
 
@@ -1218,7 +1220,7 @@ def _osqueryd_restart_required(hashfile, flagfile):
     This function will check whether osqueryd needs to be restarted
     """
     global OSQUERYD_NEEDS_RESTART
-    LOG.info("checking if osqueryd needs to be restarted or not")
+    log.info("checking if osqueryd needs to be restarted or not")
     if OSQUERYD_NEEDS_RESTART:
         OSQUERYD_NEEDS_RESTART = False
         return True
@@ -1237,13 +1239,13 @@ def _osqueryd_restart_required(hashfile, flagfile):
             with open(hashfile, "r") as hfile:
                 old_hash = hfile.read()
                 if old_hash != new_hash:
-                    LOG.info('old hash is %s and new hash is %s', old_hash, new_hash)
-                    LOG.info('changes detected in flag file')
+                    log.info('old hash is %s and new hash is %s', old_hash, new_hash)
+                    log.info('changes detected in flag file')
                     return True
                 else:
-                    LOG.info('no changes detected in flag file')
+                    log.info('no changes detected in flag file')
     except Exception:
-        LOG.error(
+        log.error(
             "some error occured, unable to determine whether osqueryd need to be restarted,"
             " not restarting osqueryd")
     return False
@@ -1253,15 +1255,15 @@ def _osqueryd_running_status_windows(servicename):
     """
     This function will check whether osqueryd is running in windows systems
     """
-    LOG.info("checking if osqueryd is already running or not")
+    log.info("checking if osqueryd is already running or not")
     osqueryd_running = False
     cmd_status = "(Get-Service -Name " + servicename + ").Status"
     osqueryd_status = __salt__['cmd.run'](cmd_status, shell='powershell')
     if osqueryd_status == 'Running':
         osqueryd_running = True
-        LOG.info('osqueryd already running')
+        log.info('osqueryd already running')
     else:
-        LOG.info('osqueryd not running')
+        log.info('osqueryd not running')
         osqueryd_running = False
 
     return osqueryd_running
@@ -1276,9 +1278,9 @@ def _start_osqueryd(pidfile,
     """
     This function will start osqueryd
     """
-    LOG.info("osqueryd is not running, attempting to start osqueryd")
+    log.info("osqueryd is not running, attempting to start osqueryd")
     if salt.utils.platform.is_windows():
-        LOG.info("requesting service manager to start osqueryd")
+        log.info("requesting service manager to start osqueryd")
         cmd = ['net', 'start', servicename]
     else:
         cmd = ['/opt/osquery/hubble_osqueryd', '--pidfile={0}'.format(pidfile),
@@ -1287,11 +1289,11 @@ def _start_osqueryd(pidfile,
                '--database_path={0}'.format(databasepath), '--daemonize']
     ret_dict = __salt__['cmd.run_all'](cmd, timeout=10000)
     if ret_dict.get('retcode', None) != 0:
-        LOG.error("Failed to start osquery daemon. Retcode: %s and error: %s", ret_dict.get(
+        log.error("Failed to start osquery daemon. Retcode: %s and error: %s", ret_dict.get(
             'retcode', None),
                   ret_dict.get('stderr', None))
     else:
-        LOG.info("Successfully started osqueryd")
+        log.info("Successfully started osqueryd")
 
 
 def _restart_osqueryd(pidfile,
@@ -1304,7 +1306,7 @@ def _restart_osqueryd(pidfile,
     """
     This function will restart osqueryd
     """
-    LOG.info("osqueryd needs to be restarted, restarting now")
+    log.info("osqueryd needs to be restarted, restarting now")
 
     with open(flagfile, "r") as open_file:
         file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
@@ -1329,10 +1331,10 @@ def _stop_osqueryd(servicename, pidfile):
         stop_cmd = ['pkill', 'hubble_osqueryd']
     ret_stop = __salt__['cmd.run_all'](stop_cmd, timeout=10000)
     if ret_stop.get('retcode', None) != 0:
-        LOG.error("Failed to stop osqueryd. Retcode: %s and error: %s",
+        log.error("Failed to stop osqueryd. Retcode: %s and error: %s",
                   ret_stop.get('retcode', None), ret_stop.get('stderr', None))
     else:
-        LOG.info("Successfully stopped osqueryd")
+        log.info("Successfully stopped osqueryd")
     if not salt.utils.platform.is_windows():
         remove_pidfile_cmd = ['rm', '-rf', '{0}'.format(pidfile)]
         __salt__['cmd.run'](remove_pidfile_cmd, timeout=10000)
@@ -1363,12 +1365,12 @@ def _parse_log(path_to_logfile,
                     # In this scenario hubble might take too much time to process the logs
                     # which may not be required
                     # To handle this, log file size is validated against max threshold size.
-                    LOG.info(
+                    log.info(
                         "Log file size is above max threshold size that can be parsed by Hubble.")
-                    LOG.info("Log file size: %f, max threshold: %f",
+                    log.info("Log file size: %f, max threshold: %f",
                              os.stat(path_to_logfile).st_size,
                              maxlogfilesizethreshold)
-                    LOG.info("Rotating log and skipping parsing for this iteration")
+                    log.info("Rotating log and skipping parsing for this iteration")
                     # Closing explicitly to handle File in Use exception in windows
                     file_des.close()
                     _perform_log_rotation(path_to_logfile,
@@ -1389,7 +1391,7 @@ def _parse_log(path_to_logfile,
                     # Closing explicitly to handle File in Use exception in windows
                     file_des.close()
                     if rotate_log:
-                        LOG.info('Log file size above threshold, '
+                        log.info('Log file size above threshold, '
                                  'going to rotate log file: %s', path_to_logfile)
                         residue_events = _perform_log_rotation(path_to_logfile,
                                                                file_offset,
@@ -1398,15 +1400,15 @@ def _parse_log(path_to_logfile,
                                                                enablediskstatslogging,
                                                                True)
                         if residue_events:
-                            LOG.info("Found few residue logs, updating the data object")
+                            log.info("Found few residue logs, updating the data object")
                             event_data += residue_events
                         # Reset file offset to start of file in case original file is rotated
                         file_offset = 0
                 _set_cache_offset(path_to_logfile, file_offset)
             else:
-                LOG.error('Unable to open log file for reading: %s', path_to_logfile)
+                log.error('Unable to open log file for reading: %s', path_to_logfile)
     else:
-        LOG.error("Log file doesn't exists: %s", path_to_logfile)
+        log.error("Log file doesn't exists: %s", path_to_logfile)
 
     return event_data
 
@@ -1446,17 +1448,17 @@ def _perform_log_rotation(path_to_logfile,
                 os.path.join(backup_log_dir, log_filename)) + "*")
 
             if list_of_backup_log_files:
-                LOG.info("Backup log file count: %d and backup count threshold: %d",
+                log.info("Backup log file count: %d and backup count threshold: %d",
                          len(list_of_backup_log_files), backup_log_files_count)
                 list_of_backup_log_files.sort()
-                LOG.info("Backup log file sorted list: %s", list_of_backup_log_files)
+                log.info("Backup log file sorted list: %s", list_of_backup_log_files)
                 if len(list_of_backup_log_files) >= backup_log_files_count:
                     list_of_backup_log_files = list_of_backup_log_files[
                         :len(list_of_backup_log_files) -
                         backup_log_files_count + 1]
                     for dfile in list_of_backup_log_files:
                         salt.utils.files.remove(dfile)
-                    LOG.info("Successfully deleted extra backup log files")
+                    log.info("Successfully deleted extra backup log files")
 
             residue_events = []
             log_filename = os.path.basename(path_to_logfile)
@@ -1472,7 +1474,7 @@ def _perform_log_rotation(path_to_logfile,
                 # As of now, this method would send disk stats to Splunk (if configured)
                 _disk_stats = check_disk_usage()
         else:
-            LOG.error("Specified backup log directory does not exists."
+            log.error("Specified backup log directory does not exists."
                       " Log rotation will not be performed.")
 
     return residue_events
@@ -1486,7 +1488,7 @@ def _read_residue_logs(path_to_logfile, offset):
     if os.path.exists(path_to_logfile):
         with open(path_to_logfile, "r") as file_des:
             if file_des:
-                LOG.info('Checking for any residue logs that might have been '
+                log.info('Checking for any residue logs that might have been '
                          'added while log rotation was being performed')
                 file_des.seek(offset)
                 for event in file_des.readlines():
@@ -1504,7 +1506,7 @@ def query(query):
     """
     max_file_size = 104857600
     if 'attach' in query.lower() or 'curl' in query.lower():
-        LOG.critical('Skipping potentially malicious osquery query which contains either'
+        log.critical('Skipping potentially malicious osquery query which contains either'
                      ' \'attach\' or \'curl\': %s', query)
         return None
     query_ret = {'result': True}
@@ -1517,7 +1519,7 @@ def query(query):
     else:
         if 'Timed out' in res['stdout']:
             # this is really the best way to tell without getting fancy
-            LOG.error('TIMEOUT during osqueryi execution %s', query)
+            log.error('TIMEOUT during osqueryi execution %s', query)
         query_ret['result'] = False
         query_ret['error'] = res['stderr']
 
@@ -1569,7 +1571,7 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
               group: root                # optional, default shown
     """
     if salt.utils.is_windows():
-        LOG.error('Windows is not supported for nebula.extensions')
+        log.error('Windows is not supported for nebula.extensions')
         return False
 
     if extensions_topfile is None:
@@ -1578,7 +1580,7 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
     try:
         topdata = _get_top_data(extensions_topfile)
     except Exception:
-        LOG.info('An error occurred fetching top data for nebula.extensions.', exc_into=True)
+        log.info('An error occurred fetching top data for nebula.extensions.', exc_into=True)
         return False
 
     if not topdata:
@@ -1601,7 +1603,7 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
                         ext_file.write(extension)
                         ext_file.write('\n')
             except Exception:
-                LOG.error('Something went wrong writing osquery extensions.load.', exc_info=True)
+                log.error('Something went wrong writing osquery extensions.load.', exc_info=True)
 
             # Leave flag to restart osqueryd
             global OSQUERYD_NEEDS_RESTART
@@ -1620,7 +1622,7 @@ def _get_file_data(topdata):
             orig_fh = ext_file
             ext_file = __salt__['cp.cache_file'](ext_file)
         if not ext_file:
-            LOG.error('Could not find file %s.', orig_fh)
+            log.error('Could not find file %s.', orig_fh)
             continue
         if os.path.isfile(ext_file):
             with open(ext_file, 'r') as file_data:
@@ -1657,7 +1659,7 @@ def _parse_file_data(files):
             if dest.startswith(whitelisted_path):
                 dest_ok = True
         if not dest_ok:
-            LOG.error('Skipping file outside of osquery_extensions_path_whitelist: %s', dest)
+            log.error('Skipping file outside of osquery_extensions_path_whitelist: %s', dest)
             continue
 
         # Allow for file removals
@@ -1670,7 +1672,7 @@ def _parse_file_data(files):
             continue
 
         if not path or not dest:
-            LOG.error('path or dest missing in files entry: %s', file_data)
+            log.error('path or dest missing in files entry: %s', file_data)
             continue
 
         result = _get_file(**file_data)
@@ -1690,7 +1692,7 @@ def _get_file(path, dest, mode='600', user='root', group='root'):
         mode = str(mode)
         local_path = __salt__['cp.cache_file'](path)
         if not local_path:
-            LOG.error('Couldn\'t cache %s to %s. This is probably due to '
+            log.error('Couldn\'t cache %s to %s. This is probably due to '
                       'an issue finding the file in S3.', path, dest)
             return False
         shutil.copyfile(local_path, dest)
@@ -1702,5 +1704,5 @@ def _get_file(path, dest, mode='600', user='root', group='root'):
 
         return ret[0]['result']
     except Exception:
-        LOG.error('An error occurred getting file %s', path, exc_info=True)
+        log.error('An error occurred getting file %s', path, exc_info=True)
         return False

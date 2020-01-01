@@ -1,3 +1,8 @@
+argparse
+Crypto
+daemon
+logging
+pprint
 backports-abc
 bandit
 certifi
@@ -15,7 +20,6 @@ msgpack
 ntplib
 pycrypto
 pyinotify
-pylint
 pytest
 pytest-cov
 pytest-html
@@ -25,9 +29,12 @@ python-dateutil
 pyyaml
 requests
 salt-ssh
+pylint
+saltpylint
 singledispatch
 six
 smmap2
 tornado
 urllib3
 vulners
+pyOpenSSL

@@ -50,7 +50,7 @@ import re
 
 from salt.exceptions import CommandExecutionError
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 def grep(path,
@@ -88,8 +88,7 @@ def grep(path,
     if not os.path.isfile(path):
         if success_on_file_missing:
             return True, {'reason': 'File missing'}
-        else:
-            return False, {'reason': 'File missing'}
+        return False, {'reason': 'File missing'}
 
     if not grep_args:
         grep_args = []
@@ -100,8 +99,7 @@ def grep(path,
         # No output found
         if fail_on_match:
             return True, {'grep_output': output}
-        else:
-            return False, {'grep_output': output}
+        return False, {'grep_output': output}
 
     # We default to ``success = True`` because there was grep output. Now we'll
     # check against the various match_output settings to see if we need to
@@ -123,10 +121,7 @@ def grep(path,
     if fail_on_match:
         success = not success
 
-    if success:
-        return True, {'grep_output': output}
-    else:
-        return False, {'grep_output': output}
+    return success, {'grep_output': output}
 
 
 def _grep(path,

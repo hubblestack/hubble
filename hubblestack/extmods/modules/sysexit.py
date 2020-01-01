@@ -8,7 +8,7 @@ import logging
 import sys
 
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 def sysexit(code=0):
     """
@@ -17,5 +17,5 @@ def sysexit(code=0):
     code
         The exist status with which the process should exit.
     """
-    LOG.info('instructing daemon to exit')
+    log.info('instructing daemon to exit')
     sys.exit(code)

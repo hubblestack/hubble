@@ -14,14 +14,25 @@ class TestStatNova():
 
     def test_merge_yaml(self):
         ret = {}
-        data = {'stat': {'passwd_owner_group': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0',
-                                                'data': {'Ubuntu-16.04': [{'/etc/passwd': {'gid': 0, 'tag': 'CIS-12.4', 'group': 'root', 'uid': 0, 'user': 'root'}}]},
-                                                'description': 'Verify User/Group Ownership on /etc/passwd'}}}
+        data = {
+            'stat': {'passwd_owner_group': {
+                'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0',
+                'data': {'Ubuntu-16.04': [{'/etc/passwd': {'gid': 0,
+                                                           'tag': 'CIS-12.4',
+                                                           'group': 'root',
+                                                           'uid': 0,
+                                                           'user': 'root'}}]},
+                'description': 'Verify User/Group Ownership on /etc/passwd'}}}
         profile = 'ubuntu-1604-level-1-scored-v1-0-0'
         val = hubblestack.files.hubblestack_nova.stat_nova._merge_yaml(ret, data, profile)
-        assert val['stat'] == [{'passwd_owner_group': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0',
-                                                       'data': {'Ubuntu-16.04': [{'/etc/passwd': {'group': 'root', 'gid': 0, 'tag': 'CIS-12.4', 'uid': 0, 'user': 'root'}}]},
-                                                       'description': 'Verify User/Group Ownership on /etc/passwd'}}]
+        assert val['stat'] == [{'passwd_owner_group': {
+            'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0',
+            'data': {'Ubuntu-16.04': [{'/etc/passwd': {'group': 'root',
+                                                       'gid': 0,
+                                                       'tag': 'CIS-12.4',
+                                                       'uid': 0,
+                                                       'user': 'root'}}]},
+            'description': 'Verify User/Group Ownership on /etc/passwd'}}]
 
     def test_merge_yaml_recurssive(self):
         ret = {}

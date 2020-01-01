@@ -19,7 +19,7 @@ import salt.utils.platform
 
 from salt.exceptions import CommandExecutionError
 
-LOG = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 DEFAULT_MASK = ['File create', 'File delete', 'Hard link change', 'Data extend',
                 'Data overwrite', 'Data truncation', 'Security change', 'Rename: old name',
                 'Rename: new name']
@@ -124,8 +124,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
     global CONFIG
 
     if config.get('verbose'):
-        LOG.debug('Pulsar module called.')
-        LOG.debug('Pulsar module config from pillar:\n%s', config)
+        log.debug('Pulsar module called.')
+        log.debug('Pulsar module config from pillar:\n%s', config)
     ret = []
     # Get config(s) from filesystem if we don't have them already
     if CONFIG and CONFIG_STALENESS < config.get('refresh_frequency', 60):
@@ -135,14 +135,14 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         config = CONFIG
     else:
         if config.get('verbose'):
-            LOG.debug('No cached config found for pulsar, retrieving fresh from fileserver.')
+            log.debug('No cached config found for pulsar, retrieving fresh from fileserver.')
         new_config = _get_config_from_fileserver(config)
         new_config.update(config)
         config = new_config
         CONFIG_STALENESS = 0
         CONFIG = config
     if config.get('verbose'):
-        LOG.debug('Pulsar beacon config (compiled from config list):\n%s', config)
+        log.debug('Pulsar beacon config (compiled from config list):\n%s', config)
 
     if 'win_pulsar_file_map' not in __context__:
         __context__['win_pulsar_file_map'] = {}
@@ -192,9 +192,9 @@ def _get_config_from_fileserver(config):
                                               recursive_update=True,
                                               merge_lists=True)
             else:
-                LOG.error('Path %s does not exist or is not a file', path)
+                log.error('Path %s does not exist or is not a file', path)
     else:
-        LOG.error('Pulsar beacon \'paths\' data improperly formatted. Should be list of paths')
+        log.error('Pulsar beacon \'paths\' data improperly formatted. Should be list of paths')
 
     return new_config
 
@@ -329,13 +329,13 @@ def getfilepath(pfid, fname, drive):
             'fsutil file queryfilenamebyid {0} 0x{1}'.format(drive, pfid),
             ignore_retcode=True)).replace('?\\', '\r\n')
         if 'Error:' in jfullpath:
-            LOG.debug('Current usn cannot be queried as file')
+            log.debug('Current usn cannot be queried as file')
             return None
         __context__['win_pulsar_file_map'][pfid] = jfullpath.split('\r\n')[1]
         retpath = __context__['win_pulsar_file_map'][pfid] + '\\' + fname
         return retpath
     except Exception:
-        LOG.debug('Current usn item is not a file')
+        log.debug('Current usn item is not a file')
         return None
 
 
@@ -354,7 +354,7 @@ def usnfilter(usn_list, config_paths):
                         'paths', 'verbose'}:
                 continue
             if not os.path.exists(path):
-                LOG.info('the folder path %s does not exist', path)
+                log.info('the folder path %s does not exist', path)
                 continue
 
             if isinstance(config_paths[path], dict):
@@ -367,7 +367,7 @@ def usnfilter(usn_list, config_paths):
 
             fpath = usn['Full path']
             if fpath is None:
-                LOG.debug('The following change made was not a file: %s', usn)
+                log.debug('The following change made was not a file: %s', usn)
                 continue
             # check if base path called out in yaml is in file location called out in actual change
             if path in fpath:
@@ -517,7 +517,7 @@ def get_top_data(topfile):
         TOP_STALENESS += 1
         topdata = TOP
     else:
-        LOG.debug('Missing/stale cached topdata found for pulsar,'
+        log.debug('Missing/stale cached topdata found for pulsar,'
                   ' retrieving fresh from fileserver.')
         topfile = __salt__['cp.cache_file'](topfile)
         try:

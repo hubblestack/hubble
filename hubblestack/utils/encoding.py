@@ -40,3 +40,15 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
         ret = base64.b64encode(starting_string)
 
     return bool(ret), ret
+
+def encode_something_to_bytes(x):
+    """ take strings or bytes or whatever and convert to bytes """
+    if isinstance(x, (bytes,bytearray)):
+        return x
+    return x.encode('utf-8')
+
+def decode_something_to_string(x):
+    """ take strings or bytes or whatever and convert to string """
+    if isinstance(x, (bytes,bytearray)):
+        return x.decode('utf-8')
+    return x

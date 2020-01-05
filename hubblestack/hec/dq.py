@@ -7,6 +7,8 @@ import time
 import shutil
 import json
 from collections import deque
+from hubblestack.utils.misc import numbered_file_split_key
+from hubblestack.utils.encoding import encode_something_to_bytes, decode_something_to_string
 
 __all__ = [
     'QueueTypeError', 'QueueCapacityError', 'MemQueue', 'DiskQueue',
@@ -37,6 +39,7 @@ class OKTypesMixin:
         if not isinstance(item, self.ok_types):
             raise QueueTypeError('type({0}) is not ({1})'.format(type(item), self.ok_types))
 
+
 class NoQueue(object):
     cn = 0
     def put(self, *a, **kw):
@@ -49,22 +52,6 @@ class NoQueue(object):
         return False
     __nonzero__ = __bool__ # stupid python2
 
-def numbered_file_split_key(x):
-    """ for sorting purposes, split filenames like '238048.11', '238048.17',
-        '238048.0' into lists of integers.  E.g.:
-
-        for fname in sorted(filenames, key=numbered_file_split_key):
-            do_things_ordered_by_integer_sort()
-    """
-    try:
-        return [int(i) for i in x.split('.')]
-    except:
-        pass
-    try:
-        return [int(x)]
-    except:
-        pass
-    return list()
 
 class DiskQueue(OKTypesMixin):
     sep = b' '
@@ -85,6 +72,7 @@ class DiskQueue(OKTypesMixin):
     __nonzero__ = __bool__ # stupid python2
 
     def compress(self, dat):
+        dat = encode_something_to_bytes(dat)
         if not self.compression:
             return dat
         def _bz2(x):
@@ -100,7 +88,8 @@ class DiskQueue(OKTypesMixin):
                 os.unlink(name)
 
     def decompress(self, dat):
-        if str(dat).startswith('BZ'):
+        dat = encode_something_to_bytes(dat)
+        if dat.startswith(b'BZ'):
             try:
                 return bz2.BZ2Decompressor().decompress(dat)
             except IOError:
@@ -147,8 +136,6 @@ class DiskQueue(OKTypesMixin):
         f = os.path.join(d, remainder)
         with open(f, 'wb') as fh:
             log.debug('writing item to disk cache')
-            if isinstance(bstr, str):
-                bstr = str.encode(bstr)
             fh.write(bstr)
         if meta:
             with open(f + '.meta', 'w') as fh:
@@ -176,7 +163,7 @@ class DiskQueue(OKTypesMixin):
         """
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                return self.decompress(fh.read()), self.read_meta(fname)
+                return decode_something_to_string(self.decompress(fh.read())), self.read_meta(fname)
 
     def get(self):
         """ get the next item from the queue
@@ -184,15 +171,15 @@ class DiskQueue(OKTypesMixin):
         """
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                ret = self.decompress(fh.read())
-            ret = ret, self.read_meta(fname)
+                dat = self.decompress(fh.read())
+            mdat = self.read_meta(fname)
             sz = os.stat(fname).st_size
             self.unlink_(fname)
             self.cn -= 1
             self.sz -= sz
             if self.double_check_cnsz:
                 self._count(double_check_only=True, tag='get')
-            return ret
+            return decode_something_to_string(dat), mdat
 
     def getz(self, sz=SPLUNK_MAX_MSG):
         """ fetch items from the queue and concatenate them together using the
@@ -235,7 +222,7 @@ class DiskQueue(OKTypesMixin):
             #
             # occasionally this will return something pessimistic
             meta_data[k] = max(meta_data[k])
-        return ret, meta_data
+        return decode_something_to_string(ret), meta_data
 
     def pop(self):
         """ remove the next item from the queue (do not return it); useful with .peek() """

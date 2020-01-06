@@ -51,8 +51,6 @@ def _get_aws_details():
         aws['cloud_instance_id'] = requests.get(
             'http://169.254.169.254/latest/meta-data/instance-id',
             headers=aws_token_header, timeout=3, proxies=proxies).text
-
-
     except (requests.exceptions.RequestException, ValueError):
         # Not on an AWS box
         aws = None
@@ -233,6 +231,5 @@ def _build_gpc_extra(gcp_header, proxies):
         external_ips_list = [item['externalIp'] for item in value['accessConfigs'] if
                              'externalIp' in item]
         gcp_extra[grain_name_accessconfig_external_ips] = ','.join(external_ips_list)
-
 
     return gcp_extra

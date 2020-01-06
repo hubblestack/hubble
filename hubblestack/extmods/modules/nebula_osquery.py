@@ -116,6 +116,8 @@ def queries(query_group,
 
     query_data = query_data.get(query_group, {})
 
+    if not query_group:
+        return None
     if not query_data:
         return None
 

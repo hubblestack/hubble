@@ -18,6 +18,7 @@ hubble_status = hubblestack.status.HubbleStatus(__name__)
 
 from . dq import DiskQueue, NoQueue, QueueCapacityError
 from hubblestack.utils.stdrec import update_payload
+from hubblestack.utils.encoding import encode_something_to_bytes
 
 __version__ = '1.0'
 
@@ -259,7 +260,7 @@ class HEC(object):
             md5 = hashlib.md5()
             uril = sorted([ x.uri for x in self.server_uri ])
             for u in uril:
-                md5.update(u)
+                md5.update(encode_something_to_bytes(u))
             actual_disk_queue = os.path.join(disk_queue, md5.hexdigest())
             log.debug("disk_queue for %s: %s", uril, actual_disk_queue)
             self.queue = DiskQueue(actual_disk_queue, size=disk_queue_size, compression=disk_queue_compression)
@@ -299,12 +300,12 @@ class HEC(object):
             log.error("disk queue is full, dropping payload")
 
 
-    def queueEvent(self, dat, eventtime=''):
+    def queueEvent(self, dat, eventtime='', no_queue=False):
         if not isinstance(dat, Payload):
             dat = Payload(dat, eventtime, no_queue=no_queue)
         if dat.no_queue: # here you silly hec, queue this no_queue payload...
             return
-        count_input(payload)
+        count_input(dat)
         self._queue_event(dat)
 
     def flushQueue(self):

@@ -479,7 +479,7 @@ class HubbleStatus(object):
         min_t = min([x['first_t'] for x in stats_short.values() if x['first_t'] > 0])
         time_stats = {'time': max_t, 'dt': min_dt, 'start': min_t}
         stats_short['HEALTH'] = health_stats = {
-            'buckets': {k: n.buckets for k, n in cls.dat.iteritems()},
+            'buckets': {k: n.buckets for k, n in cls.dat.items()},
             'last_activity': time_stats,
         }
         stats_short['__doc__'] = {

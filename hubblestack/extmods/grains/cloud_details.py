@@ -49,8 +49,8 @@ def _get_aws_details():
         # Else it will throw an Exception
         int(aws['cloud_account_id'])
         aws['cloud_instance_id'] = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
-                                                headers=aws_token_header, timeout=3, proxies=proxies).text
-
+                                                headers=aws_token_header, timeout=3,
+                                                proxies=proxies).text
     except (requests.exceptions.RequestException, ValueError):
         # Not on an AWS box
         aws = None
@@ -61,13 +61,16 @@ def _get_aws_details():
             aws_extra['cloud_availability_zone'] = res.get('availabilityZone')
             aws_extra['cloud_ami_id'] = res.get('imageId')
             aws_extra['cloud_region'] = res.get('region')
-            r = requests.get('http://169.254.169.254/latest/meta-data/public-hostname', headers=aws_token_header, timeout=3, proxies=proxies)
+            r = requests.get('http://169.254.169.254/latest/meta-data/public-hostname',
+                             headers=aws_token_header, timeout=3, proxies=proxies)
             if r.status_code == requests.codes.ok:
                 aws_extra['cloud_public_hostname'] = r.text
-            r = requests.get('http://169.254.169.254/latest/meta-data/public-ipv4', headers=aws_token_header, timeout=3, proxies=proxies)
+            r = requests.get('http://169.254.169.254/latest/meta-data/public-ipv4',
+                             headers=aws_token_header, timeout=3, proxies=proxies)
             if r.status_code == requests.codes.ok:
                 aws_extra['cloud_public_ipv4'] = r.text
-            r = requests.get('http://169.254.169.254/latest/meta-data/local-hostname', headers=aws_token_header, timeout=3, proxies=proxies)
+            r = requests.get('http://169.254.169.254/latest/meta-data/local-hostname',
+                             headers=aws_token_header, timeout=3, proxies=proxies)
             if r.status_code == requests.codes.ok:
                 aws_extra['cloud_private_hostname'] = r.text
             for key in aws_extra.keys():
@@ -227,6 +230,5 @@ def _build_gpc_extra(gcp_header, proxies):
         external_ips_list = [item['externalIp'] for item in value['accessConfigs'] if
                              'externalIp' in item]
         gcp_extra[grain_name_accessconfig_external_ips] = ','.join(external_ips_list)
-
 
     return gcp_extra

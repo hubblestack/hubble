@@ -333,9 +333,12 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
     for failure_index in reversed(sorted(set(failures_to_remove))):
         results['Failure'].pop(failure_index)
 
+    to_remove = set()
     for key in results.keys():
         if not results[key]:
-            results.pop(key)
+            to_remove.add(key)
+    for key_to_remove in to_remove:
+        results.pop(key_to_remove)
 
     return results
 
@@ -581,9 +584,12 @@ def _clean_up_results(results, show_success):
     if show_success was not passed, adding an error message if
     results is empty
     """
+    to_remove = set()
     for key in results.keys():
         if not results[key]:
-            results.pop(key)
+            to_remove.add(key)
+    for key_to_remove in to_remove:
+        results.pop(key_to_remove)
 
     if not results:
         results['Messages'] = 'No audits matched this host in the specified profiles.'

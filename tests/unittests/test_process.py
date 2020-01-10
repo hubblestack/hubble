@@ -1,12 +1,8 @@
 
 
 import os
-import sys
 import pytest
 from collections import defaultdict
-
-myPath = os.path.abspath(os.getcwd())
-sys.path.insert(0, myPath)
 
 from salt.exceptions import ArgumentValueError
 import hubblestack.extmods.fdg.process

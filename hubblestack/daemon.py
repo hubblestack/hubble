@@ -3,7 +3,6 @@
 Main entry point for the hubble daemon
 """
 
-
 # import lockfile
 import argparse
 import copy
@@ -512,7 +511,6 @@ def _setup_signaling():
     if not salt.utils.platform.is_windows():
         signal.signal(signal.SIGHUP, clean_up_process)
         signal.signal(signal.SIGQUIT, clean_up_process)
-
 
 def _disable_boto_modules():
     """ Disable the unneeded boto modules because they cause issues with the loader """

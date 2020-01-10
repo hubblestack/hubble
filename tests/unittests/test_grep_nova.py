@@ -1,7 +1,4 @@
-import sys
 import os
-myPath = os.path.abspath(os.getcwd())
-sys.path.insert(0, myPath)
 import hubblestack.files.hubblestack_nova.grep
 
 

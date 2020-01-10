@@ -75,6 +75,5 @@ def _find_addr(interfaces):
         for ip_addr in ips:
             if ip_addr != '127.0.0.1':
                 return {'local_ip4': ip_addr}
-
     # Give up
     return {'local_ip4', ''}

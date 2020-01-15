@@ -271,8 +271,8 @@ def _get_cert_from_file(cert_file_path):
 def _get_x509_days_left(x509):
     date_fmt = '%Y%m%d%H%M%SZ'
     current_datetime = datetime.datetime.utcnow()
-    not_after = time.strptime(x509.get_notAfter(), date_fmt)
-    not_before = time.strptime(x509.get_notBefore(), date_fmt)
+    not_after = time.strptime(x509.get_notAfter().decode(), date_fmt)
+    not_before = time.strptime(x509.get_notBefore().decode(), date_fmt)
 
     ret = {'not_after': (datetime.datetime(*not_after[:6]) - current_datetime).days,
            'not_before': (datetime.datetime(*not_before[:6]) - current_datetime).days}

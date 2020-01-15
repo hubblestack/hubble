@@ -164,7 +164,7 @@ class DiskQueue(OKTypesMixin):
         ''' iterate and return all items in the disk queue (without removing any) '''
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                yield self.decompress(fh.read())
+                yield self.decompress(fh.read()), self.read_meta(fname)
 
     def get(self):
         """ get the next item from the queue

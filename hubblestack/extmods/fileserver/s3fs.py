@@ -103,7 +103,7 @@ from salt.ext.six.moves.urllib.parse import quote as _quote
 
 log = logging.getLogger(__name__)
 
-S3_CACHE_EXPIRE = 3600  # cache for 30 minutes
+S3_CACHE_EXPIRE = 1800  # cache for 30 minutes
 S3_SYNC_ON_UPDATE = True  # sync cache on update rather than jit
 
 

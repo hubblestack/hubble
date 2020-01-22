@@ -258,6 +258,9 @@ def query(key, keyid, method='GET', params=None, headers=None,
         return 'Saved to local file: {0}'.format(local_file)
 
     if result.status_code < 200 or result.status_code >= 300:
+        if err_code == 'SlowDown':
+            log.warning('{}, {}'.format(err_code, err_msg))
+            return
         raise CommandExecutionError(
             'Failed s3 operation. {0}: {1}'.format(err_code, err_msg))
 

@@ -103,7 +103,7 @@ from salt.ext.six.moves.urllib.parse import quote as _quote
 
 log = logging.getLogger(__name__)
 
-S3_CACHE_EXPIRE = 30  # cache for 30 seconds
+S3_CACHE_EXPIRE = 3600  # cache for 30 minutes
 S3_SYNC_ON_UPDATE = True  # sync cache on update rather than jit
 
 
@@ -335,6 +335,7 @@ def _get_s3_key():
         'service_url': None,
         'keyid': None,
         'key': None,
+        'cache_expire': None
     }
 
     ret = dict()
@@ -359,8 +360,11 @@ def _init():
     specified and cache the data to disk.
     '''
     cache_file = _get_buckets_cache_filename()
-    exp = time.time() - S3_CACHE_EXPIRE
+    s3_key_kwargs = _get_s3_key()
+    cache_expire_time = s3_key_kwargs['cache_expire'] if s3_key_kwargs.get('cache_expire', None) else S3_CACHE_EXPIRE
+    exp = time.time() - float(cache_expire_time)
 
+    log.info('S3 cache expire time is {}s'.format(cache_expire_time))
     # check mtime of the buckets files cache
     metadata = None
     try:
@@ -449,6 +453,9 @@ def _refresh_buckets_cache_file(cache_file):
                                         path_style=path_style,
                                         https_enable=https_enable,
                                         params={'marker': marker})
+            if not tmp:
+                return
+
             headers = []
             for header in tmp:
                 if 'Key' in header:

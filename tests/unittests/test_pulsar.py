@@ -1,19 +1,19 @@
+"""
+Test the fim (pulsar) internals for various correctness
+"""
+
 import os
-import hubblestack.extmods.modules.pulsar as pulsar
-from salt.exceptions import CommandExecutionError
-
 import shutil
+import logging
 import six
-import pyinotify
 
-if os.environ.get('DEBUG_SHOW_PULSAR_LOGS'):
-    import logging
-    root_logger = logging.getLogger()
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    root_logger.addHandler(ch)
+from salt.exceptions import CommandExecutionError
+import hubblestack.extmods.modules.pulsar as pulsar
 
-class TestPulsar():
+log = logging.getLogger(__name__)
+
+class TestPulsar(object):
+    """ An older set of pulsar tests """
 
     def test_virtual(self):
         var = pulsar.__virtual__()
@@ -75,8 +75,10 @@ class TestPulsar():
         configfile = 'tests/unittests/resources/hubblestack_pulsar_config.yaml'
         verbose = False
 
-        def config_get(value, default):
+        def config_get(_, default):
+            ''' pretend salt[config.get] '''
             return default
+
         __salt__ = {}
         __salt__['config.get'] = config_get
         pulsar.__salt__ = __salt__
@@ -90,11 +92,14 @@ class TestPulsar():
     def test_top_result_for_list(self):
         topfile = 'tests/unittests/resources/top.pulsar'
 
-        def cp_cache_file(value):
+        def cp_cache_file(_):
+            ''' pretend salt[cp.cache_file] '''
             return 'tests/unittests/resources/top.pulsar'
 
         def match_compound(value):
+            ''' pretend match.compound '''
             return value
+
         __salt__ = {}
         __salt__['cp.cache_file'] = cp_cache_file
         __salt__['match.compound'] = match_compound
@@ -108,10 +113,13 @@ class TestPulsar():
         topfile = 'tests/unittests/resources/top.pulsar'
 
         def cp_cache_file(topfile):
+            ''' pretend salt[cp.cache_file] '''
             return topfile
 
         def match_compound(value):
+            ''' pretend match.compound '''
             return value
+
         __salt__ = {}
         __salt__['cp.cache_file'] = cp_cache_file
         __salt__['match.compound'] = match_compound
@@ -124,11 +132,14 @@ class TestPulsar():
     def test_get_top_data_for_CommandExecutionError(self):
         topfile = '/testfile'
 
-        def cp_cache_file(topfile):
+        def cp_cache_file(_):
+            ''' pretend salt[cp.cache_file] '''
             return '/testfile'
 
         def match_compound(value):
+            ''' pretend match.compound '''
             return value
+
         __salt__ = {}
         __salt__['cp.cache_file'] = cp_cache_file
         __salt__['match.compound'] = match_compound
@@ -139,35 +150,43 @@ class TestPulsar():
         except CommandExecutionError:
             pass
 
-class TestPulsar2():
+class TestPulsar2(object):
+    """ A slightly newer set of pulsar internals tets """
+
     tdir   = 'blah'
     tfile  = os.path.join(tdir, 'file')
     atdir  = os.path.abspath(tdir)
     atfile = os.path.abspath(tfile)
 
-    def reset(self, **kw):
-        def config_get(value, default):
+    def reset(self, **kwargs):
+        def config_get(_, default):
+            ''' pretend salt[config.get] '''
             return default
 
-        if 'paths' not in kw:
-            kw['paths'] = []
+        if 'paths' not in kwargs:
+            kwargs['paths'] = []
 
         __salt__ = {}
         __salt__['config.get'] = config_get
         pulsar.__salt__ = __salt__
-        pulsar.__opts__ = {'pulsar': kw}
-        pulsar.__context__ = c = {}
+        pulsar.__opts__ = {'pulsar': kwargs}
+        pulsar.__context__ = {}
         self.nuke_tdir()
 
         pulsar._get_notifier() # sets up the dequeue
 
         self.events = []
-        self.N = c['pulsar.notifier']
-        self.wm = self.N._watch_manager
-        self.wm.update_config()
+        self.notifier = pulsar.__context__['pulsar.notifier']
+        self.watch_manager = self.notifier._watch_manager
+        self.watch_manager.update_config()
 
     def process(self):
-        self.events.extend([ "{change}(path)".format(**x) for x in pulsar.process() ])
+        self.events.extend([ "{change}({path})".format(**x) for x in pulsar.process() ])
+
+    def get_clear_events(self):
+        ret = self.events
+        self.events = list()
+        return ret
 
     def nuke_tdir(self):
         if os.path.isdir(self.tdir):
@@ -181,28 +200,28 @@ class TestPulsar2():
         with open(self.tfile, 'w') as fh:
             fh.write(to_write)
 
-    def mk_subdir_files(self, *f, **kw):
-        if len(f) == 1 and isinstance(f[0], (list,tuple)):
-            f = f[0]
-        for _f in f:
-            _f = _f if _f.startswith(self.tdir + '/') else os.path.join(self.tdir, _f)
-            s = _f.split('/')
-            if s:
-                fn = s.pop()
-                b = ''
-                for i in s:
-                    b = os.path.join(b,i)
+    def mk_subdir_files(self, *files, **kwargs):
+        if len(files) == 1 and isinstance(files[0], (list, tuple)):
+            files = files[0]
+        for file in files:
+            file = file if file.startswith(self.tdir + '/') else os.path.join(self.tdir, file)
+            split_file = file.split('/')
+            if split_file:
+                output_fname = split_file.pop()
+                dir_to_make = ''
+                for i in split_file:
+                    dir_to_make = os.path.join(dir_to_make, i)
                     if not os.path.isdir(i):
-                        os.mkdir(b)
-                k = ('{}_out', 'out_{}', '{}_to_write', 'to_write')
-                for _k in k:
-                    to_write = kw.get(_k.format(fn))
+                        os.mkdir(dir_to_make)
+                forms = ('{}_out', 'out_{}', '{}_to_write', 'to_write')
+                for form in forms:
+                    to_write = kwargs.get(form.format(output_fname))
                     if to_write is not None:
                         break
                 if to_write is None:
                     to_write = 'supz\n'
-                fn = os.path.join(b, fn)
-                with open(fn, 'a') as fh:
+                output_fname = os.path.join(dir_to_make, output_fname)
+                with open(output_fname, 'a') as fh:
                     fh.write(to_write if to_write is not None else 'supz\n')
 
     def more_fname(self, number, base=None):
@@ -216,30 +235,35 @@ class TestPulsar2():
                 fh.write(to_write.format(count))
 
     def test_listify_anything(self):
-        la = pulsar.PulsarWatchManager._listify_anything
-        def lla(x,e):
-            assert len(la(x)) == e
-        def sla(x,e):
-            assert str(sorted(la(x), key=lambda x: str(x))) == str(sorted(e, key=lambda x: str(x)))
-        lla(None, 0)
-        lla([None], 0)
-        lla(set([None]), 0)
-        lla(set(), 0)
-        lla([], 0)
-        lla([[],[],(),{},None,[None]], 0)
+        listify_fn = pulsar.PulsarWatchManager._listify_anything
 
-        m = [[1],[2],(1,),(5),{2},None,[None],{'one':1}]
-        lla(m, 4)
-        sla(m, [1,2,5,'one'])
+        def assert_len_listify_is(list_arg, expected):
+            """ compact comparifier """
+            assert len( listify_fn(list_arg) ) == expected
+
+        def assert_str_listify_is(list_arg, expected):
+            """ compact comparifier """
+            assert str(sorted(listify_fn(list_arg))) == str(sorted(expected))
+
+        assert_len_listify_is(None, 0)
+        assert_len_listify_is([None], 0)
+        assert_len_listify_is(set([None]), 0)
+        assert_len_listify_is(set(), 0)
+        assert_len_listify_is([], 0)
+        assert_len_listify_is([[],[],(),{}, None,[None]], 0)
+
+        oogly_list = [[1],[2],(1,),(5),{2}, None,[None],{'one':1}]
+        assert_len_listify_is(oogly_list, 4)
+        assert_str_listify_is(oogly_list, [1,2,5,'one'])
 
     def test_add_watch(self, modality='add-watch'):
-        o = {}
-        kw = { self.atdir: o }
+        options = {}
+        kwargs = { self.atdir: options }
 
         if modality in ('watch_new_files', 'watch_files'):
-            o[modality] = True
+            options[modality] = True
 
-        self.reset(**kw)
+        self.reset(**kwargs)
 
         # NOTE: without new_files and/or without watch_files parent_db should
         # remain empty, and we shouldn't get a watch on tfile
@@ -247,20 +271,20 @@ class TestPulsar2():
         os.mkdir(self.tdir)
 
         if modality == 'add-watch':
-            self.wm.add_watch(self.tdir, pulsar.DEFAULT_MASK)
+            self.watch_manager.add_watch(self.tdir, pulsar.DEFAULT_MASK)
 
         elif modality in ('watch', 'watch_new_files', 'watch_files'):
-            self.wm.watch(self.tdir)
+            self.watch_manager.watch(self.tdir)
 
         else:
             raise Exception("unknown modality")
 
         self.process()
         assert len(self.events) == 0
-        assert self.wm.watch_db.get(self.tdir) is None
-        assert self.wm.watch_db.get(self.atdir) > 0
-        assert len(self.wm.watch_db) == 1
-        assert not isinstance(self.wm.parent_db.get(self.atdir), set)
+        assert self.watch_manager.watch_db.get(self.tdir) is None
+        assert self.watch_manager.watch_db.get(self.atdir) > 0
+        assert len(self.watch_manager.watch_db) == 1
+        assert not isinstance(self.watch_manager.parent_db.get(self.atdir), set)
 
         self.mk_tdir_and_write_tfile() # write supz to tfile
 
@@ -270,11 +294,11 @@ class TestPulsar2():
         assert self.events[1].startswith('IN_MODIFY')
 
         if modality in ('watch_files', 'watch_new_files'):
-            assert len(self.wm.watch_db) == 2
-            assert isinstance(self.wm.parent_db.get(self.atdir), set)
+            assert len(self.watch_manager.watch_db) == 2
+            assert isinstance(self.watch_manager.parent_db.get(self.atdir), set)
         else:
-            assert len(self.wm.watch_db) == 1
-            assert not isinstance(self.wm.parent_db.get(self.atdir), set)
+            assert len(self.watch_manager.watch_db) == 1
+            assert not isinstance(self.watch_manager.parent_db.get(self.atdir), set)
 
         self.nuke_tdir()
 
@@ -285,100 +309,190 @@ class TestPulsar2():
         self.test_add_watch(modality='watch_new_files')
 
     def test_recurse_without_watch_files(self):
-        c1 = {self.atdir: { 'recurse': False }}
-        c2 = {self.atdir: { 'recurse': True  }}
+        config1 = {self.atdir: { 'recurse': False }}
+        config2 = {self.atdir: { 'recurse': True  }}
 
-        self.reset(**c1)
+        self.reset(**config1)
         self.mk_subdir_files('blah1','a/b/c/blah2')
-        self.wm.watch(self.tdir)
-        self.wm.prune()
-        s1 = set(self.wm.watch_db)
+        self.watch_manager.watch(self.tdir)
+        self.watch_manager.prune()
+        set1 = set(self.watch_manager.watch_db)
 
-        self.reset(**c2)
+        self.reset(**config2)
         self.mk_subdir_files('blah1','a/b/c/blah2')
-        self.wm.watch(self.tdir)
-        self.wm.prune()
-        s2 = set(self.wm.watch_db)
+        self.watch_manager.watch(self.tdir)
+        self.watch_manager.prune()
+        set2 = set(self.watch_manager.watch_db)
 
-        s0a = set([self.atdir])
-        s0b = [self.atdir]
+        set0_a = set([self.atdir])
+        set0_b = [self.atdir]
         for i in 'abc':
-            s0b.append( os.path.join(s0b[-1], i) )
-        s0b = set(s0b)
+            set0_b.append( os.path.join(set0_b[-1], i) )
+        set0_b = set(set0_b)
 
-        assert s1 == s0a
-        assert s2 == s0b
+        assert set1 == set0_a
+        assert set2 == set0_b
 
     def config_make_files_watch_process_reconfig(self, config, reconfig=None, mk_files=0):
         """
             create a config (arg0),
             make tdir and tfile,
             watch the tdir,
-            store watch_db in s0,
+            store watch_db in set0,
             make additional files (default: 0),
             execute process(),
-            store watch_db in s1,
+            store watch_db in set1,
             reconfigure using reconfig param (named param or arg1) (default: None)
             execute process(),
-            store watch_db in s2
-            return s0, s1, s2 as a tuple
+            store watch_db in set2
+            return set0, set1, set2 as a tuple
         """
         self.reset(**config)
         self.mk_tdir_and_write_tfile()
-        self.wm.watch(self.tdir)
-        s0 = set(self.wm.watch_db)
+        self.watch_manager.watch(self.tdir)
+        set0 = set(self.watch_manager.watch_db)
         if mk_files > 0:
             self.mk_more_files(count=mk_files)
         self.process()
-        s1 = set(self.wm.watch_db)
+        set1 = set(self.watch_manager.watch_db)
         if reconfig is None:
-            del self.wm.cm.nc_config[ self.atdir ]
+            del self.watch_manager.cm.nc_config[ self.atdir ]
         else:
-            self.wm.cm.nc_config[ self.atdir ] = reconfig
+            self.watch_manager.cm.nc_config[ self.atdir ] = reconfig
         self.process()
-        s2 = set(self.wm.watch_db)
-        return s0,s1,s2
+        set2 = set(self.watch_manager.watch_db)
+        return set0, set1, set2
 
     def test_pruning_watch_files_false(self):
-        s0,s1,s2 = self.config_make_files_watch_process_reconfig({self.atdir:{}}, None, mk_files=2)
-        assert s0 == set([self.atdir])
-        assert s1 == set([self.atdir])
-        assert s2 == set()
+        set0, set1, set2 = self.config_make_files_watch_process_reconfig({self.atdir:{}}, None, mk_files=2)
+        assert set0 == set([self.atdir])
+        assert set1 == set([self.atdir])
+        assert set2 == set()
 
     def test_pruning_watch_new_files_then_false(self):
-        c1 = {self.atdir: { 'watch_new_files': True }}
-        c2 = {self.atdir: { 'watch_new_files': False }}
-        s0,s1,s2 = self.config_make_files_watch_process_reconfig(c1,c2, mk_files=2)
-        f1 = self.more_fname(0, base=self.atfile)
-        f2 = self.more_fname(1, base=self.atfile)
-        assert s0 == set([self.atdir])
-        assert s1 == set([self.atdir, f1, f2])
-        assert s2 == set([self.atdir])
+        config1 = {self.atdir: { 'watch_new_files': True }}
+        config2 = {self.atdir: { 'watch_new_files': False }}
+        set0, set1, set2 = self.config_make_files_watch_process_reconfig(config1, config2, mk_files=2)
+        fname1 = self.more_fname(0, base=self.atfile)
+        fname2 = self.more_fname(1, base=self.atfile)
+        assert set0 == set([self.atdir])
+        assert set1 == set([self.atdir, fname1, fname2])
+        assert set2 == set([self.atdir])
 
     def test_pruning_watch_files_then_false(self):
-        c1 = {self.atdir: { 'watch_files': True }}
-        c2 = {self.atdir: { 'watch_files': False }}
-        s0,s1,s2 = self.config_make_files_watch_process_reconfig(c1,c2, mk_files=2)
-        f1 = self.more_fname(0, base=self.atfile)
-        f2 = self.more_fname(1, base=self.atfile)
-        assert s0 == set([self.atdir, self.atfile])
-        assert s1 == set([self.atdir, self.atfile, f1, f2])
-        assert s2 == set([self.atdir])
+        config1 = {self.atdir: { 'watch_files': True }}
+        config2 = {self.atdir: { 'watch_files': False }}
+        set0, set1, set2 = self.config_make_files_watch_process_reconfig(config1, config2, mk_files=2)
+        fname1 = self.more_fname(0, base=self.atfile)
+        fname2 = self.more_fname(1, base=self.atfile)
+        assert set0 == set([self.atdir, self.atfile])
+        assert set1 == set([self.atdir, self.atfile, fname1, fname2])
+        assert set2 == set([self.atdir])
 
     def test_pruning_watch_new_files_then_nothing(self):
-        c1 = {self.atdir: { 'watch_new_files': True }}
-        s0,s1,s2 = self.config_make_files_watch_process_reconfig(c1,None, mk_files=2)
-        f1 = self.more_fname(0, base=self.atfile)
-        f2 = self.more_fname(1, base=self.atfile)
-        assert s0 == set([self.atdir])
-        assert s1 == set([self.atdir, f1, f2])
-        assert s2 == set()
+        config1 = {self.atdir: { 'watch_new_files': True }}
+        set0, set1, set2 = self.config_make_files_watch_process_reconfig(config1, None, mk_files=2)
+        fname1 = self.more_fname(0, base=self.atfile)
+        fname2 = self.more_fname(1, base=self.atfile)
+        assert set0 == set([self.atdir])
+        assert set1 == set([self.atdir, fname1, fname2])
+        assert set2 == set()
 
     def test_pruning_watch_files_then_nothing(self):
-        c1 = {self.atdir: { 'watch_files': True }}
-        s0,s1,s2 = self.config_make_files_watch_process_reconfig(c1,None, mk_files=2)
-        f1 = self.more_fname(0, base=self.atfile)
-        f2 = self.more_fname(1, base=self.atfile)
-        assert s0 == set([self.atdir, self.atfile])
-        assert s1 == set([self.atdir, f1, f2, self.atfile])
-        assert s2 == set()
+        config1 = {self.atdir: { 'watch_files': True }}
+        set0, set1, set2 = self.config_make_files_watch_process_reconfig(config1, None, mk_files=2)
+        fname1 = self.more_fname(0, base=self.atfile)
+        fname2 = self.more_fname(1, base=self.atfile)
+        assert set0 == set([self.atdir, self.atfile])
+        assert set1 == set([self.atdir, fname1, fname2, self.atfile])
+        assert set2 == set()
+
+    def test_watch_files_events(self):
+        config = {self.atdir: { 'watch_files': True }}
+        self.reset(**config)
+        self.mk_tdir_and_write_tfile()
+
+        set0 = set(self.watch_manager.watch_db)
+
+        pulsar.process()
+        set1 = set(self.watch_manager.watch_db)
+        levents1 = len(self.events)
+        assert set0 == set()
+        assert set1 == set([self.atdir, self.atfile])
+        assert levents1 == 0
+
+        with open(self.atfile, 'a') as fh:
+            fh.write('supz\n')
+        self.process()
+        set_ = set(self.watch_manager.watch_db)
+        events_ = self.get_clear_events()
+        assert set_ == set1
+        assert events_ == ['IN_MODIFY({})'.format(self.atfile)]
+
+        os.unlink(self.atfile)
+        self.process()
+        set_ = set(self.watch_manager.watch_db)
+        events_ = self.get_clear_events()
+        assert set_ == set([self.atdir])
+        assert events_ == ['IN_DELETE({})'.format(self.atfile)]
+
+        with open(self.atfile, 'a') as fh:
+            fh.write('supz\n')
+        self.process()
+        set_ = set(self.watch_manager.watch_db)
+        events_ = self.get_clear_events()
+        assert set_ == set1
+        assert events_ == ['IN_CREATE({})'.format(self.atfile)]
+
+        with open(self.atfile, 'a') as fh:
+            fh.write('supz\n')
+        self.process()
+        set_ = set(self.watch_manager.watch_db)
+        events_ = self.get_clear_events()
+        assert set_ == set1
+        assert events_ == ['IN_MODIFY({})'.format(self.atfile)]
+
+    def test_single_file_events(self):
+        config = {self.atfile: dict()}
+        self.reset(**config)
+        self.mk_tdir_and_write_tfile()
+
+        set0 = set(self.watch_manager.watch_db)
+        assert set0 == set()
+
+        pulsar.process()
+        set1 = set(self.watch_manager.watch_db)
+        levents1 = len(self.events)
+        assert set1 == set([self.atfile])
+        assert levents1 == 0
+
+        with open(self.atfile, 'a') as fh:
+            fh.write('supz\n')
+        self.process()
+        set2 = set(self.watch_manager.watch_db)
+        events2 = self.get_clear_events()
+        assert set2 == set1
+        assert events2 == ['IN_MODIFY({})'.format(self.atfile)]
+
+        os.unlink(self.atfile)
+        self.process()
+        set_ = set(self.watch_manager.watch_db)
+        events_ = self.get_clear_events()
+        assert set_ == set() # this is DELETE_SELF now (technically)
+        assert events_ == ['IN_DELETE({})'.format(self.atfile)]
+
+        with open(self.atfile, 'a') as fh:
+            fh.write('supz\n')
+        self.process()
+        set_ = set(self.watch_manager.watch_db)
+        events_ = self.get_clear_events()
+        assert set_ == set1
+        assert events_ == ['IN_CREATE({})'.format(self.atfile)]
+
+        with open(self.atfile, 'a') as fh:
+            fh.write('supz\n')
+        self.process()
+        set_ = set(self.watch_manager.watch_db)
+        events_ = self.get_clear_events()
+        assert set_ == set1
+        assert events_ == ['IN_MODIFY({})'.format(self.atfile)]

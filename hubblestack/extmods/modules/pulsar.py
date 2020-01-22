@@ -32,7 +32,8 @@ import salt.utils.platform
 try:
     import pyinotify
     HAS_PYINOTIFY = True
-    DEFAULT_MASK = pyinotify.IN_CREATE | pyinotify.IN_DELETE | pyinotify.IN_MODIFY
+    DEFAULT_MASK = pyinotify.IN_CREATE | pyinotify.IN_DELETE | pyinotify.IN_DELETE_SELF | pyinotify.IN_MODIFY
+    RM_WATCH_MASK = pyinotify.IN_DELETE | pyinotify.IN_DELETE_SELF | pyinotify.IN_IGNORED
     MASKS = {}
     for var in dir(pyinotify):
         if var.startswith('IN_'):
@@ -72,6 +73,18 @@ def _enqueue(revent):
     Enqueue the event
     """
     __context__['pulsar.queue'].append(revent)
+
+def _maskname_filter(name):
+    """ deleting a directly watched file produces IN_DELETE_SELF (not
+        IN_DELETE) and also kicks up a an IN_IGNORED (whether you mask for it
+        or not) to indicate the file is nolonger watched.
+
+        We avoid returning IN_IGNORED if we can... but IN_DELETE_SELF is
+        corrected to IN_DELETE
+    """
+    if name == 'IN_DELETE_SELF':
+        return 'IN_DELETE'
+    return name
 
 class ConfigManager(object):
     _config = {}
@@ -360,9 +373,9 @@ class PulsarWatchManager(pyinotify.WatchManager):
             kw['rec'] = kw.get('rec')
             if kw['rec'] is None:
                 kw['rec'] = pconf['recurse']
-            self.add_watch(path,mask,**kw)
-            log.debug('add-watch wd={0} path={1} watch_files={2} recurse={3}'.format(
-                self.watch_db.get(path), path, pconf['watch_files'], kw['rec']))
+            self.add_watch(path, mask, **kw)
+            log.debug('add-watch wd={0} path={1} watch_files={2} recurse={3} mask={4}'.format(
+                self.watch_db.get(path), path, pconf['watch_files'], kw['rec'], mask))
 
         if new_file: # process() says this is a new file
             self._add_recursed_file_watch(path)
@@ -772,10 +785,11 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
             excludes = _preprocess_excludes( config[cpath].get('exclude') )
             _append = not excludes(pathname)
+
             if _append:
                 config_path = config['paths'][0]
                 pulsar_config = config_path[config_path.rfind('/') + 1:len(config_path)]
-                sub = { 'change': event.maskname,
+                sub = { 'change': _maskname_filter(event.maskname),
                         'path': abspath,  # goes to object_path in splunk
                         'tag':  dirname,  # goes to file_path in splunk
                         'name': basename, # goes to file_name in splunk
@@ -816,9 +830,8 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                     if os.path.isfile(pathname):
                         sub['size'] = os.path.getsize(pathname)
 
-
-
-                ret.append(sub)
+                if event.mask != pyinotify.IN_IGNORED:
+                    ret.append(sub)
 
                 if not event.mask & pyinotify.IN_ISDIR:
                     if event.mask & pyinotify.IN_CREATE:
@@ -826,10 +839,10 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                             or config[cpath].get('watch_files', False)
                         if watch_this:
                             if not excludes(pathname):
-                                log.debug("add file-watch path={0}".format(pathname))
+                                log.debug("add file-watch path={0} mask={1}".format(pathname,
+                                    pyinotify.IN_MODIFY))
                                 wm.watch(pathname, pyinotify.IN_MODIFY, new_file=True)
-
-                    elif event.mask & pyinotify.IN_DELETE:
+                    elif event.mask & RM_WATCH_MASK:
                         wm.rm_watch(pathname)
             else:
                 log.debug('Excluding {0} from event for {1}'.format(pathname, cpath))
@@ -839,7 +852,6 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
         dt.mark('update_watches')
         log.debug("update watches")
         # Update existing watches and add new ones
-        # TODO: make the config handle more options
         for path in config:
             excludes = lambda x: False
             if path in ['return', 'checksum', 'stats', 'batch', 'verbose',
@@ -848,22 +860,18 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                 continue
             if isinstance(config[path], dict):
                 mask = config[path].get('mask', DEFAULT_MASK)
-             ## commented out on 2019-08-05
-             #  watch_files = config[path].get('watch_files', DEFAULT_MASK)
-             ## note: it seems like the below was commented out because the above seems to be bugged
-             ## clearly watch_files should default to False, not DEFAULT_MASK
-             ## (aka true); that probably seemd like spurious watches from ##
-             ## duplications or whatever caused the below to be commented out.
-             ## Regardless, the above is probably wrong *and* seems unused.
-             ## commented out previous to 2019-08-05
-             #  if watch_files:
-             #      # we're going to get dup modify events if watch_files is set
-             #      # and we still monitor modify for the dir
-             #      a = mask & pyinotify.IN_MODIFY
-             #      if a:
-             #          log.debug("mask={0} -= mask & pyinotify.IN_MODIFY={1} ==> {2}".format(
-             #              mask, a, mask-a))
-             #          mask -= mask & pyinotify.IN_MODIFY
+                watch_files = config[path].get('watch_files', False)
+                if watch_files:
+                    # we're going to get dup modify events if watch_files is set
+                    # and we still monitor modify for the dir
+                    mask_and_modify = mask & pyinotify.IN_MODIFY
+                    if mask_and_modify:
+                        log.debug("mask={0} -= mask & pyinotify.IN_MODIFY={1}" \
+                            " ==> {2}".format(
+                                mask,
+                                mask_and_modify,
+                                mask-mask_and_modify))
+                        mask -= mask_and_modify
                 excludes = _preprocess_excludes( config[path].get('exclude') )
                 if isinstance(mask, list):
                     r_mask = 0
@@ -881,7 +889,32 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                 rec = False
                 auto_add = False
 
+            if os.path.isfile(path) and not wm.get_wd(path):
+                # We were not previously watching this file generate a fake
+                # IN_CREATE to announce this fact.  We'd like to only generate
+                # CREATE events when files are created, but we can't actually
+                # watch files that don't exist yet (not with inotify anyway).
+                # The kernel would rather be watching directories anyway.
+                #
+                # You might worry we'll get lots of spurious IN_CREATEs when
+                # the database is cleared or at startup or whatever.  We
+                # actually watch everyhthing from config at startup anyway; so
+                # we avoid these fake IN_CREATE events at startup. They only
+                # happen when we add a watch during update, which means the
+                # file really is new since the last time we thought about it
+                # (aka the last time we ran the process() function).
+                _, abspath, dirname, basename = cm.format_path(path)
+                config_path = config['paths'][0]
+                pulsar_config = config_path[config_path.rfind('/') + 1:len(config_path)]
+                fake_sub = { 'change': 'IN_CREATE',
+                        'path': abspath,  # goes to object_path in splunk
+                        'tag':  dirname,  # goes to file_path in splunk
+                        'name': basename, # goes to file_name in splunk
+                        'pulsar_config': pulsar_config}
+                ret.append(fake_sub)
+
             wm.watch(path, mask, rec=rec, auto_add=auto_add, exclude_filter=excludes)
+
         dt.fin()
         dt.mark('prune_watches')
         wm.prune()

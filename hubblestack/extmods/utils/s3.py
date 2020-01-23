@@ -227,7 +227,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
             log.debug('Uploaded from %s to %s', local_file, path)
         else:
             log.debug('Created bucket %s', bucket)
-        return
+        return None
 
     if method == 'DELETE':
         if not six.text_type(result.status_code).startswith('2'):
@@ -243,7 +243,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
             log.debug('Deleted %s from bucket %s', path, bucket)
         else:
             log.debug('Deleted bucket %s', bucket)
-        return
+        return None
 
     # This can be used to save a binary object to disk
     if local_file and method == 'GET':
@@ -259,8 +259,8 @@ def query(key, keyid, method='GET', params=None, headers=None,
 
     if result.status_code < 200 or result.status_code >= 300:
         if err_code == 'SlowDown':
-            log.warning('{}, {}'.format(err_code, err_msg))
-            return
+            log.warning('%s, %s', err_code, err_msg)
+            return None
         raise CommandExecutionError(
             'Failed s3 operation. {0}: {1}'.format(err_code, err_msg))
 
@@ -279,7 +279,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
             return ret, requesturl
     else:
         if result.status_code != requests.codes.ok:
-            return
+            return None
         ret = {'headers': []}
         if full_headers:
             ret['headers'] = dict(result.headers)

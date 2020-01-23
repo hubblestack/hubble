@@ -356,10 +356,10 @@ def _init():
     """
     cache_file = _get_buckets_cache_filename()
     s3_key_kwargs = _get_s3_key()
-    cache_expire_time = s3_key_kwargs['cache_expire'] if s3_key_kwargs.get('cache_expire', None) else S3_CACHE_EXPIRE
-    exp = time.time() - float(cache_expire_time)
+    cache_expire_time = float(s3_key_kwargs['cache_expire'] if s3_key_kwargs.get('cache_expire', None) else S3_CACHE_EXPIRE)
+    exp = time.time() - cache_expire_time
 
-    log.info('S3 cache expire time is {}s'.format(cache_expire_time))
+    log.info('S3 cache expire time is %ds', cache_expire_time)
     # check mtime of the buckets files cache
     metadata = None
     try:
@@ -445,7 +445,7 @@ def _refresh_buckets_cache_file(cache_file):
                                         https_enable=s3_key_kwargs['https_enable'],
                                         params={'marker': marker})
             if not tmp:
-                return
+                return None
 
             headers = []
             for header in tmp:

@@ -243,7 +243,10 @@ class TestPulsar2(object):
 
         def assert_str_listify_is(list_arg, expected):
             """ compact comparifier """
-            assert str(sorted(listify_fn(list_arg))) == str(sorted(expected))
+            def boo(x):
+                return str(x)
+
+            assert str(sorted(listify_fn(list_arg), key=boo)) == str(sorted(expected, key=boo))
 
         assert_len_listify_is(None, 0)
         assert_len_listify_is([None], 0)

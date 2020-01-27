@@ -43,7 +43,7 @@ import logging
 import re
 import json
 import inspect
-import cStringIO
+import io as cStringIO
 
 from collections import OrderedDict, namedtuple
 

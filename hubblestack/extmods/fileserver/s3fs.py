@@ -354,6 +354,7 @@ def _get_s3_key():
     # cleanup (which changed the return type from list to dict)
     return [ ret[x] for x in 'key keyid service_url verify_ssl kms_keyid location path_style https_enable'.split() ]
 
+
 def _init():
     '''
     Connect to S3 and download the metadata for each file in all buckets
@@ -364,7 +365,7 @@ def _init():
     cache_expire_time = float(s3_key_kwargs['cache_expire'] if s3_key_kwargs.get('cache_expire', None) else S3_CACHE_EXPIRE)
     exp = time.time() - cache_expire_time
 
-    log.info('S3 cache expire time is %ds', cache_expire_time)
+    log.debug('S3 cache expire time is %ds', cache_expire_time)
     # check mtime of the buckets files cache
     metadata = None
     try:

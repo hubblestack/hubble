@@ -114,6 +114,7 @@ def split_certs(fh):
         else:
             ret += line
             if line.startswith('----'):
+                ret = ret.encode()
                 try:
                     yield ossl.load_certificate(ossl.FILETYPE_PEM, ret)
                 except Exception as e:
@@ -186,7 +187,7 @@ class X509AwareCertBucket:
             if d in already:
                 continue
             already.add(d)
-            d += " " + stringify_ossl_cert(c)
+            d = d.decode() + " " + stringify_ossl_cert(c)
             log.debug('adding %s as a trusted certificate approver', d)
             self.store.add_cert(c)
             self.trusted.append(d)
@@ -196,7 +197,7 @@ class X509AwareCertBucket:
             if d in already:
                 continue
             already.add(d)
-            d += " " + stringify_ossl_cert(c)
+            d = d.decode() + " " + stringify_ossl_cert(c)
             log.debug('checking to see if %s is trustworthy', d)
             try:
                 ossl.X509StoreContext(self.store, c).verify_certificate()
@@ -213,7 +214,7 @@ class X509AwareCertBucket:
             if d in already:
                 continue
             already.add(d)
-            d += " " + stringify_ossl_cert(c)
+            d = d.decode() + " " + stringify_ossl_cert(c)
             log.debug('checking to see if %s is a valid leaf cert', d)
             try:
                 ossl.X509StoreContext(self.store, c).verify_certificate()
@@ -245,7 +246,7 @@ class X509AwareCertBucket:
 def stringify_ossl_cert(c):
     if isinstance(c, (list,tuple)):
         return ', '.join([ stringify_ossl_cert(x) for x in c ])
-    return '/'.join([ '='.join(x) for x in c.get_subject().get_components() ])
+    return '/'.join([ '='.join([ x_.decode() for x_ in x ]) for x in c.get_subject().get_components() ])
 
 def jsonify(obj, indent=2):
     return json.dumps(obj, indent=indent)
@@ -285,7 +286,7 @@ def hash_target(fname, obj_mode=False, chosen_hash=None):
     if obj_mode:
         return hasher, chosen_hash
     digest = hasher.finalize()
-    hd = ''.join([ '{:02x}'.format(ord(x)) for x in digest ])
+    hd = ''.join([ '{:02x}'.format(x) for x in digest ])
     log.debug('hashed %s: %s', fname, hd)
     return hd
 
@@ -453,7 +454,7 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
             # without a matching SIGNATURE
             ret[vfname] = STATUS.FAIL
     # fix any normalized names so the caller gets back their specified targets
-    for k,v in xlate.iteritems():
+    for k,v in xlate.items():
         ret[v] = ret.pop(k)
     return ret
 

@@ -20,6 +20,9 @@ pipeline {
         stage('setup') {
             steps {
                 sh '''#!/bin/bash
+                    git clean -dfx
+                    '''
+                sh '''#!/bin/bash
                     source /etc/profile.d/kersplat.sh
                     pyenv local $PY_V
                     pyenv shell $PY_V

@@ -165,6 +165,12 @@ class DiskQueue(OKTypesMixin):
             with open(fname, 'rb') as fh:
                 return decode_something_to_string(self.decompress(fh.read())), self.read_meta(fname)
 
+    def iter_peek(self):
+        ''' iterate and return all items in the disk queue (without removing any) '''
+        for fname in self.files:
+            with open(fname, 'rb') as fh:
+                yield self.decompress(fh.read()), self.read_meta(fname)
+
     def get(self):
         """ get the next item from the queue
             returns: data_octets, meta_data_dict

@@ -119,7 +119,7 @@ def _put(ret):
 
     # try to get sqlite queries to show not-ints for jids
     ret['jid'] = str(ret.get('jid', '??'))
-    log.info("logging jid=%s in sqlite dumpster", **ret)
+    log.info("logging jid=%s in sqlite dumpster", ret['jid'])
 
     for i in ('id', 'fun', 'fun_args', 'return', 'Failure', 'Success'):
         if i not in ret:

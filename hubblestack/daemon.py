@@ -667,7 +667,9 @@ def _setup_logging(parsed_args):
         pass  # ensure the file exists before we set perms on it
     # 384 is 0o600 permissions, written without octal for python 2/3 compat
     os.chmod(__opts__['log_file'], 384)
-    os.chmod(parsed_args.get('configfile'), 384)
+    configfile = parsed_args.get('configfile')
+    if configfile and os.path.isfile(configfile):
+        os.chmod(configfile, 384)
 
 
 def _setup_dirs():

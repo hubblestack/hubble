@@ -67,6 +67,7 @@ MANIFEST_RE = re.compile(r'^\s*(?P<digest>[0-9a-fA-F]+)\s+(?P<fname>.+)$')
 log = logging.getLogger(__name__)
 
 class STATUS:
+    """ container for status code (strings) """
     FAIL = 'fail'
     VERIFIED = 'verified'
     UNKNOWN = 'unknown'
@@ -78,7 +79,8 @@ class Options(object):
 
     Instead of `__salt__['config.get']('repo_signing:public_crt')`, write `Options.public_crt`.
     """
-    class defaults:
+    class Defaults:
+        """ defaults storage for options """
         require_verify = False
         ca_crt = '/etc/hubble/sign/ca-root.crt'
         public_crt = '/etc/hubble/sign/public.crt'
@@ -95,7 +97,7 @@ class Options(object):
         except AttributeError:
             pass
         try:
-            default = getattr(self.defaults, name)
+            default = getattr(self.Defaults, name)
             return __salt__['config.get']('repo_signing:{}'.format(name), default)
       # except NameError:
       #     # __salt__ isn't defined: return the default?
@@ -103,9 +105,16 @@ class Options(object):
       #     return default
         except AttributeError:
             raise
-Options = Options()
+
+# replace class with instance
+Options = Options() # pylint: disable=invalid-name ; this is fine
 
 def split_certs(fh):
+    """ attempt to split certs found in given filehandle into separate openssl cert objects
+
+        returns a generator, for list, use `list(split_cerst(fh))`
+    """
+
     ret = None
     for line in fh.readlines():
         if ret is None:
@@ -117,23 +126,29 @@ def split_certs(fh):
                 ret = ret.encode()
                 try:
                     yield ossl.load_certificate(ossl.FILETYPE_PEM, ret)
-                except Exception as e:
-                    log.debug('decoding item as certificate failed: %s; trying as PEM encoded private key', e)
+                except Exception as exception_object:
+                    log.debug('decoding item as certificate failed: %s; trying as PEM encoded private key',
+                        exception_object)
                     yield load_pem_private_key(ret, password=None, backend=default_backend())
                 ret = None
 
 def read_certs(*fnames):
+    """ given a list of filenames (as varargs), attempt to find all certs in all named files.
+
+        returns openssl objects as a generator.
+        for a list: `list(read_certs('filename1', 'filename2'))`
+    """
     for fname in fnames:
         if fname.strip().startswith('--') and '\x0a' in fname:
-            for x in split_certs(cStringIO.StringIO(fname)):
-                yield x
+            for i in split_certs(cStringIO.StringIO(fname)):
+                yield i
         elif os.path.isfile(fname):
             try:
                 with open(fname, 'r') as fh:
-                    for x in split_certs(fh):
-                        yield x
-            except Exception as e:
-                log.error('error while reading "%s": %s', fname, e)
+                    for i in split_certs(fh):
+                        yield i
+            except Exception as exception_object:
+                log.error('error while reading "%s": %s', fname, exception_object)
 
 class X509AwareCertBucket:
     """
@@ -147,9 +162,9 @@ class X509AwareCertBucket:
     public_crt = tuple()
 
     def authenticate_cert(self):
-        if any( x.status == STATUS.FAIL for x in self.public_crt ):
+        if any( i.status == STATUS.FAIL for i in self.public_crt ):
             return STATUS.FAIL
-        if all( x.status == STATUS.VERIFIED for x in self.public_crt ):
+        if all( i.status == STATUS.VERIFIED for i in self.public_crt ):
             return STATUS.VERIFIED
         return STATUS.UNKNOWN
 
@@ -182,49 +197,49 @@ class X509AwareCertBucket:
         # testing, and that's probably about it
 
         already = set()
-        for c in read_certs(ca_crt):
-            d = c.digest('sha1')
-            if d in already:
+        for i in read_certs(ca_crt):
+            digest = i.digest('sha1')
+            if digest in already:
                 continue
-            already.add(d)
-            d = d.decode() + " " + stringify_ossl_cert(c)
-            log.debug('adding %s as a trusted certificate approver', d)
-            self.store.add_cert(c)
-            self.trusted.append(d)
+            already.add(digest)
+            digest = digest.decode() + " " + stringify_ossl_cert(i)
+            log.debug('adding %s as a trusted certificate approver', digest)
+            self.store.add_cert(i)
+            self.trusted.append(digest)
 
-        for c in read_certs(*untrusted_crt):
-            d = c.digest('sha1')
-            if d in already:
+        for i in read_certs(*untrusted_crt):
+            digest = i.digest('sha1')
+            if digest in already:
                 continue
-            already.add(d)
-            d = d.decode() + " " + stringify_ossl_cert(c)
-            log.debug('checking to see if %s is trustworthy', d)
+            already.add(digest)
+            digest = digest.decode() + " " + stringify_ossl_cert(i)
+            log.debug('checking to see if %s is trustworthy', digest)
             try:
-                ossl.X509StoreContext(self.store, c).verify_certificate()
-                self.store.add_cert(c)
-                self.trusted.append(d)
+                ossl.X509StoreContext(self.store, i).verify_certificate()
+                self.store.add_cert(i)
+                self.trusted.append(digest)
                 log.debug('  added to verify store')
-            except ossl.X509StoreContextError as e:
-                log.debug('  not trustworthy: %s', e)
+            except ossl.X509StoreContextError as exception_object:
+                log.debug('  not trustworthy: %s', exception_object)
 
         self.public_crt = list()
-        for c in read_certs(*public_crt):
+        for i in read_certs(*public_crt):
             status = STATUS.FAIL
-            d = c.digest('sha1')
-            if d in already:
+            digest = i.digest('sha1')
+            if digest in already:
                 continue
-            already.add(d)
-            d = d.decode() + " " + stringify_ossl_cert(c)
-            log.debug('checking to see if %s is a valid leaf cert', d)
+            already.add(digest)
+            digest = digest.decode() + " " + stringify_ossl_cert(i)
+            log.debug('checking to see if %s is a valid leaf cert', digest)
             try:
-                ossl.X509StoreContext(self.store, c).verify_certificate()
+                ossl.X509StoreContext(self.store, i).verify_certificate()
                 status = STATUS.VERIFIED
-                self.trusted.append(d)
+                self.trusted.append(digest)
                 log.debug('  marking verified')
-            except ossl.X509StoreContextError as e:
-                code, depth, message = e.args[0]
+            except ossl.X509StoreContextError as exception_object:
+                code, depth, message = exception_object.args[0]
                 log.debug('authentication of %s failed: code=%s depth=%s, message=%s',
-                    d, code, depth, message)
+                    digest, code, depth, message)
                 # from openssl/x509_vfy.h
                 # define X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT         2
                 # define X509_V_ERR_UNABLE_TO_GET_CRL                 3
@@ -241,14 +256,21 @@ class X509AwareCertBucket:
                 # define X509_V_ERR_CRL_HAS_EXPIRED                   12
                 # XX # if code in (10,12):
                 # XX #     return # .... is this even the right idea? should we do this through conext flags?
-            self.public_crt.append(self.PublicCertObj(c, d, status))
+            self.public_crt.append(self.PublicCertObj(i, digest, status))
 
-def stringify_ossl_cert(c):
-    if isinstance(c, (list,tuple)):
-        return ', '.join([ stringify_ossl_cert(x) for x in c ])
-    return '/'.join([ '='.join([ x_.decode() for x_ in x ]) for x in c.get_subject().get_components() ])
+def stringify_ossl_cert(a_cert_obj):
+    """ try to stryingy a cert object into its subject components and digest hexification.
+
+        E.g. (with extra newline added for line-wrap):
+            3E:9C:58:F5:27:89:A8:F4:B7:AB:4D:1C:56:C8:4E:F0:03:0F:C8:C3
+            C=US/ST=State/L=City/O=Org/OU=Group/CN=Certy Cert #1
+    """
+    if isinstance(a_cert_obj, (list,tuple)):
+        return ', '.join([ stringify_ossl_cert(i) for i in a_cert_obj ])
+    return '/'.join([ '='.join([ j.decode() for j in i ]) for i in a_cert_obj.get_subject().get_components() ])
 
 def jsonify(obj, indent=2):
+    """ cury function to add default indent=2 to json.dumps(obj, indent=indent) """
     return json.dumps(obj, indent=indent)
 
 def normalize_path(path, trunc=None):
@@ -279,30 +301,30 @@ def hash_target(fname, obj_mode=False, chosen_hash=None):
     hasher = hashes.Hash(chosen_hash, default_backend())
     if os.path.isfile(fname):
         with open(fname, 'rb') as fh:
-            r = fh.read(1024)
-            while r:
-                hasher.update(r)
-                r = fh.read(1024)
+            buffer = fh.read(1024)
+            while buffer:
+                hasher.update(buffer)
+                buffer = fh.read(1024)
     if obj_mode:
         return hasher, chosen_hash
     digest = hasher.finalize()
-    hd = ''.join([ '{:02x}'.format(x) for x in digest ])
-    log.debug('hashed %s: %s', fname, hd)
-    return hd
+    hex_digest = ''.join([ '{:02x}'.format(i) for i in digest ])
+    log.debug('hashed %s: %s', fname, hex_digest)
+    return hex_digest
 
-def descend_targets(targets, cb):
+def descend_targets(targets, callback):
     """
-    recurse into the given `targets` (files or directories) and invoke the `cb`
+    recurse into the given `targets` (files or directories) and invoke the `callback`
     callback on each file found.
     """
     for fname in targets:
         if os.path.isfile(fname):
-            cb(fname)
+            callback(fname)
         if os.path.isdir(fname):
             for dirpath, dirnames, filenames in os.walk(fname):
                 for fname in filenames:
                     fname_ = os.path.join(dirpath, fname)
-                    cb(fname_)
+                    callback(fname_)
 
 def manifest(targets, mfname='MANIFEST'):
     """
@@ -316,24 +338,26 @@ def manifest(targets, mfname='MANIFEST'):
             log.debug('wrote %s %s to %s', digest, fname, mfname)
         descend_targets(targets, append_hash)
 
-def sign_target(fname, ofname, private_key='private.key', **kw):
+def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: disable=unused-argument
     """
     Sign a given `fname` and write the signature to `ofname`.
     """
-    k0, = read_certs(private_key)
+    # NOTE: This is intended to crash if there's some number of keys other than
+    # exactly 1 read from the private_key file:
+    first_key, = read_certs(private_key)
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     args = { 'data': hasher.finalize() }
-    if isinstance(k0, rsa.RSAPrivateKey):
+    if isinstance(first_key, rsa.RSAPrivateKey):
         args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
             salt_length=padding.PSS.MAX_LENGTH)
         args['algorithm'] = utils.Prehashed(chosen_hash)
-    sig = k0.sign(**args)
+    sig = first_key.sign(**args)
     with open(ofname, 'w') as fh:
         log.debug('writing signature of %s to %s', os.path.abspath(fname), os.path.abspath(ofname))
         fh.write(PEM.encode(sig, 'Detached Signature of {}'.format(fname)))
         fh.write('\n')
 
-def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt', **kw):
+def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt', **kwargs): # pylint: disable=unused-argument
     """
         Given the fname, sfname public_crt and ca_crt:
 
@@ -473,10 +497,10 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
         def _p(fnd):
             return fnd.get(real_path, fnd.get('path', ''))
 
-        def inner(path, saltenv, *a, **kw):
-            f_mani = find_file_f('MANIFEST', saltenv, *a, **kw )
-            f_sign = find_file_f('SIGNATURE', saltenv, *a, **kw )
-            f_path = find_file_f(path, saltenv, *a, **kw)
+        def inner(path, saltenv, *a, **kwargs):
+            f_mani = find_file_f('MANIFEST', saltenv, *a, **kwargs )
+            f_sign = find_file_f('SIGNATURE', saltenv, *a, **kwargs )
+            f_path = find_file_f(path, saltenv, *a, **kwargs)
             real_path = _p(f_path)
             mani_path = _p(f_mani)
             sign_path = _p(f_sign)

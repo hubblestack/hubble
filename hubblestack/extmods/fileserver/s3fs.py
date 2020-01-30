@@ -553,7 +553,7 @@ def _refresh_buckets_cache_file(cache_file):
 
     log.debug('Writing buckets cache file')
 
-    with salt.utils.files.fopen(cache_file, 'w') as fp_:
+    with salt.utils.files.fopen(cache_file, 'wb') as fp_:
         pickle.dump(metadata, fp_)
 
     return metadata
@@ -569,7 +569,9 @@ def _read_buckets_cache_file(cache_file):
         try:
             data = pickle.load(fp_)
         except (pickle.UnpicklingError, AttributeError, EOFError, ImportError,
-                IndexError, KeyError):
+                IndexError, KeyError) as e:
+            log.info('error unpickling buckets cache file (%s): %s',
+                cache_file, repr(e))
             data = None
 
     return data

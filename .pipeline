@@ -13,7 +13,7 @@ pipeline {
     environment {
         PY_COLORS = 1
         HS_PROFILE = 1
-        PY_V = '3.6.10'
+        TEST_PY_V = '3.6.10'
     }
 
     stages {
@@ -24,10 +24,11 @@ pipeline {
                     '''
                 sh '''#!/bin/bash
                     source /etc/profile.d/kersplat.sh
+                    export PY_V="$TEST_PY_V"
+                    pyenv local $TEST_PY_V
+                    pyenv shell $TEST_PY_V
+                    echo "pyenv version-name: $(pyenv version-name)"
                     set -x -e
-                    pyenv local $PY_V
-                    pyenv shell $PY_V
-                    pyenv version-name
                     rm -rf vlib venv .pytest_cache
                     pip install --cache-dir ./pip.cache -t ./vlib virtualenv
                     PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv

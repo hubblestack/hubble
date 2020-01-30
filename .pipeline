@@ -43,9 +43,9 @@ pipeline {
                     /usr/bin/git fetch --no-tags --progress https://github.com/hubblestack/hubble.git +refs/heads/develop:refs/remotes/origin/develop
                     echo git branch -vva
                     git branch -vva
-                    echo "LHS=$LHS RHS=$RHS"
                     LHS="origin/${CHANGE_TARGET:-develop}"
                     RHS="${BRANCH_NAME:+origin/}${BRANCH_NAME:-HEAD}"
+                    echo "LHS=$LHS RHS=$RHS"
                     if [[ $(git show -s --format='%s%n%b' "${LHS}..${RHS}") =~ LINT-FULL ]]
                     then find hubblestack -name "*.py"
                     else find hubblestack -name "*.py" -print0 | xargs -r0 git diff --name-only "$LHS" "$RHS"

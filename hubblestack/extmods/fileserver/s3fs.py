@@ -283,7 +283,7 @@ def file_list(load):
     return ret
 
 
-def file_list_emptydirs(load):
+def file_list_emptydirs(load): # pylint: disable=unused-argument ; just a todo
     """
     Return a list of all empty directories on the master
     """
@@ -569,9 +569,9 @@ def _read_buckets_cache_file(cache_file):
         try:
             data = pickle.load(fp_)
         except (pickle.UnpicklingError, AttributeError, EOFError, ImportError,
-                IndexError, KeyError) as e:
+                IndexError, KeyError) as eobj:
             log.info('error unpickling buckets cache file (%s): %s',
-                cache_file, repr(e))
+                cache_file, repr(eobj))
             data = None
 
     return data

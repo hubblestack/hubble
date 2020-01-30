@@ -482,6 +482,8 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             sign_path = _p(f_sign)
             log.debug('path=%s rpath=%s manifest=%s signature=%s',
                 path, real_path, mani_path, sign_path)
+            if not real_path:
+                return f_path
             verify_res = verify_files([real_path],
                 mfname=mani_path, sfname=sign_path,
                 public_crt=Options.public_crt, ca_crt=Options.ca_crt)

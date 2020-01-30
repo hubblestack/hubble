@@ -17,6 +17,7 @@ except ImportError:
     HAS_REQUESTS = False  # pylint: disable=W0612
 
 # Import Salt libs
+import os
 import salt.utils.aws
 import salt.utils.files
 import salt.utils.hashutils
@@ -202,6 +203,11 @@ def query(key, keyid, method='GET', params=None, headers=None,
             )
             err_code = 'http-{0}'.format(result.status_code)
             err_msg = err_text
+
+    if os.environ.get('MOCK_SLOW_DOWN'):
+        result.status_code = 503
+        err_code = 'SlowDown'
+        err_msg = 'slow down you jerks'
 
     log.debug('S3 Response Status Code: %s', result.status_code)
 

@@ -335,7 +335,7 @@ def _get_s3_key():
         'service_url': None,
         'keyid': None,
         'key': None,
-        'cache_expire': None
+        'cache_expire': S3_CACHE_EXPIRE,
     }
 
     ret = dict()
@@ -361,7 +361,7 @@ def _init():
     specified and cache the data to disk.
     '''
     cache_file = _get_buckets_cache_filename()
-    cache_expire_time = float(_get_s3_key().get('cache_expire', S3_CACHE_EXPIRE))
+    cache_expire_time = float(_get_s3_key().get('cache_expire'))
     exp = time.time() - cache_expire_time
 
     log.debug('S3 cache expire time is %ds', cache_expire_time)

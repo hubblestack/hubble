@@ -1,7 +1,6 @@
 argparse
 crypto
 daemon
-logging
 pprint
 backports-abc
 bandit

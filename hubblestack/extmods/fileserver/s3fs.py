@@ -125,7 +125,7 @@ def update():
     """
     metadata = _init()
 
-    if S3_SYNC_ON_UPDATE:
+    if S3_SYNC_ON_UPDATE and metadata:
         # sync the buckets to the local cache
         log.info('Syncing local cache from S3...')
         for saltenv, env_meta in six.iteritems(metadata):
@@ -283,7 +283,7 @@ def file_list(load):
     return ret
 
 
-def file_list_emptydirs(load):
+def file_list_emptydirs(load): # pylint: disable=unused-argument ; just a todo
     """
     Return a list of all empty directories on the master
     """
@@ -553,7 +553,7 @@ def _refresh_buckets_cache_file(cache_file):
 
     log.debug('Writing buckets cache file')
 
-    with salt.utils.files.fopen(cache_file, 'w') as fp_:
+    with salt.utils.files.fopen(cache_file, 'wb') as fp_:
         pickle.dump(metadata, fp_)
 
     return metadata
@@ -569,7 +569,9 @@ def _read_buckets_cache_file(cache_file):
         try:
             data = pickle.load(fp_)
         except (pickle.UnpicklingError, AttributeError, EOFError, ImportError,
-                IndexError, KeyError):
+                IndexError, KeyError) as eobj:
+            log.info('error unpickling buckets cache file (%s): %s',
+                cache_file, repr(eobj))
             data = None
 
     return data

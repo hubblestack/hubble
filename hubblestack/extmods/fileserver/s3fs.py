@@ -125,7 +125,7 @@ def update():
     """
     metadata = _init()
 
-    if S3_SYNC_ON_UPDATE:
+    if S3_SYNC_ON_UPDATE and metadata:
         # sync the buckets to the local cache
         log.info('Syncing local cache from S3...')
         for saltenv, env_meta in six.iteritems(metadata):

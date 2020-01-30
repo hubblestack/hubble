@@ -69,16 +69,14 @@ pipeline {
                 }
                 stage('pylint') {
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh '''#!/bin/bash
-                                source ./venv/bin/activate
-                                < relevant-files.txt  xargs -r pylint --output-format=json \
-                                    > tests/unittests/output/pylint.json
-                                x=$?
-                                python ./tests/automation/pylint-json-to-html tests/unittests/output/pylint.json
-                                exit $x
-                                '''
-                        }
+                        sh '''#!/bin/bash
+                            source ./venv/bin/activate
+                            < relevant-files.txt  xargs -r pylint --output-format=json \
+                                > tests/unittests/output/pylint.json
+                            x=$?
+                            python ./tests/automation/pylint-json-to-html tests/unittests/output/pylint.json
+                            exit $x
+                            '''
                     }
                 }
                 stage('bandit') {

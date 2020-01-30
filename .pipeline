@@ -1,5 +1,5 @@
 
-def imgname = 'hubblestack/jenkins:centos-v1.0.9'
+def imgname = 'hubblestack/jenkins:centos-v1.0.14'
 
 pipeline {
     agent { docker { image "${imgname}" } }
@@ -24,9 +24,10 @@ pipeline {
                     '''
                 sh '''#!/bin/bash
                     source /etc/profile.d/kersplat.sh
+                    set -x -e
                     pyenv local $PY_V
                     pyenv shell $PY_V
-                    set -x -e
+                    pyenv version-name
                     rm -rf vlib venv .pytest_cache
                     pip install --cache-dir ./pip.cache -t ./vlib virtualenv
                     PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv

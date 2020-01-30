@@ -6,7 +6,7 @@ plugin interfaces used by Salt.
 """
 
 # Import python libs
-from __future__ import absolute_import
+
 import os
 import imp
 import sys
@@ -39,6 +39,7 @@ import salt.modules.cmdmod
 
 # Import 3rd-party libs
 import salt.ext.six as six
+import importlib
 try:
     import pkg_resources
     HAS_PKG_RESOURCES = True
@@ -114,13 +115,13 @@ class LazyDict(collections.MutableMapping):
     def __init__(self):
         self.clear()
 
-    def __nonzero__(self):
+    def __bool__(self):
         # we are zero if dict is empty and loaded is true
         return bool(self._dict or not self.loaded)
 
-    def __bool__(self):
+    def __nonzero__(self):
         # we are zero if dict is empty and loaded is true
-        return self.__nonzero__()
+        return self.__bool__()
 
     def clear(self):
         """
@@ -1395,7 +1396,7 @@ class LazyLoader(LazyDict):
         for submodule in submodules:
             # it is a submodule if the name is in a namespace under mod
             if submodule.__name__.startswith(mod.__name__ + '.'):
-                reload(submodule)
+                importlib.reload(submodule)
                 self._reload_submodules(submodule)
 
     def _load_module(self, name):

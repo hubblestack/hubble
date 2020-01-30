@@ -3,8 +3,6 @@
 Main entry point for the hubble daemon
 """
 
-from __future__ import print_function
-
 # import lockfile
 import argparse
 import copy
@@ -22,7 +20,6 @@ import time
 import uuid
 from datetime import datetime
 
-import salt.fileclient
 import salt.fileserver
 import salt.fileserver.gitfs
 import salt.modules.cmdmod
@@ -32,6 +29,8 @@ import salt.utils.jid
 import salt.utils.gitfs
 import salt.utils.path
 from croniter import croniter
+
+import hubblestack.utils.signing
 import hubblestack.splunklogging
 import hubblestack.log
 import hubblestack.hec.opt
@@ -42,7 +41,7 @@ import hubblestack.status
 import hubblestack.saltoverrides
 
 log = logging.getLogger(__name__)
-hubble_status = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
+HSS = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
 
 # Importing syslog fails on windows
 if not salt.utils.platform.is_windows():
@@ -238,7 +237,7 @@ def getlastrunbybuckets(buckets, seconds):
     return last_run
 
 
-@hubble_status.watch
+@HSS.watch
 def schedule():
     """
     Rudimentary single-pass scheduler
@@ -307,7 +306,7 @@ def schedule():
     schedule_config = __opts__.get('schedule', {})
     if 'user_schedule' in __opts__ and isinstance(__opts__['user_schedule'], dict):
         schedule_config.update(__opts__['user_schedule'])
-    for jobname, jobdata in schedule_config.iteritems():
+    for jobname, jobdata in schedule_config.items():
         # Error handling galore
         if not jobdata or not isinstance(jobdata, dict):
             log.error('Scheduled job %s does not have valid data', jobname)
@@ -514,7 +513,6 @@ def _setup_signaling():
         signal.signal(signal.SIGHUP, clean_up_process)
         signal.signal(signal.SIGQUIT, clean_up_process)
 
-
 def _disable_boto_modules():
     """ Disable the unneeded boto modules because they cause issues with the loader """
     # Disable all of salt's boto modules, they give nothing but trouble to the loader
@@ -638,12 +636,13 @@ def _setup_logging(parsed_args):
         if __opts__['daemonize']:
             __opts__['log_level'] = 'info'
     # Handle the explicit -vvv settings
-    if __opts__['verbose'] == 1:
-        __opts__['log_level'] = 'warning'
-    elif __opts__['verbose'] == 2:
-        __opts__['log_level'] = 'info'
-    elif __opts__['verbose'] >= 3:
-        __opts__['log_level'] = 'debug'
+    if __opts__['verbose']:
+        if __opts__['verbose'] == 1:
+            __opts__['log_level'] = 'warning'
+        elif __opts__['verbose'] == 2:
+            __opts__['log_level'] = 'info'
+        elif __opts__['verbose'] >= 3:
+            __opts__['log_level'] = 'debug'
     # Console logging is probably the same, but can be different
     console_logging_opts = {
         'log_level': __opts__.get('console_log_level', __opts__['log_level']),
@@ -669,7 +668,9 @@ def _setup_logging(parsed_args):
         pass  # ensure the file exists before we set perms on it
     # 384 is 0o600 permissions, written without octal for python 2/3 compat
     os.chmod(__opts__['log_file'], 384)
-    os.chmod(parsed_args.get('configfile'), 384)
+    configfile = parsed_args.get('configfile')
+    if configfile and os.path.isfile(configfile):
+        os.chmod(configfile, 384)
 
 
 def _setup_dirs():
@@ -717,7 +718,7 @@ def _setup_dirs():
 # tag='hubble:rg' will appear in the logs to differentiate this from other
 # hangtime_wrapper timers (if any)
 @hangtime_wrapper(timeout=600, repeats=True, tag='hubble:rg')
-@hubble_status.watch
+@HSS.watch
 def refresh_grains(initial=False):
     """
     Refresh the grains, pillar, utils, modules, and returners
@@ -792,7 +793,10 @@ def refresh_grains(initial=False):
 
     hubblestack.status.__opts__ = __opts__
     hubblestack.status.__salt__ = __salt__
-    hubble_status.start_sigusr1_signal_handler()
+    HSS.start_sigusr1_signal_handler()
+
+    hubblestack.utils.signing.__opts__ = __opts__
+    hubblestack.utils.signing.__salt__ = __salt__
 
     if not initial and __salt__['config.get']('splunklogging', False):
         hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
@@ -808,7 +812,7 @@ def emit_to_syslog(grains_to_emit):
         for grain in grains_to_emit:
             if grain in __grains__:
                 if bool(__grains__[grain]) and isinstance(__grains__[grain], dict):
-                    for key, value in __grains__[grain].iteritems():
+                    for key, value in __grains__[grain].items():
                         syslog_list.append('{0}={1}'.format(key, value))
                 else:
                     syslog_list.append('{0}={1}'.format(grain, __grains__[grain]))
@@ -953,7 +957,7 @@ def scan_proc_for_hubbles(_proc_path='/proc', hname=r'^/\S+python.*?/opt/.*?hubb
                           kill_other=True, ksig=signal.SIGTERM):
     """ look for other hubble processes and kill them or sys.exit()"""
     no_pgrp = str(os.getpgrp())
-    rpid = re.compile('\d+')
+    rpid = re.compile(r'\d+')
     if os.path.isdir('/proc'):
         for dirname, dirs, _files in os.walk('/proc'):
             if dirname == '/proc':

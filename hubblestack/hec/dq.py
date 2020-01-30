@@ -7,6 +7,8 @@ import time
 import shutil
 import json
 from collections import deque
+from hubblestack.utils.misc import numbered_file_split_key
+from hubblestack.utils.encoding import encode_something_to_bytes, decode_something_to_string
 
 __all__ = [
     'QueueTypeError', 'QueueCapacityError', 'MemQueue', 'DiskQueue',
@@ -36,6 +38,7 @@ class OKTypesMixin:
     def check_type(self, item):
         if not isinstance(item, self.ok_types):
             raise QueueTypeError('type({0}) is not ({1})'.format(type(item), self.ok_types))
+
 
 class NoQueue(object):
     cn = 0
@@ -69,6 +72,7 @@ class DiskQueue(OKTypesMixin):
     __nonzero__ = __bool__ # stupid python2
 
     def compress(self, dat):
+        dat = encode_something_to_bytes(dat)
         if not self.compression:
             return dat
         def _bz2(x):
@@ -84,7 +88,8 @@ class DiskQueue(OKTypesMixin):
                 os.unlink(name)
 
     def decompress(self, dat):
-        if dat.startswith('BZ'):
+        dat = encode_something_to_bytes(dat)
+        if dat.startswith(b'BZ'):
             try:
                 return bz2.BZ2Decompressor().decompress(dat)
             except IOError:
@@ -158,7 +163,13 @@ class DiskQueue(OKTypesMixin):
         """
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                return self.decompress(fh.read()), self.read_meta(fname)
+                return decode_something_to_string(self.decompress(fh.read())), self.read_meta(fname)
+
+    def iter_peek(self):
+        ''' iterate and return all items in the disk queue (without removing any) '''
+        for fname in self.files:
+            with open(fname, 'rb') as fh:
+                yield self.decompress(fh.read()), self.read_meta(fname)
 
     def iter_peek(self):
         ''' iterate and return all items in the disk queue (without removing any) '''
@@ -172,15 +183,15 @@ class DiskQueue(OKTypesMixin):
         """
         for fname in self.files:
             with open(fname, 'rb') as fh:
-                ret = self.decompress(fh.read())
-            ret = ret, self.read_meta(fname)
+                dat = self.decompress(fh.read())
+            mdat = self.read_meta(fname)
             sz = os.stat(fname).st_size
             self.unlink_(fname)
             self.cn -= 1
             self.sz -= sz
             if self.double_check_cnsz:
                 self._count(double_check_only=True, tag='get')
-            return ret
+            return decode_something_to_string(dat), mdat
 
     def getz(self, sz=SPLUNK_MAX_MSG):
         """ fetch items from the queue and concatenate them together using the
@@ -223,7 +234,7 @@ class DiskQueue(OKTypesMixin):
             #
             # occasionally this will return something pessimistic
             meta_data[k] = max(meta_data[k])
-        return ret, meta_data
+        return decode_something_to_string(ret), meta_data
 
     def pop(self):
         """ remove the next item from the queue (do not return it); useful with .peek() """
@@ -239,14 +250,8 @@ class DiskQueue(OKTypesMixin):
     @property
     def files(self):
         """ generate all filenames in the diskqueue (returns iterable) """
-        def _k(x):
-            try:
-                return [ int(i) for i in x.split('.') ]
-            except:
-                pass
-            return x
         for path, dirs, files in sorted(os.walk(self.directory)):
-            for fname in [ os.path.join(path, f) for f in sorted(files, key=_k) ]:
+            for fname in [os.path.join(path, f) for f in sorted(files, key=numbered_file_split_key)]:
                 if fname.endswith('.meta'):
                     continue
                 yield fname

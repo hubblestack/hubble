@@ -13,7 +13,7 @@ This is due to security concerns -- because fdg can collect arbitrary data from
 a system, we don't want an attacker to be able to send that data to arbitrary
 endpoints.
 """
-from __future__ import absolute_import
+
 import logging
 import requests
 

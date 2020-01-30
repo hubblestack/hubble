@@ -56,7 +56,7 @@ pkg:
       trigger: state
 
 """
-from __future__ import absolute_import
+
 import logging
 
 import fnmatch
@@ -204,7 +204,7 @@ def _merge_yaml(ret, data, profile=None):
         if topkey in data.get('pkg', {}):
             if topkey not in ret['pkg']:
                 ret['pkg'][topkey] = []
-            for key, val in data['pkg'][topkey].iteritems():
+            for key, val in data['pkg'][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret['pkg'][topkey].append({key: val})
@@ -217,11 +217,11 @@ def _get_tags(data):
     """
     ret = {}
     distro = __grains__.get('osfinger')
-    for toplist, toplevel in data.get('pkg', {}).iteritems():
+    for toplist, toplevel in data.get('pkg', {}).items():
         # pkg:blacklist
         for audit_dict in toplevel:
             # pkg:blacklist:0
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 # pkg:blacklist:0:telnet
                 tags_dict = audit_data.get('data', {})
                 # pkg:blacklist:0:telnet:data
@@ -243,11 +243,11 @@ def _get_tags(data):
                 if isinstance(tags, dict):
                     # malformed yaml, convert to list of dicts
                     tmp = []
-                    for name, tag in tags.iteritems():
+                    for name, tag in tags.items():
                         tmp.append({name: tag})
                     tags = tmp
                 for item in tags:
-                    for name, tag in item.iteritems():
+                    for name, tag in item.items():
                         tag_data = {}
                         # Whitelist could have a dictionary, not a string
                         if isinstance(tag, dict):

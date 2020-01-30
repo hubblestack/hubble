@@ -1,7 +1,6 @@
 argparse
-Crypto
+crypto
 daemon
-logging
 pprint
 backports-abc
 bandit
@@ -18,7 +17,8 @@ markupsafe
 mock
 msgpack
 ntplib
-pycrypto
+cryptography
+pycryptodome
 pyinotify
 pytest
 pytest-cov
@@ -37,4 +37,4 @@ smmap2
 tornado
 urllib3
 vulners
-pyOpenSSL
+pyopenssl

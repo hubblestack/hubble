@@ -41,7 +41,7 @@ def returner(ret):
     for opts in opts_list:
         sumo_nebula_return = opts['sumo_nebula_return']
         for query in data:
-            for query_name, query_results in query.iteritems():
+            for query_name, query_results in query.items():
                 if 'data' not in query_results:
                     query_results['data'] = [{'error': 'result missing'}]
                 for query_result in query_results['data']:

@@ -114,7 +114,7 @@ If there are no chaining keywords that are valid to execute, the fdg execution
 will end and any ``return`` keywords will be evaluated as we move back up the
 call chain.
 """
-from __future__ import absolute_import
+
 import logging
 import os
 import yaml
@@ -214,7 +214,7 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
     ret = {}
     for fdg_file in fdg_routines:
         if isinstance(fdg_file, dict):
-            for key, val in fdg_file.iteritems():
+            for key, val in fdg_file.items():
                 retkey, retval = fdg(_fdg_saltify(key), val)
                 ret[retkey] = retval
         else:
@@ -381,7 +381,7 @@ def _get_top_data(topfile):
 
     ret = []
 
-    for match, data in topdata.iteritems():
+    for match, data in topdata.items():
         if __salt__['match.compound'](match):
             ret.extend(data)
 

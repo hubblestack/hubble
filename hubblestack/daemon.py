@@ -41,7 +41,7 @@ import hubblestack.status
 import hubblestack.saltoverrides
 
 log = logging.getLogger(__name__)
-hubble_status = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
+HSS = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
 
 # Importing syslog fails on windows
 if not salt.utils.platform.is_windows():
@@ -237,7 +237,7 @@ def getlastrunbybuckets(buckets, seconds):
     return last_run
 
 
-@hubble_status.watch
+@HSS.watch
 def schedule():
     """
     Rudimentary single-pass scheduler
@@ -718,7 +718,7 @@ def _setup_dirs():
 # tag='hubble:rg' will appear in the logs to differentiate this from other
 # hangtime_wrapper timers (if any)
 @hangtime_wrapper(timeout=600, repeats=True, tag='hubble:rg')
-@hubble_status.watch
+@HSS.watch
 def refresh_grains(initial=False):
     """
     Refresh the grains, pillar, utils, modules, and returners
@@ -793,7 +793,7 @@ def refresh_grains(initial=False):
 
     hubblestack.status.__opts__ = __opts__
     hubblestack.status.__salt__ = __salt__
-    hubble_status.start_sigusr1_signal_handler()
+    HSS.start_sigusr1_signal_handler()
 
     hubblestack.utils.signing.__opts__ = __opts__
     hubblestack.utils.signing.__salt__ = __salt__

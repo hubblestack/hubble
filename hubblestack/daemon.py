@@ -957,7 +957,7 @@ def scan_proc_for_hubbles(_proc_path='/proc', hname=r'^/\S+python.*?/opt/.*?hubb
                           kill_other=True, ksig=signal.SIGTERM):
     """ look for other hubble processes and kill them or sys.exit()"""
     no_pgrp = str(os.getpgrp())
-    rpid = re.compile('\d+')
+    rpid = re.compile(r'\d+')
     if os.path.isdir('/proc'):
         for dirname, dirs, _files in os.walk('/proc'):
             if dirname == '/proc':

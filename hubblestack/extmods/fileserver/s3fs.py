@@ -352,7 +352,7 @@ def _get_s3_key():
     # This rather odd return strategy is a result of trying to make a small
     # change for the incorrect backport of PR740 without it's preceeding
     # cleanup (which changed the return type from list to dict)
-    return [ ret[x] for x in 'key keyid service_url verify_ssl kms_keyid location path_style https_enable'.split() ]
+    return [ ret[x] for x in 'key keyid service_url verify_ssl kms_keyid location path_style https_enable cache_expire'.split() ]
 
 
 def _init():
@@ -360,8 +360,9 @@ def _init():
     Connect to S3 and download the metadata for each file in all buckets
     specified and cache the data to disk.
     '''
+    key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable, cache_expire = _get_s3_key()
     cache_file = _get_buckets_cache_filename()
-    cache_expire_time = float(_get_s3_key().get('cache_expire'))
+    cache_expire_time = float(cache_expire)
     exp = time.time() - cache_expire_time
 
     log.debug('S3 cache expire time is %ds', cache_expire_time)
@@ -435,7 +436,7 @@ def _refresh_buckets_cache_file(cache_file):
 
     log.debug('Refreshing buckets cache file')
 
-    key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable = _get_s3_key()
+    key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable, cache_expire = _get_s3_key()
     metadata = {}
 
     # helper s3 query function
@@ -685,7 +686,7 @@ def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
     Checks the local cache for the file, if it's old or missing go grab the
     file from S3 and update the cache
     '''
-    key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable = _get_s3_key()
+    key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable, cache_expire = _get_s3_key()
 
     # check the local cache...
     if os.path.isfile(cached_file_path):

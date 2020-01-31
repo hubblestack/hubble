@@ -207,7 +207,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
     if os.environ.get('MOCK_SLOW_DOWN'):
         result.status_code = 503
         err_code = 'SlowDown'
-        err_msg = 'slow down you jerks'
+        err_msg = 'MOCK_SLOW_DOWN environment variable set. All S3 queries will fail for testing purposes."
 
     log.debug('S3 Response Status Code: %s', result.status_code)
 

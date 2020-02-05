@@ -149,6 +149,10 @@ def salt_loaders():
     hubblestack.utils.stdrec.__grains__ = salt_loaders.grains
     hubblestack.utils.stdrec.__opts__ = salt_loaders.opts
 
+    log.debug('populating hubblestack.utils.signing with __salt__ and __opts__')
+    hubblestack.utils.signing.__opts__ = __opts__
+    hubblestack.utils.signing.__salt__ = __salt__
+
     log.debug('populating hubblestack.hec with __grains__, __salt__, and __opts__')
     hubblestack.hec.opt.__grains__ = salt_loaders.grains
     hubblestack.hec.opt.__salt__ = salt_loaders.salt

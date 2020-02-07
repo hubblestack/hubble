@@ -135,7 +135,6 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make install
 
 # use pyenv
-COPY pyinstaller-requirements.txt /
 ARG PYENV_VERSION=3.6.10
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
 ENV PYENV_ROOT=/usr/local/pyenv
@@ -148,6 +147,7 @@ RUN umask 022 \
  && env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYENV_VERSION \
  && pyenv global $PYENV_VERSION
 
+COPY pyinstaller-requirements.txt /
 RUN eval "$(pyenv init -)" \
  && pip -v install --upgrade pip \
  && pip -v install -r pyinstaller-requirements.txt

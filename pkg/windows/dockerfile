@@ -4,7 +4,7 @@
 #                    2. docker build -t <image_name> .
 # The resulting image is ready to run the pyinstaller on container start and drop hubble<version>.exe
 # in a local directory. Mount c:\data volume into a directory on the host to access the package.
-# To run the container:  
+# To run the container:
 #                    3. Copy over any other items you want to include with hubble and place them in <host folder>/opt
 #                    4. docker run -it --rm -v <host folder>:c:\data <image_name>
 #build docker image from windowscore
@@ -31,7 +31,9 @@ VOLUME C:/data
 COPY pyinstaller-requirements.txt c:/temp/
 COPY hubble.conf C:/temp/
 #install Chocolatey, then git and osquery
-RUN powershell.exe -Command Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString("$env:CHOCO_URL"))
+RUN powershell.exe -Command Set-ExecutionPolicy Bypass -Scope Process -Force; \
+ [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'; \
+ iex ((New-Object System.Net.WebClient).DownloadString("$env:CHOCO_URL"));
 RUN powershell.exe -Command choco install git nssm -y;
 RUN powershell.exe -Command choco install osquery --version 3.4.0 -y;
 
@@ -52,10 +54,10 @@ RUN powershell.exe -Command git clone "$env:HUBBLE_GIT_URL"; \
   Push-Location hubble; \
   git checkout "$env:HUBBLE_CHECKOUT"; \
   pop-location;
-  
+
 #Use pip to install hubble dependencies
 RUN powershell.exe -Command pip install -r pyinstaller-requirements.txt;
-  
+
 # Modify gitfs fix for incorrect path variables until fix has been upstreamed
 RUN powershell.exe -Command If (!(Test-Path C:/Python27/Lib/site-packages/salt)) {Copy-Item C:/temp/salt/salt -Destination C:/Python27/Lib/site-packages/ -Recurse -Force}; \
   $gitfsFile = Get-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py; \
@@ -63,7 +65,7 @@ RUN powershell.exe -Command If (!(Test-Path C:/Python27/Lib/site-packages/salt))
   Set-Content -Path C:\Python27\Lib\site-packages\salt\utils\gitfs.py -Value $gitfsFile -Force
 #Get vcredist prereq for hubble
 RUN powershell.exe -Command \
-  $ProgressPreference = 'SilentlyContinue'; \ 
+  $ProgressPreference = 'SilentlyContinue'; \
   Invoke-WebRequest -Uri 'http://repo.saltstack.com/windows/dependencies/64/vcredist_x64_2008_mfc.exe' -OutFile "C:/temp/hubble/pkg/windows/vcredist.exe"
 #Create pyionstaller spec and edit it to work with windows
 CMD powershell.exe -Command Push-Location C:/temp/hubble; \
@@ -91,5 +93,4 @@ CMD powershell.exe -Command Push-Location C:/temp/hubble; \
   ./makensis.exe /DHubbleVersion="$env:HUBBLE_CHECKOUT" 'C:/temp/hubble/pkg/windows/hubble-Setup.nsi'; \
   Get-FileHash -Path C:/temp/hubble/pkg/windows/Hubble*exe -Algorithm SHA256 ^| Out-File C:/temp/hubble/pkg/windows/hubble_windows.sha256; \
   Copy-Item C:/temp/hubble/pkg/windows/Hubble*exe -Destination C:/data/; \
-  Copy-Item C:/temp/hubble/pkg/windows/hubble_windows.sha256 -Destination C:/data/; 
-  
+  Copy-Item C:/temp/hubble/pkg/windows/hubble_windows.sha256 -Destination C:/data/;

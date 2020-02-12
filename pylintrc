@@ -125,7 +125,16 @@ disable=print-statement,
         xreadlines-attribute,
         deprecated-sys-function,
         exception-escape,
-        comprehension-escape
+        comprehension-escape,
+        missing-module-docstring
+
+# missing-module-docstring^^:
+#   This wants to require a docstring at the top of every file.  We don't
+#   always want that; particularly for __init__.py files.  If there was a way
+#   to disable this for only __init__.py files, that would be better. Some of
+#   our __init__.py files are are auto-generated (e.g., for versioning). Until
+#   we find a way to do that without a comment in the file (which is roughly
+#   the same as a docstring), just disable this check.
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -133,7 +142,8 @@ disable=print-statement,
 # it should appear only once). See also the "--disable" option for examples.
 enable=blacklisted-name,
        invalid-name,
-       missing-docstring,
+       missing-function-docstring,
+       missing-class-docstring,
        empty-docstring,
        unneeded-not,
        singleton-comparison,
@@ -372,14 +382,6 @@ enable=blacklisted-name,
        deprecated-method,
        bad-thread-instantiation,
        shallow-copy-environ
-
-# This wants to require a docstring at the top of every file.  We don't always
-# want that; particularly for __init__.py files.  If there was a way to disable
-# this for only __init__.py files, that would be better as some of ours are
-# auto-generated.  Until we find a way to to that without a comment in the file
-# (which is roughly the same as a docstring), we'll do this:
-disable=missing-module-docstring
-
 
 [REPORTS]
 

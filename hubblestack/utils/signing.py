@@ -114,7 +114,6 @@ def split_certs(fh):
 
         returns a generator, for list, use `list(split_cerst(fh))`
     """
-
     ret = None
     for line in fh.readlines():
         if ret is None:

@@ -798,6 +798,9 @@ def refresh_grains(initial=False):
     hubblestack.utils.signing.__opts__ = __opts__
     hubblestack.utils.signing.__salt__ = __salt__
 
+    hubblestack.utils.signing.__opts__ = __opts__
+    hubblestack.utils.signing.__salt__ = __salt__
+
     if not initial and __salt__['config.get']('splunklogging', False):
         hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
 

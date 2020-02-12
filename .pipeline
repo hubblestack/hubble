@@ -106,7 +106,7 @@ pipeline {
                 alwaysLinkToLastBuild: false,
                 keepAll: true,
                 reportDir: 'tests/unittests/output',
-                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg, bandit.html',
+                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg, bandit.html, relevant-files.txt',
                 reportName: "Test Reports"
             ])
         }

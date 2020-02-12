@@ -49,7 +49,7 @@ pipeline {
                     if [[ $(git show -s --format='%s%n%b' "${LHS}..${RHS}") =~ LINT-FULL ]]
                     then find hubblestack -name "*.py"
                     else find hubblestack -name "*.py" -print0 | xargs -r0 git diff --name-only "$LHS" "$RHS"
-                    fi > relevant-files.txt
+                    fi > tests/unittests/output/relevant-files.txt
                     '''
                 sh '''mkdir -vp tests/unittests/output'''
             }
@@ -71,7 +71,7 @@ pipeline {
                     steps {
                         sh '''#!/bin/bash
                             source ./venv/bin/activate
-                            < relevant-files.txt  xargs -r pylint --output-format=json \
+                            < tests/unittests/output/relevant-files.txt  xargs -r pylint --output-format=json \
                                 > tests/unittests/output/pylint.json
                             x=$?
                             python ./tests/automation/pylint-json-to-html tests/unittests/output/pylint.json
@@ -84,7 +84,7 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             sh '''#!/bin/bash
                                 source ./venv/bin/activate
-                                < relevant-files.txt  xargs -r bandit -lif html \
+                                < tests/unittests/output/relevant-files.txt  xargs -r bandit -lif html \
                                   > tests/unittests/output/bandit.html
                                 x=$?
                                 cp tests/static/bandit.css tests/unittests/output/bandit.css

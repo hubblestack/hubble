@@ -54,5 +54,9 @@ def verify(*targets, **kw):
     log.debug('signing.verify(targets=%s, mfname=%s, sfname=%s, public_crt=%s, ca_crt=%s, pwd=%s)',
         targets, mfname, sfname, public_crt, ca_crt, pwd)
 
+    #log.debug('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!')
+    log.splunk('verification status of {}:\n{}'.format(pwd,
+            dict(HuS.verify_files(targets, mfname=mfname, sfname=sfname,
+                public_crt=public_crt, ca_crt=ca_crt))))
     return dict(HuS.verify_files(targets, mfname=mfname, sfname=sfname,
         public_crt=public_crt, ca_crt=ca_crt))

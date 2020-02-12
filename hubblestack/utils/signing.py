@@ -192,6 +192,7 @@ class X509AwareCertBucket:
             self.trusted.append(d)
 
         for c in read_certs(*untrusted_crt):
+            log.debug('c in read_certs:\n{}'.format(c))
             d = c.digest('sha1')
             if d in already:
                 continue
@@ -204,7 +205,12 @@ class X509AwareCertBucket:
                 self.trusted.append(d)
                 log.debug('  added to verify store')
             except ossl.X509StoreContextError as e:
-                log.debug('  not trustworthy: %s', e)
+                #log.error('  not trustworthy: %s', e)
+                code, depth, message = e.args[0]
+                status = STATUS.FAIL
+                # maybe add path
+                log.critical('Cert verification failed for: %s code=%s depth=%s, message=%s',
+                        status, d, code, depth, message)
 
         self.public_crt = list()
         for c in read_certs(*public_crt):
@@ -224,22 +230,39 @@ class X509AwareCertBucket:
                 code, depth, message = e.args[0]
                 log.debug('authentication of %s failed: code=%s depth=%s, message=%s',
                     d, code, depth, message)
-                # from openssl/x509_vfy.h
-                # define X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT         2
-                # define X509_V_ERR_UNABLE_TO_GET_CRL                 3
-                # define X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY 20
-                # define X509_V_ERR_CERT_UNTRUSTED                    27
-                # define X509_V_ERR_UNABLE_TO_GET_CRL_ISSUER          33
                 if code in (2,3,20,27,33):
-                    # we just don't have the required info, it's not failing to
-                    # verify not exactly, but it's definitely not verified
-                    # either
-                    log.debug(' code=%d is alright-ish though. setting status to UNKNOWN', code)
+                    # from openssl/x509_vfy.h or 
+                    # https://www.openssl.org/docs/man1.1.0/man3/X509_STORE_CTX_set_current_cert.html
+                    # define X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT         2
+                    #   the issuer certificate could not be found: 
+                    #   this occurs if the issuer certificate of an 
+                    #   untrusted certificate cannot be found.
+                    # define X509_V_ERR_UNABLE_TO_GET_CRL                 3
+                    #   the CRL of a certificate could not be found.
+                    # define X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT_LOCALLY 20
+                    #   the issuer certificate of a locally looked up 
+                    #   certificate could not be found. This normally means 
+                    #   the list of trusted certificates is not complete.
+                    # define X509_V_ERR_CERT_UNTRUSTED                    27
+                    #   the root CA is not marked as trusted for the 
+                    #   specified purpose.
+                    # define X509_V_ERR_UNABLE_TO_GET_CRL_ISSUER          33
+                    #   the CRL of a certificate could not be found.
+                    #   we just don't have the required info, it's not 
+                    #   failing to verify not exactly, but it's definitely 
+                    #   not verified either
                     status = STATUS.UNKNOWN
-                # define X509_V_ERR_CERT_HAS_EXPIRED                  10
-                # define X509_V_ERR_CRL_HAS_EXPIRED                   12
-                # XX # if code in (10,12):
-                # XX #     return # .... is this even the right idea? should we do this through conext flags?
+                    log.error('authentication %s for %s: code=%s depth=%s, message=%s',
+                            status, d, code, depth, message)
+                if code in (10,12):
+                    # define X509_V_ERR_CERT_HAS_EXPIRED                  10
+                    #   the certificate has expired: that is the notAfter date is before the current time.
+                    # define X509_V_ERR_CRL_HAS_EXPIRED                   12
+                    #   the CRL has expired.
+                    # XX # if code in (10,12):
+                    status = STATUS.FAIL
+                    log.critical('authentication %s for %s: code=%s depth=%s, message=%s',
+                        status, d, code, depth, message)
             self.public_crt.append(self.PublicCertObj(c, d, status))
 
 def stringify_ossl_cert(c):
@@ -350,9 +373,11 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
     x509 = X509AwareCertBucket(public_crt, ca_crt)
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
+    log.debug('digest: {}\nsig: {}')
     args = { 'signature': sig, 'data': digest }
     for crt,txt,status in x509.public_crt:
-        log.debug('trying to check %s with %s', sfname, txt)
+        #log.error('Public Cert Debug:\ncrt: {}\ntxt: {}\nstatus:{}\n'.format(crt, txt, status))
+        log.debug('Trying to check %s with %s', sfname, txt)
         pubkey = crt.get_pubkey().to_cryptography_key()
         if isinstance(pubkey, rsa.RSAPublicKey):
             args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
@@ -362,8 +387,9 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
             pubkey.verify(**args)
             return status
         except InvalidSignature:
+            # want status, cert_fingerprint, hash from manifest, new_hash
+            log.critical('fname=%s failed signature check (sfname=%s)',fname, sfname)
             pass
-    log.error('fname=%s failed signature check (sfname=%s)', fname, sfname)
     return STATUS.FAIL
 
 def iterate_manifest(mfname):
@@ -379,7 +405,7 @@ def iterate_manifest(mfname):
                 manifested_fname = normalize_path(manifested_fname)
                 yield manifested_fname
 
-def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='public.crt', ca_crt='ca-root.crt'):
+def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='public.crt', ca_crt='ca-root.crt', n_failures=0):
     """ given a list of `targets`, a MANIFEST, and a SIGNATURE file:
 
         1. Check the signature of the manifest, mark the 'MANIFEST' item of the return as:
@@ -393,7 +419,7 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
 
         return a mapping from the input target list to the status values (a dict of filename: status)
     """
-    log.debug("verify_files(%s, mfname=%s, sfname=%s, public_crt=%s, ca_crt=%s", targets, mfname, sfname, public_crt, ca_crt)
+    log.debug("verify_files(%s, mfname=%s, sfname=%s, public_crt=%s, ca_crt=%s, n_failures=%d", targets, mfname, sfname, public_crt, ca_crt, n_failures)
     ret = OrderedDict()
     ret[mfname] = verify_signature(mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt)
     # ret[mfname] is the strongest claim we can make about the files we're
@@ -484,13 +510,17 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             verify_res = verify_files([real_path],
                 mfname=mani_path, sfname=sign_path,
                 public_crt=Options.public_crt, ca_crt=Options.ca_crt)
+            # Originally log.debug
+            # log.error, log.splunk, log.critical send to hubble
             log.debug('verify: %s', dict(**verify_res))
             vrg = verify_res.get(real_path, STATUS.UNKNOWN)
             if vrg == STATUS.VERIFIED:
+                log.critical('vrg: {}\nreal_path: {}'.format(vrg, real_path))
                 return f_path
             if vrg == STATUS.UNKNOWN and not Options.require_verify:
                 return f_path
-            log.debug('claiming not found')
+            if vrg == STATUS.UNKNOWN or vrg == STATUS.FAIL:
+                log.critical('vrg: {},real_path: {}'.format(vrg, real_path))
             return dict(**not_found)
         return inner
     return wrapper

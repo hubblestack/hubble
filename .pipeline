@@ -51,8 +51,8 @@ pipeline {
                     else find hubblestack -name "*.py" -print0 | xargs -r0 git diff --name-only "$LHS" "$RHS"
                     fi > relevant-files.txt
                     '''
-                sh '''mkdir -vp tests/unittests/output
-                      cp relevant-files.txt tests/unittests/output
+                sh ''' mkdir -vp tests/unittests/output
+                       cp relevant-files.txt tests/unittests/output
                    '''
             }
         }
@@ -73,14 +73,9 @@ pipeline {
                     steps {
                         sh '''#!/bin/bash
                             source ./venv/bin/activate
-                            if grep -q . relevant-files.txt; then
-                                < relevant-files.txt  xargs -r pylint --output-format=json \
-                                    > tests/unittests/output/pylint.json
-                                x=$?
-                            else
-                                echo "[]" > tests/unittests/output/pylint.json
-                                x=0
-                            fi
+                            < relevant-files.txt  xargs -r pylint --output-format=json \
+                                > tests/unittests/output/pylint.json
+                            x=$?
                             python ./tests/automation/pylint-json-to-html tests/unittests/output/pylint.json
                             exit $x
                             '''
@@ -91,17 +86,12 @@ pipeline {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             sh '''#!/bin/bash
                                 source ./venv/bin/activate
-                                if grep -q . relevant-files.txt; then
-                                    < relevant-files.txt  xargs -r bandit -lif html \
-                                      > tests/unittests/output/bandit.html
-                                    x=$?
-                                    cp tests/static/bandit.css tests/unittests/output/bandit.css
-                                    sed -i -e '/<style/,/<.style/c<link rel="stylesheet" href="bandit.css">' \
-                                      tests/unittests/output/bandit.html
-                                else
-                                    echo "<p>did not run</p>" > tests/unittests/output/bandit.html
-                                    x=0
-                                fi
+                                < relevant-files.txt  xargs -r bandit -lif html \
+                                  > tests/unittests/output/bandit.html
+                                x=$?
+                                cp tests/static/bandit.css tests/unittests/output/bandit.css
+                                sed -i -e '/<style/,/<.style/c<link rel="stylesheet" href="bandit.css">' \
+                                  tests/unittests/output/bandit.html
                                 exit $x
                                 '''
                         }

@@ -463,21 +463,32 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
     for vfname in digests:
         digest = digests[vfname]
         htname = os.path.join(trunc, vfname) if trunc else vfname
+        log.debug('vfname:{}, digest: {}, htname: {}'.format( vfname, digest, htname))
         if digest == STATUS.UNKNOWN:
             # digests[vfname] is either UNKNOWN (from the targets population)
             # or it's a digest from the MANIFEST. If UNKNOWN, we have nothing to compare
             # so we return UNKNOWN
+            # !error
             ret[vfname] = STATUS.UNKNOWN
+            log.error('!! verify_files() STATUS UNKNOWN !!!!!!!!!! vfname:{}, digest: {}, htname: {}'.format( vfname, digest, htname))
         elif digest == hash_target(htname):
+            # path gets same status as MANIFEST
             # Cool, the digest matches, but rather than mark STATUS.VERIFIED,
             # we mark it with the same status as the MANIFEST it self --
             # presumably it's signed (STATUS.VERIFIED); but perhaps it's only
             # UNKNOWN or even FAIL.
             ret[vfname] = ret[mfname]
         else:
-            # We do have a MANIFEST entry and it doesn't match: FAIL with or
+            # We do have a MANIFEST entry and it doesn't match: FAIL with o,r
             # without a matching SIGNATURE
             ret[vfname] = STATUS.FAIL
+            # !critical? 
+            # hash doesn't match MANIFEST's file
+            # IF A HASH HAS CHANGED FAIL
+            # ? i
+            # reference a file that doesnt exist === ERROR
+            # 
+            log.critical('!! verify_files() STATUS FAIL !!!!!!!!!! vfname:{}, digest: {}, htname: {}'.format( vfname, digest, htname))
     # fix any normalized names so the caller gets back their specified targets
     for k,v in xlate.iteritems():
         ret[v] = ret.pop(k)
@@ -514,13 +525,13 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             # log.error, log.splunk, log.critical send to hubble
             log.debug('verify: %s', dict(**verify_res))
             vrg = verify_res.get(real_path, STATUS.UNKNOWN)
+            # log.debu
             if vrg == STATUS.VERIFIED:
-                log.critical('vrg: {}\nreal_path: {}'.format(vrg, real_path))
                 return f_path
             if vrg == STATUS.UNKNOWN and not Options.require_verify:
                 return f_path
             if vrg == STATUS.UNKNOWN or vrg == STATUS.FAIL:
-                log.critical('vrg: {},real_path: {}'.format(vrg, real_path))
+                log.dedug('status: {}, path: {}'.format(vrg, real_path))
             return dict(**not_found)
         return inner
     return wrapper

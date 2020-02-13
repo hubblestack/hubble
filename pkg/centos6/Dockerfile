@@ -154,8 +154,9 @@ RUN eval "$(pyenv init -)" \
  && pip -v install -r pyinstaller-requirements.txt
 
 #fpm package making requirements start
-RUN yum install -y rpmbuild rpm-build gcc make rh-ruby23 rh-ruby23-ruby-devel \
- && scl enable rh-ruby23 "gem install --no-ri --no-rdoc fpm"
+RUN yum install -y centos-release-scl scl-utils
+RUN yum install -y rpmbuild rpm-build gcc make rh-ruby23 rh-ruby23-ruby-devel
+RUN scl enable rh-ruby23 "gem install --no-ri --no-rdoc fpm"
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
@@ -184,7 +185,7 @@ WORKDIR /hubble_build
 ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
 CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubblestack/__init__.py ; cat /data/hubble_buildinfo >> /hubble_build/hubblestack/__init__.py; fi \
     && eval \"$(pyenv init -)\" \
-    && python27 'pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py' \
+    && pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py \
     && mkdir -p /var/log/hubble_osquery/backuplogs \
 # hubble default configuration file
     && cp -rf /hubble_build/conf/hubble /etc/hubble/ \

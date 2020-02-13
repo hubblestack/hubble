@@ -43,7 +43,7 @@ import logging
 import re
 import json
 import inspect
-import cStringIO
+import io as cStringIO
 
 from collections import OrderedDict, namedtuple
 
@@ -67,6 +67,7 @@ MANIFEST_RE = re.compile(r'^\s*(?P<digest>[0-9a-fA-F]+)\s+(?P<fname>.+)$')
 log = logging.getLogger(__name__)
 
 class STATUS:
+    """ container for status code (strings) """
     FAIL = 'fail'
     VERIFIED = 'verified'
     UNKNOWN = 'unknown'
@@ -78,7 +79,8 @@ class Options(object):
 
     Instead of `__salt__['config.get']('repo_signing:public_crt')`, write `Options.public_crt`.
     """
-    class defaults:
+    class Defaults:
+        """ defaults storage for options """
         require_verify = False
         ca_crt = '/etc/hubble/sign/ca-root.crt'
         public_crt = '/etc/hubble/sign/public.crt'
@@ -95,7 +97,7 @@ class Options(object):
         except AttributeError:
             pass
         try:
-            default = getattr(self.defaults, name)
+            default = getattr(self.Defaults, name)
             return __salt__['config.get']('repo_signing:{}'.format(name), default)
       # except NameError:
       #     # __salt__ isn't defined: return the default?
@@ -103,9 +105,15 @@ class Options(object):
       #     return default
         except AttributeError:
             raise
-Options = Options()
+
+# replace class with instance
+Options = Options() # pylint: disable=invalid-name ; this is fine
 
 def split_certs(fh):
+    """ attempt to split certs found in given filehandle into separate openssl cert objects
+
+        returns a generator, for list, use `list(split_cerst(fh))`
+    """
     ret = None
     for line in fh.readlines():
         if ret is None:
@@ -114,25 +122,32 @@ def split_certs(fh):
         else:
             ret += line
             if line.startswith('----'):
+                ret = ret.encode()
                 try:
                     yield ossl.load_certificate(ossl.FILETYPE_PEM, ret)
-                except Exception as e:
-                    log.debug('decoding item as certificate failed: %s; trying as PEM encoded private key', e)
+                except Exception as exception_object:
+                    log.debug('decoding item as certificate failed: %s; trying as PEM encoded private key',
+                        exception_object)
                     yield load_pem_private_key(ret, password=None, backend=default_backend())
                 ret = None
 
 def read_certs(*fnames):
+    """ given a list of filenames (as varargs), attempt to find all certs in all named files.
+
+        returns openssl objects as a generator.
+        for a list: `list(read_certs('filename1', 'filename2'))`
+    """
     for fname in fnames:
         if fname.strip().startswith('--') and '\x0a' in fname:
-            for x in split_certs(cStringIO.StringIO(fname)):
-                yield x
+            for i in split_certs(cStringIO.StringIO(fname)):
+                yield i
         elif os.path.isfile(fname):
             try:
                 with open(fname, 'r') as fh:
-                    for x in split_certs(fh):
-                        yield x
-            except Exception as e:
-                log.error('error while reading "%s": %s', fname, e)
+                    for i in split_certs(fh):
+                        yield i
+            except Exception as exception_object:
+                log.error('error while reading "%s": %s', fname, exception_object)
 
 class X509AwareCertBucket:
     """
@@ -146,16 +161,16 @@ class X509AwareCertBucket:
     public_crt = tuple()
 
     def authenticate_cert(self):
-        if any( x.status == STATUS.FAIL for x in self.public_crt ):
+        if any( i.status == STATUS.FAIL for i in self.public_crt ):
             return STATUS.FAIL
-        if all( x.status == STATUS.VERIFIED for x in self.public_crt ):
+        if all( i.status == STATUS.VERIFIED for i in self.public_crt ):
             return STATUS.VERIFIED
         return STATUS.UNKNOWN
 
     def __init__(self, public_crt, ca_crt):
         try:
             import hubblestack.pre_packaged_certificates as HPPC
-            # iff we have hardcoded certs then we're meant to ignore any other
+            # if we have hardcoded certs then we're meant to ignore any other
             # configured value
             if hasattr(HPPC, 'public_crt'):
                 log.debug('using pre-packaged-public_crt')
@@ -181,55 +196,48 @@ class X509AwareCertBucket:
         # testing, and that's probably about it
 
         already = set()
-        for c in read_certs(ca_crt):
-            d = c.digest('sha1')
-            if d in already:
+        for i in read_certs(ca_crt):
+            digest = i.digest('sha1')
+            if digest in already:
                 continue
-            already.add(d)
-            d += " " + stringify_ossl_cert(c)
-            log.debug('adding %s as a trusted certificate approver', d)
-            self.store.add_cert(c)
-            self.trusted.append(d)
+            already.add(digest)
+            digest = digest.decode() + " " + stringify_ossl_cert(i)
+            log.debug('adding %s as a trusted certificate approver', digest)
+            self.store.add_cert(i)
+            self.trusted.append(digest)
 
-        for c in read_certs(*untrusted_crt):
-            log.debug('c in read_certs:\n{}'.format(c))
-            d = c.digest('sha1')
-            if d in already:
+        for i in read_certs(*untrusted_crt):
+            digest = i.digest('sha1')
+            if digest in already:
                 continue
-            already.add(d)
-            d += " " + stringify_ossl_cert(c)
-            log.debug('checking to see if %s is trustworthy', d)
+            already.add(digest)
+            digest = digest.decode() + " " + stringify_ossl_cert(i)
+            log.debug('checking to see if %s is trustworthy', digest)
             try:
-                ossl.X509StoreContext(self.store, c).verify_certificate()
-                self.store.add_cert(c)
-                self.trusted.append(d)
+                ossl.X509StoreContext(self.store, i).verify_certificate()
+                self.store.add_cert(i)
+                self.trusted.append(digest)
                 log.debug('  added to verify store')
-            except ossl.X509StoreContextError as e:
-                #log.error('  not trustworthy: %s', e)
-                code, depth, message = e.args[0]
-                status = STATUS.FAIL
-                # maybe add path
+            except ossl.X509StoreContextError as exception_object:
                 log.critical('Cert verification failed for: %s code=%s depth=%s, message=%s',
                         status, d, code, depth, message)
 
         self.public_crt = list()
-        for c in read_certs(*public_crt):
+        for i in read_certs(*public_crt):
             status = STATUS.FAIL
-            d = c.digest('sha1')
-            if d in already:
+            digest = i.digest('sha1')
+            if digest in already:
                 continue
-            already.add(d)
-            d += " " + stringify_ossl_cert(c)
-            log.debug('checking to see if %s is a valid leaf cert', d)
+            already.add(digest)
+            digest = digest.decode() + " " + stringify_ossl_cert(i)
+            log.debug('checking to see if %s is a valid leaf cert', digest)
             try:
-                ossl.X509StoreContext(self.store, c).verify_certificate()
+                ossl.X509StoreContext(self.store, i).verify_certificate()
                 status = STATUS.VERIFIED
-                self.trusted.append(d)
+                self.trusted.append(digest)
                 log.debug('  marking verified')
-            except ossl.X509StoreContextError as e:
-                code, depth, message = e.args[0]
-                log.debug('authentication of %s failed: code=%s depth=%s, message=%s',
-                    d, code, depth, message)
+            except ossl.X509StoreContextError as exception_object:
+                code, depth, message = exception_object.args[0]
                 if code in (2,3,20,27,33):
                     # from openssl/x509_vfy.h or 
                     # https://www.openssl.org/docs/man1.1.0/man3/X509_STORE_CTX_set_current_cert.html
@@ -252,25 +260,36 @@ class X509AwareCertBucket:
                     #   failing to verify not exactly, but it's definitely 
                     #   not verified either
                     status = STATUS.UNKNOWN
-                    log.error('authentication %s for %s: code=%s depth=%s, message=%s',
-                            status, d, code, depth, message)
+                    log_level = log.error
                 if code in (10,12):
                     # define X509_V_ERR_CERT_HAS_EXPIRED                  10
-                    #   the certificate has expired: that is the notAfter date is before the current time.
+                    #   the certificate has expired: that is the not
+                    #   After date is before the current time.
                     # define X509_V_ERR_CRL_HAS_EXPIRED                   12
                     #   the CRL has expired.
-                    # XX # if code in (10,12):
                     status = STATUS.FAIL
-                    log.critical('authentication %s for %s: code=%s depth=%s, message=%s',
-                        status, d, code, depth, message)
-            self.public_crt.append(self.PublicCertObj(c, d, status))
+                    log_level = log.critical
+                # log at either log.error or log.critical according to 
+                # the error code
+                log_level('cert verification status: \'%s\'| error code:%d | depth: %s |message: %s',
+                    status, code, depth, message)
 
-def stringify_ossl_cert(c):
-    if isinstance(c, (list,tuple)):
-        return ', '.join([ stringify_ossl_cert(x) for x in c ])
-    return '/'.join([ '='.join(x) for x in c.get_subject().get_components() ])
+            self.public_crt.append(self.PublicCertObj(i, digest, status))
+
+
+def stringify_ossl_cert(a_cert_obj):
+    """ try to stryingy a cert object into its subject components and digest hexification.
+
+        E.g. (with extra newline added for line-wrap):
+            3E:9C:58:F5:27:89:A8:F4:B7:AB:4D:1C:56:C8:4E:F0:03:0F:C8:C3
+            C=US/ST=State/L=City/O=Org/OU=Group/CN=Certy Cert #1
+    """
+    if isinstance(a_cert_obj, (list,tuple)):
+        return ', '.join([ stringify_ossl_cert(i) for i in a_cert_obj ])
+    return '/'.join([ '='.join([ j.decode() for j in i ]) for i in a_cert_obj.get_subject().get_components() ])
 
 def jsonify(obj, indent=2):
+    """ cury function to add default indent=2 to json.dumps(obj, indent=indent) """
     return json.dumps(obj, indent=indent)
 
 def normalize_path(path, trunc=None):
@@ -301,30 +320,30 @@ def hash_target(fname, obj_mode=False, chosen_hash=None):
     hasher = hashes.Hash(chosen_hash, default_backend())
     if os.path.isfile(fname):
         with open(fname, 'rb') as fh:
-            r = fh.read(1024)
-            while r:
-                hasher.update(r)
-                r = fh.read(1024)
+            buffer = fh.read(1024)
+            while buffer:
+                hasher.update(buffer)
+                buffer = fh.read(1024)
     if obj_mode:
         return hasher, chosen_hash
     digest = hasher.finalize()
-    hd = ''.join([ '{:02x}'.format(ord(x)) for x in digest ])
-    log.debug('hashed %s: %s', fname, hd)
-    return hd
+    hex_digest = ''.join([ '{:02x}'.format(ord(i)) for i in digest ])
+    log.debug('hashed %s: %s', fname, hex_digest)
+    return hex_digest
 
-def descend_targets(targets, cb):
+def descend_targets(targets, callback):
     """
-    recurse into the given `targets` (files or directories) and invoke the `cb`
+    recurse into the given `targets` (files or directories) and invoke the `callback`
     callback on each file found.
     """
     for fname in targets:
         if os.path.isfile(fname):
-            cb(fname)
+            callback(fname)
         if os.path.isdir(fname):
             for dirpath, dirnames, filenames in os.walk(fname):
                 for fname in filenames:
                     fname_ = os.path.join(dirpath, fname)
-                    cb(fname_)
+                    callback(fname_)
 
 def manifest(targets, mfname='MANIFEST'):
     """
@@ -338,24 +357,26 @@ def manifest(targets, mfname='MANIFEST'):
             log.debug('wrote %s %s to %s', digest, fname, mfname)
         descend_targets(targets, append_hash)
 
-def sign_target(fname, ofname, private_key='private.key', **kw):
+def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: disable=unused-argument
     """
     Sign a given `fname` and write the signature to `ofname`.
     """
-    k0, = read_certs(private_key)
+    # NOTE: This is intended to crash if there's some number of keys other than
+    # exactly 1 read from the private_key file:
+    first_key, = read_certs(private_key)
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     args = { 'data': hasher.finalize() }
-    if isinstance(k0, rsa.RSAPrivateKey):
+    if isinstance(first_key, rsa.RSAPrivateKey):
         args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
             salt_length=padding.PSS.MAX_LENGTH)
         args['algorithm'] = utils.Prehashed(chosen_hash)
-    sig = k0.sign(**args)
+    sig = first_key.sign(**args)
     with open(ofname, 'w') as fh:
         log.debug('writing signature of %s to %s', os.path.abspath(fname), os.path.abspath(ofname))
         fh.write(PEM.encode(sig, 'Detached Signature of {}'.format(fname)))
         fh.write('\n')
 
-def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt', **kw):
+def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt', **kwargs): # pylint: disable=unused-argument
     """
         Given the fname, sfname public_crt and ca_crt:
 
@@ -373,11 +394,9 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
     x509 = X509AwareCertBucket(public_crt, ca_crt)
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
-    log.debug('digest: {}\nsig: {}')
     args = { 'signature': sig, 'data': digest }
     for crt,txt,status in x509.public_crt:
-        #log.error('Public Cert Debug:\ncrt: {}\ntxt: {}\nstatus:{}\n'.format(crt, txt, status))
-        log.debug('Trying to check %s with %s', sfname, txt)
+        log.debug('trying to check %s with %s', sfname, txt)
         pubkey = crt.get_pubkey().to_cryptography_key()
         if isinstance(pubkey, rsa.RSAPublicKey):
             args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
@@ -387,8 +406,9 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
             pubkey.verify(**args)
             return status
         except InvalidSignature:
-            # want status, cert_fingerprint, hash from manifest, new_hash
-            log.critical('fname=%s failed signature check (sfname=%s)',fname, sfname)
+            # get fingerprint of public cert, 
+            log_critical('public verification status: \'%s\'| fingerprint: %| |',
+                    STATUS.FAIL, )
             pass
     return STATUS.FAIL
 
@@ -405,7 +425,7 @@ def iterate_manifest(mfname):
                 manifested_fname = normalize_path(manifested_fname)
                 yield manifested_fname
 
-def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='public.crt', ca_crt='ca-root.crt', n_failures=0):
+def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='public.crt', ca_crt='ca-root.crt'):
     """ given a list of `targets`, a MANIFEST, and a SIGNATURE file:
 
         1. Check the signature of the manifest, mark the 'MANIFEST' item of the return as:
@@ -419,7 +439,7 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
 
         return a mapping from the input target list to the status values (a dict of filename: status)
     """
-    log.debug("verify_files(%s, mfname=%s, sfname=%s, public_crt=%s, ca_crt=%s, n_failures=%d", targets, mfname, sfname, public_crt, ca_crt, n_failures)
+    log.debug("verify_files(%s, mfname=%s, sfname=%s, public_crt=%s, ca_crt=%s", targets, mfname, sfname, public_crt, ca_crt)
     ret = OrderedDict()
     ret[mfname] = verify_signature(mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt)
     # ret[mfname] is the strongest claim we can make about the files we're
@@ -463,34 +483,43 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
     for vfname in digests:
         digest = digests[vfname]
         htname = os.path.join(trunc, vfname) if trunc else vfname
-        log.debug('vfname:{}, digest: {}, htname: {}'.format( vfname, digest, htname))
+        new_hash = hash_target(htname)
+
         if digest == STATUS.UNKNOWN:
             # digests[vfname] is either UNKNOWN (from the targets population)
             # or it's a digest from the MANIFEST. If UNKNOWN, we have nothing to compare
             # so we return UNKNOWN
-            # !error
-            ret[vfname] = STATUS.UNKNOWN
-            log.error('!! verify_files() STATUS UNKNOWN !!!!!!!!!! vfname:{}, digest: {}, htname: {}'.format( vfname, digest, htname))
-        elif digest == hash_target(htname):
+            status = STATUS.UNKNOWN
+        elif digest == new_hash:
             # path gets same status as MANIFEST
             # Cool, the digest matches, but rather than mark STATUS.VERIFIED,
-            # we mark it with the same status as the MANIFEST it self --
+            # we mark it with the same status as the MANIFEST itself --
             # presumably it's signed (STATUS.VERIFIED); but perhaps it's only
             # UNKNOWN or even FAIL.
-            ret[vfname] = ret[mfname]
+            status = ret[mfname]
         else:
             # We do have a MANIFEST entry and it doesn't match: FAIL with o,r
             # without a matching SIGNATURE
-            ret[vfname] = STATUS.FAIL
-            # !critical? 
-            # hash doesn't match MANIFEST's file
-            # IF A HASH HAS CHANGED FAIL
-            # ? i
-            # reference a file that doesnt exist === ERROR
-            # 
-            log.critical('!! verify_files() STATUS FAIL !!!!!!!!!! vfname:{}, digest: {}, htname: {}'.format( vfname, digest, htname))
+            status = STATUS.FAIL
+
+        # Set the log level according to the verification status.
+        # this needs to be set outside the above if statement in order to 
+        # maintain the status being pulled from the manifest
+        if status == STATUS.VERIFIED:
+            log_level = log.debug
+        elif status == STATUS.UNKNOWN:
+            log_level = log.error
+        else:
+            log_level = log.critical
+
+        log_level('verification status: \'%s\' for %s | manifest sha256: %s | actual sha256: %s',
+                status, vfname, digest, new_hash)
+
+        ret[vfname] = status
+
+        ########
     # fix any normalized names so the caller gets back their specified targets
-    for k,v in xlate.iteritems():
+    for k,v in xlate.items():
         ret[v] = ret.pop(k)
     return ret
 
@@ -509,29 +538,27 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
         def _p(fnd):
             return fnd.get(real_path, fnd.get('path', ''))
 
-        def inner(path, saltenv, *a, **kw):
-            f_mani = find_file_f('MANIFEST', saltenv, *a, **kw )
-            f_sign = find_file_f('SIGNATURE', saltenv, *a, **kw )
-            f_path = find_file_f(path, saltenv, *a, **kw)
+        def inner(path, saltenv, *a, **kwargs):
+            f_mani = find_file_f('MANIFEST', saltenv, *a, **kwargs )
+            f_sign = find_file_f('SIGNATURE', saltenv, *a, **kwargs )
+            f_path = find_file_f(path, saltenv, *a, **kwargs)
             real_path = _p(f_path)
             mani_path = _p(f_mani)
             sign_path = _p(f_sign)
             log.debug('path=%s rpath=%s manifest=%s signature=%s',
                 path, real_path, mani_path, sign_path)
+            if not real_path:
+                return f_path
             verify_res = verify_files([real_path],
                 mfname=mani_path, sfname=sign_path,
                 public_crt=Options.public_crt, ca_crt=Options.ca_crt)
-            # Originally log.debug
-            # log.error, log.splunk, log.critical send to hubble
             log.debug('verify: %s', dict(**verify_res))
             vrg = verify_res.get(real_path, STATUS.UNKNOWN)
-            # log.debu
             if vrg == STATUS.VERIFIED:
                 return f_path
             if vrg == STATUS.UNKNOWN and not Options.require_verify:
                 return f_path
-            if vrg == STATUS.UNKNOWN or vrg == STATUS.FAIL:
-                log.dedug('status: {}, path: {}'.format(vrg, real_path))
+            log.debug('claiming not found')
             return dict(**not_found)
         return inner
     return wrapper

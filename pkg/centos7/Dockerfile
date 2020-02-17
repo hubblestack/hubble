@@ -181,7 +181,6 @@ RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
 RUN eval "$(pyenv init -)" \
  && cd "$HUBBLE_SRC_PATH" \
  && python setup.py egg_info \
- && pip freeze | grep ^azure | cut -d= -f1 | xargs -r pip remove \
  && pip install --upgrade -r hubblestack.egg-info/requires.txt -r optional-requirements.txt
 RUN mkdir /data
 VOLUME /data

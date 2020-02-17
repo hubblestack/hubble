@@ -152,10 +152,16 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
+#fpm package making requirements start
+RUN apt-get install -y ruby ruby-dev rubygems gcc make \
+ && gem install --no-ri --no-rdoc fpm
+
+RUN apt-get install -y libbz2-dev
+
 # use pyenv
 ARG PYENV_VERSION=3.6.10
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
-ENV PYENV_ROOT=/usr/local/pyenv
+ENV PYENV_ROOT=/opt/pyenv
 ENV PATH=$PYENV_ROOT/bin:$PATH
 RUN umask 022 \
  && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
@@ -165,14 +171,8 @@ RUN umask 022 \
  && env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYENV_VERSION \
  && pyenv global $PYENV_VERSION
 
-COPY pyinstaller-requirements.txt /
 RUN eval "$(pyenv init -)" \
- && pip -v install --upgrade pip \
- && pip -v install -r pyinstaller-requirements.txt
-
-#deb package making requirements start
-RUN apt-get install -y ruby ruby-dev rubygems gcc make \
- && gem install --no-ri --no-rdoc fpm
+ && pip -v install --upgrade pip
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
@@ -187,58 +187,18 @@ ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
-RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
+RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout -B hubble-build && git reset --hard "$HUBBLE_CHECKOUT" && git clean -dfx \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
  && sed -i "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" /hubble_build/hubblestack/__init__.py \
  && sed -i "s/COMMIT_NOT_SET/`git describe`/g" /hubble_build/hubblestack/__init__.py
+RUN eval "$(pyenv init -)" \
+ && cd "$HUBBLE_SRC_PATH" \
+ && python setup.py egg_info \
+ && pip install --upgrade -r hubblestack.egg-info/requires.txt -r optional-requirements.txt
 RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build
-ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
-CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubblestack/__init__.py ; cat /data/hubble_buildinfo >> /hubble_build/hubblestack/__init__.py; fi \
-    && eval \"$(pyenv init -)\" \
-    && pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py \
-    && mkdir -p /var/log/hubble_osquery/backuplogs \
-# hubble default configuration file
-    && cp -rf /hubble_build/conf/hubble /etc/hubble/ \
-    && cp -rf /hubble_build/conf/hubble-profile.sh /etc/profile.d/ \
-    && cp -pr /hubble_build/dist/hubble /opt/hubble/hubble-libs \
-    && ln -s /opt/hubble/hubble-libs/hubble /opt/hubble/hubble \
-    # make sure rpm shared libs are taken out to avoid mismatch between rpm database and shared libs that pyinstaller includes
-    && rm -rf /opt/hubble/hubble-libs/librpm* \
-    # hack to get libssh2 since pyinstaller 3.2 does not do it
-    && cp /usr/lib/x86_64-linux-gnu/libssh2.so.1 /opt/hubble/hubble-libs \
-#debian pkg start
-    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /opt/hubble /opt/osquery /etc/profile.d/hubble-profile.sh /var/log/hubble_osquery/backuplogs \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
-    && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
-    && cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/ \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system \
-    && cp /hubble_build/pkg/hubble.service /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system/ \
-    && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
-#during container run, if a configuration file exists in a /data copy it over the existing one so it would be
-#possile to optionally include a custom one with the package
-    && if [ -f /data/hubble ] ; then cp /data/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ ; fi \
-#also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
-    && if [ -d /data/opt ] ; then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/opt/ ; fi \
-    && cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
-    && mkdir -p usr/bin \
-#symlink to have hubble binary in path
-    && ln -s /opt/hubble/hubble usr/bin/hubble \
-#fpm start
-    && fpm -s dir -t deb \
-       -n hubblestack \
-       -v ${HUBBLE_VERSION} \
-       --iteration ${HUBBLE_ITERATION} \
-       --url ${HUBBLE_URL} \
-       --deb-no-default-config-files \
-       --after-install /hubble_build/conf/afterinstall-systemd.sh \
-       --after-upgrade /hubble_build/conf/afterupgrade.sh \
-       --before-remove /hubble_build/conf/beforeremove.sh \
-       etc/hubble etc/init.d opt usr /var/log/hubble_osquery/backuplogs \
-    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb \
-    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb \
-                          > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb.sha256" ]
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

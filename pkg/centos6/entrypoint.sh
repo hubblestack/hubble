@@ -128,7 +128,7 @@ if [ "X$NO_FPM" = X1 ]; then
 fi
 
 # fpm start
-fpm -s dir -t rpm \
+scl enable rh-ruby23 'fpm -s dir -t rpm \
     -n hubblestack \
     -v ${HUBBLE_VERSION} \
     --iteration ${HUBBLE_ITERATION} \
@@ -138,12 +138,12 @@ fpm -s dir -t rpm \
     --after-install /hubble_build/conf/afterinstall-systemd.sh \
     --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
     --before-remove /hubble_build/conf/beforeremove.sh \
-    etc/hubble opt usr /var/log/hubble_osquery/backuplogs
+    etc/hubble opt usr /var/log/hubble_osquery/backuplogs'
 
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
 PKG_OUT_EXT=x86_64.rpm
-PKG_FIN_EXT=el7.$PKG_OUT_EXT
+PKG_FIN_EXT=el6.$PKG_OUT_EXT
 PKG_ONAME="$PKG_BASE_NAME.$PKG_OUT_EXT"
 PKG_FNAME="$PKG_BASE_NAME.$PKG_FIN_EXT"
 

@@ -13,8 +13,7 @@
 import os
 from PyInstaller.utils.hooks import (collect_data_files,
                                      collect_submodules,
-                                     collect_dynamic_libs,
-                                     PY_EXECUTABLE_SUFFIXES)
+                                     collect_dynamic_libs,)
 
 DATAS = []
 BINARIES = []
@@ -68,7 +67,7 @@ for sloader in SALT_LOADERS:
 # Let's remove any python source files included that are in HIDDEN_IMPORTS but not on DATAS
 for entry in DATAS[:]:
     path, mod = entry
-    if not path.endswith(tuple(PY_EXECUTABLE_SUFFIXES)):
+    if not path.endswith(('.py', '.pyc')):
         # We are only after python files
         continue
     no_ext_path = os.path.splitext(path)[0]

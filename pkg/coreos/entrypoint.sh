@@ -67,11 +67,11 @@ cp -va /entrypoint.sh /data/last-build.1
 
 mkdir -p /var/log/hubble_osquery/backuplogs
 
-mkdir -p /usr/lib/systemd/system
+mkdir -p /etc/systemd/system
 mkdir -p /etc/profile.d
 mkdir -p /etc/hubble
 
-cp -v /hubble_build/pkg/hubble.service /usr/lib/systemd/system/
+cp -v /hubble_build/pkg/hubble.service /etc/systemd/system
 cp -v /hubble_build/conf/hubble-profile.sh /etc/profile.d/
 
 if [ -f /data/hubble ]
@@ -79,73 +79,24 @@ then cp -v /data/hubble /etc/hubble/
 else cp -v /hubble_build/conf/hubble /etc/hubble/
 fi
 
-if [ "X$TEST_BINARIES" = X1 ]; then
-    # weakly test the new bin
-    ./dist/hubble/hubble --version
-
-    # does it still work if we call it in its new home?
-    /opt/hubble/hubble-libs/hubble --version
-
-    # how about if it's via non-home location?
-    /opt/hubble/hubble --version
-
-    # lastly, can we actually use salt grains and other lazy loader items?
-    /opt/hubble/hubble-libs/hubble -vvv grains.get hubble_version
-    /opt/hubble/hubble -vvv grains.get hubble_version
-fi
-
 if [ "X$NO_TAR" = X1 ]; then
     echo "exiting (as requested by NO_TAR=$NO_TAR) without pre-tar-ing package"
     exit 0
 fi 2>/dev/null
 
-# rpm pkg start
-tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz \
+# also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
+if [ -d /data/opt ]
+then cp -r /data/opt/* /opt
+fi
+
+PKG_FILE="/data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.coreos.tar.gz"
+
+tar -cSPvvzf "$PKG_FILE" \
     --exclude opt/hubble/pyenv \
     /etc/hubble /opt/hubble /opt/osquery \
     /etc/profile.d/hubble-profile.sh \
-    /usr/lib/systemd/system/hubble.service \
     /var/log/hubble_osquery/backuplogs \
-    2>&1 | tee /hubble_build/rpm-pkg-start-tar.log
+    /etc/systemd/system/hubble.service \
+    2>&1 | tee /hubble_build/deb-pkg-start-tar.log
 
-PKG_STRUCT_DIR=/hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
-mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
-tar -xSzvvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C $PKG_STRUCT_DIR
-
-# also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
-if [ -d /data/opt ]
-then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/opt/
-fi
-
-# symlink to have hubble binary in path
-cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
-mkdir -p usr/bin
-ln -s /opt/hubble/hubble usr/bin/hubble
-
-if [ "X$NO_FPM" = X1 ]; then
-    echo "exiting (as requested by NO_FPM=$NO_FPM) without building package"
-    exit 0
-fi
-
-# fpm start
-fpm -s dir -t rpm \
-    -n hubblestack \
-    -v ${HUBBLE_VERSION} \
-    --iteration ${HUBBLE_ITERATION} \
-    --url ${HUBBLE_URL} \
-    --description "${HUBBLE_DESCRIPTION}" \
-    --rpm-summary "${HUBBLE_SUMMARY}" \
-    --after-install /hubble_build/conf/afterinstall-systemd.sh \
-    --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
-    --before-remove /hubble_build/conf/beforeremove.sh \
-    etc/hubble opt usr /var/log/hubble_osquery/backuplogs
-
-# edit to change iteration number, if necessary
-PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
-PKG_OUT_EXT=x86_64.rpm
-PKG_FIN_EXT=el7.$PKG_OUT_EXT
-PKG_ONAME="$PKG_BASE_NAME.$PKG_OUT_EXT"
-PKG_FNAME="$PKG_BASE_NAME.$PKG_FIN_EXT"
-
-cp -va "$PKG_ONAME" /data/"$PKG_FNAME"
-openssl dgst -sha256 /data/"$PKG_FNAME" > /data/"$PKG_FNAME".sha256
+openssl dgst -sha256 "$PKG_FILE" > "$PKG_FILE".sha256

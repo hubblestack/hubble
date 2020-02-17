@@ -19,14 +19,38 @@ fi
 PS4=$'-------------=: '
 set -x -e
 
-cp -rf "$HUBBLE_SRC_PATH"/* /hubble_build/
-
 # possibly replace the version file
 if [ -f /data/hubble_buildinfo ]; then
     echo >> /hubble_build/hubblestack/__init__.py
     cat /data/hubble_buildinfo >> /hubble_build/hubblestack/__init__.py
 fi 2>/dev/null
 
+cat > /data/pre_packaged_certificates.py << EOF
+ca_crt = list()
+public_crt = list()
+EOF
+do_pkg_crts=0
+if [ -f /data/certs/ca-root.crt ]; then
+    echo "ca_crt.append('''$(< /data/certs/ca-root.crt)''')" \
+        >> /data/pre_packaged_certificates.py
+    for item in /data/certs/int*.crt; do
+        if [ -f "$item" ]
+        then echo "ca_crt.append('''$(< "$item")''')" \
+            >> /data/pre_packaged_certificates.py
+        fi
+    done
+    do_pkg_crts=$(( do_pkg_crts + 1 ))
+fi
+for item in /data/certs/{pub,sign}*.crt; do
+    if [ -f "$item" ]
+    then echo "public_crt.append('''$(< "$item")''')" \
+        >> /data/pre_packaged_certificates.py
+    fi
+    do_pkg_crts=$(( do_pkg_crts + 1 ))
+done
+if [ $do_pkg_crts -gt 0 ]
+then cp /data/pre_packaged_certificates.py /hubble_build/hubblestack
+fi
 
 cd /hubble_build
 
@@ -128,6 +152,7 @@ if [ "X$NO_FPM" = X1 ]; then
 fi
 
 # fpm start
+# https://fedoraproject.org/wiki/Releases/FeatureBuildId
 fpm -s dir -t rpm \
     -n hubblestack \
     -v ${HUBBLE_VERSION} \
@@ -135,6 +160,7 @@ fpm -s dir -t rpm \
     --url ${HUBBLE_URL} \
     --description "${HUBBLE_DESCRIPTION}" \
     --rpm-summary "${HUBBLE_SUMMARY}" \
+    --rpm-rpmbuild-define "_build_id_links none" \
     --after-install /hubble_build/conf/afterinstall-systemd.sh \
     --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
     --before-remove /hubble_build/conf/beforeremove.sh \
@@ -143,7 +169,7 @@ fpm -s dir -t rpm \
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
 PKG_OUT_EXT=x86_64.rpm
-PKG_FIN_EXT=el7.$PKG_OUT_EXT
+PKG_FIN_EXT=el8.$PKG_OUT_EXT
 PKG_ONAME="$PKG_BASE_NAME.$PKG_OUT_EXT"
 PKG_FNAME="$PKG_BASE_NAME.$PKG_FIN_EXT"
 

@@ -114,6 +114,7 @@ def split_certs(fh):
 
         returns a generator, for list, use `list(split_cerst(fh))`
     """
+
     ret = None
     for line in fh.readlines():
         if ret is None:
@@ -170,7 +171,7 @@ class X509AwareCertBucket:
     def __init__(self, public_crt, ca_crt):
         try:
             import hubblestack.pre_packaged_certificates as HPPC
-            # if we have hardcoded certs then we're meant to ignore any other
+            # iff we have hardcoded certs then we're meant to ignore any other
             # configured value
             if hasattr(HPPC, 'public_crt'):
                 log.debug('using pre-packaged-public_crt')
@@ -219,8 +220,7 @@ class X509AwareCertBucket:
                 self.trusted.append(digest)
                 log.debug('  added to verify store')
             except ossl.X509StoreContextError as exception_object:
-                log.critical('Cert verification failed for: %s code=%s depth=%s, message=%s',
-                        status, d, code, depth, message)
+                log.critical('  not trustworthy: %s', exception_object)
 
         self.public_crt = list()
         for i in read_certs(*public_crt):
@@ -269,8 +269,7 @@ class X509AwareCertBucket:
                     #   the CRL has expired.
                     status = STATUS.FAIL
                     log_level = log.critical
-                # log at either log.error or log.critical according to 
-                # the error code
+                # log at either log.error or log.critical according to the error code
                 log_level('cert verification status: \'%s\'| error code:%d | depth: %s |message: %s',
                     status, code, depth, message)
 
@@ -406,9 +405,9 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
             pubkey.verify(**args)
             return status
         except InvalidSignature:
-            # get fingerprint of public cert, 
-            log_critical('public verification status: \'%s\'| fingerprint: %| |',
-                    STATUS.FAIL, )
+            # get fingerprint
+            log.critical('public verification status: \'%s\'| fingerprint: \'%s\'| |',
+                    STATUS.FAIL,'fingerprint' )
             pass
     return STATUS.FAIL
 
@@ -517,7 +516,6 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
 
         ret[vfname] = status
 
-        ########
     # fix any normalized names so the caller gets back their specified targets
     for k,v in xlate.items():
         ret[v] = ret.pop(k)
@@ -562,3 +560,5 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             return dict(**not_found)
         return inner
     return wrapper
+
+

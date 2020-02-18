@@ -429,6 +429,7 @@ def write_timestamp_cache(cache_path, timestamps):
     '''timestamps = dict of profile_paths and epoch time timestamps
             for example: {'file3': 1582035781.653595, 'file2': 1582035781.653606 }
     '''
+    # simply wirte to json file
     with open(cache_path, 'w+') as f:
         json.dump(timestamps, f)
 
@@ -440,18 +441,19 @@ def make_timestamps(targets, cache_path):
     if not os.path.exists(cache_path):
         timestamps = {}
     else:
+        # load timestamps from cache file
         with open(cache_path) as f:
             timestamps = json.load(f)
-
     if type(targets) is not list:
         targets = [targets]
 
     for t in targets:
+        # if the timestamp/target already exist skip to next
         if timestamps.get(t) is not None:
             continue
         else:
             timestamps[t] = time.time()
-
+    # update timestamp cache file
     write_timestamp_cache(cache_path, timestamps)
 
     return timestamps
@@ -464,20 +466,28 @@ def check_target_ts(dampening_limit, timestamps, target, cache_path):
         cache_path = string path of cache_file
         timestamps = dict of profile_paths and epoch time timestamps
             for example: {'file3': 1582035781.653595, 'file2': 1582035781.653606 }
+        dampening_limit = number of seconds to wait before sending a verification 
+            status through hubble_log
+        target = string path of target file
 
+    Returns True if the timestamp of a target is greater than the dampening limit
     '''
+    # get the timestamp of the last time a profile failed a verification check
     ts_0 = timestamps.get(target)
     if ts_0 is None:
         ts_0 = time.time()
         timestamps[target] = ts_0
+        # update the timestamp cache
         write_timestamp_cache(cache_path, timestamps)
         return True
 
     ts_1 = time.time()
+    # make a timedelta from the loaded timestamp vs now. 
     td =  ts_1 - ts_0
     if td >= dampening_limit:
         new_ts = time.time()
         timestamps[target] = new_ts
+        # update the timestamp cache
         write_timestamp_cache(cache_path, timestamps)
         return True
     else:
@@ -540,10 +550,10 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
                     manifested_fname = normalize_path(manifested_fname)
                     if manifested_fname in digests:
                         digests[manifested_fname] = digest
-    # load/generate timestamps for target file
+    # load/ or generate timestamps for targets file
     timestamps = make_timestamps(targets, ts_cache_path)
-    # need to pull from /etc/hubble/hubble?
-    dampening_limit = 60
+    # number of seconds before a FAIL or UNKNOWN is set to the returner
+    dampening_limit = 3600
     # compare actual digests of files (if they exist) to the manifested digests
     for vfname in digests:
         digest = digests[vfname]
@@ -556,13 +566,13 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
             # or it's a digest from the MANIFEST. If UNKNOWN, we have nothing to compare
             # so we return UNKNOWN
             status = STATUS.UNKNOWN
+            # check to see if the the status of a failed target has been sent is the last x seconds
             dampened = check_target_ts(dampening_limit, timestamps, vfname, ts_cache_path)
             if dampened == True:
                 log_level = log.error
             else:
-                log.debug('!!!!!!!! {} has a {} status\nHere\'s the timestamp from the last: {}'.format(
+                log.debug('{} has a {} status. here\'s the timestamp from the last: {}'.format(
                     vfname, status, timestamps.get(vfname)))
-                pass
         elif digest == new_hash:
             # path gets same status as MANIFEST
             # Cool, the digest matches, but rather than mark STATUS.VERIFIED,
@@ -574,14 +584,15 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
             # We do have a MANIFEST entry and it doesn't match: FAIL with o,r
             # without a matching SIGNATURE
             status = STATUS.FAIL
+            # check to see if the the status of a failed target has been sent is the last x seconds
             dampened = check_target_ts(dampening_limit, timestamps, vfname, ts_cache_path)
             if dampened == True:
                  log_level = log.critical
             else:
-                log.debug('!!!!!!!! {} has a {} status\nHere\'s the timestamp from the last: {}'.format(
+                log.debug('{} has a {} status. here\'s the timestamp from the last: {}'.format(
                     vfname, status, timestamps.get(vfname)))
-                pass
 
+        # logs according to the STATUS of target file
         log_level('verification status: \'%s\' for %s | manifest sha256: %s | actual sha256: %s',
                 status, vfname, digest, new_hash)
         ret[vfname] = status

@@ -42,6 +42,7 @@ import getpass
 import logging
 import re
 import json
+import time
 import inspect
 import io as cStringIO
 
@@ -424,6 +425,69 @@ def iterate_manifest(mfname):
                 manifested_fname = normalize_path(manifested_fname)
                 yield manifested_fname
 
+
+def write_timestamp_cache(cache_path, timestamps):
+    '''timestamps = dict of profile_paths and epoch time timestamps
+            for example: {'file3': 1582035781.653595, 'file2': 1582035781.653606 }
+    '''
+    with open(cache_path, 'w+') as f:
+        json.dump(timestamps, f)
+
+
+def make_timestamps(targets, cache_path):
+    '''This function makes a dictionary of targets paths and timestamps
+                for example: {'file3': 1582035781.653595, 'file2': 1582035781.653606 }
+    '''
+    if not os.path.exists(cache_path):
+        timestamps = {}
+    else:
+        with open(cache_path) as f:
+            timestamps = json.load(f)
+
+    if type(targets) is not list:
+        targets = [targets]
+
+    for t in targets:
+        if timestamps.get(t) is not None:
+            continue
+        else:
+            timestamps[t] = time.time()
+
+    write_timestamp_cache(cache_path, timestamps)
+
+    return timestamps
+
+
+#def check_target_ts(cache_path, dampening_limit, targets, target):
+def check_target_ts(dampening_limit, timestamps, target, cache_path):
+    '''This function writes/updates a timestamp cache
+    file for profiles
+    Args:
+        cache_path = string path of cache_file
+        timestamps = dict of profile_paths and epoch time timestamps
+            for example: {'file3': 1582035781.653595, 'file2': 1582035781.653606 }
+
+    '''
+    ts_0 = timestamps.get(target)
+    if ts_0 is None:
+        ts_0 = time.time()
+        timestamps[target] = ts_0
+        #log.debug('!!!!!!! timestamp: {} didn\'t exist, target: {}'.format(ts_0, target))
+        write_timestamp_cache(cache_path, timestamps)
+        return True
+
+    ts_1 = time.time()
+    td =  ts_1 - ts_0
+    if td >= dampening_limit:
+        new_ts = time.time()
+        timestamps[target] = new_ts
+        #log.debug('!!!!!!! td: {}, target: {}'.format(td, target))
+        write_timestamp_cache(cache_path, timestamps)
+        return True
+    else:
+        return False
+
+
 def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='public.crt', ca_crt='ca-root.crt'):
     """ given a list of `targets`, a MANIFEST, and a SIGNATURE file:
 
@@ -458,10 +522,12 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
     # normalized names back to given target names.
     xlate = dict()
     digests = OrderedDict()
+    ts_cache_path = '/tmp/hubble-ts-cache'
     if not targets:
         targets = list(iterate_manifest(mfname))
     for otarget in targets:
         target = normalize_path(otarget, trunc=trunc)
+
         log.debug('found manifest for %s (%s)', otarget, target)
         if otarget != target:
             xlate[target] = otarget
@@ -478,17 +544,29 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
                     manifested_fname = normalize_path(manifested_fname)
                     if manifested_fname in digests:
                         digests[manifested_fname] = digest
+    # load/generate timestamps for target file
+    timestamps = make_timestamps(targets, ts_cache_path)
+    # need to pull from /etc/hubble/hubble?
+    dampening_limit = 60
     # compare actual digests of files (if they exist) to the manifested digests
     for vfname in digests:
         digest = digests[vfname]
         htname = os.path.join(trunc, vfname) if trunc else vfname
         new_hash = hash_target(htname)
 
+        log_level = log.debug
         if digest == STATUS.UNKNOWN:
             # digests[vfname] is either UNKNOWN (from the targets population)
             # or it's a digest from the MANIFEST. If UNKNOWN, we have nothing to compare
             # so we return UNKNOWN
             status = STATUS.UNKNOWN
+            dampened = check_target_ts(dampening_limit, timestamps, vfname, ts_cache_path)
+            if dampened == True:
+                log_level = log.error
+            else:
+                log.debug('!!!!!!!! {} has a {} status\nHere\'s the timestamp from the last: {}'.format(
+                    vfname, status, timestamps.get(vfname)))
+                pass
         elif digest == new_hash:
             # path gets same status as MANIFEST
             # Cool, the digest matches, but rather than mark STATUS.VERIFIED,
@@ -500,20 +578,16 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
             # We do have a MANIFEST entry and it doesn't match: FAIL with o,r
             # without a matching SIGNATURE
             status = STATUS.FAIL
-
-        # Set the log level according to the verification status.
-        # this needs to be set outside the above if statement in order to 
-        # maintain the status being pulled from the manifest
-        if status == STATUS.VERIFIED:
-            log_level = log.debug
-        elif status == STATUS.UNKNOWN:
-            log_level = log.error
-        else:
-            log_level = log.critical
+            dampened = check_target_ts(dampening_limit, timestamps, vfname, ts_cache_path)
+            if dampened == True:
+                 log_level = log.critical
+            else:
+                log.debug('!!!!!!!! {} has a {} status\nHere\'s the timestamp from the last: {}'.format(
+                    vfname, status, timestamps.get(vfname)))
+                pass
 
         log_level('verification status: \'%s\' for %s | manifest sha256: %s | actual sha256: %s',
                 status, vfname, digest, new_hash)
-
         ret[vfname] = status
 
     # fix any normalized names so the caller gets back their specified targets
@@ -560,5 +634,3 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             return dict(**not_found)
         return inner
     return wrapper
-
-

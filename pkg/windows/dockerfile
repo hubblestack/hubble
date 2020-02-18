@@ -17,7 +17,7 @@ ENV SALT_SRC_PATH='C:/temp/salt/'
 ENV SALT_GIT_URL=https://github.com/saltstack/salt
 ENV SALT_CHECKOUT=v2018.11
 #All the variables used for hubble
-ARG HUBBLE_CHECKOUT=v3.0.9
+ARG HUBBLE_CHECKOUT=v3.0.10
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 ENV _HOOK_DIR='./pkg/'

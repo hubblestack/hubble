@@ -47,9 +47,15 @@ tar -xzvvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C \
     /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
 
 mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d
-cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/
+mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/profile.d
+mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble
 
-cp -f /hubble_build/conf/hubble \
+cp -v /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/
+
+cp -v /hubble_build/conf/hubble-profile.sh \
+    /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/profile.d/
+
+cp -v /hubble_build/conf/hubble \
     /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/
 
 # during container run, if a configuration file exists in a /data copy it over

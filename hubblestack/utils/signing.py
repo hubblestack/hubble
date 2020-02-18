@@ -406,9 +406,8 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
             pubkey.verify(**args)
             return status
         except InvalidSignature:
-            # get fingerprint
-            log.critical('public verification status: \'%s\'| fingerprint: \'%s\'| |',
-                    STATUS.FAIL,'fingerprint' )
+            log.critical('public verification status: \'%s\'| cert text: \'%s\'| |',
+                    STATUS.FAIL, txt )
             pass
     return STATUS.FAIL
 
@@ -458,7 +457,6 @@ def make_timestamps(targets, cache_path):
     return timestamps
 
 
-#def check_target_ts(cache_path, dampening_limit, targets, target):
 def check_target_ts(dampening_limit, timestamps, target, cache_path):
     '''This function writes/updates a timestamp cache
     file for profiles
@@ -472,7 +470,6 @@ def check_target_ts(dampening_limit, timestamps, target, cache_path):
     if ts_0 is None:
         ts_0 = time.time()
         timestamps[target] = ts_0
-        #log.debug('!!!!!!! timestamp: {} didn\'t exist, target: {}'.format(ts_0, target))
         write_timestamp_cache(cache_path, timestamps)
         return True
 
@@ -481,7 +478,6 @@ def check_target_ts(dampening_limit, timestamps, target, cache_path):
     if td >= dampening_limit:
         new_ts = time.time()
         timestamps[target] = new_ts
-        #log.debug('!!!!!!! td: {}, target: {}'.format(td, target))
         write_timestamp_cache(cache_path, timestamps)
         return True
     else:

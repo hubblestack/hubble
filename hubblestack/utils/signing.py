@@ -70,7 +70,8 @@ log = logging.getLogger(__name__)
 verif_log_timestamps = {}
 # How often in seconds to set log level to log.error/critical
 # maybe set in /etc/hubble/hubble
-verif_log_dampener_lim = 120
+#verif_log_dampener_lim = 3600 
+verif_log_dampener_lim = 60
 
 
 def check_verif_timestamp(target):
@@ -245,7 +246,8 @@ class X509AwareCertBucket:
                 continue
             already.add(digest)
             digest = digest.decode() + " " + stringify_ossl_cert(i)
-            log.debug('adding {} as a trusted certificate approver'.format(digest))
+            log.splunk('adding {} as a trusted certificate approver'.format(digest))
+            #log.debug('adding {} as a trusted certificate approver'.format(digest))
             self.store.add_cert(i)
             self.trusted.append(digest)
 
@@ -255,12 +257,14 @@ class X509AwareCertBucket:
                 continue
             already.add(digest)
             digest = digest.decode() + " " + stringify_ossl_cert(i)
-            log.debug('checking to see if {} is trustworthy'.format(digest))
+            #log.debug('checking to see if {} is trustworthy'.format(digest))
+            log.splunk('checking to see if {} is trustworthy'.format(digest))
             try:
                 ossl.X509StoreContext(self.store, i).verify_certificate()
                 self.store.add_cert(i)
                 self.trusted.append(digest)
-                log.debug('added {} to verify store'.format(digest))
+                #log.debug('added {} to verify store'.format(digest))
+                log.splunk('added {} to verify store'.format(digest))
             except ossl.X509StoreContextError as exception_object:
                 # log at either log.error or log.critical according to the error code
                 log.critical('{}  not trustworthy: {}'.format(digest, exception_object))
@@ -422,6 +426,7 @@ def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: d
         fh.write('\n')
 
 def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt', **kwargs): # pylint: disable=unused-argument
+    ### make 
     """
         Given the fname, sfname public_crt and ca_crt:
 
@@ -441,10 +446,16 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
     x509 = X509AwareCertBucket(public_crt, ca_crt)
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
+    str_digest = ''.join([ '{:02x}'.format(ord(i)) for i in digest ])
+    str_sig = ''.join([ '{:02x}'.format(ord(i)) for i in sig ])
+
     args = { 'signature': sig, 'data': digest }
     for crt,txt,status in x509.public_crt:
         log_level = log.debug
         log_level('trying to check "{}" with "{}"'.format( sfname, txt))
+        # ONLY WANT PATH, TXT(from crt), STATUS UPON FAILURE
+        msg = 'status "{}" | fname "{}" | str_digest "{}" | str_sig "{}" | text "{}"'
+        log.critical(msg.format( status, fname, str_digest, str_sig, txt))
         pubkey = crt.get_pubkey().to_cryptography_key()
         if isinstance(pubkey, rsa.RSAPublicKey):
             args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),

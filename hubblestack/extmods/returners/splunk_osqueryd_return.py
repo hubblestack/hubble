@@ -141,7 +141,7 @@ def returner(ret):
 
                     # If the osquery query includes a field called 'time' it will be checked.
                     # If it's within the last year, it will be used as the eventtime.
-                    event_time = query_results.get('time', '')
+                    event_time = query_results.get('unixTime', '')
                     if 'columns' in query_results: #This means we have result log event
                         event.update(query_results['columns'])
                         _generate_and_send_payload(hec,

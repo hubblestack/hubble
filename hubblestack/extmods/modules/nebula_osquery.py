@@ -1465,9 +1465,9 @@ def _get_file_offset(path_to_logfile):
         else:
             with open(offsetfile, 'r') as file:
                 offset_data = json.load(file)
-            offset = offset_data['offset']
-            initial_crc = offset_data['initial_crc']
-            last_crc = offset_data['last_crc']
+            offset = offset_data.get('offset')
+            initial_crc = offset_data.get('initial_crc')
+            last_crc = offset_data.get('last_crc')
             log.debug("Offset file: {0} exist. Got following values: offset: {1}, initial_crc: {2}, last_crc: {3}".format(offsetfile, offset, initial_crc, last_crc))
 
             log_file_offset = 0

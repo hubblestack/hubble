@@ -144,14 +144,15 @@ RUN yum install -y bzip2-devel
 # use pyenv
 ARG PYENV_VERSION=3.6.10
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
-ENV PYENV_ROOT=/opt/pyenv
+ENV PYENV_ROOT=/opt/hubble/pyenv
 ENV PATH=$PYENV_ROOT/bin:$PATH
+ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
 RUN umask 022 \
  && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
  && chmod 0755 /usr/bin/pyenv-installer \
  && /usr/bin/pyenv-installer \
  && eval "$(pyenv init -)" \
- && env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYENV_VERSION \
+ && pyenv install $PYENV_VERSION \
  && pyenv global $PYENV_VERSION
 
 RUN eval "$(pyenv init -)" \
@@ -181,7 +182,10 @@ RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
 RUN eval "$(pyenv init -)" \
  && cd "$HUBBLE_SRC_PATH" \
  && python setup.py egg_info \
- && pip install --upgrade -r hubblestack.egg-info/requires.txt -r optional-requirements.txt
+ && pip install --upgrade \
+        -r hubblestack.egg-info/requires.txt \
+        -r optional-requirements.txt \
+        -r package-requirements.txt
 RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build

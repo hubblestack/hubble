@@ -68,10 +68,9 @@ log = logging.getLogger(__name__)
 # and time() kv pairs. When the time() value exceeds the dampening_limit (3600 sec), 
 # we reset time and set log level accordingly.
 verif_log_timestamps = {}
-# How often in seconds to set log level to log.error/critical
+# How often in seconds 3600 = 1 hour to set log level to log.error/critical
 # maybe set in /etc/hubble/hubble
-#verif_log_dampener_lim = 3600 
-verif_log_dampener_lim = 60
+verif_log_dampener_lim = 3600
 
 
 def check_verif_timestamp(target, dampener_limit=None):
@@ -157,7 +156,6 @@ def split_certs(fh):
         returns a generator, for list, use `list(split_cerst(fh))`
     """
 
-
     ret = None
     short_fname = fh.name.split('/')[-1]
     for line in fh.readlines():
@@ -172,7 +170,7 @@ def split_certs(fh):
                     log_level = log.debug
                     yield ossl.load_certificate(ossl.FILETYPE_PEM, ret)
                 except Exception as E:
-                    status = STATUS.ERROR
+                    status = STATUS.UNKNOWN
                     if check_verif_timestamp(fh) == True:
                         log_level = log.error
                     msg = '{}: | file: "{}" | cert decoding status: {} | attempting as PEM encoded private key'
@@ -201,6 +199,17 @@ def read_certs(*fnames):
                     log_level = log.error
                 log_level('error while reading "{}": {}'.format( fname, E))
 
+
+def stringify_cert_files(cert):
+    """this function returns a string version of cert(s) for returner"""
+    if type(cert) is list and len(cert) >= 1:
+        return ', '.join([str(c) for c in cert])
+    elif type(cert) is file:
+        return cert.name
+    else:
+        return str(cert)
+
+
 class X509AwareCertBucket:
     """
     A wrapper around the various operations required to verify certificate authenticity.
@@ -211,6 +220,7 @@ class X509AwareCertBucket:
     """
     PublicCertObj = namedtuple('PublicCertObj', ['crt', 'txt', 'status'])
     public_crt = tuple()
+
 
     def authenticate_cert(self):
         if any( i.status == STATUS.FAIL for i in self.public_crt ):
@@ -261,8 +271,9 @@ class X509AwareCertBucket:
             if check_verif_timestamp(digest, dampener_limit=seconds_day) == True:
                 log_level = log.splunk
             status = STATUS.VERIFIED
-            msg = 'ca_cert: file: "{}" | status: {} | digest "{}"| added to verify store'
-            log_level(msg.format(ca_crt, status, digest))
+            str_ca = stringify_cert_files(ca_crt)
+            msg = 'ca cert | file: "{}" | status: {} | digest "{}" | added to verify store'
+            log_level(msg.format(str_ca, status, digest))
 
         for i in read_certs(*untrusted_crt):
             digest = i.digest('sha1')
@@ -280,15 +291,14 @@ class X509AwareCertBucket:
                 # log at either log.error or log.critical according to the error code
                 status = STATUS.FAIL
                 pass
-            if status == STATUS.VERIFIED and check_verif_timestamp(digest, dampener_limit=seconds_day) == True:
-                log_level = log.splunk
-            elif status == STATUS.FAIL and check_verif_timestamp(digest) == True:
-                log_level = log.critical
-            log_level = log.critical
-            msg = 'untrusted_certs: file: "{}" | status: {} | digest "{}"'
-            str_untrusted = ', '.join(untrusted_crt)
+            if check_verif_timestamp(digest, dampener_limit=seconds_day) == True:
+                if status == STATUS.FAIL: log_level = log.critical
+                elif status == STATUS.UNKNOWN: log_level = log.error
+                else: log_level = log.splunk
+            str_untrusted = stringify_cert_files(untrusted_crt)
+            msg = 'intermediate certs | file: "{}" | status: {} | digest "{}"'
             log_level(msg.format(str_untrusted, status, digest))
-            exit() 
+
         self.public_crt = list()
         for i in read_certs(*public_crt):
             status = STATUS.FAIL
@@ -302,10 +312,13 @@ class X509AwareCertBucket:
                 ossl.X509StoreContext(self.store, i).verify_certificate()
                 status = STATUS.VERIFIED
                 self.trusted.append(digest)
-                if status == STATUS.VERIFIED and check_verif_timestamp(digest, dampener_limit=seconds_day) == True:
-                    log_level = log.splunk
-                msg = 'public cert verification status : "{}" | digest: "{}"'
-                log_level(msg.format(status, digest))
+                if check_verif_timestamp(digest, dampener_limit=seconds_day) == True:
+                    if status == STATUS.FAIL: log_level = log.critical
+                    elif status == STATUS.UNKNOWN: log_level = log.error
+                    else: log_level = log.splunk
+                str_public = stringify_cert_files(public_crt)
+                msg = 'public cert | file: "{}" | status : "{}" | digest: "{}"'
+                log_level(msg.format(str_public, status, digest))
             except ossl.X509StoreContextError as exception_object:
                 code, depth, message = exception_object.args[0]
                 if code in (2,3,20,27,33):
@@ -322,12 +335,12 @@ class X509AwareCertBucket:
                     # X509_V_ERR_CRL_HAS_EXPIRED                   12
                     status = STATUS.FAIL
                 # log at either log.error or log.critical according to the error code
-                if status == STATUS.FAIL and check_verif_timestamp(vfname) == True:
-                    log_level = log.critical
-                elif status == STATUS.ERROR and check_verif_timestamp(vfname) == True:
-                    log_level = log.error
-                msg = 'public cert verification status: "{}" | digest: "{}"| X509 error code: {} | depth: {} | message: {}'
-                log_level(msg.format(status, digest, code, depth, message))
+                if check_verif_timestamp(digest, dampener_limit=seconds_day) == True:
+                    if status == STATUS.FAIL: log_level = log.critical
+                    elif status == STATUS.UNKNOWN: log_level = log.error
+                    else: log_level = log.splunk
+                msg = 'public cert | file: "{}" | status: {} | digest: "{}" | X509 error code: {} | depth: {} | message: "{}"'
+                log_level(msg.format(str_public, status, digest, code, depth, message))
 
             self.public_crt.append(self.PublicCertObj(i, digest, status))
 
@@ -461,7 +474,7 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
     for crt,txt,status in x509.public_crt:
         log_level = log.debug
         sha256sum = hash_target(fname)
-        msg = '{} | file "{}" | status: {} | sha256: "{}" | public cert fingerprint and requester: "{}"'
+        msg = '{} | file "{}" | status: {} | sha256sum: "{}" | public cert fingerprint and requester: "{}"'
         pubkey = crt.get_pubkey().to_cryptography_key()
         if isinstance(pubkey, rsa.RSAPublicKey):
             args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
@@ -469,13 +482,13 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
             args['algorithm'] = utils.Prehashed(chosen_hash)
         try:
             pubkey.verify(**args)
-            log_level(msg.format(short_fname, status, fname, txt ))
+            log_level(msg.format(short_fname, fname, status, sha256sum, txt ))
             return status
         except InvalidSignature:
             status = STATUS.FAIL
             if check_verif_timestamp(fname) == True:
                 log_level = log.critical
-            log_level(msg.format(short_fname, fname, sha256sum, status, txt ))
+            log_level(msg.format(short_fname, fname, status, sha256sum, txt))
             pass
     return STATUS.FAIL
 
@@ -508,8 +521,8 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
 
         return a mapping from the input target list to the status values (a dict of filename: status)
     """
-    log.debug("verify_files({}, mfname={}, sfname={}, public_crt={}, ca_crt={}".format(
-        targets, mfname, sfname, public_crt, ca_crt))
+    #log.debug("verify_files({}, mfname={}, sfname={}, public_crt={}, ca_crt={}".format(
+    #    targets, mfname, sfname, public_crt, ca_crt))
     ret = OrderedDict()
     ret[mfname] = verify_signature(mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt)
     # ret[mfname] is the strongest claim we can make about the files we're
@@ -577,10 +590,9 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
             # We do have a MANIFEST entry and it doesn't match: FAIL with or
             # without a matching SIGNATURE
             status = STATUS.FAIL
-        if status == STATUS.FAIL and check_verif_timestamp(vfname) == True:
-            log_level = log.critical
-        elif status == STATUS.UNKNOWN and check_verif_timestamp(vfname) == True:
-            log_level = log.error
+        if check_verif_timestamp(digest) == True:
+            if status == STATUS.FAIL: log_level = log.critical
+            elif status == STATUS.UNKNOWN: log_level = log.error
         # logs according to the STATUS of target file
         msg = 'file: "{}" | status: {} | manifest sha256: "{}" | real sha256: "{}"'
         log_level(msg.format(vfname, status, digest, new_hash))

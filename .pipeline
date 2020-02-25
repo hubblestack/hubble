@@ -51,7 +51,9 @@ pipeline {
                     else find hubblestack -name "*.py" -print0 | xargs -r0 git diff --name-only "$LHS" "$RHS"
                     fi > relevant-files.txt
                     '''
-                sh '''mkdir -vp tests/unittests/output'''
+                sh ''' mkdir -vp tests/unittests/output
+                       cp relevant-files.txt tests/unittests/output
+                   '''
             }
         }
         stage('lint/test') {
@@ -106,7 +108,7 @@ pipeline {
                 alwaysLinkToLastBuild: false,
                 keepAll: true,
                 reportDir: 'tests/unittests/output',
-                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg, bandit.html',
+                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg, bandit.html, relevant-files.txt',
                 reportName: "Test Reports"
             ])
         }

@@ -7,6 +7,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# patch detritus
+*.rej
+*.orig
+
 # C extensions
 *.so
 

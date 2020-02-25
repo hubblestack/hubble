@@ -73,7 +73,7 @@ def _get_aws_details():
                              headers=aws_token_header, timeout=3, proxies=proxies)
             if r.status_code == requests.codes.ok:
                 aws_extra['cloud_private_hostname'] = r.text
-            for key in aws_extra.keys():
+            for key in list(aws_extra):
                 if not aws_extra[key]:
                     aws_extra.pop(key)
 
@@ -133,7 +133,7 @@ def _get_azure_details():
                 grain_name_mac = "cloud_interface_{0}_mac_address".format(counter)
                 azure_extra[grain_name_mac] = value['macAddress']
 
-            for key in azure_extra:
+            for key in list(azure_extra):
                 if not azure_extra[key]:
                     azure_extra.pop(key)
 

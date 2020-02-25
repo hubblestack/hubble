@@ -105,7 +105,7 @@ from hubblestack.utils.signing import find_wrapf
 
 log = logging.getLogger(__name__)
 
-S3_CACHE_EXPIRE = 30  # cache for 30 seconds
+S3_CACHE_EXPIRE = 1800  # cache for 30 minutes
 S3_SYNC_ON_UPDATE = True  # sync cache on update rather than jit
 
 
@@ -336,6 +336,7 @@ def _get_s3_key():
         'service_url': None,
         'keyid': None,
         'key': None,
+        'cache_expire': S3_CACHE_EXPIRE,
     }
 
     ret = dict()
@@ -351,14 +352,17 @@ def _get_s3_key():
 
     return ret
 
+
 def _init():
     """
     Connect to S3 and download the metadata for each file in all buckets
     specified and cache the data to disk.
     """
     cache_file = _get_buckets_cache_filename()
-    exp = time.time() - S3_CACHE_EXPIRE
+    cache_expire_time = float(_get_s3_key().get('cache_expire'))
+    exp = time.time() - cache_expire_time
 
+    log.debug('S3 cache expire time is %ds', cache_expire_time)
     # check mtime of the buckets files cache
     metadata = None
     try:
@@ -443,6 +447,9 @@ def _refresh_buckets_cache_file(cache_file):
                                         path_style=s3_key_kwargs['path_style'],
                                         https_enable=s3_key_kwargs['https_enable'],
                                         params={'marker': marker})
+            if not tmp:
+                return None
+
             headers = []
             for header in tmp:
                 if 'Key' in header:

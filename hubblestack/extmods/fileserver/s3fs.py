@@ -575,6 +575,10 @@ def _read_buckets_cache_file(cache_file):
     with salt.utils.files.fopen(cache_file, 'rb') as fp_:
         try:
             data = pickle.load(fp_)
+            # check for 'corrupted' cache data ex: {u'base':[]}
+            if not any(data.values()):
+                data = None
+
         except (pickle.UnpicklingError, AttributeError, EOFError, ImportError,
                 IndexError, KeyError):
             data = None

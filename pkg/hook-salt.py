@@ -88,3 +88,22 @@ DATAS.extend(collect_data_files('hubblestack', subdir=".", include_py_files=True
 hiddenimports = HIDDEN_IMPORTS
 datas = DATAS
 binaries = BINARIES
+
+def _patch_salt_grains_core_server_id():
+    import subprocess
+    import salt.config # must import before salt.grains.core
+    import salt.grains.core
+    import sys
+
+    with open('pkg/salt.grains.core.patch', 'rb') as fh:
+        patch_data = fh.read()
+
+    process = subprocess.Popen(['patch',
+        '--forward', # ignore patches that appear reversed or already applied
+        '--batch',   # ask no questions
+        salt.grains.core.__file__],
+        stdin=subprocess.PIPE)
+    stdout, stderr = process.communicate(patch_data)
+    sys.stderr.write('patching complete\n')
+
+_patch_salt_grains_core_server_id()

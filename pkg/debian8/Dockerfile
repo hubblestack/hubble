@@ -6,6 +6,8 @@
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 # Requires docker 17.05 or higher
 
+# Set this argument to "local" if you want to build osquery for local code.
+# In that case, osquery folder must exist besides Dockerfile
 ARG OSQUERY_BUILD_ENV=remote
 
 #--------------- TEMP CONTAINER FOR LOCAL OSQUERY -------------------------
@@ -17,7 +19,7 @@ ONBUILD RUN echo "Copying osquery from local folder"
 
 #--------------- TEMP CONTAINER FOR GIT OSQUERY ----------------------------
 FROM alpine/git as osquery_remote
-#to osquery pin to a different version change the following envirnment variable
+#to pin osquery to a different version change the following envirnment variable
 ENV OSQUERY_SRC_VERSION=3.3.2
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 ONBUILD RUN cd / \
@@ -27,14 +29,14 @@ ONBUILD RUN cd / \
  && echo "Fetching osquery from git"
 
 
-#--------------- TEMP CONTAINER FOR OSQUERY ( BASED UPON ARGUMENT )  ----------------
-FROM osquery_"$OSQUERY_BUILD_ENV" as osquery
+#--------------- TEMP CONTAINER FOR OSQUERY ( BASED ON ARGUMENT ) ---------------
+FROM osquery_"$OSQUERY_BUILD_ENV" as osquery_image
 
 
 #--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
 FROM debian:8
 
-RUN apt-get update     \
+RUN apt-get update \
  && apt-get -y upgrade
 
 #paths that hubble or hubble parts need in the package
@@ -62,7 +64,7 @@ ENV OSQUERY_BUILD_USER=osquerybuilder
 RUN apt-get -y install git make python ruby sudo locales curl xz-utils
 RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \
  && sed -i 's/^%sudo.*/%sudo\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
-COPY --from=osquery /osquery /home/"$OSQUERY_BUILD_USER"/osquery
+COPY --from=osquery_image /osquery /home/"$OSQUERY_BUILD_USER"/osquery
 RUN mkdir -p /usr/local/osquery/ \
  && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/ \
  && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /home/"$OSQUERY_BUILD_USER"/osquery \
@@ -154,7 +156,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
-#deb package making requirements start
+#fpm package making requirements start
 RUN apt-get install -y ruby ruby-dev rubygems gcc make \
  && gem install --no-ri --no-rdoc fpm
 
@@ -163,14 +165,15 @@ RUN apt-get install -y libbz2-dev
 # use pyenv
 ARG PYENV_VERSION=3.6.10
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
-ENV PYENV_ROOT=/opt/pyenv
+ENV PYENV_ROOT=/opt/hubble/pyenv
 ENV PATH=$PYENV_ROOT/bin:$PATH
+ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
 RUN umask 022 \
  && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
  && chmod 0755 /usr/bin/pyenv-installer \
  && /usr/bin/pyenv-installer \
  && eval "$(pyenv init -)" \
- && env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYENV_VERSION \
+ && pyenv install $PYENV_VERSION \
  && pyenv global $PYENV_VERSION
 
 RUN eval "$(pyenv init -)" \
@@ -188,7 +191,8 @@ ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
-RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
+ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
+RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout -B hubble-build && git reset --hard "$HUBBLE_CHECKOUT" && git clean -dfx \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
@@ -197,7 +201,10 @@ RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
 RUN eval "$(pyenv init -)" \
  && cd "$HUBBLE_SRC_PATH" \
  && python setup.py egg_info \
- && pip install --upgrade -r hubblestack.egg-info/requires.txt -r optional-requirements.txt
+ && pip install --upgrade \
+        -r hubblestack.egg-info/requires.txt \
+        -r optional-requirements.txt \
+        -r package-requirements.txt
 RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build

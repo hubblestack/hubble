@@ -6,7 +6,7 @@
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 # Requires docker 17.05 or higher
 
-# Set this arguement to "local" if you want to build osquery for local code.
+# Set this argument to "local" if you want to build osquery for local code.
 # In that case, osquery folder must exist besides Dockerfile
 ARG OSQUERY_BUILD_ENV=remote
 
@@ -39,13 +39,12 @@ FROM centos:6
 RUN yum makecache fast && yum -y update
 
 #paths that hubble or hubble parts need in the package
-RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs 
-
+RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 ENV OSQUERY_BUILD_USER=osquerybuilder
-RUN yum -y install xz git make python ruby sudo which python-argparse
+RUN yum -y install xz git make ruby sudo which python-argparse
 RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
  && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
 COPY --from=osquery_image /osquery /home/"$OSQUERY_BUILD_USER"/osquery
@@ -76,7 +75,7 @@ RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 RUN yum -y install  \
     libffi-devel openssl-devel libxml2-devel libxslt-devel libffi \
     libssh2-devel autoconf automake libtool libjpeg-devel zlib-devel \
-    python-devel make cmake gcc python-setuptools wget openssl
+    make cmake gcc wget openssl
 
 #libcurl install start
 #install libcurl to avoid depending on host version
@@ -85,7 +84,7 @@ ENV LIBCURL_SRC_URL=https://github.com/curl/curl.git
 ENV LIBCURL_SRC_VERSION=curl-7_64_1
 ENV LIBCURL_TEMP=/tmp/libcurl
 ENV PATH=/opt/hubble/bin/:/opt/hubble/include:/opt/hubble/lib:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-RUN set -x; mkdir -p "$LIBCURL_TEMP" \
+RUN mkdir -p "$LIBCURL_TEMP" \
  && cd "$LIBCURL_TEMP" \
  && git clone "$LIBCURL_SRC_URL" \
  && cd curl \
@@ -146,14 +145,15 @@ RUN yum install -y bzip2-devel
 # use pyenv
 ARG PYENV_VERSION=3.6.10
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
-ENV PYENV_ROOT=/opt/pyenv
+ENV PYENV_ROOT=/opt/hubble/pyenv
 ENV PATH=$PYENV_ROOT/bin:$PATH
+ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
 RUN umask 022 \
  && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
  && chmod 0755 /usr/bin/pyenv-installer \
  && /usr/bin/pyenv-installer \
  && eval "$(pyenv init -)" \
- && env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYENV_VERSION \
+ && pyenv install $PYENV_VERSION \
  && pyenv global $PYENV_VERSION
 
 RUN eval "$(pyenv init -)" \
@@ -174,16 +174,12 @@ ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
-RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
+RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
  && git checkout -B hubble-build && git reset --hard "$HUBBLE_CHECKOUT" && git clean -dfx \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
  && sed -i "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" /hubble_build/hubblestack/__init__.py \
  && sed -i "s/COMMIT_NOT_SET/`git describe`/g" /hubble_build/hubblestack/__init__.py
-RUN eval "$(pyenv init -)" \
- && cd "$HUBBLE_SRC_PATH" \
- && python setup.py egg_info \
- && pip install --upgrade -r hubblestack.egg-info/requires.txt -r optional-requirements.txt
 RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build

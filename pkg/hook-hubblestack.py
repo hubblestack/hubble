@@ -46,6 +46,12 @@ HIDDEN_IMPORTS = [
     'hubblestack.utils.signing',
 ]
 
+try:
+    import hubblestack.pre_packaged_certificates
+    HIDDEN_IMPORTS.append('hubblestack.pre_packaged_certificates')
+except ImportError:
+    pass
+
 def _yield_all(HI):
     for i in HI:
         yield from collect_submodules(i)

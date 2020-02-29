@@ -1,7 +1,13 @@
 #!/bin/bash
 
-# use the global pyenv version
 eval "$(pyenv init -)"
+
+# locate some pyenv things
+pyenv_prefix="$(pyenv prefix)"
+python_binary="$(pyenv which python)"
+while [ -L "$python_binary" ]
+do python_binary="$(readlink -f "$python_binary")"
+done
 
 # if ENTRYPOINT is given a CMD other than nothing
 # abort here and do that other CMD
@@ -10,60 +16,99 @@ then exec "$@"
 fi
 
 # from now on, exit on error (rather than && every little thing)
+PS4=$'-------------=: '
 set -x -e
-
-cp -rf "$HUBBLE_SRC_PATH"/* /hubble_build/
 
 # possibly replace the version file
 if [ -f /data/hubble_buildinfo ]; then
     echo >> /hubble_build/hubblestack/__init__.py
     cat /data/hubble_buildinfo >> /hubble_build/hubblestack/__init__.py
-fi
+fi 2>/dev/null
 
 
-cd /hubble_build || exit 1 # we already exit by set -e, but ...
+cd /hubble_build
 
-pip install --upgrade -r optional-requirements.txt
-pip install .
+# we may have preinstalled requirements that may need upgrading
+# pip install . might not upgrade/downgrade the requirements
+python setup.py egg_info
+pip install --upgrade \
+    -r hubblestack.egg-info/requires.txt \
+    -r optional-requirements.txt \
+    -r package-requirements.txt
 
-ln -svf $(pyenv prefix)/bin/hubble /opt/hubble/hubble
+[ -f ${_HOOK_DIR:-./pkg}/hook-hubblestack.py ] || exit 1
+
+rm -rf build dist /opt/hubble/hubble-libs /hubble_build/hubble.spec
+export LD_LIBRARY_PATH=$pyenv_prefix/lib:/opt/hubble/lib:/opt/hubble-libs
+export LD_RUN_PATH=$LD_LIBRARY_PATH
+pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL:-INFO} \
+    --additional-hooks-dir ${_HOOK_DIR:-./pkg} \
+    --runtime-hook pkg/runtime-hooks.py \
+    ./hubble.py 2>&1 | tee /tmp/pyinstaller.log
+
+cp -pr dist/hubble /opt/hubble/hubble-libs
+
+cat > /opt/hubble/hubble << EOF
+#!/bin/bash
+exec /opt/hubble/hubble-libs/hubble "\$@"
+exit 1
+EOF
+chmod 0755 /opt/hubble/hubble
+
+[ -d /data/last-build.4 ] && rm -rf /data/last-build.4
+[ -d /data/last-build.3 ] && mv -v /data/last-build.3 /data/last-build.4
+[ -d /data/last-build.2 ] && mv -v /data/last-build.2 /data/last-build.3
+[ -d /data/last-build.1 ] && mv -v /data/last-build.1 /data/last-build.2
+cp -va build/ /data/last-build.1
+mv /tmp/pyinstaller.log /data/last-build.1
+cp -va /entrypoint.sh /data/last-build.1
 
 mkdir -p /var/log/hubble_osquery/backuplogs
 
-rm -rf /opt/hubble/hubble-libs/librpm*
-rm -rf /opt/pyenv/.git
+mkdir -p /etc/init.d
+mkdir -p /etc/profile.d
+mkdir -p /etc/hubble
 
-cp -va /usr/lib/x86_64-linux-gnu/libssh2.so.1 /opt/hubble/hubble-libs
+cp -v /hubble_build/pkg/hubble /etc/init.d
+cp -v /hubble_build/conf/hubble-profile.sh /etc/profile.d/
 
-# rpm pkg start
-tar -cPvvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble \
-    /opt/hubble /opt/osquery /etc/profile.d/hubble-profile.sh \
-    /var/log/hubble_osquery/backuplogs \
-    /opt/pyenv 2>&1 \
-    | tee /hubble_build/rpm-pkg-start-tar.log
-
-mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
-tar -xzvvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C \
-    /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
-
-mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d
-mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/profile.d
-mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble
-
-cp -v /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/
-
-cp -v /hubble_build/conf/hubble-profile.sh \
-    /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/profile.d/
-
-cp -v /hubble_build/conf/hubble \
-    /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/
-
-# during container run, if a configuration file exists in a /data copy it over
-# the existing one so it would be possile to optionally include a custom one
-# with the package
 if [ -f /data/hubble ]
-then cp /data/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/
+then cp -v /data/hubble /etc/hubble/
+else cp -v /hubble_build/conf/hubble /etc/hubble/
 fi
+
+if [ "X$TEST_BINARIES" = X1 ]; then
+    # weakly test the new bin
+    ./dist/hubble/hubble --version
+
+    # does it still work if we call it in its new home?
+    /opt/hubble/hubble-libs/hubble --version
+
+    # how about if it's via non-home location?
+    /opt/hubble/hubble --version
+
+    # lastly, can we actually use salt grains and other lazy loader items?
+    /opt/hubble/hubble-libs/hubble -vvv grains.get hubble_version
+    /opt/hubble/hubble -vvv grains.get hubble_version
+fi
+
+if [ "X$NO_TAR" = X1 ]; then
+    echo "exiting (as requested by NO_TAR=$NO_TAR) without pre-tar-ing package"
+    exit 0
+fi 2>/dev/null
+
+# deb pkg start
+tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz \
+    --exclude opt/hubble/pyenv \
+    /etc/hubble /opt/hubble /opt/osquery \
+    /etc/profile.d/hubble-profile.sh \
+    /etc/init.d/hubble \
+    /var/log/hubble_osquery/backuplogs \
+    2>&1 | tee /hubble_build/deb-pkg-start-tar.log
+
+PKG_STRUCT_DIR=/hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
+mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
+tar -xSzvvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C $PKG_STRUCT_DIR
 
 # also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
 if [ -d /data/opt ]
@@ -75,6 +120,11 @@ cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
 mkdir -p usr/bin
 ln -s /opt/hubble/hubble usr/bin/hubble
 
+if [ "X$NO_FPM" = X1 ]; then
+    echo "exiting (as requested by NO_FPM=$NO_FPM) without building package"
+    exit 0
+fi
+
 # fpm start
 fpm -s dir -t deb \
     -n hubblestack \
@@ -82,14 +132,17 @@ fpm -s dir -t deb \
     --iteration ${HUBBLE_ITERATION} \
     --url ${HUBBLE_URL} \
     --deb-no-default-config-files \
-    --after-install /hubble_build/conf/afterinstall-systemd.sh \
-    --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
+    --after-install /hubble_build/conf/afterinstall.sh \
+    --after-upgrade /hubble_build/conf/afterupgrade.sh \
     --before-remove /hubble_build/conf/beforeremove.sh \
     etc/hubble etc/init.d opt usr /var/log/hubble_osquery/backuplogs
 
 # edit to change iteration number, if necessary
-cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb \
-    /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb10.amd64.deb
+PKG_BASE_NAME=hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}
+PKG_OUT_EXT=amd64.deb
+PKG_FIN_EXT=deb10.$PKG_OUT_EXT
+PKG_ONAME="${PKG_BASE_NAME}_$PKG_OUT_EXT"
+PKG_FNAME="${PKG_BASE_NAME}.$PKG_FIN_EXT"
 
-openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb10.amd64.deb \
-    > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb10.amd64.deb.sha256
+cp -va "$PKG_ONAME" /data/"$PKG_FNAME"
+openssl dgst -sha256 /data/"$PKG_FNAME" > /data/"$PKG_FNAME".sha256

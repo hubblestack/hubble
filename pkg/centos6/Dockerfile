@@ -180,13 +180,6 @@ RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
  && sed -i "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" /hubble_build/hubblestack/__init__.py \
  && sed -i "s/COMMIT_NOT_SET/`git describe`/g" /hubble_build/hubblestack/__init__.py
-RUN eval "$(pyenv init -)" \
- && cd "$HUBBLE_SRC_PATH" \
- && python setup.py egg_info \
- && pip install --upgrade \
-        -r hubblestack.egg-info/requires.txt \
-        -r optional-requirements.txt \
-        -r package-requirements.txt
 RUN mkdir /data
 VOLUME /data
 WORKDIR /hubble_build

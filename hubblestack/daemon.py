@@ -18,6 +18,7 @@ import uuid
 import json
 import socket
 import math
+import traceback
 
 import salt.fileclient
 import salt.fileserver
@@ -308,93 +309,98 @@ def schedule():
     if 'user_schedule' in __opts__ and isinstance(__opts__['user_schedule'], dict):
         schedule_config.update(__opts__['user_schedule'])
     for jobname, jobdata in schedule_config.iteritems():
-        # Error handling galore
-        if not jobdata or not isinstance(jobdata, dict):
-            log.error('Scheduled job {0} does not have valid data'.format(jobname))
-            continue
-        if 'function' not in jobdata or 'seconds' not in jobdata:
-            log.error('Scheduled job {0} is missing a ``function`` or '
-                      '``seconds`` argument'.format(jobname))
-            continue
-        func = jobdata['function']
-        if func not in __salt__:
-            log.error('Scheduled job {0} has a function {1} which could not '
-                      'be found.'.format(jobname, func))
-            continue
         try:
-            if 'cron' in jobdata:
-                seconds = getsecondsbycronexpression(base, jobdata['cron'])
-            else:
-                seconds = int(jobdata['seconds'])
-            splay = int(jobdata.get('splay', 0))
-            min_splay = int(jobdata.get('min_splay', 0))
-        except ValueError:
-            log.error('Scheduled job {0} has an invalid value for seconds or '
-                      'splay.'.format(jobname))
-        args = jobdata.get('args', [])
-        if not isinstance(args, list):
-            log.error('Scheduled job {0} has args not formed as a list: {1}'
-                      .format(jobname, args))
-        kwargs = jobdata.get('kwargs', {})
-        if not isinstance(kwargs, dict):
-            log.error('Scheduled job {0} has kwargs not formed as a dict: {1}'
-                      .format(jobname, kwargs))
-        returners = jobdata.get('returner', [])
-        if not isinstance(returners, list):
-            returners = [returners]
-        returner_retry = jobdata.get('returner_retry', False)
-
-        # Actually process the job
-        run = False
-        if 'last_run' not in jobdata:
-            if jobdata.get('run_on_start', False):
-                if splay:
-                    # Run `splay` seconds in the future, by telling the scheduler we last ran it
-                    # `seconds - splay` seconds ago.
-                    jobdata['last_run'] = time.time() - (seconds - random.randint(min_splay, splay))
+            # Error handling galore
+            if not jobdata or not isinstance(jobdata, dict):
+                log.error('Scheduled job {0} does not have valid data'.format(jobname))
+                continue
+            if 'function' not in jobdata or 'seconds' not in jobdata:
+                log.error('Scheduled job {0} is missing a ``function`` or '
+                          '``seconds`` argument'.format(jobname))
+                continue
+            func = jobdata['function']
+            if func not in __salt__:
+                log.error('Scheduled job {0} has a function {1} which could not '
+                          'be found.'.format(jobname, func))
+                continue
+            try:
+                if 'cron' in jobdata:
+                    seconds = getsecondsbycronexpression(base, jobdata['cron'])
                 else:
-                    # Run now
-                    run = True
-                    jobdata['last_run'] = time.time()
-            else:
-                if splay:
-                    # Run `seconds + splay` seconds in the future by telling the scheduler we last
-                    # ran it at now + `splay` seconds.
-                    jobdata['last_run'] = time.time() + random.randint(min_splay, splay)
-                elif 'buckets' in jobdata:
-                    # Place the host in a bucket and fix the execution time.
-                    jobdata['last_run'] = getlastrunbybuckets(jobdata['buckets'], seconds)
-                    log.debug('last_run according to bucket is {0}'.format(jobdata['last_run']))
-                elif 'cron' in jobdata:
-                    # execute the hubble process based on cron expression
-                    jobdata['last_run'] = getlastrunbycron(base, seconds)
+                    seconds = int(jobdata['seconds'])
+                splay = int(jobdata.get('splay', 0))
+                min_splay = int(jobdata.get('min_splay', 0))
+            except ValueError:
+                log.error('Scheduled job {0} has an invalid value for seconds or '
+                          'splay.'.format(jobname))
+            args = jobdata.get('args', [])
+            if not isinstance(args, list):
+                log.error('Scheduled job {0} has args not formed as a list: {1}'
+                          .format(jobname, args))
+            kwargs = jobdata.get('kwargs', {})
+            if not isinstance(kwargs, dict):
+                log.error('Scheduled job {0} has kwargs not formed as a dict: {1}'
+                          .format(jobname, kwargs))
+            returners = jobdata.get('returner', [])
+            if not isinstance(returners, list):
+                returners = [returners]
+            returner_retry = jobdata.get('returner_retry', False)
+
+            # Actually process the job
+            run = False
+            if 'last_run' not in jobdata:
+                if jobdata.get('run_on_start', False):
+                    if splay:
+                        # Run `splay` seconds in the future, by telling the scheduler we last ran it
+                        # `seconds - splay` seconds ago.
+                        jobdata['last_run'] = time.time() - (seconds - random.randint(min_splay, splay))
+                    else:
+                        # Run now
+                        run = True
+                        jobdata['last_run'] = time.time()
                 else:
-                    # Run in `seconds` seconds.
-                    jobdata['last_run'] = time.time()
+                    if splay:
+                        # Run `seconds + splay` seconds in the future by telling the scheduler we last
+                        # ran it at now + `splay` seconds.
+                        jobdata['last_run'] = time.time() + random.randint(min_splay, splay)
+                    elif 'buckets' in jobdata:
+                        # Place the host in a bucket and fix the execution time.
+                        jobdata['last_run'] = getlastrunbybuckets(jobdata['buckets'], seconds)
+                        log.debug('last_run according to bucket is {0}'.format(jobdata['last_run']))
+                    elif 'cron' in jobdata:
+                        # execute the hubble process based on cron expression
+                        jobdata['last_run'] = getlastrunbycron(base, seconds)
+                    else:
+                        # Run in `seconds` seconds.
+                        jobdata['last_run'] = time.time()
 
-        if jobdata['last_run'] < time.time() - seconds:
-            run = True
+            if jobdata['last_run'] < time.time() - seconds:
+                run = True
 
-        if run:
-            log.debug('Executing scheduled function {0}'.format(func))
-            jobdata['last_run'] = time.time()
-            ret = __salt__[func](*args, **kwargs)
-            sf_count += 1
-            if __opts__['log_level'] == 'debug':
-                log.debug('Job returned:\n{0}'.format(ret))
-            for returner in returners:
-                returner = '{0}.returner'.format(returner)
-                if returner not in __returners__:
-                    log.error('Could not find {0} returner.'.format(returner))
-                    continue
-                log.debug('Returning job data to {0}'.format(returner))
-                returner_ret = {'id': __grains__['id'],
-                                'jid': salt.utils.jid.gen_jid(__opts__),
-                                'fun': func,
-                                'fun_args': args + ([kwargs] if kwargs else []),
-                                'return': ret,
-                                'retry': returner_retry}
-                __returners__[returner](returner_ret)
+            if run:
+                log.debug('Executing scheduled function {0}'.format(func))
+                jobdata['last_run'] = time.time()
+                ret = __salt__[func](*args, **kwargs)
+                sf_count += 1
+                if __opts__['log_level'] == 'debug':
+                    log.debug('Job returned:\n{0}'.format(ret))
+                for returner in returners:
+                    returner = '{0}.returner'.format(returner)
+                    if returner not in __returners__:
+                        log.error('Could not find {0} returner.'.format(returner))
+                        continue
+                    log.debug('Returning job data to {0}'.format(returner))
+                    returner_ret = {'id': __grains__['id'],
+                                    'jid': salt.utils.jid.gen_jid(__opts__),
+                                    'fun': func,
+                                    'fun_args': args + ([kwargs] if kwargs else []),
+                                    'return': ret,
+                                    'retry': returner_retry}
+                    __returners__[returner](returner_ret)
+        except Exception as e:
+            log.error("Exception in running job: {0}. Exception: {1} . Continuing with next job....".format(jobname, e))
+            tb = traceback.format_exc()
+            log.error("Exception stacktrace: {0}".format(tb))
     return sf_count
 
 

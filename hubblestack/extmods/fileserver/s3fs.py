@@ -103,7 +103,7 @@ from salt.ext.six.moves.urllib.parse import quote as _quote
 
 log = logging.getLogger(__name__)
 
-S3_CACHE_EXPIRE = 30  # cache for 30 seconds
+S3_CACHE_EXPIRE = 1800  # cache for 30 minutes
 S3_SYNC_ON_UPDATE = True  # sync cache on update rather than jit
 
 
@@ -335,6 +335,7 @@ def _get_s3_key():
         'service_url': None,
         'keyid': None,
         'key': None,
+        'cache_expire': S3_CACHE_EXPIRE,
     }
 
     ret = dict()
@@ -351,16 +352,20 @@ def _get_s3_key():
     # This rather odd return strategy is a result of trying to make a small
     # change for the incorrect backport of PR740 without it's preceeding
     # cleanup (which changed the return type from list to dict)
-    return [ ret[x] for x in 'key keyid service_url verify_ssl kms_keyid location path_style https_enable'.split() ]
+    return [ ret[x] for x in 'key keyid service_url verify_ssl kms_keyid location path_style https_enable cache_expire'.split() ]
+
 
 def _init():
     '''
     Connect to S3 and download the metadata for each file in all buckets
     specified and cache the data to disk.
     '''
+    key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable, cache_expire = _get_s3_key()
     cache_file = _get_buckets_cache_filename()
-    exp = time.time() - S3_CACHE_EXPIRE
+    cache_expire_time = float(cache_expire)
+    exp = time.time() - cache_expire_time
 
+    log.debug('S3 cache expire time is %ds', cache_expire_time)
     # check mtime of the buckets files cache
     metadata = None
     try:
@@ -431,7 +436,7 @@ def _refresh_buckets_cache_file(cache_file):
 
     log.debug('Refreshing buckets cache file')
 
-    key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable = _get_s3_key()
+    key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable, cache_expire = _get_s3_key()
     metadata = {}
 
     # helper s3 query function
@@ -449,6 +454,9 @@ def _refresh_buckets_cache_file(cache_file):
                                         path_style=path_style,
                                         https_enable=https_enable,
                                         params={'marker': marker})
+            if not tmp:
+                return None
+
             headers = []
             for header in tmp:
                 if 'Key' in header:
@@ -582,6 +590,10 @@ def _read_buckets_cache_file(cache_file):
     with salt.utils.files.fopen(cache_file, 'rb') as fp_:
         try:
             data = pickle.load(fp_)
+            # check for 'corrupted' cache data ex: {u'base':[]}
+            if not any(data.values()):
+                data = None
+
         except (pickle.UnpicklingError, AttributeError, EOFError, ImportError,
                 IndexError, KeyError):
             data = None
@@ -678,7 +690,7 @@ def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
     Checks the local cache for the file, if it's old or missing go grab the
     file from S3 and update the cache
     '''
-    key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable = _get_s3_key()
+    key, keyid, service_url, verify_ssl, kms_keyid, location, path_style, https_enable, cache_expire = _get_s3_key()
 
     # check the local cache...
     if os.path.isfile(cached_file_path):

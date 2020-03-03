@@ -19,8 +19,6 @@ fi
 PS4=$'-------------=: '
 set -x -e
 
-cp -rf "$HUBBLE_SRC_PATH"/* /hubble_build/
-
 # possibly replace the version file
 if [ -f /data/hubble_buildinfo ]; then
     echo >> /hubble_build/hubblestack/__init__.py

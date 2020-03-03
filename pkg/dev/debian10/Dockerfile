@@ -190,14 +190,24 @@ ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
+
 RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
- && git checkout -B hubble-build && git reset --hard "$HUBBLE_CHECKOUT" && git clean -dfx \
- && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
- && sed -i "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" /hubble_build/hubblestack/__init__.py \
- && sed -i "s/COMMIT_NOT_SET/`git describe`/g" /hubble_build/hubblestack/__init__.py
+ && git checkout -B hubble-build && git reset --hard "$HUBBLE_CHECKOUT" && git clean -dfx
+
+RUN cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
+ && rm -rf /hubble_build/.git
+
+RUN cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.orig \
+ && sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" \
+           -e "s/COMMIT_NOT_SET/$(cd $HUBBLE_SRC_PATH; git describe --long --always --tags)/g" \
+           /hubble_build/hubblestack/__init__.py \
+ && cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixed
+
 RUN mkdir /data
 VOLUME /data
+
 WORKDIR /hubble_build
+
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

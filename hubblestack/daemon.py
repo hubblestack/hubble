@@ -9,6 +9,7 @@ import copy
 import json
 import logging
 import math
+import traceback
 import os
 import pprint
 import re
@@ -307,41 +308,45 @@ def schedule():
     if 'user_schedule' in __opts__ and isinstance(__opts__['user_schedule'], dict):
         schedule_config.update(__opts__['user_schedule'])
     for jobname, jobdata in schedule_config.items():
-        # Error handling galore
-        if not jobdata or not isinstance(jobdata, dict):
-            log.error('Scheduled job %s does not have valid data', jobname)
-            continue
-        if 'function' not in jobdata or 'seconds' not in jobdata:
-            log.error('Scheduled job %s is missing a ``function`` or ``seconds`` argument', jobname)
-            continue
-        func = jobdata['function']
-        if func not in __salt__:
-            log.error('Scheduled job %s has a function %s which could not be found.', jobname, func)
-            continue
         try:
-            if 'cron' in jobdata:
-                seconds = getsecondsbycronexpression(base, jobdata['cron'])
-            else:
-                seconds = int(jobdata['seconds'])
-            splay = int(jobdata.get('splay', 0))
-            min_splay = int(jobdata.get('min_splay', 0))
-        except ValueError:
-            log.error('Scheduled job %s has an invalid value for seconds or splay.', jobname)
-        args = jobdata.get('args', [])
-        if not isinstance(args, list):
-            log.error('Scheduled job %s has args not formed as a list: %s', jobname, args)
-        kwargs = jobdata.get('kwargs', {})
-        if not isinstance(kwargs, dict):
-            log.error('Scheduled job %s has kwargs not formed as a dict: %s', jobname, kwargs)
-        returners = jobdata.get('returner', [])
-        if not isinstance(returners, list):
-            returners = [returners]
-        # Actually process the job
-        run = _process_job(jobdata, splay, seconds, min_splay, base)
-        if run:
-            _execute_function(jobdata, func, returners, args, kwargs)
-            sf_count += 1
-
+            # Error handling galore
+            if not jobdata or not isinstance(jobdata, dict):
+                log.error('Scheduled job %s does not have valid data', jobname)
+                continue
+            if 'function' not in jobdata or 'seconds' not in jobdata:
+                log.error('Scheduled job %s is missing a ``function`` or ``seconds`` argument', jobname)
+                continue
+            func = jobdata['function']
+            if func not in __salt__:
+                log.error('Scheduled job %s has a function %s which could not be found.', jobname, func)
+                continue
+            try:
+                if 'cron' in jobdata:
+                    seconds = getsecondsbycronexpression(base, jobdata['cron'])
+                else:
+                    seconds = int(jobdata['seconds'])
+                splay = int(jobdata.get('splay', 0))
+                min_splay = int(jobdata.get('min_splay', 0))
+            except ValueError:
+                log.error('Scheduled job %s has an invalid value for seconds or splay.', jobname)
+            args = jobdata.get('args', [])
+            if not isinstance(args, list):
+                log.error('Scheduled job %s has args not formed as a list: %s', jobname, args)
+            kwargs = jobdata.get('kwargs', {})
+            if not isinstance(kwargs, dict):
+                log.error('Scheduled job %s has kwargs not formed as a dict: %s', jobname, kwargs)
+            returners = jobdata.get('returner', [])
+            if not isinstance(returners, list):
+                returners = [returners]
+            # Actually process the job
+            run = _process_job(jobdata, splay, seconds, min_splay, base)
+            if run:
+                _execute_function(jobdata, func, returners, args, kwargs)
+                sf_count += 1
+        except Exception as e:
+            log.error("Exception in running job: {0}. Exception: {1} . Continuing with next job....".format(jobname, e))
+            tb = traceback.format_exc()
+            log.error("Exception stacktrace: {0}".format(tb))
     return sf_count
 
 

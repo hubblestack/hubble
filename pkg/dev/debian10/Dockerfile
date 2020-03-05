@@ -1,7 +1,6 @@
 # This Dockerfile aims to make building Hubble v2 packages easier.
 # To build an image: 1. copy pkg/scripts/pyinstaller-requirements.txt to directory with this Dockerfile
-#                    2. docker build -t <image_name> . --build-arg=HUBBLE_GIT_URL=<git_repo_url>
-#                                                      --build-arg=HUBBLE_CHECKOUT=<branch/tag/commit>
+#                    2. docker build -t <image_name> .
 # The resulting image is ready to run the pyinstaller on container start and drop hubble<version>-coreos.tar.gz
 # in the /data directory. Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
@@ -18,6 +17,7 @@ ONBUILD RUN echo "Copying osquery from local folder"
 
 #--------------- TEMP CONTAINER FOR GIT OSQUERY ----------------------------
 FROM alpine/git as osquery_remote
+#to osquery pin to a different version change the following envirnment variable
 ENV OSQUERY_SRC_VERSION=3.3.2
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 ONBUILD RUN cd / \
@@ -27,7 +27,7 @@ ONBUILD RUN cd / \
  && echo "Fetching osquery from git"
 
 
-#--------------- TEMP CONTAINER FOR OSQUERY ( BASED UPON FLAG)  ----------------
+#--------------- TEMP CONTAINER FOR OSQUERY ( BASED UPON ARGUMENT )  ------------
 FROM osquery_"$OSQUERY_BUILD_ENV" as osquery
 
 
@@ -58,7 +58,6 @@ RUN mkdir -p "$PATCHELF_TEMP" \
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
-#to pin to a different version change the following envirnment variable
 ENV OSQUERY_BUILD_USER=osquerybuilder
 RUN apt-get -y install git make python ruby sudo curl
 RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \
@@ -153,10 +152,23 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
-#pyinstaller requirements start
-#must be preceded by libgit2 install
+# use pyenv
+ARG PYENV_VERSION=3.6.10
+ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
+ENV PYENV_ROOT=/usr/local/pyenv
+ENV PATH=$PYENV_ROOT/bin:$PATH
+RUN umask 022 \
+ && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
+ && chmod 0755 /usr/bin/pyenv-installer \
+ && /usr/bin/pyenv-installer \
+ && eval "$(pyenv init -)" \
+ && env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYENV_VERSION \
+ && pyenv global $PYENV_VERSION
+
 COPY pyinstaller-requirements.txt /
-RUN pip -v install -r pyinstaller-requirements.txt
+RUN eval "$(pyenv init -)" \
+ && pip -v install --upgrade pip \
+ && pip -v install -r pyinstaller-requirements.txt
 
 #deb package making requirements start
 RUN apt-get install -y ruby ruby-dev rubygems gcc make \
@@ -165,9 +177,9 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=3.0
+ARG HUBBLE_CHECKOUT=v4.0.0
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=3.0-branch
+ENV HUBBLE_VERSION=4.0.0
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_SRC_PATH=/hubble_src
@@ -175,9 +187,9 @@ ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
-RUN git clone ${HUBBLE_GIT_URL} "$HUBBLE_SRC_PATH" \
+RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
- && git checkout ${HUBBLE_CHECKOUT} \
+ && git checkout -B hubble-build && git reset --hard "$HUBBLE_CHECKOUT" && git clean -dfx \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
  && sed -i "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" /hubble_build/hubblestack/__init__.py \
  && sed -i "s/COMMIT_NOT_SET/`git describe`/g" /hubble_build/hubblestack/__init__.py
@@ -186,6 +198,7 @@ VOLUME /data
 WORKDIR /hubble_build
 ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
 CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubblestack/__init__.py ; cat /data/hubble_buildinfo >> /hubble_build/hubblestack/__init__.py; fi \
+    && eval \"$(pyenv init -)\" \
     && pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py \
     && mkdir -p /var/log/hubble_osquery/backuplogs \
 # hubble default configuration file
@@ -226,6 +239,6 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
        etc/hubble etc/init.d opt usr /var/log/hubble_osquery/backuplogs \
-    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb10_amd64.deb \
-    && openssl dgst -sha256 /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb10_amd64.deb \
-                          > /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb10_amd64.deb.sha256" ]
+    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb10.amd64.deb \
+    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb10.amd64.deb \
+                          > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb10.amd64.deb.sha256" ]

@@ -1,5 +1,7 @@
 pyinstaller==3.3.1
-Crypto
+crypto
+pycryptodome
+cryptography
 pyopenssl>=16.2.0
 argparse
 requests>=2.13.0

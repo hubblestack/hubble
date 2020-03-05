@@ -1,5 +1,7 @@
 pyinstaller==3.2 # currently 3.2.1 version is not supported because of botocore exception
-Crypto
+crypto
+pycryptodome
+cryptography
 pyopenssl>=16.2.0
 argparse
 requests>=2.13.0

@@ -346,6 +346,7 @@ class X509AwareCertBucket:
                         log_level = log.critical
                     elif status == STATUS.UNKNOWN:
                         log_level = log.error
+                str_public = stringify_cert_files(public_crt)
                 log_level('public cert | file: "%s" | status: %s | digest: "%s" | X509 error code: %s | depth: %s | message: "%s"',
                         str_public, status, digest, code, depth, message)
 

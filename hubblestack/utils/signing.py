@@ -185,7 +185,9 @@ def read_certs(*fnames):
     """
     for fname in fnames:
         if fname.strip().startswith('--') and '\x0a' in fname:
-            for i in split_certs(cStringIO.StringIO(fname)):
+            siofh = cStringIO.StringIO(fname)
+            siofh.name = '<a string>'
+            for i in split_certs(siofh):
                 yield i
         elif os.path.isfile(fname):
             try:

@@ -203,9 +203,10 @@ def read_certs(*fnames):
 
 def stringify_cert_files(cert):
     """this function returns a string version of cert(s) for returner"""
-    if type(cert) is list and len(cert) >= 1:
+    if isinstance(cert, (tuple,list)) and cert:
         return ', '.join([str(c) for c in cert])
-    elif type(cert) is file:
+    elif hasattr(cert, 'name'):
+        # probably a file handle
         return cert.name
     return str(cert)
 

@@ -34,36 +34,22 @@ FROM osquery_"$OSQUERY_BUILD_ENV" as osquery_image
 
 
 #--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
-FROM debian:9
+FROM centos:8
 
-RUN apt-get update \
- && apt-get -y upgrade
+RUN dnf -y update
 
 #paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
-
-#patchelf build start
-#must precede osquery as at the moment, osquery won't build without patchelf
-ENV PATCHELF_GIT_URL=https://github.com/NixOS/patchelf.git
-ENV PATCHELF_TEMP=/tmp/patchelf
-RUN apt-get -y install autoconf git make g++
-RUN mkdir -p "$PATCHELF_TEMP" \
- && cd "$PATCHELF_TEMP" \
- && git clone "$PATCHELF_GIT_URL" \
- && cd patchelf \
- && sed -i 's/serial-tests/parallel-tests/' configure.ac \
- && ./bootstrap.sh \
- && ./configure \
- && make \
- && make install
-
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 ENV OSQUERY_BUILD_USER=osquerybuilder
-RUN apt-get -y install git make python ruby sudo curl
-RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \
- && sed -i 's/^%sudo.*/%sudo\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
+RUN dnf -y install dnf-plugins-core \
+ && dnf config-manager --set-enabled PowerTools \
+ && dnf -y install python3 git make ruby sudo which doxygen \
+ && ln -svf python3 /usr/bin/python
+RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
+ && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
 COPY --from=osquery_image /osquery /home/"$OSQUERY_BUILD_USER"/osquery
 RUN mkdir -p /usr/local/osquery/ \
  && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/ \
@@ -89,12 +75,10 @@ RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt
 RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
-RUN apt-get -y install  \
-               python-dev libffi-dev libssl-dev libyaml-dev libssh2-1 libssh2-1-dev autoconf automake libtool \
-               libxml2-dev libxslt1-dev python-cffi \
-               zlib1g-dev cmake python-setuptools  \
-               gcc wget python-pip openssl \
- && apt-get clean
+RUN dnf -y install  \
+               libffi-devel openssl-devel libffi libssh-devel autoconf automake libtool \
+               libxml2-devel libxslt-devel libjpeg-devel zlib-devel \
+               make cmake gcc python3-devel wget openssl
 
 #libcurl install start
 #install libcurl to avoid depending on host version
@@ -109,7 +93,13 @@ RUN mkdir -p "$LIBCURL_TEMP" \
  && cd curl \
  && git checkout "$LIBCURL_SRC_VERSION" \
  && ./buildconf \
- && ./configure --prefix=/opt/hubble --disable-ldap --without-nss --disable-manual --disable-gopher --disable-smtp --disable-smb --disable-imap --disable-pop3 --disable-tftp --disable-telnet --disable-dict --disable-ldaps --disable-ldap --disable-rtsp --with-libssh2 \
+ && ./configure --prefix=/opt/hubble --disable-ldap \
+        --without-nss --disable-manual --disable-gopher \
+        --disable-smtp --disable-smb --disable-imap \
+        --disable-pop3 --disable-tftp --disable-telnet \
+        --disable-dict --disable-ldaps --disable-ldap \
+        --disable-rtsp \
+        --with-libssh \
  && make \
  && make install
 
@@ -149,12 +139,16 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && echo "$LIBGIT2_SRC_SHA256  libgit2.tar.gz" | sha256sum -c - \
  && tar xzf libgit2.tar.gz \
  && cd libgit2-"$LIBGIT2_SRC_VERSION"/ \
- && export LIBGIT2=/usr/local/ \
- && cmake . -DCMAKE_INSTALL_PREFIX=$LIBGIT2 \
+ && cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/ \
  && make \
  && make install
 
-RUN apt-get install -y libbz2-dev
+#fpm package making requirements start
+RUN dnf install -y ruby ruby-devel rpm-build rubygems gcc make \
+ && gem install --no-ri --no-rdoc fpm
+
+# things we may need to build a python
+RUN dnf install -y bzip2-devel
 
 # use pyenv
 ARG PYENV_VERSION=3.6.10
@@ -177,10 +171,12 @@ RUN eval "$(pyenv init -)" \
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
 ARG HUBBLE_CHECKOUT=v4.0.0
-ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_VERSION=4.0.0
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
+ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
+ENV HUBBLE_SUMMARY="Profile based on-demand auditing and monitoring tool"
+ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"

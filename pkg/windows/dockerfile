@@ -11,15 +11,6 @@
 FROM microsoft/windowsservercore:ltsc2016
 #Needed to just work
 ENV PYTHONIOENCODING='UTF-8'
-ENV CHOCO_URL=https://chocolatey.org/install.ps1
-#All the variables used for salt
-ENV SALT_SRC_PATH='C:/temp/salt/'
-ENV SALT_GIT_URL=https://github.com/saltstack/salt
-ENV SALT_CHECKOUT=v2018.11
-#All the variables used for hubble
-ARG HUBBLE_CHECKOUT=v4.0.0
-ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 ENV _HOOK_DIR='./pkg/'
 ENV NSIS_LOC='C:/Program Files (x86)/NSIS'
 #Create location for build environment and set as working dir
@@ -27,10 +18,77 @@ RUN powershell.exe -Command New-Item c:/temp -ItemType Directory; \
   New-Item C:/data -ItemType Directory;
 WORKDIR C:/temp
 VOLUME C:/data
-#Copy local files to working directory
-COPY pyinstaller-requirements.txt c:/temp/
-COPY hubble.conf C:/temp/
-#install Chocolatey, then git and osquery
+#############
+# Installing Python 3.5.3
+#############
+
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+ENV PYTHON_VERSION 3.5.3
+ENV PYTHON_RELEASE 3.5.3
+
+RUN $url = ('https://www.python.org/ftp/python/{0}/python-{1}-amd64.exe' -f $env:PYTHON_RELEASE, $env:PYTHON_VERSION); \
+	Write-Host ('Downloading {0} ...' -f $url); \
+	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
+	Invoke-WebRequest -Uri $url -OutFile 'python.exe'; \
+	\
+	Write-Host 'Installing ...'; \
+# https://docs.python.org/3.5/using/windows.html#installing-without-ui
+	Start-Process python.exe -Wait \
+		-ArgumentList @( \
+			'/quiet', \
+			'InstallAllUsers=1', \
+			'TargetDir=C:\Python35', \
+			'PrependPath=1', \
+			'Shortcuts=0', \
+			'Include_doc=0', \
+			'Include_pip=0', \
+			'Include_test=0' \
+		); \
+	\
+# the installer updated PATH, so we should refresh our local value
+	$env:PATH = [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Machine); \
+	\
+	Write-Host 'Verifying install ...'; \
+	Write-Host '  python --version'; python --version; \
+	\
+	Write-Host 'Removing ...'; \
+	Remove-Item python.exe -Force; \
+	\
+	Write-Host 'Complete.'
+
+# if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
+ENV PYTHON_PIP_VERSION 20.0.2
+# https://github.com/pypa/get-pip
+ENV PYTHON_GET_PIP_URL https://github.com/pypa/get-pip/raw/d59197a3c169cef378a22428a3fa99d33e080a5d/get-pip.py
+ENV PYTHON_GET_PIP_SHA256 421ac1d44c0cf9730a088e337867d974b91bdce4ea2636099275071878cc189e
+
+RUN Write-Host ('Downloading get-pip.py ({0}) ...' -f $env:PYTHON_GET_PIP_URL); \
+	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
+	Invoke-WebRequest -Uri $env:PYTHON_GET_PIP_URL -OutFile 'get-pip.py'; \
+	Write-Host ('Verifying sha256 ({0}) ...' -f $env:PYTHON_GET_PIP_SHA256); \
+	if ((Get-FileHash 'get-pip.py' -Algorithm sha256).Hash -ne $env:PYTHON_GET_PIP_SHA256) { \
+		Write-Host 'FAILED!'; \
+		exit 1; \
+	}; \
+	\
+	Write-Host ('Installing pip=={0} ...' -f $env:PYTHON_PIP_VERSION); \
+	python get-pip.py \
+		--disable-pip-version-check \
+		--no-cache-dir \
+		('pip=={0}' -f $env:PYTHON_PIP_VERSION) \
+	; \
+	Remove-Item get-pip.py -Force; \
+	\
+	Write-Host 'Verifying pip install ...'; \
+	pip --version; \
+	\
+	Write-Host 'Complete.'
+
+#############
+
+ENV CHOCO_URL=https://chocolatey.org/install.ps1
+##install Chocolatey, then git and osquery
 RUN powershell.exe -Command Set-ExecutionPolicy Bypass -Scope Process -Force; \
  [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'; \
  iex ((New-Object System.Net.WebClient).DownloadString("$env:CHOCO_URL"));
@@ -38,44 +96,59 @@ RUN powershell.exe -Command choco install git nssm -y;
 RUN powershell.exe -Command choco install osquery --version 3.4.0 -y;
 
 #RUN powershell.exe $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+#All the variables used for salt
+ENV SALT_SRC_PATH='C:/temp/salt/'
+ENV SALT_GIT_URL=https://github.com/saltstack/salt
+ENV SALT_CHECKOUT=v2018.11
 #Git clone salt and run packages
 RUN powershell.exe -Command git clone "$env:SALT_GIT_URL"; \
   Push-Location salt/pkg/windows; \
   git checkout "$env:SALT_CHECKOUT"; \
   [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'; \
-  C:/temp/salt/pkg/windows/build_env_2.ps1 -Silent;
+  C:/temp/salt/pkg/windows/build_env_3.ps1 -Silent;
 #more salt installs
 RUN powershell.exe -Command Push-Location salt; \
-  test-path ./setup.py; \
-  python ./setup.py --quiet install --force; \
+  test-path C:/temp/salt/setup.py; \
+  python C:/temp/salt/setup.py --quiet install --force; \
   pop-location;
+#All the variables used for hubble
+ARG HUBBLE_CHECKOUT=4.0-pkg-fix
+ARG HUBBLE_GIT_URL=https://github.com/jettero/hubble.git
+ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 #Clone Hubble
 RUN powershell.exe -Command git clone "$env:HUBBLE_GIT_URL"; \
   Push-Location hubble; \
   git checkout "$env:HUBBLE_CHECKOUT"; \
   pop-location;
 
+#Copy local files to working directory
+COPY pyinstaller-requirements.txt c:/temp/
+COPY hubble.conf C:/temp/
+
 #Use pip to install hubble dependencies
 RUN powershell.exe -Command pip install -r pyinstaller-requirements.txt;
 
-# Modify gitfs fix for incorrect path variables until fix has been upstreamed
-RUN powershell.exe -Command If (!(Test-Path C:/Python27/Lib/site-packages/salt)) {Copy-Item C:/temp/salt/salt -Destination C:/Python27/Lib/site-packages/ -Recurse -Force}; \
-  $gitfsFile = Get-Content C:\Python27\Lib\site-packages\salt\utils\gitfs.py; \
+#Modify gitfs fix for incorrect path variables until fix has been upstreamed
+RUN If (!(Test-Path C:/Python35/Lib/site-packages/salt)) { Copy-Item C:/temp/salt/salt -Destination C:/Python35/Lib/site-packages/ -Recurse -Force}; \
+  $gitfsFile = Get-Content C:\Python35\Lib\site-packages\salt\utils\gitfs.py; \
   $gitfsFile = $gitfsFile -replace 'files.add\\(add_mountpoint\\(relpath\\(repo_path\\)\\)\\)','files.add("/".join(repo_path.partition(".:\\")[2].split(os.sep)))'; \
-  Set-Content -Path C:\Python27\Lib\site-packages\salt\utils\gitfs.py -Value $gitfsFile -Force
+  Set-Content -Path C:\Python35\Lib\site-packages\salt\utils\gitfs.py -Value $gitfsFile -Force
+
 #Get vcredist prereq for hubble
-RUN powershell.exe -Command \
-  $ProgressPreference = 'SilentlyContinue'; \
+RUN $ProgressPreference = 'SilentlyContinue'; \
   Invoke-WebRequest -Uri 'http://repo.saltstack.com/windows/dependencies/64/vcredist_x64_2008_mfc.exe' -OutFile "C:/temp/hubble/pkg/windows/vcredist.exe"
-#Create pyionstaller spec and edit it to work with windows
-CMD powershell.exe -Command Push-Location C:/temp/hubble; \
+
+#Create pyinstaller spec and edit it to work with windows
+CMD Push-Location C:/temp/hubble; \
+#  Copy-Item C:/data/hook-salt.py -Destination C:/temp/hubble/pkg/hook-salt.py; \
+#  Copy-Item C:/data/salt.grains.core.patch -Destination C:/temp/hubble/pkg/salt.grains.core.patch; \
   pyi-makespec --additional-hooks-dir=$env:_HOOK_DIR ./hubble.py; \
   $specFile = Get-Content 'C:/temp/hubble/hubble.spec'; \
-  $specFile = $specFile -replace 'a.binaries','a.binaries + [(''libeay32.dll'', ''C:\Python27\libeay32.dll'', ''BINARY'')]'; \
+  $specFile = $specFile -replace 'a.binaries','a.binaries + [(''libeay32.dll'', ''C:\Python35\libeay32.dll'', ''BINARY'')]'; \
   Set-Content -Path ./hubble.spec -Value $specFile -Force; \
   pyinstaller ./hubble.spec; \
   Pop-Location; \
-#Move the hubble.conf, nssm, and osquery to the corerect location
+#Move the hubble.conf, nssm, and osquery to the correct location
   New-Item './hubble/dist/hubble/etc/hubble' -ItemType Directory; \
   New-Item './hubble/dist/hubble/osqueryd' -ItemType Directory; \
   Move-Item hubble.conf -Destination ./hubble/dist/hubble/etc/hubble/; \
@@ -92,6 +165,6 @@ CMD powershell.exe -Command Push-Location C:/temp/hubble; \
 #Build the installer
   Push-Location 'C:/Program Files (x86)/NSIS'; \
   ./makensis.exe /DHubbleVersion="$env:HUBBLE_CHECKOUT" 'C:/temp/hubble/pkg/windows/hubble-Setup.nsi'; \
-  Get-FileHash -Path C:/temp/hubble/pkg/windows/Hubble*exe -Algorithm SHA256 ^| Out-File C:/temp/hubble/pkg/windows/hubble_windows.sha256; \
+  Get-FileHash -Path C:/temp/hubble/pkg/windows/Hubble*exe -Algorithm SHA256 | Out-File C:/temp/hubble/pkg/windows/hubble_windows.sha256; \
   Copy-Item C:/temp/hubble/pkg/windows/Hubble*exe -Destination C:/data/; \
   Copy-Item C:/temp/hubble/pkg/windows/hubble_windows.sha256 -Destination C:/data/;

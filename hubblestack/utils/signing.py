@@ -185,9 +185,7 @@ def read_certs(*fnames):
     """
     for fname in fnames:
         if fname.strip().startswith('--') and '\x0a' in fname:
-            siofh = cStringIO.StringIO(fname)
-            siofh.name = '<a string>'
-            for i in split_certs(siofh):
+            for i in split_certs(cStringIO.StringIO(fname)):
                 yield i
         elif os.path.isfile(fname):
             try:
@@ -203,10 +201,9 @@ def read_certs(*fnames):
 
 def stringify_cert_files(cert):
     """this function returns a string version of cert(s) for returner"""
-    if isinstance(cert, (tuple,list)) and cert:
+    if type(cert) is list and len(cert) >= 1:
         return ', '.join([str(c) for c in cert])
-    elif hasattr(cert, 'name'):
-        # probably a file handle
+    elif type(cert) is file:
         return cert.name
     return str(cert)
 
@@ -346,7 +343,6 @@ class X509AwareCertBucket:
                         log_level = log.critical
                     elif status == STATUS.UNKNOWN:
                         log_level = log.error
-                str_public = stringify_cert_files(public_crt)
                 log_level('public cert | file: "%s" | status: %s | digest: "%s" | X509 error code: %s | depth: %s | message: "%s"',
                         str_public, status, digest, code, depth, message)
 

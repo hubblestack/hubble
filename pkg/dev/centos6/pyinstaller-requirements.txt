@@ -1,8 +1,5 @@
 pyinstaller==3.3.1
-Tornado>=4.0.0,<5.0.0
-crypto
-pycryptodome
-cryptography
+Crypto
 pyopenssl>=16.2.0
 argparse
 requests>=2.13.0
@@ -15,9 +12,9 @@ salt-ssh
 gitpython
 pyinotify
 cffi
+croniter
 azure==4.0.0
 azure-storage-common==2.1.0
 azure-storage-blob==2.1.0
-croniter
 vulners
 ntplib

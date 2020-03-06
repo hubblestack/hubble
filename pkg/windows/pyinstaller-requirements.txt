@@ -1,5 +1,5 @@
-pyinstaller==3.2 # currently 3.2.1 version is not supported because of botocore exception
-crypto
+pyinstaller==3.6
+pyinstaller-hooks
 pycryptodome
 cryptography
 pyopenssl>=16.2.0
@@ -10,6 +10,7 @@ daemon
 boto3
 botocore
 pygit2<0.27.0
+salt-ssh==2019.2.3
 gitpython
 cffi
 azure==4.0.0
@@ -17,3 +18,5 @@ azure-storage-common==2.1.0
 azure-storage-blob==2.1.0
 croniter
 vulners
+ntplib
+patch==1.*

@@ -59,6 +59,7 @@ setup(
         'croniter',
         'vulners',
         'ntplib',
+        'patch==1.*',
     ],
     data_files=data_files,
     options={

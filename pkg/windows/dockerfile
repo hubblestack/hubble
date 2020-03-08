@@ -13,17 +13,14 @@ FROM microsoft/windowsservercore:ltsc2016
 ENV PYTHONIOENCODING='UTF-8'
 ENV _HOOK_DIR='./pkg/'
 ENV NSIS_LOC='C:/Program Files (x86)/NSIS'
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 #Create location for build environment and set as working dir
-RUN powershell.exe -Command New-Item c:/temp -ItemType Directory; \
+RUN New-Item C:/temp -ItemType Directory; \
   New-Item C:/data -ItemType Directory;
 WORKDIR C:/temp
 VOLUME C:/data
-#############
-# Installing Python 3.5.3
-#############
 
-SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
-
+#Installing Python 3.5.3
 ENV PYTHON_VERSION 3.5.3
 ENV PYTHON_RELEASE 3.5.3
 
@@ -46,7 +43,7 @@ RUN $url = ('https://www.python.org/ftp/python/{0}/python-{1}-amd64.exe' -f $env
 			'Include_test=0' \
 		); \
 	\
-# the installer updated PATH, so we should refresh our local value
+#the installer updated PATH, so we should refresh our local value
 	$env:PATH = [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Machine); \
 	\
 	Write-Host 'Verifying install ...'; \
@@ -84,16 +81,15 @@ RUN Write-Host ('Downloading get-pip.py ({0}) ...' -f $env:PYTHON_GET_PIP_URL); 
 	pip --version; \
 	\
 	Write-Host 'Complete.'
-
 #############
 
-ENV CHOCO_URL=https://chocolatey.org/install.ps1
 ##install Chocolatey, then git and osquery
-RUN powershell.exe -Command Set-ExecutionPolicy Bypass -Scope Process -Force; \
+ENV CHOCO_URL=https://chocolatey.org/install.ps1
+RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
  [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'; \
  iex ((New-Object System.Net.WebClient).DownloadString("$env:CHOCO_URL"));
-RUN powershell.exe -Command choco install git nssm -y;
-RUN powershell.exe -Command choco install osquery --version 3.4.0 -y;
+RUN choco install git nssm -y;
+RUN choco install osquery --version 3.4.0 -y;
 
 #RUN powershell.exe $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 #All the variables used for salt
@@ -101,32 +97,36 @@ ENV SALT_SRC_PATH='C:/temp/salt/'
 ENV SALT_GIT_URL=https://github.com/saltstack/salt
 ENV SALT_CHECKOUT=v2018.11
 #Git clone salt and run packages
-RUN powershell.exe -Command git clone "$env:SALT_GIT_URL"; \
+RUN git clone "$env:SALT_GIT_URL"; \
   Push-Location salt/pkg/windows; \
   git checkout "$env:SALT_CHECKOUT"; \
   [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'; \
-  C:/temp/salt/pkg/windows/build_env_3.ps1 -Silent;
+  ./build_env_3.ps1 -Silent;
 #more salt installs
-RUN powershell.exe -Command Push-Location salt; \
-  test-path C:/temp/salt/setup.py; \
-  python C:/temp/salt/setup.py --quiet install --force; \
+RUN Push-Location salt; \
+  test-path ./setup.py; \
+  python ./setup.py --quiet install --force; \
   pop-location;
 #All the variables used for hubble
-ARG HUBBLE_CHECKOUT=4.0-pkg-fix
-ARG HUBBLE_GIT_URL=https://github.com/jettero/hubble.git
+ARG HUBBLE_CHECKOUT=4.0-win-release
+ARG HUBBLE_GIT_URL=https://github.com/devagupt/hubble.git
 ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 #Clone Hubble
-RUN powershell.exe -Command git clone "$env:HUBBLE_GIT_URL"; \
+RUN git clone "$env:HUBBLE_GIT_URL"; \
   Push-Location hubble; \
   git checkout "$env:HUBBLE_CHECKOUT"; \
   pop-location;
 
 #Copy local files to working directory
-COPY pyinstaller-requirements.txt c:/temp/
 COPY hubble.conf C:/temp/
 
+RUN Push-Location C:/temp/hubble; \
+  python setup.py egg_info; \
 #Use pip to install hubble dependencies
-RUN powershell.exe -Command pip install -r pyinstaller-requirements.txt;
+  pip install -r hubblestack.egg-info/requires.txt \
+  -r optional-requirements.txt \
+  -r package-requirements.txt; \
+  Pop-Location;
 
 #Modify gitfs fix for incorrect path variables until fix has been upstreamed
 RUN If (!(Test-Path C:/Python35/Lib/site-packages/salt)) { Copy-Item C:/temp/salt/salt -Destination C:/Python35/Lib/site-packages/ -Recurse -Force}; \
@@ -138,33 +138,5 @@ RUN If (!(Test-Path C:/Python35/Lib/site-packages/salt)) { Copy-Item C:/temp/sal
 RUN $ProgressPreference = 'SilentlyContinue'; \
   Invoke-WebRequest -Uri 'http://repo.saltstack.com/windows/dependencies/64/vcredist_x64_2008_mfc.exe' -OutFile "C:/temp/hubble/pkg/windows/vcredist.exe"
 
-#Create pyinstaller spec and edit it to work with windows
-CMD Push-Location C:/temp/hubble; \
-#  Copy-Item C:/data/hook-salt.py -Destination C:/temp/hubble/pkg/hook-salt.py; \
-#  Copy-Item C:/data/salt.grains.core.patch -Destination C:/temp/hubble/pkg/salt.grains.core.patch; \
-  pyi-makespec --additional-hooks-dir=$env:_HOOK_DIR ./hubble.py; \
-  $specFile = Get-Content 'C:/temp/hubble/hubble.spec'; \
-  $specFile = $specFile -replace 'a.binaries','a.binaries + [(''libeay32.dll'', ''C:\Python35\libeay32.dll'', ''BINARY'')]'; \
-  Set-Content -Path ./hubble.spec -Value $specFile -Force; \
-  pyinstaller ./hubble.spec; \
-  Pop-Location; \
-#Move the hubble.conf, nssm, and osquery to the correct location
-  New-Item './hubble/dist/hubble/etc/hubble' -ItemType Directory; \
-  New-Item './hubble/dist/hubble/osqueryd' -ItemType Directory; \
-  Move-Item hubble.conf -Destination ./hubble/dist/hubble/etc/hubble/; \
-  Move-Item 'C:/ProgramData/chocolatey/lib/NSSM/tools/nssm.exe' -Destination './hubble/dist/hubble/' -Force; \
-  If (Test-Path C:/ProgramData/osquery/osqueryi.exe) {Copy-Item 'C:/ProgramData/osquery/osqueryi.exe' -Destination './hubble/dist/hubble/' -Force} \
-  Else {Copy-Item 'C:/Program Files/osquery/osqueryi.exe' -Destination './hubble/dist/hubble/' -Force}; \
-  If (Test-Path C:/ProgramData/osquery/osqueryd/osqueryd.exe) {Copy-Item 'C:/ProgramData/osquery/osqueryd/osqueryd.exe' -Destination './hubble/dist/hubble/osqueryd/' -Force} \
-  Else {Copy-Item 'C:/Program Files/osquery/osqueryd/osqueryd.exe' -Destination './hubble/dist/hubble/osqueryd/' -Force}; \
-  If (Test-Path C:/data/hubble.conf) {Copy-Item  C:/data/hubble.conf -Destination ./hubble/dist/hubble/etc/hubble/ -Force}; \
-  If (Test-Path C:/data/opt) {Copy-Item  C:/data/opt -Destination './hubble/dist/hubble/' -Recurse -Force}; \
-  Move-Item 'C:/temp/hubble/pkg/windows/osqueryd_safe_permissions.ps1' -Destination './hubble/dist/hubble/' -Force; \
-  Move-Item 'C:/temp/hubble/pkg/windows/hubble_config_permissions.ps1' -Destination './hubble/dist/hubble/' -Force; \
-  Move-Item 'C:/temp/hubble/pkg/windows/prerequisites.ps1' -Destination './hubble/dist/hubble/' -Force; \
-#Build the installer
-  Push-Location 'C:/Program Files (x86)/NSIS'; \
-  ./makensis.exe /DHubbleVersion="$env:HUBBLE_CHECKOUT" 'C:/temp/hubble/pkg/windows/hubble-Setup.nsi'; \
-  Get-FileHash -Path C:/temp/hubble/pkg/windows/Hubble*exe -Algorithm SHA256 | Out-File C:/temp/hubble/pkg/windows/hubble_windows.sha256; \
-  Copy-Item C:/temp/hubble/pkg/windows/Hubble*exe -Destination C:/data/; \
-  Copy-Item C:/temp/hubble/pkg/windows/hubble_windows.sha256 -Destination C:/data/;
+COPY entrypoint.ps1 C:/temp/
+ENTRYPOINT ["powershell.exe", "C:/temp/entrypoint.ps1"]

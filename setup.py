@@ -43,8 +43,6 @@ elif distro == 'Amazon Linux AMI':
 
 if platform_name == 'Windows':
     dependencies.remove('pyinotify')
-    dependencies.append('argparse')
-    dependencies.append('pprint')
 
 with open('hubblestack/__init__.py', 'r') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',

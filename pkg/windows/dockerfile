@@ -81,7 +81,6 @@ RUN Write-Host ('Downloading get-pip.py ({0}) ...' -f $env:PYTHON_GET_PIP_URL); 
 	pip --version; \
 	\
 	Write-Host 'Complete.'
-#############
 
 ##install Chocolatey, then git and osquery
 ENV CHOCO_URL=https://chocolatey.org/install.ps1

@@ -107,8 +107,8 @@ RUN Push-Location salt; \
   python ./setup.py --quiet install --force; \
   pop-location;
 #All the variables used for hubble
-ARG HUBBLE_CHECKOUT=4.0-win-release
-ARG HUBBLE_GIT_URL=https://github.com/devagupt/hubble.git
+ARG HUBBLE_CHECKOUT=v4.0.0
+ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 #Clone Hubble
 RUN git clone "$env:HUBBLE_GIT_URL"; \

@@ -50,10 +50,10 @@ def gen_CA(fname='ca-root', cn='ca-root', path_length=0, authority=None, pdir=DE
     public_key  = private_key.public_key()
 
     with open(os.path.join(pdir, fname + '.key'), 'w') as fh:
-        fh.write( as_pem(private_key) )
+        fh.write( str(as_pem(private_key)) )
 
     with open(os.path.join(pdir, fname + '.unsigned'), 'w') as fh:
-        fh.write( as_pem(public_key) )
+        fh.write( str(as_pem(public_key)) )
 
     ksec_100 = datetime.timedelta(0, 100e3, 0)
     Msec_300 = datetime.timedelta(0, 300e6, 0)
@@ -115,7 +115,7 @@ def gen_CA(fname='ca-root', cn='ca-root', path_length=0, authority=None, pdir=DE
     certificate = builder.sign(**signing_args)
 
     with open(os.path.join(pdir, fname + '.crt'), 'w') as fh:
-        fh.write( as_pem(certificate) )
+        fh.write( str(as_pem(certificate)) )
 
     return Authority(private_key, certificate)
 
@@ -127,10 +127,10 @@ def gen_leaf(authority, fname_template='{}', cn='Certy Cert McCertFace', pdir=DE
     public_name = fname_template.format('public')
 
     with open(os.path.join(pdir, private_name + '.key'), 'w') as fh:
-        fh.write( as_pem(private_key) )
+        fh.write( str(as_pem(private_key)) )
 
     with open(os.path.join(pdir, public_name + '.unsigned'), 'w') as fh:
-        fh.write( as_pem(public_key) )
+        fh.write( str(as_pem(public_key)) )
 
     ksec_100 = datetime.timedelta(0, 100e3, 0)
     Msec_300 = datetime.timedelta(0, 300e6, 0)
@@ -187,7 +187,7 @@ def gen_leaf(authority, fname_template='{}', cn='Certy Cert McCertFace', pdir=DE
     certificate = builder.sign(**signing_args)
 
     with open(os.path.join(pdir, public_name + '.crt'), 'w') as fh:
-        fh.write( as_pem(certificate) )
+        fh.write( str(as_pem(certificate)) )
 
     return Authority(private_key, certificate)
 

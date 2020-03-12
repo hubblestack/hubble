@@ -8,7 +8,7 @@ daemon
 boto3
 botocore
 pygit2<0.27.0
-gitdb==0.6.4
+gitdb2==2.0.6
 gitpython==2.1.3
 cffi
 azure==4.0.0

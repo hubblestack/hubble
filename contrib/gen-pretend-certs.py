@@ -49,11 +49,11 @@ def gen_CA(fname='ca-root', cn='ca-root', path_length=0, authority=None, pdir=DE
     private_key = genkey(**args)
     public_key  = private_key.public_key()
 
-    with open(os.path.join(pdir, fname + '.key'), 'w') as fh:
-        fh.write( str(as_pem(private_key)) )
+    with open(os.path.join(pdir, fname + '.key'), 'wb') as fh:
+        fh.write( as_pem(private_key) )
 
-    with open(os.path.join(pdir, fname + '.unsigned'), 'w') as fh:
-        fh.write( str(as_pem(public_key)) )
+    with open(os.path.join(pdir, fname + '.unsigned'), 'wb') as fh:
+        fh.write( as_pem(public_key) )
 
     ksec_100 = datetime.timedelta(0, 100e3, 0)
     Msec_300 = datetime.timedelta(0, 300e6, 0)
@@ -114,8 +114,8 @@ def gen_CA(fname='ca-root', cn='ca-root', path_length=0, authority=None, pdir=DE
 
     certificate = builder.sign(**signing_args)
 
-    with open(os.path.join(pdir, fname + '.crt'), 'w') as fh:
-        fh.write( str(as_pem(certificate)) )
+    with open(os.path.join(pdir, fname + '.crt'), 'wb') as fh:
+        fh.write( as_pem(certificate) )
 
     return Authority(private_key, certificate)
 
@@ -126,11 +126,11 @@ def gen_leaf(authority, fname_template='{}', cn='Certy Cert McCertFace', pdir=DE
     private_name = fname_template.format('private')
     public_name = fname_template.format('public')
 
-    with open(os.path.join(pdir, private_name + '.key'), 'w') as fh:
-        fh.write( str(as_pem(private_key)) )
+    with open(os.path.join(pdir, private_name + '.key'), 'wb') as fh:
+        fh.write( as_pem(private_key) )
 
-    with open(os.path.join(pdir, public_name + '.unsigned'), 'w') as fh:
-        fh.write( str(as_pem(public_key)) )
+    with open(os.path.join(pdir, public_name + '.unsigned'), 'wb') as fh:
+        fh.write( as_pem(public_key) )
 
     ksec_100 = datetime.timedelta(0, 100e3, 0)
     Msec_300 = datetime.timedelta(0, 300e6, 0)
@@ -186,8 +186,8 @@ def gen_leaf(authority, fname_template='{}', cn='Certy Cert McCertFace', pdir=DE
 
     certificate = builder.sign(**signing_args)
 
-    with open(os.path.join(pdir, public_name + '.crt'), 'w') as fh:
-        fh.write( str(as_pem(certificate)) )
+    with open(os.path.join(pdir, public_name + '.crt'), 'wb') as fh:
+        fh.write( as_pem(certificate) )
 
     return Authority(private_key, certificate)
 
@@ -203,9 +203,9 @@ def main(root_cn, int1_cn, int2_cn, **args):
     lf1 = gen_leaf(cn='Certy Cert #1', fname_template='{}-1', authority=ia1, **args)
     lf2 = gen_leaf(cn='Certy Cert #2', fname_template='{}-2', authority=ia2, **args)
 
-    with open(os.path.join(args['pdir'], 'bundle.pem'), 'w') as ofh:
+    with open(os.path.join(args['pdir'], 'bundle.pem'), 'wb') as ofh:
         for i in range(1,3):
-            with open(os.path.join(args['pdir'], 'intermediate-{}.crt'.format(i)), 'r') as ifh:
+            with open(os.path.join(args['pdir'], 'intermediate-{}.crt'.format(i)), 'rb') as ifh:
                 ofh.write(ifh.read())
 
 if __name__ == '__main__':

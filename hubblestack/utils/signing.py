@@ -230,7 +230,7 @@ class X509AwareCertBucket:
             return STATUS.VERIFIED
         return STATUS.UNKNOWN
 
-    def __init__(self, public_crt, ca_crt):
+    def __init__(self, public_crt=None, ca_crt=None):
         try:
             import hubblestack.pre_packaged_certificates as HPPC
             # iff we have hardcoded certs then we're meant to ignore any other
@@ -243,6 +243,11 @@ class X509AwareCertBucket:
                 ca_crt = HPPC.ca_crt
         except ImportError:
             pass
+
+        if public_crt is None:
+            public_crt = Options.public_crt
+        if ca_crt is None:
+            ca_crt = Options.ca_crt
 
         untrusted_crt = list()
 

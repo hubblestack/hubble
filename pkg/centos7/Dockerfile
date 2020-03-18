@@ -134,27 +134,29 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
+#fpm package making requirements start
+RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
+ && gem install --no-ri --no-rdoc fpm
+
+# things we may need to build a python
+RUN yum install -y bzip2-devel
+
 # use pyenv
 ARG PYENV_VERSION=3.6.10
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
-ENV PYENV_ROOT=/usr/local/pyenv
+ENV PYENV_ROOT=/opt/hubble/pyenv
 ENV PATH=$PYENV_ROOT/bin:$PATH
+ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
 RUN umask 022 \
  && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
  && chmod 0755 /usr/bin/pyenv-installer \
  && /usr/bin/pyenv-installer \
  && eval "$(pyenv init -)" \
- && env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install $PYENV_VERSION \
+ && pyenv install $PYENV_VERSION \
  && pyenv global $PYENV_VERSION
 
-COPY pyinstaller-requirements.txt /
 RUN eval "$(pyenv init -)" \
- && pip -v install --upgrade pip \
- && pip -v install -r pyinstaller-requirements.txt
-
-#fpm package making requirements start
-RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
- && gem install --no-ri --no-rdoc fpm
+ && pip -v install --upgrade pip
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
@@ -165,62 +167,30 @@ ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
 ENV HUBBLE_SUMMARY="Profile based on-demand auditing and monitoring tool"
-ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
+ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
-RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
+
+RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
- && git checkout -B hubble-build && git reset --hard "$HUBBLE_CHECKOUT" && git clean -dfx \
- && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
- && sed -i "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" /hubble_build/hubblestack/__init__.py \
- && sed -i "s/COMMIT_NOT_SET/`git describe`/g" /hubble_build/hubblestack/__init__.py
+ && git checkout -B hubble-build && git reset --hard "$HUBBLE_CHECKOUT" && git clean -dfx
+
+RUN cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
+ && rm -rf /hubble_build/.git
+
+RUN cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.orig \
+ && sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" \
+           -e "s/COMMIT_NOT_SET/$(cd $HUBBLE_SRC_PATH; git describe --long --always --tags)/g" \
+           /hubble_build/hubblestack/__init__.py \
+ && cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixed
+
 RUN mkdir /data
 VOLUME /data
+
 WORKDIR /hubble_build
-ENTRYPOINT [ "/bin/bash", "-o", "xtrace", "-c" ]
-CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubblestack/__init__.py ; cat /data/hubble_buildinfo >> /hubble_build/hubblestack/__init__.py; fi \
-    && eval \"$(pyenv init -)\" \
-    && pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL} --additional-hooks-dir=${_HOOK_DIR} --runtime-hook=pkg/pyinstaller-runtimehooks/pathopthubble.py hubble.py \
-    && mkdir -p /var/log/hubble_osquery/backuplogs \
-# hubble default configuration file
-    && cp -rf /hubble_build/conf/hubble /etc/hubble/ \
-    && cp -rf /hubble_build/conf/hubble-profile.sh /etc/profile.d/ \
-    && cp -pr /hubble_build/dist/hubble /opt/hubble/hubble-libs \
-    && ln -s /opt/hubble/hubble-libs/hubble /opt/hubble/hubble \
-    # make sure rpm shared libs are taken out to avoid mismatch between rpm database and shared libs that pyinstaller includes
-    && rm -rf /opt/hubble/hubble-libs/librpm* \
-#rpm pkg start
-    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /opt/hubble /opt/osquery /etc/profile.d/hubble-profile.sh /var/log/hubble_osquery/backuplogs \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
-    && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system \
-    && cp /hubble_build/pkg/hubble.service /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system/ \
-    && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
-#during container run, if a configuration file exists in a /data copy it over the existing one so it would be
-#possile to optionally include a custom one with the package
-    && if [ -f /data/hubble ] ; then cp /data/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ ; fi \
-#also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
-    && if [ -d /data/opt ] ; then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/opt/ ; fi \
-    && cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
-    && mkdir -p usr/bin \
-#symlink to have hubble binary in path
-    && ln -s /opt/hubble/hubble usr/bin/hubble \
-#fpm start
-    && fpm -s dir -t rpm \
-       -n hubblestack \
-       -v ${HUBBLE_VERSION} \
-       --iteration ${HUBBLE_ITERATION} \
-       --url ${HUBBLE_URL} \
-       --description \"${HUBBLE_DESCRIPTION}\" \
-       --rpm-summary \"${HUBBLE_SUMMARY}\" \
-       --after-install /hubble_build/conf/afterinstall-systemd.sh \
-       --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
-       --before-remove /hubble_build/conf/beforeremove.sh \
-       etc/hubble opt usr /var/log/hubble_osquery/backuplogs \
-#edit to change iteration number, if necessary
-    && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm \
-    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm \
-                          > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm.sha256" ]
+
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

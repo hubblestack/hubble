@@ -13,8 +13,7 @@
 import os
 from PyInstaller.utils.hooks import (collect_data_files,
                                      collect_submodules,
-                                     collect_dynamic_libs,
-                                     PY_EXECUTABLE_SUFFIXES)
+                                     collect_dynamic_libs,)
 
 DATAS = []
 BINARIES = []
@@ -68,7 +67,7 @@ for sloader in SALT_LOADERS:
 # Let's remove any python source files included that are in HIDDEN_IMPORTS but not on DATAS
 for entry in DATAS[:]:
     path, mod = entry
-    if not path.endswith(tuple(PY_EXECUTABLE_SUFFIXES)):
+    if not path.endswith(('.py', '.pyc')):
         # We are only after python files
         continue
     no_ext_path = os.path.splitext(path)[0]
@@ -89,3 +88,16 @@ DATAS.extend(collect_data_files('hubblestack', subdir=".", include_py_files=True
 hiddenimports = HIDDEN_IMPORTS
 datas = DATAS
 binaries = BINARIES
+
+def _patch_salt_grains_core_server_id():
+    import salt.config # must import before salt.grains.core
+    import salt.grains.core
+    import sys
+    import patch
+
+    pset = patch.fromfile('pkg/salt.grains.core.patch')
+    pset.items[0].target=salt.grains.core.__file__.encode()
+    pset.apply()
+    sys.stderr.write('patching complete\n')
+
+_patch_salt_grains_core_server_id()

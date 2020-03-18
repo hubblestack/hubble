@@ -1,0 +1,2 @@
+pyinstaller==3.6
+pyinstaller-hooks

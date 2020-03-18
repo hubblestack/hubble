@@ -20,12 +20,12 @@ python:
   - "3.8"
 
 install:
-  - pip install -r test-requirements.txt
+  - pip --upgarde pip
+  - ./mk-requires.sh
+  - pip install -r requirements.txt
 
 script:
   - wget -q "$LIBGIT2_SRC_URL" -O $LIBGIT2_TAR_NAME
   - tar -xzf $LIBGIT2_TAR_NAME
   - (cd $LIBGIT2_DIR_NAME; cmake . -DMAKE_INSTALL_PREFIX=${LIBGIT2} && make -j 5 install)
-  - pip install --upgrade pip
-  - pip install --upgrade -r <( bash pkg/generate-requirements.sh )
   - pytest tests/unittests

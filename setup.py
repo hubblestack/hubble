@@ -13,7 +13,8 @@ platform_name=platform.system()
 # Default to CentOS7
 data_files = [('/usr/lib/systemd/system', ['pkg/source/hubble.service']),
               ('/etc/hubble', ['conf/hubble']), ]
-dependencies = [
+
+build_dependencies = [
     'pycryptodome',
     'cryptography',
     'pyopenssl>=16.2.0',
@@ -28,7 +29,7 @@ dependencies = [
     'vulners',
     'ntplib',
     'patch==1.*',
-    ]
+]
 
 if distro == 'redhat' or distro == 'centos':
     if version.startswith('6'):
@@ -42,7 +43,7 @@ elif distro == 'Amazon Linux AMI':
                   ('/etc/hubble', ['conf/hubble']), ]
 
 if platform_name == 'Windows':
-    dependencies.remove('pyinotify')
+    build_dependencies.remove('pyinotify')
 
 with open('hubblestack/__init__.py', 'r') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
@@ -64,10 +65,7 @@ setup(
             'hubble = hubblestack.daemon:run',
         ],
     },
-    tests_require=[
-        'mock',
-    ],
-    install_requires=dependencies,
+    install_requires=build_dependencies,
     data_files=data_files,
     options={
 #        'build_scripts': {

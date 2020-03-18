@@ -467,7 +467,7 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
         return STATUS.VERIFIED if both the signature and the CA sig match
     """
     log_level = log.debug
-    short_fname = fname.split('/')[-1]
+    short_fname = fname.split('/')[-1] if fname else 'n/a'
     try:
         with open(sfname, 'r') as fh:
             sig,_,_ = PEM.decode(fh.read()) # also returns header and decrypted-status

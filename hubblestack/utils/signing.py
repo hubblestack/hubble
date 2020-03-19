@@ -539,8 +539,14 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
         return a mapping from the input target list to the status values (a dict of filename: status)
     """
 
+    if mfname is None:
+        mfname = 'MANIFEST'
+    if sfname is None:
+        sfname = 'SIGNATURE'
+
     log.debug("verifying: files: %s | mfname: %s | sfname: %s | public_crt: %s| ca_crt: %s",
             targets, mfname, sfname, public_crt, ca_crt)
+
     ret = OrderedDict()
     ret[mfname] = verify_signature(mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt)
     # ret[mfname] is the strongest claim we can make about the files we're

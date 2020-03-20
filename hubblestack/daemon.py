@@ -170,7 +170,16 @@ def main():
         pidfile_count += 1
         if __opts__['daemonize'] and pidfile_count > pidfile_refresh:
             pidfile_count = 0
-            create_pidfile()
+            try:
+                # Fix when disk is full, and pid file gets deleted. 
+                # Hubble tries to create this file. Due to no-space. This result in exception, and process exits
+                # Fix is to put this create_pidfile in try-catch
+
+                create_pidfile()
+            except Exception as exc:
+                log.exception('Error in creating pid file. Probably disk is full: {0}'.format(exc))
+                # continue for further operations
+            
         if time.time() - last_grains_refresh >= __opts__['grains_refresh_frequency']:
             last_grains_refresh = _emit_and_refresh_grains()
         try:

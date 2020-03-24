@@ -467,6 +467,10 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
         return STATUS.VERIFIED if both the signature and the CA sig match
     """
     log_level = log.debug
+    if fname is None or sfname is None:
+        status = STATUS.UNKNOWN
+        log_level('fname=%s or sfname=%s is Nones => status=%s', fname, sfname, status)
+        return status
     short_fname = fname.split('/')[-1]
     try:
         with open(sfname, 'r') as fh:
@@ -477,7 +481,7 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
         if check_verif_timestamp(verif_key):
             log_level = log.error
         log_level('%s | file "%s" | status: %s ', short_fname, fname, status)
-        return STATUS.UNKNOWN
+        return status
     x509 = X509AwareCertBucket(public_crt, ca_crt)
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
@@ -535,8 +539,14 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
         return a mapping from the input target list to the status values (a dict of filename: status)
     """
 
+    if mfname is None:
+        mfname = 'MANIFEST'
+    if sfname is None:
+        sfname = 'SIGNATURE'
+
     log.debug("verifying: files: %s | mfname: %s | sfname: %s | public_crt: %s| ca_crt: %s",
             targets, mfname, sfname, public_crt, ca_crt)
+
     ret = OrderedDict()
     ret[mfname] = verify_signature(mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt)
     # ret[mfname] is the strongest claim we can make about the files we're

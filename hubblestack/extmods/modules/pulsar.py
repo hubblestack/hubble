@@ -185,7 +185,7 @@ class ConfigManager(object):
                 self.nc_config['paths'] = configfile
             else:
                 self.nc_config['paths'] = [configfile]
-        else:
+        elif 'paths' not in self.nc_config:
             self.nc_config['paths'] = []
         config = self.config
         config['verbose'] = verbose
@@ -904,8 +904,11 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                 # file really is new since the last time we thought about it
                 # (aka the last time we ran the process() function).
                 _, abspath, dirname, basename = cm.format_path(path)
-                config_path = config['paths'][0]
-                pulsar_config = config_path[config_path.rfind('/') + 1:len(config_path)]
+                try:
+                    config_path = config['paths'][0]
+                    pulsar_config = config_path[config_path.rfind('/') + 1:len(config_path)]
+                except IndexError:
+                    pulsar_config = 'unknown'
                 fake_sub = { 'change': 'IN_CREATE',
                         'path': abspath,  # goes to object_path in splunk
                         'tag':  dirname,  # goes to file_path in splunk

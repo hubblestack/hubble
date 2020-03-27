@@ -1,11 +1,14 @@
 # This Dockerfile aims to make building Hubble v2 packages easier.
 # To build an image: 1. copy pkg/scripts/pyinstaller-requirements.txt to directory with this Dockerfile
-#                    2. docker build -t <image_name> .
+#                    2. docker build -t <image_name> . --build-arg=HUBBLE_GIT_URL=<git_repo_url>
+#                                                      --build-arg=HUBBLE_CHECKOUT=<branch/tag/commit>
 # The resulting image is ready to run the pyinstaller on container start and drop hubble<version>-coreos.tar.gz
 # in the /data directory. Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 # Requires docker 17.05 or higher
 
+# Set this argument to "local" if you want to build osquery for local code.
+# In that case, osquery folder must exist besides Dockerfile
 ARG OSQUERY_BUILD_ENV=remote
 
 #--------------- TEMP CONTAINER FOR LOCAL OSQUERY -------------------------
@@ -17,7 +20,7 @@ ONBUILD RUN echo "Copying osquery from local folder"
 
 #--------------- TEMP CONTAINER FOR GIT OSQUERY ----------------------------
 FROM alpine/git as osquery_remote
-#to osquery pin to a different version change the following envirnment variable
+#to pin osquery to a different version change the following envirnment variable
 ENV OSQUERY_SRC_VERSION=3.3.2
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 ONBUILD RUN cd / \
@@ -27,42 +30,29 @@ ONBUILD RUN cd / \
  && echo "Fetching osquery from git"
 
 
-#--------------- TEMP CONTAINER FOR OSQUERY ( BASED UPON ARGUMENT )  ------------
-FROM osquery_"$OSQUERY_BUILD_ENV" as osquery
+#--------------- TEMP CONTAINER FOR OSQUERY ( BASED ON ARGUMENT ) ---------------
+FROM osquery_"$OSQUERY_BUILD_ENV" as osquery_image
 
 
 #--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
-FROM debian:9
+FROM centos:8
 
-RUN apt-get update     \
- && apt-get -y upgrade
+RUN dnf -y update
 
 #paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
-
-#patchelf build start
-#must precede osquery as at the moment, osquery won't build without patchelf
-ENV PATCHELF_GIT_URL=https://github.com/NixOS/patchelf.git
-ENV PATCHELF_TEMP=/tmp/patchelf
-RUN apt-get -y install autoconf git make g++
-RUN mkdir -p "$PATCHELF_TEMP" \
- && cd "$PATCHELF_TEMP" \
- && git clone "$PATCHELF_GIT_URL" \
- && cd patchelf \
- && sed -i 's/serial-tests/parallel-tests/' configure.ac \
- && ./bootstrap.sh \
- && ./configure \
- && make \
- && make install
-
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
+#to pin to a different version change the following envirnment variable
 ENV OSQUERY_BUILD_USER=osquerybuilder
-RUN apt-get -y install git make python ruby sudo curl
-RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \
- && sed -i 's/^%sudo.*/%sudo\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
-COPY --from=osquery /osquery /home/"$OSQUERY_BUILD_USER"/osquery
+RUN dnf -y install dnf-plugins-core \
+ && dnf config-manager --set-enabled PowerTools \
+ && dnf -y install python2 git make ruby sudo which doxygen \
+ && ln -svf /usr/bin/python2 /usr/bin/python
+RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
+ && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
+COPY --from=osquery_image /osquery /home/"$OSQUERY_BUILD_USER"/osquery
 RUN mkdir -p /usr/local/osquery/ \
  && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/ \
  && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /home/"$OSQUERY_BUILD_USER"/osquery
@@ -87,12 +77,10 @@ RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt
 RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
-RUN apt-get -y install  \
-               python-dev libffi-dev libssl-dev libyaml-dev libssh2-1 libssh2-1-dev autoconf automake libtool \
-               libxml2-dev libxslt1-dev python-cffi \
-               zlib1g-dev cmake python-setuptools  \
-               gcc wget python-pip openssl \
- && apt-get clean
+RUN dnf -y install  \
+               libffi-devel openssl-devel libffi libssh-devel autoconf automake libtool \
+               libxml2-devel libxslt-devel libjpeg-devel zlib-devel \
+               make cmake gcc python2-devel wget openssl
 
 #libcurl install start
 #install libcurl to avoid depending on host version
@@ -107,7 +95,7 @@ RUN mkdir -p "$LIBCURL_TEMP" \
  && cd curl \
  && git checkout "$LIBCURL_SRC_VERSION" \
  && ./buildconf \
- && ./configure --prefix=/opt/hubble --disable-ldap --without-nss --disable-manual --disable-gopher --disable-smtp --disable-smb --disable-imap --disable-pop3 --disable-tftp --disable-telnet --disable-dict --disable-ldaps --disable-ldap --disable-rtsp --with-libssh2 \
+ && ./configure --prefix=/opt/hubble --disable-ldap --without-nss --disable-manual --disable-gopher --disable-smtp --disable-smb --disable-imap --disable-pop3 --disable-tftp --disable-telnet --disable-dict --disable-ldaps --disable-ldap --disable-rtsp --with-libssh \
  && make \
  && make install
 
@@ -147,36 +135,40 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && echo "$LIBGIT2_SRC_SHA256  libgit2.tar.gz" | sha256sum -c - \
  && tar xzf libgit2.tar.gz \
  && cd libgit2-"$LIBGIT2_SRC_VERSION"/ \
- && export LIBGIT2=/usr/local/ \
- && cmake . -DCMAKE_INSTALL_PREFIX=$LIBGIT2 \
+ && cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/ \
  && make \
  && make install
 
 #pyinstaller requirements start
 #must be preceded by libgit2 install
 COPY pyinstaller-requirements.txt /
-RUN pip -v install -r pyinstaller-requirements.txt
+#default python-pip from yum does not like upgrading itself from pip. looking for better options other than wget.
+RUN wget -c https://bootstrap.pypa.io/get-pip.py \
+ && python get-pip.py \
+ && pip -v install -r pyinstaller-requirements.txt
 
-#deb package making requirements start
-RUN apt-get install -y ruby ruby-dev rubygems gcc make \
+#fpm package making requirements start
+RUN dnf install -y ruby ruby-devel rpm-build rubygems gcc make \
  && gem install --no-ri --no-rdoc fpm
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v3.0.12
-ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=3.0.12
+ARG HUBBLE_CHECKOUT=3.0
+ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
+ENV HUBBLE_VERSION=3.0_branch
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
+ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
+ENV HUBBLE_SUMMARY="Profile based on-demand auditing and monitoring tool"
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
-RUN git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
+RUN git clone "${HUBBLE_GIT_URL}" "$HUBBLE_SRC_PATH" \
  && cd "$HUBBLE_SRC_PATH" \
- && git checkout "$HUBBLE_CHECKOUT" \
+ && git checkout "${HUBBLE_CHECKOUT}" \
  && cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
  && sed -i "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" /hubble_build/hubblestack/__init__.py \
  && sed -i "s/COMMIT_NOT_SET/`git describe`/g" /hubble_build/hubblestack/__init__.py
@@ -194,14 +186,10 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
     && ln -s /opt/hubble/hubble-libs/hubble /opt/hubble/hubble \
     # make sure rpm shared libs are taken out to avoid mismatch between rpm database and shared libs that pyinstaller includes
     && rm -rf /opt/hubble/hubble-libs/librpm* \
-    # hack to get libssh2 since pyinstaller 3.2 does not do it
-    && cp /usr/lib/x86_64-linux-gnu/libssh2.so.1 /opt/hubble/hubble-libs \
-#debian pkg start
+#rpm pkg start
     && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /opt/hubble /opt/osquery /etc/profile.d/hubble-profile.sh /var/log/hubble_osquery/backuplogs \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
-    && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
-    && cp /hubble_build/pkg/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d/ \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system \
     && cp /hubble_build/pkg/hubble.service /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/usr/lib/systemd/system/ \
     && cp -f /hubble_build/conf/hubble /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/hubble/ \
@@ -215,16 +203,19 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
 #symlink to have hubble binary in path
     && ln -s /opt/hubble/hubble usr/bin/hubble \
 #fpm start
-    && fpm -s dir -t deb \
+    && fpm -s dir -t rpm \
        -n hubblestack \
        -v ${HUBBLE_VERSION} \
        --iteration ${HUBBLE_ITERATION} \
        --url ${HUBBLE_URL} \
-       --deb-no-default-config-files \
+       --description \"${HUBBLE_DESCRIPTION}\" \
+       --rpm-summary \"${HUBBLE_SUMMARY}\" \
+       --rpm-rpmbuild-define \"_build_id_links none\" \
        --after-install /hubble_build/conf/afterinstall-systemd.sh \
-       --after-upgrade /hubble_build/conf/afterupgrade.sh \
+       --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
-       etc/hubble etc/init.d opt usr /var/log/hubble_osquery/backuplogs \
-    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb \
-    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb \
-                          > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb9.amd64.deb.sha256" ]
+       etc/hubble opt usr /var/log/hubble_osquery/backuplogs \
+#edit to change iteration number, if necessary
+    && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el8.x86_64.rpm \
+    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el8.x86_64.rpm \
+                          > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el8.x86_64.rpm.sha256" ]

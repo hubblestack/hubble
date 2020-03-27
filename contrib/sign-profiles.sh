@@ -1,4 +1,13 @@
 #!/bin/bash
+#
+# This is an example of a way to quickly sign a repo without accidentally
+# signing all the wrong things.  If everything goes well, it should
+# (re)generate a MANIFEST and SIGNATURE file.
+#
+# USAGE: bash contrib/sign-profiles.sh repo private-key
+#
+# e.g., bash contrib/sign-profiles.sh ~/code/hubblestack_data.git_repo ~/secerts/hubble/private.key
+#
 
 PROFILE="$1"; shift
 PRIVATE_KEY="${1:-/etc/certs/private.key}"; shift

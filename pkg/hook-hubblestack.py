@@ -35,6 +35,7 @@ HIDDEN_IMPORTS = [
     'azure.storage.blob',
     'croniter',
     'vulners',
+    'sqlite3',
 
     # fdg readfile.json tries to absolute import a module during lazy load. Too
     # late for the packer to notice it should be packed in the binary.

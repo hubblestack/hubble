@@ -158,7 +158,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 RUN apt-get install -y ruby ruby-dev rubygems gcc make \
  && gem install --no-ri --no-rdoc fpm
 
-RUN apt-get install -y libbz2-dev
+RUN apt-get install -y libbz2-dev libsqlite3-dev
 
 # use pyenv
 ARG PYENV_VERSION=3.6.10

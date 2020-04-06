@@ -65,11 +65,11 @@ cp -va /entrypoint.sh /data/last-build.1
 
 mkdir -p /var/log/hubble_osquery/backuplogs
 
-mkdir -p /usr/lib/systemd/system
+mkdir -p /etc/init.d
 mkdir -p /etc/profile.d
 mkdir -p /etc/hubble
 
-cp -v /hubble_build/pkg/hubble.service /usr/lib/systemd/system/
+cp -v /hubble_build/pkg/hubble /etc/init.d
 cp -v /hubble_build/conf/hubble-profile.sh /etc/profile.d/
 
 if [ -f /data/hubble ]
@@ -102,7 +102,7 @@ tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz \
     --exclude opt/hubble/pyenv \
     /etc/hubble /opt/hubble /opt/osquery \
     /etc/profile.d/hubble-profile.sh \
-    /usr/lib/systemd/system/hubble.service \
+    /etc/init.d/hubble \
     /var/log/hubble_osquery/backuplogs \
     2>&1 | tee /hubble_build/rpm-pkg-start-tar.log
 
@@ -133,10 +133,10 @@ scl enable rh-ruby23 'fpm -s dir -t rpm \
     --url ${HUBBLE_URL} \
     --description "${HUBBLE_DESCRIPTION}" \
     --rpm-summary "${HUBBLE_SUMMARY}" \
-    --after-install /hubble_build/conf/afterinstall-systemd.sh \
-    --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
+    --after-install /hubble_build/conf/afterinstall.sh \
+    --after-upgrade /hubble_build/conf/afterupgrade.sh \
     --before-remove /hubble_build/conf/beforeremove.sh \
-    etc/hubble opt usr /var/log/hubble_osquery/backuplogs'
+    etc/hubble /etc/init.d opt usr /var/log/hubble_osquery/backuplogs'
 
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}

@@ -5,7 +5,7 @@ import os, sys
 from pytest import fixture
 import hubblestack.utils.signing as sig
 
-@fixture(scope='module', params=['rsa', '448'])
+@fixture(scope='module', params=['rsa', '448', '25519'])
 def cdbt(request):
     yield request.param
 

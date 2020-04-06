@@ -30,7 +30,7 @@
 +
 +        import hashlib
 +        md5 = hashlib.md5()
-+        md5.update( f'{id_}'.encode() )
++        md5.update( str(id_).encode() )
 +        id_hash = int( md5.hexdigest(), 16 )
      if id_hash is None:
          # Python < 3.3 or error encountered above

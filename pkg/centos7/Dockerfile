@@ -139,7 +139,7 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
  && gem install --no-ri --no-rdoc fpm
 
 # things we may need to build a python
-RUN yum install -y bzip2-devel
+RUN yum install -y bzip2-devel sqlite-devel
 
 # use pyenv
 ARG PYENV_VERSION=3.6.10

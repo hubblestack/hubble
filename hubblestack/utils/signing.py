@@ -64,8 +64,8 @@ from cryptography.hazmat.primitives.serialization import load_pem_private_key
 MANIFEST_RE = re.compile(r'^\s*(?P<digest>[0-9a-fA-F]+)\s+(?P<fname>.+)$')
 log = logging.getLogger(__name__)
 
-# "verification_log_timestamps" is a global dict that contains str path 
-# and time() kv pairs. When the time() value exceeds the dampening_limit (3600 sec), 
+# "verification_log_timestamps" is a global dict that contains str path
+# and time() kv pairs. When the time() value exceeds the dampening_limit (3600 sec),
 # we reset time and set log level accordingly.
 verif_log_timestamps = {}
 # How often in seconds 3600 = 1 hour to set log level to log.error/critical
@@ -230,7 +230,7 @@ class X509AwareCertBucket:
             return STATUS.VERIFIED
         return STATUS.UNKNOWN
 
-    def __init__(self, public_crt, ca_crt):
+    def __init__(self, public_crt=None, ca_crt=None):
         try:
             import hubblestack.pre_packaged_certificates as HPPC
             # iff we have hardcoded certs then we're meant to ignore any other
@@ -243,6 +243,11 @@ class X509AwareCertBucket:
                 ca_crt = HPPC.ca_crt
         except ImportError:
             pass
+
+        if public_crt is None:
+            public_crt = Options.public_crt
+        if ca_crt is None:
+            ca_crt = Options.ca_crt
 
         untrusted_crt = list()
 
@@ -327,7 +332,7 @@ class X509AwareCertBucket:
             except ossl.X509StoreContextError as exception_object:
                 code, depth, message = exception_object.args[0]
                 if code in (2,3,20,27,33):
-                    # from openssl/x509_vfy.h or 
+                    # from openssl/x509_vfy.h or
                     # https://www.openssl.org/docs/man1.1.0/man3/X509_STORE_CTX_set_current_cert.html
                     # X509_V_ERR_UNABLE_TO_GET_ISSUER_CERT         2
                     # X509_V_ERR_UNABLE_TO_GET_CRL                 3
@@ -439,7 +444,12 @@ def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: d
     """
     # NOTE: This is intended to crash if there's some number of keys other than
     # exactly 1 read from the private_key file:
-    first_key, = read_certs(private_key)
+    the_keys = list(read_certs(private_key))
+    if not the_keys:
+        log.error('unable to sign %s with %s (no such file or error reading certs)',
+            os.path.abspath(fname), os.path.abspath(private_key))
+        return
+    first_key = the_keys[0]
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     args = { 'data': hasher.finalize() }
     if isinstance(first_key, rsa.RSAPrivateKey):
@@ -453,7 +463,7 @@ def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: d
         fh.write('\n')
 
 def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt', **kwargs): # pylint: disable=unused-argument
-    ### make 
+    ### make
     """
         Given the fname, sfname public_crt and ca_crt:
 
@@ -462,6 +472,10 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
         return STATUS.VERIFIED if both the signature and the CA sig match
     """
     log_level = log.debug
+    if fname is None or sfname is None:
+        status = STATUS.UNKNOWN
+        log_level('fname=%s or sfname=%s is Nones => status=%s', fname, sfname, status)
+        return status
     short_fname = fname.split('/')[-1]
     try:
         with open(sfname, 'r') as fh:
@@ -472,7 +486,7 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
         if check_verif_timestamp(verif_key):
             log_level = log.error
         log_level('%s | file "%s" | status: %s ', short_fname, fname, status)
-        return STATUS.UNKNOWN
+        return status
     x509 = X509AwareCertBucket(public_crt, ca_crt)
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
@@ -530,8 +544,14 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
         return a mapping from the input target list to the status values (a dict of filename: status)
     """
 
+    if mfname is None:
+        mfname = 'MANIFEST'
+    if sfname is None:
+        sfname = 'SIGNATURE'
+
     log.debug("verifying: files: %s | mfname: %s | sfname: %s | public_crt: %s| ca_crt: %s",
             targets, mfname, sfname, public_crt, ca_crt)
+
     ret = OrderedDict()
     ret[mfname] = verify_signature(mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt)
     # ret[mfname] is the strongest claim we can make about the files we're
@@ -586,7 +606,7 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
             # or it's a digest from the MANIFEST. If UNKNOWN, we have nothing to compare
             # so we return UNKNOWN
             status = STATUS.UNKNOWN
-            # check to see if the the status of a failed target has been sent is the last 
+            # check to see if the the status of a failed target has been sent is the last
             # x seconds, we reset time and set log level accordingly. the same for FAIL
         elif digest == new_hash:
             # path gets same status as MANIFEST

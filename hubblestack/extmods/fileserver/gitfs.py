@@ -65,8 +65,8 @@ AUTH_PROVIDERS = ('pygit2',)
 AUTH_PARAMS = ('user', 'password', 'pubkey', 'privkey', 'passphrase',
                'insecure_auth')
 
-# Import salt libs
-import salt.utils.gitfs
+from hubblestack.utils.signing import find_wrapf
+from hubblestack.extmods.utils.gitfs import GitFS
 from salt.exceptions import FileserverConfigError
 
 log = logging.getLogger(__name__)
@@ -76,13 +76,10 @@ __virtualname__ = 'gitfs'
 
 
 def _gitfs(init_remotes=True):
-    return salt.utils.gitfs.GitFS(
-        __opts__,
-        __opts__['gitfs_remotes'],
+    return GitFS( __opts__, __opts__['gitfs_remotes'],
         per_remote_overrides=PER_REMOTE_OVERRIDES,
         per_remote_only=PER_REMOTE_ONLY,
         init_remotes=init_remotes)
-
 
 def __virtual__():
     '''
@@ -90,16 +87,18 @@ def __virtual__():
     properly in the master config file.
     '''
     if __virtualname__ not in __opts__['fileserver_backend']:
+        log.info("no fileserver_backend configs, skipping gitfs")
         return False
     try:
         _gitfs(init_remotes=False)
         # Initialization of the GitFS object did not fail, so we know we have
         # valid configuration syntax and that a valid provider was detected.
+        log.error("have fileserver_backend configs and GitFS object loads: success loading %s", __virtualname__)
         return __virtualname__
     except FileserverConfigError:
         pass
+    log.error("something went wrong loading GitFS object, claiming to not have gitfs")
     return False
-
 
 def clear_cache():
     '''
@@ -107,13 +106,11 @@ def clear_cache():
     '''
     return _gitfs(init_remotes=False).clear_cache()
 
-
 def clear_lock(remote=None, lock_type='update'):
     '''
     Clear update.lk
     '''
     return _gitfs().clear_lock(remote=remote, lock_type=lock_type)
-
 
 def lock(remote=None):
     '''
@@ -125,13 +122,11 @@ def lock(remote=None):
     '''
     return _gitfs().lock(remote=remote)
 
-
 def update(remotes=None):
     '''
     Execute a git fetch on all of the repos
     '''
     _gitfs().update(remotes)
-
 
 def update_intervals():
     '''
@@ -139,21 +134,19 @@ def update_intervals():
     '''
     return _gitfs().update_intervals()
 
-
 def envs(ignore_cache=False):
     '''
     Return a list of refs that can be used as environments
     '''
     return _gitfs().envs(ignore_cache=ignore_cache)
 
-
+@find_wrapf(not_found={'rel': '', 'path': ''}, real_path='path')
 def find_file(path, tgt_env='base', **kwargs):  # pylint: disable=W0613
     '''
     Find the first file to match the path and ref, read the file out of git
     and send the path to the newly cached file
     '''
     return _gitfs().find_file(path, tgt_env=tgt_env, **kwargs)
-
 
 def init():
     '''
@@ -162,20 +155,17 @@ def init():
     '''
     _gitfs()
 
-
 def serve_file(load, fnd):
     '''
     Return a chunk from a file based on the data received
     '''
     return _gitfs().serve_file(load, fnd)
 
-
 def file_hash(load, fnd):
     '''
     Return a file hash, the hash type is set in the master config file
     '''
     return _gitfs().file_hash(load, fnd)
-
 
 def file_list(load):
     '''
@@ -184,7 +174,6 @@ def file_list(load):
     '''
     return _gitfs().file_list(load)
 
-
 def file_list_emptydirs(load):  # pylint: disable=W0613
     '''
     Return a list of all empty directories on the master
@@ -192,13 +181,11 @@ def file_list_emptydirs(load):  # pylint: disable=W0613
     # Cannot have empty dirs in git
     return []
 
-
 def dir_list(load):
     '''
     Return a list of all directories on the master
     '''
     return _gitfs().dir_list(load)
-
 
 def symlink_list(load):
     '''

@@ -142,7 +142,7 @@ class Options(object):
             pass
         try:
             default = getattr(self.Defaults, name)
-            return __salt__['config.get']('repo_signing:%s'.format(name), default)
+            return __salt__['config.get']('repo_signing:{}'.format(name), default)
         except AttributeError:
             raise
 

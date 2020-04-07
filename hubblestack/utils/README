@@ -1,0 +1,6 @@
+
+Dev Note:
+
+The Salt layout has a utils directory. most of the things in there end up in
+__utils__[mod.func]. Hubblestack has both utils/ (which is not in __utils__)
+and extmods/utils (which is in __utils__).

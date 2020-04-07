@@ -154,7 +154,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
-RUN apt-get install -y libbz2-dev
+RUN apt-get install -y libbz2-dev libsqlite3-dev
 
 # use pyenv
 ARG PYENV_VERSION=3.6.10

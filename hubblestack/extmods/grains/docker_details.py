@@ -5,7 +5,7 @@ HubbleStack Docker Details Grain
 import salt.modules.cmdmod
 import salt.utils.platform
 import logging
-import hubblestack.extmods.utils.osquery_lib as osquery_lib
+import hubblestack.utils.osquery_lib as osquery_lib
 
 log = logging.getLogger(__name__)
 __salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet,

@@ -789,6 +789,7 @@ def refresh_grains(initial=False):
 
     hubblestack.utils.stdrec.__grains__ = __grains__
     hubblestack.utils.stdrec.__opts__ = __opts__
+    hubblestack.utils.osquery_lib.__grains__ = __grains__
 
     hubblestack.hec.opt.__grains__ = __grains__
     hubblestack.hec.opt.__salt__ = __salt__

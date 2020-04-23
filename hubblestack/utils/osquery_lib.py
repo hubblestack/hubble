@@ -30,11 +30,7 @@ def query(query_sql='', osquery_path=None, args=None, max_file_size=104857600, t
     res = __salt__['cmd.run_all'](cmd, timeout=timeout, python_shell=False, output_loglevel=output_loglevel)
     if res['retcode'] == 0:
       ret = json.loads(res['stdout'])
-      if len(ret) != 0:
-        for result in ret:
-          for key, value in result.items():
-            if value and isinstance(value, unicode):
-              return value
+      return ret
     return None
   except Exception as e:
     log.exception('An exception occurred while executing query {0} - {1}'.format(query_sql, e))

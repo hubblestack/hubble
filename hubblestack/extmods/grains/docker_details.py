@@ -53,9 +53,9 @@ def _get_docker_version():
 
 def _is_docker_process_running():
   osquery_sql = 'select name from processes where name LIKE "%docker%"'
-  docker_process_list = osquery_util(query_sql=osquery_sql, osquery_path=osquery_path)
-  if len(docker_process_list) != 0:
-    for result in docker_process_list:
+  query_result = osquery_util(query_sql=osquery_sql, osquery_path=osquery_path)
+  if len(query_result) != 0:
+    for result in query_result:
       process_name = result.get('name')
       if 'dockerd' in process_name:
         log.debug("Docker is running")

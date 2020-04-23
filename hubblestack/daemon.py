@@ -40,6 +40,7 @@ from datetime import datetime
 from hubblestack.hangtime import hangtime_wrapper
 import hubblestack.status
 import hubblestack.saltoverrides
+import hubblestack.hubble_constants
 
 log = logging.getLogger(__name__)
 hubble_status = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')

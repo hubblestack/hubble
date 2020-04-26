@@ -19,7 +19,7 @@ def get_docker_details():
       return grains
 
     docker_details = {}
-    docker_details['installed'] = False
+    docker_details['installed'] = __salt__['pkg.version']('docker')
     docker_details['running'] = False
     docker_details['version'] = _get_docker_version()
 
@@ -52,7 +52,7 @@ def _get_docker_version():
 
 
 def _is_docker_process_running():
-  osquery_sql = 'select name from processes where name LIKE "%docker%"'
+  osquery_sql = 'select name from processes where name LIKE "%dockerd%"'
   query_result = osquery_util(query_sql=osquery_sql, osquery_path=osquery_path)
   if len(query_result) != 0:
     for result in query_result:

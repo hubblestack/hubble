@@ -41,7 +41,6 @@ from hubblestack.hangtime import hangtime_wrapper
 import hubblestack.status
 import hubblestack.saltoverrides
 import hubblestack.hubble_constants
-import hubblestack.extmods.grains.docker_details
 
 log = logging.getLogger(__name__)
 hubble_status = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
@@ -792,7 +791,6 @@ def refresh_grains(initial=False):
     hubblestack.utils.stdrec.__grains__ = __grains__
     hubblestack.utils.stdrec.__opts__ = __opts__
     hubblestack.utils.osquery_lib.__grains__ = __grains__
-    hubblestack.extmods.grains.docker_details.__salt__ = __salt__
 
     hubblestack.hec.opt.__grains__ = __grains__
     hubblestack.hec.opt.__salt__ = __salt__

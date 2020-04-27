@@ -1,7 +1,7 @@
 """
 HubbleStack Docker Details Grain.
 CLI Usage - hubble grains.get docker_details
-Example Output - {u'installed': True, u'running': True, u'version': u'19.03.8'}
+Example Output - {u'installed': True, u'running': True}
 Author - Mudit Agarwal (muagarwa@adobe.com)
 """
 import salt.utils.platform
@@ -10,45 +10,55 @@ from hubblestack.utils.osquery_lib import query as osquery_util
 log = logging.getLogger(__name__)
 osquery_path = '/opt/osquery/osqueryi'
 
-def get_docker_details():
+def get_docker_details(grains):
   try:
-    grains = {}
+    docker_grains = {}
 
     if salt.utils.platform.is_windows():
       log.debug('This grain is only available on linux')
-      return grains
+      return docker_grains
 
     docker_details = {}
-    docker_details['installed'] = __salt__['pkg.version']('docker')
+    docker_details['installed'] = _is_docker_installed(grains)
     docker_details['running'] = False
-    docker_details['version'] = _get_docker_version()
 
-    if docker_details['version']:
-      docker_details['installed'] = True
+    if docker_details['installed']:
       docker_details['running'] = _is_docker_process_running()
 
     log.debug('docker_details = {0}'.format(docker_details))
 
-    grains['docker_details'] = docker_details
+    docker_grains['docker_details'] = docker_details
 
-    return grains
+    return docker_grains
   except Exception as e:
     log.exception('The following exception occurred while fetching docker details {0}'.format(e))
     return None
 
 
-def _get_docker_version():
-  osquery_sql = 'select server_version from docker_info'
-  query_result = osquery_util(query_sql=osquery_sql, osquery_path=osquery_path)
-  if len(query_result) != 0:
-    for result in query_result:
-      if isinstance(result, dict):
-        docker_version = result.get('server_version')
-        log.debug('docker_version = {0}'.format(docker_version))
-        if docker_version and isinstance(docker_version, unicode):
-          return docker_version
-
-  return None
+def _is_docker_installed(grains):
+  try:
+    os_family = grains.get('os_family')
+    if 'coreos' in os_family.lower():
+      return True
+    elif 'debian' in os_family.lower():
+      osquery_sql = 'select name from deb_packages where name like "%docker%"'
+    elif 'centos' in os_family.lower():
+      osquery_sql = 'select name from rpm_packages where name like "%docker%"'
+    else:
+      log.debug("OS not supported")
+      return False
+    query_result = osquery_util(query_sql=osquery_sql, osquery_path=osquery_path)
+    if len(query_result) != 0:
+      for result in query_result:
+        if isinstance(result, dict):
+          package_name = result.get('name')
+          log.debug('package_name = {0}'.format(package_name))
+          if package_name and 'docker' in package_name:
+            return True
+    return False
+  except Exception as e:
+    log.exception('The following exception occurred while executing _is_docker_installed {0}'.format(e))
+    return False
 
 
 def _is_docker_process_running():

@@ -42,7 +42,7 @@ def _is_docker_installed(grains):
       return True
     elif 'debian' in os_family.lower():
       osquery_sql = 'select name from deb_packages where name like "%docker%"'
-    elif 'centos' in os_family.lower():
+    elif 'redhat' in os_family.lower():
       osquery_sql = 'select name from rpm_packages where name like "%docker%"'
     else:
       log.debug("OS not supported")

@@ -14,4 +14,10 @@ OSQD_BLACKLISTED_FLAGS = ['config_plugin',
                           'distributed_tls_read_endpoint',
                           'distributed_tls_write_endpoint',
                           'logger_plugin',
-                          'distributed_plugin']
+                          'distributed_plugin',
+                          # Disable extensions and extensions related flag
+                          'disable_extensions',
+                          'extensions_socket',
+                          'extensions_autoload',
+                          'extensions_require',
+                          'extensions_default_index']

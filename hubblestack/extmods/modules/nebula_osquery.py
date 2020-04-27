@@ -697,6 +697,7 @@ def _generate_osquery_flags_file(flagstopfile):
                     else:
                         propdata = "--" + key + "=" + flags_data.get(key) + "\n"
                         cf.write(propdata)
+                cf.write('--disable_extensions=true')  # Disabling extensions
         except Exception as e:
             log.error("Failed to generate osquery flags file using topfile {0}".format(e))
 

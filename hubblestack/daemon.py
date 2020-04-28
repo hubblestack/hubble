@@ -33,12 +33,14 @@ import hubblestack.splunklogging
 import hubblestack.log
 import hubblestack.hec.opt
 import hubblestack.utils.stdrec
+import hubblestack.utils.osquery_lib
 from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime
 from hubblestack.hangtime import hangtime_wrapper
 import hubblestack.status
 import hubblestack.saltoverrides
+import hubblestack.hubble_constants
 
 log = logging.getLogger(__name__)
 hubble_status = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
@@ -788,6 +790,7 @@ def refresh_grains(initial=False):
 
     hubblestack.utils.stdrec.__grains__ = __grains__
     hubblestack.utils.stdrec.__opts__ = __opts__
+    hubblestack.utils.osquery_lib.__grains__ = __grains__
 
     hubblestack.hec.opt.__grains__ = __grains__
     hubblestack.hec.opt.__salt__ = __salt__

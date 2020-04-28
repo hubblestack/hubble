@@ -1,3 +1,7 @@
+"""
+HubbleStack osquery lib. Can be used to execute osquery queries from Hubble code
+Author - Mudit Agarwal (muagarwa@adobe.com)
+"""
 import logging
 import os
 import salt.modules.cmdmod

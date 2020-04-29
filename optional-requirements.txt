@@ -3,4 +3,3 @@ azure-storage-common==2.1.0
 azure-storage-blob==2.1.0
 boto3
 botocore
-salt-ssh==2019.2.3

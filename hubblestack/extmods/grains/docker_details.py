@@ -8,7 +8,6 @@ import salt.utils.platform
 import logging
 from hubblestack.utils.osquery_lib import query as osquery_util
 log = logging.getLogger(__name__)
-osquery_path = '/opt/osquery/osqueryi'
 
 def get_docker_details(grains):
   try:
@@ -47,7 +46,7 @@ def _is_docker_installed(grains):
     else:
       log.debug("OS not supported")
       return False
-    query_result = osquery_util(query_sql=osquery_sql, osquery_path=osquery_path)
+    query_result = osquery_util(query_sql=osquery_sql)
     if len(query_result) != 0:
       for result in query_result:
         if isinstance(result, dict):
@@ -63,7 +62,7 @@ def _is_docker_installed(grains):
 
 def _is_docker_process_running():
   osquery_sql = 'select name from processes where name LIKE "%dockerd%"'
-  query_result = osquery_util(query_sql=osquery_sql, osquery_path=osquery_path)
+  query_result = osquery_util(query_sql=osquery_sql)
   if len(query_result) != 0:
     for result in query_result:
       process_name = result.get('name')

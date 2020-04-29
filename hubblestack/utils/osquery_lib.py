@@ -10,10 +10,13 @@ import json
 __salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet,
             'cmd.run_all': salt.modules.cmdmod.run_all}
 
+global __grains__
+
 log = logging.getLogger(__name__)
 
 def query(query_sql='', osquery_path=None, args=None, max_file_size=104857600, timeout=10000, output_loglevel='quiet'):
   try:
+    log.info('global grains = {0}'.format(__grains__))
     if not query_sql:
       return None
     if not osquery_path:

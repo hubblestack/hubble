@@ -19,5 +19,4 @@ OSQD_BLACKLISTED_FLAGS = ['config_plugin',
                           'disable_extensions',
                           'extensions_socket',
                           'extensions_autoload',
-                          'extensions_require',
-                          'extensions_default_index']
+                          'extensions_require']

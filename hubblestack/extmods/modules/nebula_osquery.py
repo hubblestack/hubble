@@ -45,7 +45,6 @@ from hashlib import md5
 from salt.exceptions import CommandExecutionError
 from hubblestack import __version__
 import hubblestack.log
-import hubblestack.hubble_constants as hconstants
 
 log = logging.getLogger(__name__)
 CRC_BYTES = 256
@@ -691,13 +690,8 @@ def _generate_osquery_flags_file(flagstopfile):
             log.debug("Writing config to osquery.flags file")
             with open(flagfile, "w") as cf:
                 for key in flags_data:
-                    if key in hconstants.OSQD_BLACKLISTED_FLAGS:
-                        # There are few flags that can be exploited, blacklisted flags cannot be modified remotely
-                        log.debug("Blacklisted flag specified in remote flagsfile, skipping flag: {0}".format(key))
-                    else:
-                        propdata = "--" + key + "=" + flags_data.get(key) + "\n"
-                        cf.write(propdata)
-                cf.write('--disable_extensions=true')  # Disabling extensions
+                    propdata = "--" + key + "=" + flags_data.get(key) + "\n"
+                    cf.write(propdata)
         except Exception as e:
             log.error("Failed to generate osquery flags file using topfile {0}".format(e))
 

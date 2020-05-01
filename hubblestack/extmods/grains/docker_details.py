@@ -65,10 +65,11 @@ def _is_docker_process_running():
   query_result = osquery_util(query_sql=osquery_sql)
   if len(query_result) != 0:
     for result in query_result:
-      process_name = result.get('name')
-      if 'dockerd' in process_name:
-        log.debug("Docker is running")
-        return True
+      if isinstance(result, dict):
+        process_name = result.get('name')
+        if 'dockerd' in process_name:
+          log.debug("Docker is running")
+          return True
   log.debug("Docker is not running")
   return False
 

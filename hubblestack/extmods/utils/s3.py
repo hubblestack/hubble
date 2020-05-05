@@ -246,6 +246,10 @@ def query(key, keyid, method='GET', params=None, headers=None,
     # This can be used to save a binary object to disk
     if local_file and method == 'GET':
         if result.status_code < 200 or result.status_code >= 300:
+            if err_code in ['SlowDown', 'ServiceUnavailable', 'RequestTimeTooSkewed',
+                            'RequestTimeout', 'OperationAborted', 'InternalError']:
+                log.error('Failed to get file. %s: %s', err_code, err_msg)
+                return None
             raise CommandExecutionError(
                 'Failed to get file. {0}: {1}'.format(err_code, err_msg))
 
@@ -258,7 +262,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
     if result.status_code < 200 or result.status_code >= 300:
         if err_code in ['SlowDown', 'ServiceUnavailable', 'RequestTimeTooSkewed',
                         'RequestTimeout', 'OperationAborted', 'InternalError']:
-            log.error('Failed s3 operation: %s, %s', err_code, err_msg)
+            log.error('Failed s3 operation. %s: %s', err_code, err_msg)
             return None
         raise CommandExecutionError(
             'Failed s3 operation. {0}: {1}'.format(err_code, err_msg))

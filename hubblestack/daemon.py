@@ -34,6 +34,7 @@ import hubblestack.log
 import hubblestack.hec.opt
 import hubblestack.utils.stdrec
 import hubblestack.utils.osquery_lib
+import hubblestack.hubble_constants
 from hubblestack import __version__
 from croniter import croniter
 from datetime import datetime

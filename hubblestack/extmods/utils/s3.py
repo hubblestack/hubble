@@ -243,11 +243,14 @@ def query(key, keyid, method='GET', params=None, headers=None,
             log.debug('Deleted bucket %s', bucket)
         return None
 
+    sortof_ok = ['SlowDown', 'ServiceUnavailable', 'RequestTimeTooSkewed',
+        'RequestTimeout', 'OperationAborted', 'InternalError',
+        'AccessDenied']
+
     # This can be used to save a binary object to disk
     if local_file and method == 'GET':
         if result.status_code < 200 or result.status_code >= 300:
-            if err_code in ['SlowDown', 'ServiceUnavailable', 'RequestTimeTooSkewed',
-                            'RequestTimeout', 'OperationAborted', 'InternalError']:
+            if err_code in sortof_ok:
                 log.error('Failed to get file. %s: %s', err_code, err_msg)
                 return None
             raise CommandExecutionError(
@@ -260,8 +263,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
         return 'Saved to local file: {0}'.format(local_file)
 
     if result.status_code < 200 or result.status_code >= 300:
-        if err_code in ['SlowDown', 'ServiceUnavailable', 'RequestTimeTooSkewed',
-                        'RequestTimeout', 'OperationAborted', 'InternalError']:
+        if err_code in sortof_ok:
             log.error('Failed s3 operation. %s: %s', err_code, err_msg)
             return None
         raise CommandExecutionError(

@@ -22,6 +22,7 @@ import salt.utils.aws
 import salt.utils.files
 import salt.utils.hashutils
 import salt.utils.xmlutil as xml
+import time
 from salt._compat import ElementTree as ET
 from salt.exceptions import CommandExecutionError
 from salt.ext.six.moves.urllib.parse import quote as _quote   # pylint: disable=import-error,no-name-in-module
@@ -29,7 +30,23 @@ from salt.ext import six
 
 log = logging.getLogger(__name__)
 
+def thirty_second_memoize(f):
+    memo = dict()
+    def inner(*a, **kw):
+        k = '-'.join([ str(x) for x in a ] + [ str(kw[x]) for x in sorted(kw) ])
+        now = time.time()
+        if k in memo:
+            v,t = memo[k]
+            if now - t < 30:
+                log_k = kw.get('path', k)
+                log.info('returning memoized result for %s', log_k)
+                return v
+        v = f(*a, **kw)
+        memo[k] = (v,now)
+        return v
+    return inner
 
+@thirty_second_memoize
 def query(key, keyid, method='GET', params=None, headers=None,
           requesturl=None, return_url=False, bucket=None, service_url=None,
           path='', return_bin=False, action=None, local_file=None,

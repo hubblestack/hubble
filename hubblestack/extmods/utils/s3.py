@@ -251,10 +251,10 @@ def query(key, keyid, method='GET', params=None, headers=None,
     if local_file and method == 'GET':
         if result.status_code < 200 or result.status_code >= 300:
             if err_code in sortof_ok:
-                log.error('Failed to get file. %s: %s', err_code, err_msg)
+                log.error('Failed to get file=%s. %s: %s', path, err_code, err_msg)
                 return None
             raise CommandExecutionError(
-                'Failed to get file. {0}: {1}'.format(err_code, err_msg))
+                'Failed to get file=%s. {0}: {1}'.format(path, err_code, err_msg))
 
         log.debug('Saving to local file: %s', local_file)
         with salt.utils.files.fopen(local_file, 'wb') as out:

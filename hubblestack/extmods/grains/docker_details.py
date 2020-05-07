@@ -10,28 +10,24 @@ from hubblestack.utils.osquery_lib import query as osquery_util
 log = logging.getLogger(__name__)
 
 def get_docker_details(grains):
-  try:
-    docker_grains = {}
+  docker_grains = {}
 
-    if salt.utils.platform.is_windows():
-      log.debug('This grain is only available on linux')
-      return docker_grains
-
-    docker_details = {}
-    docker_details['installed'] = _is_docker_installed(grains)
-    docker_details['running'] = False
-
-    if docker_details['installed']:
-      docker_details['running'] = _is_docker_process_running()
-
-    log.debug('docker_details = {0}'.format(docker_details))
-
-    docker_grains['docker_details'] = docker_details
-
+  if salt.utils.platform.is_windows():
+    log.debug('This grain is only available on linux')
     return docker_grains
-  except Exception as e:
-    log.exception('The following exception occurred while fetching docker details {0}'.format(e))
-    return None
+
+  docker_details = {}
+  docker_details['installed'] = _is_docker_installed(grains)
+  docker_details['running'] = False
+
+  if docker_details['installed']:
+    docker_details['running'] = _is_docker_process_running()
+
+  log.debug('docker_details = {0}'.format(docker_details))
+
+  docker_grains['docker_details'] = docker_details
+
+  return docker_grains
 
 
 def _is_docker_installed(grains):

@@ -25,6 +25,33 @@ if [ -f /data/hubble_buildinfo ]; then
     cat /data/hubble_buildinfo >> /hubble_build/hubblestack/__init__.py
 fi 2>/dev/null
 
+cat > /data/pre_packaged_certificates.py << EOF
+ca_crt = list()
+public_crt = list()
+EOF
+do_pkg_crts=0
+if [ -f /data/certs/ca-root.crt ]; then
+    echo "ca_crt.append('''$(< /data/certs/ca-root.crt)''')" \
+        >> /data/pre_packaged_certificates.py
+        do_pkg_crts=$(( do_pkg_crts + 1 ))
+    for item in /data/certs/int*.crt; do
+        if [ -f "$item" ]
+        then echo "ca_crt.append('''$(< "$item")''')" \
+            >> /data/pre_packaged_certificates.py
+            do_pkg_crts=$(( do_pkg_crts + 1 ))
+        fi
+    done
+fi
+for item in /data/certs/{pub,sign}*.crt; do
+    if [ -f "$item" ]
+    then echo "public_crt.append('''$(< "$item")''')" \
+        >> /data/pre_packaged_certificates.py
+        do_pkg_crts=$(( do_pkg_crts + 1 ))
+    fi
+done
+if [ $do_pkg_crts -gt 0 ]
+then cp /data/pre_packaged_certificates.py /hubble_build/hubblestack
+fi
 
 cd /hubble_build
 
@@ -136,7 +163,7 @@ scl enable rh-ruby23 'fpm -s dir -t rpm \
     --after-install /hubble_build/conf/afterinstall.sh \
     --after-upgrade /hubble_build/conf/afterupgrade.sh \
     --before-remove /hubble_build/conf/beforeremove.sh \
-    etc/hubble /etc/init.d opt usr /var/log/hubble_osquery/backuplogs'
+    etc/hubble etc/init.d opt usr /var/log/hubble_osquery/backuplogs'
 
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}

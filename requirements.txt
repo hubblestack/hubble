@@ -25,6 +25,7 @@ markupsafe
 mock
 msgpack
 ntplib
+objgraph
 patch==1.*
 pprint
 pycryptodome

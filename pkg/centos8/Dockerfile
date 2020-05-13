@@ -16,14 +16,10 @@ RUN dnf -y update
 #paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
 
-#copy in and process osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
+#extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
 ARG OSQUERY_TAR_FILENAME=osquery_4hubble.tar
-COPY ${OSQUERY_TAR_FILENAME} /opt/osquery/${OSQUERY_TAR_FILENAME}
-RUN cd /opt/osquery \
- && tar xf "$OSQUERY_TAR_FILENAME" \
- && rm -f "$OSQUERY_TAR_FILENAME" \
- && cd / 
-# && /opt/osquery/osqueryi --version
+ADD ${OSQUERY_TAR_FILENAME} /opt/osquery/
+RUN /opt/osquery/osqueryi --version
  
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN dnf -y install git \

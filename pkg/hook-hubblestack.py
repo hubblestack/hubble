@@ -2,6 +2,7 @@ from PyInstaller.utils.hooks import collect_submodules
 
 HIDDEN_IMPORTS = [
     'ssl',
+    'objgraph',
     'Cryptodome',
     'OpenSSL',
     'argparse',
@@ -35,6 +36,7 @@ HIDDEN_IMPORTS = [
     'azure.storage.blob',
     'croniter',
     'vulners',
+    'sqlite3',
 
     # fdg readfile.json tries to absolute import a module during lazy load. Too
     # late for the packer to notice it should be packed in the binary.

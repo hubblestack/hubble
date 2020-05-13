@@ -140,7 +140,7 @@ RUN yum install -y rpmbuild rpm-build gcc make rh-ruby23 rh-ruby23-ruby-devel
 RUN scl enable rh-ruby23 "gem install --no-ri --no-rdoc fpm"
 
 # things we may need to build a python
-RUN yum install -y bzip2-devel
+RUN yum install -y bzip2-devel sqlite-devel
 
 # use pyenv
 ARG PYENV_VERSION=3.6.10

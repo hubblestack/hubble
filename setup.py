@@ -15,6 +15,7 @@ data_files = [('/usr/lib/systemd/system', ['pkg/source/hubble.service']),
               ('/etc/hubble', ['conf/hubble']), ]
 
 build_dependencies = [
+    'objgraph',
     'pycryptodome',
     'cryptography',
     'pyopenssl>=16.2.0',

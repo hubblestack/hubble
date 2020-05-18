@@ -184,8 +184,7 @@ ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
 RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
- && cd "$HUBBLE_SRC_PATH" \
- && git checkout -B hubble-build && git reset --hard "$HUBBLE_CHECKOUT" && git clean -dfx
+ && cd "$HUBBLE_SRC_PATH" && git "$HUBBLE_CHECKOUT"
 
 RUN cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
  && rm -rf /hubble_build/.git

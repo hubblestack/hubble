@@ -8,34 +8,33 @@
 
 # Set this argument to "local" if you want to build osquery for local code.
 # In that case, osquery folder must exist besides Dockerfile
-ARG OSQUERY_BUILD_ENV=remote
+#ARG OSQUERY_BUILD_ENV=local
 
 #--------------- TEMP CONTAINER FOR LOCAL OSQUERY -------------------------
-FROM alpine as osquery_local
-ONBUILD COPY osquery /osquery
-ONBUILD RUN echo "Copying osquery from local folder"
+#FROM alpine as osquery_local
+#ONBUILD COPY osquery /osquery
+#ONBUILD RUN echo "Copying osquery from local folder"
 
 
 
 #--------------- TEMP CONTAINER FOR GIT OSQUERY ----------------------------
-FROM alpine/git as osquery_remote
+#FROM alpine/git as osquery_remote
 #to pin osquery to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=3.3.2
-ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
-ONBUILD RUN cd / \
- && git clone "$OSQUERY_GIT_URL" \
- && cd osquery/ \
- && git checkout "$OSQUERY_SRC_VERSION" \
- && echo "Fetching osquery from git"
+#ENV OSQUERY_SRC_VERSION=3.3.2
+#ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
+#ONBUILD RUN cd / \
+# && git clone "$OSQUERY_GIT_URL" \
+# && cd osquery/ \
+# && git checkout "$OSQUERY_SRC_VERSION" \
+# && echo "Fetching osquery from git"
 
 
 #--------------- TEMP CONTAINER FOR OSQUERY ( BASED ON ARGUMENT ) ---------------
-FROM osquery_"$OSQUERY_BUILD_ENV" as osquery_image
+#FROM osquery_"$OSQUERY_BUILD_ENV" as osquery_image
 
 
 #--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
 FROM centos:7
-
 RUN yum makecache fast && yum -y update
 
 #paths that hubble or hubble parts need in the package
@@ -44,32 +43,42 @@ RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osque
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 ENV OSQUERY_BUILD_USER=osquerybuilder
+ARG BUILD_OSQUERY=true
+ARG BUILD_OSQUERY_LOCALLY=false
+COPY osquery /osquery
+COPY osqueryi /osqueryi
+COPY osqueryd /osqueryd
 RUN yum -y install git make python ruby sudo which
 RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
  && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
-COPY --from=osquery_image /osquery /home/"$OSQUERY_BUILD_USER"/osquery
-RUN mkdir -p /usr/local/osquery/ \
- && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/ \
- && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /home/"$OSQUERY_BUILD_USER"/osquery
-USER $OSQUERY_BUILD_USER
-ENV SKIP_TESTS=1
-RUN cd /home/"$OSQUERY_BUILD_USER"/osquery \
- && make sysprep \
+ADD osquerybuilder.sh /osquerybuilder.sh
+RUN sh /osquerybuilder.sh "$BUILD_OSQUERY" "$BUILD_OSQUERY_LOCALLY"
+
+#RUN mkdir /home/"$OSQUERY_BUILD_USER"/osquery
+# && cp -r /osquery/ /home/"$OSQUERY_BUILD_USER"/
+#COPY --from=osquery_image /osquery /home/"$OSQUERY_BUILD_USER"/osquery
+#RUN mkdir -p /usr/local/osquery/ \
+# && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/ \
+# && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /home/"$OSQUERY_BUILD_USER"/osquery
+#USER $OSQUERY_BUILD_USER
+#ENV SKIP_TESTS=1
+#RUN cd /home/"$OSQUERY_BUILD_USER"/osquery \
+# && make sysprep \
 #have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
- && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
- && make deps \
- && make \
- && make strip
-USER root
-RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt/osquery \
- && cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery/hubble_osqueryd \
- && chown -R root. /opt/osquery \
- && chmod -R 500 /opt/osquery/* \
+# && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
+# && make deps \
+# && make \
+# && make strip
+#USER root
+#RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt/osquery \
+# && cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery/hubble_osqueryd \
+# && chown -R root. /opt/osquery \
+# && chmod -R 500 /opt/osquery/* \
 #put augeas lenses into the default directory that we changed earlier
- && mkdir -p /opt/osquery/lenses \
- && cp -r /usr/local/osquery/share/augeas/lenses/dist/* /opt/osquery/lenses \
- && chmod -R 400 /opt/osquery/lenses/*
-RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
+# && mkdir -p /opt/osquery/lenses \
+# && cp -r /usr/local/osquery/share/augeas/lenses/dist/* /opt/osquery/lenses \
+# && chmod -R 400 /opt/osquery/lenses/*
+#RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN yum -y install  \
@@ -149,8 +158,8 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV HUBBLE_CHECKOUT=v3.0.12
-ENV HUBBLE_VERSION=3.0.12
+ENV HUBBLE_CHECKOUT=3.0
+ENV HUBBLE_VERSION=3.0.12_19
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."

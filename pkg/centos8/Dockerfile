@@ -16,11 +16,6 @@ RUN dnf -y update
 #paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
 
-#extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
-ARG OSQUERY_TAR_FILENAME=osquery_4hubble.tar
-ADD ${OSQUERY_TAR_FILENAME} /opt/osquery/
-RUN /opt/osquery/osqueryi --version
- 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN dnf -y install git \
     libffi-devel openssl-devel libffi libssh-devel autoconf automake libtool \
@@ -113,6 +108,11 @@ RUN umask 022 \
 
 RUN eval "$(pyenv init -)" \
  && pip -v install --upgrade pip
+
+#extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
+ARG OSQUERY_TAR_FILENAME=osquery_4hubble.tar
+ADD ${OSQUERY_TAR_FILENAME} /opt/osquery/
+RUN /opt/osquery/osqueryi --version
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built

@@ -63,8 +63,8 @@ ARG BUILD_OSQUERY=true
 ARG BUILD_OSQUERY_LOCALLY=false
 ARG OSQUERY_SRC_VERSION=osquery_3.3.2_tob
 COPY osquery /osquery
-COPY $OSQUERY_SRC_VERSION /osqueryi
-COPY $OSQUERY_SRC_VERSION /osqueryd
+ENV OSQUERY_TAR_FILENAME=$OSQUERY_SRC_VERSION"_debian8.tar"
+COPY $OSQUERY_TAR_FILENAME /
 
 RUN apt-get -y install git make python ruby sudo locales curl xz-utils
 RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \

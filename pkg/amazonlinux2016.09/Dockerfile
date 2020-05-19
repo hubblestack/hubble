@@ -49,8 +49,8 @@ ARG BUILD_OSQUERY=true
 ARG BUILD_OSQUERY_LOCALLY=false
 ARG OSQUERY_SRC_VERSION=osquery_3.3.2_tob
 COPY osquery /osquery
-COPY $OSQUERY_SRC_VERSION /osqueryi
-COPY $OSQUERY_SRC_VERSION /osqueryd
+ENV OSQUERY_TAR_FILENAME=$OSQUERY_SRC_VERSION"_amazonlinux2016.09.tar"
+COPY $OSQUERY_TAR_FILENAME /
 
 ENV OSQUERY_BUILD_USER=osquerybuilder
 RUN yum -y install git make python ruby sudo which

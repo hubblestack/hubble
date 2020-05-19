@@ -75,7 +75,7 @@ Check the following links for more details:
   (https://github.com/saltstack/salt/blob/develop/salt/modules/iptables.py)
 """
 
-from __future__ import absolute_import
+
 import logging
 
 import fnmatch
@@ -193,7 +193,7 @@ def _merge_yaml(ret, data, profile=None):
         if topkey in data.get('firewall', {}):
             if topkey not in ret['firewall']:
                 ret['firewall'][topkey] = []
-            for key, val in data['firewall'][topkey].iteritems():
+            for key, val in data['firewall'][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret['firewall'][topkey].append({key: val})
@@ -202,9 +202,9 @@ def _merge_yaml(ret, data, profile=None):
 
 def _get_tags(data):
     ret = {}
-    for toplist, toplevel in data.get('firewall', {}).iteritems():
+    for toplist, toplevel in data.get('firewall', {}).items():
         for audit_dict in toplevel:
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 tags_dict = audit_data.get('data', {})
                 tag = tags_dict.pop('tag')
                 if tag not in ret:

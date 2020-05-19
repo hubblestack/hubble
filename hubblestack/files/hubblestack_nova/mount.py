@@ -27,7 +27,7 @@ mount:
       labels:
         - critical
 """
-from __future__ import absolute_import
+
 import logging
 
 import fnmatch
@@ -145,7 +145,7 @@ def _merge_yaml(ret, data, profile=None):
         if topkey in data.get('mount', {}):
             if topkey not in ret['mount']:
                 ret['mount'][topkey] = []
-            for key, val in data['mount'][topkey].iteritems():
+            for key, val in data['mount'][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret['mount'][topkey].append({key: val})
@@ -160,11 +160,11 @@ def _get_tags(data):
     ret = {}
     distro = __grains__.get('osfinger')
 
-    for toplist, toplevel in data.get('mount', {}).iteritems():
+    for toplist, toplevel in data.get('mount', {}).items():
         # mount:blacklist
         for audit_dict in toplevel:
             # mount:blacklist:0
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 # mount:blacklist:0:telnet
                 tags_dict = audit_data.get('data', {})
                 # mount:blacklist:0:telnet:data
@@ -186,11 +186,11 @@ def _get_tags(data):
                 if isinstance(tags, dict):
                     # malformed yaml, convert to list of dicts
                     tmp = []
-                    for name, tag in tags.iteritems():
+                    for name, tag in tags.items():
                         tmp.append({name: tag})
                     tags = tmp
                 for item in tags:
-                    for name, tag in item.iteritems():
+                    for name, tag in item.items():
                         tag_data = {}
                         # Whitelist could have a dictionary, not a string
                         if isinstance(tag, dict):

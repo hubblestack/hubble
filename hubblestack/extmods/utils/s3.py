@@ -4,7 +4,7 @@ Connection library for Amazon S3
 
 :depends: requests
 """
-from __future__ import absolute_import, print_function, unicode_literals
+
 
 # Import Python libs
 import logging
@@ -22,6 +22,7 @@ import salt.utils.aws
 import salt.utils.files
 import salt.utils.hashutils
 import salt.utils.xmlutil as xml
+import time
 from salt._compat import ElementTree as ET
 from salt.exceptions import CommandExecutionError
 from salt.ext.six.moves.urllib.parse import quote as _quote   # pylint: disable=import-error,no-name-in-module
@@ -29,7 +30,23 @@ from salt.ext import six
 
 log = logging.getLogger(__name__)
 
+def thirty_second_memoize(f):
+    memo = dict()
+    def inner(*a, **kw):
+        k = '-'.join([ str(x) for x in a ] + [ str(kw[x]) for x in sorted(kw) ])
+        now = time.time()
+        if k in memo:
+            v,t = memo[k]
+            if now - t < 30:
+                log_k = kw.get('path', k)
+                log.info('returning memoized result for %s', log_k)
+                return v
+        v = f(*a, **kw)
+        memo[k] = (v,now)
+        return v
+    return inner
 
+@thirty_second_memoize
 def query(key, keyid, method='GET', params=None, headers=None,
           requesturl=None, return_url=False, bucket=None, service_url=None,
           path='', return_bin=False, action=None, local_file=None,
@@ -207,7 +224,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
     if os.environ.get('MOCK_SLOW_DOWN'):
         result.status_code = 503
         err_code = 'SlowDown'
-        err_msg = 'slow down you jerks'
+        err_msg = 'MOCK_SLOW_DOWN environment variable set. All S3 queries will fail for testing purposes.'
 
     log.debug('S3 Response Status Code: %s', result.status_code)
 
@@ -243,11 +260,18 @@ def query(key, keyid, method='GET', params=None, headers=None,
             log.debug('Deleted bucket %s', bucket)
         return None
 
+    sortof_ok = ['SlowDown', 'ServiceUnavailable', 'RequestTimeTooSkewed',
+        'RequestTimeout', 'OperationAborted', 'InternalError',
+        'AccessDenied']
+
     # This can be used to save a binary object to disk
     if local_file and method == 'GET':
         if result.status_code < 200 or result.status_code >= 300:
+            if err_code in sortof_ok:
+                log.error('Failed to get file=%s. %s: %s', path, err_code, err_msg)
+                return None
             raise CommandExecutionError(
-                'Failed to get file. {0}: {1}'.format(err_code, err_msg))
+                'Failed to get file=%s. {0}: {1}'.format(path, err_code, err_msg))
 
         log.debug('Saving to local file: %s', local_file)
         with salt.utils.files.fopen(local_file, 'wb') as out:
@@ -256,9 +280,8 @@ def query(key, keyid, method='GET', params=None, headers=None,
         return 'Saved to local file: {0}'.format(local_file)
 
     if result.status_code < 200 or result.status_code >= 300:
-        if err_code in ['SlowDown', 'ServiceUnavailable', 'RequestTimeTooSkewed',
-                        'RequestTimeout', 'OperationAborted', 'InternalError']:
-            log.error('Failed s3 operation: %s, %s', err_code, err_msg)
+        if err_code in sortof_ok:
+            log.error('Failed s3 operation. %s: %s', err_code, err_msg)
             return None
         raise CommandExecutionError(
             'Failed s3 operation. {0}: {1}'.format(err_code, err_msg))

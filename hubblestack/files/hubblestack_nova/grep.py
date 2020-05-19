@@ -51,7 +51,7 @@ failure for blacklist). If it's set to False and the file is missing, then it
 will be considered a non-match (success for blacklist, failure for whitelist).
 If the file exists, this setting is ignored.
 """
-from __future__ import absolute_import
+
 import logging
 
 import fnmatch
@@ -175,7 +175,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 if not os.path.exists(name) and 'match_on_file_missing' in tag_data:
                     if tag_data['match_on_file_missing']:
                         found = True
-                        failure_reason = "Found the file '{0}'. This blaclisted file " \
+                        failure_reason = "Found the file '{0}'. This blacklisted file " \
                                          "should not exist.".format(name)
                     else:
                         found = False
@@ -210,7 +210,7 @@ def _merge_yaml(ret, data, profile=None):
         if topkey in data.get('grep', {}):
             if topkey not in ret['grep']:
                 ret['grep'][topkey] = []
-            for key, val in data['grep'][topkey].iteritems():
+            for key, val in data['grep'][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret['grep'][topkey].append({key: val})
@@ -223,11 +223,11 @@ def _get_tags(data):
     """
     ret = {}
     distro = __grains__.get('osfinger')
-    for toplist, toplevel in data.get('grep', {}).iteritems():
+    for toplist, toplevel in data.get('grep', {}).items():
         # grep:blacklist
         for audit_dict in toplevel:
             # grep:blacklist:0
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 # grep:blacklist:0:telnet
                 tags_dict = audit_data.get('data', {})
                 # grep:blacklist:0:telnet:data
@@ -249,11 +249,11 @@ def _get_tags(data):
                 if isinstance(tags, dict):
                     # malformed yaml, convert to list of dicts
                     tmp = []
-                    for name, tag in tags.iteritems():
+                    for name, tag in tags.items():
                         tmp.append({name: tag})
                     tags = tmp
                 for item in tags:
-                    for name, tag in item.iteritems():
+                    for name, tag in item.items():
                         tag_data = {}
                         # Whitelist could have a dictionary, not a string
                         if isinstance(tag, dict):

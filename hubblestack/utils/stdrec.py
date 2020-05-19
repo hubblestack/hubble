@@ -116,6 +116,8 @@ def update_payload(payload):
         payload['event'] = dict()
     if isinstance(payload['event'], dict):
         payload['event'].update(std_info())
+    if not payload.get('host'):
+        payload['host'] = get_fqdn()
     fields = index_extracted(payload)
     if fields:
         payload['fields'] = fields

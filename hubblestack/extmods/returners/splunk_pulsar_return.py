@@ -241,15 +241,16 @@ def _build_linux_event(alert, change):
              'pulsar_config': alert['pulsar_config']}
     if 'contents' in alert:
         event['contents'] = alert['contents']
-    if alert['stats']:  # Gather more data if the change wasn't a delete
+    # Gather more data if the change wasn't a delete
+    if 'stats' in alert and isinstance(alert['stats'], dict):
         stats = alert['stats']
-        event['object_id'] = stats['inode']
-        event['file_acl'] = stats['mode']
-        event['file_create_time'] = stats['ctime']
-        event['file_modify_time'] = stats['mtime']
-        event['file_size'] = stats['size'] / 1024.0  # Convert bytes to kilobytes
-        event['user'] = stats['user']
-        event['group'] = stats['group']
+        event['object_id'] = stats.get('inode')
+        event['file_acl'] = stats.get('mode')
+        event['file_create_time'] = stats.get('ctime')
+        event['file_modify_time'] = stats.get('mtime')
+        event['file_size'] = stats.get('size', 0) / 1024.0  # Convert bytes to kilobytes
+        event['user'] = stats.get('user')
+        event['group'] = stats.get('group')
         if object_type == 'file':
             chk = alert.get('checksum')
             if chk:
@@ -312,7 +313,7 @@ def _update_event(custom_fields, host_args, cloud_details, event):
         custom_field_value = __salt__['config.get'](custom_field, '')
         if isinstance(custom_field_value, list):
             custom_field_value = ','.join(custom_field_value)
-        if isinstance(custom_field_value, (str, unicode)):
+        if isinstance(custom_field_value, str):
             event.update({custom_field_name: custom_field_value})
     # Remove any empty fields from the event payload
     remove_keys = [k for k in event if event[k] == ""]

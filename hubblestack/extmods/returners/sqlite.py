@@ -2,7 +2,7 @@
 """
 Return hubble data to sqlite (intended for testing)
 """
-from __future__ import absolute_import
+
 
 import json
 import logging

@@ -54,7 +54,7 @@ def returner(ret):
                     break
 
         for query in ret['return']:
-            for query_name, query_results in query.iteritems():
+            for query_name, query_results in query.items():
                 for query_result in query_results['data']:
                     args = {'query': query_name,
                             'job_id': ret['jid'],

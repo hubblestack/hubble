@@ -5,7 +5,7 @@ Flexible Data Gathering: grep
 
 This fdg module allows for grepping against files and strings
 """
-from __future__ import absolute_import
+
 import logging
 import os.path
 

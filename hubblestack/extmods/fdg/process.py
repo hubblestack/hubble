@@ -6,7 +6,7 @@ Flexible Data Gathering: data processing
 This module primarily processes and properly format
 the data outputted by a module to serve it to another module.
 """
-from __future__ import absolute_import
+
 
 import logging
 import re
@@ -72,9 +72,9 @@ def _filter_dict(dct,
         not equal to 2.
     """
     ret = dct
-    for comp, value in filter_rules.iteritems():
+    for comp, value in filter_rules.items():
         try:
-            ret = {key: val for key, val in ret.iteritems()
+            ret = {key: val for key, val in ret.items()
                    if (filter_values and _compare(comp, val, value)) or
                    (not filter_values and _compare(comp, key, value))}
         except ArgumentValueError:
@@ -174,7 +174,7 @@ def _filter(seq,
         log.error("``filter_rules`` should be of type dict")
         return None
     ret = seq
-    for comp, value in filter_rules.iteritems():
+    for comp, value in filter_rules.items():
         try:
             ret = [x for x in ret if _compare(comp, x, value)]
         except ArgumentValueError:
@@ -428,7 +428,7 @@ def dict_to_list(starting_dict=None, update_chained=True, chained=None, chained_
             except (AttributeError, ValueError, TypeError):
                 log.error("Invalid arguments type.", exc_info=True)
                 return False, None
-    ret = [(key, value) for key, value in chained.iteritems()]
+    ret = [(key, value) for key, value in chained.items()]
     status = bool(ret)
 
     return status, ret
@@ -482,7 +482,7 @@ def _dict_convert_none(dictionary):
         log.error("Invalid argument type - should be dict")
         return None
     updated_dict = {}
-    for key, value in dictionary.iteritems():
+    for key, value in dictionary.items():
         if value == '':
             updated_dict[key] = None
         elif isinstance(value, dict):
@@ -594,7 +594,7 @@ def _sterilize_dict(dictionary):
         log.error("Invalid argument type - should be dict")
         return None
     updated_dict = {}
-    for key, value in dictionary.iteritems():
+    for key, value in dictionary.items():
         if isinstance(value, dict):
             updated_dict[key] = _sterilize_dict(value)
         elif isinstance(value, (set, list, tuple)):

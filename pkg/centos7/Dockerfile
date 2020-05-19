@@ -53,7 +53,8 @@ ARG BUILD_OSQUERY=true
 ARG BUILD_OSQUERY_LOCALLY=false
 ARG OSQUERY_SRC_VERSION=osquery_3.3.2_tob
 COPY osquery /osquery
-COPY $OSQUERY_SRC_VERSION_centos7.tar /
+ENV OSQUERY_TAR_FILENAME=$OSQUERY_SRC_VERSION"_centos7.tar"
+COPY $OSQUERY_TAR_FILENAME /
 RUN yum -y install git make python ruby sudo which
 RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
  && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers

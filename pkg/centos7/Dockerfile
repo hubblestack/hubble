@@ -8,12 +8,18 @@
 
 # Set this argument to "local" if you want to build osquery for local code.
 # In that case, osquery folder must exist besides Dockerfile
-#ARG OSQUERY_BUILD_ENV=local
+#ARG BUILD_OSQUERY=true
 
 #--------------- TEMP CONTAINER FOR LOCAL OSQUERY -------------------------
-#FROM alpine as osquery_local
+#FROM alpine as BUILD_OSQUERY_true
 #ONBUILD COPY osquery /osquery
 #ONBUILD RUN echo "Copying osquery from local folder"
+
+
+#--------------- TEMP CONTAINER FOR GIT OSQUERY ----------------------------
+#FROM alpine as BUILD_OSQUERY_false
+#ONBUILD COPY osquery_3.3.2_tob /osqueryi
+#ONBUILD COPY osquery_3.3.2_tob /osqueryd
 
 
 
@@ -30,7 +36,7 @@
 
 
 #--------------- TEMP CONTAINER FOR OSQUERY ( BASED ON ARGUMENT ) ---------------
-#FROM osquery_"$OSQUERY_BUILD_ENV" as osquery_image
+#FROM BUILD_OSQUERY_"$BUILD_OSQUERY" as osquery_image
 
 
 #--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
@@ -46,8 +52,8 @@ ENV OSQUERY_BUILD_USER=osquerybuilder
 ARG BUILD_OSQUERY=true
 ARG BUILD_OSQUERY_LOCALLY=false
 COPY osquery /osquery
-COPY osqueryi /osqueryi
-COPY osqueryd /osqueryd
+COPY osquery_3.3.2_tob /osqueryi
+COPY osquery_3.3.2_tob /osqueryd
 RUN yum -y install git make python ruby sudo which
 RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
  && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers

@@ -6,29 +6,29 @@
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 # Requires docker 17.05 or higher
 
-ARG OSQUERY_BUILD_ENV=remote
+#ARG OSQUERY_BUILD_ENV=remote
 
 #--------------- TEMP CONTAINER FOR LOCAL OSQUERY -------------------------
-FROM alpine as osquery_local
-ONBUILD COPY osquery /osquery
-ONBUILD RUN echo "Copying osquery from local folder"
+#FROM alpine as osquery_local
+#ONBUILD COPY osquery /osquery
+#ONBUILD RUN echo "Copying osquery from local folder"
 
 
 
 #--------------- TEMP CONTAINER FOR GIT OSQUERY ----------------------------
-FROM alpine/git as osquery_remote
+#FROM alpine/git as osquery_remote
 #to osquery pin to a different version change the following envirnment variable
-ENV OSQUERY_SRC_VERSION=3.3.2
-ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
-ONBUILD RUN cd / \
- && git clone "$OSQUERY_GIT_URL" \
- && cd osquery/ \
- && git checkout "$OSQUERY_SRC_VERSION" \
- && echo "Fetching osquery from git"
+#ENV OSQUERY_SRC_VERSION=3.3.2
+#ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
+#ONBUILD RUN cd / \
+# && git clone "$OSQUERY_GIT_URL" \
+# && cd osquery/ \
+# && git checkout "$OSQUERY_SRC_VERSION" \
+# && echo "Fetching osquery from git"
 
 
 #--------------- TEMP CONTAINER FOR OSQUERY ( BASED UPON ARGUMENT )  ------------
-FROM osquery_"$OSQUERY_BUILD_ENV" as osquery
+#FROM osquery_"$OSQUERY_BUILD_ENV" as osquery
 
 
 #--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
@@ -59,34 +59,43 @@ RUN mkdir -p "$PATCHELF_TEMP" \
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 ENV OSQUERY_BUILD_USER=osquerybuilder
+ARG BUILD_OSQUERY=true
+ARG BUILD_OSQUERY_LOCALLY=false
+ARG OSQUERY_SRC_VERSION=osquery_3.3.2_tob
+COPY osquery /osquery
+COPY $OSQUERY_SRC_VERSION /osqueryi
+COPY $OSQUERY_SRC_VERSION /osqueryd
 RUN apt-get -y install git make python ruby sudo curl
 RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \
  && sed -i 's/^%sudo.*/%sudo\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
-COPY --from=osquery /osquery /home/"$OSQUERY_BUILD_USER"/osquery
-RUN mkdir -p /usr/local/osquery/ \
- && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/ \
- && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /home/"$OSQUERY_BUILD_USER"/osquery
-USER $OSQUERY_BUILD_USER
-ENV SKIP_TESTS=1
-RUN cd /home/"$OSQUERY_BUILD_USER"/osquery \
- && make sysprep \
+ADD osquerybuilder.sh /osquerybuilder.sh
+RUN sh /osquerybuilder.sh "$BUILD_OSQUERY" "$BUILD_OSQUERY_LOCALLY"
+#COPY --from=osquery /osquery /home/"$OSQUERY_BUILD_USER"/osquery
+#RUN mkdir -p /usr/local/osquery/ \
+# && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /usr/local/osquery/ \
+# && chown "$OSQUERY_BUILD_USER":"$OSQUERY_BUILD_USER" -R /home/"$OSQUERY_BUILD_USER"/osquery
+#USER $OSQUERY_BUILD_USER
+#ENV SKIP_TESTS=1
+#RUN cd /home/"$OSQUERY_BUILD_USER"/osquery \
+# && make sysprep \
 #have the default augeas lenses directory point to /opt/osquery/lenses, must be done after sysprep
- && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
- && make deps \
- && make \
- && make strip
-USER root
-RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt/osquery \
- && cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery/hubble_osqueryd \
- && chown -R root. /opt/osquery \
- && chmod -R 500 /opt/osquery/* \
+# && sed -i '/augeas_lenses,/,/\"Directory\ that\ contains\ augeas\ lenses\ files\"\\)\;/ s/\/usr\/share\/osquery\/lenses/\/opt\/osquery\/lenses/' osquery/tables/system/posix/augeas.cpp \
+# && make deps \
+# && make \
+# && make strip
+#USER root
+#RUN cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt/osquery \
+# && cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery/hubble_osqueryd \
+# && chown -R root. /opt/osquery \
+# && chmod -R 500 /opt/osquery/* \
 #put augeas lenses into the default directory that we changed earlier
- && mkdir -p /opt/osquery/lenses \
- && cp -r /usr/local/osquery/share/augeas/lenses/dist/* /opt/osquery/lenses \
- && chmod -R 400 /opt/osquery/lenses/*
-RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
+# && mkdir -p /opt/osquery/lenses \
+# && cp -r /usr/local/osquery/share/augeas/lenses/dist/* /opt/osquery/lenses \
+# && chmod -R 400 /opt/osquery/lenses/*
+#RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
+USER root
 RUN apt-get -y install  \
                python-dev libffi-dev libssl-dev libyaml-dev libssh2-1 libssh2-1-dev autoconf automake libtool \
                libxml2-dev libxslt1-dev python-cffi \

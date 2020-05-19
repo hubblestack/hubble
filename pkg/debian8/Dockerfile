@@ -99,6 +99,7 @@ RUN sh /osquerybuilder.sh "$BUILD_OSQUERY" "$BUILD_OSQUERY_LOCALLY"
 #RUN ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
+USER root
 RUN apt-get -y install  \
                python-dev libffi-dev libssl-dev libyaml-dev libssh2-1 libssh2-1-dev autoconf automake libtool \
                libxml2-dev libxslt1-dev zlib1g-dev cmake python-setuptools \

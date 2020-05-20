@@ -5,9 +5,7 @@ build_osquery_locally=$2
 
 if [ $build_osquery != true ]
 then
-  mkdir -p /opt/osquery/
-  cp /osqueryi /opt/osquery/osqueryi
-  cp /osqueryd /opt/osquery/hubble_osqueryd
+  tar -C /opt/ -zxvf osquery_*_tob_debian9.tar
   echo $build_osquery
 else
   echo $build_osquery_locally

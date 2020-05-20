@@ -192,10 +192,12 @@ def _run_osqueryi_query(query, query_sql, timing, verbose):
     Run the osqueryi query in query_sql and return the result
     """
     max_file_size = 104857600
+    augeas_lenses = '/opt/osquery/lenses'
     query_ret = {'result': True}
 
     # Run the osqueryi query
-    cmd = [__grains__['osquerybinpath'], '--read_max', max_file_size, '--json', query_sql]
+    cmd = [__grains__['osquerybinpath'], '--read_max', max_file_size, '--json',
+          '--augeas_lenses', augeas_lenses, query_sql]
 
     time_start = time.time()
     res = __salt__['cmd.run_all'](cmd, timeout=10000)

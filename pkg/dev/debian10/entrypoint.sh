@@ -25,6 +25,33 @@ if [ -f /data/hubble_buildinfo ]; then
     cat /data/hubble_buildinfo >> /hubble_build/hubblestack/__init__.py
 fi 2>/dev/null
 
+cat > /data/pre_packaged_certificates.py << EOF
+ca_crt = list()
+public_crt = list()
+EOF
+do_pkg_crts=0
+if [ -f /data/certs/ca-root.crt ]; then
+    echo "ca_crt.append('''$(< /data/certs/ca-root.crt)''')" \
+        >> /data/pre_packaged_certificates.py
+        do_pkg_crts=$(( do_pkg_crts + 1 ))
+    for item in /data/certs/int*.crt; do
+        if [ -f "$item" ]
+        then echo "ca_crt.append('''$(< "$item")''')" \
+            >> /data/pre_packaged_certificates.py
+            do_pkg_crts=$(( do_pkg_crts + 1 ))
+        fi
+    done
+fi
+for item in /data/certs/{pub,sign}*.crt; do
+    if [ -f "$item" ]
+    then echo "public_crt.append('''$(< "$item")''')" \
+        >> /data/pre_packaged_certificates.py
+        do_pkg_crts=$(( do_pkg_crts + 1 ))
+    fi
+done
+if [ $do_pkg_crts -gt 0 ]
+then cp /data/pre_packaged_certificates.py /hubble_build/hubblestack
+fi
 
 cd /hubble_build
 
@@ -65,11 +92,11 @@ cp -va /entrypoint.sh /data/last-build.1
 
 mkdir -p /var/log/hubble_osquery/backuplogs
 
-mkdir -p /etc/init.d
+mkdir -p /usr/lib/systemd/system
 mkdir -p /etc/profile.d
 mkdir -p /etc/hubble
 
-cp -v /hubble_build/pkg/hubble /etc/init.d
+cp -v /hubble_build/pkg/hubble.service /usr/lib/systemd/system/
 cp -v /hubble_build/conf/hubble-profile.sh /etc/profile.d/
 
 if [ -f /data/hubble ]
@@ -102,7 +129,7 @@ tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz \
     --exclude opt/hubble/pyenv \
     /etc/hubble /opt/hubble /opt/osquery \
     /etc/profile.d/hubble-profile.sh \
-    /etc/init.d/hubble \
+    /usr/lib/systemd/system/hubble.service \
     /var/log/hubble_osquery/backuplogs \
     2>&1 | tee /hubble_build/deb-pkg-start-tar.log
 
@@ -132,10 +159,10 @@ fpm -s dir -t deb \
     --iteration ${HUBBLE_ITERATION} \
     --url ${HUBBLE_URL} \
     --deb-no-default-config-files \
-    --after-install /hubble_build/conf/afterinstall.sh \
-    --after-upgrade /hubble_build/conf/afterupgrade.sh \
+    --after-install /hubble_build/conf/afterinstall-systemd.sh \
+    --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
     --before-remove /hubble_build/conf/beforeremove.sh \
-    etc/hubble etc/init.d opt usr /var/log/hubble_osquery/backuplogs
+    etc/hubble opt usr /var/log/hubble_osquery/backuplogs
 
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}

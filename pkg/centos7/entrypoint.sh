@@ -33,20 +33,21 @@ do_pkg_crts=0
 if [ -f /data/certs/ca-root.crt ]; then
     echo "ca_crt.append('''$(< /data/certs/ca-root.crt)''')" \
         >> /data/pre_packaged_certificates.py
+        do_pkg_crts=$(( do_pkg_crts + 1 ))
     for item in /data/certs/int*.crt; do
         if [ -f "$item" ]
         then echo "ca_crt.append('''$(< "$item")''')" \
             >> /data/pre_packaged_certificates.py
+            do_pkg_crts=$(( do_pkg_crts + 1 ))
         fi
     done
-    do_pkg_crts=$(( do_pkg_crts + 1 ))
 fi
 for item in /data/certs/{pub,sign}*.crt; do
     if [ -f "$item" ]
     then echo "public_crt.append('''$(< "$item")''')" \
         >> /data/pre_packaged_certificates.py
+        do_pkg_crts=$(( do_pkg_crts + 1 ))
     fi
-    do_pkg_crts=$(( do_pkg_crts + 1 ))
 done
 if [ $do_pkg_crts -gt 0 ]
 then cp /data/pre_packaged_certificates.py /hubble_build/hubblestack

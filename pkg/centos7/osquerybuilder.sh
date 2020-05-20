@@ -38,10 +38,10 @@ else
   sudo -u "$OSQUERY_BUILD_USER" make strip
   cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryi /opt/osquery/osqueryi
   cp -pr /home/"$OSQUERY_BUILD_USER"/osquery/build/linux/osquery/osqueryd /opt/osquery/hubble_osqueryd
+  mkdir -p /opt/osquery/lenses
+  cp -r /usr/local/osquery/share/augeas/lenses/dist/* /opt/osquery/lenses
 fi
 chown -R root. /opt/osquery
 chmod -R 500 /opt/osquery/*
-mkdir -p /opt/osquery/lenses
-cp -r /usr/local/osquery/share/augeas/lenses/dist/* /opt/osquery/lenses
 chmod -R 400 /opt/osquery/lenses/*
 ls -lahR /opt/osquery/ && /opt/osquery/osqueryi --version

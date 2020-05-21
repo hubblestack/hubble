@@ -8,8 +8,8 @@
 # Requires docker 17.05 or higher
 
 #Hubble builds can have the following 3 combinations wrt osquery:
-# 1. Package already built osquery. (BUILD_OSQUERY=false)
-# 2. Build osquery from local git repo. (BUILD_OSQUERY=true BUILD_OSQUERY_LOCALLY=true)
+# 1. Package already built osquery. (BUILD_OSQUERY=false). Keep the osquery tar file besides this Dockerfile.
+# 2. Build osquery from local git repo. (BUILD_OSQUERY=true BUILD_OSQUERY_LOCALLY=true). Keep the osquery source code besides this Dockerfile.
 # 3. Build osquery from https://github.com/facebook/osquery.git. (BUILD_OSQUERY=true BUILD_OSQUERY_LOCALLY=false)
 #--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
 FROM centos:8

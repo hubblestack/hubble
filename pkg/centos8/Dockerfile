@@ -9,7 +9,7 @@
 
 #Hubble builds can have the following 3 combinations wrt osquery:
 # 1. Package already built osquery. (BUILD_OSQUERY=false)
-# 2. Build osquery from https://git.corp.adobe.com/hubblestack/osquery. (BUILD_OSQUERY=true BUILD_OSQUERY_LOCALLY=true)
+# 2. Build osquery from local git repo. (BUILD_OSQUERY=true BUILD_OSQUERY_LOCALLY=true)
 # 3. Build osquery from https://github.com/facebook/osquery.git. (BUILD_OSQUERY=true BUILD_OSQUERY_LOCALLY=false)
 #--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
 FROM centos:8

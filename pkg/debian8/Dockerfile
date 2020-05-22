@@ -9,6 +9,7 @@
 
 #Hubble builds can have the following 3 combinations wrt osquery:
 # 1. Package already built osquery. (BUILD_OSQUERY=false). Keep the osquery tar file besides this Dockerfile.
+# The tarfile name has format OSQUERY_SRC_VERSION_centos7.tar where OSQUERY_SRC_VERSION can be passed to this Dockerfile as an ARG.
 # 2. Build osquery from local git repo. (BUILD_OSQUERY=true BUILD_OSQUERY_LOCALLY=true). Keep the osquery source code besides this Dockerfile.
 # 3. Build osquery from https://github.com/facebook/osquery.git. (BUILD_OSQUERY=true BUILD_OSQUERY_LOCALLY=false)
 #--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
@@ -41,16 +42,16 @@ RUN mkdir -p "$PATCHELF_TEMP" \
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ARG BUILD_OSQUERY=true
 ARG BUILD_OSQUERY_LOCALLY=false
-ARG OSQUERY_SRC_VERSION=osquery_3.3.2_tob
+ARG OSQUERY_SRC_VERSION=osquery_3.3.2
 COPY osquery /osquery
 ENV OSQUERY_TAR_FILENAME=$OSQUERY_SRC_VERSION"_debian8.tar"
-COPY $OSQUERY_TAR_FILENAME /
+COPY $OSQUERY_TAR_FILENAME /$OSQUERY_TAR_FILENAME
 
 RUN apt-get -y install git make python ruby sudo locales curl xz-utils
 RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \
  && sed -i 's/^%sudo.*/%sudo\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
 ADD osquerybuilder.sh /osquerybuilder.sh
-RUN sh /osquerybuilder.sh "$BUILD_OSQUERY" "$BUILD_OSQUERY_LOCALLY"
+RUN sh /osquerybuilder.sh "$BUILD_OSQUERY" "$BUILD_OSQUERY_LOCALLY" "$OSQUERY_TAR_FILENAME"
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 USER root

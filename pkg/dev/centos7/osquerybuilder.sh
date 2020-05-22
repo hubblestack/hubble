@@ -2,10 +2,11 @@
 
 build_osquery=$1
 build_osquery_locally=$2
+osquery_tarfile_name=$3
 
 if [ $build_osquery != true ]
 then
-  tar -C /opt/ -zxvf osquery_*_tob_centos7.tar 
+  tar -C /opt/ -zxvf $osquery_tarfile_name 
   echo $build_osquery
 else
   echo $build_osquery_locally

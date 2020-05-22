@@ -5,6 +5,8 @@ import os
 import yaml
 import fnmatch
 
+from packaging import version
+
 import salt.loader
 import salt.utils
 
@@ -50,7 +52,6 @@ def audit(audit_files=None,
     log.info('debug 1')
     # validate and get list of filepaths
     audit_files = __get_audit_files(audit_files)
-
     if not audit_files:
         return result_dict
 
@@ -60,7 +61,7 @@ def audit(audit_files=None,
                                         tag='nova_v2_modules',
                                         pack={'__salt__': __salt__,
                                               '__grains__': __grains__})
-    # 
+    #
     # Lets start iterating over audit files
     # 
     for audit_file in audit_files:
@@ -88,7 +89,7 @@ def __run_audit(audit_data_dict, tags, audit_file, verbose):
     # got data for one audit file
     # lets parse, validate and execute one by one
     for audit_id, audit_data in audit_data_dict.items():
-        log.debug('Executing check-id: %s in audit file: %s', audit_id, audit_file)
+        log.info('Executing check-id: %s in audit file: %s', audit_id, audit_file)
 
         audit_impl = __get_matched_implementation(audit_id, audit_data, tags)
         if not audit_impl:
@@ -100,7 +101,7 @@ def __run_audit(audit_data_dict, tags, audit_file, verbose):
 
         try:
             # version check
-            if not __is_audit_check_version_compatible(audit_id, audit_data):
+            if not __is_audit_check_version_compatible(audit_id, audit_impl):
                 # add into skipped section
                 raise AuditCheckVersionIncompatibleError('Version not compatible')
         
@@ -199,26 +200,69 @@ def __execute_module(audit_id, audit_impl, audit_data, verbose):
 
 
 
-def __is_audit_check_version_compatible(audit_check_id, audit_data):
-    log.info(__grains__['hubble_version'])
+def __is_audit_check_version_compatible(audit_check_id, audit_impl):
+    """
+    Function to check if current hubble version matches with provided values
+    :param audit_check_id:
+    :param audit_data:
+    :return: boolean
 
-    return True
+    Provided values expect string with operators AND and OR.
+    The precedence of AND is greater than OR and for a group of AND or OR, the order of evaluation is from left to right
+    Following are the valid comparison operators:
+    <,>,<=,>=,==,!=
+    The version value after comparison operators should be fixed string. No regex is allowed in this version.
+    If any character apart from the allowed values is passed to the provided values, then this function will throw the InvalidSyntax Error
+    Some valid string types
+    >3.0.0
+    <=4.0.0
+    >=2.0.0 OR != 4.1.2
+    >=1.0.0 AND <=9.1.2 OR >=0.1.1 AND <=0.9.9
+    >=2.0.0 AND >3.0.0 AND <=4.0.0 OR ==5.0.0
+    >1.0 AND <10.0 AND >=2.0. OR >=4.0 AND <=5.0 OR ==6.0
+    """
+    log.info("Current hubble version: %s" % __grains__['hubble_version'])
+    current_version = version.parse(__grains__['hubble_version'])
+    version_str = audit_impl['hubble_version'].upper()
+    version_list = [[x.strip() for x in item.split("AND")] for item in version_str.split("OR")]
+    #[['>=2.0.0','>3.0.0','<=4.0.0'], ['==5.0.0']]
+    expression_result = []
+    for expression in version_list: #Outer loop to evaluate OR conditions
+        condition_match=True
+        for condition in expression: #Inner loop to evaluate AND conditions
+            if condition.startswith('<='):
+                condition = condition[2:]
+                result = current_version <= version.parse(condition)
+            elif condition.startswith('>='):
+                condition = condition[2:]
+                result = current_version >= version.parse(condition)
+            elif condition.startswith('<'):
+                condition = condition[1:]
+                result = current_version < version.parse(condition)
+            elif condition.startswith('>'):
+                condition = condition[1:]
+                result = current_version > version.parse(condition)
+            elif condition.startswith('=='):
+                condition = condition[2:]
+                result = current_version == version.parse(condition)
+            elif condition.startswith('!='):
+                condition = condition[2:]
+                result = current_version != version.parse(condition)
+            else:
+                # Throw error as unexpected string occurs
+                log.error("Invalid syntax in version condition, check_id: %s condition: %s" % (audit_check_id, condition))
+                print(condition)
+            condition_match = condition_match and result
+            if not condition_match:
+                # Found a false condition. No need to evaluate further for AND conditions
+                print(condition)
+                break
+        if condition_match:
+            # Found a true condition. No need to evaluate further for OR conditions
+            return True
+
+    return False
     
-    # # Process any version targeting
-    #     if version and 'hubble_version' not in __grains__:
-    #         log.error('Audit %s calls for version checking %s but cannot '
-    #                   'find `hubble_version` in __grains__. Skipping.', audit_id, version)
-    #         ret['Skipped'].append({audit_id: data})
-    #         continue
-    #     elif version:
-    #         version_match = _version_cmp(version)
-    #         if not version_match:
-    #             log.debug(
-    #                 'Skipping audit %s due to version %s not matching version requirements %s',
-    #                 audit_id, __grains__['hubble_version'], version)
-    #             ret['Skipped'].append({audit_id: data})
-    #             continue
-
 def __validate_audit_data(audit_id, audit_impl):
     if 'module' not in audit_impl:
         log.error('Matched implementation does not have module mentioned, check_id: %s', audit_id)
@@ -233,7 +277,7 @@ def __get_matched_implementation(audit_check_id, audit_data, tags):
     # if tag is not matched, no need to fetch matched implementation
     audit_check_tag = audit_data.get('tag', audit_check_id)
     if not fnmatch.fnmatch(audit_check_tag, tags):
-        log.debug('Not exeuting audit_check: %s, user passed tag: %s did not match this audit tag: %s', audit_check_id, tags, audit_check_tag)
+        log.debug('Not executing audit_check: %s, user passed tag: %s did not match this audit tag: %s', audit_check_id, tags, audit_check_tag)
         return None
 
     # Lets look for matching implementation based on os.filter grain

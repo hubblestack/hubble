@@ -89,7 +89,7 @@ def __run_audit(audit_data_dict, tags, audit_file, verbose):
     # got data for one audit file
     # lets parse, validate and execute one by one
     for audit_id, audit_data in audit_data_dict.items():
-        log.info('Executing check-id: %s in audit file: %s', audit_id, audit_file)
+        log.debug('Executing check-id: %s in audit file: %s', audit_id, audit_file)
 
         audit_impl = __get_matched_implementation(audit_id, audit_data, tags)
         if not audit_impl:
@@ -251,16 +251,13 @@ def __is_audit_check_version_compatible(audit_check_id, audit_impl):
             else:
                 # Throw error as unexpected string occurs
                 log.error("Invalid syntax in version condition, check_id: %s condition: %s" % (audit_check_id, condition))
-                print(condition)
             condition_match = condition_match and result
             if not condition_match:
                 # Found a false condition. No need to evaluate further for AND conditions
-                print(condition)
                 break
         if condition_match:
             # Found a true condition. No need to evaluate further for OR conditions
             return True
-
     return False
     
 def __validate_audit_data(audit_id, audit_impl):

@@ -33,7 +33,7 @@ def get_docker_details(grains):
 def _is_docker_installed(grains):
   try:
     os_family = grains.get('os_family')
-    if 'coreos' in os_family.lower():
+    if 'coreos' in os_family.lower() or 'flatcar' in os_family.lower():
       return True
     elif 'debian' in os_family.lower():
       osquery_sql = 'select name from deb_packages where name like "%docker%"'

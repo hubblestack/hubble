@@ -84,7 +84,7 @@ def validate_params(check_id, audit_check):
     Raises:
         AuditCheckValdiationError: For any validation error
     """
-    log.info('Start validating for check-id: %s' %(check_id))
+    log.info('Module: stat Start validating params for check-id: %s' %(check_id))
 
     mandatory_params = ['path', 'gid', 'group', 'mode', 'uid', 'user']
     error = {}

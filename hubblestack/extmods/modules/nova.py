@@ -49,7 +49,6 @@ def audit(audit_files=None,
     if type(verbose) is str and verbose in ['True', 'False']:
         verbose = verbose == 'True'
 
-    log.info('debug 1')
     # validate and get list of filepaths
     audit_files = __get_audit_files(audit_files)
     if not audit_files:
@@ -66,9 +65,8 @@ def audit(audit_files=None,
     # 
     for audit_file in audit_files:
         # Cache audit file
-        log.info('caching file...')
+        log.debug('caching file...')
         file_cache_path = __salt__['cp.cache_file'](audit_file)
-        log.info(file_cache_path)
 
         # validate audit file
         # Fileserver will return False if the file is not found
@@ -76,7 +74,7 @@ def audit(audit_files=None,
             log.error('Could not find audit file %s', audit_file)
             continue
 
-        log.info('Processing %s', audit_file)
+        log.debug('Processing %s', audit_file)
         audit_data_dict = __load_and_validate_yaml_file(file_cache_path, audit_file)
         if not audit_data_dict:
             log.error('Audit file: %s could not be loaded', audit_file)
@@ -180,24 +178,22 @@ def __execute_module(audit_id, audit_impl, audit_data, verbose):
         
         module_logs = {}
         if not verbose:
-            log.info('Non verbose mode')
+            log.debug('Non verbose mode')
             module_logs = __nova__[filtered_log_method](audit_id, audit_check)
         else:
-            log.info('verbose mode')
+            log.debug('verbose mode')
             module_logs = audit_check
 
         audit_result_local = {**audit_result_local, **module_logs}
         # add this result
         audit_result['run_config']['checks'].append(audit_result_local)
 
-        
-
     log.info('~~~~~~~ Result ~~~~~~~~~')
     import json
     log.info(json.dumps(audit_result, sort_keys=False, indent=4))
     # log.info(audit_result)
     log.info('~~~~~~~~~~~~~~~~~~~~~~~~')
-
+    return audit_result
 
 
 def __is_audit_check_version_compatible(audit_check_id, audit_impl):
@@ -220,8 +216,9 @@ def __is_audit_check_version_compatible(audit_check_id, audit_impl):
     >=1.0.0 AND <=9.1.2 OR >=0.1.1 AND <=0.9.9
     >=2.0.0 AND >3.0.0 AND <=4.0.0 OR ==5.0.0
     >1.0 AND <10.0 AND >=2.0. OR >=4.0 AND <=5.0 OR ==6.0
+    >1
     """
-    log.info("Current hubble version: %s" % __grains__['hubble_version'])
+    log.debug("Current hubble version: %s" % __grains__['hubble_version'])
     current_version = version.parse(__grains__['hubble_version'])
     version_str = audit_impl['hubble_version'].upper()
     version_list = [[x.strip() for x in item.split("AND")] for item in version_str.split("OR")]
@@ -299,7 +296,7 @@ def __load_and_validate_yaml_file(filepath, audit_filename):
     Returns:
         [type] -- [description]
     """
-    log.info('Validating yaml file: %s', audit_filename)
+    log.debug('Validating yaml file: %s', audit_filename)
     # validating physical file existance
     if not filepath or not os.path.isfile(filepath):
         log.error('Could not find file: %s', filepath)

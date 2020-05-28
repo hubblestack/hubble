@@ -42,12 +42,12 @@ foreach ($item in $items) {
   Set-Acl $item.FullName $acl
 }
 
-$acl1 = Get-Acl $hubble_conf_file_path
+$file_acl = Get-Acl $hubble_conf_file_path
 foreach ($accnt in $permGroups) {
   $permission = $accnt.Value, $grantedPerm, 'None', $propagationFlag, $permType
   $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule $permission
   Write-Host $accessRule
-  $acl1.SetAccessRule($accessRule)
+  $file_acl.SetAccessRule($accessRule)
     }
-$acl1.SetOwner($adminsGroup)
-Set-Acl $hubble_conf_file_path $acl1
+$file_acl.SetOwner($adminsGroup)
+Set-Acl $hubble_conf_file_path $file_acl

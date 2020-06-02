@@ -13,7 +13,7 @@ __virtualname__ = 'memleak'
 log = logging.getLogger(__virtualname__)
 STATE = dict(growth=True, new_item_refmaps=0)
 
-# if the salt.loader replaces this, fine; if not, /var/cache/hubble is fine too
+# if the hubblestack.hubble_mods.loader replaces this, fine; if not, /var/cache/hubble is fine too
 __opts__ = { 'cachedir': '/var/cache/hubble' }
 
 def __virtual__():

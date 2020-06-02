@@ -25,7 +25,7 @@ from salt.exceptions import CommandExecutionError
 
 # Import salt libs
 import salt.ext.six
-import salt.loader
+import hubblestack.hubble_mods.loader
 import salt.utils.platform
 
 # Import third party libs

@@ -7,7 +7,7 @@ import logging
 import pytest
 import collections
 import salt.config
-import salt.loader
+import hubblestack.hubble_mods.loader
 
 log = logging.getLogger(__name__)
 SaltLoaders = collections.namedtuple("SaltLoaders", 'opts salt grains utils'.split())
@@ -137,11 +137,11 @@ def salt_loaders():
     __opts__['osquery_backuplogs_count'] = 2
 
     log.debug('loading __grains__')
-    __opts__['grains'] = __grains__ = salt.loader.grains(__opts__)
+    __opts__['grains'] = __grains__ = hubblestack.hubble_mods.loader.grains(__opts__)
     log.debug('loading __utils__')
-    __utils__ = salt.loader.utils(__opts__)
+    __utils__ = hubblestack.hubble_mods.loader.utils(__opts__)
     log.debug('loading __salt__ (aka minion mods)')
-    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+    __salt__ = hubblestack.hubble_mods.loader.minion_mods(__opts__, utils=__utils__)
 
     salt_loaders = SaltLoaders(__opts__, __salt__, __grains__, __utils__)
 

@@ -119,7 +119,7 @@ import logging
 import os
 import yaml
 
-import salt.loader
+import hubblestack.hubble_mods.loader
 import salt.utils
 from salt.exceptions import CommandExecutionError
 
@@ -166,7 +166,7 @@ def fdg(fdg_file, starting_chained=None):
 
     # Instantiate fdg modules
     global __fdg__
-    __fdg__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'fdg'),
+    __fdg__ = hubblestack.hubble_mods.loader.LazyLoader(hubblestack.hubble_mods.loader._module_dirs(__opts__, 'fdg'),
                                      __opts__,
                                      tag='fdg',
                                      pack={'__salt__': __salt__,
@@ -311,7 +311,7 @@ def _return(data, returner):
     # JIT load the returners, since most returns will be handled by the daemon
     global __returners__
     if not __returners__:
-        __returners__ = salt.loader.returners(__opts__, __salt__)
+        __returners__ = hubblestack.hubble_mods.loader.returners(__opts__, __salt__)
 
     returner += '.returner'
     if returner not in __returners__:

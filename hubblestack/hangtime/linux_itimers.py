@@ -48,12 +48,12 @@ class HangTime(Exception):
 
         ... code-block:: python
 
-            # salt.loader.grains() catches our HangTime exception as an
+            # hubblestack.hubble_mods.loader.grains() catches our HangTime exception as an
             # ordinary SIGALRM event and complains about the error
             # as if it was inside whichever grain ended up taking too long.
 
             with HangTime(timeout=30, repeats=True):
-                __grains__ = salt.loader.grains(__opts__)
+                __grains__ = hubblestack.hubble_mods.loader.grains(__opts__)
 
             # the timer resets and repeats after any grain takes too long so
             # the next one that takes to long has the benefit of an itimer

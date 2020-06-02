@@ -102,7 +102,7 @@ import os
 import yaml
 
 from distutils.version import StrictVersion
-import salt.loader
+import hubblestack.hubble_mods.loader
 import salt.utils
 from salt.exceptions import CommandExecutionError
 from hubblestack.status import HubbleStatus
@@ -162,7 +162,7 @@ def audit(audit_files=None,
 
     # Load audit modules
     global __audit__
-    __audit__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'audit'),
+    __audit__ = hubblestack.hubble_mods.loader.LazyLoader(hubblestack.hubble_mods.loader._module_dirs(__opts__, 'audit'),
                                        __opts__,
                                        tag='audit',
                                        pack={'__salt__': __salt__,

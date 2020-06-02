@@ -603,5 +603,5 @@ def _setup_for_testing():
     __opts__ = salt.config.minion_config(config_file)
     __opts__['conf_file'] = config_file
     __opts__.update(parsed_args)
-    import salt.loader
-    __grains__ = salt.loader.grains(__opts__)
+    import hubblestack.hubble_mods.loader
+    __grains__ = hubblestack.hubble_mods.loader.grains(__opts__)

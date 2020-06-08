@@ -182,10 +182,7 @@ def __execute_module(audit_id, audit_impl, audit_data, verbose):
         __nova__[validate_param_method](audit_id, audit_check)
 
     #check for type in check implementation. If not present default is 'and'
-    if 'type' in audit_impl:
-        type = audit_impl['type'].lower().strip()
-    else:
-        type='and'
+    type = audit_impl.get('type', 'and').lower().strip()
     audit_result['type']=type
     # validate succeded, lets execute it and prepare result dictionary
     audit_result['run_config']['checks'] = []

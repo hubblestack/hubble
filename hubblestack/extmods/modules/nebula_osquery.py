@@ -35,6 +35,8 @@ import shutil
 import time
 from hashlib import md5
 import yaml
+import zlib
+import traceback
 
 import salt.utils
 import salt.utils.files
@@ -46,7 +48,7 @@ import hubblestack.log
 
 from hubblestack.status import HubbleStatus
 log = logging.getLogger(__name__)
-
+CRC_BYTES = 256
 hubble_status = HubbleStatus(__name__, 'top', 'queries', 'osqueryd_monitor', 'osqueryd_log_parser')
 
 __virtualname__ = 'nebula'
@@ -388,11 +390,11 @@ def osqueryd_log_parser(osqueryd_logdir=None,
         Directory path where hubble should create log file backups post log rotation
 
     maxlogfilesizethreshold
-        Log file size threshold in bytes. If osquery log file size is greter than this value,
-        then logs will only be roatated but not parsed
+        Log file size threshold in bytes. If osquery log file size is greater than this value,
+        then logs will only be rotated but not parsed
 
     logfilethresholdinbytes
-        Log file size threshold in bytes. If osquery log file is greter than this value,
+        Log file size threshold in bytes. If osquery log file is greater than this value,
         then log rotation will be done once logs have been processed
 
     backuplogfilescount
@@ -1248,7 +1250,7 @@ def _osqueryd_restart_required(hashfile, flagfile):
                     log.info('no changes detected in flag file')
     except Exception:
         log.error(
-            "some error occured, unable to determine whether osqueryd need to be restarted,"
+            "some error occurred, unable to determine whether osqueryd need to be restarted,"
             " not restarting osqueryd")
     return False
 
@@ -1406,7 +1408,7 @@ def _parse_log(path_to_logfile,
                             event_data += residue_events
                         # Reset file offset to start of file in case original file is rotated
                         file_offset = 0
-                _set_cache_offset(path_to_logfile, file_offset)
+                _set_file_offset(path_to_logfile, file_offset)
             else:
                 log.error('Unable to open log file for reading: %s', path_to_logfile)
     else:
@@ -1415,22 +1417,91 @@ def _parse_log(path_to_logfile,
     return event_data
 
 
-def _set_cache_offset(path_to_logfile, offset):
+def _set_file_offset(path_to_logfile, offset):
     """
-    Cache file offset in memory
+    Cache file offset in specified file
+    A file will be created in cache directory and following attributes will be stored in it
+    offset, initial_crc (CRC for first 256 bytes of log file), last_crc (CRC for last 256 bytes of log file)
     """
-    cachefilekey = os.path.basename(path_to_logfile)
-    __RESULT_LOG_OFFSET__[cachefilekey] = offset
+    try:
+        log_filename = os.path.basename(path_to_logfile)
+        offsetfile = os.path.join(__opts__.get('cachedir'), 'osqueryd', 'offset', log_filename)
+        log_file_initial_crc = 0
+        log_file_last_crc = 0
+        if(offset > 0):
+            with open(path_to_logfile, 'r') as log_file:
+                log_file.seek(0)
+                log_file_initial_crc = zlib.crc32(log_file.read(CRC_BYTES))
 
+            if(offset > CRC_BYTES):
+                with open(path_to_logfile, 'r') as log_file:
+                    log_file.seek(offset - CRC_BYTES)
+                    log_file_last_crc = zlib.crc32(log_file.read(CRC_BYTES))
+
+        offset_dict = {"offset" : offset, "initial_crc": log_file_initial_crc, "last_crc": log_file_last_crc}
+        log.info("Storing following information for file {0}. Offset: {1}, Initial_CRC: {2}, Last_CRC: {3}".format(path_to_logfile, offset, log_file_initial_crc, log_file_last_crc))
+        if not os.path.exists(os.path.dirname(offsetfile)):
+            os.makedirs(os.path.dirname(offsetfile))
+
+        with open(offsetfile, 'w') as json_file:
+            json.dump(offset_dict, json_file)
+    except Exception as e:
+        log.error("Exception in creating offset file. Exception: {0}".format(e))
+        tb = traceback.format_exc()
+        log.error("Exception stacktrace: {0}".format(tb))
 
 def _get_file_offset(path_to_logfile):
     """
-    Fetch file offset for specified file
+    Fetch file offset for specified file.
+    It works by loading JSON offset file stored in cache directory.
+    From the JSON file, it fetches offset, initial_crc and last_crc of the log file.
+    Return 0 if there is any exception
     """
-    cachefilekey = os.path.basename(path_to_logfile)
-    offset = __RESULT_LOG_OFFSET__.get(cachefilekey, 0)
-    return offset
+    offset = 0
+    try:
+        log_filename = os.path.basename(path_to_logfile)
+        offsetfile = os.path.join(__opts__.get('cachedir'), 'osqueryd', 'offset', log_filename)
+        if not os.path.isfile(offsetfile):
+            log.info("Offset file: {0} does not exist. Returning offset as 0.".format(offsetfile))
+        else:
+            with open(offsetfile, 'r') as file:
+                offset_data = json.load(file)
+            offset = offset_data.get('offset')
+            initial_crc = offset_data.get('initial_crc')
+            last_crc = offset_data.get('last_crc')
+            log.debug("Offset file: {0} exist. Got following values: offset: {1}, initial_crc: {2}, last_crc: {3}".format(offsetfile, offset, initial_crc, last_crc))
 
+            log_file_offset = 0
+            log_file_initial_crc = 0
+            with open(path_to_logfile, 'r') as log_file:
+                log_file.seek(log_file_offset)
+                log_file_initial_crc = zlib.crc32(log_file.read(CRC_BYTES))
+
+            if log_file_initial_crc == initial_crc:
+                log.debug("Initial CRC for log file {0} matches. Now matching last CRC for the given offset {1}".format(path_to_logfile, offset))
+                if offset > CRC_BYTES:
+                    log_file_offset = offset - CRC_BYTES
+                    log_file_last_crc = 0
+                    with open(path_to_logfile, 'r') as log_file:
+                        log_file.seek(log_file_offset)
+                        log_file_last_crc = zlib.crc32(log_file.read(CRC_BYTES))
+                    if log_file_last_crc == last_crc:
+                        log.info("Last CRC for log file {0} matches. Returning the offset value {1}".format(path_to_logfile, offset))
+                    else:
+                        log.error("Last CRC for log file {0} does not match. Got values: Expected: {1}, Actual: {2}. Returning offset as 0.".format(path_to_logfile, last_crc, log_file_last_crc))
+                        offset = 0
+                else:
+                    log.info("Last offset of log file {0} is less than {1}. Returning 0.".format(path_to_logfile, CRC_BYTES))
+                    offset = 0
+            else:
+                log.error("Initial CRC for log file {0} does not match. Got values: Expected: {1}, Actual {2}. Returning offset as 0.".format(path_to_logfile, initial_crc, log_file_initial_crc))
+                offset = 0
+    except Exception as e:
+        log.error("Exception in getting offset for file: {0}. Returning offset as 0. Exception {1}".format(path_to_logfile, e))
+        tb = traceback.format_exc()
+        log.error("Exception stacktrace: {0}".format(tb))
+        offset = 0
+    return offset
 
 def _perform_log_rotation(path_to_logfile,
                           offset,

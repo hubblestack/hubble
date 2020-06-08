@@ -50,7 +50,6 @@ from hubblestack.status import HubbleStatus
 log = logging.getLogger(__name__)
 
 CRC_BYTES = 256
-from hubblestack.status import HubbleStatus
 hubble_status = HubbleStatus(__name__, 'top', 'queries', 'osqueryd_monitor', 'osqueryd_log_parser')
 
 __virtualname__ = 'nebula'

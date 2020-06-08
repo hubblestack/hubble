@@ -20,7 +20,9 @@ log = logging.getLogger(__name__)
 BASE_DIR_NOVA_PROFILES = 'hubblestack_nova_profiles_v2'
 CHECK_STATUS = {
     'Success': 'Success',
-    'Failure': 'Failure'
+    'Failure': 'Failure',
+    'Skipped': 'Skipped',
+    'Error': 'Error'
 }
 
 __nova__ = None
@@ -28,6 +30,7 @@ __nova__ = None
 def audit(audit_files=None,
         tags='*',
         verbose=True,
+        show_compliance=None,
         results="all"):
     """[summary]
 
@@ -45,7 +48,7 @@ def audit(audit_files=None,
       'Error': [],
       'Skipped': [],
     }
-
+    combined_dict = {}
     if type(verbose) is str and verbose in ['True', 'False']:
         verbose = verbose == 'True'
 
@@ -81,11 +84,16 @@ def audit(audit_files=None,
             continue
 
         ret = __run_audit(audit_data_dict, tags, audit_file, verbose)
+        combined_dict[audit_file]=ret
+
+    __evaluate_results(result_dict, combined_dict, show_compliance)
+    return result_dict
 
 def __run_audit(audit_data_dict, tags, audit_file, verbose):
     
     # got data for one audit file
     # lets parse, validate and execute one by one
+    result_list = []
     for audit_id, audit_data in audit_data_dict.items():
         log.debug('Executing check-id: %s in audit file: %s', audit_id, audit_file)
 
@@ -100,18 +108,33 @@ def __run_audit(audit_data_dict, tags, audit_file, verbose):
         try:
             # version check
             if not __is_audit_check_version_compatible(audit_id, audit_impl):
-                # add into skipped section
                 raise AuditCheckVersionIncompatibleError('Version not compatible')
         
             # handover to module
             audit_result = __execute_module(audit_id, audit_impl, audit_data, verbose)
-        
+            result_list.append(audit_result)
+        except AuditCheckValdiationError as validation_error:
+            # add into error section
+            error_dict={}
+            error_dict['tag'] = audit_data['tag']
+            error_dict['description'] = audit_data['description']
+            error_dict['check_result'] = CHECK_STATUS['Error']
+            result_list.append(error_dict)
+            log.error(validation_error)
         except AuditCheckVersionIncompatibleError as version_error:
+            # add into skipped section
+            skipped_dict = {}
+            skipped_dict['tag'] = audit_data['tag']
+            skipped_dict['description'] = audit_data['description']
+            skipped_dict['check_result'] = CHECK_STATUS['Skipped']
+            result_list.append(skipped_dict)
             log.error(version_error)
         except Exception as exc:
             import traceback
             traceback.print_exc()
             # log.error(exc)
+    #return list of results for a file
+    return result_list
 
         # parse check
         # get tag and description
@@ -128,16 +151,12 @@ def __run_audit(audit_data_dict, tags, audit_file, verbose):
           # if verbose=off: call module::get_params_to_log()
           # keep record of results
 
-        # 
-
 def __execute_module(audit_id, audit_impl, audit_data, verbose):
     audit_result = {
         "check_id": audit_id,
         "description": audit_data['description'],
         "tag": audit_data['tag'],
-        "check_result": CHECK_STATUS['Success'],
         "module": audit_impl['module'],
-        
         "run_config": {
             "filter": audit_impl['filter'],
         }
@@ -162,20 +181,26 @@ def __execute_module(audit_id, audit_impl, audit_data, verbose):
     for audit_check in audit_impl['checks']:
         __nova__[validate_param_method](audit_id, audit_check)
 
+    #check for type in check implementation. If not present default is 'and'
+    if 'type' in audit_impl:
+        type = audit_impl['type'].lower().strip()
+    else:
+        type='and'
+    audit_result['type']=type
     # validate succeded, lets execute it and prepare result dictionary
     audit_result['run_config']['checks'] = []
     execute_method = audit_impl['module'] + '.execute'
     filtered_log_method = audit_impl['module'] + '.get_filtered_params_to_log'
+    overall_result = type=='and'
+
     for audit_check in audit_impl['checks']:
         module_result_local = __nova__[execute_method](audit_id, audit_check)
         audit_result_local = {}
         if module_result_local['result']:
             audit_result_local['check_result'] = CHECK_STATUS['Success']
         else:
-            # if 'failure_reason' in audit_data:
-            #     audit_result_local
             audit_result_local['check_result'] = CHECK_STATUS['Failure']
-        
+            audit_result_local['failure_reason'] = module_result_local['failure_reason']
         module_logs = {}
         if not verbose:
             log.debug('Non verbose mode')
@@ -187,12 +212,21 @@ def __execute_module(audit_id, audit_impl, audit_data, verbose):
         audit_result_local = {**audit_result_local, **module_logs}
         # add this result
         audit_result['run_config']['checks'].append(audit_result_local)
+        if type == 'and':
+            overall_result = overall_result and module_result_local['result']
+        else:
+            overall_result = overall_result or module_result_local['result']
 
-    log.info('~~~~~~~ Result ~~~~~~~~~')
-    import json
-    log.info(json.dumps(audit_result, sort_keys=False, indent=4))
-    # log.info(audit_result)
-    log.info('~~~~~~~~~~~~~~~~~~~~~~~~')
+    #Update overall check result
+    if overall_result:
+        audit_result['check_result'] = CHECK_STATUS['Success']
+    else:
+        audit_result['check_result'] = CHECK_STATUS['Failure']
+
+    # log.info('~~~~~~~ Result ~~~~~~~~~')
+    # import json
+    # log.info(json.dumps(audit_result, sort_keys=False, indent=4))
+    # log.info('~~~~~~~~~~~~~~~~~~~~~~~~')
     return audit_result
 
 
@@ -336,3 +370,46 @@ def __get_audit_files(audit_files):
     return ['salt://' + BASE_DIR_NOVA_PROFILES + os.sep + audit_file.replace('.', os.sep) + '.yaml'
                     for audit_file in audit_files]
     
+
+def __evaluate_results(result_dict, combined_dict, show_compliance):
+    """
+    Evaluate the result dictionary to be returned by the audit module
+    :param result_dict:
+    :param combined_dict:
+    :param show_compliance:
+    :return:
+    """
+    for audit_file in combined_dict:
+        result_list = combined_dict[audit_file]
+        for result in result_list:
+            dict={}
+            dict[result['tag']]=result['description']
+            if result['check_result'] == CHECK_STATUS['Success']:
+                result_dict[CHECK_STATUS['Success']].append(dict)
+            elif result['check_result'] == CHECK_STATUS['Failure']:
+                result_dict[CHECK_STATUS['Failure']].append(dict)
+            elif result['check_result'] == CHECK_STATUS['Error']:
+                result_dict[CHECK_STATUS['Error']].append(dict)
+            elif result['check_result'] == CHECK_STATUS['Skipped']:
+                result_dict[CHECK_STATUS['Skipped']].append(dict)
+    if show_compliance:
+        compliance = _calculate_compliance(result_dict)
+        result_dict['Compliance']=compliance
+
+def _calculate_compliance(result_dict):
+    """
+    Calculates the compliance number from the given result dictionary
+    :param result_dict:
+    :return:
+    """
+    success = len(result_dict[CHECK_STATUS['Success']])
+    failure = len(result_dict[CHECK_STATUS['Failure']])
+    error = len(result_dict[CHECK_STATUS['Error']])
+    skipped = len(result_dict[CHECK_STATUS['Skipped']])
+    total_checks = success + failure + error + skipped
+    if total_checks > 0:
+        compliance = float(success)/total_checks
+        compliance = int(compliance * 100)
+        compliance = '{0}%'.format(compliance)
+        return compliance
+    return None

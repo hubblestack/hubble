@@ -91,8 +91,8 @@ def validate_params(check_id, audit_check):
     for mandatory_param in mandatory_params:
         if mandatory_param not in audit_check:
             # collect all errors
-            error[mandatory_param] = 'Mandatory parameter: %s not found' %(check_id, mandatory_param)
-    
+            error[mandatory_param] = 'Mandatory parameter: "%s" not found for check-id: %s' %(mandatory_param, check_id)
+
     if error:
         raise AuditCheckValdiationError(error)
 

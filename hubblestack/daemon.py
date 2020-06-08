@@ -686,7 +686,7 @@ def _setup_dirs():
     module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'modules'))
     __opts__['module_dirs'] = module_dirs
     grains_dirs = __opts__.get('grains_dirs', [])
-    grains_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'grains'))
+    grains_dirs.append(os.path.join(os.path.dirname(__file__), 'grains'))
     __opts__['grains_dirs'] = grains_dirs
     returner_dirs = __opts__.get('returner_dirs', [])
     returner_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'returners'))

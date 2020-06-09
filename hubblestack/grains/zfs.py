@@ -18,7 +18,7 @@ import logging
 # Import salt libs
 import salt.utils.dictupdate
 import salt.utils.path
-import salt.utils.platform
+import hubblestack.utils.platform
 
 # Solve the Chicken and egg problem where grains need to run before any
 # of the modules are loaded and are generally available for any usage.
@@ -46,7 +46,7 @@ def __virtual__():
     # NOTE: we always load this grain so we can properly export
     #       at least the zfs_support grain
     #       except for Windows... don't try to load this on Windows (#51703)
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         return False, 'ZFS: Not available on Windows'
     return __virtualname__
 

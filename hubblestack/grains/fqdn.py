@@ -5,7 +5,7 @@ Custom grains around fqdn
 import salt.grains.core
 import salt.modules.cmdmod
 import salt.utils
-import salt.utils.platform
+import hubblestack.utils.platform
 
 __salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet,
             'cmd.run_all': salt.modules.cmdmod.run_all}
@@ -18,7 +18,7 @@ def fqdn():
     """
     grains = {}
     local_fqdn = None
-    if not salt.utils.platform.is_windows():
+    if not hubblestack.utils.platform.is_windows():
         local_fqdn = __salt__['cmd.run']('hostname --fqdn')
     if local_fqdn and 'hostname: ' not in local_fqdn:
         grains['local_fqdn'] = local_fqdn

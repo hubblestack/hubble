@@ -11,7 +11,7 @@ import logging
 # Import salt libs
 import salt.utils.data
 import salt.utils.files
-import salt.utils.platform
+import hubblestack.utils.platform
 import salt.utils.yaml
 
 __proxyenabled__ = ['*']
@@ -24,7 +24,7 @@ def shell():
     '''
     # Provides:
     #   shell
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         env_var = 'COMSPEC'
         default = r'C:\Windows\system32\cmd.exe'
     else:
@@ -41,7 +41,7 @@ def config():
     if 'conf_file' not in __opts__:
         return {}
     if os.path.isdir(__opts__['conf_file']):
-        if salt.utils.platform.is_proxy():
+        if hubblestack.utils.platform.is_proxy():
             gfn = os.path.join(
                     __opts__['conf_file'],
                     'proxy.d',
@@ -54,7 +54,7 @@ def config():
                     'grains'
                     )
     else:
-        if salt.utils.platform.is_proxy():
+        if hubblestack.utils.platform.is_proxy():
             gfn = os.path.join(
                     os.path.dirname(__opts__['conf_file']),
                     'proxy.d',

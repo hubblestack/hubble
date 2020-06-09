@@ -8,7 +8,7 @@ import copy
 import fnmatch
 import logging
 import salt.utils
-import salt.utils.platform
+import hubblestack.utils.platform
 
 
 log = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ __virtualname__ = 'win_firewall'
 
 
 def __virtual__():
-    if not salt.utils.platform.is_windows():
+    if not hubblestack.utils.platform.is_windows():
         return False, 'This audit module only runs on windows'
     if not salt.utils.powershell.module_exists('NetSecurity'):
         return False, 'This audit module requires the NetSecurity module'

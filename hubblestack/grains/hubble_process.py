@@ -8,7 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 
 # Import salt libs
-import salt.utils.platform
+import hubblestack.utils.platform
 
 try:
     import pwd
@@ -26,7 +26,7 @@ def _uid():
     '''
     Grain for the hubble User ID
     '''
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         return None
     return os.getuid()
 
@@ -47,7 +47,7 @@ def _gid():
     '''
     Grain for the hubble Group ID
     '''
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         return None
     return os.getgid()
 
@@ -78,7 +78,7 @@ def grains():
         'pid': _pid(),
     }
 
-    if not salt.utils.platform.is_windows():
+    if not hubblestack.utils.platform.is_windows():
         ret['gid'] = _gid()
         ret['uid'] = _uid()
 

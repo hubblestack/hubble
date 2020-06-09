@@ -12,7 +12,7 @@ import re
 # Import salt libs
 import salt.utils.files
 import salt.utils.path
-import salt.utils.platform
+import hubblestack.utils.platform
 
 # Solve the Chicken and egg problem where grains need to run before any
 # of the modules are loaded and are generally available for any usage.
@@ -30,11 +30,11 @@ def disks():
     '''
     Return list of disk devices
     '''
-    if salt.utils.platform.is_freebsd():
+    if hubblestack.utils.platform.is_freebsd():
         return _freebsd_geom()
-    elif salt.utils.platform.is_linux():
+    elif hubblestack.utils.platform.is_linux():
         return _linux_disks()
-    elif salt.utils.platform.is_windows():
+    elif hubblestack.utils.platform.is_windows():
         return _windows_disks()
     else:
         log.trace('Disk grain does not support OS')

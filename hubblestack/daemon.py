@@ -25,7 +25,7 @@ import salt.fileserver
 import salt.fileserver.gitfs
 import salt.modules.cmdmod
 import salt.utils
-import salt.utils.platform
+import hubblestack.utils.platform
 import salt.utils.jid
 import salt.utils.gitfs
 import salt.utils.path
@@ -45,7 +45,7 @@ log = logging.getLogger(__name__)
 HSS = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
 
 # Importing syslog fails on windows
-if not salt.utils.platform.is_windows():
+if not hubblestack.utils.platform.is_windows():
     import syslog
 
 __opts__ = {}
@@ -102,7 +102,7 @@ def _emit_and_refresh_grains():
     refresh_grains()
     last_grains_refresh = time.time()
     # Emit syslog at grains refresh frequency
-    if not (salt.utils.platform.is_windows()) and \
+    if not (hubblestack.utils.platform.is_windows()) and \
             __opts__.get('emit_grains_to_syslog', True):
         default_grains_to_emit = ['system_uuid', 'hubble_uuid', 'session_uuid',
                                   'machine_id', 'splunkindex', 'cloud_details',
@@ -514,7 +514,7 @@ def _setup_signaling():
     signal.signal(signal.SIGFPE, clean_up_process)
     signal.signal(signal.SIGILL, clean_up_process)
     signal.signal(signal.SIGSEGV, clean_up_process)
-    if not salt.utils.platform.is_windows():
+    if not hubblestack.utils.platform.is_windows():
         signal.signal(signal.SIGHUP, clean_up_process)
         signal.signal(signal.SIGQUIT, clean_up_process)
 
@@ -586,7 +586,7 @@ def _setup_cached_uuid():
 def _load_salt_config(parsed_args):
     """ load the configs for salt.DEFAULT_MINION_OPTS """
     # Load unique data for Windows or Linux
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         if parsed_args.get('configfile') is None:
             parsed_args['configfile'] = 'C:\\Program Files (x86)\\Hubble\\etc\\hubble\\hubble.conf'
         salt.config.DEFAULT_MINION_OPTS['cachedir'] = 'C:\\Program Files (x86)\\hubble\\var\\cache'

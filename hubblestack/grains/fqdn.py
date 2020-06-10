@@ -2,7 +2,7 @@
 """
 Custom grains around fqdn
 """
-import salt.grains.core
+import hubblestack.grains.hubble_core
 import salt.modules.cmdmod
 import salt.utils
 import hubblestack.utils.platform
@@ -31,7 +31,7 @@ def dest_ip():
     gateway for the host. This is because the current methods can result in
     various IPs due to round robin DNS.
     """
-    interfaces = salt.grains.core.ip4_interfaces()['ip4_interfaces']
+    interfaces = hubblestack.grains.hubble_core.ip4_interfaces()['ip4_interfaces']
     try:
         ret = __salt__['cmd.run_all']('ip route show to 0/0')
         if ret['retcode'] == 0:

@@ -4,7 +4,7 @@ import os
 import pytest
 from collections import defaultdict
 
-from salt.exceptions import ArgumentValueError
+from hubblestack.utils.exceptions import ArgumentValueError
 import hubblestack.extmods.fdg.process
 
 

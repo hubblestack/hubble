@@ -121,7 +121,7 @@ import yaml
 
 import salt.loader
 import salt.utils
-from salt.exceptions import CommandExecutionError
+from hubblestack.utils.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 __fdg__ = None

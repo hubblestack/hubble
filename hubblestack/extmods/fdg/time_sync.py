@@ -7,9 +7,9 @@ NTP servers for differences bigger than 15 minutes.
 
 
 import logging
-import salt.utils.platform
+import hubblestack.utils.platform
 
-if not salt.utils.platform.is_windows():
+if not hubblestack.utils.platform.is_windows():
     import ntplib
 log = logging.getLogger(__name__)
 
@@ -82,7 +82,7 @@ def _query_ntp_server(ntp_server):
         string containing the NTP server to query
     """
     # use w32tm instead of ntplib
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         ret = __salt__['cmd.run']('w32tm /stripchart /computer:{0} /dataonly /samples:1'.format(
             ntp_server))
         try:

@@ -85,6 +85,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 
 #fpm package making requirements start
 RUN apt-get install -y ruby ruby-dev rubygems gcc make \
+ && gem install --no-ri --no-rdoc ffi --version 1.12.2 \
  && gem install --no-ri --no-rdoc fpm
 
 RUN apt-get install -y libbz2-dev libsqlite3-dev

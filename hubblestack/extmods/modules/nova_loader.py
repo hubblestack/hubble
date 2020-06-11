@@ -22,16 +22,16 @@ from collections import MutableMapping
 from zipimport import zipimporter
 
 # Import salt libs
-from salt.exceptions import LoaderError
+from hubblestack.utils.exceptions import LoaderError
 from salt.template import check_render_pipe_str
 from salt.utils.decorators import Depends
 from salt.utils import is_proxy
 import salt.utils.context
-import salt.utils.platform
+import hubblestack.utils.platform
 import salt.utils.lazy
 import salt.utils.event
 import salt.utils.odict
-import salt.exceptions
+import hubblestack.utils.exceptions
 
 # Solve the Chicken and egg problem where grains need to run before any
 # of the modules are loaded and are generally available for any usage.
@@ -95,13 +95,13 @@ def verify_fun(lazy_obj, fun):
     Check that the function passed really exists
     """
     if not fun:
-        raise salt.exceptions.SaltInvocationError(
+        raise hubblestack.utils.exceptions.SaltInvocationError(
             'Must specify a function to run!\n'
             'ex: manage.up'
         )
     if fun not in lazy_obj:
         # If the requested function isn't available, lets say why
-        raise salt.exceptions.CommandExecutionError(lazy_obj.missing_fun_string(fun))
+        raise hubblestack.utils.exceptions.CommandExecutionError(lazy_obj.missing_fun_string(fun))
 
 
 class LazyDict(collections.MutableMapping):
@@ -875,7 +875,7 @@ def grains(opts, force_refresh=False, proxy=None):
     if opts.get('grains_cache', False):
         cumask = os.umask(0o77)
         try:
-            if salt.utils.platform.is_windows():
+            if hubblestack.utils.platform.is_windows():
                 # Make sure cache file isn't read-only
                 __salt__['cmd.run']('attrib -R "{0}"'.format(cfn))
             with salt.utils.fopen(cfn, 'w+b') as fp_:

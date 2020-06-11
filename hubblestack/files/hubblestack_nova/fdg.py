@@ -46,7 +46,7 @@ import logging
 import fnmatch
 import copy
 
-from salt.exceptions import CommandExecutionError
+from hubblestack.utils.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

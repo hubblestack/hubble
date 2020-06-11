@@ -136,3 +136,6 @@ test-*.file
 
 # certificate bundles for binary distributions
 pre_packaged_certificates.py
+
+# this comes up rarely when building at home
+osquery_*.tar

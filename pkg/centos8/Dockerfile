@@ -87,6 +87,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 
 #fpm package making requirements start
 RUN dnf install -y ruby ruby-devel rpm-build rubygems gcc make \
+ && gem install --no-ri --no-rdoc ffi --version 1.12.2 \
  && gem install --no-ri --no-rdoc fpm
 
 # things we may need to build a python

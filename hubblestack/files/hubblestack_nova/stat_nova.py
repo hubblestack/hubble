@@ -50,7 +50,7 @@ import os
 import fnmatch
 import copy
 import salt.utils
-import salt.utils.platform
+import hubblestack.utils.platform
 
 from distutils.version import LooseVersion
 
@@ -60,7 +60,7 @@ __virtualname__ = 'stat'
 
 
 def __virtual__():
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     return True
 

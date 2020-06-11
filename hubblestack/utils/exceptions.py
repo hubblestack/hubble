@@ -1,0 +1,124 @@
+# -*- coding: utf-8 -*-
+'''
+This module is a central location for all hubble exceptions
+'''
+from __future__ import absolute_import, print_function, unicode_literals
+
+# Import python libs
+import copy
+import logging
+import time
+
+log = logging.getLogger(__name__)
+
+def get_error_message(error):
+    '''
+    Get human readable message from Python Exception
+    '''
+    return error.args[0] if error.args else ''
+
+
+class HubbleException(Exception):
+    '''
+    Base exception class; all exceptions should subclass this
+    '''
+    def __init__(self, message=''):
+        # Avoid circular import
+        import hubblestack.utils.stringutils
+        if not isinstance(message, str):
+            message = str(message)
+        super(HubbleException, self).__init__(
+            hubblestack.utils.stringutils.to_str(message)
+        )
+        self.message = message
+
+class CommandNotFoundError(HubbleException):
+    '''
+    Used in modules or grains when a required binary is not available
+    '''
+
+
+class CommandExecutionError(HubbleException):
+    '''
+    Used when a module runs a command which returns an error and wants
+    to show the user the output gracefully instead of dying
+    '''
+    def __init__(self, message=''):
+        # Avoid circular import
+        import hubblestack.utils.stringutils
+        try:
+            exc_str = hubblestack.utils.stringutils.to_unicode(message)
+        except TypeError:
+            # Exception class instance passed. The HubbleException __init__ will
+            # gracefully handle non-string types passed to it
+            try:
+                exc_str = str(message)
+            except UnicodeDecodeError:
+                exc_str = hubblestack.utils.stringutils.to_unicode(str(message))  # future lint: disable=blacklisted-function
+
+        # We call the parent __init__ last instead of first because we need the
+        # logic above to derive the message string to use for the exception
+        # message.
+        super(CommandExecutionError, self).__init__(exc_str)
+
+
+class LoaderError(HubbleException):
+    '''
+    Problems loading the right renderer
+    '''
+
+class FileLockError(HubbleException):
+    '''
+    Used when an error occurs obtaining a file lock
+    '''
+    def __init__(self, message, time_start=None, *args, **kwargs):
+        super(FileLockError, self).__init__(message, *args, **kwargs)
+        if time_start is None:
+            log.warning(
+                'time_start should be provided when raising a FileLockError. '
+                'Defaulting to current time as a fallback, but this may '
+                'result in an inaccurate timeout.'
+            )
+            self.time_start = time.time()
+        else:
+            self.time_start = time_start
+
+
+class GitLockError(HubbleException):
+    '''
+    Raised when an uncaught error occurs in the midst of obtaining an
+    update/checkout lock in gitfs.
+    '''
+    def __init__(self, errno, message, *args, **kwargs):
+        super(GitLockError, self).__init__(message, *args, **kwargs)
+        self.errno = errno
+
+
+class GitRemoteError(HubbleException):
+    '''
+    Used by GitFS to denote a problem with the existence of the "origin" remote
+    or part of its configuration
+    '''
+
+
+class TimeoutError(HubbleException):
+    '''
+    Thrown when an opration cannot be completet within a given time limit.
+    '''
+
+class NotImplemented(HubbleException):
+    '''
+    Used when a module runs a command which returns an error and wants
+    to show the user the output gracefully instead of dying
+    '''
+
+class ArgumentValueError(CommandExecutionError):
+    '''
+    Used when an invalid argument was passed to a command execution
+    '''
+
+
+class MissingSmb(HubbleException):
+    '''
+    Raised when no smb library is found.
+    '''

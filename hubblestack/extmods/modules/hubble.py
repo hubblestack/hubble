@@ -18,7 +18,7 @@ import os
 import traceback
 import yaml
 
-from salt.exceptions import CommandExecutionError
+from hubblestack.utils.exceptions import CommandExecutionError
 from hubblestack import __version__
 from hubblestack.status import HubbleStatus
 

@@ -203,7 +203,7 @@ def _run_osqueryi_query(query, query_sql, timing, verbose):
           '--augeas_lenses', augeas_lenses, query_sql]
 
     time_start = time.time()
-    res = __salt__['cmd.run_all'](cmd, timeout=10000)
+    res = __salt__['cmd.run_all'](cmd, timeout=600)
     time_end = time.time()
     timing[query['query_name']] = time_end - time_start
     if res['retcode'] == 0:
@@ -1215,7 +1215,7 @@ def _osqueryd_running_status(pidfile):
             log.error("unable to open pidfile, attempting to start osqueryd")
     else:
         cmd = ['pkill', 'hubble_osqueryd']
-        __salt__['cmd.run'](cmd, timeout=10000)
+        __salt__['cmd.run'](cmd, timeout=600)
         log.error("pidfile not found, attempting to start osqueryd")
     return osqueryd_running
 
@@ -1292,7 +1292,7 @@ def _start_osqueryd(pidfile,
                '--logger_path={0}'.format(logdir),
                '--config_path={0}'.format(configfile), '--flagfile={0}'.format(flagfile),
                '--database_path={0}'.format(databasepath), '--daemonize']
-    ret_dict = __salt__['cmd.run_all'](cmd, timeout=10000)
+    ret_dict = __salt__['cmd.run_all'](cmd, timeout=600)
     if ret_dict.get('retcode', None) != 0:
         log.error("Failed to start osquery daemon. Retcode: %s and error: %s", ret_dict.get(
             'retcode', None),
@@ -1334,7 +1334,7 @@ def _stop_osqueryd(servicename, pidfile):
         stop_cmd = ['net', 'stop', servicename]
     else:
         stop_cmd = ['pkill', 'hubble_osqueryd']
-    ret_stop = __salt__['cmd.run_all'](stop_cmd, timeout=10000)
+    ret_stop = __salt__['cmd.run_all'](stop_cmd, timeout=600)
     if ret_stop.get('retcode', None) != 0:
         log.error("Failed to stop osqueryd. Retcode: %s and error: %s",
                   ret_stop.get('retcode', None), ret_stop.get('stderr', None))
@@ -1342,7 +1342,7 @@ def _stop_osqueryd(servicename, pidfile):
         log.info("Successfully stopped osqueryd")
     if not salt.utils.platform.is_windows():
         remove_pidfile_cmd = ['rm', '-rf', '{0}'.format(pidfile)]
-        __salt__['cmd.run'](remove_pidfile_cmd, timeout=10000)
+        __salt__['cmd.run'](remove_pidfile_cmd, timeout=600)
 
 
 def _parse_log(path_to_logfile,
@@ -1585,7 +1585,7 @@ def query(query):
 
     # Run the osqueryi query
     cmd = [__grains__['osquerybinpath'], '--read_max', max_file_size, '--json', query]
-    res = __salt__['cmd.run_all'](cmd, timeout=10000)
+    res = __salt__['cmd.run_all'](cmd, timeout=600)
     if res['retcode'] == 0:
         query_ret['data'] = json.loads(res['stdout'])
     else:

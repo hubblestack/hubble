@@ -1430,12 +1430,12 @@ def _set_cache_offset(path_to_logfile, offset):
         log_file_initial_crc = 0
         log_file_last_crc = 0
         if(offset > 0):
-            with open(path_to_logfile, 'r') as log_file:
+            with open(path_to_logfile, 'rb') as log_file:
                 log_file.seek(0)
                 log_file_initial_crc = zlib.crc32(log_file.read(CRC_BYTES))
 
             if(offset > CRC_BYTES):
-                with open(path_to_logfile, 'r') as log_file:
+                with open(path_to_logfile, 'rb') as log_file:
                     log_file.seek(offset - CRC_BYTES)
                     log_file_last_crc = zlib.crc32(log_file.read(CRC_BYTES))
 
@@ -1471,7 +1471,7 @@ def _get_file_offset(path_to_logfile):
 
             log_file_offset = 0
             log_file_initial_crc = 0
-            with open(path_to_logfile, 'r') as log_file:
+            with open(path_to_logfile, 'rb') as log_file:
                 log_file.seek(log_file_offset)
                 log_file_initial_crc = zlib.crc32(log_file.read(CRC_BYTES))
 
@@ -1480,7 +1480,7 @@ def _get_file_offset(path_to_logfile):
                 if offset > CRC_BYTES:
                     log_file_offset = offset - CRC_BYTES
                     log_file_last_crc = 0
-                    with open(path_to_logfile, 'r') as log_file:
+                    with open(path_to_logfile, 'rb') as log_file:
                         log_file.seek(log_file_offset)
                         log_file_last_crc = zlib.crc32(log_file.read(CRC_BYTES))
                     if log_file_last_crc == last_crc:

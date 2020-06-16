@@ -166,11 +166,11 @@ fpm -s dir -t rpm \
     etc/hubble opt usr /var/log/hubble_osquery/backuplogs
 
 # edit to change iteration number, if necessary
-PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
+PKG_BASE_NAME=${HUBBLE_VERSION}-${HUBBLE_ITERATION}
 PKG_OUT_EXT=x86_64.rpm
 PKG_FIN_EXT=al1609.$PKG_OUT_EXT
-PKG_ONAME="$PKG_BASE_NAME.$PKG_OUT_EXT"
-PKG_FNAME="$PKG_BASE_NAME.$PKG_FIN_EXT"
+PKG_ONAME="hubblestack_$PKG_BASE_NAME.$PKG_OUT_EXT"
+PKG_FNAME="hubblestack-$PKG_BASE_NAME.$PKG_FIN_EXT"
 
 cp -va "$PKG_ONAME" /data/"$PKG_FNAME"
 openssl dgst -sha256 /data/"$PKG_FNAME" > /data/"$PKG_FNAME".sha256

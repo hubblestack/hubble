@@ -165,7 +165,7 @@ fpm -s dir -t deb \
     etc/hubble opt usr /var/log/hubble_osquery/backuplogs
 
 # edit to change iteration number, if necessary
-PKG_BASE_NAME=hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}
+PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
 PKG_OUT_EXT=amd64.deb
 PKG_FIN_EXT=deb9.$PKG_OUT_EXT
 PKG_ONAME="${PKG_BASE_NAME}_$PKG_OUT_EXT"

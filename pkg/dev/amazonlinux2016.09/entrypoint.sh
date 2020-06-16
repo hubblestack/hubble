@@ -168,7 +168,7 @@ fpm -s dir -t rpm \
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
 PKG_OUT_EXT=x86_64.rpm
-PKG_FIN_EXT=all609.$PKG_OUT_EXT
+PKG_FIN_EXT=al1609.$PKG_OUT_EXT
 PKG_ONAME="$PKG_BASE_NAME.$PKG_OUT_EXT"
 PKG_FNAME="$PKG_BASE_NAME.$PKG_FIN_EXT"
 

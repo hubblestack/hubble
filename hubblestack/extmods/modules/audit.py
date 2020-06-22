@@ -175,8 +175,6 @@ def __run_audit(audit_data_dict, tags, audit_file, verbose, labels):
             result_list.append(skipped_dict)
             log.error(version_error)
         except Exception as exc:
-            import traceback
-            traceback.print_exc()
             log.error(exc)
     #return list of results for a file
     return result_list
@@ -434,6 +432,7 @@ def __evaluate_results(result_dict, combined_dict, show_compliance):
     :param show_compliance:
     :return:
     """
+    #TODO - Handle boolean expressions here
     for audit_file in combined_dict:
         result_list = combined_dict[audit_file]
         for result in result_list:

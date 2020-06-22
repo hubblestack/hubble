@@ -64,7 +64,7 @@ def run(audit_files=None,
         if not isinstance(labels, list):
             labels = labels.split(',')
     # validate and get list of filepaths
-    audit_files = __get_audit_files(audit_files)
+    audit_files = _get_audit_files(audit_files)
     if not audit_files:
         return result_dict
 
@@ -86,15 +86,15 @@ def run(audit_files=None,
             continue
 
         log.debug('Processing %s', audit_file)
-        audit_data_dict = __load_and_validate_yaml_file(file_cache_path, audit_file)
+        audit_data_dict = _load_and_validate_yaml_file(file_cache_path, audit_file)
         if not audit_data_dict:
             log.error('Audit file: %s could not be loaded', audit_file)
             continue
 
-        ret = __run_audit(audit_data_dict, tags, audit_file, verbose, labels)
+        ret = _run_audit(audit_data_dict, tags, audit_file, verbose, labels)
         combined_dict[audit_file]=ret
 
-    __evaluate_results(result_dict, combined_dict, show_compliance)
+    _evaluate_results(result_dict, combined_dict, show_compliance)
     return result_dict
 
 def top(topfile='top.nova',
@@ -134,7 +134,7 @@ def top(topfile='top.nova',
     _clean_up_results(results)
     return results
 
-def __run_audit(audit_data_dict, tags, audit_file, verbose, labels):
+def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
     
     # got data for one audit file
     # lets parse, validate and execute one by one
@@ -142,21 +142,21 @@ def __run_audit(audit_data_dict, tags, audit_file, verbose, labels):
     for audit_id, audit_data in audit_data_dict.items():
         log.debug('Executing check-id: %s in audit file: %s', audit_id, audit_file)
 
-        audit_impl = __get_matched_implementation(audit_id, audit_data, tags, labels)
+        audit_impl = _get_matched_implementation(audit_id, audit_data, tags, labels)
         if not audit_impl:
             # no matched impl found
             continue
 
-        if not __validate_audit_data(audit_id, audit_impl):
+        if not _validate_audit_data(audit_id, audit_impl):
             continue
 
         try:
             # version check
-            if not __is_audit_check_version_compatible(audit_id, audit_impl):
+            if not _is_audit_check_version_compatible(audit_id, audit_impl):
                 raise AuditCheckVersionIncompatibleError('Version not compatible')
         
             # handover to module
-            audit_result = __execute_module(audit_id, audit_impl, audit_data, verbose)
+            audit_result = _execute_module(audit_id, audit_impl, audit_data, verbose)
             result_list.append(audit_result)
         except AuditCheckValdiationError as validation_error:
             # add into error section
@@ -179,7 +179,7 @@ def __run_audit(audit_data_dict, tags, audit_file, verbose, labels):
     #return list of results for a file
     return result_list
 
-def __execute_module(audit_id, audit_impl, audit_data, verbose):
+def _execute_module(audit_id, audit_impl, audit_data, verbose):
     audit_result = {
         "check_id": audit_id,
         "description": audit_data['description'],
@@ -275,7 +275,7 @@ def __execute_module(audit_id, audit_impl, audit_data, verbose):
     return audit_result
 
 
-def __is_audit_check_version_compatible(audit_check_id, audit_impl):
+def _is_audit_check_version_compatible(audit_check_id, audit_impl):
     """
     Function to check if current hubble version matches with provided values
     :param audit_check_id:
@@ -336,14 +336,14 @@ def __is_audit_check_version_compatible(audit_check_id, audit_impl):
             return True
     return False
     
-def __validate_audit_data(audit_id, audit_impl):
+def _validate_audit_data(audit_id, audit_impl):
     if 'module' not in audit_impl:
         log.error('Matched implementation does not have module mentioned, check_id: %s', audit_id)
         return False
 
     return True
 
-def __get_matched_implementation(audit_check_id, audit_data, tags, labels):
+def _get_matched_implementation(audit_check_id, audit_data, tags, labels):
     log.debug('Getting matching implementation')
 
     # check if label passed is matching with the check or not.
@@ -371,7 +371,7 @@ def __get_matched_implementation(audit_check_id, audit_data, tags, labels):
     log.debug('No target matched for audit_check_id: %s', audit_check_id)
     return None
 
-def __load_and_validate_yaml_file(filepath, audit_filename):
+def _load_and_validate_yaml_file(filepath, audit_filename):
     """
     Load and validate yaml file
     File must be a valid yaml file, and content loaded must form a python-dictionary
@@ -403,7 +403,7 @@ def __load_and_validate_yaml_file(filepath, audit_filename):
     return yaml_data
     
 
-def __get_audit_files(audit_files):
+def _get_audit_files(audit_files):
     """Get audit files list, if valid
 
     Arguments:
@@ -424,7 +424,7 @@ def __get_audit_files(audit_files):
                     for audit_file in audit_files]
     
 
-def __evaluate_results(result_dict, combined_dict, show_compliance):
+def _evaluate_results(result_dict, combined_dict, show_compliance):
     """
     Evaluate the result dictionary to be returned by the audit module
     :param result_dict:

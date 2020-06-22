@@ -23,8 +23,11 @@ def execute(check_id, audit_check):
     Raises:
         AuditCheckFailedError -- In case of error
     """
+    log.debug('Executing fdg module for check-id: %s' %(check_id))
 
     fdg_file = audit_check['file']
+    
+    # starting_chained, an attribute for fdg module. Passing it as it is (if found)
     starting_chained = audit_check.get('starting_chained')
     use_status = audit_check.get('use_status', False)
 

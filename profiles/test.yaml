@@ -1,7 +1,9 @@
 check_unique_id:
   description: 'devansh success test'
   tag: 'ADOBE-00041'
-
+  labels:
+    - 'sample1'
+    - 'sample2'
   # sub_check: true
 
   # failure_reason: 'fail reason'
@@ -299,6 +301,43 @@ check_unique_id5:
 
       module: stat
 
+      type: or
+
+      checks:
+        - path: /etc/ssh/ssh_config
+          gid: 0
+          group: root
+          mode: 644
+          uid: 0
+          user: root
+          allow_more_strict: true
+        - path: /etc/ssh/ssh_config1
+          gid: 0
+          group: root
+          mode: 644
+          uid: 0
+          user: root
+          allow_more_strict: true
+check_unique_id6:
+  description: 'devansh failure reason test'
+  tag: 'ADOBE-00046'
+
+  # sub_check: true
+
+  failure_reason: 'dummy fail reason'
+
+  # invert_result: true
+
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-7'
+
+      hubble_version: '>3 AND <7 AND <8'
+
+      # return_no_exec: true
+
+      module: stat
+
       type: and
 
       checks:
@@ -309,7 +348,127 @@ check_unique_id5:
           uid: 0
           user: root
           allow_more_strict: true
+        - path: /etc/ssh/ssh_config1
+          gid: 0
+          group: root
+          mode: 644
+          uid: 0
+          user: root
+          allow_more_strict: true
+check_unique_id7:
+  description: 'devansh subcheck test'
+  tag: 'ADOBE-00047'
+
+  sub_check: true
+
+  failure_reason: 'dummy fail reason'
+
+  # invert_result: true
+
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-7'
+
+      hubble_version: '>3 AND <7 AND <8'
+
+      # return_no_exec: true
+
+      module: stat
+
+      type: or
+
+      checks:
         - path: /etc/ssh/ssh_config
+          gid: 0
+          group: root
+          mode: 644
+          uid: 0
+          user: root
+          allow_more_strict: true
+check_unique_id8:
+  description: 'devansh invert test fail 1'
+  tag: 'ADOBE-00048'
+
+#  sub_check: true
+
+  failure_reason: 'dummy fail reason'
+
+  invert_result: true
+
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-7'
+
+      hubble_version: '>3 AND <7 AND <8'
+
+      # return_no_exec: true
+
+      module: stat
+
+      type: or
+
+      checks:
+        - path: /etc/ssh/ssh_config
+          gid: 0
+          group: root
+          mode: 644
+          uid: 0
+          user: root
+          allow_more_strict: true
+check_unique_id9:
+  description: 'devansh invert test fail 2'
+  tag: 'ADOBE-00049'
+
+#  sub_check: true
+
+#  failure_reason: 'dummy fail reason'
+
+  invert_result: true
+
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-7'
+
+      hubble_version: '>3 AND <7 AND <8'
+
+      # return_no_exec: true
+
+      module: stat
+
+      type: or
+
+      checks:
+        - path: /etc/ssh/ssh_config
+          gid: 0
+          group: root
+          mode: 644
+          uid: 0
+          user: root
+          allow_more_strict: true
+check_unique_id10:
+  description: 'devansh invert test success'
+  tag: 'ADOBE-00049'
+
+#  sub_check: true
+
+  failure_reason: 'dummy fail reason'
+
+  invert_result: true
+
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-7'
+
+      hubble_version: '>3 AND <7 AND <8'
+
+      # return_no_exec: true
+
+      module: stat
+
+      type: or
+
+      checks:
+        - path: /etc/ssh/ssh_config1
           gid: 0
           group: root
           mode: 644

@@ -22,6 +22,35 @@ def execute(check_id, audit_check):
 
     Raises:
         AuditCheckFailedError -- In case of error
+
+    Example for a check implementation in a profile:
+check_unique_id:
+  description: 'stat check'
+  tag: 'ADOBE-01'
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-7'
+
+      hubble_version: '>3 AND <7 AND <8'
+
+      module: stat
+
+      checks:
+        - path: /etc/ssh/ssh_config1
+          gid: 0
+          group: root
+          mode: 644
+          uid: 0
+          user: root
+          allow_more_strict: true
+
+    Mandatory parameters:
+    path - file path
+    gid - group id
+    group - group name
+    mode - file mode
+    uid - user id
+    user - user name
     """
 
     # check file presence

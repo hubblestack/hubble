@@ -2,8 +2,8 @@
 """
 Return hubble data to sqlite (intended for testing)
 """
-
-
+from __future__ import absolute_import
+from functools import wraps
 import json
 import logging
 import os
@@ -19,8 +19,9 @@ except Exception:
 __virtualname__ = 'sqlite'
 
 log = logging.getLogger(__virtualname__)
+isConnected = False
 
-_CONN = None
+version = [int(num) for num in sqlite3.sqlite_version.split('.')]
 
 
 def __virtual__():
@@ -37,7 +38,6 @@ def __virtual__():
 def _get_options(ret=None):
     """
     Get the sqlite dumpster options from configs
-
     :return: options
     """
 
@@ -59,23 +59,165 @@ def _get_conn():
     """
     Establish a connection (if not connected) and return it
 
-    :return: connection
+    :return: connection object or None
     """
     _options = _get_options()
-    global _CONN
-    if not _CONN:
-        _p = _options.get('dumpster', 'hubble-returns.db')
-        _d = os.path.dirname(_p)
-        if _d and not os.path.isdir(_d):
-            log.debug('creating directory %s', _d)
-            os.makedirs(_d, 0o755)
-        log.debug('connecting to database in %s', _p)
-        _CONN = sqlite3.connect(_options.get('dumpster', 'hubble-returns.db'))
-        log.debug('creating ret table')
-        _CONN.execute('''create table if not exists ret(
-            jid text, id text, fun text, fun_args json,
-            ret json)''')
-    return _CONN
+    global isConnected
+    conn = None
+
+    if not isConnected:
+        database = _options.get('dumpster', 'hubble-returns-testing.db')
+        dir = os.path.dirname(database)
+
+        if dir and not os.path.isdir(dir):
+            log.debug('creating missing directory %s', dir)
+            try:
+                os.makedirs(dir, 0o755)
+            except OSError as err:
+                log.info('failed to create directory %s', dir)
+        try:
+            conn = sqlite3.connect(_options.get('dumpster', 'hubble-returns-testing.db'))
+            isConnected = True
+        except sqlite3.Error as e:
+            log.exception('failed to connect to sqlite database %s', database)
+
+        log.debug('creating jid table')
+
+        conn.execute('''CREATE TABLE if not exists jids(jid TEXT PRIMARY KEY, id INT, load TEXT NOT NULL)''')
+        if version[0] >= 3 and version[1] >= 9:
+            conn.execute('''CREATE TABLE if not exists ret(
+            jid TEXT, id INT, fun TEXT, fun_args JSON, 
+            return_data JSON, FOREIGN KEY(jid) REFERENCES jids(jid))''')
+        else:
+            conn.execute('''CREATE TABLE if not exists ret(
+            jid TEXT,id INT, fun TEXT, fun_args TEXT, 
+            return_data TEXT,
+             FOREIGN KEY(jid) REFERENCES jids(jid))''')
+
+    return conn
+
+
+def _close_connection(conn):
+    '''
+    Close sqlite connection
+    '''
+
+    if not isConnected:
+        log.debug('no sqlite connection to close')
+        return
+
+    global isConnected
+    isConnected = False
+
+    log.debug('closing sqlite connection')
+    conn.commit()
+    conn.close()
+
+
+def _open_close_conn(func):
+    '''
+    Decorator to open and close sqlite connection
+    '''
+
+    @wraps(func)
+    def wrapper_func(*args, **kwargs):
+        kwargs['conn'] = _get_conn()
+        if not kwargs['conn']:
+            log.exception('failed to retrieve sqlite connection object')
+            return
+        results = func(*args, **kwargs)
+        _close_connection(kwargs['conn'])
+        return results
+
+    return wrapper_func
+
+
+@_open_close_conn
+def get_fun(fun, fun_args=None, conn=None, return_all=False):
+    '''
+    Returns load of last function called
+    Provide function arguments for a more granular return
+    Set return_all to True to return entire query result
+    '''
+
+    log.debug('sqlite3 returner get_func called')
+    cur = conn.cursor()
+
+    if fun_args:
+        log.debug(
+            'sqlite3 returner retrieving last job called with function: %s and arguments: %s', fun, fun_args)
+        cur.execute('''SELECT jid, id, fun, fun_args, return_data 
+        FROM jids INNER JOIN ret ON jids.id = ret.id  
+        WHERE fun_args = ? and fun = ? ORDER BY ret.id DESC ''', fun_args, fun)
+
+
+@_open_close_conn
+def get_ret(conn=None):
+    '''
+    Returns json of last job called
+    '''
+
+    log.debug('sqlite3 returner retrieving last job called')
+    cur = conn.cursor()
+    cur.execute('''SELECT load FROM jids WHERE id = (SELECT MAX(id) FROM jids)''')
+    results = cur.fetchall()
+    return results
+
+
+@_open_close_conn
+def get_load(jid, conn=None):
+    '''
+    Gets load data from the jid specified
+    :returns load or None
+    '''
+
+    log.debug('sqlite3 returner retrieving data with jid %s', jid)
+    cur = conn.cursor()
+    cur.execute('''SELECT load FROM jids WHERE jid = ? ''', jid)
+
+    results = cur.fetchall()
+
+    if not results:
+        log.debug('failed to return load for jid %s', jid)
+        return None
+
+    return results
+
+
+@_open_close_conn
+def _insert_helper(ret, conn=None):
+    log.debug('populating jids table with %s', ret.get('jid'))
+    conn.execute('''INSERT INTO  jids (id, jid, load)
+    VALUES((SELECT IFNULL(MAX(id), 0) + 1 FROM jids),?,?);''', (ret.get('jid'), ret.get('return')))
+
+    log.debug('populating ret table with jid %s'.ret.get('jid'))
+    conn.execute('''INSERT INTO  ret (id, jid, fun, fun_args, return_data)
+    VALUES((SELECT IFNULL(MAX(id), 0) + 1 FROM ret),?,?,?,?,?,?);''',
+                 (ret.get('jid'), ret.get('fun'), ret.get('fun_args'), ret.get('return')))
+
+
+def _insert(ret, conn=None):
+    # identify lists of events
+    list_of_events = False
+    if isinstance(ret, (list, tuple)):
+        num_events = sum([0 if isinstance(i, dict) else 1 for i in ret])
+        if num_events == 0:
+            list_of_events = True
+
+    # recursion
+    if list_of_events:
+        for item in ret:
+            _insert(item)
+        return
+
+    for key in list(ret):
+        if not ret[key]:
+            ret.pop(key)
+        if version[0] >= 3 and version[1] >= 9:
+            if isinstance(ret.get(key), (list, tuple, dict)):
+                ret[key] = json.dumps(ret[key])
+
+    _insert_helper(ret, conn)
 
 
 """
@@ -95,43 +237,8 @@ def _get_conn():
 """
 
 
-def _put(ret):
-    """
-    Add item to sqlite
-    """
-    conn = _get_conn()
-
-    # identify lists of events
-    list_of_events = False
-    if isinstance(ret, (list, tuple)):
-        num_events = sum([0 if isinstance(i, dict) else 1 for i in ret])
-        if num_events == 0:
-            list_of_events = True
-
-    if list_of_events:
-        for item in ret:
-            _put(item)
-        return
-
-    for item in ret:
-        if isinstance(ret[item], (list, tuple, dict)):
-            ret[item] = json.dumps(ret[item])
-
-    # try to get sqlite queries to show not-ints for jids
-    ret['jid'] = str(ret.get('jid', '??'))
-    log.info("logging jid=%s in sqlite dumpster", ret['jid'])
-
-    for i in ('id', 'fun', 'fun_args', 'return', 'Failure', 'Success'):
-        if i not in ret:
-            ret[i] = None
-    # conn.execute("insert into ret values(:jid,:id,:fun,json(:fun_args),json(:return))", x)
-    # json() isn't added until later than sqlite-3.7.17 (the centos7 version)...
-    conn.execute("insert into ret values(:jid,:id,:fun,:fun_args,:return)", ret)
-    conn.commit()
-
-
 def returner(ret):
     """
     The main returner function that sends ret data to sqlite
     """
-    _put(ret)
+    _insert(ret)

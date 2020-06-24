@@ -104,7 +104,7 @@ import yaml
 from distutils.version import StrictVersion
 import salt.loader
 import salt.utils
-from salt.exceptions import CommandExecutionError
+from hubblestack.utils.exceptions import CommandExecutionError
 from hubblestack.status import HubbleStatus
 
 log = logging.getLogger(__name__)

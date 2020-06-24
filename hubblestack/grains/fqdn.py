@@ -2,10 +2,10 @@
 """
 Custom grains around fqdn
 """
-import salt.grains.core
+import hubblestack.grains.hubble_core
 import salt.modules.cmdmod
 import salt.utils
-import salt.utils.platform
+import hubblestack.utils.platform
 
 __salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet,
             'cmd.run_all': salt.modules.cmdmod.run_all}
@@ -18,7 +18,7 @@ def fqdn():
     """
     grains = {}
     local_fqdn = None
-    if not salt.utils.platform.is_windows():
+    if not hubblestack.utils.platform.is_windows():
         local_fqdn = __salt__['cmd.run']('hostname --fqdn')
     if local_fqdn and 'hostname: ' not in local_fqdn:
         grains['local_fqdn'] = local_fqdn
@@ -31,7 +31,7 @@ def dest_ip():
     gateway for the host. This is because the current methods can result in
     various IPs due to round robin DNS.
     """
-    interfaces = salt.grains.core.ip4_interfaces()['ip4_interfaces']
+    interfaces = hubblestack.grains.hubble_core.ip4_interfaces()['ip4_interfaces']
     try:
         ret = __salt__['cmd.run_all']('ip route show to 0/0')
         if ret['retcode'] == 0:

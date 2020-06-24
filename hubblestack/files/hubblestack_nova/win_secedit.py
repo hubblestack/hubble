@@ -8,7 +8,7 @@ import copy
 import fnmatch
 import logging
 import salt.utils
-import salt.utils.platform
+import hubblestack.utils.platform
 
 try:
     import codecs
@@ -22,7 +22,7 @@ __virtualname__ = 'win_secedit'
 
 
 def __virtual__():
-    if not salt.utils.platform.is_windows() or not HAS_WINDOWS_MODULES:
+    if not hubblestack.utils.platform.is_windows() or not HAS_WINDOWS_MODULES:
         return False, 'This audit module only runs on windows'
     return True
 

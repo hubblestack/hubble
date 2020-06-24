@@ -34,7 +34,7 @@ import fnmatch
 import os
 import copy
 import salt.utils
-import salt.utils.platform
+import hubblestack.utils.platform
 
 from distutils.version import LooseVersion
 
@@ -42,7 +42,7 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     return True
 

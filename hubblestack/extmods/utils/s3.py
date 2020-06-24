@@ -24,7 +24,7 @@ import salt.utils.hashutils
 import salt.utils.xmlutil as xml
 import time
 from salt._compat import ElementTree as ET
-from salt.exceptions import CommandExecutionError
+from hubblestack.utils.exceptions import CommandExecutionError
 from salt.ext.six.moves.urllib.parse import quote as _quote   # pylint: disable=import-error,no-name-in-module
 from salt.ext import six
 

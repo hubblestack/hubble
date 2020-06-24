@@ -94,6 +94,7 @@ import os
 import yaml
 
 import hubblestack.extmods.module_runner.runner_factory as runner_factory
+from hubblestack.utils.exceptions import CommandExecutionError
 from hubblestack.status import HubbleStatus
 
 log = logging.getLogger(__name__)

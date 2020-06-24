@@ -21,12 +21,12 @@ import os
 import re
 import yaml
 import time
-from salt.exceptions import CommandExecutionError
+from hubblestack.utils.exceptions import CommandExecutionError
 
 # Import salt libs
 import salt.ext.six
 import salt.loader
-import salt.utils.platform
+import hubblestack.utils.platform
 
 # Import third party libs
 try:
@@ -57,7 +57,7 @@ from hubblestack.status import HubbleStatus
 hubble_status = HubbleStatus(__name__, 'top', 'process')
 
 def __virtual__():
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         return False, 'This module only works on Linux'
     return True
 

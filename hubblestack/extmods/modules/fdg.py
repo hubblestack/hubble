@@ -119,7 +119,7 @@ import logging
 import os
 
 import yaml
-from salt.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 import hubblestack.extmods.module_runner.runner_factory as runner_factory
 

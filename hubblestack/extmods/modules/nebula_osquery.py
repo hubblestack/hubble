@@ -40,9 +40,9 @@ import traceback
 
 import salt.utils
 import salt.utils.files
-import salt.utils.platform
+import hubblestack.utils.platform
 
-from salt.exceptions import CommandExecutionError
+from hubblestack.utils.exceptions import CommandExecutionError
 from hubblestack import __version__
 import hubblestack.log
 
@@ -99,7 +99,7 @@ def queries(query_group,
         salt '*' nebula.queries hour pillar_key=sec_osqueries
     """
     # sanity check of query_file: if not present, add it
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         query_file = query_file or \
                      'salt://hubblestack_nebula_v2/hubblestack_nebula_win_queries.yaml'
     else:
@@ -129,7 +129,7 @@ def queries(query_group,
     # run the osqueryi queries
     success, timing, ret = _run_osquery_queries(query_data, verbose)
 
-    if success is False and salt.utils.platform.is_windows():
+    if success is False and hubblestack.utils.platform.is_windows():
         log.error('osquery does not run on windows versions earlier than Server 2008 and Windows 7')
         if query_group == 'day':
             ret = [
@@ -350,7 +350,7 @@ def osqueryd_monitor(configfile=None,
     databasepath = databasepath or __opts__.get('osquery_dbpath')
     pidfile = pidfile or os.path.join(base_path, "hubble_osqueryd.pidfile")
     hashfile = hashfile or os.path.join(base_path, "hash_of_flagfile.txt")
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         conftopfile = conftopfile or 'salt://hubblestack_nebula_v2/win_top.osqueryconf'
         flagstopfile = flagstopfile or 'salt://hubblestack_nebula_v2/win_top.osqueryflags'
 
@@ -506,7 +506,7 @@ def check_disk_usage(path=None):
 
     """
     disk_stats = {}
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         log.info("Platform is windows, skipping disk usage stats")
         disk_stats = {"Error": "Platform is windows"}
     else:
@@ -585,7 +585,7 @@ def top(query_group,
     """
     Run the queries represented by query_group from the configuration files extracted from topfile
     """
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         topfile = 'salt://hubblestack_nebula_v2/win_top.nebula'
 
     configs = _get_top_data(topfile)
@@ -1284,7 +1284,7 @@ def _start_osqueryd(pidfile,
     This function will start osqueryd
     """
     log.info("osqueryd is not running, attempting to start osqueryd")
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         log.info("requesting service manager to start osqueryd")
         cmd = ['net', 'start', servicename]
     else:
@@ -1330,7 +1330,7 @@ def _stop_osqueryd(servicename, pidfile):
     """
     Thid function will stop osqueryd.
     """
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         stop_cmd = ['net', 'stop', servicename]
     else:
         stop_cmd = ['pkill', 'hubble_osqueryd']
@@ -1340,7 +1340,7 @@ def _stop_osqueryd(servicename, pidfile):
                   ret_stop.get('retcode', None), ret_stop.get('stderr', None))
     else:
         log.info("Successfully stopped osqueryd")
-    if not salt.utils.platform.is_windows():
+    if not hubblestack.utils.platform.is_windows():
         remove_pidfile_cmd = ['rm', '-rf', '{0}'.format(pidfile)]
         __salt__['cmd.run'](remove_pidfile_cmd, timeout=600)
 

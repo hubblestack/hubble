@@ -200,14 +200,14 @@ def _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile):
     type = audit_impl.get('type', 'and').lower().strip()
 
     #check for type in check implementation. If not present default is 'and'
-    audit_result['type'] = type
+    audit_result['run_config']['type'] = type
+    audit_result['invert_result'] = invert_result
 
     # check if return_no_exec is true
     if return_no_exec:
         audit_result['run_config']['return_no_exec'] = True
         check_result = CHECK_STATUS['Success']
         if invert_result:
-            audit_result['invert_result'] = True
             check_result = CHECK_STATUS['Failure']
             audit_result['failure_reason'] = failure_reason
         audit_result['check_result'] = check_result

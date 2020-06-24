@@ -48,7 +48,7 @@ import logging
 import os
 import re
 
-from salt.exceptions import CommandExecutionError
+from hubblestack.utils.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

@@ -16,9 +16,9 @@ import yaml
 
 import salt.ext.six
 import salt.loader
-import salt.utils.platform
+import hubblestack.utils.platform
 
-from salt.exceptions import CommandExecutionError
+from hubblestack.utils.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 DEFAULT_MASK = ['ExecuteFile', 'Write', 'Delete', 'DeleteSubdirectoriesAndFiles',
@@ -33,7 +33,7 @@ __version__ = 'v2017.8.3'
 
 
 def __virtual__():
-    if not salt.utils.platform.is_windows():
+    if not hubblestack.utils.platform.is_windows():
         return False, 'This module only works on windows'
     return __virtualname__
 

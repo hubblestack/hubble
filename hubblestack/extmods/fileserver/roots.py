@@ -29,7 +29,7 @@ import salt.utils.files
 import salt.utils.gzip_util
 import salt.utils.hashutils
 import salt.utils.path
-import salt.utils.platform
+import hubblestack.utils.platform
 import salt.utils.stringutils
 import salt.utils.versions
 from salt.ext import six
@@ -360,7 +360,7 @@ def _file_lists(load, form):
                         'roots: %s symlink destination is %s',
                         abs_path, link_dest
                     )
-                    if salt.utils.platform.is_windows() \
+                    if hubblestack.utils.platform.is_windows() \
                             and link_dest.startswith('\\\\'):
                         # Symlink points to a network path. Since you can't
                         # join UNC and non-UNC paths, just assume the original

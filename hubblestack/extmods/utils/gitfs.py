@@ -30,7 +30,7 @@ import salt.utils.gzip_util
 import salt.utils.hashutils
 import salt.utils.itertools
 import salt.utils.path
-import salt.utils.platform
+import hubblestack.utils.platform
 import salt.utils.stringutils
 import salt.utils.url
 import salt.utils.user
@@ -39,7 +39,7 @@ import salt.fileserver
 from salt.config import DEFAULT_MASTER_OPTS as _DEFAULT_MASTER_OPTS
 from salt.utils.odict import OrderedDict
 from salt.utils.process import os_is_running as pid_exists
-from salt.exceptions import (
+from hubblestack.utils.exceptions import (
     FileserverConfigError,
     GitLockError,
     get_error_message
@@ -595,7 +595,7 @@ class GitProvider(object):
 
         cmd = subprocess.Popen(
             shlex.split(cmd_str),
-            close_fds=not salt.utils.platform.is_windows(),
+            close_fds=not hubblestack.utils.platform.is_windows(),
             cwd=os.path.dirname(self.gitdir),
             env=env,
             stdout=subprocess.PIPE,
@@ -3086,7 +3086,7 @@ class GitPillar(GitBase):
                                 # is remove the symlink and let it be created
                                 # below.
                                 try:
-                                    if salt.utils.platform.is_windows() \
+                                    if hubblestack.utils.platform.is_windows() \
                                             and not ldest.startswith('\\\\') \
                                             and os.path.isdir(ldest):
                                         # On Windows, symlinks to directories

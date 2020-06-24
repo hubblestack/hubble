@@ -94,7 +94,7 @@ def run(audit_files=None,
         ret = _run_audit(audit_data_dict, tags, audit_file, verbose, labels)
         combined_dict[audit_file]=ret
 
-    _evaluate_results(result_dict, combined_dict, show_compliance)
+    _evaluate_results(result_dict, combined_dict, show_compliance, verbose)
     return result_dict
 
 def top(topfile='top.nova',
@@ -139,9 +139,9 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
     # got data for one audit file
     # lets parse, validate and execute one by one
     result_list = []
+    nova_profile = os.path.splitext(os.path.basename(audit_file))[0]
     for audit_id, audit_data in audit_data_dict.items():
-        log.debug('Executing check-id: %s in audit file: %s', audit_id, audit_file)
-
+        log.debug('Executing check-id: %s in nova profile: %s', audit_id, nova_profile)
         audit_impl = _get_matched_implementation(audit_id, audit_data, tags, labels)
         if not audit_impl:
             # no matched impl found
@@ -156,7 +156,7 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
                 raise AuditCheckVersionIncompatibleError('Version not compatible')
         
             # handover to module
-            audit_result = _execute_module(audit_id, audit_impl, audit_data, verbose)
+            audit_result = _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile)
             result_list.append(audit_result)
         except AuditCheckValdiationError as validation_error:
             # add into error section
@@ -164,6 +164,7 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
             error_dict['tag'] = audit_data['tag']
             error_dict['description'] = audit_data['description']
             error_dict['check_result'] = CHECK_STATUS['Error']
+            error_dict['nova_profile'] = nova_profile
             result_list.append(error_dict)
             log.error(validation_error)
         except AuditCheckVersionIncompatibleError as version_error:
@@ -172,6 +173,7 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
             skipped_dict['tag'] = audit_data['tag']
             skipped_dict['description'] = audit_data['description']
             skipped_dict['check_result'] = CHECK_STATUS['Skipped']
+            skipped_dict['nova_profile'] = nova_profile
             result_list.append(skipped_dict)
             log.error(version_error)
         except Exception as exc:
@@ -179,10 +181,11 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
     #return list of results for a file
     return result_list
 
-def _execute_module(audit_id, audit_impl, audit_data, verbose):
+def _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile):
     audit_result = {
         "check_id": audit_id,
         "description": audit_data['description'],
+        "nova_profile": nova_profile,
         "sub_check": audit_data.get('sub_check', False),
         "tag": audit_data['tag'],
         "module": audit_impl['module'],
@@ -424,12 +427,13 @@ def _get_audit_files(audit_files):
                     for audit_file in audit_files]
     
 
-def _evaluate_results(result_dict, combined_dict, show_compliance):
+def _evaluate_results(result_dict, combined_dict, show_compliance, verbose):
     """
     Evaluate the result dictionary to be returned by the audit module
-    :param result_dict:
-    :param combined_dict:
-    :param show_compliance:
+    :param result_dict: Final dictionary to be returned
+    :param combined_dict: Initial dictionary with results for all profiles
+    :param show_compliance: Para to show compliance percentage
+    :param verbose: Create output in verbose manner or not
     :return:
     """
     #TODO - Handle boolean expressions here
@@ -439,7 +443,10 @@ def _evaluate_results(result_dict, combined_dict, show_compliance):
             sub_check = result.get('sub_check', False)
             if not sub_check:
                 dict={}
-                dict[result['tag']]=result['description']
+                if verbose:
+                    dict[result['tag']] = result
+                else:
+                    dict[result['tag']]=result['description']
                 if result['check_result'] == CHECK_STATUS['Success']:
                     result_dict[CHECK_STATUS['Success']].append(dict)
                 elif result['check_result'] == CHECK_STATUS['Failure']:

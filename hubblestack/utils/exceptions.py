@@ -2,7 +2,7 @@
 '''
 This module is a central location for all hubble exceptions
 '''
-# Import python libs
+
 import copy
 import logging
 import time
@@ -131,7 +131,6 @@ class MissingSmb(HubbleException):
     '''
     Raised when no smb library is found.
     '''
-
 
 class MinionError(HubbleException):
     '''

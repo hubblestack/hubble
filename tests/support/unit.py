@@ -302,11 +302,11 @@ class TextTestResult(_TextTestResult):
     '''
 
     def startTest(self, test):
-        log.debug('>>>>> START >>>>> {0}'.format(test.id()))
+        log.debug('---=: START :=--- {0}'.format(test.id()))
         return super(TextTestResult, self).startTest(test)
 
     def stopTest(self, test):
-        log.debug('<<<<< END <<<<<<< {0}'.format(test.id()))
+        log.debug('---=: END  :=--- {0}'.format(test.id()))
         return super(TextTestResult, self).stopTest(test)
 
 

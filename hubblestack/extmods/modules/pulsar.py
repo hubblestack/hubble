@@ -11,7 +11,6 @@ Watch files and translate the changes into salt events
             the beacon configuration.
 
 """
-# Import Python libs
 
 import types
 import base64
@@ -21,12 +20,10 @@ import os
 import re
 import yaml
 import time
-from hubblestack.utils.exceptions import CommandExecutionError
 
-import hubblestack.loader
+from hubblestack.utils.exceptions import CommandExecutionError
 import hubblestack.utils.platform
 
-# Import third party libs
 try:
     import pyinotify
     HAS_PYINOTIFY = True

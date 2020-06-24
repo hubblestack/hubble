@@ -23,7 +23,6 @@ import tornado.ioloop
 import weakref
 from datetime import datetime
 
-# Import salt libs
 import hubblestack.utils.configparser
 import hubblestack.utils.data
 import hubblestack.utils.files
@@ -40,6 +39,7 @@ import hubblestack.extmods.fileserver
 from hubblestack.config import DEFAULT_MASTER_OPTS as _DEFAULT_MASTER_OPTS
 from hubblestack.utils.odict import OrderedDict
 from hubblestack.utils.process import os_is_running as pid_exists
+
 from hubblestack.utils.exceptions import (
     FileserverConfigError,
     GitLockError,

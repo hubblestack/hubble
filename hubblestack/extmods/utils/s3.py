@@ -25,7 +25,6 @@ import time
 from urllib.parse import quote as _quote
 from hubblestack.utils._compat import ElementTree as ET
 from hubblestack.utils.exceptions import CommandExecutionError
-# pylint: disable=import-error,no-name-in-module
 
 log = logging.getLogger(__name__)
 

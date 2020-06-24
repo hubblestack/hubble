@@ -9,7 +9,6 @@ import glob
 import logging
 import re
 
-# Import salt libs
 import hubblestack.utils.files
 import hubblestack.utils.path
 import hubblestack.utils.platform

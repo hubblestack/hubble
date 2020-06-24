@@ -146,7 +146,6 @@ def run(fdg_file=None, starting_chained=None):
         Allows you to pass in a starting argument, which will be treated as
         the ``chained`` argument for the ``main`` block. Optional.
     """
-<<<<<<< ad1aa731efd4fedba334706519de8442ae0d7b11
     if fdg_file is None:
         return top()
     fdg_file = _get_fdg_file(fdg_file)
@@ -157,15 +156,6 @@ def run(fdg_file=None, starting_chained=None):
 
     # initialize loader
     fdg_runner.init_loader()
-=======
-    if fdg_file and fdg_file.startswith('salt://'):
-        cached = __mods__['cp.cache_file'](fdg_file)
-    else:
-        cached = fdg_file
-    if not cached:
-        raise CommandExecutionError('There was a problem caching the fdg_file: {0}'
-                                    .format(fdg_file))
->>>>>>> add cp module dependencies
 
     # Recursive execution of the blocks
     # Handover to fdg_runner
@@ -217,17 +207,12 @@ def top(fdg_topfile='top.fdg'):
 
 
 def _get_top_data(topfile):
-<<<<<<< ad1aa731efd4fedba334706519de8442ae0d7b11
     """
-        Helper method to retrieve and parse the FDG topfile
-        """
+    Helper method to retrieve and parse the FDG topfile
+    """
     if not topfile.startswith('salt://'):
         topfile = 'salt://' + BASE_DIR_FDG_PROFILES + os.sep + topfile
     cached_topfile = __salt__['cp.cache_file'](topfile)
-=======
-
-    cached_topfile = __mods__['cp.cache_file'](topfile)
->>>>>>> add cp module dependencies
 
     if not cached_topfile:
         log.debug('FDG topfile %s not found from fileserver. Aborting.', topfile)

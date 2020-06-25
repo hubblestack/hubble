@@ -1296,14 +1296,6 @@ def _windows_platform_data():
         service_pack = None
         if info['ServicePackMajor'] > 0:
             service_pack = ''.join(['SP', str(info['ServicePackMajor'])])
-=======
-        info = salt.utils.win_osinfo.get_os_version_info()
-        net_info = salt.utils.win_osinfo.get_join_info()
-
-        service_pack = None
-        if info['ServicePackMajor'] > 0:
-            service_pack = ''.join(['SP', six.text_type(info['ServicePackMajor'])])
->>>>>>> 68abcf3... Salt-less hubble changes, Pulling 3 salt libraries to our codebase. (#6) (#876)
 
         os_release = _windows_os_release_grain(caption=osinfo.Caption,
                                                product_type=osinfo.ProductType)

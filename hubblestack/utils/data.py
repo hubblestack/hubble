@@ -135,7 +135,6 @@ def decode(data, encoding=None, errors='strict', keep=False,
                 raise
         return data
 
-
 def encode(data, encoding=None, errors='strict', keep=False,
            preserve_dict_class=False, preserve_tuples=False):
     """
@@ -170,7 +169,6 @@ def encode(data, encoding=None, errors='strict', keep=False,
             if not keep:
                 raise
         return data
-
 
 def encode_dict(data, encoding=None, errors='strict', keep=False,
                 preserve_dict_class=False, preserve_tuples=False):
@@ -375,7 +373,6 @@ def decode_tuple(data, encoding=None, errors='strict', keep=False,
         decode_list(data, encoding, errors, keep, normalize,
                     preserve_dict_class, True, to_str)
     )
-
 
 def repack_dictlist(data,
                     strict=False,

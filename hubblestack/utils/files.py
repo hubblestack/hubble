@@ -18,7 +18,6 @@ import hubblestack.utils.exceptions
 
 try:
     import fcntl
-
     HAS_FCNTL = True
 except ImportError:
     # fcntl is not available on windows
@@ -109,7 +108,6 @@ def fopen(*args, **kwargs):
 
     return f_handle
 
-
 def is_fcntl_available():
     """
     Simple function to check if the ``fcntl`` module is available or not.
@@ -154,7 +152,6 @@ def is_binary(path):
                 return True
     except os.error:
         return False
-
 
 def remove(path):
     """

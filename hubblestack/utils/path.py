@@ -19,7 +19,6 @@ from hubblestack.utils.exceptions import CommandNotFoundError
 
 log = logging.getLogger(__name__)
 
-
 def which(exe=None):
     '''
     Python clone of /usr/bin/which

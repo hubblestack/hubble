@@ -20,7 +20,6 @@ List of grains:
 import logging
 
 import hubblestack.utils.path
-
 import hubblestack.modules.cmdmod
 
 __salt__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet}

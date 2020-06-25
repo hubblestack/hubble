@@ -4,7 +4,7 @@ import logging
 import os
 import re
 
-from hubblestack.utils.hubble_error import AuditCheckValdiationError
+from hubblestack.utils.hubble_error import AuditCheckValidationError
 from hubblestack.utils.hubble_error import AuditCheckFailedError
 from salt.exceptions import CommandExecutionError
 
@@ -65,7 +65,7 @@ def validate_params(check_id, audit_check):
         audit_check {dict} -- Single audit check for this module
 
     Raises:
-        AuditCheckValdiationError: For any validation error
+        AuditCheckValidationError: For any validation error
     """
     log.debug('Module: fdg Start validating params for check-id: %s' %(check_id))
 
@@ -75,6 +75,6 @@ def validate_params(check_id, audit_check):
         error['file'] = 'Mandatory parameter: file param not found for check-id: %s' %(check_id)
 
     if error:
-        raise AuditCheckValdiationError(str(error))
+        raise AuditCheckValidationError(str(error))
 
     log.debug('Validatiion success for check-id: %s' %(check_id))

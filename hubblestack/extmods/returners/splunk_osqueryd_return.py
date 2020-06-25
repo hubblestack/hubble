@@ -106,7 +106,7 @@ def _generate_and_send_payload(hec, host_args, opts, event, query_results):
         sourcetype = opts['sourcetype'] + '_' + query_results['name'].replace('pack_', '')
     # If the osquery query includes a field called 'time' it will be checked.
     # If it's within the last year, it will be used as the eventtime.
-    event_time = query_results.get('time', '')
+    event_time = query_results.get('unixTime', query_results.get('time', ''))
     try:
         if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(
                 float(event_time))).days > 365:

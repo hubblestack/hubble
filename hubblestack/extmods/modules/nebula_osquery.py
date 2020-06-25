@@ -39,7 +39,7 @@ import zlib
 import traceback
 
 import salt.utils
-import salt.utils.files
+import hubblestack.utils.files
 import hubblestack.utils.platform
 
 from hubblestack.utils.exceptions import CommandExecutionError
@@ -1529,7 +1529,7 @@ def _perform_log_rotation(path_to_logfile,
                         :len(list_of_backup_log_files) -
                         backup_log_files_count + 1]
                     for dfile in list_of_backup_log_files:
-                        salt.utils.files.remove(dfile)
+                        hubblestack.utils.files.remove(dfile)
                     log.info("Successfully deleted extra backup log files")
 
             residue_events = []
@@ -1537,7 +1537,7 @@ def _perform_log_rotation(path_to_logfile,
 
             backup_log_file = os.path.normpath(os.path.join(backup_log_dir, log_filename) +
                                                "-" + str(time.time()))
-            salt.utils.files.rename(path_to_logfile, backup_log_file)
+            hubblestack.utils.files.rename(path_to_logfile, backup_log_file)
 
             if read_residue_events:
                 residue_events = _read_residue_logs(backup_log_file, offset)

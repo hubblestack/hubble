@@ -10,17 +10,17 @@ import logging
 import re
 
 # Import salt libs
-import salt.utils.files
-import salt.utils.path
+import hubblestack.utils.files
+import hubblestack.utils.path
 import hubblestack.utils.platform
 
 # Solve the Chicken and egg problem where grains need to run before any
 # of the modules are loaded and are generally available for any usage.
-import salt.modules.cmdmod
+import hubblestack.modules.cmdmod
 
 __salt__ = {
-    'cmd.run': salt.modules.cmdmod._run_quiet,
-    'cmd.run_all': salt.modules.cmdmod._run_all_quiet
+    'cmd.run': hubblestack.modules.cmdmod._run_quiet,
+    'cmd.run_all': hubblestack.modules.cmdmod._run_all_quiet
 }
 
 log = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ _geom_attribs = [_geomconsts.__dict__[key] for key in
 
 
 def _freebsd_geom():
-    geom = salt.utils.path.which('geom')
+    geom = hubblestack.utils.path.which('geom')
     ret = {'disks': {}, 'SSDs': []}
 
     devices = __salt__['cmd.run']('{0} disk list'.format(geom))
@@ -133,7 +133,7 @@ def _linux_disks():
 
     for entry in glob.glob('/sys/block/*/queue/rotational'):
         try:
-            with salt.utils.files.fopen(entry) as entry_fp:
+            with hubblestack.utils.files.fopen(entry) as entry_fp:
                 device = entry.split('/')[3]
                 flag = entry_fp.read(1)
                 if flag == '0':
@@ -153,7 +153,7 @@ def _linux_disks():
 
 
 def _windows_disks():
-    wmic = salt.utils.path.which('wmic')
+    wmic = hubblestack.utils.path.which('wmic')
 
     namespace = r'\\root\microsoft\windows\storage'
     path = 'MSFT_PhysicalDisk'

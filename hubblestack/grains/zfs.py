@@ -17,17 +17,17 @@ import logging
 
 # Import salt libs
 import salt.utils.dictupdate
-import salt.utils.path
+import hubblestack.utils.path
 import hubblestack.utils.platform
 
 # Solve the Chicken and egg problem where grains need to run before any
 # of the modules are loaded and are generally available for any usage.
-import salt.modules.cmdmod
+import hubblestack.modules.cmdmod
 import salt.utils.zfs
 
 __virtualname__ = 'zfs'
 __salt__ = {
-    'cmd.run': salt.modules.cmdmod.run,
+    'cmd.run': hubblestack.modules.cmdmod.run,
 }
 __utils__ = {
     'zfs.is_supported': salt.utils.zfs.is_supported,

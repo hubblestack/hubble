@@ -23,12 +23,12 @@ from datetime import datetime
 
 import salt.fileserver
 import salt.fileserver.gitfs
-import salt.modules.cmdmod
+import hubblestack.modules.cmdmod
 import salt.utils
 import hubblestack.utils.platform
 import salt.utils.jid
 import salt.utils.gitfs
-import salt.utils.path
+import hubblestack.utils.path
 from croniter import croniter
 
 import hubblestack.utils.signing
@@ -549,8 +549,8 @@ def _setup_cached_uuid():
         # Prefer our /opt/osquery/osqueryi if present
         osqueryipaths = ('/opt/osquery/osqueryi', 'osqueryi', '/usr/bin/osqueryi')
         for path in osqueryipaths:
-            if salt.utils.path.which(path):
-                live_uuid = salt.modules.cmdmod.run_stdout('{0} {1}'.format(path, query),
+            if hubblestack.utils.path.which(path):
+                live_uuid = hubblestack.modules.cmdmod.run_stdout('{0} {1}'.format(path, query),
                                                            output_loglevel='quiet')
                 live_uuid = str(live_uuid).upper()
                 if len(live_uuid) == 36:

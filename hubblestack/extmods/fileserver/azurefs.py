@@ -56,6 +56,8 @@ import os
 import os.path
 import shutil
 
+import hubblestack.utils.files
+
 # Import salt libs
 import salt.fileserver
 import salt.utils
@@ -163,7 +165,7 @@ def serve_file(load, fnd):
     ret['dest'] = fnd['rel']
     gzip = load.get('gzip', None)
     fpath = os.path.normpath(fnd['path'])
-    with salt.utils.files.fopen(fpath, 'rb') as fp_:
+    with hubblestack.utils.files.fopen(fpath, 'rb') as fp_:
         fp_.seek(load['loc'])
         data = fp_.read(__opts__['file_buffer_size'])
         if data and six.PY3 and not salt.utils.is_bin_file(fpath):
@@ -265,7 +267,7 @@ def update():
                 # Lock writes
                 lk_fn = fname + '.lk'
                 salt.fileserver.wait_lock(lk_fn, fname)
-                with salt.utils.files.fopen(lk_fn, 'w+') as fp_:
+                with hubblestack.utils.files.fopen(lk_fn, 'w+') as fp_:
                     fp_.write('')
 
                 try:
@@ -303,9 +305,9 @@ def update():
         container_list = path + '.list'
         lk_fn = container_list + '.lk'
         salt.fileserver.wait_lock(lk_fn, container_list)
-        with salt.utils.files.fopen(lk_fn, 'w+') as fp_:
+        with hubblestack.utils.files.fopen(lk_fn, 'w+') as fp_:
             fp_.write('')
-        with salt.utils.files.fopen(container_list, 'w') as fp_:
+        with hubblestack.utils.files.fopen(container_list, 'w') as fp_:
             fp_.write(json.dumps(blob_names))
         try:
             os.unlink(lk_fn)
@@ -330,7 +332,7 @@ def file_hash(load, fnd):
     relpath = fnd['rel']
     path = fnd['path']
     hash_cachedir = os.path.join(__opts__['cachedir'], 'azurefs', 'hashes')
-    hashdest = salt.utils.path.join(hash_cachedir,
+    hashdest = hubblestack.utils.path.join(hash_cachedir,
                                     load['saltenv'],
                                     '{0}.hash.{1}'.format(relpath,
                                                           __opts__['hash_type']))
@@ -338,11 +340,11 @@ def file_hash(load, fnd):
         if not os.path.exists(os.path.dirname(hashdest)):
             os.makedirs(os.path.dirname(hashdest))
         ret['hsum'] = salt.utils.hashutils.get_hash(path, __opts__['hash_type'])
-        with salt.utils.files.fopen(hashdest, 'w+') as fp_:
+        with hubblestack.utils.files.fopen(hashdest, 'w+') as fp_:
             fp_.write(ret['hsum'])
         return ret
     else:
-        with salt.utils.files.fopen(hashdest, 'rb') as fp_:
+        with hubblestack.utils.files.fopen(hashdest, 'rb') as fp_:
             ret['hsum'] = fp_.read()
         return ret
 
@@ -361,7 +363,7 @@ def file_list(load):
             salt.fileserver.wait_lock(lk, container_list, 5)
             if not os.path.exists(container_list):
                 continue
-            with salt.utils.files.fopen(container_list, 'r') as fp_:
+            with hubblestack.utils.files.fopen(container_list, 'r') as fp_:
                 ret.update(set(json.load(fp_)))
     except Exception as exc:
         log.error('azurefs: an error ocurred retrieving file lists. '

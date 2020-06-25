@@ -8,7 +8,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import logging
 
 # Import salt libs
-import salt.utils.files
+import hubblestack.utils.files
 
 log = logging.getLogger(__name__)
 
@@ -19,9 +19,9 @@ def mdadm():
     '''
     devices = set()
     try:
-        with salt.utils.files.fopen('/proc/mdstat', 'r') as mdstat:
+        with hubblestack.utils.files.fopen('/proc/mdstat', 'r') as mdstat:
             for line in mdstat:
-                line = salt.utils.stringutils.to_unicode(line)
+                line = hubblestack.utils.stringutils.to_unicode(line)
                 if line.startswith('Personalities : '):
                     continue
                 if line.startswith('unused devices:'):

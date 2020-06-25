@@ -25,12 +25,12 @@ import logging
 # Import salt libs
 import salt.fileserver
 import salt.utils.event
-import salt.utils.files
+import hubblestack.utils.files
 import salt.utils.gzip_util
 import salt.utils.hashutils
-import salt.utils.path
+import hubblestack.utils.path
 import hubblestack.utils.platform
-import salt.utils.stringutils
+import hubblestack.utils.stringutils
 import salt.utils.versions
 from salt.ext import six
 
@@ -128,7 +128,7 @@ def serve_file(load, fnd):
     ret['dest'] = fnd['rel']
     gzip = load.get('gzip', None)
     fpath = os.path.normpath(fnd['path'])
-    with salt.utils.files.fopen(fpath, 'rb') as fp_:
+    with hubblestack.utils.files.fopen(fpath, 'rb') as fp_:
         fp_.seek(load['loc'])
         data = fp_.read(__opts__['file_buffer_size'])
         if gzip and data:
@@ -163,9 +163,9 @@ def update():
     old_mtime_map = {}
     # if you have an old map, load that
     if os.path.exists(mtime_map_path):
-        with salt.utils.files.fopen(mtime_map_path, 'rb') as fp_:
+        with hubblestack.utils.files.fopen(mtime_map_path, 'rb') as fp_:
             for line in fp_:
-                line = salt.utils.stringutils.to_unicode(line)
+                line = hubblestack.utils.stringutils.to_unicode(line)
                 try:
                     file_path, mtime = line.replace('\n', '').split(':', 1)
                     old_mtime_map[file_path] = mtime
@@ -191,10 +191,10 @@ def update():
     mtime_map_path_dir = os.path.dirname(mtime_map_path)
     if not os.path.exists(mtime_map_path_dir):
         os.makedirs(mtime_map_path_dir)
-    with salt.utils.files.fopen(mtime_map_path, 'wb') as fp_:
+    with hubblestack.utils.files.fopen(mtime_map_path, 'wb') as fp_:
         for file_path, mtime in six.iteritems(new_mtime_map):
             fp_.write(
-                salt.utils.stringutils.to_bytes(
+                hubblestack.utils.stringutils.to_bytes(
                     '{0}:{1}\n'.format(file_path, mtime)
                 )
             )
@@ -242,9 +242,9 @@ def file_hash(load, fnd):
     # if we have a cache, serve that if the mtime hasn't changed
     if os.path.exists(cache_path):
         try:
-            with salt.utils.files.fopen(cache_path, 'rb') as fp_:
+            with hubblestack.utils.files.fopen(cache_path, 'rb') as fp_:
                 try:
-                    hsum, mtime = salt.utils.stringutils.to_unicode(fp_.read()).split(':')
+                    hsum, mtime = hubblestack.utils.stringutils.to_unicode(fp_.read()).split(':')
                 except ValueError:
                     log.debug('Fileserver attempted to read incomplete cache file. Retrying.')
                     # Delete the file since its incomplete (either corrupted or incomplete)
@@ -282,7 +282,7 @@ def file_hash(load, fnd):
                 raise
     # save the cache object "hash:mtime"
     cache_object = '{0}:{1}'.format(ret['hsum'], os.path.getmtime(path))
-    with salt.utils.files.flopen(cache_path, 'w') as fp_:
+    with hubblestack.utils.files.flopen(cache_path, 'w') as fp_:
         fp_.write(cache_object)
     return ret
 
@@ -334,7 +334,7 @@ def _file_lists(load, form):
             for item in items:
                 abs_path = os.path.join(parent_dir, item)
                 log.trace('roots: Processing %s', abs_path)
-                is_link = salt.utils.path.islink(abs_path)
+                is_link = hubblestack.utils.path.islink(abs_path)
                 log.trace(
                     'roots: %s is %sa link',
                     abs_path, 'not ' if not is_link else ''
@@ -355,7 +355,7 @@ def _file_lists(load, form):
                     # WindowsError on Windows.
                     pass
                 if is_link:
-                    link_dest = salt.utils.path.readlink(abs_path)
+                    link_dest = hubblestack.utils.path.readlink(abs_path)
                     log.trace(
                         'roots: %s symlink destination is %s',
                         abs_path, link_dest
@@ -393,7 +393,7 @@ def _file_lists(load, form):
                         ret['links'][rel_path] = link_dest
 
         for path in __opts__['file_roots'][load['saltenv']]:
-            for root, dirs, files in salt.utils.path.os_walk(
+            for root, dirs, files in hubblestack.utils.path.os_walk(
                     path,
                     followlinks=__opts__['fileserver_followsymlinks']):
                 _add_to(ret['dirs'], path, root, dirs)

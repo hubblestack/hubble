@@ -2,8 +2,6 @@
 '''
 This module is a central location for all hubble exceptions
 '''
-from __future__ import absolute_import, print_function, unicode_literals
-
 # Import python libs
 import copy
 import logging
@@ -61,6 +59,17 @@ class CommandExecutionError(HubbleException):
         # message.
         super(CommandExecutionError, self).__init__(exc_str)
 
+class TimedProcTimeoutError(HubbleException):
+    '''
+    Thrown when a timed subprocess does not terminate within the timeout,
+    or if the specified timeout is not an int or a float
+    '''
+
+class HubbleInvocationError(HubbleException, TypeError):
+    '''
+    Used when the wrong number of arguments are sent to modules or invalid
+    arguments are specified on the command line
+    '''
 
 class LoaderError(HubbleException):
     '''

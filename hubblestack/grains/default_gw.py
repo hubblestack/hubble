@@ -20,11 +20,11 @@ List of grains:
 import logging
 
 import salt.utils
-import salt.utils.path
+import hubblestack.utils.path
 
-import salt.modules.cmdmod
+import hubblestack.modules.cmdmod
 
-__salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet}
+__salt__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet}
 log = logging.getLogger(__name__)
 
 
@@ -45,7 +45,7 @@ def default_gateway():
         ip_gw: True   # True if either of the above is True, False otherwise
     """
     grains = {}
-    if not salt.utils.path.which('ip'):
+    if not hubblestack.utils.path.which('ip'):
         return {}
     grains['ip_gw'] = False
     grains['ip4_gw'] = False

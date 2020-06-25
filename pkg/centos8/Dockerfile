@@ -85,12 +85,12 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
-#fpm package making requirements start
-RUN dnf install -y ruby ruby-devel rpm-build rubygems gcc make \
- && gem install --no-ri --no-rdoc fpm
+# things we may need to build python and get fpm working
+RUN dnf -y update && dnf install -y ruby ruby-devel rpm-build rubygems gcc make bzip2-devel sqlite-devel
 
-# things we may need to build a python
-RUN yum install -y bzip2-devel sqlite-devel
+# install fpm
+RUN gem install --no-ri --no-rdoc ffi --version 1.12.2 \
+ && gem install --no-ri --no-rdoc fpm
 
 # use pyenv
 ARG PYENV_VERSION=3.6.10
@@ -131,8 +131,7 @@ ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
 RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
- && cd "$HUBBLE_SRC_PATH" \
- && git checkout -B hubble-build && git reset --hard "$HUBBLE_CHECKOUT" && git clean -dfx
+ && cd "$HUBBLE_SRC_PATH" && git checkout "$HUBBLE_CHECKOUT"
 
 RUN cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
  && rm -rf /hubble_build/.git

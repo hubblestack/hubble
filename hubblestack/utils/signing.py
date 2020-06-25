@@ -454,7 +454,8 @@ def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: d
     args = { 'data': hasher.finalize() }
     if isinstance(first_key, rsa.RSAPrivateKey):
         args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
-            salt_length=padding.PSS.MAX_LENGTH)
+            #salt_length=padding.PSS.MAX_LENGTH)
+            salt_length=32)
         args['algorithm'] = utils.Prehashed(chosen_hash)
     sig = first_key.sign(**args)
     with open(ofname, 'w') as fh:
@@ -498,7 +499,8 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
         pubkey = crt.get_pubkey().to_cryptography_key()
         if isinstance(pubkey, rsa.RSAPublicKey):
             args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
-                salt_length=padding.PSS.MAX_LENGTH)
+                #salt_length=padding.PSS.MAX_LENGTH)
+                salt_length=32)
             args['algorithm'] = utils.Prehashed(chosen_hash)
         try:
             pubkey.verify(**args)

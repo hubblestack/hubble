@@ -84,6 +84,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 
 #fpm package making requirements start
 RUN apt-get install -y ruby ruby-dev rubygems gcc make \
+ && gem install --no-ri --no-rdoc ffi --version 1.12.2 \
  && gem install --no-ri --no-rdoc fpm
 
 RUN apt-get install -y libbz2-dev libsqlite3-dev
@@ -125,8 +126,7 @@ ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
 RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
- && cd "$HUBBLE_SRC_PATH" \
- && git checkout -B hubble-build && git reset --hard "$HUBBLE_CHECKOUT" && git clean -dfx
+ && cd "$HUBBLE_SRC_PATH" && git checkout "$HUBBLE_CHECKOUT"
 
 RUN cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
  && rm -rf /hubble_build/.git

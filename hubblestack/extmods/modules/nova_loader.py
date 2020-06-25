@@ -35,7 +35,7 @@ import hubblestack.utils.exceptions
 
 # Solve the Chicken and egg problem where grains need to run before any
 # of the modules are loaded and are generally available for any usage.
-import salt.modules.cmdmod
+import hubblestack.modules.cmdmod
 
 # Import 3rd-party libs
 import salt.ext.six as six
@@ -47,7 +47,7 @@ except ImportError:
     HAS_PKG_RESOURCES = False
 
 __salt__ = {
-    'cmd.run': salt.modules.cmdmod._run_quiet
+    'cmd.run': hubblestack.modules.cmdmod._run_quiet
 }
 log = logging.getLogger(__name__)
 

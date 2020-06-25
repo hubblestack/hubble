@@ -6,12 +6,13 @@ salt-call
 """
 
 import logging
-import salt.modules.cmdmod
+import salt.modules.config
+import hubblestack.modules.cmdmod
 
 log = logging.getLogger(__name__)
 
 __salt__ = {
-    'cmd.run': salt.modules.cmdmod._run_quiet,
+    'cmd.run': hubblestack.modules.cmdmod._run_quiet,
     'config.get': salt.modules.config.get,
 }
 

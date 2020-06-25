@@ -3,12 +3,12 @@
 Custom grains around fqdn
 """
 import hubblestack.grains.hubble_core
-import salt.modules.cmdmod
+import hubblestack.modules.cmdmod
 import salt.utils
 import hubblestack.utils.platform
 
-__salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet,
-            'cmd.run_all': salt.modules.cmdmod.run_all}
+__salt__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet,
+            'cmd.run_all': hubblestack.modules.cmdmod.run_all}
 
 
 def fqdn():

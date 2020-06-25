@@ -9,8 +9,8 @@ import os
 import logging
 
 # Import salt libs
-import salt.utils.data
-import salt.utils.files
+import hubblestack.utils.data
+import hubblestack.utils.files
 import hubblestack.utils.platform
 import salt.utils.yaml
 
@@ -68,9 +68,9 @@ def config():
                     )
     if os.path.isfile(gfn):
         log.debug('Loading static grains from %s', gfn)
-        with salt.utils.files.fopen(gfn, 'rb') as fp_:
+        with hubblestack.utils.files.fopen(gfn, 'rb') as fp_:
             try:
-                return salt.utils.data.decode(salt.utils.yaml.safe_load(fp_))
+                return hubblestack.utils.data.decode(salt.utils.yaml.safe_load(fp_))
             except Exception:
                 log.warning("Bad syntax in grains file! Skipping.")
                 return {}

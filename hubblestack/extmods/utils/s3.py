@@ -19,7 +19,7 @@ except ImportError:
 # Import Salt libs
 import os
 import salt.utils.aws
-import salt.utils.files
+import hubblestack.utils.files
 import salt.utils.hashutils
 import salt.utils.xmlutil as xml
 import time
@@ -173,7 +173,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
     try:
         if method == 'PUT':
             if local_file:
-                fh = salt.utils.files.fopen(local_file, 'rb')  # pylint: disable=resource-leakage
+                fh = hubblestack.utils.files.fopen(local_file, 'rb')  # pylint: disable=resource-leakage
                 data = fh.read()  # pylint: disable=resource-leakage
             result = requests.request(method,
                                       requesturl,
@@ -274,7 +274,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
                 'Failed to get file=%s. {0}: {1}'.format(path, err_code, err_msg))
 
         log.debug('Saving to local file: %s', local_file)
-        with salt.utils.files.fopen(local_file, 'wb') as out:
+        with hubblestack.utils.files.fopen(local_file, 'wb') as out:
             for chunk in result.iter_content(chunk_size=chunk_size):
                 out.write(chunk)
         return 'Saved to local file: {0}'.format(local_file)

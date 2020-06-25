@@ -4,10 +4,10 @@ Gather the system uuid via osquery
 """
 import logging
 import os
-import salt.utils.path
-import salt.modules.cmdmod
+import hubblestack.utils.path
+import hubblestack.modules.cmdmod
 
-__salt__ = {'cmd.run_stdout': salt.modules.cmdmod.run_stdout}
+__salt__ = {'cmd.run_stdout': hubblestack.modules.cmdmod.run_stdout}
 log = logging.getLogger(__name__)
 
 
@@ -82,7 +82,7 @@ def _get_uuid_from_system():
     # Prefer our /opt/osquery/osqueryi if present
     osqueryipaths = ('/opt/osquery/osqueryi', 'osqueryi', '/usr/bin/osqueryi')
     for path in osqueryipaths:
-        if salt.utils.path.which(path):
+        if hubblestack.utils.path.which(path):
             first_run = __salt__['cmd.run_stdout']('{0} {1}'.format(path, query),
                                                    output_loglevel='quiet')
             first_run = str(first_run).upper()

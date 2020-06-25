@@ -89,7 +89,7 @@ import logging
 # Import salt libs
 import salt.fileserver as fs
 import salt.modules
-import salt.utils.files
+import hubblestack.utils.files
 import salt.utils.gzip_util
 import salt.utils.hashutils
 import salt.utils.versions
@@ -245,10 +245,10 @@ def serve_file(load, fnd):
 
     ret['dest'] = _trim_env_off_path([fnd['path']], load['saltenv'])[0]
 
-    with salt.utils.files.fopen(cached_file_path, 'rb') as fp_:
+    with hubblestack.utils.files.fopen(cached_file_path, 'rb') as fp_:
         fp_.seek(load['loc'])
         data = fp_.read(__opts__['file_buffer_size'])
-        if data and six.PY3 and not salt.utils.files.is_binary(cached_file_path):
+        if data and six.PY3 and not hubblestack.utils.files.is_binary(cached_file_path):
             data = data.decode(__salt_system_encoding__)
         if gzip and data:
             data = salt.utils.gzip_util.compress(data, gzip)
@@ -560,7 +560,7 @@ def _refresh_buckets_cache_file(cache_file):
 
     log.debug('Writing buckets cache file')
 
-    with salt.utils.files.fopen(cache_file, 'wb') as fp_:
+    with hubblestack.utils.files.fopen(cache_file, 'wb') as fp_:
         pickle.dump(metadata, fp_)
 
     return metadata
@@ -572,7 +572,7 @@ def _read_buckets_cache_file(cache_file):
     """
     log.debug('Reading buckets cache file')
 
-    with salt.utils.files.fopen(cache_file, 'rb') as fp_:
+    with hubblestack.utils.files.fopen(cache_file, 'rb') as fp_:
         try:
             data = pickle.load(fp_)
             # check for 'corrupted' cache data ex: {u'base':[]}

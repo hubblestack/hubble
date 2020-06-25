@@ -56,12 +56,12 @@ except ImportError:
 import hubblestack.utils.exceptions
 import salt.log
 import salt.utils.dns
-import salt.utils.files
+import hubblestack.utils.files
 import salt.utils.network
-import salt.utils.path
+import hubblestack.utils.path
 import salt.utils.pkg.rpm
 import hubblestack.utils.platform
-import salt.utils.stringutils
+import hubblestack.utils.stringutils
 from salt.ext import six
 from salt.ext.six.moves import range
 
@@ -70,13 +70,13 @@ if hubblestack.utils.platform.is_windows():
 
 # Solve the Chicken and egg problem where grains need to run before any
 # of the modules are loaded and are generally available for any usage.
-import salt.modules.cmdmod
+import hubblestack.modules.cmdmod
 import salt.modules.smbios
 
 __salt__ = {
-    'cmd.run': salt.modules.cmdmod._run_quiet,
-    'cmd.retcode': salt.modules.cmdmod._retcode_quiet,
-    'cmd.run_all': salt.modules.cmdmod._run_all_quiet,
+    'cmd.run': hubblestack.modules.cmdmod._run_quiet,
+    'cmd.retcode': hubblestack.modules.cmdmod._retcode_quiet,
+    'cmd.run_all': hubblestack.modules.cmdmod._run_all_quiet,
     'smbios.records': salt.modules.smbios.records,
     'smbios.get': salt.modules.smbios.get,
 }
@@ -139,7 +139,7 @@ def _linux_cpudata():
     cpuinfo = '/proc/cpuinfo'
     # Parse over the cpuinfo file
     if os.path.isfile(cpuinfo):
-        with salt.utils.files.fopen(cpuinfo, 'r') as _fp:
+        with hubblestack.utils.files.fopen(cpuinfo, 'r') as _fp:
             for line in _fp:
                 comps = line.split(':')
                 if not len(comps) > 1:
@@ -193,7 +193,7 @@ def _linux_gpu_data():
     if __opts__.get('enable_gpu_grains', True) is False:
         return {}
 
-    lspci = salt.utils.path.which('lspci')
+    lspci = hubblestack.utils.path.which('lspci')
     if not lspci:
         log.debug(
             'The `lspci` binary is not available on the system. GPU grains '
@@ -324,8 +324,8 @@ def _bsd_cpudata(osdata):
     #   num_cpus
     #   cpu_model
     #   cpu_flags
-    sysctl = salt.utils.path.which('sysctl')
-    arch = salt.utils.path.which('arch')
+    sysctl = hubblestack.utils.path.which('sysctl')
+    arch = hubblestack.utils.path.which('arch')
     cmds = {}
 
     if sysctl:
@@ -358,7 +358,7 @@ def _bsd_cpudata(osdata):
     if osdata['kernel'] == 'FreeBSD' and os.path.isfile('/var/run/dmesg.boot'):
         grains['cpu_flags'] = []
         # TODO: at least it needs to be tested for BSD other then FreeBSD
-        with salt.utils.files.fopen('/var/run/dmesg.boot', 'r') as _fp:
+        with hubblestack.utils.files.fopen('/var/run/dmesg.boot', 'r') as _fp:
             cpu_here = False
             for line in _fp:
                 if line.startswith('CPU: '):
@@ -421,7 +421,7 @@ def _aix_cpudata():
     #   cpu_model
     #   cpu_flags
     grains = {}
-    cmd = salt.utils.path.which('prtconf')
+    cmd = hubblestack.utils.path.which('prtconf')
     if cmd:
         data = __salt__['cmd.run']('{0}'.format(cmd)) + os.linesep
         for dest, regstring in (('cpuarch', r'(?im)^\s*Processor\s+Type:\s+(\S+)'),
@@ -445,7 +445,7 @@ def _linux_memdata():
 
     meminfo = '/proc/meminfo'
     if os.path.isfile(meminfo):
-        with salt.utils.files.fopen(meminfo, 'r') as ifile:
+        with hubblestack.utils.files.fopen(meminfo, 'r') as ifile:
             for line in ifile:
                 comps = line.rstrip('\n').split(':')
                 if not len(comps) > 1:
@@ -465,7 +465,7 @@ def _osx_memdata():
     '''
     grains = {'mem_total': 0, 'swap_total': 0}
 
-    sysctl = salt.utils.path.which('sysctl')
+    sysctl = hubblestack.utils.path.which('sysctl')
     if sysctl:
         mem = __salt__['cmd.run']('{0} -n hw.memsize'.format(sysctl))
         swap_total = __salt__['cmd.run']('{0} -n vm.swapusage'.format(sysctl)).split()[2].replace(',', '.')
@@ -488,7 +488,7 @@ def _bsd_memdata(osdata):
     '''
     grains = {'mem_total': 0, 'swap_total': 0}
 
-    sysctl = salt.utils.path.which('sysctl')
+    sysctl = hubblestack.utils.path.which('sysctl')
     if sysctl:
         mem = __salt__['cmd.run']('{0} -n hw.physmem'.format(sysctl))
         if osdata['kernel'] == 'NetBSD' and mem.startswith('-'):
@@ -496,7 +496,7 @@ def _bsd_memdata(osdata):
         grains['mem_total'] = int(mem) // 1024 // 1024
 
         if osdata['kernel'] in ['OpenBSD', 'NetBSD']:
-            swapctl = salt.utils.path.which('swapctl')
+            swapctl = hubblestack.utils.path.which('swapctl')
             swap_data = __salt__['cmd.run']('{0} -sk'.format(swapctl))
             if swap_data == 'no swap devices configured':
                 swap_total = 0
@@ -520,7 +520,7 @@ def _sunos_memdata():
         if comps[0].strip() == 'Memory' and comps[1].strip() == 'size:':
             grains['mem_total'] = int(comps[2].strip())
 
-    swap_cmd = salt.utils.path.which('swap')
+    swap_cmd = hubblestack.utils.path.which('swap')
     swap_data = __salt__['cmd.run']('{0} -s'.format(swap_cmd)).split()
     try:
         swap_avail = int(swap_data[-2][:-1])
@@ -537,7 +537,7 @@ def _aix_memdata():
     Return the memory information for AIX systems
     '''
     grains = {'mem_total': 0, 'swap_total': 0}
-    prtconf = salt.utils.path.which('prtconf')
+    prtconf = hubblestack.utils.path.which('prtconf')
     if prtconf:
         for line in __salt__['cmd.run'](prtconf, python_shell=True).splitlines():
             comps = [x for x in line.strip().split(' ') if x]
@@ -547,7 +547,7 @@ def _aix_memdata():
     else:
         log.error('The \'prtconf\' binary was not found in $PATH.')
 
-    swap_cmd = salt.utils.path.which('swap')
+    swap_cmd = hubblestack.utils.path.which('swap')
     if swap_cmd:
         swap_data = __salt__['cmd.run']('{0} -s'.format(swap_cmd)).split()
         try:
@@ -600,7 +600,7 @@ def _aix_get_machine_id():
     Parse the output of lsattr -El sys0 for os_uuid
     '''
     grains = {}
-    cmd = salt.utils.path.which('lsattr')
+    cmd = hubblestack.utils.path.which('lsattr')
     if cmd:
         data = __salt__['cmd.run']('{0} -El sys0'.format(cmd)) + os.linesep
         uuid_regexes = [re.compile(r'(?im)^\s*os_uuid\s+(\S+)\s+(.*)')]
@@ -692,7 +692,7 @@ def _virtual(osdata):
     # test first for virt-what, which covers most of the desired functionality
     # on most platforms
     if not hubblestack.utils.platform.is_windows() and osdata['kernel'] not in skip_cmds:
-        if salt.utils.path.which('virt-what'):
+        if hubblestack.utils.path.which('virt-what'):
             _cmds = ['virt-what']
 
     # Check if enable_lspci is True or False
@@ -718,7 +718,7 @@ def _virtual(osdata):
             command = 'system_profiler'
             args = ['SPDisplaysDataType']
         elif osdata['kernel'] == 'SunOS':
-            virtinfo = salt.utils.path.which('virtinfo')
+            virtinfo = hubblestack.utils.path.which('virtinfo')
             if virtinfo:
                 try:
                     ret = __salt__['cmd.run_all']('{0} -a'.format(virtinfo))
@@ -733,7 +733,7 @@ def _virtual(osdata):
             else:
                 command = 'prtdiag'
 
-        cmd = salt.utils.path.which(command)
+        cmd = hubblestack.utils.path.which(command)
 
         if not cmd:
             continue
@@ -881,7 +881,7 @@ def _virtual(osdata):
 
     choices = ('Linux', 'HP-UX')
     isdir = os.path.isdir
-    sysctl = salt.utils.path.which('sysctl')
+    sysctl = hubblestack.utils.path.which('sysctl')
     if osdata['kernel'] in choices:
         if os.path.isdir('/proc'):
             try:
@@ -901,7 +901,7 @@ def _virtual(osdata):
                 failed_commands.discard('dmidecode')
         # Provide additional detection for OpenVZ
         if os.path.isfile('/proc/self/status'):
-            with salt.utils.files.fopen('/proc/self/status') as status_file:
+            with hubblestack.utils.files.fopen('/proc/self/status') as status_file:
                 vz_re = re.compile(r'^envID:\s+(\d+)$')
                 for line in status_file:
                     vz_match = vz_re.match(line.rstrip('\n'))
@@ -921,7 +921,7 @@ def _virtual(osdata):
                     grains['virtual_subtype'] = 'Xen HVM DomU'
                 elif os.path.isfile('/proc/xen/capabilities') and \
                         os.access('/proc/xen/capabilities', os.R_OK):
-                    with salt.utils.files.fopen('/proc/xen/capabilities') as fhr:
+                    with hubblestack.utils.files.fopen('/proc/xen/capabilities') as fhr:
                         if 'control_d' not in fhr.read():
                             # Tested on CentOS 5.5 / 2.6.18-194.3.1.el5xen
                             grains['virtual_subtype'] = 'Xen PV DomU'
@@ -942,7 +942,7 @@ def _virtual(osdata):
         # Check container type after hypervisors, to avoid variable overwrite on containers running in virtual environment.
         if os.path.isfile('/proc/1/cgroup'):
             try:
-                with salt.utils.files.fopen('/proc/1/cgroup', 'r') as fhr:
+                with hubblestack.utils.files.fopen('/proc/1/cgroup', 'r') as fhr:
                     fhr_contents = fhr.read()
                 if ':/lxc/' in fhr_contents:
                     grains['virtual_subtype'] = 'LXC'
@@ -958,13 +958,13 @@ def _virtual(osdata):
             except IOError:
                 pass
         if os.path.isfile('/proc/cpuinfo'):
-            with salt.utils.files.fopen('/proc/cpuinfo', 'r') as fhr:
+            with hubblestack.utils.files.fopen('/proc/cpuinfo', 'r') as fhr:
                 if 'QEMU Virtual CPU' in fhr.read():
                     grains['virtual'] = 'kvm'
         if os.path.isfile('/sys/devices/virtual/dmi/id/product_name'):
             try:
-                with salt.utils.files.fopen('/sys/devices/virtual/dmi/id/product_name', 'r') as fhr:
-                    output = salt.utils.stringutils.to_unicode(fhr.read(), errors='replace')
+                with hubblestack.utils.files.fopen('/sys/devices/virtual/dmi/id/product_name', 'r') as fhr:
+                    output = hubblestack.utils.stringutils.to_unicode(fhr.read(), errors='replace')
                     if 'VirtualBox' in output:
                         grains['virtual'] = 'VirtualBox'
                     elif 'RHEV Hypervisor' in output:
@@ -980,7 +980,7 @@ def _virtual(osdata):
             except IOError:
                 pass
     elif osdata['kernel'] == 'FreeBSD':
-        kenv = salt.utils.path.which('kenv')
+        kenv = hubblestack.utils.path.which('kenv')
         if kenv:
             product = __salt__['cmd.run'](
                 '{0} smbios.system.product'.format(kenv)
@@ -1031,7 +1031,7 @@ def _virtual(osdata):
                 grains['virtual_subtype'] = roles
         else:
             # Check if it's a "regular" zone. (i.e. Solaris 10/11 zone)
-            zonename = salt.utils.path.which('zonename')
+            zonename = hubblestack.utils.path.which('zonename')
             if zonename:
                 zone = __salt__['cmd.run']('{0}'.format(zonename))
                 if zone != 'global':
@@ -1083,8 +1083,8 @@ def _virtual_hv(osdata):
     try:
         version = {}
         for fn in ('major', 'minor', 'extra'):
-            with salt.utils.files.fopen('/sys/hypervisor/version/{}'.format(fn), 'r') as fhr:
-                version[fn] = salt.utils.stringutils.to_unicode(fhr.read().strip())
+            with hubblestack.utils.files.fopen('/sys/hypervisor/version/{}'.format(fn), 'r') as fhr:
+                version[fn] = hubblestack.utils.stringutils.to_unicode(fhr.read().strip())
         grains['virtual_hv_version'] = '{}.{}{}'.format(version['major'], version['minor'], version['extra'])
         grains['virtual_hv_version_info'] = [version['major'], version['minor'], version['extra']]
     except (IOError, OSError, KeyError):
@@ -1108,8 +1108,8 @@ def _virtual_hv(osdata):
                         13: 'memory_op_vnode_supported',
                         14: 'ARM_SMCCC_supported'}
     try:
-        with salt.utils.files.fopen('/sys/hypervisor/properties/features', 'r') as fhr:
-            features = salt.utils.stringutils.to_unicode(fhr.read().strip())
+        with hubblestack.utils.files.fopen('/sys/hypervisor/properties/features', 'r') as fhr:
+            features = hubblestack.utils.stringutils.to_unicode(fhr.read().strip())
         enabled_features = []
         for bit, feat in six.iteritems(xen_feature_table):
             if int(features, 16) & (1 << bit):
@@ -1544,7 +1544,7 @@ def _parse_lsb_release():
     ret = {}
     try:
         log.trace('Attempting to parse /etc/lsb-release')
-        with salt.utils.files.fopen('/etc/lsb-release') as ifile:
+        with hubblestack.utils.files.fopen('/etc/lsb-release') as ifile:
             for line in ifile:
                 try:
                     key, value = _LSB_REGEX.match(line.rstrip('\n')).groups()[:2]
@@ -1568,7 +1568,7 @@ def _parse_os_release(*os_release_files):
     ret = {}
     for filename in os_release_files:
         try:
-            with salt.utils.files.fopen(filename) as ifile:
+            with hubblestack.utils.files.fopen(filename) as ifile:
                 regex = re.compile('^([\\w]+)=(?:\'|")?(.*?)(?:\'|")?$')
                 for line in ifile:
                     match = regex.match(line.strip())
@@ -1709,13 +1709,13 @@ def os_data():
             grains['init'] = 'systemd'
         except (OSError, IOError):
             try:
-                with salt.utils.files.fopen('/proc/1/cmdline') as fhr:
+                with hubblestack.utils.files.fopen('/proc/1/cmdline') as fhr:
                     init_cmdline = fhr.read().replace('\x00', ' ').split()
             except (IOError, OSError):
                 pass
             else:
                 try:
-                    init_bin = salt.utils.path.which(init_cmdline[0])
+                    init_bin = hubblestack.utils.path.which(init_cmdline[0])
                 except IndexError:
                     # Emtpy init_cmdline
                     init_bin = None
@@ -1729,7 +1729,7 @@ def os_data():
                         # Default to the value of file_buffer_size for the minion
                         buf_size = 262144
                     try:
-                        with salt.utils.files.fopen(init_bin, 'rb') as fp_:
+                        with hubblestack.utils.files.fopen(init_bin, 'rb') as fp_:
                             edge = b''
                             buf = fp_.read(buf_size).lower()
                             while buf:
@@ -1748,12 +1748,12 @@ def os_data():
                             'Unable to read from init_bin (%s): %s',
                             init_bin, exc
                         )
-                elif salt.utils.path.which('supervisord') in init_cmdline:
+                elif hubblestack.utils.path.which('supervisord') in init_cmdline:
                     grains['init'] = 'supervisord'
-                elif salt.utils.path.which('dumb-init') in init_cmdline:
+                elif hubblestack.utils.path.which('dumb-init') in init_cmdline:
                     # https://github.com/Yelp/dumb-init
                     grains['init'] = 'dumb-init'
-                elif salt.utils.path.which('tini') in init_cmdline:
+                elif hubblestack.utils.path.which('tini') in init_cmdline:
                     # https://github.com/krallin/tini
                     grains['init'] = 'tini'
                 elif init_cmdline == ['runit']:
@@ -1836,7 +1836,7 @@ def os_data():
                     grains['lsb_distrib_id'] = 'SUSE'
                     version = ''
                     patch = ''
-                    with salt.utils.files.fopen('/etc/SuSE-release') as fhr:
+                    with hubblestack.utils.files.fopen('/etc/SuSE-release') as fhr:
                         for line in fhr:
                             if 'enterprise' in line.lower():
                                 grains['lsb_distrib_id'] = 'SLES'
@@ -1857,7 +1857,7 @@ def os_data():
                     log.trace('Parsing distrib info from /etc/altlinux-release')
                     # ALT Linux
                     grains['lsb_distrib_id'] = 'altlinux'
-                    with salt.utils.files.fopen('/etc/altlinux-release') as ifile:
+                    with hubblestack.utils.files.fopen('/etc/altlinux-release') as ifile:
                         # This file is symlinked to from:
                         #     /etc/fedora-release
                         #     /etc/redhat-release
@@ -1873,7 +1873,7 @@ def os_data():
                     log.trace('Parsing distrib info from /etc/centos-release')
                     # CentOS Linux
                     grains['lsb_distrib_id'] = 'CentOS'
-                    with salt.utils.files.fopen('/etc/centos-release') as ifile:
+                    with hubblestack.utils.files.fopen('/etc/centos-release') as ifile:
                         for line in ifile:
                             # Need to pull out the version and codename
                             # in the case of custom content in /etc/centos-release
@@ -1891,7 +1891,7 @@ def os_data():
                     log.trace(
                         'Parsing Synology distrib info from /etc/.defaults/VERSION'
                     )
-                    with salt.utils.files.fopen('/etc.defaults/VERSION', 'r') as fp_:
+                    with hubblestack.utils.files.fopen('/etc.defaults/VERSION', 'r') as fp_:
                         synoinfo = {}
                         for line in fp_:
                             try:
@@ -1971,7 +1971,7 @@ def os_data():
             # store a untouched copy of the timestamp in osrelease_stamp
             grains['osrelease_stamp'] = uname_v
         elif os.path.isfile('/etc/release'):
-            with salt.utils.files.fopen('/etc/release', 'r') as fp_:
+            with hubblestack.utils.files.fopen('/etc/release', 'r') as fp_:
                 rel_data = fp_.read()
                 try:
                     release_re = re.compile(
@@ -2399,7 +2399,7 @@ def get_machine_id():
     if not existing_locations:
         return {}
     else:
-        with salt.utils.files.fopen(existing_locations[0]) as machineid:
+        with hubblestack.utils.files.fopen(existing_locations[0]) as machineid:
             return {'machine_id': machineid.read().strip()}
 
 
@@ -2518,8 +2518,8 @@ def _hw_data(osdata):
             contents_file = os.path.join('/sys/class/dmi/id', fw_file)
             if os.path.exists(contents_file):
                 try:
-                    with salt.utils.files.fopen(contents_file, 'r') as ifile:
-                        grains[key] = salt.utils.stringutils.to_unicode(ifile.read().strip(), errors='replace')
+                    with hubblestack.utils.files.fopen(contents_file, 'r') as ifile:
+                        grains[key] = hubblestack.utils.stringutils.to_unicode(ifile.read().strip(), errors='replace')
                         if key == 'uuid':
                             grains['uuid'] = grains['uuid'].lower()
                 except (IOError, OSError) as err:
@@ -2528,7 +2528,7 @@ def _hw_data(osdata):
                     if err.errno == EACCES or err.errno == EPERM:
                         # Skip the grain if non-root user has no access to the file.
                         pass
-    elif salt.utils.path.which_bin(['dmidecode', 'smbios']) is not None and not (
+    elif hubblestack.utils.path.which_bin(['dmidecode', 'smbios']) is not None and not (
             hubblestack.utils.platform.is_smartos() or
             (  # SunOS on SPARC - 'smbios: failed to load SMBIOS: System does not export an SMBIOS table'
                 osdata['kernel'] == 'SunOS' and
@@ -2552,7 +2552,7 @@ def _hw_data(osdata):
             if serial is not None:
                 grains['serialnumber'] = serial
                 break
-    elif salt.utils.path.which_bin(['fw_printenv']) is not None:
+    elif hubblestack.utils.path.which_bin(['fw_printenv']) is not None:
         # ARM Linux devices expose UBOOT env variables via fw_printenv
         hwdata = {
             'manufacturer': 'manufacturer',
@@ -2567,7 +2567,7 @@ def _hw_data(osdata):
     elif osdata['kernel'] == 'FreeBSD':
         # On FreeBSD /bin/kenv (already in base system)
         # can be used instead of dmidecode
-        kenv = salt.utils.path.which('kenv')
+        kenv = hubblestack.utils.path.which('kenv')
         if kenv:
             # In theory, it will be easier to add new fields to this later
             fbsd_hwdata = {
@@ -2582,7 +2582,7 @@ def _hw_data(osdata):
                 value = __salt__['cmd.run']('{0} {1}'.format(kenv, val))
                 grains[key] = _clean_value(key, value)
     elif osdata['kernel'] == 'OpenBSD':
-        sysctl = salt.utils.path.which('sysctl')
+        sysctl = hubblestack.utils.path.which('sysctl')
         hwdata = {'biosversion': 'hw.version',
                   'manufacturer': 'hw.vendor',
                   'productname': 'hw.product',
@@ -2593,7 +2593,7 @@ def _hw_data(osdata):
             if not value.endswith(' value is not available'):
                 grains[key] = _clean_value(key, value)
     elif osdata['kernel'] == 'NetBSD':
-        sysctl = salt.utils.path.which('sysctl')
+        sysctl = hubblestack.utils.path.which('sysctl')
         nbsd_hwdata = {
             'biosversion': 'machdep.dmi.board-version',
             'manufacturer': 'machdep.dmi.system-vendor',
@@ -2608,7 +2608,7 @@ def _hw_data(osdata):
                 grains[key] = _clean_value(key, result['stdout'])
     elif osdata['kernel'] == 'Darwin':
         grains['manufacturer'] = 'Apple Inc.'
-        sysctl = salt.utils.path.which('sysctl')
+        sysctl = hubblestack.utils.path.which('sysctl')
         hwdata = {'productname': 'hw.model'}
         for key, oid in hwdata.items():
             value = __salt__['cmd.run']('{0} -b {1}'.format(sysctl, oid))
@@ -2620,7 +2620,7 @@ def _hw_data(osdata):
         # commands and attempt various lookups.
         data = ""
         for (cmd, args) in (('/usr/sbin/prtdiag', '-v'), ('/usr/sbin/prtconf', '-vp'), ('/usr/sbin/virtinfo', '-a')):
-            if salt.utils.path.which(cmd):  # Also verifies that cmd is executable
+            if hubblestack.utils.path.which(cmd):  # Also verifies that cmd is executable
                 data += __salt__['cmd.run']('{0} {1}'.format(cmd, args))
                 data += '\n'
 
@@ -2734,7 +2734,7 @@ def _hw_data(osdata):
                     grains['productname'] = t_productname
                     break
     elif osdata['kernel'] == 'AIX':
-        cmd = salt.utils.path.which('prtconf')
+        cmd = hubblestack.utils.path.which('prtconf')
         if cmd:
             data = __salt__['cmd.run']('{0}'.format(cmd)) + os.linesep
             for dest, regstring in (('serialnumber', r'(?im)^\s*Machine\s+Serial\s+Number:\s+(\S+)'),
@@ -2754,7 +2754,7 @@ def _hw_data(osdata):
             log.error('The \'prtconf\' binary was not found in $PATH.')
 
     elif osdata['kernel'] == 'AIX':
-        cmd = salt.utils.path.which('prtconf')
+        cmd = hubblestack.utils.path.which('prtconf')
         if data:
             data = __salt__['cmd.run']('{0}'.format(cmd)) + os.linesep
             for dest, regstring in (('serialnumber', r'(?im)^\s*Machine\s+Serial\s+Number:\s+(\S+)'),
@@ -2842,7 +2842,7 @@ def default_gateway():
         ip_gw: True   # True if either of the above is True, False otherwise
     '''
     grains = {}
-    ip_bin = salt.utils.path.which('ip')
+    ip_bin = hubblestack.utils.path.which('ip')
     if not ip_bin:
         return {}
     grains['ip_gw'] = False

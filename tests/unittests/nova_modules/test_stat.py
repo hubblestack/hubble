@@ -435,6 +435,18 @@ class TestNovaStat(TestCase):
         allow_more_strict = True
         self.assertTrue(stat._check_mode(max_permissions, given_permissions, allow_more_strict))
 
+    def test_checkmode6(self):
+        """
+        Test check mode function
+        given_permission is 0
+        should return true
+        :return:
+        """
+        max_permissions = "420"
+        given_permissions = "0"
+        allow_more_strict = True
+        self.assertTrue(stat._check_mode(max_permissions, given_permissions, allow_more_strict))
+
     def test_is_permission_in_limit1(self):
         """
         Test _is_permission_in_limit function
@@ -478,4 +490,15 @@ class TestNovaStat(TestCase):
         """
         max_permissions = "3"
         given_permissions = "5"
+        self.assertFalse(stat._is_permission_in_limit(max_permissions, given_permissions))
+
+    def test_is_permission_in_limit5(self):
+        """
+        Test _is_permission_in_limit function
+        max_permission and  given_permission not matches for execute
+        should return false
+        :return:
+        """
+        max_permissions = "6"
+        given_permissions = "7"
         self.assertFalse(stat._is_permission_in_limit(max_permissions, given_permissions))

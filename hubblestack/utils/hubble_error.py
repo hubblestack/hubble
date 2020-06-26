@@ -16,7 +16,7 @@ class AuditCheckFailedError(Exception):
     def __init__(self, message):
         super().__init__(message)
 
-class AuditCheckValdiationError(Exception):
+class AuditCheckValidationError(Exception):
     """
     Used when an audit check is wrongly written or some mandatory params are not passed
     """

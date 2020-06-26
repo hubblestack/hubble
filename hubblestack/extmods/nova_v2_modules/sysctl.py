@@ -1,3 +1,28 @@
+"""
+Nova module to check kernel parameters
+
+Example yaml of check
+check_unique_id:
+  description: 'sample description'
+  tag: 'ADOBE-00041'
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-7'
+    module: pkg
+    checks:
+        - name: net.ipv4.tcp_syncookies
+          match_output: 'sample*'
+          match_output_regex: true
+
+Here we are checking value of kernel param 'net.ipv4.tcp_syncookies' and matching it with the regex 'sample*'
+Param match_output_regex is optional and it's default value is False
+
+Regex support:
+If match_output_regex is set to true, then match_output is treated as regex pattern and the output of sysctl command is matched with that pattern
+
+If  match_regex_support is False, then exact string matching is done for the result and match_output command
+Multiple commands can be passed in checks with their outputs.
+"""
 import logging
 import re
 
@@ -14,22 +39,6 @@ def execute(check_id, audit_check):
 
         Returns:
             dict -- dictionary of result status and output
-
-        Example yaml of check
-
-        check_unique_id:
-          description: 'sample description'
-          tag: 'ADOBE-00041'
-          implementations:
-            - filter:
-                grains: 'G@osfinger:CentOS*Linux-7'
-            module: pkg
-            checks:
-                - name: net.ipv4.tcp_syncookies
-                  match_output: 'sample*'
-                  match_output_regex: true
-
-        Here we are checking value of kernel param 'net.ipv4.tcp_syncookies' and matching it with the regex 'sample*'
         """
     log.debug('Executing fdg module for check-id: %s' % (check_id))
     name = audit_check['name']

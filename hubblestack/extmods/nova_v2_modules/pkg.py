@@ -36,9 +36,9 @@ import logging
 import os
 import re
 
-from distutils.version import LooseVersion
+from packaging import version
 
-from hubblestack.utils.hubble_error import AuditCheckValdiationError
+from hubblestack.utils.hubble_error import AuditCheckValidationError
 from hubblestack.utils.hubble_error import AuditCheckFailedError
 from salt.exceptions import CommandExecutionError
 
@@ -114,12 +114,12 @@ def validate_params(check_id, audit_check):
         audit_check {dict} -- Single audit check for this module
 
     Raises:
-        AuditCheckValdiationError: For any validation error
+        AuditCheckValidationError: For any validation error
     """
     log.info('Module: pkg Start validating params for check-id: %s' %(check_id))
 
     if 'name' not in audit_check:
-        raise AuditCheckValdiationError('Mandatory parameter name is not present in check_id: %s' %(check_id))
+        raise AuditCheckValidationError('Mandatory parameter name is not present in check_id: %s' %(check_id))
 
     log.debug('Validatiion success for check-id: %s' %(check_id))
 
@@ -129,15 +129,15 @@ def _match_version(pkg_version_to_match, pkg_version_found):
     compare version accordingly
     """
     if pkg_version_to_match.startswith('<='):
-        version_comparison_result = LooseVersion(pkg_version_found) <= LooseVersion(pkg_version_to_match[2:])
+        version_comparison_result = version.parse(pkg_version_found) <= version.parse(pkg_version_to_match[2:])
     elif pkg_version_to_match.startswith('>='):
-        version_comparison_result = LooseVersion(pkg_version_found) >= LooseVersion(pkg_version_to_match[2:])
+        version_comparison_result = version.parse(pkg_version_found) >= version.parse(pkg_version_to_match[2:])
     elif pkg_version_to_match.startswith('<'):
-        version_comparison_result = LooseVersion(pkg_version_found) < LooseVersion(pkg_version_to_match[1:])
+        version_comparison_result = version.parse(pkg_version_found) < version.parse(pkg_version_to_match[1:])
     elif pkg_version_to_match.startswith('>'):
-        version_comparison_result = LooseVersion(pkg_version_found) > LooseVersion(pkg_version_to_match[1:])
+        version_comparison_result = version.parse(pkg_version_found) > version.parse(pkg_version_to_match[1:])
     else:
         # check for exact version
-        version_comparison_result = LooseVersion(pkg_version_found) == LooseVersion(pkg_version_to_match)
+        version_comparison_result = version.parse(pkg_version_found) == version.parse(pkg_version_to_match)
     
     return version_comparison_result

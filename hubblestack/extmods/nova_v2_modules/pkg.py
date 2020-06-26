@@ -86,7 +86,6 @@ def execute(check_id, audit_check):
 
     if errors:
         # error string will have version along with operator if passed from profile
-        print("Package version mismatch: %s" %(str(errors)))
         return {"result": False, "failure_reason": "Package version mismatch: %s" %(str(errors))}
 
     return {"result": True}

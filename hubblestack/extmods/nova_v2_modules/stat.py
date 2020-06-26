@@ -1,26 +1,8 @@
 # -*- encoding: utf-8 -*-
+"""
+Nova module for running stat command
 
-import logging
-import os
-
-from hubblestack.utils.hubble_error import AuditCheckValidationError
-
-log = logging.getLogger(__name__)
-
-def execute(check_id, audit_check):
-    """Execute single check
-
-    Arguments:
-        check_id {str} -- Unique check id
-        audit_check {str} -- Dictionary of an individual check implementation
-
-    Returns:
-        dict -- dictionary of result status and output
-
-    Raises:
-        AuditCheckFailedError -- In case of error
-
-    Example for a check implementation in a profile:
+Example for a check implementation in a profile:
 check_unique_id:
   description: 'stat check'
   tag: 'ADOBE-01'
@@ -42,13 +24,35 @@ check_unique_id:
           allow_more_strict: true
 
 It is checking for file on the given path and matches the permissions on it with given params.
-    Mandatory parameters:
+Mandatory parameters:
     path - file path
     gid - group id
     group - group name
     mode - file mode
     uid - user id
     user - user name
+
+Multiple paths can be provided in a single check
+"""
+import logging
+import os
+
+from hubblestack.utils.hubble_error import AuditCheckValidationError
+
+log = logging.getLogger(__name__)
+
+def execute(check_id, audit_check):
+    """Execute single check
+
+    Arguments:
+        check_id {str} -- Unique check id
+        audit_check {str} -- Dictionary of an individual check implementation
+
+    Returns:
+        dict -- dictionary of result status and output
+
+    Raises:
+        AuditCheckFailedError -- In case of error
     """
 
     log.debug('Executing stat module for check-id: %s' % (check_id))

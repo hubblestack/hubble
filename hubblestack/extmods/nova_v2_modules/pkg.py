@@ -54,7 +54,7 @@ def execute(check_id, audit_check):
         AuditCheckFailedError -- In case of error
     """
 
-    log.debug("Checking for package installed or not: %s" %(audit_check['name']))
+    log.debug("Checking for package installed or not: %s in check id: %s" %(audit_check['name'], check_id))
 
     # fetch package info from system
     pkg_found = __salt__['pkg.version'](audit_check['name'])

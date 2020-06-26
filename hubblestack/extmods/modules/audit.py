@@ -100,7 +100,14 @@ def top(topfile='top.nova',
         verbose=None,
         show_compliance=None,
         labels=None):
-
+    """
+    Top function that is called from hubble config file
+    :param topfile:
+    :param verbose:
+    :param show_compliance:
+    :param labels:
+    :return:
+    """
     results = {}
     # Will be a combination of strings and single-item dicts. The strings
     # have no tag filters, so we'll treat them as tag filter '*'. If we sort

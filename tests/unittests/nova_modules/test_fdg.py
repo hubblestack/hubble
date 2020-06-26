@@ -1,4 +1,4 @@
-from unittest import TestCase, mock
+from unittest import TestCase
 import pytest
 
 from hubblestack.extmods.nova_v2_modules import fdg

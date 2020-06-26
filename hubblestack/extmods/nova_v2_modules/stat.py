@@ -3,7 +3,7 @@
 import logging
 import os
 
-from hubblestack.utils.hubble_error import AuditCheckValdiationError
+from hubblestack.utils.hubble_error import AuditCheckValidationError
 
 log = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ It is checking for file on the given path and matches the permissions on it with
     user - user name
     """
 
-    log.debug('Executing fdg module for check-id: %s' % (check_id))
+    log.debug('Executing stat module for check-id: %s' % (check_id))
     # check file presence
     if not os.path.isfile(audit_check['path']):
         if 'success_on_file_missing' in audit_check and audit_check['success_on_file_missing']:
@@ -110,7 +110,7 @@ def validate_params(check_id, audit_check):
         audit_check {dict} -- Single audit check for this module
 
     Raises:
-        AuditCheckValdiationError: For any validation error
+        AuditCheckValidationError: For any validation error
     """
     log.info('Module: stat Start validating params for check-id: %s' %(check_id))
 
@@ -122,7 +122,7 @@ def validate_params(check_id, audit_check):
             error[mandatory_param] = 'Mandatory parameter: "%s" not found for check-id: %s' %(mandatory_param, check_id)
 
     if error:
-        raise AuditCheckValdiationError(error)
+        raise AuditCheckValidationError(error)
 
     log.debug('Validatiion success for check-id: %s' %(check_id))
 

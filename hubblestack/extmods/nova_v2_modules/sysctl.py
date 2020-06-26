@@ -1,7 +1,7 @@
 import logging
 import re
 
-from hubblestack.utils.hubble_error import AuditCheckValdiationError
+from hubblestack.utils.hubble_error import AuditCheckValidationError
 
 log = logging.getLogger(__name__)
 
@@ -89,6 +89,6 @@ def validate_params(check_id, audit_check):
             error[mandatory_param] = 'Mandatory parameter: "%s" not found for check-id: %s' % (mandatory_param, check_id)
 
     if error:
-        raise AuditCheckValdiationError(error)
+        raise AuditCheckValidationError(error)
 
     log.debug('Validatiion success for check-id: %s' %(check_id))

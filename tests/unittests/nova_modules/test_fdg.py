@@ -2,7 +2,7 @@ from unittest import TestCase, mock
 import pytest
 
 from hubblestack.extmods.nova_v2_modules import fdg
-from hubblestack.utils.hubble_error import AuditCheckValdiationError
+from hubblestack.utils.hubble_error import AuditCheckValidationError
 
 class TestNovaFdg(TestCase):
     """
@@ -17,7 +17,7 @@ class TestNovaFdg(TestCase):
         audit_check = {}
         check_id = "test-1"
 
-        with pytest.raises(AuditCheckValdiationError) as exception:
+        with pytest.raises(AuditCheckValidationError) as exception:
             fdg.validate_params(check_id, audit_check)
             pytest.fail('Should not have passed')
         self.assertTrue('Mandatory parameter: file param not found' in str(exception.value))

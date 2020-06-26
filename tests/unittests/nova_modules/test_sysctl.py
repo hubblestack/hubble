@@ -2,7 +2,7 @@ from unittest import TestCase, mock
 import pytest
 
 from hubblestack.extmods.nova_v2_modules import sysctl
-from hubblestack.utils.hubble_error import AuditCheckValdiationError
+from hubblestack.utils.hubble_error import AuditCheckValidationError
 
 
 class TestNovaSysctl(TestCase):
@@ -18,7 +18,7 @@ class TestNovaSysctl(TestCase):
         audit_check = {}
         check_id = "test-1"
 
-        with pytest.raises(AuditCheckValdiationError) as exception:
+        with pytest.raises(AuditCheckValidationError) as exception:
             sysctl.validate_params(check_id, audit_check)
             pytest.fail("Check should not have passed")
 
@@ -31,7 +31,7 @@ class TestNovaSysctl(TestCase):
         audit_check = {'match_output': '1'}
         check_id = "test-2"
 
-        with pytest.raises(AuditCheckValdiationError) as exception:
+        with pytest.raises(AuditCheckValidationError) as exception:
             sysctl.validate_params(check_id, audit_check)
             pytest.fail("Check should not have passed")
 
@@ -44,7 +44,7 @@ class TestNovaSysctl(TestCase):
         audit_check = {'name': 'test'}
         check_id = "test-3"
 
-        with pytest.raises(AuditCheckValdiationError) as exception:
+        with pytest.raises(AuditCheckValidationError) as exception:
             sysctl.validate_params(check_id, audit_check)
             pytest.fail("Check should not have passed")
 

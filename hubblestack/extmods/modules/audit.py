@@ -10,9 +10,8 @@ from packaging import version
 import salt.loader
 import salt.utils
 
-from hubblestack.utils.hubble_error import AuditCheckFailedError
 from hubblestack.utils.hubble_error import AuditCheckVersionIncompatibleError
-from hubblestack.utils.hubble_error import AuditCheckValdiationError
+from hubblestack.utils.hubble_error import AuditCheckValidationError
 
 log = logging.getLogger(__name__)
 
@@ -158,7 +157,7 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
             # handover to module
             audit_result = _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile)
             result_list.append(audit_result)
-        except AuditCheckValdiationError as validation_error:
+        except AuditCheckValidationError as validation_error:
             # add into error section
             error_dict={}
             error_dict['tag'] = audit_data['tag']
@@ -215,7 +214,7 @@ def _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile):
 
     # Check presence of implementation checks
     if 'checks' not in audit_impl:
-        raise AuditCheckValdiationError('No checks are present')
+        raise AuditCheckValidationError('No checks are present')
 
     # Execute module validation of params
     validate_param_method = audit_impl['module'] + '.validate_params'

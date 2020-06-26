@@ -2,11 +2,8 @@
 
 import logging
 import os
-import re
 
 from hubblestack.utils.hubble_error import AuditCheckValdiationError
-from hubblestack.utils.hubble_error import AuditCheckFailedError
-from salt.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +41,7 @@ check_unique_id:
           user: root
           allow_more_strict: true
 
+It is checking for file on the given path and matches the permissions on it with given params.
     Mandatory parameters:
     path - file path
     gid - group id
@@ -53,6 +51,7 @@ check_unique_id:
     user - user name
     """
 
+    log.debug('Executing fdg module for check-id: %s' % (check_id))
     # check file presence
     if not os.path.isfile(audit_check['path']):
         if 'success_on_file_missing' in audit_check and audit_check['success_on_file_missing']:

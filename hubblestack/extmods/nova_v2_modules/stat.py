@@ -79,7 +79,7 @@ def execute(check_id, audit_check):
         error['uid'] = 'Expected: %s, got: %s' %(audit_check['uid'], stat_res['uid'])
     
     # For mode check, complexity added by param: allow_more_strict
-    allow_more_strict = 'allow_more_strict' in audit_check and audit_check['allow_more_strict']
+    allow_more_strict = audit_check.get('allow_more_strict', False)
     mode_result = _check_mode(str(audit_check['mode']), str(stat_res['mode'][1:]), allow_more_strict)
     if not mode_result:
         error['mode'] = 'Expected: %s, got: %s' %(audit_check['mode'], stat_res['mode'])

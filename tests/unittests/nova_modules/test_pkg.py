@@ -5,6 +5,9 @@ from hubblestack.extmods.nova_v2_modules import pkg
 from hubblestack.utils.hubble_error import AuditCheckValidationError
 
 class TestNovaPkg(TestCase):
+    """
+    Unit tests for nova pkg module
+    """
     def test_validateParams1(self):
         """
         Mandatory param not passed
@@ -49,10 +52,10 @@ class TestNovaPkg(TestCase):
         audit_check = {"name": "splunk"}
         check_id = "test-1"
 
-        def testFn(pkg_name):
+        def test_fn(pkg_name):
             return "1.2.1"
         __salt__ = {}
-        __salt__['pkg.version'] = testFn
+        __salt__['pkg.version'] = test_fn
 
         pkg.__salt__ = __salt__
 
@@ -67,10 +70,10 @@ class TestNovaPkg(TestCase):
         audit_check = {"name": "splunk"}
         check_id = "test-1"
 
-        def testFn(pkg_name):
+        def test_fn(pkg_name):
             return None
         __salt__ = {}
-        __salt__['pkg.version'] = testFn
+        __salt__['pkg.version'] = test_fn
 
         pkg.__salt__ = __salt__
 
@@ -86,10 +89,10 @@ class TestNovaPkg(TestCase):
         audit_check = {"name": "splunk", "version": "1.3.4"}
         check_id = "test-1"
 
-        def testFn(pkg_name):
+        def test_fn(pkg_name):
             return "1.3.4"
         __salt__ = {}
-        __salt__['pkg.version'] = testFn
+        __salt__['pkg.version'] = test_fn
 
         pkg.__salt__ = __salt__
 
@@ -105,10 +108,10 @@ class TestNovaPkg(TestCase):
         audit_check = {"name": "splunk", "version": "1.3.4"}
         check_id = "test-1"
 
-        def testFn(pkg_name):
+        def test_fn(pkg_name):
             return "1.3.5"
         __salt__ = {}
-        __salt__['pkg.version'] = testFn
+        __salt__['pkg.version'] = test_fn
 
         pkg.__salt__ = __salt__
 
@@ -124,10 +127,10 @@ class TestNovaPkg(TestCase):
         audit_check = {"name": "splunk", "version": ">=1.3.4"}
         check_id = "test-1"
 
-        def testFn(pkg_name):
+        def test_fn(pkg_name):
             return "1.3.5"
         __salt__ = {}
-        __salt__['pkg.version'] = testFn
+        __salt__['pkg.version'] = test_fn
 
         pkg.__salt__ = __salt__
 
@@ -143,10 +146,10 @@ class TestNovaPkg(TestCase):
         audit_check = {"name": "splunk", "version": ">1.3.4"}
         check_id = "test-1"
 
-        def testFn(pkg_name):
+        def test_fn(pkg_name):
             return "1.3.5"
         __salt__ = {}
-        __salt__['pkg.version'] = testFn
+        __salt__['pkg.version'] = test_fn
 
         pkg.__salt__ = __salt__
 
@@ -162,10 +165,10 @@ class TestNovaPkg(TestCase):
         audit_check = {"name": "splunk", "version": "<=1.3.4"}
         check_id = "test-1"
 
-        def testFn(pkg_name):
+        def test_fn(pkg_name):
             return "1.3.5"
         __salt__ = {}
-        __salt__['pkg.version'] = testFn
+        __salt__['pkg.version'] = test_fn
 
         pkg.__salt__ = __salt__
 
@@ -181,10 +184,10 @@ class TestNovaPkg(TestCase):
         audit_check = {"name": "splunk", "version": "<1.3.4"}
         check_id = "test-1"
 
-        def testFn(pkg_name):
+        def test_fn(pkg_name):
             return "1.3.5"
         __salt__ = {}
-        __salt__['pkg.version'] = testFn
+        __salt__['pkg.version'] = test_fn
 
         pkg.__salt__ = __salt__
 

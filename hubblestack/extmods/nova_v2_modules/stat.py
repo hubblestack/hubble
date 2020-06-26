@@ -57,8 +57,9 @@ def execute(check_id, audit_check):
 
     log.debug('Executing stat module for check-id: %s' % (check_id))
     # check file presence
+    success_on_file_missing = audit_check.get('success_on_file_missing', False)
     if not os.path.isfile(audit_check['path']):
-        if 'success_on_file_missing' in audit_check and audit_check['success_on_file_missing']:
+        if success_on_file_missing:
             return {"result": True, "output": "File not present and success_on_file_missing flag is true"}
         else:
             return {"result": False, "failure_reason": "File not present"}

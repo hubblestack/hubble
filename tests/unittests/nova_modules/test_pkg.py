@@ -2,7 +2,7 @@ from unittest import TestCase, mock
 import pytest
 
 from hubblestack.extmods.nova_v2_modules import pkg
-from hubblestack.utils.hubble_error import AuditCheckValdiationError
+from hubblestack.utils.hubble_error import AuditCheckValidationError
 from hubblestack.utils.hubble_error import AuditCheckFailedError
 
 class TestNovaPkg(TestCase):
@@ -15,7 +15,7 @@ class TestNovaPkg(TestCase):
         audit_check = {}
         check_id = "test-1"
 
-        with pytest.raises(AuditCheckValdiationError) as exception:
+        with pytest.raises(AuditCheckValidationError) as exception:
             pkg.validate_params(check_id, audit_check)
             pytest.fail('Should not have passed')
         self.assertTrue('Mandatory parameter name is not present' in str(exception.value))

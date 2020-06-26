@@ -4,7 +4,7 @@ import logging
 import os
 import re
 
-from hubblestack.utils.hubble_error import AuditCheckValdiationError
+from hubblestack.utils.hubble_error import AuditCheckValidationError
 from hubblestack.utils.hubble_error import AuditCheckFailedError
 from salt.exceptions import CommandExecutionError
 
@@ -111,7 +111,7 @@ def validate_params(check_id, audit_check):
         audit_check {dict} -- Single audit check for this module
 
     Raises:
-        AuditCheckValdiationError: For any validation error
+        AuditCheckValidationError: For any validation error
     """
     log.info('Module: stat Start validating params for check-id: %s' %(check_id))
 
@@ -123,7 +123,7 @@ def validate_params(check_id, audit_check):
             error[mandatory_param] = 'Mandatory parameter: "%s" not found for check-id: %s' %(mandatory_param, check_id)
 
     if error:
-        raise AuditCheckValdiationError(error)
+        raise AuditCheckValidationError(error)
 
     log.debug('Validatiion success for check-id: %s' %(check_id))
 

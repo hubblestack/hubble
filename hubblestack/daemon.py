@@ -31,6 +31,7 @@ import salt.utils.gitfs
 import salt.utils.path
 from croniter import croniter
 
+import hubblestack.loader
 import hubblestack.utils.signing
 import hubblestack.splunklogging
 import hubblestack.log
@@ -52,6 +53,7 @@ __opts__ = {}
 # This should work fine until we go to multiprocessing
 SESSION_UUID = str(uuid.uuid4())
 
+salt.loader = hubblestack.loader
 
 def run():
     """
@@ -709,7 +711,7 @@ def _setup_dirs():
 
 
 # 600s is a long time to get stuck loading grains and *not* be doing things
-# like nova/pulsar. The SIGALRM will get caught by salt.loader.raw_mod as an
+# like nova/pulsar. The SIGALRM will get caught by hubblestack.loader.raw_mod as an
 # error in a grain -- probably whichever is broken/hung.
 #
 # The grain will simply be missing, but the next refresh_grains will try to
@@ -752,7 +754,7 @@ def refresh_grains(initial=False):
         __opts__.pop('grains')
     if 'pillar' in __opts__:
         __opts__.pop('pillar')
-    __grains__ = salt.loader.grains(__opts__)
+    __grains__ = hubblestack.loader.grains(__opts__)
     __grains__.update(persist)
     __grains__['session_uuid'] = SESSION_UUID
 
@@ -777,9 +779,9 @@ def refresh_grains(initial=False):
     __pillar__ = {}
     __opts__['grains'] = __grains__
     __opts__['pillar'] = __pillar__
-    __utils__ = salt.loader.utils(__opts__)
-    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__, context=__context__)
-    __returners__ = salt.loader.returners(__opts__, __salt__)
+    __utils__ = hubblestack.loader.utils(__opts__)
+    __salt__ = hubblestack.loader.minion_mods(__opts__, utils=__utils__, context=__context__)
+    __returners__ = hubblestack.loader.returners(__opts__, __salt__)
 
     # the only things that turn up in here (and that get preserved)
     # are pulsar.queue, pulsar.notifier and cp.fileclient_###########

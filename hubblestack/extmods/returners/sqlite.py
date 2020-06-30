@@ -9,18 +9,17 @@ import logging
 import os
 import salt.returners
 
+IS_CONNECTED = False
+
 try:
     import sqlite3
-
-    GOT_SQLI = True
+    HAS_SQLI = True
 except Exception:
-    GOT_SQLI = False
+    HAS_SQLI = False
 
 __virtualname__ = 'sqlite'
 
 log = logging.getLogger(__virtualname__)
-isConnected = False
-
 version = [int(num) for num in sqlite3.sqlite_version.split('.')]
 
 
@@ -30,7 +29,7 @@ def __virtual__():
 
     :return: The virtual name of the module.
     """
-    if GOT_SQLI:
+    if HAS_SQLI:
         return __virtualname__
     return False, "sqlite3 module is missing"
 
@@ -61,11 +60,11 @@ def _get_conn():
 
     :return: connection object or None
     """
+    global IS_CONNECTED
     _options = _get_options()
-    global isConnected
     conn = None
 
-    if not isConnected:
+    if not IS_CONNECTED:
         database = _options.get('dumpster', 'hubble-returns-testing.db')
         dir = os.path.dirname(database)
 
@@ -77,7 +76,7 @@ def _get_conn():
                 log.info('failed to create directory %s', dir)
         try:
             conn = sqlite3.connect(_options.get('dumpster', 'hubble-returns-testing.db'))
-            isConnected = True
+            IS_CONNECTED = True
         except sqlite3.Error as e:
             log.exception('failed to connect to sqlite database %s', database)
 
@@ -102,16 +101,17 @@ def _close_connection(conn):
     Close sqlite connection
     '''
 
-    if not isConnected:
+    global IS_CONNECTED
+
+    if not IS_CONNECTED:
         log.debug('no sqlite connection to close')
         return
-
-    global isConnected
-    isConnected = False
 
     log.debug('closing sqlite connection')
     conn.commit()
     conn.close()
+
+    IS_CONNECTED = False
 
 
 def _open_close_conn(func):

@@ -21,6 +21,7 @@ import types
 from zipimport import zipimporter
 
 # Import salt libs
+# TODO: all these should be hubble.config, hubble.defaults.x, hubble.utils.x, etc
 import salt.config
 import salt.defaults.exitcodes
 import salt.syspaths
@@ -42,65 +43,35 @@ from salt.utils.decorators import Depends
 from salt.ext import six
 from salt.ext.six.moves import reload_module
 
-if sys.version_info[:2] >= (3, 5):
-    import importlib.machinery  # pylint: disable=no-name-in-module,import-error
-    import importlib.util  # pylint: disable=no-name-in-module,import-error
-    USE_IMPORTLIB = True
-else:
-    import imp
-    USE_IMPORTLIB = False
+import importlib.machinery
+import importlib.util
 
-try:
-    from collections.abc import MutableMapping
-except ImportError:
-    from collections import MutableMapping
-
-try:
-    import pkg_resources
-    HAS_PKG_RESOURCES = True
-except ImportError:
-    HAS_PKG_RESOURCES = False
+import pkg_resources
 
 log = logging.getLogger(__name__)
 
 SALT_BASE_PATH = os.path.abspath(salt.syspaths.INSTALL_DIR)
 LOADED_BASE_NAME = 'salt.loaded'
 
-if USE_IMPORTLIB:
-    # pylint: disable=no-member
-    MODULE_KIND_SOURCE = 1
-    MODULE_KIND_COMPILED = 2
-    MODULE_KIND_EXTENSION = 3
-    MODULE_KIND_PKG_DIRECTORY = 5
-    SUFFIXES = []
-    for suffix in importlib.machinery.EXTENSION_SUFFIXES:
-        SUFFIXES.append((suffix, 'rb', MODULE_KIND_EXTENSION))
-    for suffix in importlib.machinery.SOURCE_SUFFIXES:
-        SUFFIXES.append((suffix, 'rb', MODULE_KIND_SOURCE))
-    for suffix in importlib.machinery.BYTECODE_SUFFIXES:
-        SUFFIXES.append((suffix, 'rb', MODULE_KIND_COMPILED))
-    MODULE_KIND_MAP = {
-        MODULE_KIND_SOURCE: importlib.machinery.SourceFileLoader,
-        MODULE_KIND_COMPILED: importlib.machinery.SourcelessFileLoader,
-        MODULE_KIND_EXTENSION: importlib.machinery.ExtensionFileLoader
-    }
-    # pylint: enable=no-member
-else:
-    SUFFIXES = imp.get_suffixes()
+MODULE_KIND_SOURCE = 1
+MODULE_KIND_COMPILED = 2
+MODULE_KIND_EXTENSION = 3
+MODULE_KIND_PKG_DIRECTORY = 5
+SUFFIXES = []
+for suffix in importlib.machinery.EXTENSION_SUFFIXES:
+    SUFFIXES.append((suffix, 'rb', MODULE_KIND_EXTENSION))
+for suffix in importlib.machinery.SOURCE_SUFFIXES:
+    SUFFIXES.append((suffix, 'rb', MODULE_KIND_SOURCE))
+for suffix in importlib.machinery.BYTECODE_SUFFIXES:
+    SUFFIXES.append((suffix, 'rb', MODULE_KIND_COMPILED))
+MODULE_KIND_MAP = {
+    MODULE_KIND_SOURCE: importlib.machinery.SourceFileLoader,
+    MODULE_KIND_COMPILED: importlib.machinery.SourcelessFileLoader,
+    MODULE_KIND_EXTENSION: importlib.machinery.ExtensionFileLoader
+}
 
 PY3_PRE_EXT = \
     re.compile(r'\.cpython-{0}{1}(\.opt-[1-9])?'.format(*sys.version_info[:2]))
-
-# Because on the cloud drivers we do `from salt.cloud.libcloudfuncs import *`
-# which simplifies code readability, it adds some unsupported functions into
-# the driver's module scope.
-# We list un-supported functions here. These will be removed from the loaded.
-#  TODO:  remove the need for this cross-module code. Maybe use NotImplemented
-LIBCLOUD_FUNCS_NOT_SUPPORTED = (
-    'parallels.avail_sizes',
-    'parallels.avail_locations',
-    'proxmox.avail_sizes',
-)
 
 # Will be set to pyximport module at runtime if cython is enabled in config.
 pyximport = None
@@ -125,15 +96,14 @@ def _module_dirs(
             ext_type_dirs = '{0}_dirs'.format(tag)
         if ext_type_dirs in opts:
             ext_type_types.extend(opts[ext_type_dirs])
-        if HAS_PKG_RESOURCES and ext_type_dirs:
-            for entry_point in pkg_resources.iter_entry_points('salt.loader', ext_type_dirs):
-                try:
-                    loaded_entry_point = entry_point.load()
-                    for path in loaded_entry_point():
-                        ext_type_types.append(path)
-                except Exception as exc:
-                    log.error("Error getting module directories from %s: %s", _format_entrypoint_target(entry_point), exc)
-                    log.debug("Full backtrace for module directories error", exc_info=True)
+        for entry_point in pkg_resources.iter_entry_points('salt.loader', ext_type_dirs):
+            try:
+                loaded_entry_point = entry_point.load()
+                for path in loaded_entry_point():
+                    ext_type_types.append(path)
+            except Exception as exc:
+                log.error("Error getting module directories from %s: %s", _format_entrypoint_target(entry_point), exc)
+                log.debug("Full backtrace for module directories error", exc_info=True)
 
     cli_module_dirs = []
     # The dirs can be any module dir, or a in-tree _{ext_type} dir
@@ -654,10 +624,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         if self.opts.get('enable_zip_modules', True) is True:
             self.suffix_map['.zip'] = tuple()
         # allow for module dirs
-        if USE_IMPORTLIB:
-            self.suffix_map[''] = ('', '', MODULE_KIND_PKG_DIRECTORY)
-        else:
-            self.suffix_map[''] = ('', '', imp.PKG_DIRECTORY)
+        self.suffix_map[''] = ('', '', MODULE_KIND_PKG_DIRECTORY)
 
         # create mapping of filename (without suffix) to (path, suffix)
         # The files are added in order of priority, so order *must* be retained.
@@ -890,58 +857,51 @@ class LazyLoader(salt.utils.lazy.LazyDict):
                         self.tag,
                         name)
                 if suffix == '':
-                    if USE_IMPORTLIB:
-                        # pylint: disable=no-member
-                        # Package directory, look for __init__
-                        loader_details = [
-                            (importlib.machinery.SourceFileLoader, importlib.machinery.SOURCE_SUFFIXES),
-                            (importlib.machinery.SourcelessFileLoader, importlib.machinery.BYTECODE_SUFFIXES),
-                            (importlib.machinery.ExtensionFileLoader, importlib.machinery.EXTENSION_SUFFIXES),
-                        ]
-                        file_finder = importlib.machinery.FileFinder(
-                            fpath_dirname,
-                            *loader_details
-                        )
-                        spec = file_finder.find_spec(mod_namespace)
-                        if spec is None:
-                            raise ImportError()
-                        # TODO: Get rid of load_module in favor of
-                        # exec_module below. load_module is deprecated, but
-                        # loading using exec_module has been causing odd things
-                        # with the magic dunders we pack into the loaded
-                        # modules, most notably with salt-ssh's __opts__.
-                        mod = spec.loader.load_module()
-                        # mod = importlib.util.module_from_spec(spec)
-                        # spec.loader.exec_module(mod)
-                        # pylint: enable=no-member
-                        sys.modules[mod_namespace] = mod
-                    else:
-                        mod = imp.load_module(mod_namespace, None, fpath, desc)
+                    # pylint: disable=no-member
+                    # Package directory, look for __init__
+                    loader_details = [
+                        (importlib.machinery.SourceFileLoader, importlib.machinery.SOURCE_SUFFIXES),
+                        (importlib.machinery.SourcelessFileLoader, importlib.machinery.BYTECODE_SUFFIXES),
+                        (importlib.machinery.ExtensionFileLoader, importlib.machinery.EXTENSION_SUFFIXES),
+                    ]
+                    file_finder = importlib.machinery.FileFinder(
+                        fpath_dirname,
+                        *loader_details
+                    )
+                    spec = file_finder.find_spec(mod_namespace)
+                    if spec is None:
+                        raise ImportError()
+                    # TODO: Get rid of load_module in favor of
+                    # exec_module below. load_module is deprecated, but
+                    # loading using exec_module has been causing odd things
+                    # with the magic dunders we pack into the loaded
+                    # modules, most notably with salt-ssh's __opts__.
+                    mod = spec.loader.load_module()
+                    # mod = importlib.util.module_from_spec(spec)
+                    # spec.loader.exec_module(mod)
+                    # pylint: enable=no-member
+                    sys.modules[mod_namespace] = mod
                     # reload all submodules if necessary
                     if not self.initial_load:
                         self._reload_submodules(mod)
                 else:
-                    if USE_IMPORTLIB:
-                        # pylint: disable=no-member
-                        loader = MODULE_KIND_MAP[desc[2]](mod_namespace, fpath)
-                        spec = importlib.util.spec_from_file_location(
-                            mod_namespace, fpath, loader=loader
-                        )
-                        if spec is None:
-                            raise ImportError()
-                        # TODO: Get rid of load_module in favor of
-                        # exec_module below. load_module is deprecated, but
-                        # loading using exec_module has been causing odd things
-                        # with the magic dunders we pack into the loaded
-                        # modules, most notably with salt-ssh's __opts__.
-                        mod = spec.loader.load_module()
-                        #mod = importlib.util.module_from_spec(spec)
-                        #spec.loader.exec_module(mod)
-                        # pylint: enable=no-member
-                        sys.modules[mod_namespace] = mod
-                    else:
-                        with salt.utils.files.fopen(fpath, desc[1]) as fn_:
-                            mod = imp.load_module(mod_namespace, fn_, fpath, desc)
+                    # pylint: disable=no-member
+                    loader = MODULE_KIND_MAP[desc[2]](mod_namespace, fpath)
+                    spec = importlib.util.spec_from_file_location(
+                        mod_namespace, fpath, loader=loader
+                    )
+                    if spec is None:
+                        raise ImportError()
+                    # TODO: Get rid of load_module in favor of
+                    # exec_module below. load_module is deprecated, but
+                    # loading using exec_module has been causing odd things
+                    # with the magic dunders we pack into the loaded
+                    # modules, most notably with salt-ssh's __opts__.
+                    mod = spec.loader.load_module()
+                    #mod = importlib.util.module_from_spec(spec)
+                    #spec.loader.exec_module(mod)
+                    # pylint: enable=no-member
+                    sys.modules[mod_namespace] = mod
         except IOError:
             raise
         except ImportError as exc:

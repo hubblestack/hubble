@@ -1,5 +1,5 @@
 
-def imgname = 'hubblestack/jenkins:centos-v1.0.8'
+def imgname = 'hubblestack/jenkins:centos-v1.0.14'
 
 pipeline {
     agent { docker { image "${imgname}" } }
@@ -13,6 +13,7 @@ pipeline {
     environment {
         PY_COLORS = 1
         HS_PROFILE = 1
+        TEST_PY_V = '3.6.10'
     }
 
     stages {
@@ -23,8 +24,10 @@ pipeline {
                     '''
                 sh '''#!/bin/bash
                     source /etc/profile.d/kersplat.sh
-                    pyenv local $PY_V
-                    pyenv shell $PY_V
+                    export PY_V="$TEST_PY_V"
+                    pyenv local $TEST_PY_V
+                    pyenv shell $TEST_PY_V
+                    echo "pyenv version-name: $(pyenv version-name)"
                     set -x -e
                     rm -rf vlib venv .pytest_cache
                     pip install --cache-dir ./pip.cache -t ./vlib virtualenv
@@ -40,15 +43,17 @@ pipeline {
                     /usr/bin/git fetch --no-tags --progress https://github.com/hubblestack/hubble.git +refs/heads/develop:refs/remotes/origin/develop
                     echo git branch -vva
                     git branch -vva
-                    echo "LHS=$LHS RHS=$RHS"
                     LHS="origin/${CHANGE_TARGET:-develop}"
                     RHS="${BRANCH_NAME:+origin/}${BRANCH_NAME:-HEAD}"
+                    echo "LHS=$LHS RHS=$RHS"
                     if [[ $(git show -s --format='%s%n%b' "${LHS}..${RHS}") =~ LINT-FULL ]]
                     then find hubblestack -name "*.py"
                     else find hubblestack -name "*.py" -print0 | xargs -r0 git diff --name-only "$LHS" "$RHS"
                     fi > relevant-files.txt
                     '''
-                sh '''mkdir -vp tests/unittests/output'''
+                sh ''' mkdir -vp tests/unittests/output
+                       cp relevant-files.txt tests/unittests/output
+                   '''
             }
         }
         stage('lint/test') {
@@ -66,16 +71,14 @@ pipeline {
                 }
                 stage('pylint') {
                     steps {
-                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
-                            sh '''#!/bin/bash
-                                source ./venv/bin/activate
-                                < relevant-files.txt  xargs -r pylint --output-format=json \
-                                    > tests/unittests/output/pylint.json
-                                x=$?
-                                python ./tests/automation/pylint-json-to-html tests/unittests/output/pylint.json
-                                exit $x
-                                '''
-                        }
+                        sh '''#!/bin/bash
+                            source ./venv/bin/activate
+                            < relevant-files.txt  xargs -r pylint --output-format=json \
+                                > tests/unittests/output/pylint.json
+                            x=$?
+                            python ./tests/automation/pylint-json-to-html tests/unittests/output/pylint.json
+                            exit $x
+                            '''
                     }
                 }
                 stage('bandit') {
@@ -105,7 +108,7 @@ pipeline {
                 alwaysLinkToLastBuild: false,
                 keepAll: true,
                 reportDir: 'tests/unittests/output',
-                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg, bandit.html',
+                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg, bandit.html, relevant-files.txt',
                 reportName: "Test Reports"
             ])
         }

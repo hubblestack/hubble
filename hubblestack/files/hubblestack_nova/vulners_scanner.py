@@ -17,7 +17,7 @@ It does not matter what `<random data>` is, as long as the top key of the file i
 This allows the module to run under a certain profile, as all of the other Nova modules do.
 """
 
-from __future__ import absolute_import
+
 import logging
 
 import sys

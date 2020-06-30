@@ -21,7 +21,7 @@ nebula_osquery:
     - query_name: rpm_packages
       query: select rpm.*, t.iso_8601 from rpm_packages as rpm join time as t;
 """
-from __future__ import absolute_import
+
 
 import collections
 import copy
@@ -35,6 +35,8 @@ import shutil
 import time
 from hashlib import md5
 import yaml
+import zlib
+import traceback
 
 import salt.utils
 import salt.utils.files
@@ -47,6 +49,7 @@ import hubblestack.log
 from hubblestack.status import HubbleStatus
 log = logging.getLogger(__name__)
 
+CRC_BYTES = 256
 hubble_status = HubbleStatus(__name__, 'top', 'queries', 'osqueryd_monitor', 'osqueryd_log_parser')
 
 __virtualname__ = 'nebula'
@@ -116,6 +119,8 @@ def queries(query_group,
 
     query_data = query_data.get(query_group, {})
 
+    if not query_group:
+        return None
     if not query_data:
         return None
 
@@ -171,7 +176,7 @@ def _build_baseline_osquery_data(report_version_with_day):
         ret.append(
             {'fallback_pkgs': {
                 'data': [{'name': k, 'version': v}
-                         for k, v in __salt__['pkg.list_pkgs']().iteritems()],
+                         for k, v in __salt__['pkg.list_pkgs']().items()],
                 'result': True}})
     uptime = __salt__['status.uptime']()
     if isinstance(uptime, dict):
@@ -190,13 +195,15 @@ def _run_osqueryi_query(query, query_sql, timing, verbose):
     Run the osqueryi query in query_sql and return the result
     """
     max_file_size = 104857600
+    augeas_lenses = '/opt/osquery/lenses'
     query_ret = {'result': True}
 
     # Run the osqueryi query
-    cmd = [__grains__['osquerybinpath'], '--read_max', max_file_size, '--json', query_sql]
+    cmd = [__grains__['osquerybinpath'], '--read_max', max_file_size, '--json',
+          '--augeas_lenses', augeas_lenses, query_sql]
 
     time_start = time.time()
-    res = __salt__['cmd.run_all'](cmd, timeout=10000)
+    res = __salt__['cmd.run_all'](cmd, timeout=600)
     time_end = time.time()
     timing[query['query_name']] = time_end - time_start
     if res['retcode'] == 0:
@@ -224,7 +231,7 @@ def _run_osquery_queries(query_data, verbose):
     ret = []
     timing = {}
     success = True
-    for name, query in query_data.iteritems():
+    for name, query in query_data.items():
         query['query_name'] = name
         query_sql = query.get('query')
         if not query_sql:
@@ -254,12 +261,12 @@ def _update_osquery_results(ret):
     Returns the updated version.
     """
     for data in ret:
-        for _query_name, query_ret in data.iteritems():
+        for _query_name, query_ret in data.items():
             if 'data' not in query_ret:
                 continue
             for result in query_ret['data']:
-                for key, value in result.iteritems():
-                    if value and isinstance(value, basestring) and\
+                for key, value in result.items():
+                    if value and isinstance(value, str) and\
                             value.startswith('__JSONIFY__'):
                         result[key] = json.loads(value[len('__JSONIFY__'):])
 
@@ -472,13 +479,13 @@ def _update_event_data(ret):
         obj = json.loads(event_data)
         if 'action' in obj and obj['action'] == 'snapshot':
             for result in obj['snapshot']:
-                for key, value in result.iteritems():
-                    if value and isinstance(value, basestring) and \
+                for key, value in result.items():
+                    if value and isinstance(value, str) and \
                             value.startswith('__JSONIFY__'):
                         result[key] = json.loads(value[len('__JSONIFY__'):])
         elif 'action' in obj:
-            for key, value in obj['columns'].iteritems():
-                if value and isinstance(value, basestring) and value.startswith('__JSONIFY__'):
+            for key, value in obj['columns'].items():
+                if value and isinstance(value, str) and value.startswith('__JSONIFY__'):
                     obj['columns'][key] = json.loads(value[len('__JSONIFY__'):])
         n_ret.append(obj)
 
@@ -621,7 +628,7 @@ def _get_top_data(topfile):
     ret = []
 
     for topmatch in topdata:
-        for match, data in topmatch.iteritems():
+        for match, data in topmatch.items():
             if __salt__['match.compound'](match):
                 ret.extend(data)
 
@@ -875,7 +882,7 @@ def _mask_object_helper(object_to_be_masked, perform_masking_kwargs, column, que
                 _mask_interactive_shell_data(data, kwargs)
             else:
                 kwargs['custom_args']['log_error'] = False
-                for query_name, query_ret in obj.iteritems():
+                for query_name, query_ret in obj.items():
                     data = query_ret['data']
                     _mask_interactive_shell_data(data, kwargs)
 
@@ -995,14 +1002,14 @@ def _mask_event_data_helper(event_data, query_name, column, perform_masking_kwar
         if mask_column and isinstance(mask_column, list):
             blacklisted_object = _custom_blacklisted_object(blacklisted_object, mask_column)
     if column not in event_data or \
-            (isinstance(event_data[column], basestring) and
+            (isinstance(event_data[column], str) and
              event_data[column].strip() != ''):
         if custom_args['log_error']:
             log.error('masking data references a missing column %s in query %s',
                       column, query_name)
         if custom_args['should_break']:
             return False, blacklisted_object, event_data
-    if isinstance(event_data[column], basestring):
+    if isinstance(event_data[column], str):
         # If column is of 'string' type, then replace pattern in-place
         # No need for recursion here
         value = event_data[column]
@@ -1208,7 +1215,7 @@ def _osqueryd_running_status(pidfile):
             log.error("unable to open pidfile, attempting to start osqueryd")
     else:
         cmd = ['pkill', 'hubble_osqueryd']
-        __salt__['cmd.run'](cmd, timeout=10000)
+        __salt__['cmd.run'](cmd, timeout=600)
         log.error("pidfile not found, attempting to start osqueryd")
     return osqueryd_running
 
@@ -1285,7 +1292,7 @@ def _start_osqueryd(pidfile,
                '--logger_path={0}'.format(logdir),
                '--config_path={0}'.format(configfile), '--flagfile={0}'.format(flagfile),
                '--database_path={0}'.format(databasepath), '--daemonize']
-    ret_dict = __salt__['cmd.run_all'](cmd, timeout=10000)
+    ret_dict = __salt__['cmd.run_all'](cmd, timeout=600)
     if ret_dict.get('retcode', None) != 0:
         log.error("Failed to start osquery daemon. Retcode: %s and error: %s", ret_dict.get(
             'retcode', None),
@@ -1327,7 +1334,7 @@ def _stop_osqueryd(servicename, pidfile):
         stop_cmd = ['net', 'stop', servicename]
     else:
         stop_cmd = ['pkill', 'hubble_osqueryd']
-    ret_stop = __salt__['cmd.run_all'](stop_cmd, timeout=10000)
+    ret_stop = __salt__['cmd.run_all'](stop_cmd, timeout=600)
     if ret_stop.get('retcode', None) != 0:
         log.error("Failed to stop osqueryd. Retcode: %s and error: %s",
                   ret_stop.get('retcode', None), ret_stop.get('stderr', None))
@@ -1335,7 +1342,7 @@ def _stop_osqueryd(servicename, pidfile):
         log.info("Successfully stopped osqueryd")
     if not salt.utils.platform.is_windows():
         remove_pidfile_cmd = ['rm', '-rf', '{0}'.format(pidfile)]
-        __salt__['cmd.run'](remove_pidfile_cmd, timeout=10000)
+        __salt__['cmd.run'](remove_pidfile_cmd, timeout=600)
 
 
 def _parse_log(path_to_logfile,
@@ -1413,18 +1420,85 @@ def _parse_log(path_to_logfile,
 
 def _set_cache_offset(path_to_logfile, offset):
     """
-    Cache file offset in memory
+    Cache file offset in specified file
+    A file will be created in cache directory and following attributes will be stored in it
+    offset, initial_crc (CRC for first 256 bytes of log file), last_crc (CRC for last 256 bytes of log file)
     """
-    cachefilekey = os.path.basename(path_to_logfile)
-    __RESULT_LOG_OFFSET__[cachefilekey] = offset
+    try:
+        log_filename = os.path.basename(path_to_logfile)
+        offsetfile = os.path.join(__opts__.get('cachedir'), 'osqueryd', 'offset', log_filename)
+        log_file_initial_crc = 0
+        log_file_last_crc = 0
+        if(offset > 0):
+            with open(path_to_logfile, 'rb') as log_file:
+                log_file.seek(0)
+                log_file_initial_crc = zlib.crc32(log_file.read(CRC_BYTES))
 
+            if(offset > CRC_BYTES):
+                with open(path_to_logfile, 'rb') as log_file:
+                    log_file.seek(offset - CRC_BYTES)
+                    log_file_last_crc = zlib.crc32(log_file.read(CRC_BYTES))
+
+        offset_dict = {"offset" : offset, "initial_crc": log_file_initial_crc, "last_crc": log_file_last_crc}
+        log.info("Storing following information for file {0}. Offset: {1}, Initial_CRC: {2}, Last_CRC: {3}".format(path_to_logfile, offset, log_file_initial_crc, log_file_last_crc))
+        if not os.path.exists(os.path.dirname(offsetfile)):
+            os.makedirs(os.path.dirname(offsetfile))
+
+        with open(offsetfile, 'w') as json_file:
+            json.dump(offset_dict, json_file)
+    except Exception as e:
+        log.error("Exception in creating offset file. Exception: {0}".format(e))
+        tb = traceback.format_exc()
+        log.error("Exception stacktrace: {0}".format(tb))
 
 def _get_file_offset(path_to_logfile):
     """
     Fetch file offset for specified file
     """
-    cachefilekey = os.path.basename(path_to_logfile)
-    offset = __RESULT_LOG_OFFSET__.get(cachefilekey, 0)
+    offset = 0
+    try:
+        log_filename = os.path.basename(path_to_logfile)
+        offsetfile = os.path.join(__opts__.get('cachedir'), 'osqueryd', 'offset', log_filename)
+        if not os.path.isfile(offsetfile):
+            log.info("Offset file: {0} does not exist. Returning offset as 0.".format(offsetfile))
+        else:
+            with open(offsetfile, 'r') as file:
+                offset_data = json.load(file)
+            offset = offset_data.get('offset')
+            initial_crc = offset_data.get('initial_crc')
+            last_crc = offset_data.get('last_crc')
+            log.debug("Offset file: {0} exist. Got following values: offset: {1}, initial_crc: {2}, last_crc: {3}".format(offsetfile, offset, initial_crc, last_crc))
+
+            log_file_offset = 0
+            log_file_initial_crc = 0
+            with open(path_to_logfile, 'rb') as log_file:
+                log_file.seek(log_file_offset)
+                log_file_initial_crc = zlib.crc32(log_file.read(CRC_BYTES))
+
+            if log_file_initial_crc == initial_crc:
+                log.debug("Initial CRC for log file {0} matches. Now matching last CRC for the given offset {1}".format(path_to_logfile, offset))
+                if offset > CRC_BYTES:
+                    log_file_offset = offset - CRC_BYTES
+                    log_file_last_crc = 0
+                    with open(path_to_logfile, 'rb') as log_file:
+                        log_file.seek(log_file_offset)
+                        log_file_last_crc = zlib.crc32(log_file.read(CRC_BYTES))
+                    if log_file_last_crc == last_crc:
+                        log.info("Last CRC for log file {0} matches. Returning the offset value {1}".format(path_to_logfile, offset))
+                    else:
+                        log.error("Last CRC for log file {0} does not match. Got values: Expected: {1}, Actual: {2}. Returning offset as 0.".format(path_to_logfile, last_crc, log_file_last_crc))
+                        offset = 0
+                else:
+                    log.info("Last offset of log file {0} is less than {1}. Returning 0.".format(path_to_logfile, CRC_BYTES))
+                    offset = 0
+            else:
+                log.error("Initial CRC for log file {0} does not match. Got values: Expected: {1}, Actual {2}. Returning offset as 0.".format(path_to_logfile, initial_crc, log_file_initial_crc))
+                offset = 0
+    except Exception as e:
+        log.error("Exception in getting offset for file: {0}. Returning offset as 0. Exception {1}".format(path_to_logfile, e))
+        tb = traceback.format_exc()
+        log.error("Exception stacktrace: {0}".format(tb))
+        offset = 0
     return offset
 
 
@@ -1511,7 +1585,7 @@ def query(query):
 
     # Run the osqueryi query
     cmd = [__grains__['osquerybinpath'], '--read_max', max_file_size, '--json', query]
-    res = __salt__['cmd.run_all'](cmd, timeout=10000)
+    res = __salt__['cmd.run_all'](cmd, timeout=600)
     if res['retcode'] == 0:
         query_ret['data'] = json.loads(res['stdout'])
     else:

@@ -4,7 +4,7 @@ This will setup your computer to enable auditing for specified folders inputted 
 It will then scan the event log for changes to those folders and report when it finds one.
 """
 
-from __future__ import absolute_import
+
 
 import collections
 import fnmatch
@@ -255,8 +255,8 @@ def _should_append(config, path, event):
     _append = True
     if isinstance(config[path], dict) and 'exclude' in config[path]:
         for exclude in config[path]['exclude']:
-            if isinstance(exclude, dict) and exclude.values()[0].get('regex', False):
-                if re.search(exclude.keys()[0], event['Object Name']):
+            if isinstance(exclude, dict) and list(exclude.values())[0].get('regex', False):
+                if re.search(list(exclude.keys())[0], event['Object Name']):
                     _append = False
             else:
                 if fnmatch.fnmatch(event['Object Name'], exclude):
@@ -669,7 +669,7 @@ def get_top_data(topfile):
 
     ret = []
 
-    for match, data in topdata.iteritems():
+    for match, data in topdata.items():
         if __salt__['match.compound'](match):
             ret.extend(data)
 

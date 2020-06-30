@@ -1,7 +1,5 @@
 argparse
-crypto
 daemon
-logging
 pprint
 backports-abc
 bandit
@@ -18,8 +16,6 @@ markupsafe
 mock
 msgpack
 ntplib
-cryptography
-pycryptodome
 pyinotify
 pytest
 pytest-cov

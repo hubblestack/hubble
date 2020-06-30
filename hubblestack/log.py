@@ -3,7 +3,7 @@
 Logging for the hubble daemon
 """
 
-from __future__ import print_function
+
 
 import logging
 import time
@@ -220,7 +220,7 @@ def _remove_sensitive_info(obj, patterns_to_filter):
     if isinstance(obj, dict):
         obj = {
             key: _remove_sensitive_info(value, patterns_to_filter)
-            for key, value in obj.iteritems()
+            for key, value in obj.items()
             if not any(patt in key for patt in patterns_to_filter)}
     elif isinstance(obj, list):
         obj = [_remove_sensitive_info(item, patterns_to_filter)

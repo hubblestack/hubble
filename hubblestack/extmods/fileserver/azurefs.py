@@ -47,7 +47,7 @@ permissions. Proxy can also be provided in the configuration.
 """
 
 # Import python libs
-from __future__ import absolute_import
+
 from distutils.version import LooseVersion
 import base64
 import json
@@ -252,7 +252,8 @@ def update():
             if os.path.exists(fname):
                 # File exists, check the hashes
                 source_md5 = blob.properties.content_settings.content_md5
-                local_md5 = base64.b64encode(salt.utils.hashutils.get_hash(fname, 'md5').decode('hex'))
+                local_md5_hex = salt.utils.hashutils.get_hash(fname, 'md5')
+                local_md5 = base64.b64encode(bytes.fromhex(local_md5_hex))
                 if local_md5 != source_md5:
                     update = True
             else:

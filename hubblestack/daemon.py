@@ -3,14 +3,13 @@
 Main entry point for the hubble daemon
 """
 
-from __future__ import print_function
-
 # import lockfile
 import argparse
 import copy
 import json
 import logging
 import math
+import traceback
 import os
 import pprint
 import re
@@ -43,7 +42,7 @@ import hubblestack.status
 import hubblestack.saltoverrides
 
 log = logging.getLogger(__name__)
-hubble_status = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
+HSS = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
 
 # Importing syslog fails on windows
 if not salt.utils.platform.is_windows():
@@ -239,7 +238,7 @@ def getlastrunbybuckets(buckets, seconds):
     return last_run
 
 
-@hubble_status.watch
+@HSS.watch
 def schedule():
     """
     Rudimentary single-pass scheduler
@@ -308,42 +307,46 @@ def schedule():
     schedule_config = __opts__.get('schedule', {})
     if 'user_schedule' in __opts__ and isinstance(__opts__['user_schedule'], dict):
         schedule_config.update(__opts__['user_schedule'])
-    for jobname, jobdata in schedule_config.iteritems():
-        # Error handling galore
-        if not jobdata or not isinstance(jobdata, dict):
-            log.error('Scheduled job %s does not have valid data', jobname)
-            continue
-        if 'function' not in jobdata or 'seconds' not in jobdata:
-            log.error('Scheduled job %s is missing a ``function`` or ``seconds`` argument', jobname)
-            continue
-        func = jobdata['function']
-        if func not in __salt__:
-            log.error('Scheduled job %s has a function %s which could not be found.', jobname, func)
-            continue
+    for jobname, jobdata in schedule_config.items():
         try:
-            if 'cron' in jobdata:
-                seconds = getsecondsbycronexpression(base, jobdata['cron'])
-            else:
-                seconds = int(jobdata['seconds'])
-            splay = int(jobdata.get('splay', 0))
-            min_splay = int(jobdata.get('min_splay', 0))
-        except ValueError:
-            log.error('Scheduled job %s has an invalid value for seconds or splay.', jobname)
-        args = jobdata.get('args', [])
-        if not isinstance(args, list):
-            log.error('Scheduled job %s has args not formed as a list: %s', jobname, args)
-        kwargs = jobdata.get('kwargs', {})
-        if not isinstance(kwargs, dict):
-            log.error('Scheduled job %s has kwargs not formed as a dict: %s', jobname, kwargs)
-        returners = jobdata.get('returner', [])
-        if not isinstance(returners, list):
-            returners = [returners]
-        # Actually process the job
-        run = _process_job(jobdata, splay, seconds, min_splay, base)
-        if run:
-            _execute_function(jobdata, func, returners, args, kwargs)
-            sf_count += 1
-
+            # Error handling galore
+            if not jobdata or not isinstance(jobdata, dict):
+                log.error('Scheduled job %s does not have valid data', jobname)
+                continue
+            if 'function' not in jobdata or 'seconds' not in jobdata:
+                log.error('Scheduled job %s is missing a ``function`` or ``seconds`` argument', jobname)
+                continue
+            func = jobdata['function']
+            if func not in __salt__:
+                log.error('Scheduled job %s has a function %s which could not be found.', jobname, func)
+                continue
+            try:
+                if 'cron' in jobdata:
+                    seconds = getsecondsbycronexpression(base, jobdata['cron'])
+                else:
+                    seconds = int(jobdata['seconds'])
+                splay = int(jobdata.get('splay', 0))
+                min_splay = int(jobdata.get('min_splay', 0))
+            except ValueError:
+                log.error('Scheduled job %s has an invalid value for seconds or splay.', jobname)
+            args = jobdata.get('args', [])
+            if not isinstance(args, list):
+                log.error('Scheduled job %s has args not formed as a list: %s', jobname, args)
+            kwargs = jobdata.get('kwargs', {})
+            if not isinstance(kwargs, dict):
+                log.error('Scheduled job %s has kwargs not formed as a dict: %s', jobname, kwargs)
+            returners = jobdata.get('returner', [])
+            if not isinstance(returners, list):
+                returners = [returners]
+            # Actually process the job
+            run = _process_job(jobdata, splay, seconds, min_splay, base)
+            if run:
+                _execute_function(jobdata, func, returners, args, kwargs)
+                sf_count += 1
+        except Exception as e:
+            log.error("Exception in running job: {0}. Exception: {1} . Continuing with next job....".format(jobname, e))
+            tb = traceback.format_exc()
+            log.error("Exception stacktrace: {0}".format(tb))
     return sf_count
 
 
@@ -515,7 +518,6 @@ def _setup_signaling():
         signal.signal(signal.SIGHUP, clean_up_process)
         signal.signal(signal.SIGQUIT, clean_up_process)
 
-
 def _disable_boto_modules():
     """ Disable the unneeded boto modules because they cause issues with the loader """
     # Disable all of salt's boto modules, they give nothing but trouble to the loader
@@ -639,12 +641,13 @@ def _setup_logging(parsed_args):
         if __opts__['daemonize']:
             __opts__['log_level'] = 'info'
     # Handle the explicit -vvv settings
-    if __opts__['verbose'] == 1:
-        __opts__['log_level'] = 'warning'
-    elif __opts__['verbose'] == 2:
-        __opts__['log_level'] = 'info'
-    elif __opts__['verbose'] >= 3:
-        __opts__['log_level'] = 'debug'
+    if __opts__['verbose']:
+        if __opts__['verbose'] == 1:
+            __opts__['log_level'] = 'warning'
+        elif __opts__['verbose'] == 2:
+            __opts__['log_level'] = 'info'
+        elif __opts__['verbose'] >= 3:
+            __opts__['log_level'] = 'debug'
     # Console logging is probably the same, but can be different
     console_logging_opts = {
         'log_level': __opts__.get('console_log_level', __opts__['log_level']),
@@ -720,7 +723,7 @@ def _setup_dirs():
 # tag='hubble:rg' will appear in the logs to differentiate this from other
 # hangtime_wrapper timers (if any)
 @hangtime_wrapper(timeout=600, repeats=True, tag='hubble:rg')
-@hubble_status.watch
+@HSS.watch
 def refresh_grains(initial=False):
     """
     Refresh the grains, pillar, utils, modules, and returners
@@ -795,7 +798,10 @@ def refresh_grains(initial=False):
 
     hubblestack.status.__opts__ = __opts__
     hubblestack.status.__salt__ = __salt__
-    hubble_status.start_sigusr1_signal_handler()
+    HSS.start_sigusr1_signal_handler()
+
+    hubblestack.utils.signing.__opts__ = __opts__
+    hubblestack.utils.signing.__salt__ = __salt__
 
     hubblestack.utils.signing.__opts__ = __opts__
     hubblestack.utils.signing.__salt__ = __salt__
@@ -814,7 +820,7 @@ def emit_to_syslog(grains_to_emit):
         for grain in grains_to_emit:
             if grain in __grains__:
                 if bool(__grains__[grain]) and isinstance(__grains__[grain], dict):
-                    for key, value in __grains__[grain].iteritems():
+                    for key, value in __grains__[grain].items():
                         syslog_list.append('{0}={1}'.format(key, value))
                 else:
                     syslog_list.append('{0}={1}'.format(grain, __grains__[grain]))
@@ -959,7 +965,7 @@ def scan_proc_for_hubbles(_proc_path='/proc', hname=r'^/\S+python.*?/opt/.*?hubb
                           kill_other=True, ksig=signal.SIGTERM):
     """ look for other hubble processes and kill them or sys.exit()"""
     no_pgrp = str(os.getpgrp())
-    rpid = re.compile('\d+')
+    rpid = re.compile(r'\d+')
     if os.path.isdir('/proc'):
         for dirname, dirs, _files in os.walk('/proc'):
             if dirname == '/proc':

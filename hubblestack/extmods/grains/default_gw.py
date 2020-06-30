@@ -15,7 +15,7 @@ List of grains:
     ip6_gw: True  # True/False if default ipv6 gateway
     ip_gw: True    # True if either of the above is True, False otherwise
 """
-from __future__ import absolute_import
+
 
 import logging
 

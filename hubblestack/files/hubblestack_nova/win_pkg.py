@@ -2,7 +2,7 @@
 """
 Windows package audit module
 """
-from __future__ import absolute_import
+
 
 import copy
 import fnmatch
@@ -126,7 +126,7 @@ def _merge_yaml(ret, data, profile=None):
         if topkey in data.get(__virtualname__, {}):
             if topkey not in ret[__virtualname__]:
                 ret[__virtualname__][topkey] = []
-            for key, val in data[__virtualname__][topkey].iteritems():
+            for key, val in data[__virtualname__][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret[__virtualname__][topkey].append({key: val})
@@ -139,10 +139,10 @@ def _get_tags(data):
     """
     ret = {}
     distro = __grains__.get('osfullname')
-    for toplist, toplevel in data.get(__virtualname__, {}).iteritems():
+    for toplist, toplevel in data.get(__virtualname__, {}).items():
         # secedit:whitelist
         for audit_dict in toplevel:
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 # secedit:whitelist:PasswordComplexity
                 tags_dict = audit_data.get('data', {})
                 # secedit:whitelist:PasswordComplexity:data
@@ -164,11 +164,11 @@ def _get_tags(data):
                 if isinstance(tags, dict):
                     # malformed yaml, convert to list of dicts
                     tmp = []
-                    for name, tag in tags.iteritems():
+                    for name, tag in tags.items():
                         tmp.append({name: tag})
                     tags = tmp
                 for item in tags:
-                    for name, tag in item.iteritems():
+                    for name, tag in item.items():
                         tag_data = {}
                         # Whitelist could have a dictionary, not a string
                         if isinstance(tag, dict):

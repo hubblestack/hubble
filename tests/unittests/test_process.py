@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+
 
 import os
 import pytest
@@ -452,7 +452,7 @@ class TestProcess():
         ret = hubblestack.extmods.fdg.process._split("foo bar", " ", True)
         assert expected_ret == ret
         # regex
-        ret = hubblestack.extmods.fdg.process._split("foo    bar", "\s+", True)
+        ret = hubblestack.extmods.fdg.process._split("foo    bar", r"\s+", True)
         assert expected_ret == ret
         # invalid ``sep``
         expected_ret = ['foo bar']
@@ -487,7 +487,7 @@ class TestProcess():
         expected_ret = ['a', 'b', 'c', 'd']
         # valid regex
         status, ret = hubblestack.extmods.fdg.process.split(
-            phrase="a1b2c3d", sep="\d+", regex=True)
+            phrase="a1b2c3d", sep=r"\d+", regex=True)
         assert status is True
         assert expected_ret == ret
         # simple sep
@@ -505,7 +505,7 @@ class TestProcess():
         # invalid regex
         expected_ret = ['a1b2c3d']
         status, ret = hubblestack.extmods.fdg.process.split(
-            phrase="a1b2{}", sep="\d+", regex=False, chained='c3d')
+            phrase="a1b2{}", sep=r"\d+", regex=False, chained='c3d')
         assert status is False
         assert expected_ret == ret
 

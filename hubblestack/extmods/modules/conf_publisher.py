@@ -9,6 +9,7 @@ from hubblestack.hec import get_splunk_options as gso
 
 log = logging.getLogger(__name__)
 
+
 def get_splunk_options(**kwargs):
     if not kwargs:
         kwargs['sourcetype'] = 'hubble_osquery'
@@ -16,8 +17,8 @@ def get_splunk_options(**kwargs):
         kwargs['_nick'] = {'sourcetype_nebula': 'sourcetype'}
     return gso(**kwargs)
 
-def publish(report_directly_to_splunk=True, remove_dots=True, *args):
 
+def publish(report_directly_to_splunk=True, remove_dots=True, *args):
     """
     Publishes config to splunk at an interval defined in schedule
 
@@ -44,7 +45,7 @@ def publish(report_directly_to_splunk=True, remove_dots=True, *args):
             opts_to_log.pop('grains')
     else:
         for arg in args:
-            if arg in  __opts__:
+            if arg in __opts__:
                 opts_to_log[arg] = __opts__[arg]
 
     filtered_conf = hubblestack.log.filter_logs(opts_to_log, remove_dots=remove_dots)
@@ -76,7 +77,7 @@ def _remove_sensitive_info(obj, patterns_to_filter):
     if isinstance(obj, dict):
         obj = {
             key: _remove_sensitive_info(value, patterns_to_filter)
-            for key, value in obj.iteritems()
+            for key, value in obj.items()
             if not any(patt in key for patt in patterns_to_filter)}
     elif isinstance(obj, list):
         obj = [_remove_sensitive_info(item, patterns_to_filter) for item in obj]

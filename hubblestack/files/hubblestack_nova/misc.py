@@ -38,7 +38,7 @@ misc:
     # Description will be output with the results
     description: '/home should be nodev'
 """
-from __future__ import absolute_import
+
 import logging
 
 import fnmatch
@@ -136,7 +136,7 @@ def _merge_yaml(ret, data, profile=None):
     if 'misc' not in ret:
         ret['misc'] = []
     if 'misc' in data:
-        for key, val in data['misc'].iteritems():
+        for key, val in data['misc'].items():
             if profile and isinstance(val, dict):
                 val['nova_profile'] = profile
             ret['misc'].append({key: val})
@@ -151,7 +151,7 @@ def _get_tags(data):
     distro = __grains__.get('osfinger')
     for audit_dict in data.get('misc', []):
         # misc:0
-        for audit_id, audit_data in audit_dict.iteritems():
+        for audit_id, audit_data in audit_dict.items():
             # misc:0:nodev
             tags_dict = audit_data.get('data', {})
             # misc:0:nodev:data
@@ -963,7 +963,7 @@ def mail_conf_check(reason=''):
     mail_addresses = _execute_shell_command("grep '^[[:blank:]]*inet_interfaces' /etc/postfix/main.cf | awk -F'=' '{print $2}'", python_shell=True).strip()
     mail_addresses = str(mail_addresses)
     mail_addresses = mail_addresses.split(',') if mail_addresses != "" else []
-    mail_addresses = map(str.strip, mail_addresses)
+    mail_addresses = list(map(str.strip, mail_addresses))
     invalid_addresses = list(set(mail_addresses) - set(valid_addresses))
 
     return str(invalid_addresses) if invalid_addresses != [] else True

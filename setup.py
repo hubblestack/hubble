@@ -1,14 +1,36 @@
 from setuptools import setup, find_packages
-import platform
 import re
+import platform
 
-distro, version, _ = platform.dist()
-if not distro:
-    distro, version, _ = platform.linux_distribution(supported_dists=['system'])
+try:
+    import distro
+    distro, version, _ = distro.linux_distribution(full_distribution_name=False)
+except ImportError:
+    distro = version = ''
 
-# Default to cent7
+platform_name=platform.system()
+
+# Default to CentOS7
 data_files = [('/usr/lib/systemd/system', ['pkg/source/hubble.service']),
               ('/etc/hubble', ['conf/hubble']), ]
+
+build_dependencies = [
+    'objgraph',
+    'pycryptodome',
+    'cryptography',
+    'pyopenssl>=16.2.0',
+    'requests>=2.13.0',
+    'daemon',
+    'pygit2<0.27.0',
+    'salt-ssh==2019.2.3',
+    'gitpython',
+    'pyinotify',
+    'cffi',
+    'croniter',
+    'vulners',
+    'ntplib',
+    'patch==1.*',
+]
 
 if distro == 'redhat' or distro == 'centos':
     if version.startswith('6'):
@@ -20,6 +42,9 @@ if distro == 'redhat' or distro == 'centos':
 elif distro == 'Amazon Linux AMI':
     data_files = [('/etc/init.d', ['pkg/hubble']),
                   ('/etc/hubble', ['conf/hubble']), ]
+
+if platform_name == 'Windows':
+    build_dependencies.remove('pyinotify')
 
 with open('hubblestack/__init__.py', 'r') as fd:
     version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
@@ -41,19 +66,7 @@ setup(
             'hubble = hubblestack.daemon:run',
         ],
     },
-    tests_require=[
-        'mock',
-    ],
-    install_requires=[
-        'salt-ssh >= 2019.2.0',
-        'croniter',
-        'pyinotify',
-        'cryptography',
-        'pycryptodome',
-        'vulners == 1.3.0',
-        'azure',
-        'ntplib',
-    ],
+    install_requires=build_dependencies,
     data_files=data_files,
     options={
 #        'build_scripts': {

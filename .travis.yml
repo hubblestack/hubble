@@ -1,21 +1,31 @@
 
+version: 1.0
+
 language: python
 
 cache: pip
 
 env:
-  - 'PYLINT_ENABLE=1'
+  global:
+    LIBGIT2_VERSION: "0.26.5"
+    LIBGIT2_SRC_URL: https://github.com/libgit2/libgit2/archive/v${LIBGIT2_VERSION}.tar.gz
+    LIBGIT2_DIR_NAME: libgit2-${LIBGIT2_VERSION}
+    LIBGIT2_TAR_NAME: ${LIBGIT2_DIR_NAME}.tar.gz
+    LIBGIT2: ~/libgit2/_install
+    LD_LIBRARY_PATH: ${LIBGIT2}/lib:${LD_LIBRARY_PATH}
 
 python:
-  - "2.7"
-  - "3.6"
-
-matrix:
-  allow_failures:
-    - python: "3.6"
+  - "3.6.10"
+  - "3.7"
+  - "3.8"
 
 install:
-  - pip install -r test-requirements.txt
+  - pip --upgarde pip
+  - ./mk-requires.sh
+  - pip install -r requirements.txt
 
 script:
-  - bash tests/travis-runner.sh
+  - wget -q "$LIBGIT2_SRC_URL" -O $LIBGIT2_TAR_NAME
+  - tar -xzf $LIBGIT2_TAR_NAME
+  - (cd $LIBGIT2_DIR_NAME; cmake . -DMAKE_INSTALL_PREFIX=${LIBGIT2} && make -j 5 install)
+  - pytest tests/unittests

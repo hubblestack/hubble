@@ -56,3 +56,9 @@ def verify(*targets, **kw):
 
     return dict(HuS.verify_files(targets, mfname=mfname, sfname=sfname,
         public_crt=public_crt, ca_crt=ca_crt))
+
+def enumerate():
+    """ enumerate installed certificates """
+
+    x509 = HuS.X509AwareCertBucket()
+    return [ ' '.join(x.split()[1:]) for x in x509.trusted ]

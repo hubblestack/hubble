@@ -106,7 +106,7 @@ def _generate_and_send_payload(hec, host_args, opts, event, query_results):
         sourcetype = opts['sourcetype'] + '_' + query_results['name'].replace('pack_', '')
     # If the osquery query includes a field called 'time' it will be checked.
     # If it's within the last year, it will be used as the eventtime.
-    event_time = query_results.get('time', '')
+    event_time = query_results.get('unixTime', query_results.get('time', ''))
     try:
         if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(
                 float(event_time))).days > 365:
@@ -208,7 +208,7 @@ def _update_event(custom_fields, event):
         custom_field_value = __salt__['config.get'](custom_field, '')
         if isinstance(custom_field_value, list):
             custom_field_value = ','.join(custom_field_value)
-        if isinstance(custom_field_value, (str, unicode)):
+        if isinstance(custom_field_value, str):
             event.update({custom_field_name: custom_field_value})
 
     # Remove any empty fields from the event payload

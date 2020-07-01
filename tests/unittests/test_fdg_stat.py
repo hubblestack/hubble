@@ -197,7 +197,7 @@ def test_check_stats_negative_subcheck_failed():
 
 def test_check_stats_negative_invalid_inputs():
     log.info('\n \n Executing test_check_stats_negative')
-    params = {'params' : {'filepath' : '/etc/passwd',
+    params = {'filepath' : '/etc/passwd',
                           'uid' : 0,
                           'gid' : 0,
                           'user' : 'root',
@@ -205,7 +205,6 @@ def test_check_stats_negative_invalid_inputs():
                           'match_on_file_missing' : True,
                           'allow_more_strict' : True
                          }
-             }
     __salt__ = {}
 
     def file_stats(name):
@@ -222,6 +221,26 @@ def test_check_stats_negative_invalid_inputs():
     assert isinstance(val[1], dict)
     assert 'Failure' in val[1].keys()
     assert 'expected' in val[1].keys()
+
+
+def test_check_stats_negative_no_params():
+    log.info('\n \n Executing test_check_stats_negative_no_params')
+    __salt__ = {}
+
+    def file_stats(name):
+        return {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0, 'target': '/etc/passwd',
+                'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322,
+                'ctime': 1491870657.914388}
+
+    __salt__['file.stats'] = file_stats
+    hubblestack.extmods.fdg.stat.__salt__ = __salt__
+    valid_inputs = False, {"Failure":"reason", "expected":"expectation"}
+    hubblestack.extmods.fdg.stat._validate_inputs = mock.Mock(return_value=valid_inputs)
+    val = hubblestack.extmods.fdg.stat.check_stats()
+    assert not val[0]
+    assert isinstance(val[1], dict)
+    assert 'Failure' in val[1].keys()
+
 
 # value of 'allow more strict' is not boolean
 def test_check_stats_incorrect_param_type_negative():

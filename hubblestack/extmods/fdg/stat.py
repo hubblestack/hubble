@@ -66,6 +66,10 @@ def check_stats(params='', chained=None, chained_status=None):
     The filepath can be provided either directly in params or through chaining. See example above.
     '''
 
+    if params == '' or params is None:
+        ret = {'Failure' : 'invalid input, no params provided'}
+        return False, ret
+
     if chained != None:
         log.info("value of 'chained' is not null, using {0} value as filepath".format(chained))
         filepath = chained.get('filepath')

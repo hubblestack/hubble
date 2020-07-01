@@ -2,8 +2,8 @@
 
 import os
 
-def test_unders(salt_loaders):
-    __opts__, __salt__, __grains__, __utils__ = salt_loaders
+def test_unders(HSL):
+    __opts__, __mods__, __grains__, __utils__ = HSL
     assert __grains__['id'] == 'test-minion'
 
     config = __opts__['conf_file']
@@ -19,5 +19,5 @@ def test_unders(salt_loaders):
         'hubblestack_nebula_v2', 'hubblestack_nebula_queries.yaml'))
 
     mdirs = __opts__.get('modules_dirs')
-    assert 'test.ping' in __salt__
-    assert 'hstatus.msg_counts' in __salt__
+    assert 'test.ping' in __mods__
+    assert 'hstatus.msg_counts' in __mods__

@@ -7,15 +7,14 @@ This profile makes direct use of stat module by passing filepath directly in par
 main:                             # start of this profile's main module
     module: stat.check_stats      # this tells FDG to call stat submodule's check_stats function
     args:                         # arguments to check_stats function
-        - params:
-            filepath: /etc/docker/daemon.json
-            mode: 644
-            gid: 0
-            group: root
-            uid: 0
-            user: root
-            allow_more_strict: True
-            match_on_file_missing: True
+        - filepath: /etc/docker/daemon.json
+          mode: 644
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          allow_more_strict: True
+          match_on_file_missing: True
 *****************************************************
 
 2. Sample FDG profile, with inline comments:
@@ -31,14 +30,13 @@ main:                           # start of this profile's main module
 check_stats:                    # this profile's check_stats module
     module: stat.check_stats   # this tells FDG to call stat submodule's check_stats function
     args:
-        - params:
-            mode: 644
-            gid: 0
-            group: root
-            uid: 0
-            user: root
-            allow_more_strict: True
-            match_on_file_missing: True
+        - mode: 644
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          allow_more_strict: True
+          match_on_file_missing: True
 
 *****************************************************
 
@@ -178,14 +176,14 @@ def _validate_inputs(filepath, expected):
     if filepath is None or filepath == '':
         log.error("filepath not specified")
         ret = {'Failure': "no filepath provided", "expected": expected}
-        log.info("FDG stat is returning status : True, value : {0}".format(ret))
+        log.info("FDG stat is returning status : False, value : {0}".format(ret))
         return False, ret
 
     if 'allow_more_strict' in expected.keys() and 'mode' not in expected.keys():
         reason = "'allow_more_strict' tag can't be specified without 'mode' tag." \
                  " Seems like a bug in hubble profile."
         ret = {'Failure': reason, "expected": expected}
-        log.info("FDG stat is returning status : True, value : {0}".format(ret))
+        log.info("FDG stat is returning status : False, value : {0}".format(ret))
         return False, ret
 
     return True, ret

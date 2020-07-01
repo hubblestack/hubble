@@ -83,7 +83,7 @@ def check_stats(params='', chained=None, chained_status=None):
 
     status, ret = _validate_inputs(filepath, expected)
     if not status:
-        log.info("Invalid inputs, returning False")
+        log.info("Invalid inputs provided in fdg stat module, returning False")
         return False, ret
 
     log.info("checking stats of {0}".format(filepath))
@@ -175,6 +175,7 @@ def _validate_inputs(filepath, expected):
     :return: Tuple with two value. First is the status, second is the return dictionary with failure reason.
     '''
     ret = ''
+    log.info("validating inputs in fdg stat module")
     if not filepath:
         log.error("filepath not specified")
         ret = {'Failure': "no filepath provided", "expected": expected}
@@ -189,6 +190,7 @@ def _validate_inputs(filepath, expected):
         return False, ret
 
     return True, ret
+
 
 def _check_mode(max_permission, given_permission, allow_more_strict):
     '''

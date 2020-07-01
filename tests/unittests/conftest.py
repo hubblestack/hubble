@@ -7,10 +7,10 @@ import logging
 import pytest
 import collections
 import salt.config
-import salt.loader
+import hubblestack.loader
 
 log = logging.getLogger(__name__)
-SaltLoaders = collections.namedtuple("SaltLoaders", 'opts salt grains utils'.split())
+Loaders = collections.namedtuple("Loaders", 'opts mods grains utils'.split())
 
 tests_dir = os.path.dirname(os.path.realpath(__file__))
 sources_dir = os.path.dirname(os.path.dirname(tests_dir))
@@ -58,7 +58,7 @@ def quiet_salt():
         handler.addFilter(qs)
 
 @pytest.fixture(scope='session')
-def salt_loaders():
+def hubblestack_loaders():
     quiet_salt()
 
     sys.argv = ['hubble']
@@ -137,49 +137,57 @@ def salt_loaders():
     __opts__['osquery_backuplogs_count'] = 2
 
     log.debug('loading __grains__')
-    __opts__['grains'] = __grains__ = salt.loader.grains(__opts__)
+    __opts__['grains'] = __grains__ = hubblestack.loader.grains(__opts__)
     log.debug('loading __utils__')
-    __utils__ = salt.loader.utils(__opts__)
-    log.debug('loading __salt__ (aka minion mods)')
-    __salt__ = salt.loader.minion_mods(__opts__, utils=__utils__)
+    __utils__ = hubblestack.loader.utils(__opts__)
+    log.debug('loading __mods__ (aka execution mods)')
+    __mods__ = hubblestack.loader.modules(__opts__, utils=__utils__)
 
-    salt_loaders = SaltLoaders(__opts__, __salt__, __grains__, __utils__)
+    hubblestack_loaders = Loaders(__opts__, __mods__, __grains__, __utils__)
 
     log.debug('populating hubblestack.utils.stdrec with __grains__ and __opts__')
-    hubblestack.utils.stdrec.__grains__ = salt_loaders.grains
-    hubblestack.utils.stdrec.__opts__ = salt_loaders.opts
+    hubblestack.utils.stdrec.__grains__ = hubblestack_loaders.grains
+    hubblestack.utils.stdrec.__opts__ = hubblestack_loaders.opts
 
-    log.debug('populating hubblestack.utils.signing with __salt__ and __opts__')
-    hubblestack.utils.signing.__opts__ = __opts__
-    hubblestack.utils.signing.__salt__ = __salt__
+    log.debug('populating hubblestack.utils.signing with __mods__ and __opts__')
+    hubblestack.utils.signing.__opts__ = hubblestack_loaders.opts
+    hubblestack.utils.signing.__mods__ = hubblestack_loaders.mods
+    hubblestack.utils.signing.__salt__ = hubblestack_loaders.mods
 
-    log.debug('populating hubblestack.hec with __grains__, __salt__, and __opts__')
-    hubblestack.hec.opt.__grains__ = salt_loaders.grains
-    hubblestack.hec.opt.__salt__ = salt_loaders.salt
-    hubblestack.hec.opt.__opts__ = salt_loaders.opts
+    log.debug('populating hubblestack.hec with __grains__, __mods__, and __opts__')
+    hubblestack.hec.opt.__grains__ = hubblestack_loaders.grains
+    hubblestack.hec.opt.__mods__ = hubblestack_loaders.mods
+    hubblestack.hec.opt.__salt__ = hubblestack_loaders.mods
+    hubblestack.hec.opt.__opts__ = hubblestack_loaders.opts
 
-    log.debug('populating hubblestack.splunklogging with __grains__, __salt__, and __opts__')
-    hubblestack.splunklogging.__grains__ = salt_loaders.grains
-    hubblestack.splunklogging.__salt__ = salt_loaders.salt
-    hubblestack.splunklogging.__opts__ = salt_loaders.opts
+    log.debug('populating hubblestack.splunklogging with __grains__, __mods__, and __opts__')
+    hubblestack.splunklogging.__grains__ = hubblestack_loaders.grains
+    hubblestack.splunklogging.__mods__ = hubblestack_loaders.mods
+    hubblestack.splunklogging.__salt__ = hubblestack_loaders.mods
+    hubblestack.splunklogging.__opts__ = hubblestack_loaders.opts
 
-    log.debug('populating hubblestack.status with __salt__ and __opts__')
-    hubblestack.status.__opts__ = salt_loaders.opts
-    hubblestack.status.__salt__ = salt_loaders.salt
+    log.debug('populating hubblestack.status with __mods__ and __opts__')
+    hubblestack.status.__opts__ = hubblestack_loaders.opts
+    hubblestack.status.__salt__ = hubblestack_loaders.mods
+    hubblestack.status.__mods__ = hubblestack_loaders.mods
 
-    yield salt_loaders
-
-@pytest.fixture(scope='session')
-def __salt__(salt_loaders):
-    return salt_loaders.salt
-
-@pytest.fixture(scope='session')
-def __grains__(salt_loaders):
-    return salt_loaders.grains
+    yield hubblestack_loaders
 
 @pytest.fixture(scope='session')
-def __opts__(salt_loaders):
-    return salt_loaders.opts
+def __mods__(hubblestack_loaders):
+    return hubblestack_loaders.mods
+
+@pytest.fixture(scope='session')
+def __salt__(__mods__): # XXX remove eventually
+    return __mods__
+
+@pytest.fixture(scope='session')
+def __grains__(hubblestack_loaders):
+    return hubblestack_loaders.grains
+
+@pytest.fixture(scope='session')
+def __opts__(hubblestack_loaders):
+    return hubblestack_loaders.opts
 
 ##### profiling
 prof = None

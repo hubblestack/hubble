@@ -21,7 +21,6 @@ import traceback
 import types
 from zipimport import zipimporter
 
-# Import salt libs
 import hubblestack.config
 import hubblestack.syspaths
 import hubblestack.utils.args
@@ -55,9 +54,9 @@ log = logging.getLogger(__name__)
 def __salt_basepath():
     import salt.syspaths
     return os.path.abspath(salt.syspaths.INSTALL_DIR)
+
 # XXX: we only need this while we're still loading salt modules
 SALT_BASE_PATH = __salt_basepath()
-
 HUBBLE_BASE_PATH = os.path.abspath(hubblestack.syspaths.INSTALL_DIR)
 LOADED_BASE_NAME = 'hubble.loaded'
 

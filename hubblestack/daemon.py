@@ -689,10 +689,10 @@ def _setup_dirs():
     this_dir = os.path.dirname(__file__)
 
     hubble_mods_dirs = __opts__.get('hubble_mods_dirs', [])
-    hubble_mods_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'hubble_mods'))
+    hubble_mods_dirs.append(os.path.join(this_dir, 'extmods', 'hubble_mods'))
     __opts__['hubble_mods_dirs'] = hubble_mods_dirs
     comparators_dirs = __opts__.get('comparators_dirs', [])
-    comparators_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'comparators'))
+    comparators_dirs.append(os.path.join(this_dir, 'extmods', 'comparators'))
     __opts__['comparators_dirs'] = comparators_dirs
 
     module_dirs = __opts__.get('module_dirs', [])
@@ -722,15 +722,17 @@ def _setup_dirs():
     audit_dirs = __opts__.get('audit_dirs', [])
     audit_dirs.append(os.path.join(this_dir, 'extmods', 'audit'))
     __opts__['audit_dirs'] = audit_dirs
-
     # /XXX
 
     if 'file_roots' not in __opts__:
         __opts__['file_roots'] = dict(base=list())
+
     elif 'base' not in __opts__['file_roots']:
-        __opts__['file_roots']['base'] = [ os.path.join(this_dir, 'files') ]
+        __opts__['file_roots']['base'] = [ this_root_files ]
+
     else:
-        __opts__['file_roots']['base'].insert(0, os.path.join(this_dir, 'files'))
+        __opts__['file_roots']['base'] = [this_root_files] \
+            + [x for x in __opts__['file_roots']['base'] if x != this_root_files ]
 
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')
@@ -831,17 +833,21 @@ def refresh_grains(initial=False):
     HSS.start_sigusr1_signal_handler()
 
     hubblestack.utils.signing.__opts__ = __opts__
-    hubblestack.utils.signing.__salt__ = __salt__
+    hubblestack.utils.signing.__salt__ = __mods__
+    hubblestack.utils.signing.__salt__ = __mods__
 
-    hubblestack.extmods.module_runner.runner.__salt__ = __salt__
+    hubblestack.extmods.module_runner.runner.__salt__ = __mods__
+    hubblestack.extmods.module_runner.runner.__salt__ = __mods__
     hubblestack.extmods.module_runner.runner.__grains__ = __grains__
     hubblestack.extmods.module_runner.runner.__opts__ = __opts__
 
-    hubblestack.extmods.module_runner.audit_runner.__salt__ = __salt__
+    hubblestack.extmods.module_runner.audit_runner.__salt__ = __mods__
+    hubblestack.extmods.module_runner.audit_runner.__salt__ = __mods__
     hubblestack.extmods.module_runner.audit_runner.__grains__ = __grains__
     hubblestack.extmods.module_runner.audit_runner.__opts__ = __opts__
 
-    hubblestack.extmods.module_runner.fdg_runner.__salt__ = __salt__
+    hubblestack.extmods.module_runner.fdg_runner.__salt__ = __mods__
+    hubblestack.extmods.module_runner.fdg_runner.__salt__ = __mods__
     hubblestack.extmods.module_runner.fdg_runner.__grains__ = __grains__
     hubblestack.extmods.module_runner.fdg_runner.__opts__ = __opts__
     hubblestack.extmods.module_runner.fdg_runner.__returners__ = __returners__

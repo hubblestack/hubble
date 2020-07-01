@@ -58,6 +58,10 @@ def quiet_salt():
         handler.addFilter(qs)
 
 @pytest.fixture(scope='session')
+def HSL(hubblestack_loaders):
+    return hubblestack_loaders
+
+@pytest.fixture(scope='session')
 def hubblestack_loaders():
     quiet_salt()
 
@@ -143,35 +147,35 @@ def hubblestack_loaders():
     log.debug('loading __mods__ (aka execution mods)')
     __mods__ = hubblestack.loader.modules(__opts__, utils=__utils__)
 
-    hubblestack_loaders = Loaders(__opts__, __mods__, __grains__, __utils__)
+    hsl = Loaders(__opts__, __mods__, __grains__, __utils__)
 
     log.debug('populating hubblestack.utils.stdrec with __grains__ and __opts__')
-    hubblestack.utils.stdrec.__grains__ = hubblestack_loaders.grains
-    hubblestack.utils.stdrec.__opts__ = hubblestack_loaders.opts
+    hubblestack.utils.stdrec.__grains__ = hsl.grains
+    hubblestack.utils.stdrec.__opts__ = hsl.opts
 
     log.debug('populating hubblestack.utils.signing with __mods__ and __opts__')
-    hubblestack.utils.signing.__opts__ = hubblestack_loaders.opts
-    hubblestack.utils.signing.__mods__ = hubblestack_loaders.mods
-    hubblestack.utils.signing.__salt__ = hubblestack_loaders.mods
+    hubblestack.utils.signing.__opts__ = hsl.opts
+    hubblestack.utils.signing.__mods__ = hsl.mods
+    hubblestack.utils.signing.__salt__ = hsl.mods
 
     log.debug('populating hubblestack.hec with __grains__, __mods__, and __opts__')
-    hubblestack.hec.opt.__grains__ = hubblestack_loaders.grains
-    hubblestack.hec.opt.__mods__ = hubblestack_loaders.mods
-    hubblestack.hec.opt.__salt__ = hubblestack_loaders.mods
-    hubblestack.hec.opt.__opts__ = hubblestack_loaders.opts
+    hubblestack.hec.opt.__grains__ = hsl.grains
+    hubblestack.hec.opt.__mods__ = hsl.mods
+    hubblestack.hec.opt.__salt__ = hsl.mods
+    hubblestack.hec.opt.__opts__ = hsl.opts
 
     log.debug('populating hubblestack.splunklogging with __grains__, __mods__, and __opts__')
-    hubblestack.splunklogging.__grains__ = hubblestack_loaders.grains
-    hubblestack.splunklogging.__mods__ = hubblestack_loaders.mods
-    hubblestack.splunklogging.__salt__ = hubblestack_loaders.mods
-    hubblestack.splunklogging.__opts__ = hubblestack_loaders.opts
+    hubblestack.splunklogging.__grains__ = hsl.grains
+    hubblestack.splunklogging.__mods__ = hsl.mods
+    hubblestack.splunklogging.__salt__ = hsl.mods
+    hubblestack.splunklogging.__opts__ = hsl.opts
 
     log.debug('populating hubblestack.status with __mods__ and __opts__')
-    hubblestack.status.__opts__ = hubblestack_loaders.opts
-    hubblestack.status.__salt__ = hubblestack_loaders.mods
-    hubblestack.status.__mods__ = hubblestack_loaders.mods
+    hubblestack.status.__opts__ = hsl.opts
+    hubblestack.status.__salt__ = hsl.mods
+    hubblestack.status.__mods__ = hsl.mods
 
-    yield hubblestack_loaders
+    yield hsl
 
 @pytest.fixture(scope='session')
 def __mods__(hubblestack_loaders):

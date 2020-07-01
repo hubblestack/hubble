@@ -21,7 +21,7 @@ import types
 from zipimport import zipimporter
 
 # Import salt libs
-# TODO: all these should be hubble.config, hubble.defaults.x, hubble.utils.x, etc
+# XXX: all these should be hubble.config, hubble.defaults.x, hubble.utils.x, etc
 import salt.config
 import salt.defaults.exitcodes
 import salt.syspaths
@@ -39,9 +39,11 @@ from salt.exceptions import LoaderError
 from salt.template import check_render_pipe_str
 from salt.utils.decorators import Depends
 
-# Import 3rd-party libs
+# Import 3rd-party libs XXX
 from salt.ext import six
 from salt.ext.six.moves import reload_module
+
+import hubblestack.syspaths
 
 import importlib.machinery
 import importlib.util
@@ -51,7 +53,8 @@ import pkg_resources
 log = logging.getLogger(__name__)
 
 SALT_BASE_PATH = os.path.abspath(salt.syspaths.INSTALL_DIR)
-LOADED_BASE_NAME = 'salt.loaded'
+HUBBLE_BASE_PATH = os.path.abspath(hubblestack.syspaths.INSTALL_DIR)
+LOADED_BASE_NAME = 'hubble.loaded'
 
 MODULE_KIND_SOURCE = 1
 MODULE_KIND_COMPILED = 2
@@ -85,10 +88,15 @@ def _module_dirs(
         ext_type_dirs=None,
         base_path=None,
         ):
+
     if tag is None:
         tag = ext_type
-    sys_types = os.path.join(base_path or SALT_BASE_PATH, int_type or ext_type)
+
     ext_types = os.path.join(opts['extension_modules'], ext_type)
+    sys_types = os.path.join(base_path or HUBBLE_BASE_PATH, int_type or ext_type)
+
+    # XXX should be removed eventually:
+    old_types = os.path.join(SALT_BASE_PATH, int_type or ext_type)
 
     ext_type_types = []
     if ext_dirs:
@@ -118,7 +126,7 @@ def _module_dirs(
         if os.path.isdir(maybe_dir):
             cli_module_dirs.insert(0, maybe_dir)
 
-    return cli_module_dirs + ext_type_types + [ext_types, sys_types]
+    return cli_module_dirs + ext_type_types + [ext_types, sys_types, old_types]
 
 
 def modules(
@@ -1271,3 +1279,14 @@ class LazyLoader(salt.utils.lazy.LazyDict):
             return (False, module_name, error_reason, virtual_aliases)
 
         return (True, module_name, None, virtual_aliases)
+
+
+def matchers(opts):
+    '''
+    Return the matcher services plugins
+    '''
+    return LazyLoader(
+        _module_dirs(opts, 'matchers'),
+        opts,
+        tag='matchers'
+    )

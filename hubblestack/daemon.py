@@ -57,8 +57,6 @@ __opts__ = {}
 # This should work fine until we go to multiprocessing
 SESSION_UUID = str(uuid.uuid4())
 
-salt.loader = hubblestack.loader
-
 def run():
     """
     Set up program, daemonize if needed
@@ -323,7 +321,7 @@ def schedule():
                 log.error('Scheduled job %s is missing a ``function`` or ``seconds`` argument', jobname)
                 continue
             func = jobdata['function']
-            if func not in __salt__:
+            if func not in __mods__:
                 log.error('Scheduled job %s has a function %s which could not be found.', jobname, func)
                 continue
             try:
@@ -360,7 +358,7 @@ def _execute_function(jobdata, func, returners, args, kwargs):
     """ Run the scheduled function """
     log.debug('Executing scheduled function %s', func)
     jobdata['last_run'] = time.time()
-    ret = __salt__[func](*args, **kwargs)
+    ret = __mods__[func](*args, **kwargs)
     if __opts__['log_level'] == 'debug':
         log.debug('Job returned:\n%s', ret)
     for returner in returners:
@@ -426,7 +424,7 @@ def run_function():
     log.debug('Parsed args: %s | Parsed kwargs: %s', args, kwargs)
     log.info('Executing user-requested function %s', __opts__['function'])
     try:
-        ret = __salt__[__opts__['function']](*args, **kwargs)
+        ret = __mods__[__opts__['function']](*args, **kwargs)
     except KeyError:
         log.error('Function %s is not available, or not valid.', __opts__['function'])
         sys.exit(1)
@@ -452,12 +450,15 @@ def run_function():
             print(ret)
 
 
-def load_config():
+def load_config(args=None):
     """
     Load the config from configfile and load into imported salt modules
     """
+
+    # XXX: eventually, all the below should be done in a single pass in hubblestack.config
+
     # Parse arguments
-    parsed_args = parse_args()
+    parsed_args = parse_args(args=args)
 
     # Let's find out the path of this module
     if 'SETUP_DIRNAME' in globals():
@@ -465,13 +466,13 @@ def load_config():
         this_file = os.path.join(SETUP_DIRNAME, 'salt', 'syspaths.py')  # pylint: disable=E0602
     else:
         this_file = __file__
-    install_dir = os.path.dirname(os.path.realpath(this_file))
     _load_salt_config(parsed_args)
     global __opts__
     __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
     __opts__['conf_file'] = parsed_args.get('configfile')
-    __opts__['install_dir'] = install_dir
+    __opts__['install_dir'] = hubblestack.syspaths.INSTALL_DIR
+    __opts__['extension_modules'] = os.path.join(hubblestack.syspaths.CACHE_DIR, 'extmods')
     if __opts__['version']:
         print(__version__)
         clean_up_process(None, None)
@@ -505,7 +506,7 @@ def load_config():
     _setup_logging(parsed_args)
     _setup_cached_uuid()
     refresh_grains(initial=True)
-    if __salt__['config.get']('splunklogging', False):
+    if __mods__['config.get']('splunklogging', False):
         hubblestack.log.setup_splunk_logger()
         hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
         __salt__['conf_publisher.publish']()
@@ -695,6 +696,8 @@ def _setup_dirs():
     comparators_dirs = __opts__.get('comparators_dirs', [])
     comparators_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'comparators'))
     __opts__['comparators_dirs'] = comparators_dirs
+
+    # XXX: eventually we'll move these back a dir and elimninate the below
     module_dirs = __opts__.get('module_dirs', [])
     module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'modules'))
     __opts__['module_dirs'] = module_dirs
@@ -713,9 +716,14 @@ def _setup_dirs():
     fdg_dirs = __opts__.get('fdg_dirs', [])
     fdg_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'fdg'))
     __opts__['fdg_dirs'] = fdg_dirs
+
     __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')
+
+    audit_dirs = __opts__.get('audit_dirs', [])
+    audit_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'audit'))
+    __opts__['audit_dirs'] = audit_dirs
 
 
 # 600s is a long time to get stuck loading grains and *not* be doing things
@@ -741,7 +749,7 @@ def refresh_grains(initial=False):
     global __opts__
     global __grains__
     global __utils__
-    global __salt__
+    global __mods__
     global __pillar__
     global __returners__
     global __context__
@@ -788,8 +796,8 @@ def refresh_grains(initial=False):
     __opts__['grains'] = __grains__
     __opts__['pillar'] = __pillar__
     __utils__ = hubblestack.loader.utils(__opts__)
-    __salt__ = hubblestack.loader.minion_mods(__opts__, utils=__utils__, context=__context__)
-    __returners__ = hubblestack.loader.returners(__opts__, __salt__)
+    __mods__ = hubblestack.loader.minion_mods(__opts__, utils=__utils__, context=__context__)
+    __returners__ = hubblestack.loader.returners(__opts__, __mods__)
 
     # the only things that turn up in here (and that get preserved)
     # are pulsar.queue, pulsar.notifier and cp.fileclient_###########
@@ -799,15 +807,18 @@ def refresh_grains(initial=False):
     hubblestack.utils.stdrec.__opts__ = __opts__
 
     hubblestack.hec.opt.__grains__ = __grains__
-    hubblestack.hec.opt.__salt__ = __salt__
+    hubblestack.hec.opt.__mods__ = __mods__
+    hubblestack.hec.opt.__salt__ = __mods__
     hubblestack.hec.opt.__opts__ = __opts__
 
     hubblestack.splunklogging.__grains__ = __grains__
-    hubblestack.splunklogging.__salt__ = __salt__
+    hubblestack.splunklogging.__mods__ = __mods__
+    hubblestack.splunklogging.__salt__ = __mods__
     hubblestack.splunklogging.__opts__ = __opts__
 
     hubblestack.status.__opts__ = __opts__
-    hubblestack.status.__salt__ = __salt__
+    hubblestack.status.__mods__ = __mods__
+    hubblestack.status.__salt__ = __mods__
     HSS.start_sigusr1_signal_handler()
 
     hubblestack.utils.signing.__opts__ = __opts__
@@ -828,7 +839,10 @@ def refresh_grains(initial=False):
 
     hubblestack.log.refresh_handler_std_info()
 
-    if not initial and __salt__['config.get']('splunklogging', False):
+    hubblestack.utils.signing.__mods__ = __mods__
+    hubblestack.utils.signing.__salt__ = __mods__
+
+    if not initial and __mods__['config.get']('splunklogging', False):
         hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
 
 
@@ -855,7 +869,7 @@ def emit_to_syslog(grains_to_emit):
         log.exception('An exception occurred on emitting a message to syslog: %s', exc)
 
 
-def parse_args():
+def parse_args(args=None):
     """
     Parse command line arguments
     """
@@ -883,7 +897,7 @@ def parse_args():
         help='Optional argument to print the output of single run function in json format')
     parser.add_argument('--ignore_running', action='store_true',
                         help='Ignore any running hubble processes. This disables the pidfile.')
-    return vars(parser.parse_args())
+    return vars(parser.parse_args(args=args))
 
 
 def check_pidfile(kill_other=False, scan_proc=True):
@@ -1020,7 +1034,7 @@ def clean_up_process(received_signal, frame):
                     os.remove(__opts__['pidfile'])
         sys.exit(0)
     try:
-        if __salt__['config.get']('splunklogging', False):
+        if __mods__['config.get']('splunklogging', False):
             hubblestack.log.emit_to_splunk('Signal {0} detected'.format(received_signal),
                                            'INFO', 'hubblestack.signals')
     finally:

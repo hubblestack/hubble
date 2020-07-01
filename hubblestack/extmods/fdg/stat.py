@@ -70,7 +70,7 @@ def check_stats(params='', chained=None, chained_status=None):
         ret = {'Failure' : 'invalid input, no params provided'}
         return False, ret
 
-    if chained != None:
+    if chained:
         log.info("value of 'chained' is not null, using {0} value as filepath".format(chained))
         filepath = chained.get('filepath')
     else:
@@ -94,7 +94,7 @@ def check_stats(params='', chained=None, chained_status=None):
 
     log.debug("file stats are {0}".format(salt_ret))
     if not salt_ret:
-        log.info("file stats couldn't be fetched, checking corner cases")
+        log.info("file stats couldn't be fetched for file {0}, checking corner cases".format(filepath))
         return _check_corner_cases(filepath, expected)
 
     passed = True
@@ -107,9 +107,7 @@ def check_stats(params='', chained=None, chained_status=None):
         if attribute == 'mode':
             if file_attribute_value != '0':
                 file_attribute_value = file_attribute_value[1:]
-            allow_more_strict = False
-            if 'allow_more_strict' in expected.keys():
-                allow_more_strict = expected['allow_more_strict']
+            allow_more_strict = expected.get('allow_more_strict', False)
             if not isinstance(allow_more_strict, bool):
                 passed = False
                 reason = "{0} is not a valid boolean. Seems like a bug in hubble profile." \
@@ -136,8 +134,8 @@ def check_stats(params='', chained=None, chained_status=None):
         ret = {'Failure': "For file '{0}': {1}".format(filepath, reason_dict), "expected": expected}
 
     if passed:
-        ret = {'Success': 'all stats matching', "expected": expected}
-        log.info("FDG stat is returning status : True, value : {0}".format(ret))
+        ret = {"Success": "all stats matching for file: {0}".format(filepath), "expected": expected}
+        log.info("FDG stat is returning status for file {0}: True, value : {1}".format(filepath, ret))
         return True, ret
     else:
         log.info("FDG stat is returning status : False, value : {0}".format(ret))
@@ -177,13 +175,13 @@ def _validate_inputs(filepath, expected):
     :return: Tuple with two value. First is the status, second is the return dictionary with failure reason.
     '''
     ret = ''
-    if filepath is None or filepath == '':
+    if not filepath:
         log.error("filepath not specified")
         ret = {'Failure': "no filepath provided", "expected": expected}
         log.info("FDG stat is returning status : False, value : {0}".format(ret))
         return False, ret
 
-    if 'allow_more_strict' in expected.keys() and 'mode' not in expected.keys():
+    if 'allow_more_strict' in expected and 'mode' not in expected:
         reason = "'allow_more_strict' tag can't be specified without 'mode' tag." \
                  " Seems like a bug in hubble profile."
         ret = {'Failure': reason, "expected": expected}

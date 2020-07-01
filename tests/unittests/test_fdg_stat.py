@@ -83,7 +83,7 @@ def test_validate_inputs_negative_no_mode():
 
 def test_check_stats_positive():
     log.info('\n \n Executing test_check_stats_positive')
-    params = {'params' : {'filepath' : '/etc/passwd',
+    params = {'filepath' : '/etc/passwd',
                           'mode' : '644',
                           'uid' : 0,
                           'gid' : 0,
@@ -92,7 +92,6 @@ def test_check_stats_positive():
                           'match_on_file_missing' : True,
                           'allow_more_strict' : True
                          }
-             }
     __salt__ = {}
 
     def file_stats(name):
@@ -113,7 +112,7 @@ def test_check_stats_positive():
 
 def test_check_stats_positive_using_chained():
     log.info('\n \n Executing test_check_stats_positive_using_chained')
-    params = {'params' : {'mode' : '644',
+    params = {'mode' : '644',
                           'uid' : 0,
                           'gid' : 0,
                           'user' : 'root',
@@ -121,7 +120,6 @@ def test_check_stats_positive_using_chained():
                           'match_on_file_missing' : True,
                           'allow_more_strict' : True
                          }
-             }
     __salt__ = {}
 
     def file_stats(name):
@@ -142,7 +140,7 @@ def test_check_stats_positive_using_chained():
 
 def test_check_stats_negative():
     log.info('\n \n Executing test_check_stats_negative')
-    params = {'params' : {'filepath' : '/etc/passwd',
+    params = {'filepath' : '/etc/passwd',
                           'mode' : '400',
                           'uid' : 0,
                           'gid' : 0,
@@ -151,7 +149,6 @@ def test_check_stats_negative():
                           'match_on_file_missing' : True,
                           'allow_more_strict' : True
                          }
-             }
     __salt__ = {}
 
     def file_stats(name):
@@ -171,7 +168,7 @@ def test_check_stats_negative():
 
 def test_check_stats_negative_subcheck_failed():
     log.info('\n \n Executing test_check_stats_negative')
-    params = {'params' : {'filepath' : '/etc/passwd',
+    params = {'filepath' : '/etc/passwd',
                           'mode' : '644',
                           'uid' : 0,
                           'gid' : 0,
@@ -180,7 +177,6 @@ def test_check_stats_negative_subcheck_failed():
                           'match_on_file_missing' : True,
                           'allow_more_strict' : True
                          }
-             }
     __salt__ = {}
 
     def file_stats(name):
@@ -231,7 +227,7 @@ def test_check_stats_negative_invalid_inputs():
 def test_check_stats_incorrect_param_type_negative():
     log.info('\n \n Executing test_check_stats_incorrect_param_type_negative')
 
-    params = {'params' : {'filepath' : '/etc/passwd',
+    params = {'filepath' : '/etc/passwd',
                           'mode' : '400',
                           'uid' : 0,
                           'gid' : 0,
@@ -240,7 +236,6 @@ def test_check_stats_incorrect_param_type_negative():
                           'match_on_file_missing' : True,
                           'allow_more_strict' : "True"
                          }
-             }
     __salt__ = {}
 
     def file_stats(name):
@@ -261,7 +256,7 @@ def test_check_stats_incorrect_param_type_negative():
 
 def test_check_stats_negative_using_chained():
     log.info('\n \n Executing test_check_stats_negative_using_chained')
-    params = {'params' : {'mode' : '400',
+    params = {'mode' : '400',
                           'uid' : 0,
                           'gid' : 0,
                           'user' : 'root',
@@ -269,7 +264,6 @@ def test_check_stats_negative_using_chained():
                           'match_on_file_missing' : True,
                           'allow_more_strict' : True
                          }
-             }
     __salt__ = {}
 
     def file_stats(name):
@@ -309,12 +303,12 @@ def test_check_corner_cases_positive_nothing_expected():
 def test_check_corner_cases_positive_match_on_file_missing():
     log.info('\n \n Executing test_check_stats_positive_match_on_file_missing')
     expected =  {'mode': '644',
-                          'uid' : 0,
-                          'gid' : 0,
-                          'user' : 'root',
-                          'group' : 'root',
-                          'match_on_file_missing' : True,
-                          'allow_more_strict' : True
+                 'uid' : 0,
+                 'gid' : 0,
+                 'user' : 'root',
+                 'group' : 'root',
+                 'match_on_file_missing' : True,
+                 'allow_more_strict' : True
                 }
     __salt__ = {}
 

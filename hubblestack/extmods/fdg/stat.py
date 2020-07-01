@@ -60,14 +60,13 @@ log = logging.getLogger(__name__)
 def check_stats(params='', chained=None, chained_status=None):
     '''
 
-    :param params:
-    :param chained:
-    :param chained_status:
+    :param params: dictionary of parameters to match with the file stats
+    :param chained: file path can be passed as chained
+    :param chained_status: Status returned by the chained function.
     :return: tuple with (status(Boolean), result(dict))
     This function takes into input stat params that are to be matched with stats of given file.
     The filepath can be provided either directly in params or through chaining. See example above.
     '''
-    params = params.get('params')
 
     if chained != None:
         log.info("value of 'chained' is not null, using {0} value as filepath".format(chained))
@@ -144,6 +143,13 @@ def check_stats(params='', chained=None, chained_status=None):
 
 
 def _check_corner_cases(filepath, expected):
+    '''
+    The function checks if a few corner cases are met or not. The result can be success/failure
+    depending upon which case is met.
+    :param filepath: File path of file
+    :param expected: dictionary of expected params
+    :return: Tuple with two value. First is the status, second is the return dictionary with failure reason.
+    '''
     if not expected:
         ret = {"Success" : "nothing is expected, therefore passing the test", "expected": expected}
         log.info("FDG stat is returning status : True, value : {0}".format(ret))
@@ -162,6 +168,12 @@ def _check_corner_cases(filepath, expected):
 
 
 def _validate_inputs(filepath, expected):
+    '''
+    The functions will validate if filepath is specified and mode is provided in the expected params
+    :param filepath: File path of file
+    :param expected: dictionary of expected params
+    :return: Tuple with two value. First is the status, second is the return dictionary with failure reason.
+    '''
     ret = ''
     if filepath is None or filepath == '':
         log.error("filepath not specified")

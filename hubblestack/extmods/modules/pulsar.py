@@ -634,7 +634,7 @@ class delta_t(object):
 @hubble_status.watch
 def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml',
             verbose=False):
-    """
+    r"""
     Watch the configured files
 
     Example pillar config

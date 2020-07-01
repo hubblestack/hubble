@@ -33,7 +33,7 @@ import hubblestack.utils.path
 import hubblestack.utils.platform
 import hubblestack.utils.stringutils
 import salt.utils.url
-import salt.utils.user
+import hubblestack.utils.user
 import salt.utils.versions
 import salt.fileserver
 from salt.config import DEFAULT_MASTER_OPTS as _DEFAULT_MASTER_OPTS

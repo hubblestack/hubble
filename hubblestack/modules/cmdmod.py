@@ -21,7 +21,6 @@ import base64
 import re
 import tempfile
 
-# Import salt libs
 import hubblestack.utils.args
 import hubblestack.utils.data
 import hubblestack.utils.files
@@ -30,7 +29,7 @@ import hubblestack.utils.platform
 import hubblestack.utils.stringutils
 import hubblestack.utils.timed_subprocess
 import hubblestack.grains.extra
-import salt.utils.user
+import hubblestack.utils.user
 import hubblestack.grains.extra
 from hubblestack.utils.exceptions import CommandExecutionError, TimedProcTimeoutError, \
     HubbleInvocationError
@@ -44,8 +43,8 @@ except ImportError:
     pass
 
 if hubblestack.utils.platform.is_windows():
-    from salt.utils.win_runas import runas as win_runas
-    from salt.utils.win_functions import escape_argument as _cmd_quote
+    from hubblestack.utils.win_runas import runas as win_runas
+    from hubblestack.utils.win_functions import escape_argument as _cmd_quote
     HAS_WIN_RUNAS = True
 else:
     from shlex import quote as _cmd_quote
@@ -724,7 +723,7 @@ def _run(cmd,
 
     if runas or group or umask:
         new_kwargs['preexec_fn'] = functools.partial(
-                salt.utils.user.chugid_and_umask,
+                hubblestack.utils.user.chugid_and_umask,
                 runas,
                 _umask,
                 group)

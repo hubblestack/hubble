@@ -1,3 +1,7 @@
+"""
+These are utility functions used to check 'mode' stat of a file. Currently the stat module in Nova and FDG use these functions
+"""
+
 def check_mode(max_permission, given_permission, allow_more_strict):
     """
     Checks whether a file's permission are equal to a given permission or more restrictive.

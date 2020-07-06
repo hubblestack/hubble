@@ -347,8 +347,6 @@ def grains(opts, force_refresh=False, proxy=None):
                 kwargs['grains'] = grains_data
             ret = funcs[key](**kwargs)
         except Exception:
-            if salt.utils.platform.is_proxy():
-                log.info('The following CRITICAL message may not be an error; the proxy may not be completely established yet.')
             log.critical(
                 'Failed to load grains defined in grain file %s in '
                 'function %s, error:\n', key, funcs[key],

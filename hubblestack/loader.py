@@ -360,25 +360,6 @@ def grains(opts, force_refresh=False, proxy=None):
         else:
             grains_data.update(ret)
 
-    if opts.get('proxy_merge_grains_in_module', True) and proxy:
-        try:
-            proxytype = proxy.opts['proxy']['proxytype']
-            if proxytype + '.grains' in proxy:
-                if proxytype + '.initialized' in proxy and proxy[proxytype + '.initialized']():
-                    try:
-                        proxytype = proxy.opts['proxy']['proxytype']
-                        ret = proxy[proxytype + '.grains']()
-                        if grains_deep_merge:
-                            salt.utils.dictupdate.update(grains_data, ret)
-                        else:
-                            grains_data.update(ret)
-                    except Exception:
-                        log.critical('Failed to run proxy\'s grains function!',
-                            exc_info=True
-                        )
-        except KeyError:
-            pass
-
     grains_data.update(opts['grains'])
     # Write cache if enabled
     if opts.get('grains_cache', False):

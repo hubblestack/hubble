@@ -188,24 +188,6 @@ def modules(
 
     ret.pack['__salt__'] = ret
 
-    # Load any provider overrides from the configuration file providers option
-    #  Note: Providers can be pkg, service, user or group - not to be confused
-    #        with cloud providers.
-    providers = opts.get('providers', False)
-    if providers and isinstance(providers, dict):
-        for mod in providers:
-            # sometimes providers opts is not to diverge modules but
-            # for other configuration
-            try:
-                funcs = raw_mod(opts, providers[mod], ret)
-            except TypeError:
-                break
-            else:
-                if funcs:
-                    for func in funcs:
-                        f_key = '{0}{1}'.format(mod, func[func.rindex('.'):])
-                        ret[f_key] = funcs[func]
-
     if notify:
         evt = salt.utils.event.get_event('minion', opts=opts, listen=False)
         evt.fire_event({'complete': True}, tag='/salt/minion/minion_mod_complete')

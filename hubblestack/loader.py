@@ -170,8 +170,8 @@ def modules(
         __grains__ = salt.loader.grains(__opts__)
         __opts__['grains'] = __grains__
         __utils__ = salt.loader.utils(__opts__)
-        __salt__ = salt.loader.modules(__opts__, utils=__utils__)
-        __salt__['test.ping']()
+        __mods__ = salt.loader.modules(__opts__, utils=__utils__)
+        __mods__['test.ping']()
     '''
     # TODO Publish documentation for module whitelisting
     if not whitelist:

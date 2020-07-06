@@ -963,21 +963,6 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         else:
             virtual_aliases = ()
 
-        # If this is a proxy minion then MOST modules cannot work. Therefore, require that
-        # any module that does work with salt-proxy-minion define __proxyenabled__ as a list
-        # containing the names of the proxy types that the module supports.
-        #
-        # Render modules and state modules are OK though
-        if 'proxy' in self.opts:
-            if self.tag in ['grains', 'proxy']:
-                if not hasattr(mod, '__proxyenabled__') or \
-                        (self.opts['proxy']['proxytype'] not in mod.__proxyenabled__ and
-                            '*' not in mod.__proxyenabled__):
-                    err_string = 'not a proxy_minion enabled module'
-                    self.missing_modules[module_name] = err_string
-                    self.missing_modules[name] = err_string
-                    return False
-
         if getattr(mod, '__load__', False) is not False:
             log.info(
                 'The functions from module \'%s\' are being loaded from the '

@@ -1213,7 +1213,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
             # in incomplete grains sets, these can be safely ignored
             # and logged to debug, still, it includes the traceback to
             # help debugging.
-            log.debug('KeyError when loading %s', module_name, exc_info=True)
+            log.error('Failed to LazyLoad "%s"', module_name, exc_info=True)
 
         except Exception:
             # If the module throws an exception during __virtual__()

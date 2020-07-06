@@ -1,4 +1,4 @@
-'''
+"""
 HubbleStack FDG module for using stat to verify ownership & permissions.
 
 1. Sample FDG profile, with inline comments:
@@ -46,17 +46,18 @@ the file is missing, then it will be considered a match (success).
 If it's set to False and the file is missing, then it
 will be considered a non-match (failure).
 If the file exists, this setting is ignored.
-'''
+"""
 
 import logging
 import salt.utils
 import salt.utils.platform
 import os
 log = logging.getLogger(__name__)
+import hubblestack.utils.stat_functions as stat_functions
 
 
 def check_stats(params='', chained=None, chained_status=None):
-    '''
+    """
 
     :param params: dictionary of parameters to match with the file stats
     :param chained: file path can be passed as chained
@@ -64,14 +65,14 @@ def check_stats(params='', chained=None, chained_status=None):
     :return: tuple with (status(Boolean), result(dict))
     This function takes into input stat params that are to be matched with stats of given file.
     The filepath can be provided either directly in params or through chaining. See example above.
-    '''
+    """
 
     if params == '' or params is None:
         ret = {'Failure' : 'invalid input, no params provided'}
         return False, ret
 
     if chained:
-        log.info("value of 'chained' is not null, using {0} value as filepath".format(chained))
+        log.info("value of 'chained' is not null, using %s value as filepath", chained)
         filepath = chained.get('filepath')
     else:
         filepath = params.get('filepath')
@@ -86,15 +87,15 @@ def check_stats(params='', chained=None, chained_status=None):
         log.info("Invalid inputs provided in fdg stat module, returning False")
         return False, ret
 
-    log.info("checking stats of {0}".format(filepath))
+    log.info("checking stats of %s", filepath)
     if os.path.exists(filepath):
         salt_ret = __salt__['file.stats'](filepath)
     else:
         salt_ret = {}
 
-    log.debug("file stats are {0}".format(salt_ret))
+    log.debug("file stats are %s", salt_ret)
     if not salt_ret:
-        log.info("file stats couldn't be fetched for file {0}, checking corner cases".format(filepath))
+        log.info("file stats couldn't be fetched for file %s, checking corner cases", filepath)
         return _check_corner_cases(filepath, expected)
 
     passed = True
@@ -115,7 +116,7 @@ def check_stats(params='', chained=None, chained_status=None):
                 reason_dict[attribute] = reason
 
             else:
-                subcheck_passed = _check_mode(str(expected[attribute]), str(file_attribute_value), allow_more_strict)
+                subcheck_passed = stat_functions.check_mode(str(expected[attribute]), str(file_attribute_value), allow_more_strict)
                 if not subcheck_passed:
                     passed = False
                     reason = {'expected': str(expected[attribute]),
@@ -135,130 +136,58 @@ def check_stats(params='', chained=None, chained_status=None):
 
     if passed:
         ret = {"Success": "all stats matching for file: {0}".format(filepath), "expected": expected}
-        log.info("FDG stat is returning status for file {0}: True, value : {1}".format(filepath, ret))
+        log.info("FDG stat's check_status function is returning status for file %s: True, value : %s", filepath, ret)
         return True, ret
     else:
-        log.info("FDG stat is returning status : False, value : {0}".format(ret))
+        log.info("FDG stat's check_status function is returning status : False, value : %s", ret)
         return False, ret
 
 
 def _check_corner_cases(filepath, expected):
-    '''
+    """
     The function checks if a few corner cases are met or not. The result can be success/failure
     depending upon which case is met.
     :param filepath: File path of file
     :param expected: dictionary of expected params
     :return: Tuple with two value. First is the status, second is the return dictionary with failure reason.
-    '''
+    """
     if not expected:
         ret = {"Success" : "nothing is expected, therefore passing the test", "expected": expected}
-        log.info("FDG stat is returning status : True, value : {0}".format(ret))
+        log.info("FDG stat's _check_corner_cases function is returning status : True, value : %s", ret)
         return True, ret
     elif 'match_on_file_missing' in expected.keys() and expected['match_on_file_missing']:
         ret = {"Success": "unable to find file, passing check because 'match_on_file_missing' is 'True'", "expected": expected}
-        log.info("FDG stat is returning status : True, value : {0}".format(ret))
+        log.info("FDG stat's _check_corner_cases function is returning status : True, value : %s", ret)
         return True, ret
     else:
         reason = "Could not get access any file at '{0}'. " \
                  "File might not exist, or hubble might not" \
                  " have enough permissions".format(filepath)
         ret = {'Failure': reason, "expected": expected}
-        log.info("FDG stat is returning status : False, value : {0}".format(ret))
+        log.info("FDG stat's _check_corner_cases function is returning status : False, value : %s", ret)
         return False, ret
 
 
 def _validate_inputs(filepath, expected):
-    '''
+    """
     The functions will validate if filepath is specified and mode is provided in the expected params
     :param filepath: File path of file
     :param expected: dictionary of expected params
     :return: Tuple with two value. First is the status, second is the return dictionary with failure reason.
-    '''
+    """
     ret = ''
     log.info("validating inputs in fdg stat module")
     if not filepath:
-        log.error("filepath not specified")
+        log.error("filepath not specified to FDG stat module")
         ret = {'Failure': "no filepath provided", "expected": expected}
-        log.info("FDG stat is returning status : False, value : {0}".format(ret))
+        log.info("FDG stat's _validate_inputs function is returning status : False, value : %s", ret)
         return False, ret
 
     if 'allow_more_strict' in expected and 'mode' not in expected:
         reason = "'allow_more_strict' tag can't be specified without 'mode' tag." \
                  " Seems like a bug in hubble profile."
         ret = {'Failure': reason, "expected": expected}
-        log.info("FDG stat is returning status : False, value : {0}".format(ret))
+        log.info("FDG stat's _validate_inputs function is returning status : False, value : %s", ret)
         return False, ret
 
     return True, ret
-
-
-def _check_mode(max_permission, given_permission, allow_more_strict):
-    '''
-    Checks whether a file's permission are equal to a given permission or more restrictive.
-    Permission is a string of 3 digits [0-7]. 'given_permission' is the actual permission on file,
-    'max_permission' is the expected permission on this file. Set 'allow_more_strict' to True,
-    to allow more restrictive permissions as well. Example:
-
-    _check_mode('644', '644', False)        returns         True
-    _check_mode('644', '600', False)        returns         False
-    _check_mode('644', '644', True)         returns         True
-    _check_mode('644', '600', True)         returns         True
-    _check_mode('644', '655', True)        returns         False
-
-    '''
-
-    if given_permission == '0':
-        return True
-
-    if ((not allow_more_strict) or (max_permission == 'None')):
-        return (max_permission == given_permission)
-
-    if (_is_permission_in_limit(max_permission[0], given_permission[0]) and
-            _is_permission_in_limit(max_permission[1], given_permission[1]) and
-            _is_permission_in_limit(max_permission[2], given_permission[2])):
-        return True
-
-    return False
-
-
-def _is_permission_in_limit(max_permission, given_permission):
-    '''
-    Return true only if given_permission is not more lenient that max_permission. In other words, if
-    r or w or x is present in given_permission but absent in max_permission, it should return False
-    Takes input two integer values from 0 to 7.
-    '''
-    max_permission = int(max_permission)
-    given_permission = int(given_permission)
-    allowed_r = False
-    allowed_w = False
-    allowed_x = False
-    given_r = False
-    given_w = False
-    given_x = False
-
-    if max_permission >= 4:
-        allowed_r = True
-        max_permission = max_permission - 4
-    if max_permission >= 2:
-        allowed_w = True
-        max_permission = max_permission - 2
-    if max_permission >= 1:
-        allowed_x = True
-
-    if given_permission >= 4:
-        given_r = True
-        given_permission = given_permission - 4
-    if given_permission >= 2:
-        given_w = True
-        given_permission = given_permission - 2
-    if given_permission >= 1:
-        given_x = True
-
-    if given_r and (not allowed_r):
-        return False
-    if given_w and (not allowed_w):
-        return False
-    if given_x and (not allowed_x):
-        return False
-
-    return True

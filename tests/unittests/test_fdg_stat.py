@@ -6,7 +6,11 @@ log = logging.getLogger(__name__)
 
 
 def test_validate_inputs_positive():
-    log.info('\n \n Executing test_check_stats_negative_no_filepath')
+    """
+        All parameters given as expected
+        :expected: Success
+    """
+    log.info('Executing test_check_stats_negative_no_filepath')
     expected = { 'mode' : '400',
                   'uid' : 0,
                   'gid' : 0,
@@ -30,7 +34,11 @@ def test_validate_inputs_positive():
 
 
 def test_validate_inputs_negative_no_filepath():
-    log.info('\n \n Executing test_check_stats_negative_no_filepath')
+    """
+        'filepath' is not given
+        :expected: Failure
+    """
+    log.info('Executing test_check_stats_negative_no_filepath')
     expected = {'mode' : '400',
                           'uid' : 0,
                           'gid' : 0,
@@ -56,7 +64,11 @@ def test_validate_inputs_negative_no_filepath():
 
 
 def test_validate_inputs_negative_no_mode():
-    log.info('\n \n Executing test_check_stats_negative_no_mode')
+    """
+        'mode' is not given
+        :expected: Failure
+    """
+    log.info('Executing test_check_stats_negative_no_mode')
     expected = {'filepath' : '/etc/passwd',
                           'uid' : 0,
                           'gid' : 0,
@@ -82,7 +94,11 @@ def test_validate_inputs_negative_no_mode():
 
 
 def test_check_stats_positive():
-    log.info('\n \n Executing test_check_stats_positive')
+    """
+        Filepath is passes as a param, everything good.
+        :expected: Success
+    """
+    log.info('Executing test_check_stats_positive')
     params = {'filepath' : '/etc/passwd',
                           'mode' : '644',
                           'uid' : 0,
@@ -111,7 +127,11 @@ def test_check_stats_positive():
 
 
 def test_check_stats_positive_using_chained():
-    log.info('\n \n Executing test_check_stats_positive_using_chained')
+    """
+        Filepath is passed through chaining, everything good
+        :expected: Success
+    """
+    log.info('Executing test_check_stats_positive_using_chained')
     params = {'mode' : '644',
                           'uid' : 0,
                           'gid' : 0,
@@ -139,7 +159,11 @@ def test_check_stats_positive_using_chained():
 
 
 def test_check_stats_negative():
-    log.info('\n \n Executing test_check_stats_negative')
+    """
+        Filepath is passed from params, but mode does not match as expected
+        :expected: Failure
+    """
+    log.info('Executing test_check_stats_negative')
     params = {'filepath' : '/etc/passwd',
                           'mode' : '400',
                           'uid' : 0,
@@ -167,7 +191,11 @@ def test_check_stats_negative():
     assert 'expected' in val[1].keys()
 
 def test_check_stats_negative_subcheck_failed():
-    log.info('\n \n Executing test_check_stats_negative')
+    """
+        One of the param 'user' does not match as expected
+        :expected: Failure
+    """
+    log.info('Executing test_check_stats_negative')
     params = {'filepath' : '/etc/passwd',
                           'mode' : '644',
                           'uid' : 0,
@@ -196,7 +224,11 @@ def test_check_stats_negative_subcheck_failed():
 
 
 def test_check_stats_negative_invalid_inputs():
-    log.info('\n \n Executing test_check_stats_negative')
+    """
+        match_on_file_missing and allow_more_strict Parameters types are incorrect
+        :expected: Failure
+    """
+    log.info('Executing test_check_stats_negative')
     params = {'filepath' : '/etc/passwd',
                           'uid' : 0,
                           'gid' : 0,
@@ -224,7 +256,11 @@ def test_check_stats_negative_invalid_inputs():
 
 
 def test_check_stats_negative_no_params():
-    log.info('\n \n Executing test_check_stats_negative_no_params')
+    """
+        No parameters are given
+        :expected: Failure
+    """
+    log.info('Executing test_check_stats_negative_no_params')
     __salt__ = {}
 
     def file_stats(name):
@@ -244,7 +280,11 @@ def test_check_stats_negative_no_params():
 
 # value of 'allow more strict' is not boolean
 def test_check_stats_incorrect_param_type_negative():
-    log.info('\n \n Executing test_check_stats_incorrect_param_type_negative')
+    """
+        data type of match_on_file_missing is not boolean
+        :expected: Failure
+    """
+    log.info('Executing test_check_stats_incorrect_param_type_negative')
 
     params = {'filepath' : '/etc/passwd',
                           'mode' : '400',
@@ -274,7 +314,11 @@ def test_check_stats_incorrect_param_type_negative():
 
 
 def test_check_stats_negative_using_chained():
-    log.info('\n \n Executing test_check_stats_negative_using_chained')
+    """
+        filepath is passed through FDG chaining, however expected value of mode is different than what is mocked.
+        :expected: Failure
+    """
+    log.info('Executing test_check_stats_negative_using_chained')
     params = {'mode' : '400',
                           'uid' : 0,
                           'gid' : 0,
@@ -302,7 +346,11 @@ def test_check_stats_negative_using_chained():
 
 
 def test_check_corner_cases_positive_nothing_expected():
-    log.info('\n \n Executing test_check_stats_positive_nothing_expected')
+    """
+        Filepath is given, but no parameters to match are given.
+        :expected: Success
+    """
+    log.info('Executing test_check_stats_positive_nothing_expected')
     __salt__ = {}
 
     def file_stats(name):
@@ -320,7 +368,11 @@ def test_check_corner_cases_positive_nothing_expected():
 
 
 def test_check_corner_cases_positive_match_on_file_missing():
-    log.info('\n \n Executing test_check_stats_positive_match_on_file_missing')
+    """
+        filepath is not given, and match_on_file_missing is True
+        :expected: Success
+    """
+    log.info('Executing test_check_stats_positive_match_on_file_missing')
     expected =  {'mode': '644',
                  'uid' : 0,
                  'gid' : 0,
@@ -346,7 +398,11 @@ def test_check_corner_cases_positive_match_on_file_missing():
 
 
 def test_check_corner_cases_negative_match_on_file_missing():
-    log.info('\n \n Executing test_check_stats_positive_match_on_file_missing')
+    """
+    filepath is not given, and match_on_file_missing is False
+    :expected: Failure
+    """
+    log.info('Executing test_check_stats_positive_match_on_file_missing')
     expected = {'mode': '644',
                           'uid' : 0,
                           'gid' : 0,
@@ -369,45 +425,3 @@ def test_check_corner_cases_negative_match_on_file_missing():
     assert isinstance(val[1], dict)
     assert 'Failure' in val[1].keys()
     assert 'expected' in val[1].keys()
-
-
-def test_is_permission_in_limit_positive():
-    log.info('\n \n Executing test_is_permission_in_limit_positive')
-    val = hubblestack.extmods.fdg.stat._is_permission_in_limit(6, 4)
-    assert val
-
-
-def test_is_permission_in_limit_negative():
-    log.info('\n \n Executing test_is_permission_in_limit_negative')
-    val = hubblestack.extmods.fdg.stat._is_permission_in_limit(4, 3)
-    assert not val
-
-
-def test_check_mode_positive():
-    log.info('\n \n Executing test_check_mode_positive')
-    val = hubblestack.extmods.fdg.stat._check_mode("644", "644", False)
-    assert val
-
-
-def test_check_mode_negative():
-    log.info('\n \n Executing test_check_mode_negative')
-    val = hubblestack.extmods.fdg.stat._check_mode("644", "600", False)
-    assert not val
-
-
-def test_check_mode_positive_allow_more_strict():
-    log.info('\n \n Executing test_check_mode_positive_allow_more_strict')
-    val = hubblestack.extmods.fdg.stat._check_mode("644", "600", True)
-    assert val
-
-
-def test_check_mode_negative_allow_more_strict():
-    log.info('\n \n Executing test_check_mode_negative_allow_more_strict')
-    val = hubblestack.extmods.fdg.stat._check_mode("600", "644", True)
-    assert not val
-
-
-def test_check_mode_given_permission_is_zero():
-    log.info('\n \n Executing test_check_mode_given_permission_is_zero')
-    val = hubblestack.extmods.fdg.stat._check_mode("600", "0", True)
-    assert val

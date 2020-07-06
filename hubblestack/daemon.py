@@ -796,7 +796,7 @@ def refresh_grains(initial=False):
     __opts__['grains'] = __grains__
     __opts__['pillar'] = __pillar__
     __utils__ = hubblestack.loader.utils(__opts__)
-    __mods__ = hubblestack.loader.minion_mods(__opts__, utils=__utils__, context=__context__)
+    __mods__ = hubblestack.loader.modules(__opts__, utils=__utils__, context=__context__)
     __returners__ = hubblestack.loader.returners(__opts__, __mods__)
 
     # the only things that turn up in here (and that get preserved)

@@ -2562,7 +2562,7 @@ def _hw_data(osdata):
                   'productname': 'hw.product',
                   'serialnumber': 'hw.serialno',
                   'uuid': 'hw.uuid'}
-        for key, oid in iter(hwdata.items()):
+        for key, oid in hwdata.items():
             value = __salt__['cmd.run']('{0} -n {1}'.format(sysctl, oid))
             if not value.endswith(' value is not available'):
                 grains[key] = _clean_value(key, value)

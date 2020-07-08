@@ -39,10 +39,6 @@ from salt.exceptions import LoaderError
 from salt.template import check_render_pipe_str
 from salt.utils.decorators import Depends
 
-# Import 3rd-party libs XXX
-from salt.ext import six
-from salt.ext.six.moves import reload_module
-
 import hubblestack.syspaths
 
 import importlib.machinery
@@ -472,7 +468,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         if '__context__' not in self.pack:
             self.pack['__context__'] = None
 
-        for k, v in six.iteritems(self.pack):
+        for k, v in self.pack.items():
             if v is None:  # if the value of a pack is None, lets make an empty dict
                 self.context_dict.setdefault(k, {})
                 self.pack[k] = salt.utils.context.NamespacedDictWrapper(self.context_dict, k)
@@ -620,16 +616,16 @@ class LazyLoader(salt.utils.lazy.LazyDict):
                 )
             except OSError:
                 continue  # Next mod_dir
-            if six.PY3:
-                try:
-                    pycache_files = [
-                        os.path.join('__pycache__', x) for x in
-                        sorted(os.listdir(os.path.join(mod_dir, '__pycache__')))
-                    ]
-                except OSError:
-                    pass
-                else:
-                    files.extend(pycache_files)
+
+            try:
+                pycache_files = [
+                    os.path.join('__pycache__', x) for x in
+                    sorted(os.listdir(os.path.join(mod_dir, '__pycache__')))
+                ]
+            except OSError:
+                pass
+            else:
+                files.extend(pycache_files)
 
             for filename in files:
                 try:
@@ -639,26 +635,25 @@ class LazyLoader(salt.utils.lazy.LazyDict):
                         # log messages omitted for obviousness
                         continue  # Next filename
                     f_noext, ext = os.path.splitext(basename)
-                    if six.PY3:
-                        f_noext = PY3_PRE_EXT.sub(_replace_pre_ext, f_noext)
-                        try:
-                            opt_level = int(
-                                opt_match.pop().group(1).rsplit('-', 1)[-1]
-                            )
-                        except (AttributeError, IndexError, ValueError):
-                            # No regex match or no optimization level matched
-                            opt_level = 0
-                        try:
-                            opt_index = self.opts['optimization_order'].index(opt_level)
-                        except KeyError:
-                            log.trace(
-                                'Disallowed optimization level %d for module '
-                                'name \'%s\', skipping. Add %d to the '
-                                '\'optimization_order\' config option if you '
-                                'do not want to ignore this optimization '
-                                'level.', opt_level, f_noext, opt_level
-                            )
-                            continue
+                    f_noext = PY3_PRE_EXT.sub(_replace_pre_ext, f_noext)
+                    try:
+                        opt_level = int(
+                            opt_match.pop().group(1).rsplit('-', 1)[-1]
+                        )
+                    except (AttributeError, IndexError, ValueError):
+                        # No regex match or no optimization level matched
+                        opt_level = 0
+                    try:
+                        opt_index = self.opts['optimization_order'].index(opt_level)
+                    except KeyError:
+                        log.trace(
+                            'Disallowed optimization level %d for module '
+                            'name \'%s\', skipping. Add %d to the '
+                            '\'optimization_order\' config option if you '
+                            'do not want to ignore this optimization '
+                            'level.', opt_level, f_noext, opt_level
+                        )
+                        continue
                     else:
                         # Optimization level not reflected in filename on PY2
                         opt_index = 0
@@ -699,18 +694,14 @@ class LazyLoader(salt.utils.lazy.LazyDict):
                                 self.file_mapping[f_noext][0]
                             )
 
-                        if six.PY3 and ext == '.pyc' and curr_ext == '.pyc':
+                        if ext == '.pyc' and curr_ext == '.pyc':
                             # Check the optimization level
                             if opt_index >= curr_opt_index:
                                 # Module name match, but a higher-priority
                                 # optimization level was already matched, skipping.
                                 continue
-                        elif not curr_ext or self.suffix_order.index(ext) >= self.suffix_order.index(curr_ext):
-                            # Match found but a higher-priorty match already
-                            # exists, so skip this.
-                            continue
 
-                    if six.PY3 and not dirname and ext == '.pyc':
+                    if not dirname and ext == '.pyc':
                         # On Python 3, we should only load .pyc files from the
                         # __pycache__ subdirectory (i.e. when dirname is not an
                         # empty string).
@@ -874,7 +865,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         except IOError:
             raise
         except ImportError as exc:
-            if 'magic number' in six.text_type(exc):
+            if 'magic number' in str(exec):
                 error_msg = 'Failed to import {0} {1}. Bad magic number. If migrating from Python2 to Python3, remove all .pyc files and try again.'.format(self.tag, name)
                 log.warning(error_msg)
                 self.missing_modules[name] = error_msg
@@ -918,7 +909,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
             mod.__opts__ = self.opts
 
         # pack whatever other globals we were asked to
-        for p_name, p_value in six.iteritems(self.pack):
+        for p_name, p_value in self.pack.items():
             setattr(mod, p_name, p_value)
 
         module_name = mod.__name__.rsplit('.', 1)[-1]
@@ -1025,7 +1016,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         Load a single item if you have it
         '''
         # if the key doesn't have a '.' then it isn't valid for this mod dict
-        if not isinstance(key, six.string_types):
+        if not isinstance(key, str):
             raise KeyError('The key must be a string.')
         if '.' not in key:
             raise KeyError('The key \'{0}\' should contain a \'.\''.format(key))

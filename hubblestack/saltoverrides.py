@@ -1,15 +1,13 @@
 # coding: utf-8
 """
-Overriding the get_fqhostname function of salt.utils.network
+Overriding the get_fqhostname function of hubblestack.utils.network
 The fix has been copied from https://github.com/saltstack/salt/pull/49726
 """
 
 import socket
 import logging
 import socket
-import salt.utils.network
-
-import salt.utils.network
+import hubblestack.utils.network
 
 log = logging.getLogger(__name__)
 
@@ -44,4 +42,4 @@ def get_fqhostname():
     return fqdn
 
 # install override
-salt.utils.network.get_fqhostname = get_fqhostname
+hubblestack.utils.network.get_fqhostname = get_fqhostname

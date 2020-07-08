@@ -52,33 +52,30 @@ try:
 except ImportError:
     from distro import linux_distribution
 
-# Import salt libs
 import hubblestack.utils.exceptions
 import salt.log
-import salt.utils.dns
+import hubblestack.utils.dns
 import hubblestack.utils.files
-import salt.utils.network
+import hubblestack.utils.network
 import hubblestack.utils.path
-import salt.utils.pkg.rpm
+import hubblestack.utils.pkg.rpm
 import hubblestack.utils.platform
 import hubblestack.utils.stringutils
-from salt.ext import six
-from salt.ext.six.moves import range
 
 if hubblestack.utils.platform.is_windows():
-    import salt.utils.win_osinfo
+    import hubblestack.utils.win_osinfo
 
 # Solve the Chicken and egg problem where grains need to run before any
 # of the modules are loaded and are generally available for any usage.
 import hubblestack.modules.cmdmod
-import salt.modules.smbios
+import hubblestack.modules.smbios
 
 __salt__ = {
     'cmd.run': hubblestack.modules.cmdmod._run_quiet,
     'cmd.retcode': hubblestack.modules.cmdmod._retcode_quiet,
     'cmd.run_all': hubblestack.modules.cmdmod._run_all_quiet,
-    'smbios.records': salt.modules.smbios.records,
-    'smbios.get': salt.modules.smbios.get,
+    'smbios.records': hubblestack.modules.smbios.records,
+    'smbios.get': hubblestack.modules.smbios.get,
 }
 log = logging.getLogger(__name__)
 
@@ -88,9 +85,9 @@ if hubblestack.utils.platform.is_windows():
     # the Windows minion uses WMI for some of its grains
     try:
         import wmi  # pylint: disable=import-error
-        import salt.utils.winapi
+        import hubblestack.utils.winapi
         import win32api
-        import salt.utils.win_reg
+        import hubblestack.utils.win_reg
         HAS_WMI = True
     except ImportError:
         log.exception(
@@ -120,7 +117,7 @@ def _windows_cpudata():
             grains['num_cpus'] = int(os.environ['NUMBER_OF_PROCESSORS'])
         except ValueError:
             grains['num_cpus'] = 1
-    grains['cpu_model'] = salt.utils.win_reg.read_value(
+    grains['cpu_model'] = hubblestack.utils.win_reg.read_value(
         hive="HKEY_LOCAL_MACHINE",
         key="HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0",
         vname="ProcessorNameString").get('vdata')
@@ -342,9 +339,9 @@ def _bsd_cpudata(osdata):
         cmds['cpu_model'] = '{0} -n machdep.cpu.brand_string'.format(sysctl)
         cmds['cpu_flags'] = '{0} -n machdep.cpu.features'.format(sysctl)
 
-    grains = dict([(k, __salt__['cmd.run'](v)) for k, v in six.iteritems(cmds)])
+    grains = dict([(k, __salt__['cmd.run'](v)) for k, v in iter(cmds.items())])
 
-    if 'cpu_flags' in grains and isinstance(grains['cpu_flags'], six.string_types):
+    if 'cpu_flags' in grains and isinstance(grains['cpu_flags'], str):
         grains['cpu_flags'] = grains['cpu_flags'].split(' ')
 
     if osdata['kernel'] == 'NetBSD':
@@ -1111,7 +1108,7 @@ def _virtual_hv(osdata):
         with hubblestack.utils.files.fopen('/sys/hypervisor/properties/features', 'r') as fhr:
             features = hubblestack.utils.stringutils.to_unicode(fhr.read().strip())
         enabled_features = []
-        for bit, feat in six.iteritems(xen_feature_table):
+        for bit, feat in iter(xen_feature_table.items()):
             if int(features, 16) & (1 << bit):
                 enabled_features.append(feat)
         grains['virtual_hv_features'] = features
@@ -1271,7 +1268,7 @@ def _windows_platform_data():
     if not HAS_WMI:
         return {}
 
-    with salt.utils.winapi.Com():
+    with hubblestack.utils.winapi.Com():
         wmi_c = wmi.WMI()
         # http://msdn.microsoft.com/en-us/library/windows/desktop/aa394102%28v=vs.85%29.aspx
         systeminfo = wmi_c.Win32_ComputerSystem()[0]
@@ -1293,12 +1290,12 @@ def _windows_platform_data():
             log.debug('Motherboard info not available on this system')
 
         kernel_version = platform.version()
-        info = salt.utils.win_osinfo.get_os_version_info()
-        net_info = salt.utils.win_osinfo.get_join_info()
+        info = hubblestack.utils.win_osinfo.get_os_version_info()
+        net_info = hubblestack.utils.win_osinfo.get_join_info()
 
         service_pack = None
         if info['ServicePackMajor'] > 0:
-            service_pack = ''.join(['SP', six.text_type(info['ServicePackMajor'])])
+            service_pack = ''.join(['SP', str(info['ServicePackMajor'])])
 
         os_release = _windows_os_release_grain(caption=osinfo.Caption,
                                                product_type=osinfo.ProductType)
@@ -1536,7 +1533,7 @@ def _get_interfaces():
 
     global _INTERFACES
     if not _INTERFACES:
-        _INTERFACES = salt.utils.network.interfaces()
+        _INTERFACES = hubblestack.utils.network.interfaces()
     return _INTERFACES
 
 
@@ -1736,8 +1733,7 @@ def os_data():
                                 buf = edge + buf
                                 for item in supported_inits:
                                     if item in buf:
-                                        if six.PY3:
-                                            item = item.decode('utf-8')
+                                        item = item.decode('utf-8')
                                         grains['init'] = item
                                         buf = b''
                                         break
@@ -1776,7 +1772,7 @@ def os_data():
             log.trace('Getting lsb_release distro information')
             import lsb_release  # pylint: disable=import-error
             release = lsb_release.get_distro_information()
-            for key, value in six.iteritems(release):
+            for key, value in iter(release.items()):
                 key = key.lower()
                 lsb_param = 'lsb_{0}{1}'.format(
                     '' if key.startswith('distrib_') else 'distrib_',
@@ -2066,7 +2062,7 @@ def os_data():
     if grains.get('os_family') == 'Debian':
         osarch = __salt__['cmd.run']('dpkg --print-architecture').strip()
     elif grains.get('os_family') in ['RedHat', 'Suse']:
-        osarch = salt.utils.pkg.rpm.get_osarch()
+        osarch = hubblestack.utils.pkg.rpm.get_osarch()
     elif grains.get('os_family') in ('NILinuxRT', 'Poky'):
         archinfo = {}
         for line in __salt__['cmd.run']('opkg print-architecture').splitlines():
@@ -2174,10 +2170,10 @@ def hostname():
 
     grains['localhost'] = socket.gethostname()
     if __FQDN__ is None:
-        __FQDN__ = salt.utils.network.get_fqhostname()
+        __FQDN__ = hubblestack.utils.network.get_fqhostname()
 
     # On some distros (notably FreeBSD) if there is no hostname set
-    # salt.utils.network.get_fqhostname() will return None.
+    # hubblestack.utils.network.get_fqhostname() will return None.
     # In this case we punt and log a message at error level, but force the
     # hostname and domain to be localhost.localdomain
     # Otherwise we would stacktrace below
@@ -2216,9 +2212,9 @@ def fqdns():
     grains = {}
     fqdns = set()
 
-    addresses = salt.utils.network.ip_addrs(include_loopback=False,
+    addresses = hubblestack.utils.network.ip_addrs(include_loopback=False,
                                             interface_data=_INTERFACES)
-    addresses.extend(salt.utils.network.ip_addrs6(include_loopback=False,
+    addresses.extend(hubblestack.utils.network.ip_addrs6(include_loopback=False,
                                                   interface_data=_INTERFACES))
     err_message = 'An exception occurred resolving address \'%s\': %s'
     for ip in addresses:
@@ -2245,8 +2241,8 @@ def ip_fqdn():
         return {}
 
     ret = {}
-    ret['ipv4'] = salt.utils.network.ip_addrs(include_loopback=True)
-    ret['ipv6'] = salt.utils.network.ip_addrs6(include_loopback=True)
+    ret['ipv4'] = hubblestack.utils.network.ip_addrs(include_loopback=True)
+    ret['ipv6'] = hubblestack.utils.network.ip_addrs6(include_loopback=True)
 
     _fqdn = hostname()['fqdn']
     for socket_type, ipv_num in ((socket.AF_INET, '4'), (socket.AF_INET6, '6')):
@@ -2376,11 +2372,11 @@ def dns():
     if hubblestack.utils.platform.is_windows() or 'proxyminion' in __opts__:
         return {}
 
-    resolv = salt.utils.dns.parse_resolv()
+    resolv = hubblestack.utils.dns.parse_resolv()
     for key in ('nameservers', 'ip4_nameservers', 'ip6_nameservers',
                 'sortlist'):
         if key in resolv:
-            resolv[key] = [six.text_type(i) for i in resolv[key]]
+            resolv[key] = [str(i) for i in resolv[key]]
 
     return {'dns': resolv} if resolv else {}
 
@@ -2449,16 +2445,6 @@ def saltpath():
     return {'saltpath': os.path.dirname(salt_path)}
 
 
-def saltversion():
-    '''
-    Return the version of salt
-    '''
-    # Provides:
-    #   saltversion
-    from salt.version import __version__
-    return {'saltversion': __version__}
-
-
 def zmqversion():
     '''
     Return the zeromq version
@@ -2470,18 +2456,6 @@ def zmqversion():
         return {'zmqversion': zmq.zmq_version()}  # pylint: disable=no-member
     except ImportError:
         return {}
-
-
-def saltversioninfo():
-    '''
-    Return the version_info of salt
-
-     .. versionadded:: 0.17.0
-    '''
-    # Provides:
-    #   saltversioninfo
-    from salt.version import __version_info__
-    return {'saltversioninfo': list(__version_info__)}
 
 
 def _hw_data(osdata):
@@ -2559,7 +2533,7 @@ def _hw_data(osdata):
             'serialnumber': 'serial#',
             'productname': 'DeviceDesc',
         }
-        for grain_name, cmd_key in six.iteritems(hwdata):
+        for grain_name, cmd_key in iter(hwdata.items()):
             result = __salt__['cmd.run_all']('fw_printenv {0}'.format(cmd_key))
             if result['retcode'] == 0:
                 uboot_keyval = result['stdout'].split('=')
@@ -2578,7 +2552,7 @@ def _hw_data(osdata):
                 'biosreleasedate': 'smbios.bios.reldate',
                 'uuid': 'smbios.system.uuid',
             }
-            for key, val in six.iteritems(fbsd_hwdata):
+            for key, val in iter(fbsd_hwdata.items()):
                 value = __salt__['cmd.run']('{0} {1}'.format(kenv, val))
                 grains[key] = _clean_value(key, value)
     elif osdata['kernel'] == 'OpenBSD':
@@ -2588,7 +2562,7 @@ def _hw_data(osdata):
                   'productname': 'hw.product',
                   'serialnumber': 'hw.serialno',
                   'uuid': 'hw.uuid'}
-        for key, oid in six.iteritems(hwdata):
+        for key, oid in hwdata.items():
             value = __salt__['cmd.run']('{0} -n {1}'.format(sysctl, oid))
             if not value.endswith(' value is not available'):
                 grains[key] = _clean_value(key, value)
@@ -2602,7 +2576,7 @@ def _hw_data(osdata):
             'biosreleasedate': 'machdep.dmi.bios-date',
             'uuid': 'machdep.dmi.system-uuid',
         }
-        for key, oid in six.iteritems(nbsd_hwdata):
+        for key, oid in iter(nbsd_hwdata.items()):
             result = __salt__['cmd.run_all']('{0} -n {1}'.format(sysctl, oid))
             if result['retcode'] == 0:
                 grains[key] = _clean_value(key, result['stdout'])

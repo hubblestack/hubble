@@ -110,6 +110,9 @@ def queries(query_group,
     query_data = _get_query_data(query_file)
     __opts__['nebula_queries'] = query_data
 
+    if query_data is None or not query_group:
+        return None
+
     if 'osquerybinpath' not in __grains__:
         if query_group == 'day':
             log.warning('osquery not installed on this host. Returning baseline data')
@@ -118,11 +121,6 @@ def queries(query_group,
         return None
 
     query_data = query_data.get(query_group, {})
-
-    if not query_group:
-        return None
-    if not query_data:
-        return None
 
     schedule_time = time.time()
 

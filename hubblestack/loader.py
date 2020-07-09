@@ -100,7 +100,7 @@ def _module_dirs(
             ext_type_dirs = '{0}_dirs'.format(tag)
         if ext_type_dirs in opts:
             ext_type_types.extend(opts[ext_type_dirs])
-        for entry_point in pkg_resources.iter_entry_points('salt.loader', ext_type_dirs):
+        for entry_point in pkg_resources.iter_entry_points('hubble.loader', ext_type_dirs):
             try:
                 loaded_entry_point = entry_point.load()
                 for path in loaded_entry_point():

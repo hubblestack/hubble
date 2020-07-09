@@ -5,6 +5,14 @@ directories for python loadable code and organizes the code into the
 plugin interfaces used by Salt.
 """
 
+# XXX
+# This entire file should only exist as a monkeypatch or subclass to the
+# hubblestack.loader or the hubblestack.loader should have whatever support
+# this needs to function (loading yaml recursively I guess).
+#
+# *most* of the below was stripped from salt.loader to build hubblestack.loader
+# XXX
+
 # Import python libs
 
 import os

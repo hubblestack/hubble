@@ -166,8 +166,13 @@ class TestPulsar2(object):
         if 'paths' not in kwargs:
             kwargs['paths'] = []
 
+        def cp_cache_file(_):
+            ''' pretend salt[cp.cache_file] '''
+            return 'tests/unittests/resources/top.pulsar'
+
         __salt__ = {}
         __salt__['config.get'] = config_get
+        __salt__['cp.cache_file'] = cp_cache_file
         pulsar.__salt__ = __salt__
         pulsar.__opts__ = {'pulsar': kwargs}
         pulsar.__context__ = {}

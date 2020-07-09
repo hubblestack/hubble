@@ -128,3 +128,18 @@ def is_binary(data):
     if float(len(nontext)) / len(data) > 0.30:
         return True
     return False
+
+def to_num(text):
+    '''
+    Convert a string to a number.
+    Returns an integer if the string represents an integer, a floating
+    point number if the string is a real number, or the string unchanged
+    otherwise.
+    '''
+    try:
+        return int(text)
+    except ValueError:
+        try:
+            return float(text)
+        except ValueError:
+            return text

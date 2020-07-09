@@ -13,8 +13,9 @@ Configuration:
 """
 
 
-import logging
 import os
+import sys
+import logging
 import traceback
 import yaml
 
@@ -28,8 +29,8 @@ hubble_status = HubbleStatus(__name__, 'top', 'audit')
 
 try:
     from nova_loader import NovaLazyLoader
-except ImportError:
-    pass  # This is here to make the sphinx import of this module work
+except ImportError as e:
+    log.error('failed to load NovaLazyLoader (path=%s): %s', sys.path, e)
 
 __nova__ = {}
 

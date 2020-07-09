@@ -52,7 +52,7 @@ __salt__ = {
 log = logging.getLogger(__name__)
 
 SALT_BASE_PATH = os.path.abspath(os.path.dirname(salt.__file__))
-LOADED_BASE_NAME = 'salt.loaded'
+LOADED_BASE_NAME = 'hubble.loaded'
 
 if six.PY3:
     # pylint: disable=no-member,no-name-in-module,import-error

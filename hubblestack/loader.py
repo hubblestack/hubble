@@ -29,7 +29,6 @@ import salt.utils.args
 import salt.utils.context
 import salt.utils.data
 import salt.utils.dictupdate
-import salt.utils.event
 import salt.utils.files
 import salt.utils.lazy
 import salt.utils.odict
@@ -183,10 +182,6 @@ def modules(
     )
 
     ret.pack['__salt__'] = ret
-
-    if notify:
-        evt = salt.utils.event.get_event('minion', opts=opts, listen=False)
-        evt.fire_event({'complete': True}, tag='/salt/minion/minion_mod_complete')
 
     return ret
 minion_mods = modules # XXX: remove eventually

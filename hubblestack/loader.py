@@ -783,6 +783,8 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         fpath_dirname = os.path.dirname(fpath)
         try:
             sys.path.append(fpath_dirname)
+            if fpath_dirname.endswith('__pycache__'):
+                sys.path.append( os.path.dirname(fpath_dirname) )
             if suffix == '.pyx':
                 mod = pyximport.load_module(name, fpath, tempfile.gettempdir())
             elif suffix == '.o':

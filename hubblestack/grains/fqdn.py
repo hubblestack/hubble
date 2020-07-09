@@ -4,7 +4,6 @@ Custom grains around fqdn
 """
 import hubblestack.grains.hubble_core
 import hubblestack.modules.cmdmod
-import salt.utils
 import hubblestack.utils.platform
 
 __salt__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet,

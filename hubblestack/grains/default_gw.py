@@ -19,7 +19,6 @@ List of grains:
 
 import logging
 
-import salt.utils
 import hubblestack.utils.path
 
 import hubblestack.modules.cmdmod

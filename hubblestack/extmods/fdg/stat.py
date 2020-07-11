@@ -151,6 +151,7 @@ def _check_corner_cases(filepath, expected):
     :param expected: dictionary of expected params
     :return: Tuple with two value. First is the status, second is the return dictionary with failure reason.
     """
+    log.info("checking corner cases for %s", filepath)
     if not expected:
         ret = {"Success" : "nothing is expected, therefore passing the test", "expected": expected}
         log.info("FDG stat's _check_corner_cases function is returning status : True, value : %s", ret)
@@ -176,7 +177,7 @@ def _validate_inputs(filepath, expected):
     :return: Tuple with two value. First is the status, second is the return dictionary with failure reason.
     """
     ret = ''
-    log.info("validating inputs in fdg stat module")
+    log.info("validating inputs for %s in fdg stat module", filepath)
     if not filepath:
         log.error("filepath not specified to FDG stat module")
         ret = {'Failure': "no filepath provided", "expected": expected}

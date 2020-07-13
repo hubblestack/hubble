@@ -1,29 +1,8 @@
 # -*- encoding: utf-8 -*-
+"""
+Nova module for running stat command
 
-import logging
-import os
-import re
-
-from hubblestack.utils.hubble_error import AuditCheckValidationError
-from hubblestack.utils.hubble_error import AuditCheckFailedError
-from salt.exceptions import CommandExecutionError
-
-log = logging.getLogger(__name__)
-
-def execute(check_id, audit_check):
-    """Execute single check
-
-    Arguments:
-        check_id {str} -- Unique check id
-        audit_check {str} -- Dictionary of an individual check implementation
-
-    Returns:
-        dict -- dictionary of result status and output
-
-    Raises:
-        AuditCheckFailedError -- In case of error
-
-    Example for a check implementation in a profile:
+Example for a check implementation in a profile:
 check_unique_id:
   description: 'stat check'
   tag: 'ADOBE-01'
@@ -44,18 +23,43 @@ check_unique_id:
           user: root
           allow_more_strict: true
 
-    Mandatory parameters:
+It is checking for file on the given path and matches the permissions on it with given params.
+Mandatory parameters:
     path - file path
     gid - group id
     group - group name
     mode - file mode
     uid - user id
     user - user name
+
+Multiple paths can be provided in a single check
+"""
+import logging
+import os
+
+from hubblestack.utils.hubble_error import AuditCheckValidationError
+
+log = logging.getLogger(__name__)
+
+def execute(check_id, audit_check):
+    """Execute single check
+
+    Arguments:
+        check_id {str} -- Unique check id
+        audit_check {str} -- Dictionary of an individual check implementation
+
+    Returns:
+        dict -- dictionary of result status and output
+
+    Raises:
+        AuditCheckFailedError -- In case of error
     """
 
+    log.debug('Executing stat module for check-id: %s' % (check_id))
     # check file presence
+    success_on_file_missing = audit_check.get('success_on_file_missing', False)
     if not os.path.isfile(audit_check['path']):
-        if 'success_on_file_missing' in audit_check and audit_check['success_on_file_missing']:
+        if success_on_file_missing:
             return {"result": True, "output": "File not present and success_on_file_missing flag is true"}
         else:
             return {"result": False, "failure_reason": "File not present"}
@@ -76,7 +80,7 @@ check_unique_id:
         error['uid'] = 'Expected: %s, got: %s' %(audit_check['uid'], stat_res['uid'])
     
     # For mode check, complexity added by param: allow_more_strict
-    allow_more_strict = 'allow_more_strict' in audit_check and audit_check['allow_more_strict']
+    allow_more_strict = audit_check.get('allow_more_strict', False)
     mode_result = _check_mode(str(audit_check['mode']), str(stat_res['mode'][1:]), allow_more_strict)
     if not mode_result:
         error['mode'] = 'Expected: %s, got: %s' %(audit_check['mode'], stat_res['mode'])

@@ -1,12 +1,8 @@
 # -*- encoding: utf-8 -*-
 
 import logging
-import os
-import re
 
 from hubblestack.utils.hubble_error import AuditCheckValidationError
-from hubblestack.utils.hubble_error import AuditCheckFailedError
-from salt.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

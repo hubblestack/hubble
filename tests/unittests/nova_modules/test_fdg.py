@@ -1,11 +1,13 @@
-from unittest import TestCase, mock
+from unittest import TestCase
 import pytest
 
 from hubblestack.extmods.nova_v2_modules import fdg
 from hubblestack.utils.hubble_error import AuditCheckValidationError
-from hubblestack.utils.hubble_error import AuditCheckFailedError
 
 class TestNovaFdg(TestCase):
+    """
+    Unit tests for fdg nova module
+    """
     def test_validateParams1(self):
         """
         Mandatory param not passed
@@ -51,10 +53,10 @@ class TestNovaFdg(TestCase):
         audit_check = {"file": filepath}
         check_id = "test-1"
 
-        def testFn(arg1, starting_chained=None):
+        def test_fn(arg1, starting_chained=None):
             return True, (True,True)
         __salt__ = {}
-        __salt__['fdg.fdg'] = testFn
+        __salt__['fdg.fdg'] = test_fn
 
         fdg.__salt__ = __salt__
 
@@ -70,10 +72,10 @@ class TestNovaFdg(TestCase):
         audit_check = {"file": filepath, "use_status": True}
         check_id = "test-1"
 
-        def testFn(arg1, starting_chained=None):
+        def test_fn(arg1, starting_chained=None):
             return True, (True,True)
         __salt__ = {}
-        __salt__['fdg.fdg'] = testFn
+        __salt__['fdg.fdg'] = test_fn
 
         fdg.__salt__ = __salt__
 
@@ -90,10 +92,10 @@ class TestNovaFdg(TestCase):
         audit_check = {"file": filepath, "use_status": False}
         check_id = "test-1"
 
-        def testFn(arg1, starting_chained=None):
+        def test_fn(arg1, starting_chained=None):
             return True, (False,True)
         __salt__ = {}
-        __salt__['fdg.fdg'] = testFn
+        __salt__['fdg.fdg'] = test_fn
 
         fdg.__salt__ = __salt__
 

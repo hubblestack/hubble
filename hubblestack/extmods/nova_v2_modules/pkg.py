@@ -33,14 +33,10 @@ All matched packages must comply to that version string.
 You can give multiple packages in the yaml, under "checks" attribute.
 """
 import logging
-import os
-import re
 
 from packaging import version
 
 from hubblestack.utils.hubble_error import AuditCheckValidationError
-from hubblestack.utils.hubble_error import AuditCheckFailedError
-from salt.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 
@@ -58,7 +54,7 @@ def execute(check_id, audit_check):
         AuditCheckFailedError -- In case of error
     """
 
-    log.debug("Checking for package installed or not: %s" %(audit_check['name']))
+    log.debug("Checking for package installed or not: %s in check id: %s" %(audit_check['name'], check_id))
 
     # fetch package info from system
     pkg_found = __salt__['pkg.version'](audit_check['name'])

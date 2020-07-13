@@ -626,7 +626,6 @@ def sync(clean=False):
                                               'salt://hubblestack_nova_profiles')
     _nova_module_dir, cached_profile_dir = _hubble_dir()
     saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
-
     # Clean previously synced files
     if clean:
         __salt__['file.remove'](cached_profile_dir)
@@ -665,16 +664,12 @@ def load():
     """
     if __salt__['config.get']('hubblestack:nova:autosync', True):
         sync()
-
     for nova_dir in _hubble_dir():
         if not os.path.isdir(nova_dir):
             return False, 'No synced nova modules/profiles found'
-
     log.debug('loading nova modules')
-
     global __nova__
     __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __grains__, __pillar__, __salt__)
-
     ret = {'loaded': list(__nova__._dict.keys()),
            'missing': __nova__.missing_modules,
            'data': list(__nova__.__data__.keys()),

@@ -509,3 +509,21 @@ def ip_addrs6(interface=None, include_loopback=False, interface_data=None):
     then only IP addresses from that interface will be returned.
     '''
     return _ip_addrs(interface, include_loopback, interface_data, 'inet6')
+
+def is_ipv6(ip):
+    '''
+    Returns a bool telling if the value passed to it was a valid IPv6 address
+    '''
+    try:
+        return ipaddress.ip_address(ip).version == 6
+    except ValueError:
+        return False
+
+def is_ipv4(ip):
+    '''
+    Returns a bool telling if the value passed to it was a valid IPv4 address
+    '''
+    try:
+        return ipaddress.ip_address(ip).version == 4
+    except ValueError:
+        return False

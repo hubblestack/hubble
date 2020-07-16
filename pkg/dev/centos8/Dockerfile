@@ -20,7 +20,9 @@ RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osque
 RUN dnf -y install git \
     libffi-devel openssl-devel libffi libssh-devel autoconf automake libtool \
     libxml2-devel libxslt-devel libjpeg-devel zlib-devel \
-    make cmake gcc python3-devel wget openssl
+    make cmake gcc python3-devel wget openssl \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
 
 #libcurl install start
 #install libcurl to avoid depending on host version
@@ -43,7 +45,8 @@ RUN mkdir -p "$LIBCURL_TEMP" \
         --disable-rtsp \
         --with-libssh \
  && make \
- && make install
+ && make install \
+ && rm -rf "$LIBCURL_TEMP"
 
 #git install start
 #install git so that git package won't be a package dependency
@@ -62,7 +65,8 @@ RUN mkdir -p "$GITTEMP" \
  && echo "NO_PERL=YesPlease" >> config.mak.autogen \
  && sed -i '0,/^NO_GETTEXT/s/^NO_GETTEXT.*/NO_GETTEXT=YesPlease/' config.mak.autogen \
  && make \
- && make install
+ && make install \
+ && rm -rf "$GITTEMP"
 
 #clean up of /opt/hubble
 RUN rm /opt/hubble/bin/curl* \
@@ -83,10 +87,13 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && cd libgit2-"$LIBGIT2_SRC_VERSION"/ \
  && cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/ \
  && make \
- && make install
+ && make install \
+ && rm -rf "$LIBGIT2TEMP"
 
 # things we may need to build python and get fpm working
-RUN dnf -y update && dnf install -y ruby ruby-devel rpm-build rubygems gcc make bzip2-devel sqlite-devel
+RUN dnf -y update && dnf install -y ruby ruby-devel rpm-build rubygems gcc make bzip2-devel sqlite-devel \
+    && dnf clean all \
+    && rm -rf /var/cache/dnf
 
 # install fpm
 RUN gem install --no-ri --no-rdoc ffi --version 1.12.2 \
@@ -130,22 +137,12 @@ ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
-RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
- && cd "$HUBBLE_SRC_PATH" && git checkout "$HUBBLE_CHECKOUT"
-
-RUN cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
- && rm -rf /hubble_build/.git
-
-RUN cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.orig \
- && sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" \
-           -e "s/COMMIT_NOT_SET/$(cd $HUBBLE_SRC_PATH; git describe --long --always --tags)/g" \
-           /hubble_build/hubblestack/__init__.py \
- && cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixed
-
 RUN mkdir /data
 VOLUME /data
 
 WORKDIR /hubble_build
 
 COPY entrypoint.sh /entrypoint.sh
+ENV HUBBLE_CHECKOUT_ENV=$HUBBLE_CHECKOUT
+ENV HUBBLE_GIT_URL_ENV=$HUBBLE_GIT_URL
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

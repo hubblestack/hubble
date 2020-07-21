@@ -994,6 +994,8 @@ class WithTempdir(object):
         )
 
     def wrap(self, testcase, *args, **kwargs):
+        if not os.path.exists(self.kwargs['dir']):
+            os.makedirs(self.kwargs['dir'])
         tempdir = tempfile.mkdtemp(**self.kwargs)
         if not self.create:
             os.rmdir(tempdir)

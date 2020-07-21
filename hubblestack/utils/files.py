@@ -8,6 +8,7 @@ import contextlib
 import errno
 import logging
 import os
+import shutil
 
 import hubblestack.utils.stringutils
 import hubblestack.utils.exceptions
@@ -166,3 +167,78 @@ def rename(src, dst):
                     )
                 )
         os.rename(src, dst)
+
+def safe_rm(tgt):
+    '''
+    Safely remove a file
+    '''
+    try:
+        os.remove(tgt)
+    except (IOError, OSError):
+        pass
+
+def recursive_copy(source, dest):
+    '''
+    Recursively copy the source directory to the destination,
+    leaving files with the source does not explicitly overwrite.
+
+    (identical to cp -r on a unix machine)
+    '''
+    for root, _, files in hubblestack.utils.path.os_walk(source):
+        path_from_source = root.replace(source, '').lstrip(os.sep)
+        target_directory = os.path.join(dest, path_from_source)
+        if not os.path.exists(target_directory):
+            os.makedirs(target_directory)
+        for name in files:
+            file_path_from_source = os.path.join(source, path_from_source, name)
+            target_path = os.path.join(target_directory, name)
+            shutil.copyfile(file_path_from_source, target_path)
+
+def safe_walk(top, topdown=True, onerror=None, followlinks=True, _seen=None):
+    '''
+    A clone of the python os.walk function with some checks for recursive
+    symlinks. Unlike os.walk this follows symlinks by default.
+    '''
+    if _seen is None:
+        _seen = set()
+
+    # We may not have read permission for top, in which case we can't
+    # get a list of the files the directory contains.  os.path.walk
+    # always suppressed the exception then, rather than blow up for a
+    # minor reason when (say) a thousand readable directories are still
+    # left to visit.  That logic is copied here.
+    try:
+        # Note that listdir and error are globals in this module due
+        # to earlier import-*.
+        names = os.listdir(top)
+    except os.error as err:
+        if onerror is not None:
+            onerror(err)
+        return
+
+    if followlinks:
+        status = os.stat(top)
+        # st_ino is always 0 on some filesystems (FAT, NTFS); ignore them
+        if status.st_ino != 0:
+            node = (status.st_dev, status.st_ino)
+            if node in _seen:
+                return
+            _seen.add(node)
+
+    dirs, nondirs = [], []
+    for name in names:
+        full_path = os.path.join(top, name)
+        if os.path.isdir(full_path):
+            dirs.append(name)
+        else:
+            nondirs.append(name)
+
+    if topdown:
+        yield top, dirs, nondirs
+    for name in dirs:
+        new_path = os.path.join(top, name)
+        if followlinks or not os.path.islink(new_path):
+            for x in safe_walk(new_path, topdown, onerror, followlinks, _seen):
+                yield x
+    if not topdown:
+        yield top, dirs, nondirs

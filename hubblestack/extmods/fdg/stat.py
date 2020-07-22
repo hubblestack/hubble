@@ -1,14 +1,29 @@
 """
 HubbleStack FDG module for using stat to verify ownership & permissions.
 
-1. Sample FDG profile, with inline comments:
-This profile makes direct use of stat module by passing filepath directly in params
+1. Sample FDG profile, to get file stats
+This profile will fetch file stats for file provided as args, and send the stats to splunk
+*****************************************************
+main:
+    module: stat.get_stats
+    args:
+        - filepath: "/etc/docker/daemon.json"
+
+*****************************************************
+
+2. Sample FDG profile, with inline comments:
 *****************************************************
 main:                             # start of this profile's main module
-    module: stat.check_stats      # this tells FDG to call stat submodule's check_stats function
-    args:                         # arguments to check_stats function
-        - filepath: /etc/docker/daemon.json
-          mode: 644
+    module: stat.get_stats        # get stats of file provided via args
+    args:
+        - filepath: "/etc/docker/daemon.json"
+    pipe:
+        match_stats               # the stats of file are passed as chained param to match_stats module
+
+match_stats
+    module: stat.match_stats      # this tells FDG to call stat submodule's match_stats function
+    args:                         # arguments to match_stats function
+        - mode: 644
           gid: 0
           group: root
           uid: 0
@@ -17,18 +32,18 @@ main:                             # start of this profile's main module
           match_on_file_missing: True
 *****************************************************
 
-2. Sample FDG profile, with inline comments:
-This profile chains the stat module, so that some module can pass filepath to stat module.
+3. Sample FDG profile, with inline comments:
+This profile chains the stat module, so that some other module can pass filepath to stat module.
 *****************************************************
 main:                           # start of this profile's main module
     module: osquery.query       # this tells FDG to call osquery submodule's query function
     args:
        - 'select path as filepath from FILE where path="/etc/docker/daemon.json";'
-    xpipe:                      # This tells FDG to pass the output of the above query to check_stats functions of this profile
-       check_stats
+    pipe:                      # This tells FDG to pass the output of the above query to match_stats functions of this profile
+       match_stats
 
-check_stats:                    # this profile's check_stats module
-    module: stat.check_stats   # this tells FDG to call stat submodule's check_stats function
+match_stats:                    # this profile's check_stats module
+    module: stat.match_stats   # this tells FDG to call stat submodule's check_stats function
     args:
         - mode: 644
           gid: 0
@@ -49,61 +64,116 @@ If the file exists, this setting is ignored.
 """
 
 import logging
+import hubblestack.utils.stat_functions as stat_functions
 import salt.utils
 import salt.utils.platform
 import os
 log = logging.getLogger(__name__)
-import hubblestack.utils.stat_functions as stat_functions
+logging.basicConfig(level=logging.DEBUG)
 
 
-def check_stats(params='', chained=None, chained_status=None):
+def get_stats(params='', chained=None, chained_status=None):
     """
-
-    :param params: dictionary of parameters to match with the file stats
-    :param chained: file path can be passed as chained
+    :param params: Can contain 'filepath' to fetch stats
+    :param chained: file path for which stats are to be fetched
     :param chained_status: Status returned by the chained function.
     :return: tuple with (status(Boolean), result(dict))
-    This function takes into input stat params that are to be matched with stats of given file.
-    The filepath can be provided either directly in params or through chaining. See example above.
+    The function will fetch file stats for a file passed either using a previously chained
+    function or if a file path is directly passed through params
     """
-
-    if params == '' or params is None:
-        ret = {'Failure' : 'invalid input, no params provided'}
-        return False, ret
-
     if chained:
         log.info("value of 'chained' is not null, using %s value as filepath", chained)
-        filepath = chained.get('filepath')
+        if isinstance(chained, dict):
+            for key, value in chained.items():
+                filepath = value
+        elif isinstance(chained, str):
+            filepath = chained
+        else:
+            error_msg = "value of chained is not in correct format : {0}".format(chained)
+            logging.error(error_msg)
+            ret = {"Failure" : error_msg}
+            return False, ret
     else:
         filepath = params.get('filepath')
+
+    salt_ret = {}
+    log.info("checking stats of %s", filepath)
+    salt_ret['filepath'] = filepath
+    if os.path.exists(filepath):
+        salt_ret['file_stats'] = __salt__['file.stats'](filepath)
+    else:
+        log.info("file %s not found", filepath)
+        ret = {"file_not_found" : True}
+        salt_ret['file_stats'] = ret
+        return False, salt_ret
+
+    return True, salt_ret
+
+
+def match_stats(params='', chained=None, chained_status=None):
+    """
+    :param params: dictionary of parameters to match with the file stats
+    :param chained: actual file stats
+    :param chained_status: Status returned by the chained function.
+    :return: tuple with (status(Boolean), result(dict))
+    This function takes into input stat params that are to be matched with actual stats given as chained value.
+    """
+
+    if chained and chained.get('file_stats'):
+        log.info("value of 'chained' is %s, using these value as file stats", chained.get('file_stats'))
+        print("value of 'chained' is %s, using these value as file stats", chained.get('file_stats'))
+        file_stats = chained.get('file_stats')
+    else:
+        log.info("No stats found in chaining, unable to match stats")
+        ret = {"Failure": "No stats found in chaining, unable to match stats", "expected" : params}
+        return False, ret
+
+    if chained and chained.get('filepath'):
+        log.info("value of 'chained' is %s, using this value as file path", chained.get('filepath'))
+        print("value of 'chained' is %s, using these value as file path", chained.get('filepath'))
+        filepath = chained.get('filepath')
+    else:
+        log.info("No filepath found in chaining, unable to match stats")
+        ret = {"Failure": "No filepath found in chaining, unable to match stats", "expected": params}
+        return False, ret
+
+    log.debug("file stats are %s", file_stats)
+
+    if not params:
+        log.info("FDG stat's match_stats function is returning status : True, value : %s", file_stats)
+        success_msg = "expected params not found, therefore passing the test for chained stats {0}".format(file_stats)
+        ret = {"Success": success_msg}
+        return True, ret
 
     expected = {}
     for attribute in ['mode', 'user', 'uid', 'group', 'gid', 'allow_more_strict', 'match_on_file_missing']:
         if attribute in params.keys():
             expected[attribute] = params[attribute]
 
-    status, ret = _validate_inputs(filepath, expected)
-    if not status:
-        log.info("Invalid inputs provided in fdg stat module, returning False")
+    if 'match_on_file_missing' in expected.keys() and expected['match_on_file_missing'] \
+            and file_stats.get("file_not_found"):
+        ret = {"Success": "file not found, passing test case since 'match_on_file_missing' is set to True", "expected": expected, "file": filepath}
+        log.info("FDG stat's match_stats function is returning status : True, value : %s", ret)
+        return True, ret
+    elif file_stats.get("file_not_found"):
+        ret = {"Failure": "file not found, failing the test since 'match_on_file_missing' is not set to True",
+               "expected": expected, "file": filepath}
+        log.info("FDG stat's match_stats function is returning status : False, value : %s", ret)
         return False, ret
 
-    log.info("checking stats of %s", filepath)
-    if os.path.exists(filepath):
-        salt_ret = __salt__['file.stats'](filepath)
-    else:
-        salt_ret = {}
-
-    log.debug("file stats are %s", salt_ret)
-    if not salt_ret:
-        log.info("file stats couldn't be fetched for file %s, checking corner cases", filepath)
-        return _check_corner_cases(filepath, expected)
+    if 'allow_more_strict' in expected and 'mode' not in expected:
+        reason = "'allow_more_strict' tag can't be specified without 'mode' tag." \
+                 " Seems like a bug in hubble profile."
+        ret = {'Failure': reason, "expected": expected, "file": filepath}
+        log.info("FDG stat's match_stats function is returning status : False, value : %s", ret)
+        return False, ret
 
     passed = True
     reason_dict = {}
     for attribute in expected.keys():
         if attribute == 'allow_more_strict' or attribute == 'match_on_file_missing':
             continue
-        file_attribute_value = salt_ret[attribute]
+        file_attribute_value = file_stats[attribute]
 
         if attribute == 'mode':
             if file_attribute_value != '0':
@@ -111,8 +181,7 @@ def check_stats(params='', chained=None, chained_status=None):
             allow_more_strict = expected.get('allow_more_strict', False)
             if not isinstance(allow_more_strict, bool):
                 passed = False
-                reason = "{0} is not a valid boolean. Seems like a bug in hubble profile." \
-                    .format(allow_more_strict)
+                reason = "'allow_more_strict' is not a boolean. Seems like a bug in hubble profile."
                 reason_dict[attribute] = reason
 
             else:
@@ -132,63 +201,12 @@ def check_stats(params='', chained=None, chained_status=None):
                 reason_dict[attribute] = reason
 
     if reason_dict:
-        ret = {'Failure': "For file '{0}': {1}".format(filepath, reason_dict), "expected": expected}
+        ret = {'Failure': "file stats not matching : {0}".format(reason_dict), "expected": expected, "file": filepath}
 
     if passed:
-        ret = {"Success": "all stats matching for file: {0}".format(filepath), "expected": expected}
-        log.info("FDG stat's check_status function is returning status for file %s: True, value : %s", filepath, ret)
+        ret = {"Success": "all stats matching", "expected": expected, "file": filepath}
+        log.info("FDG stat's match_stats function is returning status : True, value : %s", ret)
         return True, ret
     else:
-        log.info("FDG stat's check_status function is returning status : False, value : %s", ret)
+        log.info("FDG stat's match_stats function is returning status : False, value : %s", ret)
         return False, ret
-
-
-def _check_corner_cases(filepath, expected):
-    """
-    The function checks if a few corner cases are met or not. The result can be success/failure
-    depending upon which case is met.
-    :param filepath: File path of file
-    :param expected: dictionary of expected params
-    :return: Tuple with two value. First is the status, second is the return dictionary with failure reason.
-    """
-    log.info("checking corner cases for %s", filepath)
-    if not expected:
-        ret = {"Success" : "nothing is expected, therefore passing the test", "expected": expected}
-        log.info("FDG stat's _check_corner_cases function is returning status : True, value : %s", ret)
-        return True, ret
-    elif 'match_on_file_missing' in expected.keys() and expected['match_on_file_missing']:
-        ret = {"Success": "unable to find file, passing check because 'match_on_file_missing' is 'True'", "expected": expected}
-        log.info("FDG stat's _check_corner_cases function is returning status : True, value : %s", ret)
-        return True, ret
-    else:
-        reason = "Could not get access any file at '{0}'. " \
-                 "File might not exist, or hubble might not" \
-                 " have enough permissions".format(filepath)
-        ret = {'Failure': reason, "expected": expected}
-        log.info("FDG stat's _check_corner_cases function is returning status : False, value : %s", ret)
-        return False, ret
-
-
-def _validate_inputs(filepath, expected):
-    """
-    The functions will validate if filepath is specified and mode is provided in the expected params
-    :param filepath: File path of file
-    :param expected: dictionary of expected params
-    :return: Tuple with two value. First is the status, second is the return dictionary with failure reason.
-    """
-    ret = ''
-    log.info("validating inputs for %s in fdg stat module", filepath)
-    if not filepath:
-        log.error("filepath not specified to FDG stat module")
-        ret = {'Failure': "no filepath provided", "expected": expected}
-        log.info("FDG stat's _validate_inputs function is returning status : False, value : %s", ret)
-        return False, ret
-
-    if 'allow_more_strict' in expected and 'mode' not in expected:
-        reason = "'allow_more_strict' tag can't be specified without 'mode' tag." \
-                 " Seems like a bug in hubble profile."
-        ret = {'Failure': reason, "expected": expected}
-        log.info("FDG stat's _validate_inputs function is returning status : False, value : %s", ret)
-        return False, ret
-
-    return True, ret

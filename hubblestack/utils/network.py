@@ -149,15 +149,15 @@ def linux_interfaces():
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT).communicate()[0]
         ifaces = _interfaces_ip("{0}\n{1}".format(
-            salt.utils.stringutils.to_str(cmd1),
-            salt.utils.stringutils.to_str(cmd2)))
+            hubblestack.utils.stringutils.to_str(cmd1),
+            hubblestack.utils.stringutils.to_str(cmd2)))
     elif ifconfig_path:
         cmd = subprocess.Popen(
             '{0} -a'.format(ifconfig_path),
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT).communicate()[0]
-        ifaces = _interfaces_ifconfig(salt.utils.stringutils.to_str(cmd))
+        ifaces = _interfaces_ifconfig(hubblestack.utils.stringutils.to_str(cmd))
     return ifaces
 
 def _interfaces_ip(out):
@@ -492,7 +492,7 @@ def _ip_addrs(interface=None, include_loopback=False, interface_data=None, proto
                               if k == interface])
         if not target_ifaces:
             log.error('Interface {0} not found.'.format(interface))
-    for ip_info in iter(target_ifaces.items()):
+    for ip_info in target_ifaces.values():
         addrs = ip_info.get(proto, [])
         addrs.extend([addr for addr in ip_info.get('secondary', []) if addr.get('type') == proto])
 

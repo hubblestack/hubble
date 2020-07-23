@@ -22,7 +22,8 @@ RUN apt-get -y install git curl \
     python-dev libffi-dev libssl-dev libyaml-dev libssh2-1 libssh2-1-dev autoconf automake libtool \
     libxml2-dev libxslt1-dev zlib1g-dev cmake python-setuptools \
     gcc wget openssl \
- && apt-get clean
+ && apt-get clean \
+ && rm -rf /var/cache/apt
 
 #libcurl install start
 #install libcurl to avoid depending on host version
@@ -39,7 +40,8 @@ RUN mkdir -p "$LIBCURL_TEMP" \
  && ./buildconf \
  && ./configure --prefix=/opt/hubble --disable-ldap --without-nss --disable-manual --disable-gopher --disable-smtp --disable-smb --disable-imap --disable-pop3 --disable-tftp --disable-telnet --disable-dict --disable-ldaps --disable-ldap --disable-rtsp --with-libssh2 \
  && make \
- && make install
+ && make install \
+ && rm -rf "$LIBCURL_TEMP"
 
 #git install start
 #install git so that git package won't be a package dependency
@@ -58,7 +60,8 @@ RUN mkdir -p "$GITTEMP" \
  && echo "NO_PERL=YesPlease" >> config.mak.autogen \
  && sed -i '0,/^NO_GETTEXT/s/^NO_GETTEXT.*/NO_GETTEXT=YesPlease/' config.mak.autogen \
  && make \
- && make install
+ && make install \
+ && rm -rf "$GITTEMP"
 
 #clean up of /opt/hubble
 RUN rm /opt/hubble/bin/curl* \
@@ -80,14 +83,19 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && export LIBGIT2=/usr/local/ \
  && cmake . -DCMAKE_INSTALL_PREFIX=$LIBGIT2 \
  && make \
- && make install
+ && make install \
+ && rm -rf "$LIBGIT2TEMP"
 
 #fpm package making requirements start
 RUN apt-get install -y ruby ruby-dev rubygems gcc make \
  && gem install --no-ri --no-rdoc ffi --version 1.12.2 \
- && gem install --no-ri --no-rdoc fpm
+ && gem install --no-ri --no-rdoc fpm \
+ && apt-get clean \
+ && rm -rf /var/cache/apt
 
-RUN apt-get install -y libbz2-dev libsqlite3-dev
+RUN apt-get install -y libbz2-dev libsqlite3-dev \
+ && apt-get clean \
+ && rm -rf /var/cache/apt
 
 # use pyenv
 ARG PYENV_VERSION=3.6.10
@@ -125,22 +133,12 @@ ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
 
-RUN set -x; git clone "$HUBBLE_GIT_URL" "$HUBBLE_SRC_PATH" \
- && cd "$HUBBLE_SRC_PATH" && git checkout "$HUBBLE_CHECKOUT"
-
-RUN cp -rf "$HUBBLE_SRC_PATH" /hubble_build \
- && rm -rf /hubble_build/.git
-
-RUN cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.orig \
- && sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" \
-           -e "s/COMMIT_NOT_SET/$(cd $HUBBLE_SRC_PATH; git describe --long --always --tags)/g" \
-           /hubble_build/hubblestack/__init__.py \
- && cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixed
-
 RUN mkdir /data
 VOLUME /data
 
 WORKDIR /hubble_build
 
 COPY entrypoint.sh /entrypoint.sh
+ENV HUBBLE_CHECKOUT_ENV=$HUBBLE_CHECKOUT
+ENV HUBBLE_GIT_URL_ENV=$HUBBLE_GIT_URL
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

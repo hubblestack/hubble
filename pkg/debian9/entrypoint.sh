@@ -1,4 +1,17 @@
 #!/bin/bash
+#Moving hubble source code logic in the shell script
+set -x -e
+git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+cd "${HUBBLE_SRC_PATH}"
+git checkout "${HUBBLE_CHECKOUT_ENV}"
+
+cp -rf "${HUBBLE_SRC_PATH}"/* /hubble_build
+rm -rf /hubble_build/.git
+
+cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.orig
+
+sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT_ENV}/g" -e "s/COMMIT_NOT_SET/$(cd ${HUBBLE_SRC_PATH}; git describe --long --always --tags)/g" /hubble_build/hubblestack/__init__.py
+cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixed
 
 eval "$(pyenv init -)"
 
@@ -17,7 +30,6 @@ fi
 
 # from now on, exit on error (rather than && every little thing)
 PS4=$'-------------=: '
-set -x -e
 
 # possibly replace the version file
 if [ -f /data/hubble_buildinfo ]; then

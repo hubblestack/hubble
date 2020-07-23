@@ -15,7 +15,7 @@ import hubblestack.utils.stringutils
 import hubblestack.utils.args
 import hubblestack.utils.data
 from hubblestack.utils.decorators.memoize import memoize
-
+from hubblestack.utils.exceptions import CommandNotFoundError
 log = logging.getLogger(__name__)
 
 def which(exe=None):
@@ -159,3 +159,29 @@ def os_walk(top, *args, **kwargs):
     for item in os.walk(top_query, *args, **kwargs):
         yield hubblestack.utils.data.decode(item, preserve_tuples=True)
 
+def sanitize_win_path(winpath):
+    '''
+    Remove illegal path characters for windows
+    '''
+    intab = '<>:|?*'
+    if isinstance(winpath, str):
+        winpath = winpath.translate(dict((ord(c), '_') for c in intab))
+    elif isinstance(winpath, str):
+        outtab = '_' * len(intab)
+        trantab = ''.maketrans(intab, outtab)
+        winpath = winpath.translate(trantab)
+    return winpath
+
+def check_or_die(command):
+    '''
+    Simple convenience function for modules to use for gracefully blowing up
+    if a required tool is not available in the system path.
+
+    Lazily import `hubblestack.modules.cmdmod` to avoid any sort of circular
+    dependencies.
+    '''
+    if command is None:
+        raise CommandNotFoundError('\'None\' is not a valid command.')
+
+    if not which(command):
+        raise CommandNotFoundError('\'{0}\' is not in the path'.format(command))

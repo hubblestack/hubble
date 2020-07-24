@@ -22,18 +22,13 @@ import yaml
 from hubblestack.utils.exceptions import CommandExecutionError
 from hubblestack import __version__
 from hubblestack.status import HubbleStatus
+from hubblestack.loader import nova as NovaLazyLoader
 
 log = logging.getLogger(__name__)
 
 hubble_status = HubbleStatus(__name__, 'top', 'audit')
 
-try:
-    from nova_loader import NovaLazyLoader
-except ImportError as e:
-    log.error('failed to load NovaLazyLoader (path=%s): %s', sys.path, e)
-
 __nova__ = {}
-
 
 @hubble_status.watch
 def audit(configs=None,
@@ -674,7 +669,7 @@ def load():
     log.debug('loading nova modules')
 
     global __nova__
-    __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __grains__, __pillar__, __salt__)
+    __nova__ = NovaLazyLoader(__opts__, __grains__, __pillar__, __salt__)
 
     ret = {'loaded': list(__nova__._dict.keys()),
            'missing': __nova__.missing_modules,

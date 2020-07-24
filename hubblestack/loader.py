@@ -91,7 +91,10 @@ def _module_dirs(
     sys_types = os.path.join(base_path or HUBBLE_BASE_PATH, int_type or ext_type)
 
     # XXX should be removed eventually:
-    old_types = os.path.join(SALT_BASE_PATH, int_type or ext_type)
+    hubblestack_type = 'hubblestack_' + (int_type or ext_type)
+    files_base_types = os.path.join(base_path or HUBBLE_BASE_PATH, 'files', hubblestack_type)
+    salt_base_types = os.path.join(SALT_BASE_PATH, int_type or ext_type)
+    # /XXX
 
     ext_type_types = []
     if ext_dirs:
@@ -121,7 +124,7 @@ def _module_dirs(
         if os.path.isdir(maybe_dir):
             cli_module_dirs.insert(0, maybe_dir)
 
-    return cli_module_dirs + ext_type_types + [ext_types, sys_types, old_types]
+    return cli_module_dirs + ext_type_types + [ext_types, sys_types, files_base_types, salt_base_types]
 
 
 def modules(
@@ -1223,4 +1226,31 @@ def matchers(opts):
         _module_dirs(opts, 'matchers'),
         opts,
         tag='matchers'
+    )
+
+
+def nova(opts, modules, context=None):
+    ''' Return all the nova modules '''
+
+    class NovaLazyLoader(LazyLoader):
+        def __getitem__(self, x):
+            if x.startswith('/') and x.endswith('.py'):
+                xlate = x[1:-3] + '.audit'
+            else:
+                xlate = x
+            try:
+                return super(NovaLazyLoader, self).__getitem__(xlate)
+            except KeyError:
+                raise KeyError(x)
+
+        def __iter__(self):
+            return iter(f'/{x[:-6]}.py' for x in super(NovaLazyLoader, self).__iter__() if x.endswith('.audit'))
+
+    return NovaLazyLoader(
+        _module_dirs(opts, 'nova'),
+        opts,
+        tag='nova',
+        pack={ '__context__': context, '__mods__': modules,
+            '__salt__': modules # XXX to remove eventually
+            }
     )

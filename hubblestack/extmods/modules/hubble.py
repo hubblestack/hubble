@@ -669,7 +669,7 @@ def load():
     log.debug('loading nova modules')
 
     global __nova__
-    __nova__ = NovaLazyLoader(__opts__, __grains__, __pillar__, __salt__)
+    __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __grains__, __pillar__, __salt__)
 
     ret = {'loaded': list(__nova__._dict.keys()),
            'missing': __nova__.missing_modules,

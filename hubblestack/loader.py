@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import time
+import yaml
 import logging
 import inspect
 import tempfile
@@ -1310,10 +1311,40 @@ def _nova_xlate_funcnames(name, fpath, suffix, tgt_mod, funcname, full_funcname,
         new_funcname = 'py'
     return new_funcname, '.'.join([name, new_funcname])
 
-def nova(opts, modules, context=None):
-    ''' Return all the nova modules '''
+def nova(hubble_dir, opts, modules, context=None):
+    '''
+    Return a nova (!lazy) loader.
 
-    return LazyLoader(
+    This does return a LazyLoader, but hubble.audit module always iterates the
+    keys forcing a full load, which somewhat defeates the purpose of using the
+    LazyLoader object at all.
+
+    nova() also populates loader.__data__ and loader.__missing_data__ for
+    backwards compatibility purposes but omits some overlapping functions that
+    were essentially unnecessary.
+
+    Originally hubble.audit used a special NovaLazyLoader that was intended to
+    make everything more readable but in fact only fragmented the codebase and
+    obsfucated the purpose and function of the new data elements it introduced.
+
+    The loader functions and file_mapping functions of the loader were also
+    hopelessly mixed up with the yaml data loaders for no apparent reason.
+
+    Presumably the original intent was to be able to use expressions like
+    __nova__['/cis/debian-9-whatever.yaml'] to access those data elements;
+    but this wasn't actually used, apparently favoring the form:
+    __nova__.__data__['/cis/whatever.yaml'] instead.
+
+    The __nova__.__data__['/whatever.yaml'] format is retained, but the
+    file_mapping['/whatever.yaml'] and load_module('whatever') functionality is
+    not. This means that anywhere refresh_filemapping() is expected to refresh
+    yaml on disk will no-longer do so. Interestingly, it didn't seem to work
+    before anyway, which seems to be the reason for the special sync() section
+    of the hubble.audit.
+
+    '''
+
+    loader = LazyLoader(
         _module_dirs(opts, 'nova'),
         opts,
         tag='nova',
@@ -1324,3 +1355,20 @@ def nova(opts, modules, context=None):
             '__salt__': modules # XXX to remove eventually
             }
     )
+
+    loader.__data__ = d = dict()
+    loader.__missing_data__ = md = dict()
+
+    for mod_dir in hubble_dir:
+        for path, _, filenames in os.walk(mod_dir):
+            for filename in filenames:
+                pathname = os.path.join(path, filename)
+                name = pathname[len(mod_dir):]
+                if filename.endswith('.yaml'):
+                    try:
+                        with open(pathname, 'r') as fh:
+                            d[name] = yaml.safe_load(fh)
+                    except Exception as exc:
+                        md[name] = str(exc)
+                        log.exception('Error loading yaml from %s', pathnmame)
+    return loader

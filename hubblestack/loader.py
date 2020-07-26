@@ -443,6 +443,9 @@ class LazyLoader(salt.utils.lazy.LazyDict):
                  whitelist=None,
                  virtual_enable=True,
                  static_modules=None,
+                 funcname_filter=None,
+                 xlate_modnames=None,
+                 xlate_funcnames=None,
                  proxy=None,
                  virtual_funcs=None,
                  ):  # pylint: disable=W0231
@@ -450,6 +453,10 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         In pack, if any of the values are None they will be replaced with an
         empty context-specific dict
         '''
+
+        self.funcname_filter = funcname_filter
+        self.xlate_modnames  = xlate_modnames
+        self.xlate_funcnames = xlate_funcnames
 
         self.pack = {} if pack is None else pack
         if opts is None:
@@ -913,6 +920,9 @@ class LazyLoader(salt.utils.lazy.LazyDict):
             setattr(mod, p_name, p_value)
 
         module_name = mod.__name__.rsplit('.', 1)[-1]
+        if callable(self.xlate_modnames):
+            module_name = self.xlate_modnames([module_name], name, fpath, suffix, mod, mode='module_name')
+            name        = self.xlate_modnames([name], name, fpath, suffix, mod, mode='name')
 
         # Call a module's initialization method if it exists
         module_init = getattr(mod, '__init__', None)
@@ -963,6 +973,8 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         # If we had another module by the same virtual name, we should put any
         # new functions under the existing dictionary.
         mod_names = [module_name] + list(virtual_aliases)
+        if callable(self.xlate_modnames):
+            mod_names = self.xlate_modnames(mod_names, name, fpath, suffix, mod, mode='mod_names')
         mod_dict = dict((
             (x, self.loaded_modules.get(x, self.mod_dict_class()))
             for x in mod_names
@@ -975,6 +987,9 @@ class LazyLoader(salt.utils.lazy.LazyDict):
             func = getattr(mod, attr)
             if not inspect.isfunction(func) and not isinstance(func, functools.partial):
                 # Not a function!? Skip it!!!
+                continue
+            if callable(self.funcname_filter) and not self.funcname_filter(attr, mod):
+                # rejected by filter
                 continue
             # Let's get the function name.
             # If the module has the __func_alias__ attribute, it must be a
@@ -989,6 +1004,9 @@ class LazyLoader(salt.utils.lazy.LazyDict):
                     full_funcname = '.'.join((tgt_mod, funcname))
                 except TypeError:
                     full_funcname = '{0}.{1}'.format(tgt_mod, funcname)
+                if callable(self.xlate_funcnames):
+                    funcname, full_funcname = self.xlate_funcnames(
+                        name, fpath, suffix, tgt_mod, funcname, full_funcname, mod, func)
                 # Save many references for lookups
                 # Careful not to overwrite existing (higher priority) functions
                 if full_funcname not in self._dict:
@@ -1228,28 +1246,80 @@ def matchers(opts):
         tag='matchers'
     )
 
+def _nova_funcname_filter(funcname, mod):
+    """
+    reject function names that aren't "audit"
+
+    args:
+      mod :- the actual imported module (allowing mod.__file__ examination, etc)
+      funcname :- the attribute name as given by dir(mod)
+
+    return:
+        True :- sure, we can provide this function
+        False :- skip this one
+    """
+    if funcname == 'audit':
+        return True
+    return False
+
+def _nova_xlate_modnames(mod_names, name, fpath, suffix, mod, mode='mod_names'):
+    """
+        Translate (xlate) "service" into "/service"
+
+        args:
+            name   :- the name of the module we're loading (e.g., 'service')
+            fpath  :- the file path of the module we're loading
+            suffix :- the suffix of the module we're loading (e.g., '.pyc', usually)
+            mod    :- the actual imported module (allowing mod.__file__ examination)
+            mode   :- the name of the load_module variable being translated
+
+        return:
+            either a list of new names (for "mod_names") or a single new name
+            (for "name" and "module_name")
+    """
+
+    new_modname = '/' + name
+
+    if mode in ("module_name", "name"):
+        return new_modname
+    return [ new_modname ]
+
+def _nova_xlate_funcnames(name, fpath, suffix, tgt_mod, funcname, full_funcname, mod, func):
+    """
+    Translate (xlate) "service.audit" into "/service.py"
+
+    args:
+        name          :- the name of the module we're loading (e.g., 'service')
+        fpath         :- the file path of the module we're loading
+        suffix        :- the suffix of the module we're loading (e.g., '.pyc', usually)
+        tgt_mod       :- the current virtual name of the module we're loading (e.g., 'service')
+        funcname      :- the function name we're maping (e.g., 'audit')
+        full_funcname :- the LazyLoader key format item (e.g., 'service.audit')
+        mod           :- the actual imported module (allowing mod.__file__ examination)
+        func          :- the actual function being mapped (allowing func.__name__)
+
+    return:
+        funcname, full_funcname
+
+        The old NovaLazyLoader's behavior can be mimicked without altering the
+        LazyLoader (very much) by simply pretending tgt_mod='/service',
+        funcname='py' and full_funcname='/service.py'.
+    """
+    new_funcname = suffix[1:]
+    if new_funcname == 'pyc':
+        new_funcname = 'py'
+    return new_funcname, '.'.join([name, new_funcname])
 
 def nova(opts, modules, context=None):
     ''' Return all the nova modules '''
 
-    class NovaLazyLoader(LazyLoader):
-        def __getitem__(self, x):
-            if x.startswith('/') and x.endswith('.py'):
-                xlate = x[1:-3] + '.audit'
-            else:
-                xlate = x
-            try:
-                return super(NovaLazyLoader, self).__getitem__(xlate)
-            except KeyError:
-                raise KeyError(x)
-
-        def __iter__(self):
-            return iter(f'/{x[:-6]}.py' for x in super(NovaLazyLoader, self).__iter__() if x.endswith('.audit'))
-
-    return NovaLazyLoader(
+    return LazyLoader(
         _module_dirs(opts, 'nova'),
         opts,
         tag='nova',
+        funcname_filter=_nova_funcname_filter,
+        xlate_modnames=_nova_xlate_modnames,
+        xlate_funcnames=_nova_xlate_funcnames,
         pack={ '__context__': context, '__mods__': modules,
             '__salt__': modules # XXX to remove eventually
             }

@@ -486,7 +486,9 @@ def top(topfile='top.nova',
         salt '*' hubble.top foo/bar.nova verbose=True
     """
     if __salt__['config.get']('hubblestack:nova:autoload', True):
-        load()
+        load_result = load()
+        if not load_result[0]:
+            return load_result
     if not __nova__:
         return False, 'No nova modules/data have been loaded.'
 
@@ -664,7 +666,7 @@ def load():
 
     for nova_dir in _hubble_dir():
         if not os.path.isdir(nova_dir):
-            return False, 'No synced nova modules/profiles found'
+            return False, 'No synced nova modules/profiles found in nova_dir={}'.format(nova_dir)
 
     log.debug('loading nova modules')
 

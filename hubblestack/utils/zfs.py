@@ -18,7 +18,7 @@ import math
 import logging
 from numbers import Number
 
-from hubblestack.utils.decorators import memoize as real_memoize
+from hubblestack.utils.decorators.memoize import memoize as real_memoize
 from hubblestack.utils.odict import OrderedDict
 from hubblestack.utils.stringutils import to_num as str_to_num
 import hubblestack.modules.cmdmod

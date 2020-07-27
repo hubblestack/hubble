@@ -131,3 +131,8 @@ class MissingSmb(HubbleException):
     '''
     Raised when no smb library is found.
     '''
+
+class FileserverConfigError(HubbleException):
+    '''
+    Used when invalid fileserver settings are detected
+    '''

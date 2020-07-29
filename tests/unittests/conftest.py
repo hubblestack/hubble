@@ -194,43 +194,28 @@ def __opts__(hubblestack_loaders):
     return hubblestack_loaders.opts
 
 ##### profiling
-prof = None
 prof_filenames = set()
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_call(item):
-    if prof:
-        prof.enable()
-
-    yield
-
-    if prof:
-        prof.disable()
-
-@pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_protocol(item):
-    global prof
-
-    prof_filename = prof = False
-
     if os.environ.get(profile_enabling_env_var):
         import cProfile
         filename, lineno, funcname = item.location # item.name is just the function name
         profile_name = filename.split('/')[-1][:-3]
         profile_name += '-' + funcname + '.pstats'
         prof_filename = os.path.join(output_dir, profile_name)
-        prof_filenames.add(prof_filename)
         try:
             os.makedirs(output_dir)
         except OSError:
             pass
         prof = cProfile.Profile()
+        prof.enable()
 
-    yield # give control back to pytest, run the test, then come back here
+    yield
 
-    if prof:
+    if os.environ.get(profile_enabling_env_var):
         prof.dump_stats(prof_filename)
-        prof = None
+        prof_filenames.add(prof_filename)
 
 def pytest_sessionfinish(session, exitstatus):
     if os.environ.get(profile_enabling_env_var):
@@ -238,20 +223,23 @@ def pytest_sessionfinish(session, exitstatus):
         if prof_filenames:
             combined = None
             for pfname in prof_filenames:
+                if not os.path.isfile(pfname):
+                    continue
                 if combined is None:
                     combined = pstats.Stats(pfname)
                 else:
                     combined.add(pfname)
 
-            cfilename = os.path.join(output_dir, 'combined.pstats')
-            csvg      = os.path.join(output_dir, 'combined.svg')
-            combined.dump_stats(cfilename)
+            if combined:
+                cfilename = os.path.join(output_dir, 'combined.pstats')
+                csvg      = os.path.join(output_dir, 'combined.svg')
+                combined.dump_stats(cfilename)
 
-            gp_cmd = [ 'gprof2dot', '-f', 'pstats', cfilename ]
+                gp_cmd = [ 'gprof2dot', '-f', 'pstats', cfilename ]
 
-            gp = subprocess.Popen(gp_cmd, stdout=subprocess.PIPE)
-            dp = subprocess.Popen(['dot', '-Tsvg', '-o', csvg], stdin=gp.stdout)
-            dp.communicate()
+                gp = subprocess.Popen(gp_cmd, stdout=subprocess.PIPE)
+                dp = subprocess.Popen(['dot', '-Tsvg', '-o', csvg], stdin=gp.stdout)
+                dp.communicate()
 
     pcmf = os.environ.get(please_chown_my_files_back_to_me)
     if pcmf:

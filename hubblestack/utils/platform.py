@@ -20,7 +20,6 @@ try:
 except ImportError:
     from distro import linux_distribution
 
-# from hubblestack.utils.decorators import memoize
 from hubblestack.utils.decorators.memoize import memoize
 
 @memoize

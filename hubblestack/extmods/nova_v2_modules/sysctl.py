@@ -87,7 +87,7 @@ def validate_params(check_id, audit_check):
             audit_check {dict} -- Single audit check for this module
 
         Raises:
-            AuditCheckValdiationError: For any validation error
+            AuditCheckValidationError: For any validation error
         """
     log.debug('Module: fdg Start validating params for check-id: %s' % (check_id))
 
@@ -100,4 +100,4 @@ def validate_params(check_id, audit_check):
     if error:
         raise AuditCheckValidationError(error)
 
-    log.debug('Validatiion success for check-id: %s' %(check_id))
+    log.debug('Validation success for check-id: %s' %(check_id))

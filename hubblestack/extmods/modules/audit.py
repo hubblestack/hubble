@@ -31,8 +31,7 @@ def run(audit_files=None,
         labels=None,
         verbose=None,
         show_compliance=None,
-        debug=None,
-        results="all"):
+        debug=None):
     """
     :param audit_files: Profile to execute. Can have one or more files (python list or comma separated) (default: {None})
     :param tags: [description] (default: {'*'})
@@ -40,7 +39,6 @@ def run(audit_files=None,
     :param verbose: [description] (default: {True})
     :param show_compliance:
     :param debug:
-    :param results: what type of results to show (success/failure/skipped/error/all) (default: {"all"})
     :return:
     """
     if audit_files is None:
@@ -145,6 +143,8 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
     # got data for one audit file
     # lets parse, validate and execute one by one
     result_list = []
+    boolean_expr_check_list = []
+    boolean_expr_result_list = []
     nova_profile = os.path.splitext(os.path.basename(audit_file))[0]
     for audit_id, audit_data in audit_data_dict.items():
         log.debug('Executing check-id: %s in nova profile: %s', audit_id, nova_profile)
@@ -160,10 +160,20 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
             # version check
             if not _is_audit_check_version_compatible(audit_id, audit_impl):
                 raise AuditCheckVersionIncompatibleError('Version not compatible')
-        
-            # handover to module
-            audit_result = _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile)
-            result_list.append(audit_result)
+
+            if _is_boolean_expression(audit_impl):
+                # Check is boolean expression.
+                # Gather boolean expressions in separate list and evaluate after evaluating all other checks.
+                log.debug('Boolean expression found. Gathering it to evaluate later.')
+                boolean_expr_dict ={}
+                boolean_expr_dict['audit_id'] = audit_id
+                boolean_expr_dict['audit_impl'] = audit_impl
+                boolean_expr_dict['audit_data'] = audit_data
+                boolean_expr_check_list.append(boolean_expr_dict)
+            else:
+                # handover to module
+                audit_result = _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile)
+                result_list.append(audit_result)
         except AuditCheckValidationError as validation_error:
             # add into error section
             error_dict={}
@@ -184,10 +194,52 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
             log.error(version_error)
         except Exception as exc:
             log.error(exc)
+
+    #Evaluate boolean expressions
+    if boolean_expr_check_list:
+        log.debug("Evaluating boolean expression checks")
+        for boolean_expr in boolean_expr_check_list:
+            try:
+                check_result = _execute_module(boolean_expr['audit_id'], boolean_expr['audit_impl'], boolean_expr['audit_data'], verbose, nova_profile, result_list)
+                boolean_expr_result_list.append(check_result)
+            except AuditCheckValidationError as validation_error:
+                # add into error section
+                error_dict = {}
+                error_dict['tag'] = boolean_expr['audit_data']['tag']
+                error_dict['description'] = boolean_expr['audit_data']['description']
+                error_dict['check_result'] = CHECK_STATUS['Error']
+                error_dict['nova_profile'] = nova_profile
+                boolean_expr_result_list.append(error_dict)
+                log.error(validation_error)
+            except AuditCheckVersionIncompatibleError as version_error:
+                # add into skipped section
+                skipped_dict = {}
+                skipped_dict['tag'] = boolean_expr['audit_data']['tag']
+                skipped_dict['description'] = boolean_expr['audit_data']['description']
+                skipped_dict['check_result'] = CHECK_STATUS['Skipped']
+                skipped_dict['nova_profile'] = nova_profile
+                boolean_expr_result_list.append(skipped_dict)
+                log.error(version_error)
+            except Exception as exc:
+                log.error(exc)
+        result_list = result_list + boolean_expr_result_list
+
     #return list of results for a file
     return result_list
 
-def _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile):
+def _is_boolean_expression(audit_impl):
+    return audit_impl.get('module', '') == 'bexpr'
+
+def _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile, result_list=None):
+    """
+    Function to execute the module and return the result
+    :param audit_id:
+    :param audit_impl:
+    :param audit_data:
+    :param verbose:
+    :param nova_profile:
+    :return:
+    """
     audit_result = {
         "check_id": audit_id,
         "description": audit_data['description'],
@@ -239,7 +291,10 @@ def _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile):
     overall_result = type=='and'
     failure_reasons = []
     for audit_check in audit_impl['checks']:
-        module_result_local = __nova__[execute_method](audit_id, audit_check)
+        if result_list is not None:
+            module_result_local = __nova__[execute_method](audit_id, audit_check, result_list)
+        else:
+            module_result_local = __nova__[execute_method](audit_id, audit_check)
         audit_result_local = {}
         if module_result_local['result']:
             audit_result_local['check_result'] = CHECK_STATUS['Success']
@@ -308,10 +363,13 @@ def _is_audit_check_version_compatible(audit_check_id, audit_impl):
     """
     log.debug("Current hubble version: %s" % __grains__['hubble_version'])
     current_version = version.parse(__grains__['hubble_version'])
-    version_str = audit_impl['hubble_version'].upper()
+    version_str = audit_impl.get('hubble_version', '')
+    if not version_str:
+        log.debug("No hubble version provided for check id: %s Thus returning true for this check" % (audit_check_id))
+        return True
+    version_str = version_str.upper()
     version_list = [[x.strip() for x in item.split("AND")] for item in version_str.split("OR")]
-    #[['>=2.0.0','>3.0.0','<=4.0.0'], ['==5.0.0']]
-    expression_result = []
+    #'>=2.0.0 AND >3.0.0 AND <=4.0.0 OR ==5.0.0' becomes [['>=2.0.0','>3.0.0','<=4.0.0'], ['==5.0.0']]
     for expression in version_list: #Outer loop to evaluate OR conditions
         condition_match=True
         for condition in expression: #Inner loop to evaluate AND conditions
@@ -493,24 +551,25 @@ def _build_data_by_tag(topfile, results):
     # Get a list of yaml to run
     top_data = _get_top_data(topfile)
 
-    for data in top_data:
-        if isinstance(data, str):
-            if '*' not in data_by_tag:
-                data_by_tag['*'] = []
-            data_by_tag['*'].append(data)
-        elif isinstance(data, dict):
-            for key, tag in data.items():
-                if tag not in data_by_tag:
-                    data_by_tag[tag] = []
-                data_by_tag[tag].append(key)
-        else:
-            if 'Errors' not in results:
-                results['Errors'] = {}
-            error_log = 'topfile malformed, list entries must be strings or ' \
-                        'dicts: {0} | {1}'.format(data, type(data))
-            results['Errors'][topfile] = {'error': error_log}
-            log.error(error_log)
-            continue
+    if top_data:
+        for data in top_data:
+            if isinstance(data, str):
+                if '*' not in data_by_tag:
+                    data_by_tag['*'] = []
+                data_by_tag['*'].append(data)
+            elif isinstance(data, dict):
+                for key, tag in data.items():
+                    if tag not in data_by_tag:
+                        data_by_tag[tag] = []
+                    data_by_tag[tag].append(key)
+            else:
+                if 'Errors' not in results:
+                    results['Errors'] = {}
+                error_log = 'topfile malformed, list entries must be strings or ' \
+                            'dicts: {0} | {1}'.format(data, type(data))
+                results['Errors'][topfile] = {'error': error_log}
+                log.error(error_log)
+                continue
 
     return data_by_tag
 

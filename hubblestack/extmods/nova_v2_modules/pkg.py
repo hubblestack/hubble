@@ -116,7 +116,7 @@ def validate_params(check_id, audit_check):
     if 'name' not in audit_check:
         raise AuditCheckValidationError('Mandatory parameter name is not present in check_id: %s' %(check_id))
 
-    log.debug('Validatiion success for check-id: %s' %(check_id))
+    log.debug('Validation success for check-id: %s' %(check_id))
 
 def _match_version(pkg_version_to_match, pkg_version_found):
     """

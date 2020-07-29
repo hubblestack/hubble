@@ -30,7 +30,8 @@ build_dependencies = [
     'vulners',
     'ntplib',
     'patch==1.*',
-    'packaging'
+    'packaging',
+    'pyparsing'
 ]
 
 if distro == 'redhat' or distro == 'centos':

@@ -73,4 +73,4 @@ def validate_params(check_id, audit_check):
     if error:
         raise AuditCheckValidationError(str(error))
 
-    log.debug('Validatiion success for check-id: %s' %(check_id))
+    log.debug('Validation success for check-id: %s' %(check_id))

@@ -129,7 +129,7 @@ def validate_params(check_id, audit_check):
     if error:
         raise AuditCheckValidationError(error)
 
-    log.debug('Validatiion success for check-id: %s' %(check_id))
+    log.debug('Validation success for check-id: %s' %(check_id))
 
 
 def _check_mode(max_permission, given_permission, allow_more_strict):

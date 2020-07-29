@@ -107,14 +107,14 @@ def flopen(*args, **kwargs):
     writing = 'wa'
     with fopen(filename, *args, **kwargs) as f_handle:
         try:
-            if is_fcntl_available(check_sunos=True):
+            if is_fcntl_available():
                 lock_type = fcntl.LOCK_SH
                 if args and any([write in args[0] for write in writing]):
                     lock_type = fcntl.LOCK_EX
                 fcntl.flock(f_handle.fileno(), lock_type)
             yield f_handle
         finally:
-            if is_fcntl_available(check_sunos=True):
+            if is_fcntl_available():
                 fcntl.flock(f_handle.fileno(), fcntl.LOCK_UN)
 
 def is_binary(path):

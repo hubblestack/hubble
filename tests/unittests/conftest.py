@@ -2,12 +2,14 @@
 
 import os
 import sys
-import subprocess
 import logging
 import pytest
 import collections
 import salt.config
+import pstats
+import subprocess
 import hubblestack.loader
+import hubblestack.daemon
 
 log = logging.getLogger(__name__)
 Loaders = collections.namedtuple("Loaders", 'opts mods grains utils'.split())
@@ -30,8 +32,6 @@ please_chown_my_files_back_to_me = 'HS_CHOWN_BACK'
 
 # if true (in the string sense), attempt to profile hubble during testing
 profile_enabling_env_var = 'HS_PROFILE'
-
-import hubblestack.daemon
 
 @pytest.fixture(scope='session')
 def osqueryd():
@@ -198,6 +198,7 @@ def __opts__(hubblestack_loaders):
 
 ##### profiling
 prof = None
+prof_filenames = set()
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_call(item):
@@ -221,6 +222,7 @@ def pytest_runtest_protocol(item):
         profile_name = filename.split('/')[-1][:-3]
         profile_name += '-' + funcname + '.pstats'
         prof_filename = os.path.join(output_dir, profile_name)
+        prof_filenames.add(prof_filename)
         try:
             os.makedirs(output_dir)
         except OSError:
@@ -236,13 +238,13 @@ def pytest_runtest_protocol(item):
 def pytest_sessionfinish(session, exitstatus):
     if os.environ.get(profile_enabling_env_var):
         # shamelessly ripped from pytest-profiling — then modified to taste
-        import glob, pstats, subprocess
-        pstat_fnamegen = glob.glob(os.path.join(output_dir, '*.pstats'))
-        pstat_filenames = [ x for x in pstat_fnamegen if not x.endswith('combined.pstats') ]
-        if pstat_filenames:
-            combined = pstats.Stats(pstat_filenames[0])
-            for pfname in pstat_filenames[1:]:
-                combined.add(pfname)
+        if prof_filenames:
+            combined = None
+            for pfname in prof_filenames:
+                if combined is None:
+                    combined = pstats.Stats(pfname)
+                else:
+                    combined.add(pfname)
 
             cfilename = os.path.join(output_dir, 'combined.pstats')
             csvg      = os.path.join(output_dir, 'combined.svg')
@@ -256,7 +258,6 @@ def pytest_sessionfinish(session, exitstatus):
 
     pcmf = os.environ.get(please_chown_my_files_back_to_me)
     if pcmf:
-        import subprocess
         p = subprocess.Popen(['chown', '-R', pcmf, sources_dir])
         p.communicate()
         print('\nchowned back files to {}'.format(pcmf))

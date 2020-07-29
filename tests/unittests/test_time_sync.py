@@ -3,6 +3,8 @@
 import mock
 import os
 import hubblestack.extmods.fdg.time_sync
+import pytest
+import socket
 
 class TestTimesync():
     '''
@@ -54,6 +56,7 @@ class TestTimesync():
         assert status is False
         assert ret is False
 
+    @pytest.mark.xfail(raises=socket.timeout)
     def test__queryNtpServer_validServer_validReturn(self):
         '''
         Test that when a valid NTP server is passed,

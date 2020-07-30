@@ -701,15 +701,9 @@ def _setup_dirs():
     fdg_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'fdg'))
     __opts__['fdg_dirs'] = fdg_dirs
     
-    # Audit module written by coulton, no longer in use
-    # audit_dirs = __opts__.get('audit_dirs', [])
-    # audit_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'audit'))
-    # __opts__['audit_dirs'] = audit_dirs
-    
-    # configuring nova v2 directories
-    nova_dirs = __opts__.get('nova_v2_modules_dirs', [])
-    nova_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'nova_v2_modules'))
-    __opts__['nova_v2_modules_dirs'] = nova_dirs
+    audit_dirs = __opts__.get('audit_dirs', [])
+    audit_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'audit'))
+    __opts__['audit_dirs'] = audit_dirs
     
     __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
     if 'roots' not in __opts__['fileserver_backend']:

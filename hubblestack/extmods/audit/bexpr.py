@@ -37,6 +37,9 @@ def execute(check_id, audit_check, result_list):
     log.debug('Executing bexpr module for check-id: %s' % (check_id))
     keyword_list = ['AND', 'OR', 'NOT', '(', ')']
     expression = audit_check['expr'].strip()
+    #Seperating keywords on the basis of space
+    expression = expression.replace('(', ' ( ')
+    expression = expression.replace(')', ' ) ')
     #Parse the expression and evaluate the result
     #Splitting the expression on the basis of spaces
     expr_list = expression.split(" ")
@@ -80,6 +83,8 @@ def execute(check_id, audit_check, result_list):
 
     #Logic to use boolean expression parser using pyparsing library
     #We are passing the boolean expression in the following form:
+    # check1 and not (check2 or (check3 and not check4) )
+    # check1 and not ( check2 or ( check3 and not check4 )  )
     # True and not ( False or ( True and not False ) )
     ParserElement.enablePackrat()
 

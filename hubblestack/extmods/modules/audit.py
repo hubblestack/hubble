@@ -1,4 +1,92 @@
 # -*- encoding: utf-8 -*-
+"""
+Audit module
+This module is used to run audit checks in Hubble
+
+Checks use a specific audit sub module like 'grep' or 'fdg'
+A sample check is defined in yaml as follows:
+
+check_id:
+  description: 'dummy test'
+  tag: 'ADOBE-1'
+  labels:
+    - 'sample label 1'
+    - 'sample label 2'
+  sub_check: true
+
+  failure_reason: 'fail reason'
+
+  invert_result: true
+
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-8'
+
+      hubble_version: '>=4.5'
+
+      return_no_exec: true
+
+      module: stat
+
+      type: and
+
+      checks:
+        - path: /etc/ssh/sshd_config.1
+          gid: 0
+          group: root
+          mode: 644
+          uid: 0
+          user: root
+          allow_more_strict: true
+
+The various fields common to checks are defined below:
+
+check_id:
+    Unique identifier for a check. Mandatory
+
+description:
+    The description of check
+
+tag:
+    The tag associated with a check. It can be used to target a check based on tag. Optional
+
+labels:
+    The labels associated with a check. We can filter out checks based on labels. Optional
+
+sub_check:
+    Flag to execute a check but not reporting it's output in final outcome. Default - false
+
+failure_reason:
+    Custom reason to be published in final output if check result is failure. Optional
+
+invert_result:
+    Flag to invert the result of check from success to failure or vice versa. Default - false
+
+grains:
+    Salt grainns to specify on which particular OS/Kernel this check is intended to run. Default - *
+
+hubble_version:
+    String to specify version of hubble on which this check is intended to run. Default - *
+
+return_no_exec:
+    Flag to specify if a check is not to be executed. The final output is Success in case other flags are not used. Default - false
+
+module:
+    Name of audit module that is called for check. Mandatory
+
+type:
+    In case there are multiple checks to be run on audit module, the final result is based on the 'type'. Default - and
+
+checks:
+    List of params to be passed to each audit sub module. The list of params can be found in the indvidual module documentation. Mandatory
+
+The output of this module is dict containing result of execution of checks. It can be either of following categories:
+1. Error - An error in execution of a check
+2. Skipped - A check is skipped due to check params
+3. Success - A check is executed successfully
+4. Failure - A check is executed and resulted in failure
+There are different features also as verbose logging, compliance and debug which can be passed as flag which calling run.
+"""
 
 import logging
 import os
@@ -66,9 +154,9 @@ def run(audit_files=None,
         return result_dict
 
     global __nova__
-    __nova__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'nova_v2_modules'),
+    __nova__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'audit'),
                                         __opts__,
-                                        tag='nova_v2_modules',
+                                        tag='audit',
                                         pack={'__salt__': __salt__,
                                               '__grains__': __grains__})
     for audit_file in audit_files:
@@ -500,7 +588,6 @@ def _evaluate_results(result_dict, combined_dict, show_compliance, verbose):
     :param verbose: Create output in verbose manner or not
     :return:
     """
-    #TODO - Handle boolean expressions here
     for audit_file in combined_dict:
         result_list = combined_dict[audit_file]
         for result in result_list:

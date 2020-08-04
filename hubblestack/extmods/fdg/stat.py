@@ -69,7 +69,6 @@ import salt.utils
 import salt.utils.platform
 import os
 log = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
 
 
 def get_stats(params='', chained=None, chained_status=None):
@@ -90,10 +89,16 @@ def get_stats(params='', chained=None, chained_status=None):
             filepath = chained
         else:
             error_msg = "value of chained is not in correct format : {0}".format(chained)
-            logging.error(error_msg)
+            log.error(error_msg)
             ret = {"Failure" : error_msg}
             return False, ret
     else:
+        if not params:
+            error_msg = "No filepath provided in get_stats, returning False"
+            log.error(error_msg)
+            ret = {"Failure": error_msg}
+            return False, ret
+
         filepath = params.get('filepath')
 
     salt_ret = {}

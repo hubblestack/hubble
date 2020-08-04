@@ -383,3 +383,14 @@ def test_get_stats_negative_incorrect_format_of_chained():
     assert not val[0]
     assert "value of chained is not in correct format" in val[1].get('Failure')
 
+
+def test_get_stats_negative_no_params():
+    """
+    No Params are provided
+    :expected: Failure, failure_reason_dict
+    """
+    log.info('Executing test_get_stats_negative_no_params')
+    val = hubblestack.extmods.fdg.stat.get_stats()
+    log.debug("return value is %s", val)
+    assert not val[0]
+    assert "No filepath provided in get_stats, returning False" in val[1].get('Failure')

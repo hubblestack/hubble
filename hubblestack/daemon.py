@@ -686,53 +686,45 @@ def _setup_dirs():
     Setup module/grain/returner dirs
     """
 
+    this_dir = os.path.dirname(__file__)
+
     module_dirs = __opts__.get('module_dirs', [])
-    module_dirs.append(os.path.join(os.path.dirname(__file__), 'modules'))
+    module_dirs.append(os.path.join(this_dir, 'modules'))
+    module_dirs.append(os.path.join(this_dir, 'extmods', 'modules')) # XXX
     __opts__['module_dirs'] = module_dirs
     grains_dirs = __opts__.get('grains_dirs', [])
-    grains_dirs.append(os.path.join(os.path.dirname(__file__), 'grains'))
+    grains_dirs.append(os.path.join(this_dir, 'grains'))
     __opts__['grains_dirs'] = grains_dirs
     returner_dirs = __opts__.get('returner_dirs', [])
-    returner_dirs.append(os.path.join(os.path.dirname(__file__), 'returners'))
+    returner_dirs.append(os.path.join(this_dir, 'returners'))
+    returner_dirs.append(os.path.join(this_dir, 'extmods', 'returners')) # XXX
     __opts__['returner_dirs'] = returner_dirs
     fileserver_dirs = __opts__.get('fileserver_dirs', [])
-    fileserver_dirs.append(os.path.join(os.path.dirname(__file__), 'fileserver'))
+    fileserver_dirs.append(os.path.join(this_dir, 'fileserver'))
+    fileserver_dirs.append(os.path.join(this_dir, 'extmods', 'fileserver')) # XXX
     __opts__['fileserver_dirs'] = fileserver_dirs
     utils_dirs = __opts__.get('utils_dirs', [])
-    utils_dirs.append(os.path.join(os.path.dirname(__file__), 'utils'))
+    utils_dirs.append(os.path.join(this_dir, 'utils'))
+    utils_dirs.append(os.path.join(this_dir, 'extmods', 'utils')) # XXX
     __opts__['utils_dirs'] = utils_dirs
     fdg_dirs = __opts__.get('fdg_dirs', [])
-    fdg_dirs.append(os.path.join(os.path.dirname(__file__), 'fdg'))
+    fdg_dirs.append(os.path.join(this_dir, 'fdg'))
+    fdg_dirs.append(os.path.join(this_dir, 'extmods', 'fdg')) # XXX
     __opts__['fdg_dirs'] = fdg_dirs
     audit_dirs = __opts__.get('audit_dirs', [])
-    audit_dirs.append(os.path.join(os.path.dirname(__file__), 'audit'))
+    audit_dirs.append(os.path.join(this_dir, 'audit'))
+    audit_dirs.append(os.path.join(this_dir, 'extmods', 'audit')) # XXX
     __opts__['audit_dirs'] = audit_dirs
-    __opts__['file_roots']['base'].insert(0, os.path.join(os.path.dirname(__file__), 'files'))
+
+    if 'file_roots' not in __opts__:
+        __opts__['file_roots'] = dict(base=list())
+    elif 'base' not in __opts__['file_roots']:
+        __opts__['file_roots']['base'] = [ os.path.join(this_dir, 'files') ]
+    else:
+        __opts__['file_roots']['base'].insert(0, os.path.join(this_dir, 'files'))
+
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')
-
-    # XXX: eventually we'll move these back a dir and elimninate the below
-    module_dirs = __opts__.get('module_dirs', [])
-    module_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'modules'))
-    __opts__['module_dirs'] = module_dirs
-    grains_dirs = __opts__.get('grains_dirs', [])
-    grains_dirs.append(os.path.join(os.path.dirname(__file__), 'grains'))
-    __opts__['grains_dirs'] = grains_dirs
-    returner_dirs = __opts__.get('returner_dirs', [])
-    returner_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'returners'))
-    __opts__['returner_dirs'] = returner_dirs
-    fileserver_dirs = __opts__.get('fileserver_dirs', [])
-    fileserver_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'fileserver'))
-    __opts__['fileserver_dirs'] = fileserver_dirs
-    utils_dirs = __opts__.get('utils_dirs', [])
-    utils_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'utils'))
-    __opts__['utils_dirs'] = utils_dirs
-    fdg_dirs = __opts__.get('fdg_dirs', [])
-    fdg_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'fdg'))
-    __opts__['fdg_dirs'] = fdg_dirs
-    audit_dirs = __opts__.get('audit_dirs', [])
-    audit_dirs.append(os.path.join(os.path.dirname(__file__), 'extmods', 'audit'))
-    __opts__['audit_dirs'] = audit_dirs
 
 
 # 600s is a long time to get stuck loading grains and *not* be doing things

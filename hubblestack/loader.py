@@ -11,6 +11,7 @@ import os
 import re
 import sys
 import time
+import yaml
 import logging
 import inspect
 import tempfile
@@ -29,7 +30,6 @@ import salt.utils.args
 import salt.utils.context
 import salt.utils.data
 import salt.utils.dictupdate
-import salt.utils.event
 import salt.utils.files
 import salt.utils.lazy
 import salt.utils.odict
@@ -92,7 +92,10 @@ def _module_dirs(
     sys_types = os.path.join(base_path or HUBBLE_BASE_PATH, int_type or ext_type)
 
     # XXX should be removed eventually:
-    old_types = os.path.join(SALT_BASE_PATH, int_type or ext_type)
+    hubblestack_type = 'hubblestack_' + (int_type or ext_type)
+    files_base_types = os.path.join(base_path or HUBBLE_BASE_PATH, 'files', hubblestack_type)
+    salt_base_types = os.path.join(SALT_BASE_PATH, int_type or ext_type)
+    # /XXX
 
     ext_type_types = []
     if ext_dirs:
@@ -100,7 +103,7 @@ def _module_dirs(
             ext_type_dirs = '{0}_dirs'.format(tag)
         if ext_type_dirs in opts:
             ext_type_types.extend(opts[ext_type_dirs])
-        for entry_point in pkg_resources.iter_entry_points('salt.loader', ext_type_dirs):
+        for entry_point in pkg_resources.iter_entry_points('hubble.loader', ext_type_dirs):
             try:
                 loaded_entry_point = entry_point.load()
                 for path in loaded_entry_point():
@@ -122,7 +125,7 @@ def _module_dirs(
         if os.path.isdir(maybe_dir):
             cli_module_dirs.insert(0, maybe_dir)
 
-    return cli_module_dirs + ext_type_types + [ext_types, sys_types, old_types]
+    return cli_module_dirs + ext_type_types + [ext_types, sys_types, files_base_types, salt_base_types]
 
 
 def modules(
@@ -183,10 +186,6 @@ def modules(
     )
 
     ret.pack['__salt__'] = ret
-
-    if notify:
-        evt = salt.utils.event.get_event('minion', opts=opts, listen=False)
-        evt.fire_event({'complete': True}, tag='/salt/minion/minion_mod_complete')
 
     return ret
 minion_mods = modules # XXX: remove eventually
@@ -445,6 +444,9 @@ class LazyLoader(salt.utils.lazy.LazyDict):
                  whitelist=None,
                  virtual_enable=True,
                  static_modules=None,
+                 funcname_filter=None,
+                 xlate_modnames=None,
+                 xlate_funcnames=None,
                  proxy=None,
                  virtual_funcs=None,
                  ):  # pylint: disable=W0231
@@ -452,6 +454,10 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         In pack, if any of the values are None they will be replaced with an
         empty context-specific dict
         '''
+
+        self.funcname_filter = funcname_filter
+        self.xlate_modnames  = xlate_modnames
+        self.xlate_funcnames = xlate_funcnames
 
         self.pack = {} if pack is None else pack
         if opts is None:
@@ -788,6 +794,8 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         fpath_dirname = os.path.dirname(fpath)
         try:
             sys.path.append(fpath_dirname)
+            if fpath_dirname.endswith('__pycache__'):
+                sys.path.append( os.path.dirname(fpath_dirname) )
             if suffix == '.pyx':
                 mod = pyximport.load_module(name, fpath, tempfile.gettempdir())
             elif suffix == '.o':
@@ -913,6 +921,9 @@ class LazyLoader(salt.utils.lazy.LazyDict):
             setattr(mod, p_name, p_value)
 
         module_name = mod.__name__.rsplit('.', 1)[-1]
+        if callable(self.xlate_modnames):
+            module_name = self.xlate_modnames([module_name], name, fpath, suffix, mod, mode='module_name')
+            name        = self.xlate_modnames([name], name, fpath, suffix, mod, mode='name')
 
         # Call a module's initialization method if it exists
         module_init = getattr(mod, '__init__', None)
@@ -963,6 +974,8 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         # If we had another module by the same virtual name, we should put any
         # new functions under the existing dictionary.
         mod_names = [module_name] + list(virtual_aliases)
+        if callable(self.xlate_modnames):
+            mod_names = self.xlate_modnames(mod_names, name, fpath, suffix, mod, mode='mod_names')
         mod_dict = dict((
             (x, self.loaded_modules.get(x, self.mod_dict_class()))
             for x in mod_names
@@ -975,6 +988,9 @@ class LazyLoader(salt.utils.lazy.LazyDict):
             func = getattr(mod, attr)
             if not inspect.isfunction(func) and not isinstance(func, functools.partial):
                 # Not a function!? Skip it!!!
+                continue
+            if callable(self.funcname_filter) and not self.funcname_filter(attr, mod):
+                # rejected by filter
                 continue
             # Let's get the function name.
             # If the module has the __func_alias__ attribute, it must be a
@@ -989,6 +1005,9 @@ class LazyLoader(salt.utils.lazy.LazyDict):
                     full_funcname = '.'.join((tgt_mod, funcname))
                 except TypeError:
                     full_funcname = '{0}.{1}'.format(tgt_mod, funcname)
+                if callable(self.xlate_funcnames):
+                    funcname, full_funcname = self.xlate_funcnames(
+                        name, fpath, suffix, tgt_mod, funcname, full_funcname, mod, func)
                 # Save many references for lookups
                 # Careful not to overwrite existing (higher priority) functions
                 if full_funcname not in self._dict:
@@ -1227,3 +1246,129 @@ def matchers(opts):
         opts,
         tag='matchers'
     )
+
+def _nova_funcname_filter(funcname, mod):
+    """
+    reject function names that aren't "audit"
+
+    args:
+      mod :- the actual imported module (allowing mod.__file__ examination, etc)
+      funcname :- the attribute name as given by dir(mod)
+
+    return:
+        True :- sure, we can provide this function
+        False :- skip this one
+    """
+    if funcname == 'audit':
+        return True
+    return False
+
+def _nova_xlate_modnames(mod_names, name, fpath, suffix, mod, mode='mod_names'):
+    """
+        Translate (xlate) "service" into "/service"
+
+        args:
+            name   :- the name of the module we're loading (e.g., 'service')
+            fpath  :- the file path of the module we're loading
+            suffix :- the suffix of the module we're loading (e.g., '.pyc', usually)
+            mod    :- the actual imported module (allowing mod.__file__ examination)
+            mode   :- the name of the load_module variable being translated
+
+        return:
+            either a list of new names (for "mod_names") or a single new name
+            (for "name" and "module_name")
+    """
+
+    new_modname = '/' + name
+
+    if mode in ("module_name", "name"):
+        return new_modname
+    return [ new_modname ]
+
+def _nova_xlate_funcnames(name, fpath, suffix, tgt_mod, funcname, full_funcname, mod, func):
+    """
+    Translate (xlate) "service.audit" into "/service.py"
+
+    args:
+        name          :- the name of the module we're loading (e.g., 'service')
+        fpath         :- the file path of the module we're loading
+        suffix        :- the suffix of the module we're loading (e.g., '.pyc', usually)
+        tgt_mod       :- the current virtual name of the module we're loading (e.g., 'service')
+        funcname      :- the function name we're maping (e.g., 'audit')
+        full_funcname :- the LazyLoader key format item (e.g., 'service.audit')
+        mod           :- the actual imported module (allowing mod.__file__ examination)
+        func          :- the actual function being mapped (allowing func.__name__)
+
+    return:
+        funcname, full_funcname
+
+        The old NovaLazyLoader's behavior can be mimicked without altering the
+        LazyLoader (very much) by simply pretending tgt_mod='/service',
+        funcname='py' and full_funcname='/service.py'.
+    """
+    new_funcname = suffix[1:]
+    if new_funcname == 'pyc':
+        new_funcname = 'py'
+    return new_funcname, '.'.join([name, new_funcname])
+
+def nova(hubble_dir, opts, modules, context=None):
+    '''
+    Return a nova (!lazy) loader.
+
+    This does return a LazyLoader, but hubble.audit module always iterates the
+    keys forcing a full load, which somewhat defeates the purpose of using the
+    LazyLoader object at all.
+
+    nova() also populates loader.__data__ and loader.__missing_data__ for
+    backwards compatibility purposes but omits some overlapping functions that
+    were essentially unnecessary.
+
+    Originally hubble.audit used a special NovaLazyLoader that was intended to
+    make everything more readable but in fact only fragmented the codebase and
+    obsfucated the purpose and function of the new data elements it introduced.
+
+    The loader functions and file_mapping functions of the loader were also
+    hopelessly mixed up with the yaml data loaders for no apparent reason.
+
+    Presumably the original intent was to be able to use expressions like
+    __nova__['/cis/debian-9-whatever.yaml'] to access those data elements;
+    but this wasn't actually used, apparently favoring the form:
+    __nova__.__data__['/cis/whatever.yaml'] instead.
+
+    The __nova__.__data__['/whatever.yaml'] format is retained, but the
+    file_mapping['/whatever.yaml'] and load_module('whatever') functionality is
+    not. This means that anywhere refresh_filemapping() is expected to refresh
+    yaml on disk will no-longer do so. Interestingly, it didn't seem to work
+    before anyway, which seems to be the reason for the special sync() section
+    of the hubble.audit.
+
+    '''
+
+    loader = LazyLoader(
+        _module_dirs(opts, 'nova'),
+        opts,
+        tag='nova',
+        funcname_filter=_nova_funcname_filter,
+        xlate_modnames=_nova_xlate_modnames,
+        xlate_funcnames=_nova_xlate_funcnames,
+        pack={ '__context__': context, '__mods__': modules,
+            '__salt__': modules # XXX to remove eventually
+            }
+    )
+
+    loader.__data__ = d = dict()
+    loader.__missing_data__ = md = dict()
+
+    for mod_dir in hubble_dir:
+        for path, _, filenames in os.walk(mod_dir):
+            for filename in filenames:
+                pathname = os.path.join(path, filename)
+                name = pathname[len(mod_dir):]
+                if filename.endswith('.yaml'):
+                    try:
+                        with open(pathname, 'r') as fh:
+                            d[name] = yaml.safe_load(fh)
+                    except Exception as exc:
+                        md[name] = str(exc)
+                        log.exception('Error loading yaml from %s', pathnmame)
+    return loader

@@ -13,26 +13,22 @@ Configuration:
 """
 
 
-import logging
 import os
+import sys
+import logging
 import traceback
 import yaml
 
 from hubblestack.utils.exceptions import CommandExecutionError
 from hubblestack import __version__
 from hubblestack.status import HubbleStatus
+from hubblestack.loader import nova as NovaLazyLoader
 
 log = logging.getLogger(__name__)
 
 hubble_status = HubbleStatus(__name__, 'top', 'audit')
 
-try:
-    from nova_loader import NovaLazyLoader
-except ImportError:
-    pass  # This is here to make the sphinx import of this module work
-
 __nova__ = {}
-
 
 @hubble_status.watch
 def audit(configs=None,
@@ -490,7 +486,9 @@ def top(topfile='top.nova',
         salt '*' hubble.top foo/bar.nova verbose=True
     """
     if __salt__['config.get']('hubblestack:nova:autoload', True):
-        load()
+        load_result = load()
+        if not load_result[0]:
+            return load_result
     if not __nova__:
         return False, 'No nova modules/data have been loaded.'
 
@@ -668,7 +666,7 @@ def load():
 
     for nova_dir in _hubble_dir():
         if not os.path.isdir(nova_dir):
-            return False, 'No synced nova modules/profiles found'
+            return False, 'No synced nova modules/profiles found in nova_dir={}'.format(nova_dir)
 
     log.debug('loading nova modules')
 

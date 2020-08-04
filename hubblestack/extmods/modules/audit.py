@@ -114,6 +114,7 @@ CHECK_STATUS = {
 
 __nova__ = None
 
+
 def run(audit_files=None,
         tags='*',
         labels=None,
@@ -135,10 +136,10 @@ def run(audit_files=None,
                    labels=labels)
     # categories of results
     result_dict = {
-      'Success': [],
-      'Failure': [],
-      'Error': [],
-      'Skipped': [],
+        'Success': [],
+        'Failure': [],
+        'Error': [],
+        'Skipped': [],
     }
     combined_dict = {}
     if type(show_compliance) is str and show_compliance.lower().strip() in ['true', 'false']:
@@ -155,10 +156,10 @@ def run(audit_files=None,
 
     global __nova__
     __nova__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'audit'),
-                                        __opts__,
-                                        tag='audit',
-                                        pack={'__salt__': __salt__,
-                                              '__grains__': __grains__})
+                                      __opts__,
+                                      tag='audit',
+                                      pack={'__salt__': __salt__,
+                                            '__grains__': __grains__})
     for audit_file in audit_files:
         # Cache audit file
         log.debug('caching file...')
@@ -177,10 +178,11 @@ def run(audit_files=None,
             continue
 
         ret = _run_audit(audit_data_dict, tags, audit_file, verbose, labels)
-        combined_dict[audit_file]=ret
+        combined_dict[audit_file] = ret
 
     _evaluate_results(result_dict, combined_dict, show_compliance, verbose)
     return result_dict
+
 
 def top(topfile='top.nova',
         verbose=None,
@@ -226,13 +228,12 @@ def top(topfile='top.nova',
     _clean_up_results(results)
     return results
 
+
 def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
-    
     # got data for one audit file
     # lets parse, validate and execute one by one
     result_list = []
     boolean_expr_check_list = []
-    boolean_expr_result_list = []
     nova_profile = os.path.splitext(os.path.basename(audit_file))[0]
     for audit_id, audit_data in audit_data_dict.items():
         log.debug('Executing check-id: %s in nova profile: %s', audit_id, nova_profile)
@@ -253,8 +254,8 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
                 # Check is boolean expression.
                 # Gather boolean expressions in separate list and evaluate after evaluating all other checks.
                 log.debug('Boolean expression found. Gathering it to evaluate later.')
-                boolean_expr_dict ={}
-                boolean_expr_dict['audit_id'] = audit_id
+                boolean_expr_dict = {}
+                boolean_expr_dict['check_id'] = audit_id
                 boolean_expr_dict['audit_impl'] = audit_impl
                 boolean_expr_dict['audit_data'] = audit_data
                 boolean_expr_check_list.append(boolean_expr_dict)
@@ -264,7 +265,8 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
                 result_list.append(audit_result)
         except AuditCheckValidationError as validation_error:
             # add into error section
-            error_dict={}
+            error_dict = {}
+            error_dict['check_id'] = audit_id
             error_dict['tag'] = audit_data['tag']
             error_dict['description'] = audit_data['description']
             error_dict['check_result'] = CHECK_STATUS['Error']
@@ -274,6 +276,7 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
         except AuditCheckVersionIncompatibleError as version_error:
             # add into skipped section
             skipped_dict = {}
+            skipped_dict['check_id'] = audit_id
             skipped_dict['tag'] = audit_data['tag']
             skipped_dict['description'] = audit_data['description']
             skipped_dict['check_result'] = CHECK_STATUS['Skipped']
@@ -283,16 +286,31 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
         except Exception as exc:
             log.error(exc)
 
-    #Evaluate boolean expressions
+    # Evaluate boolean expressions
+    boolean_expr_result_list = _evaluate_boolean_expression(boolean_expr_check_list, verbose, nova_profile, result_list)
+    result_list = result_list + boolean_expr_result_list
+
+    # return list of results for a file
+    return result_list
+
+
+def _is_boolean_expression(audit_impl):
+    return audit_impl.get('module', '') == 'bexpr'
+
+
+def _evaluate_boolean_expression(boolean_expr_check_list, verbose, nova_profile, result_list):
+    boolean_expr_result_list = []
     if boolean_expr_check_list:
         log.debug("Evaluating boolean expression checks")
         for boolean_expr in boolean_expr_check_list:
             try:
-                check_result = _execute_module(boolean_expr['audit_id'], boolean_expr['audit_impl'], boolean_expr['audit_data'], verbose, nova_profile, result_list)
+                check_result = _execute_module(boolean_expr['check_id'], boolean_expr['audit_impl'],
+                                               boolean_expr['audit_data'], verbose, nova_profile, result_list)
                 boolean_expr_result_list.append(check_result)
             except AuditCheckValidationError as validation_error:
                 # add into error section
                 error_dict = {}
+                error_dict['check_id'] = boolean_expr['check_id']
                 error_dict['tag'] = boolean_expr['audit_data']['tag']
                 error_dict['description'] = boolean_expr['audit_data']['description']
                 error_dict['check_result'] = CHECK_STATUS['Error']
@@ -302,6 +320,7 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
             except AuditCheckVersionIncompatibleError as version_error:
                 # add into skipped section
                 skipped_dict = {}
+                skipped_dict['check_id'] = boolean_expr['check_id']
                 skipped_dict['tag'] = boolean_expr['audit_data']['tag']
                 skipped_dict['description'] = boolean_expr['audit_data']['description']
                 skipped_dict['check_result'] = CHECK_STATUS['Skipped']
@@ -310,13 +329,9 @@ def _run_audit(audit_data_dict, tags, audit_file, verbose, labels):
                 log.error(version_error)
             except Exception as exc:
                 log.error(exc)
-        result_list = result_list + boolean_expr_result_list
 
-    #return list of results for a file
-    return result_list
+    return boolean_expr_result_list
 
-def _is_boolean_expression(audit_impl):
-    return audit_impl.get('module', '') == 'bexpr'
 
 def _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile, result_list=None):
     """
@@ -345,7 +360,7 @@ def _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile, res
     return_no_exec = audit_impl.get('return_no_exec', False)
     type = audit_impl.get('type', 'and').lower().strip()
 
-    #check for type in check implementation. If not present default is 'and'
+    # check for type in check implementation. If not present default is 'and'
     audit_result['run_config']['type'] = type
     audit_result['invert_result'] = invert_result
 
@@ -368,15 +383,14 @@ def _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile, res
     for audit_check in audit_impl['checks']:
         __nova__[validate_param_method](audit_id, audit_check)
 
-
-    # validate succeded, lets execute it and prepare result dictionary
+    # validate succeeded, lets execute it and prepare result dictionary
     audit_result['run_config']['checks'] = []
     execute_method = audit_impl['module'] + '.execute'
     filtered_log_method = audit_impl['module'] + '.get_filtered_params_to_log'
     # calculate the check result based on type parameter.
     # If type is 'and', all subchecks should pass for success.
     # If type is 'or', any passed subcheck will result in success.
-    overall_result = type=='and'
+    overall_result = type == 'and'
     failure_reasons = []
     for audit_check in audit_impl['checks']:
         if result_list is not None:
@@ -406,7 +420,7 @@ def _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile, res
         else:
             overall_result = overall_result or module_result_local['result']
 
-    #Update overall check result based on invert result
+    # Update overall check result based on invert result
     overall_result = overall_result != invert_result
 
     if overall_result:
@@ -418,8 +432,8 @@ def _execute_module(audit_id, audit_impl, audit_data, verbose, nova_profile, res
             audit_result['failure_reason'] = failure_reason
         else:
             if failure_reasons:
-                    failure_reasons = set(failure_reasons)
-                    audit_result['failure_reason'] = ', '.join(failure_reasons)
+                failure_reasons = set(failure_reasons)
+                audit_result['failure_reason'] = ', '.join(failure_reasons)
             else:
                 if invert_result:
                     audit_result['failure_reason'] = 'Check failed due to invert result is set to true'
@@ -457,10 +471,10 @@ def _is_audit_check_version_compatible(audit_check_id, audit_impl):
         return True
     version_str = version_str.upper()
     version_list = [[x.strip() for x in item.split("AND")] for item in version_str.split("OR")]
-    #'>=2.0.0 AND >3.0.0 AND <=4.0.0 OR ==5.0.0' becomes [['>=2.0.0','>3.0.0','<=4.0.0'], ['==5.0.0']]
-    for expression in version_list: #Outer loop to evaluate OR conditions
-        condition_match=True
-        for condition in expression: #Inner loop to evaluate AND conditions
+    # '>=2.0.0 AND >3.0.0 AND <=4.0.0 OR ==5.0.0' becomes [['>=2.0.0','>3.0.0','<=4.0.0'], ['==5.0.0']]
+    for expression in version_list:  # Outer loop to evaluate OR conditions
+        condition_match = True
+        for condition in expression:  # Inner loop to evaluate AND conditions
             if condition.startswith('<='):
                 condition = condition[2:]
                 result = current_version <= version.parse(condition)
@@ -481,7 +495,8 @@ def _is_audit_check_version_compatible(audit_check_id, audit_impl):
                 result = current_version != version.parse(condition)
             else:
                 # Throw error as unexpected string occurs
-                log.error("Invalid syntax in version condition, check_id: %s condition: %s" % (audit_check_id, condition))
+                log.error(
+                    "Invalid syntax in version condition, check_id: %s condition: %s" % (audit_check_id, condition))
             condition_match = condition_match and result
             if not condition_match:
                 # Found a false condition. No need to evaluate further for AND conditions
@@ -490,13 +505,15 @@ def _is_audit_check_version_compatible(audit_check_id, audit_impl):
             # Found a true condition. No need to evaluate further for OR conditions
             return True
     return False
-    
+
+
 def _validate_audit_data(audit_id, audit_impl):
     if 'module' not in audit_impl:
         log.error('Matched implementation does not have module mentioned, check_id: %s', audit_id)
         return False
 
     return True
+
 
 def _get_matched_implementation(audit_check_id, audit_data, tags, labels):
     log.debug('Getting matching implementation')
@@ -506,14 +523,16 @@ def _get_matched_implementation(audit_check_id, audit_data, tags, labels):
     if labels:
         check_labels = audit_data.get('labels', [])
         if not set(labels).issubset(check_labels):
-            log.debug('Not executing audit_check: %s, user passed label: %s did not match audit labels: %s', audit_check_id, labels, check_labels)
+            log.debug('Not executing audit_check: %s, user passed label: %s did not match audit labels: %s',
+                      audit_check_id, labels, check_labels)
             return None
 
     # check if tag passed matches with current check or not
     # if tag is not matched, no need to fetch matched implementation
     audit_check_tag = audit_data.get('tag', audit_check_id)
     if not fnmatch.fnmatch(audit_check_tag, tags):
-        log.debug('Not executing audit_check: %s, user passed tag: %s did not match this audit tag: %s', audit_check_id, tags, audit_check_tag)
+        log.debug('Not executing audit_check: %s, user passed tag: %s did not match this audit tag: %s', audit_check_id,
+                  tags, audit_check_tag)
         return None
 
     # Lets look for matching implementation based on os.filter grain
@@ -525,6 +544,7 @@ def _get_matched_implementation(audit_check_id, audit_data, tags, labels):
 
     log.debug('No target matched for audit_check_id: %s', audit_check_id)
     return None
+
 
 def _load_and_validate_yaml_file(filepath, audit_filename):
     """
@@ -556,7 +576,7 @@ def _load_and_validate_yaml_file(filepath, audit_filename):
         log.error('yaml data could not be loaded in python dictionary form: %s', audit_filename)
         return None
     return yaml_data
-    
+
 
 def _get_audit_files(audit_files):
     """Get audit files list, if valid
@@ -576,8 +596,8 @@ def _get_audit_files(audit_files):
 
     # prepare paths
     return ['salt://' + BASE_DIR_NOVA_PROFILES + os.sep + audit_file.replace('.', os.sep) + '.yaml'
-                    for audit_file in audit_files]
-    
+            for audit_file in audit_files]
+
 
 def _evaluate_results(result_dict, combined_dict, show_compliance, verbose):
     """
@@ -593,11 +613,11 @@ def _evaluate_results(result_dict, combined_dict, show_compliance, verbose):
         for result in result_list:
             sub_check = result.get('sub_check', False)
             if not sub_check:
-                dict={}
+                dict = {}
                 if verbose:
                     dict[result['tag']] = result
                 else:
-                    dict[result['tag']]=result['description']
+                    dict[result['tag']] = result['description']
                 if result['check_result'] == CHECK_STATUS['Success']:
                     result_dict[CHECK_STATUS['Success']].append(dict)
                 elif result['check_result'] == CHECK_STATUS['Failure']:
@@ -608,7 +628,8 @@ def _evaluate_results(result_dict, combined_dict, show_compliance, verbose):
                     result_dict[CHECK_STATUS['Skipped']].append(dict)
     if show_compliance:
         compliance = _calculate_compliance(result_dict)
-        result_dict['Compliance']=compliance
+        result_dict['Compliance'] = compliance
+
 
 def _calculate_compliance(result_dict):
     """
@@ -622,11 +643,12 @@ def _calculate_compliance(result_dict):
     # skipped = len(result_dict[CHECK_STATUS['Skipped']])
     total_checks = success + failure + error
     if total_checks > 0:
-        compliance = float(success)/total_checks
+        compliance = float(success) / total_checks
         compliance = int(compliance * 100)
         compliance = '{0}%'.format(compliance)
         return compliance
     return None
+
 
 def _build_data_by_tag(topfile, results):
     """
@@ -660,6 +682,7 @@ def _build_data_by_tag(topfile, results):
 
     return data_by_tag
 
+
 def _get_top_data(topfile):
     """
     Helper method to retrieve and parse the nova topfile
@@ -687,6 +710,7 @@ def _get_top_data(topfile):
         if __salt__['match.compound'](match):
             ret.extend(data)
     return ret
+
 
 def _clean_up_results(results):
     """

@@ -129,6 +129,9 @@ def parse_cmdline(params=None, chained=None, chained_status=None):
                     ret_match_list.extend(match_list)
                     break
 
+        if not ret_match_list:
+            log.info("No Match was found for %s in %s, returning False", key_aliases, command_line)
+            return False, ret_match_list
         return True, ret_match_list
     except Exception as e:
         log.exception("Some exception occurred in command_line_parser's parse_cmdline function %s", e)

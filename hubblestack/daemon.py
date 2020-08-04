@@ -33,6 +33,7 @@ from croniter import croniter
 
 import hubblestack.utils.signing
 import hubblestack.splunklogging
+import hubblestack.utils.osquery_lib
 import hubblestack.log
 import hubblestack.hec.opt
 import hubblestack.utils.stdrec

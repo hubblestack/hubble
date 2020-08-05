@@ -677,7 +677,8 @@ def load():
            'missing': __nova__.missing_modules,
            'data': list(__nova__.__data__.keys()),
            'missing_data': __nova__.__missing_data__}
-    return ret
+
+    return True, ret
 
 
 def version():

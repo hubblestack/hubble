@@ -71,7 +71,7 @@ def hubblestack_loaders():
     config_file = os.path.join(tests_dir, 'hubble.config')
     hubblestack.daemon.load_config(['-c', config_file])
 
-    hsl = Loaders(hubblestack.daemon.__opts__, hubblestack.daemon.__mods__, 
+    hsl = Loaders(hubblestack.daemon.__opts__, hubblestack.daemon.__mods__,
         hubblestack.daemon.__grains__, hubblestack.daemon.__utils__)
 
     yield hsl

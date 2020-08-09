@@ -1,0 +1,1470 @@
+grep:
+  whitelist:
+    single_user_mode_check:
+      data:
+        Ubuntu-18.04:
+        - /etc/shadow:
+            pattern: '^root:[*\!]:'
+            tag: CIS-1.4.3
+      description: Ensure authentication required for single user mode
+    mounts_home_partition_nodev:
+      data:
+        Ubuntu-18.04:
+        - /proc/mounts:
+            match_output: nodev
+            pattern: /home
+            tag: CIS-1.1.13
+      description: Ensure nodev option set on /home partition
+    mounts_dev_shm_partition_nodev:
+      data:
+        Ubuntu-18.04:
+        - /proc/mounts:
+            match_output: nodev
+            pattern: /dev/shm
+            tag: CIS-1.1.14
+      description: Ensure nodev option set on /dev/shm partition
+    mounts_dev_shm_partition_noexec:
+      data:
+        Ubuntu-18.04:
+        - /proc/mounts:
+            match_output: noexec
+            pattern: /dev/shm
+            tag: CIS-1.1.16
+      description: Ensure noexec option set on /dev/shm partition
+    mounts_dev_shm_partition_nosuid:
+      data:
+        Ubuntu-18.04:
+        - /proc/mounts:
+            match_output: nosuid
+            pattern: /dev/shm
+            tag: CIS-1.1.15
+      description: Ensure nosuid option set on /dev/shm partition
+    mounts_tmp_partition_nodev:
+      data:
+        Ubuntu-18.04:
+        - /proc/mounts:
+            match_output: nodev
+            pattern: /tmp
+            tag: CIS-1.1.3
+      description: Ensure nodev option set on /tmp partition
+    mounts_tmp_partition_nosuid:
+      data:
+        Ubuntu-18.04:
+        - /proc/mounts:
+            match_output: nosuid
+            pattern: /tmp
+            tag: CIS-1.1.4
+      description: Ensure nosuid option set on /tmp partition
+    mount_var_tmp_partition_nodev:
+      data:
+        Ubuntu-18.04:
+        - /proc/mounts:
+            match_output: nodev
+            pattern: /var/tmp
+            tag: CIS-1.1.7
+      description: Ensure nodev option set on /var/tmp partition
+    mount_var_tmp_partition_nosuid:
+      data:
+        Ubuntu-18.04:
+        - /proc/mounts:
+            match_output: nosuid
+            pattern: /var/tmp
+            tag: CIS-1.1.8
+      description: Ensure nosuid option set on /var/tmp partition
+    mount_var_tmp_partition_noexec:
+      data:
+        Ubuntu-18.04:
+        - /proc/mounts:
+            match_output: noexec
+            pattern: /var/tmp
+            tag: CIS-1.1.9
+      description: Ensure noexec option set on /var/tmp partition
+    aide_filesystem_scans:
+      data:
+        Ubuntu-18.04:
+        - /etc/cron.d:
+            pattern: aide
+            grep_args:
+              - '-r'
+            tag: CIS-1.3.2
+      description: Ensure filesystem integrity is regularly checked
+    boot_loader_passwd:
+      data:
+        Ubuntu-18.04:
+        - /boot/grub/grub.cfg:
+            pattern: password
+            tag: CIS-1.4.2
+      description: Ensure bootloader password is set
+    core_hard_limit:
+      data:
+        Ubuntu-18.04:
+        - /etc/security/limits.conf:
+            match_output: '0'
+            pattern: hard core
+            tag: CIS-1.5.1
+      description: Ensure core dumps are restricted
+    ntp_restrict_default:
+      data:
+        Ubuntu-18.04:
+        - /etc/ntp.conf:
+            pattern: '^restrict'
+            match_output: default
+            tag: CIS-2.2.1.2
+        - /etc/ntp.conf:
+            pattern: restrict -6 default
+            tag: CIS-2.2.1.2
+        - /etc/ntp.conf:
+            pattern: '^server'
+            tag: CIS-2.2.1.2
+        - /etc/init.d/ntp:
+            pattern: RUNASUSER=
+            tag: CIS-2.2.1.2
+      description: Ensure NTP is configured
+    configure_chrony:
+      data:
+        Ubuntu-18.04:
+        - /etc/chrony.conf:
+            tag: CIS-2.2.1.3
+            pattern: '^server'
+        - /etc/sysconfig/chronyd:
+            tag: CIS-2.2.1.3
+            pattern: 'chrony'
+      description: Ensure chrony is configured
+    local_mta:
+      data:
+        Ubuntu-18.04:
+          - /etc/postfix/main.cf:
+              pattern: '^inet_interfaces'
+              match_output: localhost
+              tag: CIS-2.2.15
+      description: Ensure mail transfer agent is configured for local-only mode
+    rsync:
+      data:
+        Ubuntu-18.04:
+        - /etc/default/rsync:
+            pattern: ^RSYNC_ENABLE
+            match_output: 'false'
+            tag: CIS-2.2.16
+      description: Ensure rsync service is not enabled
+    hosts_allow:
+      data:
+        Ubuntu-18.04:
+        - /etc/hosts.allow:
+            pattern: ALL
+            tag: CIS-3.4.2
+      description: Ensure /etc/hosts.allow is configured
+    hosts_deny:
+      data:
+        Ubuntu-18.04:
+        - /etc/hosts.deny:
+            pattern:  ALL
+            tag: CIS-3.4.3
+      description: Ensure /etc/hosts.deny is configured
+    firewall_default_deny:
+      data:
+        Ubuntu-18.04:
+        - /etc/iptables/rules.v4:
+            pattern: :INPUT
+            match_output: DROP
+            tag: CIS-3.6.2
+        - /etc/iptables/rules.v4:
+            pattern: :FORWARD
+            match_pattern: DROP
+            tag: CIS-3.6.2
+        - /etc/iptables/rules.v4:
+            pattern: :OUTPUT
+            match_output: DROP
+            tag: CIS-3.6.2
+      description: Ensure default deny firewall policy
+    firewall_accept_lo:
+      data:
+        Ubuntu-18.04:
+        - /etc/iptables/rules.v4:
+            pattern: '"\-A INPUT \-i lo \-j"'
+            match_output: ACCEPT
+            tag: CIS-3.6.3
+        - /etc/iptables/rules.v4:
+            pattern: '"\-A OUTPUT \-o lo \-j"'
+            match_output: ACCEPT
+            tag: CIS-3.6.3
+        - /etc/iptables/rules.v4:
+            pattern: '"\-A INPUT \-s 127.0.0.0/8 \-j"'
+            match_output: DROP
+            tag: CIS-3.6.3
+      description: Ensure loopback traffic is configured
+#3.6.5 is not implemented as need code changes
+    rsyslog_file_perms:
+      data:
+        Ubuntu-18.04:
+        - /etc/rsyslog.conf:
+            pattern: '^\$FileCreateMode'
+            match_output: '0640'
+            tag: CIS-4.2.1.3
+            allow_more_strict: true
+      description: Ensure rsyslog default file permissions configured
+    rsyslog_remote_logging:
+      data:
+        Ubuntu-18.04:
+        - /etc/rsyslog.conf:
+            pattern: ^*.*[^I][^I]*@
+            tag: CIS-4.2.1.4
+      description: Ensure rsyslog is configured to send logs to a remote log host
+    syslog-ng_file_perms:
+      data:
+        Ubuntu-18.04:
+        - /etc/syslog-ng/syslog-ng.conf:
+            pattern: ^options
+            match_output: 'perm(0640)'
+            tag: CIS-4.2.2.3
+      description: Ensure syslog-ng default file permissions configured
+    lockout_account:
+      data:
+        Ubuntu-18.04:
+        - /etc/pam.d/system-auth:
+            pattern: '"^auth\s+required\s+pam_faillock\.so.*"'
+            match_output: deny=5
+            grep_args:
+              - '-E'
+            tag: CIS-5.3.2
+        - /etc/pam.d/password-auth:
+            pattern: '"^auth\s+required\s+pam_faillock\.so.*"'
+            match_output: deny=5
+            grep_args:
+              - '-E'
+            tag: CIS-5.3.2
+      description: Ensure lockout for failed password attempts is configured
+    pam_password_reuse:
+      data:
+        Ubuntu-18.04:
+        - /etc/pam.d/common-password:
+            pattern: remember
+            match_output: 'remember=5'
+            tag: CIS-5.3.3
+      description: Ensure password reuse is limited
+    ssh_version_2:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: ^Protocol
+            match_output: Protocol\s+2
+            match_output_regex: True
+            tag: CIS-5.2.2
+      description: Ensure SSH Protocol is set to 2
+    ssh_log_level:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: ^LogLevel
+            match_output: LogLevel\s+INFO
+            match_output_regex: True
+            tag: CIS-5.2.3
+      description: Ensure SSH LogLevel is set to INFO
+    ssh_disable_xforward:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: ^X11Forwarding
+            match_output: X11Forwarding\s+no
+            match_output_regex: True
+            tag: CIS-5.2.4
+      description: Ensure SSH X11 forwarding is disabled
+    ssh_auth_retries:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: ^MaxAuthTries
+            match_output_regex: True
+            match_output: "^MaxAuthTries +[1-4]$"
+            tag: CIS-5.2.5
+      description: Ensure SSH MaxAuthTries is set to 4 or less
+    ssh_ignore_rhosts:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: ^IgnoreRhosts
+            match_output: IgnoreRhosts\s+yes
+            match_output_regex: True
+            tag: CIS-5.2.6
+      description: Ensure SSH IgnoreRhosts is enabled
+    ssh_hostbased_auth:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: ^HostbasedAuthentication
+            match_output: HostbasedAuthentication\s+no
+            match_output_regex: True
+            tag: CIS-5.2.7
+      description: Ensure SSH HostbasedAuthentication is disabled
+    ssh_permit_root:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: ^PermitRootLogin
+            match_output: PermitRootLogin\s+no
+            match_output_regex: True
+            tag: CIS-5.2.8
+      description: Ensure SSH root login is disabled
+    ssh_permit_empty_pw:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: ^PermitEmptyPasswords
+            match_output: PermitEmptyPasswords\s+no
+            match_output_regex: True
+            tag: CIS-5.2.9
+      description: Ensure SSH PermitEmptyPasswords is disabled
+    ssh_permit_user_env:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: ^PermitUserEnvironment
+            match_output: PermitUserEnvironment\s+no
+            match_output_regex: True
+            tag: CIS-5.2.10
+      description: Ensure SSH PermitUserEnvironment is disabled
+    sshd_idle_timeout:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: ^ClientAliveInterval
+            match_output: ^ClientAliveInterval +([1-2]{0,1}\d{1,2}|300)$
+            match_output_regex: True
+            tag: CIS-5.2.12
+        - /etc/ssh/sshd_config:
+            pattern: ClientAliveCountMax
+            match_output: "^ClientAliveCountMax +[0-3]$"
+            match_output_regex: True
+            tag: CIS-5.2.12
+      description: Ensure SSH Idle Timeout Interval is configured
+    sshd_gracetime:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: ^LoginGraceTime
+            match_output: ^LoginGraceTime ([0-5]{0,1}\d|60|1m)$
+            match_output_regex: True
+            tag: CIS-5.2.13
+      description: Ensure SSH LoginGraceTime is set to one minute or less
+    ssh_limit_access:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            pattern: '^AllowUsers|^AllowGroups|^DenyUsers|^DenyGroups'
+            grep_args:
+              - '-E'
+            tag: CIS-5.2.14
+      description:  Ensure SSH access is limited
+    sshd_banner:
+      data:
+        Ubuntu-18.04:
+        - /etc/ssh/sshd_config:
+            match_output: "/etc/issue.net"
+            pattern: ^Banner
+            tag: CIS-5.2.15
+      description: Ensure SSH warning banner is configured
+    pam_pwquality_try_first_pass:
+      data:
+        Ubuntu-18.04:
+        - /etc/pam.d/common-password:
+            match_output: try_first_pass
+            pattern: pam_pwquality.so
+            tag: CIS-5.3.1
+        - /etc/pam.d/common-password:
+            match_output: retry=3
+            pattern: pam_pwquality.so
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: minlen
+            match_output: '14'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: dcredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: ucredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: ocredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: lcredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+      description: Ensure password creation requirements are configured
+    password_hash:
+      data:
+        Ubuntu-18.04:
+        - /etc/pam.d/common-password:
+            pattern: '"^password\s.*\w+.*\s+pam_unix.so\s+\w+\s"'
+            match_output: sha512
+            grep_args:
+              - '-E'
+            tag: CIS-5.3.4
+      description: Ensure password hashing algorithm is SHA-512
+    limit_su_access:
+      data:
+        Ubuntu-18.04:
+        - /etc/pam.d/su:
+            pattern: pam_wheel.so
+            match_output: use_uid
+            tag: CIS-5.6
+        - /etc/group:
+            pattern: wheel
+            tag: CIS-5.6
+      description: Ensure access to the su command is restricted
+    password_max_days:
+      data:
+        Ubuntu-18.04:
+        - /etc/login.defs:
+            pattern: PASS_MAX_DAYS
+            match_output: '90'
+            tag: CIS-5.4.1.1
+      description: Ensure password expiration is 90 days or less
+    password_min_days:
+      data:
+        Ubuntu-18.04:
+        - /etc/login.defs:
+            pattern: PASS_MIN_DAYS
+            match_output: '7'
+            tag: CIS-5.4.1.2
+      description: Ensure minimum days between password changes is 7 or more
+    password_warn_days:
+      data:
+        Ubuntu-18.04:
+        - /etc/login.defs:
+            pattern: PASS_WARN_AGE
+            match_output: '7'
+            tag: CIS-5.4.1.3
+      description: Ensure password expiration warning days is 7 or more
+    default_umask:
+      data:
+        Ubuntu-18.04:
+        - /etc/bash.bashrc:
+            pattern: umask
+            match_pattern: '0[2367]7'
+            grep_args:
+              - '-E'
+            tag: CIS-5.4.4
+        - /etc/profile.d/cis.sh:
+            pattern: umask
+            match_pattern: '0[2367]7'
+            grep_args:
+              - '-E'
+            tag: CIS-5.4.4
+      description: Ensure default user umask is 027 or more restrictive
+    passwd_inactive:
+      data:
+        Ubuntu-18.04:
+        - /etc/default/useradd:
+            pattern: INACTIVE=30
+            tag: CIS-5.4.1.4
+      description: Ensure inactive password lock is 30 days or less
+  blacklist:
+    disable_mount_cramfs:
+      data:
+        Ubuntu-18.04:
+        - /proc/modules:
+            pattern: "^cramfs "
+            tag: CIS-1.1.1.1
+      description: Ensure mounting of cramfs filesystems is disabled
+    disable_mount_freevxfs:
+      data:
+        Ubuntu-18.04:
+        - /proc/modules:
+            pattern: "^freevxfs "
+            tag: CIS-1.1.1.2
+      description: Ensure mounting of freevxfs filesystems is disabled
+    disable_mount_jffs2:
+      data:
+        Ubuntu-18.04:
+        - /proc/modules:
+            pattern: "^jffs2 "
+            tag: CIS-1.1.1.3
+      description: Ensure mounting of jffs2 filesystems is disabled
+    disable_mount_hfs:
+      data:
+        Ubuntu-18.04:
+        - /proc/modules:
+            pattern: "^hfs "
+            tag: CIS-1.1.1.4
+      description: Ensure mounting of hfs filesystems is disabled
+    disable_mount_hfsplus:
+      data:
+        Ubuntu-18.04:
+        - /proc/modules:
+            pattern: "^hfsplus "
+            tag: CIS-1.1.1.5
+      description: Ensure mounting of hfsplus filesystems is disabled
+    disable_mount_squashfs:
+      data:
+        Ubuntu-18.04:
+        - /proc/modules:
+            pattern: "^squashfs "
+            tag: CIS-1.1.1.6
+      description: Ensure mounting of squashfs filesystems is disabled
+    disable_mount_udf:
+      data:
+        Ubuntu-18.04:
+        - /proc/modules:
+            pattern: "^udf "
+            tag: CIS-1.1.1.7
+      description: Ensure mounting of udf filesystems is disabled
+    disable_mount_fat:
+      data:
+        Ubuntu-18.04:
+        - /proc/modules:
+            pattern: "^vfat "
+            tag: CIS-1.1.1.8
+      description: Ensure mounting of FAT filesystems is disabled
+    chargen_disabled:
+      data:
+        Ubuntu-18.04:
+        - /etc/xinetd.d/chargen-dgram:
+            pattern: disable
+            match_output: 'no'
+            tag: CIS-2.1.1
+            match_on_file_missing: False
+        - /etc/xinetd.d/chargen-stream:
+            pattern: disable
+            match_output: 'no'
+            tag: CIS-2.1.1
+            match_on_file_missing: False
+      description: Ensure chargen services are not enabled
+    daytime_disabled:
+      data:
+        Ubuntu-18.04:
+        - /etc/xinetd.d/daytime-dgram:
+            pattern: disable
+            match_output: 'no'
+            tag: CIS-2.1.2
+            match_on_file_missing: False
+        - /etc/xinetd.d/daytime-stream:
+            pattern: disable
+            match_output: 'no'
+            tag: CIS-2.1.2
+            match_on_file_missing: False
+      description: Ensure daytime services are not enabled
+    discard_disabled:
+      data:
+        Ubuntu-18.04:
+        - /etc/xinetd.d/discard-dgram:
+            pattern: disable
+            match_output: 'no'
+            tag: CIS-2.1.3
+            match_on_file_missing: False
+        - /etc/xinetd.d/discard-stream:
+            pattern: disable
+            match_output: 'no'
+            tag: CIS-2.1.3
+            match_on_file_missing: False
+      description: Ensure discard services are not enabled
+    echo_disabled:
+      data:
+        Ubuntu-18.04:
+        - /etc/xinetd.d/echo-dgram:
+            pattern: disable
+            match_output: 'no'
+            tag: CIS-2.1.4
+            match_on_file_missing: False
+        - /etc/xinetd.d/echo-stream:
+            pattern: disable
+            match_output: 'no'
+            tag: CIS-2.1.4
+            match_on_file_missing: False
+      description: Ensure echo services are not enabled
+    time_disabled:
+      data:
+        Ubuntu-18.04:
+        - /etc/xinetd.d/time-dgram:
+            pattern: disable
+            match_output: 'no'
+            tag: CIS-2.1.5
+            match_on_file_missing: False
+        - /etc/xinetd.d/time-stream:
+            pattern: disable
+            match_output: 'no'
+            tag: CIS-2.1.5
+            match_on_file_missing: False
+      description: Ensure time services are not enabled
+    banner_os_info_motd:
+      data:
+        Ubuntu-18.04:
+        - /etc/motd:
+            pattern: '\v'
+            tag: CIS-1.7.1.1
+        - /etc/motd:
+            pattern: '\r'
+            tag: CIS-1.7.1.1
+        - /etc/motd:
+            pattern: '\m'
+            tag: CIS-1.7.1.1
+        - /etc/motd:
+            pattern: '\s'
+            tag: CIS-1.7.1.1
+      description: Ensure message of the day is configured properly
+    legacy_entries_passwd:
+      data:
+        Ubuntu-18.04:
+        - /etc/passwd:
+            pattern: '^+'
+            tag: CIS-6.2.2
+      description: Ensure No Legacy "+" Entries Exist in /etc/passwd File
+    legacy_entries_shadow:
+      data:
+        Ubuntu-18.04:
+        - /etc/shadow:
+            pattern: '^+'
+            tag: CIS-6.2.3
+      description: Ensure No Legacy "+" Entries Exist in /etc/shadow File
+    legacy_entries_group:
+      data:
+        Ubuntu-18.04:
+        - /etc/group:
+            pattern: '^+'
+            tag: CIS-6.2.4
+      description: Ensure No Legacy "+" Entries Exist in /etc/group File
+    ensure_local_login_warning:
+      data:
+        Ubuntu-18.04:
+        - /etc/issue:
+            pattern: '"(\\\v|\\\r|\\\m|\\\s)"'
+            grep_args:
+              - '-E'
+            tag: CIS-1.7.1.2
+      description: Ensure local login warning banner is configured properly
+    ensure_remote_login_warning:
+      data:
+        Ubuntu-18.04:
+        - /etc/issue.net:
+            pattern: '"(\\\v|\\\r|\\\m|\\\s)"'
+            grep_args:
+              - '-E'
+            tag: CIS-1.7.1.3
+      description: Ensure remote login warning banner is configured properly
+    talkd:
+      data:
+        Ubuntu-18.04:
+        - /etc/xinetd*:
+            pattern: '^talk'
+            grep_args:
+              - '-r'
+            tag: CIS-2.1.7
+        - /etc/xinetd*:
+            pattern: '^ntalk'
+            grep_args:
+              - '-r'
+            tag: CIS-2.1.7
+      description: Ensure talk server is not enabled
+    telnet:
+      data:
+        Ubuntu-18.04:
+        - /etc/xinetd*:
+            pattern: '^telnet'
+            greps_args:
+              - '-r'
+            tag: CIS-2.1.8
+      description: Ensure Telnet Server is not Enabled
+    tftp:
+      data:
+        Ubuntu-18.04:
+        - /etc/xinetd*:
+            pattern: '^tftp'
+            grep_args:
+              - '-r'
+            tag: CIS-2.1.9
+      description: Ensure tftp server is not enabled
+
+service:
+  blacklist:
+    autofs:
+      data:
+        Ubuntu-18.04:
+        - autofs: CIS-1.1.21
+      description: Disable Automounting
+    avahi_daemon:
+      data:
+        Ubuntu-18.04:
+          - avahi-daemon: CIS-2.2.3
+      description: Ensure Avahi Server is not enabled
+    cups:
+      data:
+        Ubuntu-18.04:
+          - cups: CIS-2.2.4
+      description: Ensure CUPS is not enabled
+    dhcp-server:
+      data:
+        Ubuntu-18.04:
+          - isc-dhcp-server: CIS-2.2.5
+          - isc-dhcp-server6: CIS-2.2.5
+      description: Ensure DHCP Server is not enabled
+    slapd:
+      data:
+        Ubuntu-18.04:
+        - slapd: CIS-2.2.6
+      description: Ensure LDAP server is not enabled
+    nfs-service:
+      data:
+        Ubuntu-18.04:
+        - nfs-kernel-server: CIS-2.2.7
+      description: Ensure NFS and RPC are not enabled
+    rpc-bind-service:
+      data:
+        Ubuntu-18.04:
+        - rpcbind: CIS-2.2.7
+      description: Ensure NFS and RPC are not enabled
+    bind9:
+      data:
+        Ubuntu-18.04:
+        - bind9: CIS-2.2.8
+      description: Ensure DNS Server is not enabled
+    http-server-service:
+      data:
+        Ubuntu-18.04:
+        - apache2: CIS-2.2.10
+      description: Ensure HTTP server is not enabled
+    imap-pop3-server-service:
+      data:
+        Ubuntu-18.04:
+        - dovecot: CIS-2.2.11
+      description: Ensure IMAP and POP3 server is not enabled
+  whitelist:
+    syslog-ng_running:
+      data:
+        Ubuntu-18.04:
+        - syslog-ng: CIS-4.2.2.1
+      description: Ensure syslog-ng service is enabled
+    cron:
+      data:
+        Ubuntu-18.04:
+          - cron: CIS-5.1.1
+      description: Enable cron Daemon
+
+sysctl:
+  disable_suid_dumpable:
+    data:
+      Ubuntu-18.04:
+      - fs.suid_dumpable:
+          match_output: '0'
+          tag: CIS-1.5.1
+    description: Restrict Core Dumps
+  randomize_va_space:
+    data:
+      Ubuntu-18.04:
+      - kernel.randomize_va_space:
+          match_output: '2'
+          tag: CIS-1.5.3
+    description: Ensure address space layout randomization (ASLR) is enabled
+  disable_ip4_ip_forward:
+    data:
+      Ubuntu-18.04:
+      - net.ipv4.ip_forward:
+          match_output: '0'
+          tag: CIS-3.1.1
+    description: Ensure IP forwarding is disabled
+  disable_packet_redirect:
+    data:
+      Ubuntu-18.04:
+      - net.ipv4.conf.all.send_redirects:
+          match_output: '0'
+          tag: CIS-3.1.2
+    description: Ensure packet redirect sending is disabled
+  disable_source_routed_packets:
+    data:
+      Ubuntu-18.04:
+      - net.ipv4.conf.all.accept_source_route:
+          match_output: '0'
+          tag: CIS-3.2.1
+    description: Ensure source routed packets are not accepted
+  disable_icmp_redirect:
+    data:
+      Ubuntu-18.04:
+      - net.ipv4.conf.all.accept_redirects:
+          match_output: '0'
+          tag: CIS-3.2.2
+    description: Ensure ICMP redirects are not accepted
+  disable_secure_icmp_redirect:
+    data:
+      Ubuntu-18.04:
+      - net.ipv4.conf.all.secure_redirects:
+          match_output: '0'
+          tag: CIS-3.2.3
+    description: Ensure secure ICMP redirects are not accepted
+  log_martians:
+    data:
+      Ubuntu-18.04:
+      - net.ipv4.conf.all.log_martians:
+          match_output: '1'
+          tag: CIS-3.2.4
+    description: Ensure suspicious packets are logged
+  ignore_broadcast:
+    data:
+      Ubuntu-18.04:
+      - net.ipv4.icmp_echo_ignore_broadcasts:
+          match_output: '1'
+          tag: CIS-3.2.5
+    description: Ensure broadcast ICMP requests are ignored
+  bogus_errors:
+    data:
+      Ubuntu-18.04:
+      - net.ipv4.icmp_ignore_bogus_error_responses:
+          match_output: '1'
+          tag: CIS-3.2.6
+    description: Ensure bogus ICMP responses are ignored
+  rp_filter:
+    data:
+      Ubuntu-18.04:
+      - net.ipv4.conf.all.rp_filter:
+          match_output: '1'
+          tag: CIS-3.2.7
+    description: Ensure Reverse Path Filtering is enabled
+  tcp_syncookies:
+    data:
+      Ubuntu-18.04:
+      - net.ipv4.tcp_syncookies:
+          match_output: '1'
+          tag: CIS-3.2.8
+    description: Ensure TCP SYN Cookies is enabled
+
+pkg:
+  blacklist:
+    xinetd:
+      data:
+        Ubuntu-18.04:
+          - xinetd: CIS-2.1.10
+      description: Ensure xinetd is not install
+    openbsd-inetd:
+      data:
+        Ubuntu-18.04:
+        - openbsd-inetd: CIS-2.1.11
+      description: Ensure openbsd-inetd is not installed
+    prelink:
+      data:
+        Ubuntu-18.04:
+        - prelink: CIS-1.5.4
+      description: Ensure prelink is disabled
+    nis:
+      data:
+        Ubuntu-18.04:
+        - nis: CIS-2.3.1
+      description: Ensure NIS Client is not installed
+    talkd:
+      data:
+        Ubuntu-18.04:
+        - talkd: CIS-2.1.7
+      description: Ensure Talk Server is not installed
+    telnet-server:
+      data:
+        Ubuntu-18.04:
+        - telnetd: CIS-2.1.8
+      description: Ensure Telnet Server is not installed
+    telnet-client:
+      data:
+        Ubuntu-18.04:
+        - telnet: CIS-2.3.4
+      description: Ensure Telnet Client is not installed
+    ldap-client:
+      data:
+        Ubuntu-18.04:
+        - ldap-utils: CIS-2.3.5
+      description: Ensure LDAP Client is not installed
+    talk:
+      data:
+        Ubuntu-18.04:
+        - talk: CIS-2.3.3
+      description: Ensure Talk Client is not installed
+    xserver:
+      data:
+        Ubuntu-18.04:
+        - xserver-xorg-core\*: CIS-2.2.2
+      description: Ensure X Window System is not installed
+    biosdevname:
+      data:
+        Ubuntu-18.04:
+        - biosdevname: CIS-6.17
+      description: Ensure biosdevname is not enabled
+    rsh-server:
+      data:
+        Ubuntu-18.04:
+        - rsh-server: CIS-2.1.6
+      description: Ensure rsh server is not enabled
+    rsh-client:
+      data:
+        Ubuntu-18.04:
+        - rsh-client: CIS-2.3.2
+        - rsh-redone-client: CIS-2.3.2
+      description: Ensure rsh client is not installed
+  whitelist:
+    ntp:
+      data:
+        Ubuntu-18.04:
+        - ntp: CIS-2.2.1.2
+      description: Configure Network Time Protocol (NTP)
+    aide:
+      data:
+        Ubuntu-18.04:
+        - aide: CIS-1.3.1
+      description: Ensure AIDE is installed
+    tcpd:
+      data:
+        Ubuntu-18.04:
+        - tcpd: CIS-3.4.1
+      description: Ensure TCP Wrappers is installed
+    rsyslog:
+      data:
+        Ubuntu-18.04:
+        - rsyslog: CIS-4.2.3
+      description: Ensure rsyslog is installed
+    iptables:
+      data:
+        Ubuntu-18.04:
+        - iptables: CIS-3.6.1
+      description: Ensure iptables is installed
+stat:
+  grub_cfg_perms:
+    data:
+      Ubuntu-18.04:
+      - /boot/grub/grub.cfg:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 600
+          allow_more_strict: true
+          tag: CIS-1.4.1
+    description: Ensure permissions on bootloader config are configured
+  hosts_allow_perms:
+    data:
+      Ubuntu-18.04:
+      - /etc/hosts.allow:
+          gid: 0
+          group: root
+          mode: 644
+          allow_more_strict: true
+          tag: CIS-3.4.4
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/hosts.allow are configured
+  hosts_deny_perms:
+    data:
+      Ubuntu-18.04:
+      - /etc/hosts.deny:
+          gid: 0
+          group: root
+          mode: 644
+          allow_more_strict: true
+          tag: CIS-3.4.5
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/hosts.deny are configured
+  crontab_own_perms:
+    data:
+      Ubuntu-18.04:
+      - /etc/crontab:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 600
+          allow_more_strict: true
+          tag: CIS-5.1.2
+    description:  Ensure permissions on /etc/crontab are configured
+  cron_hourly_own_perms:
+    data:
+      Ubuntu-18.04:
+      - /etc/cron.hourly:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 600
+          allow_more_strict: true
+          tag: CIS-5.1.3
+    description:  Ensure permissions on /etc/cron.hourly are configured
+  cron_daily_own_perms:
+    data:
+      Ubuntu-18.04:
+      - /etc/cron.daily:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 600
+          allow_more_strict: true
+          tag: CIS-5.1.4
+    description:  Ensure permissions on /etc/cron.daily are configured
+  cron_weekly_own_perms:
+    data:
+      Ubuntu-18.04:
+      - /etc/cron.weekly:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 600
+          allow_more_strict: true
+          tag: CIS-5.1.5
+    description:  Ensure permissions on /etc/cron.weekly are configured
+  cron_monthly_own_perms:
+    data:
+      Ubuntu-18.04:
+      - /etc/cron.monthly:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 600
+          allow_more_strict: true
+          tag: CIS-5.1.6
+    description:  Ensure permissions on /etc/cron.monthly are configured
+  cron_d_own_perms:
+    data:
+      Ubuntu-18.04:
+      - /etc/cron.d:
+          gid: 0
+          group: root
+          uid: 0
+          user: root
+          mode: 700
+          allow_more_strict: true
+          tag: CIS-5.1.7
+    description:  Ensure permissions on /etc/cron.d are configured
+  at_cron_allow:
+    data:
+      Ubuntu-18.04:
+      - /etc/cron.deny:
+          gid: null
+          group: null
+          mode: null
+          tag: CIS-5.1.8
+          uid: null
+          user: null
+      - /etc/at.deny:
+          gid: null
+          group: null
+          mode: null
+          tag: CIS-5.1.8
+          uid: null
+          user: null
+      - /etc/cron.allow:
+          gid: 0
+          group: root
+          mode: 600
+          allow_more_strict: true
+          tag: CIS-5.1.8
+          uid: 0
+          user: root
+      - /etc/at.allow:
+          gid: 0
+          group: root
+          mode: 600
+          allow_more_strict: true
+          tag: CIS-5.1.8
+          uid: 0
+          user: root
+    description: Ensure at/cron is restricted to authorized users
+  sshd_config:
+    data:
+      Ubuntu-18.04:
+      - /etc/ssh/sshd_config:
+          uid: 0
+          gid: 0
+          user: root
+          group: root
+          mode: 600
+          allow_more_strict: true
+          tag: CIS-5.2.1
+    description: Ensure permissions on /etc/ssh/sshd_config are configured
+  warning_banner_motd:
+    data:
+      Ubuntu-18.04:
+      - /etc/motd:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-1.7.1.4
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/motd are configured
+  banner_files_issue:
+    data:
+      Ubuntu-18.04:
+      - /etc/issue:
+          uid: 0
+          gid: 0
+          user: root
+          group: root
+          mode: 644
+          allow_more_strict: true
+          tag: CIS-1.7.1.5
+    description: Ensure permissions on /etc/issue are configured
+  banner_files_issue_net:
+    data:
+      Ubuntu-18.04:
+      - /etc/issue.net:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-1.7.1.6
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/issue.net are configured
+  passwd_perms:
+    data:
+      Ubuntu-18.04:
+      - /etc/passwd:
+          uid: 0
+          gid: 0
+          user: root
+          group: root
+          mode: 644
+          tag: CIS-6.1.2
+    description: Ensure permissions on /etc/passwd are configured
+  shadow_perms:
+    data:
+      Ubuntu-18.04:
+      - /etc/shadow:
+          uid: 0
+          gid: 42
+          user: root
+          group: shadow
+          mode: 640
+          tag: CIS-6.1.3
+    description: Ensure permissions on /etc/shadow are configured
+  group_perms:
+    data:
+      Ubuntu-18.04:
+      - /etc/group:
+          uid: 0
+          gid: 0
+          user: root
+          group: root
+          mode: 644
+          tag: CIS-6.1.4
+    description: Ensure permissions on /etc/group are configured
+  gshadow_owner_group:
+    data:
+      Ubuntu-18.04:
+      - /etc/gshadow:
+          uid: 0
+          gid: 42
+          user: root
+          group: shadow
+          tag: CIS-6.1.5
+    description: Ensure permissions on /etc/gshadow are configured
+  passwd-_own_perm:
+    data:
+      Ubuntu-18.04:
+      - /etc/passwd-:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.6
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/passwd- are configured
+  shadow-_own_perm:
+    data:
+      Ubuntu-18.04:
+      - /etc/shadow-:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.7
+          uid: 0
+          user: root
+    description: 'Ensure permissions on /etc/shadow- are configured'
+  group-_own_perm:
+    data:
+      Ubuntu-18.04:
+      - /etc/group-:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.8
+          uid: 0
+          user: root
+    description: 'Ensure permissions on /etc/group- are configured'
+  gshadow-_own_perm:
+    data:
+      Ubuntu-18.04:
+      - /etc/gshadow-:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.9
+          uid: 0
+          user: root
+    description: 'Ensure permissions on /etc/gshadow- are configured'
+misc:
+#  check_log_files_permission:
+#    data:
+#      Ubuntu-18.04:
+#       tag: CIS-4.2.4
+#       function: check_directory_files_permission
+#       args:
+#        - /var/log
+#        - 740
+#    description: Ensure permissions on all logfiles are configured
+  system_account_non_login:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-5.4.2
+        function: system_account_non_login
+    description: Ensure system accounts are non-login
+    control: Code change required for filtering the users by their login shell
+  default_group_for_root_account:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-5.4.3
+        function: default_group_for_root
+    description: 'Ensure default group for the root account is GID 0'
+  sshd_approved_macs:
+    data:
+      Ubuntu-18.04:
+       tag: CIS-5.2.11
+       function: check_list_values
+       args:
+         - /etc/ssh/sshd_config
+         - '^MACs'
+         - '^MACs(.*)$'
+         - null
+         - hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com,curve25519-sha256@libssh.org,diffie-hellman-group-exchange-sha256
+         - null
+         - ','
+    description: Ensure only approved MAC algorithms are used
+  ensure_password_fields_non_empty:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.1
+        function: check_password_fields_not_empty
+    description: Ensure password fields are not empty
+  root_is_only_uid_0_account:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.5
+        function: root_is_only_uid_0_account
+    description: 'Ensure root is the only UID 0 account'
+  check_path_integrity:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.6
+        function: check_path_integrity
+    description: Ensure root PATH Integrity
+  valid_home_directory:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.7
+        function: check_all_users_home_directory
+        args:
+        - 1000
+    description: 'Ensure all users home directories exist'
+  home_directory_permission:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.8
+        function: check_users_home_directory_permissions
+    description: 'Ensure users home directories permissions are 750 or more restrictive'
+  user_own_home_directory:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.9
+        function: check_users_own_their_home
+        args:
+        - 1000
+    description: Ensure users own their home directories
+#  check_users_dot_files_not_writable:
+#    data:
+#      Ubuntu-18.04:
+#        tag: CIS-6.2.10
+#        function: check_users_dot_files
+#    description: Ensure users dot files are not group or world writable
+  check_users_not_forward_files:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.11
+        function: check_users_forward_files
+    description: 'Ensure no users have .forward files'
+  check_no_users_netrc_files:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.12
+        function: check_users_netrc_files
+    description: Ensure no users have .netrc files
+  check_netrc_files_not_world_writable:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.13
+        function: check_netrc_files_accessibility
+    description: 'Ensure users .netrc Files are not group or world accessible'
+  check_no_users_have_rhosts_files:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.14
+        function: check_users_rhosts_files
+    description: Ensure no users have .rhosts files
+  check_groups_validity_in_systemfiles:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.15
+        function: check_groups_validity
+    description: Ensure all groups in /etc/passwd exist in /etc/group
+  no_duplicate_sid:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.16
+        function: check_duplicate_uids
+    description: Ensure no duplicate UIDs exist
+  no_duplicate_gid:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.17
+        function: check_duplicate_gids
+    description: Ensure no duplicate GIDs exist
+  check_duplicate_unames_exist:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.18
+        function: check_duplicate_unames
+    description: Ensure no duplicate user names exist
+  check_duplicate_gnames_exist:
+    data:
+      Ubuntu-18.04:
+        tag: CIS-6.2.19
+        function: check_duplicate_gnames
+    description: Ensure no duplicate group names exist
+systemctl:
+  whitelist:
+    rsyslog_enabled:
+      data:
+        Ubuntu-18.04:
+        - rsyslog:
+           tag: CIS-4.2.1.1
+      description: Ensure rsyslog Service is enabled
+    cron_deamon_enabled:
+      data:
+        Ubuntu-18.04:
+        - cron:
+           tag: CIS-5.1.1
+      description: Ensure cron daemon is enabled
+  blacklist:
+    avahi-daemon-disabled:
+      data:
+        Ubuntu-18.04:
+        - avahi-daemon:
+            tag: CIS-2.2.3
+      description: Ensure Avahi Server is not enabled
+    cups-disabled:
+      data:
+        Ubuntu-18.04:
+        - cups:
+            tag: CIS-2.2.4
+      description: Ensure CUPS is not enabled
+    dhcpd-disabled:
+      data:
+        Ubuntu-18.04:
+        - isc-dhcp-server:
+            tag: CIS-2.2.5
+      description: Ensure DHCP Server is not enabled
+    ldap-server-disabled:
+      data:
+        Ubuntu-18.04:
+        - slapd:
+            tag: CIS-2.2.6
+      description: Ensure LDAP server is not enabled
+    nfs-disabled:
+      data:
+        Ubuntu-18.04:
+        - nfs-kernel-server:
+            tag:  CIS-2.2.7
+      description: Ensure NFS and RPC are not enabled
+#    rpc-disabled:
+#      data:
+#        Ubuntu-18.04:
+#        - rpcbind:
+#            tag: CIS-2.2.7
+#      description: Ensure NFS and RPC are not enabled(rpcbind-systemctl)
+    dns-server-disabled:
+      data:
+        Ubuntu-18.04:
+        - bind9:
+            tag: CIS-2.2.8
+      description: Ensure DNS Server is not enabled
+    ftp-server-disabled:
+      data:
+        Ubuntu-18.04:
+        - vsftpd:
+            tag: CIS-2.2.9
+        - proftpd:
+            tag: CIS-2.2.9
+        - pure-ftpd:
+            tag: CIS-2.2.9
+      description: Ensure FTP Server is not enabled
+    http-server-disabled:
+      data:
+        Ubuntu-18.04:
+        - apache2:
+            tag: CIS-2.2.10
+      description: Ensure HTTP server is not enabled
+    imap-pop3-server-disabled:
+      data:
+        Ubuntu-18.04:
+        - dovecot:
+            tag: CIS-2.2.11
+      description: Ensure IMAP and POP3 server is not enabled
+    samba-server-disabled:
+      data:
+        Ubuntu-18.04:
+        - samba:
+            tag: CIS-2.2.12
+      description: Ensure Samba is not enabled
+    http-proxy-server-disabled:
+      data:
+        Ubuntu-18.04:
+        - squid:
+            tag: CIS-2.2.13
+      description: Ensure HTTP Proxy Server is not enabled
+    snmp-server-disabled:
+      data:
+        Ubuntu-18.04:
+        - snmpd:
+            tag: CIS-2.2.14
+      description: Ensure SNMP Server is not enabled
+    nis-server-disabled:
+      data:
+        Ubuntu-18.04:
+        - nis:
+            tag: CIS-2.2.17
+      description: Ensure NIS Server is not enabled
+    rsh-socket-disabled:
+      data:
+        Ubuntu-18.04:
+        - rsh.socket:
+            tag: CIS-2.1.6
+      description: Ensure rsh Server is not enabled
+    rlogin-socket-disabled:
+      data:
+        Ubuntu-18.04:
+        - rlogin.socket:
+            tag: CIS-2.1.6
+      description: Ensure rsh Server is not enabled
+    rexec-socket-disabled:
+      data:
+        Ubuntu-18.04:
+        - rexec.socket:
+            tag: CIS-2.1.6
+      description: Ensure rsh Server is not enabled
+    telnet-server-disabled:
+      data:
+        Ubuntu-18.04:
+        - telnet.socket:
+            tag: CIS-2.1.8
+      description: Ensure telnet server is not enabled
+    rsync-service-disabled:
+      data:
+        Ubuntu-18.04:
+        - rsync:
+            tag: CIS-2.2.16
+      description: Ensure rsync service is not enabled

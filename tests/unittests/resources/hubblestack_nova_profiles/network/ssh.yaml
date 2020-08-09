@@ -1,0 +1,4 @@
+netstat:
+  ssh:
+    address:
+      - '*:22'

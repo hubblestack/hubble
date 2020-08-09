@@ -1,0 +1,2226 @@
+win_auditpol:
+  whitelist:
+    audit_account_lockout:
+      data:
+        '*':
+        - 'account_lockout':
+            match_output: 'Success'
+            tag: CIS-17.5.1
+            value_type: 'equal'
+      description: Ensure 'Audit Account Lockout' is set to 'Success'
+    audit_application_group_management:
+      data:
+        '*':
+        - 'application_group_management':
+            match_output: 'Success and Failure'
+            tag: CIS-17.2.1
+            value_type: 'equal'
+      description: Ensure 'Audit Application Group Management' is set to 'Success and Failure'
+    audit_audit_policy_change:
+      data:
+        '*':
+        - 'audit_policy_change':
+            match_output: 'Success and Failure'
+            tag: CIS-17.7.1
+            value_type: 'equal'
+      description: Ensure 'Audit Audit Policy Change' is set to 'Success and Failure'
+    audit_authentication_policy_change:
+      data:
+        '*':
+        - 'authentication_policy_change':
+            match_output: 'Success'
+            tag: CIS-17.7.2
+            value_type: 'equal'
+      description: Ensure 'Audit Authentication Policy Change' is set to 'Success'
+    audit_authorization_policy_change:
+      data:
+        '*':
+          - 'authorization_policy_change':
+              tag: CIS-17.7.3
+              match_output: 'Success'
+              value_type: 'equal'
+      description: Ensure 'Audit Authorization Policy Change' is set to 'Success'
+    audit_computer_account_management:
+      data:
+        '*':
+        - 'computer_account_management':
+            match_output: 'Success and Failure'
+            tag: CIS-17.2.2
+            value_type: 'equal'
+      description: Ensure 'Audit Computer Account Management' is set to 'Success and Failure'
+    audit_credential_validation:
+      data:
+        '*':
+        - 'credential_validation':
+            match_output: 'Success and Failure'
+            tag: CIS-17.1.1
+            value_type: 'equal'
+      description: Ensure 'Audit Credential Validation' is set to 'Success and Failure'
+    audit_ipsec_driver:
+      data:
+        '*':
+        - 'IPsec_Driver':
+            match_output: 'Success and Failure'
+            tag: CIS-17.9.1
+            value_type: 'equal'
+      description: Ensure 'Audit IPsec Driver' is set to 'Success and Failure'
+    audit_logoff:
+      data:
+        '*':
+        - 'Logoff':
+            match_output: 'Success'
+            tag: CIS-17.5.2
+            value_type: 'equal'
+      description: Ensure 'Audit Logoff' is set to 'Success'
+    audit_logon:
+      data:
+        '*':
+        - 'Logon':
+            match_output: 'Success and Failure'
+            tag: CIS-17.5.3
+            value_type: 'equal'
+      description: Ensure 'Audit Logon' is set to 'Success and Failure'
+    audit_other_account_management_events:
+      data:
+        '*':
+        - 'other_account_management_events':
+            match_output: 'Success and Failure'
+            tag: CIS-17.2.4
+            value_type: 'equal'
+      description: Ensure 'Audit Other Account Management Events' is set to 'Success and Failure'
+    audit_other_logon_logoff_events:
+      data:
+        '*':
+        - 'other_logon_logoff_events':
+            match_output: 'Success and Failure'
+            tag: CIS-17.5.4
+            value_type: 'equal'
+      description: Ensure 'Audit Other Logon/Logoff Events' is set to 'Success and Failure'
+    audit_other_system_events:
+      data:
+        '*':
+        - 'other_system_events':
+            match_output: 'Success and Failure'
+            tag: CIS-17.9.2
+            value_type: 'equal'
+      description: Ensure 'Audit Other System Events' is set to 'Success and Failure'
+    audit_process_creation:
+      data:
+        '*':
+        - 'process_creation':
+            match_output: 'Success'
+            tag: CIS-17.3.1
+            value_type: 'equal'
+      description: Ensure 'Audit Process Creation' is set to 'Success'
+    audit_other_object_access_events:
+      data:
+        '*':
+        - 'other_object_access_events':
+            match_output: 'Success and Failure'
+            tag: CIS-17.6.1
+            value_type: 'equal'
+      description: Ensure 'Audit Other Object Access Events' is set to 'Success and Failure'
+    audit_removable_storage:
+      data:
+        '*':
+        - 'removable_storage':
+            match_output: 'Success and Failure'
+            tag: CIS-17.6.2
+            value_type: 'equal'
+      description: Ensure 'Audit Removable Storage' is set to 'Success and Failure'
+    audit_security_group_management:
+      data:
+        '*':
+        - 'security_group_management':
+            match_output: 'Success and Failure'
+            tag: CIS-17.2.5
+            value_type: 'equal'
+      description: Ensure 'Audit Security Group Management' is set to 'Success and Failure'
+    audit_security_state_change:
+      data:
+        '*':
+        - 'security_state_change':
+            match_output: 'Success'
+            tag: CIS-17.9.3
+            value_type: 'equal'
+      description: Ensure 'Audit Security State Change' is set to 'Success'
+    audit_security_system_extension:
+      data:
+        '*':
+        - 'security_system_extension':
+            match_output: 'Success and Failure'
+            tag: CIS-17.9.4
+            value_type: 'equal'
+      description: Ensure 'Audit Security System Extension' is set to 'Success and Failure'
+    audit_sensitive_privilege_use:
+      data:
+        '*':
+        - 'sensitive_privilege_use':
+            match_output: 'Success and Failure'
+            tag: CIS-17.8.1
+            value_type: 'equal'
+      description: Ensure 'Audit Sensitive Privilege Use' is set to 'Success and Failure'
+    audit_special_logon:
+      data:
+        '*':
+        - 'special_logon':
+            match_output: 'Success'
+            tag: CIS-17.5.5
+            value_type: 'equal'
+      description: Ensure 'Audit Special Logon' is set to 'Success'
+    audit_system_integrity:
+      data:
+        '*':
+        - 'system_integrity':
+            match_output: 'Success and Failure'
+            tag: CIS-17.9.5
+            value_type: 'equal'
+      description: Ensure 'Audit System Integrity' is set to 'Success and Failure'
+    audit_user_account_management:
+      data:
+        '*':
+        - 'user_account_management':
+            match_output: 'Success and Failure'
+            tag: CIS-17.2.6
+            value_type: 'equal'
+      description: Ensure 'Audit User Account Management' is set to 'Success and Failure'
+
+win_firewall:
+  whitelist:
+    windows_firewall_domain_firewall_state:
+      data:
+        '*':
+        - 'Enabled':
+            match_output: 'True'
+            tag: CIS-9.1.1
+            value_type: 'domain'
+      description: Ensure 'Windows Firewall - Domain - Firewall state' is set to 'On (recommended)'
+    windows_firewall_domain_inbound_connections:
+      data:
+        '*':
+        - 'DefaultInboundAction':
+            match_output: 'Block'
+            tag: CIS-9.1.2
+            value_type: 'domain'
+      description: Ensure 'Windows Firewall - Domain - Inbound connections' is set to 'Block (default)'
+    windows_firewall_domain_outbound_connections:
+      data:
+        '*':
+        - 'DefaultOutboundAction':
+            match_output: 'Allow'
+            tag: CIS-9.1.3
+            value_type: 'domain'
+      description: Ensure 'Windows Firewall - Domain - Outbound connections' is set to 'Allow (default)'
+    windows_firewall_domain_settings_display_a_notification:
+      data:
+        '*':
+        - 'NotifyOnListen':
+            match_output: 'False'
+            tag: CIS-9.1.4
+            value_type: 'domain'
+      description: Ensure 'Windows Firewall - Domain - Settings - Display a notification' is set to 'No'
+    windows_firewall_domain_logging_name:
+      data:
+        '*':
+        - 'LogFileName':
+            match_output: '%SYSTEMROOT%\System32\logfiles\firewall\domainfw.log'
+            tag: CIS-9.1.5
+            value_type: 'domain'
+      description: Ensure 'Windows Firewall - Domain - Logging - Name' is set to '%SYSTEMROOT%\System32\logfiles\firewall\domainfw.log'
+    windows_firewall_domain_logging_size_limit:
+      data:
+        '*':
+        - 'LogMaxSizeKilobytes':
+            match_output: '16383'
+            tag: CIS-9.1.6
+            match_type: '>'
+            value_type: 'domain'
+      description: Ensure 'Windows Firewall - Domain - Logging - Size limit (KB)' is set to '16,384 KB or greater'
+    windows_firewall_domain_logging_log_dropped_packets:
+      data:
+        '*':
+        - 'LogBlocked':
+            match_output: 'True'
+            tag: CIS-9.1.7
+            value_type: 'domain'
+      description: Ensure 'Windows Firewall - Domain - Logging - Log dropped packets' is set to 'Yes'
+    windows_firewall_domain_logging_log_successful_connections:
+      data:
+        '*':
+        - 'LogAllowed':
+            match_output: 'True'
+            tag: CIS-9.1.8
+            value_type: 'domain'
+      description: Ensure 'Windows Firewall - Domain - Logging - Log successful connections' is set to 'Yes'
+    windows_firewall_private_firewall_state:
+      data:
+        '*':
+        - 'Enabled':
+            match_output: 'True'
+            tag: CIS-9.2.1
+            value_type: 'private'
+      description: Ensure 'Windows Firewall - Private - Firewall state' is set to 'On (recommended)'
+    windows_firewall_private_inbound_connections:
+      data:
+        '*':
+        - 'DefaultInboundAction':
+            match_output: 'Block'
+            tag: CIS-9.2.2
+            value_type: 'private'
+      description: Ensure 'Windows Firewall - Private - Inbound connections' is set to 'Block (default)'
+    windows_firewall_private_outbound_connections:
+      data:
+        '*':
+        - 'DefaultOutboundAction':
+            match_output: 'Allow'
+            tag: CIS-9.2.3
+            value_type: 'private'
+      description: Ensure 'Windows Firewall - Private - Outbound connections' is set to 'Allow (default)'
+    windows_firewall_private_settings_display_a_notification:
+      data:
+        '*':
+        - 'NotifyOnListen':
+            match_output: 'False'
+            tag: CIS-9.2.4
+            value_type: 'private'
+      description: Ensure 'Windows Firewall - Private - Settings - Display a notification' is set to 'No'
+    windows_firewall_private_logging_name:
+      data:
+        '*':
+        - 'LogFileName':
+            match_output: '%SYSTEMROOT%\System32\logfiles\firewall\privatefw.log'
+            tag: CIS-9.2.5
+            value_type: 'private'
+      description: Ensure 'Windows Firewall - Private - Logging - Name' is set to '%SYSTEMROOT%\System32\logfiles\firewall\privatefw.log'
+    windows_firewall_private_logging_size_limit:
+      data:
+        '*':
+        - 'LogMaxSizeKilobytes':
+            match_output: '16383'
+            matc_type: '>'
+            tag: CIS-9.2.6
+            value_type: 'private'
+      description: Ensure 'Windows Firewall - Private - Logging - Size limit (KB)' is set to '16,384 KB or greater'
+    windows_firewall_private_logging_log_dropped_packets:
+      data:
+        '*':
+        - 'LogBlocked':
+            match_output: 'True'
+            tag: CIS-9.2.7
+            value_type: 'private'
+      description: Ensure 'Windows Firewall - Private - Logging - Log dropped packets' is set to 'Yes'
+    windows_firewall_private_logging_log_successful_connections:
+      data:
+        '*':
+        - 'LogAllowed':
+            match_output: 'True'
+            tag: CIS-9.2.8
+            value_type: 'private'
+      description: Ensure 'Windows Firewall - Private - Logging - Log successful connections' is set to 'Yes'
+    windows_firewall_public_firewall_state:
+      data:
+        '*':
+        - 'Enabled':
+            match_output: 'True'
+            tag: CIS-9.3.1
+            value_type: 'public'
+      description: Ensure 'Windows Firewall - Public - Firewall state' is set to 'On (recommended)'
+    windows_firewall_public_inbound_connections:
+      data:
+        '*':
+        - 'DefaultInboundAction':
+            match_output: 'Block'
+            tag: CIS-9.3.2
+            value_type: 'public'
+      description: Ensure 'Windows Firewall - Public - Inbound connections' is set to 'Block (default)'
+    windows_firewall_public_outbound_connections:
+      data:
+        '*':
+        - 'DefaultOutboundAction':
+            match_output: 'Allow'
+            tag: CIS-9.3.3
+            value_type: 'public'
+      description: Ensure 'Windows Firewall - Public - Outbound connections' is set to 'Allow (default)'
+    windows_firewall_public_settings_display_a_notification:
+      data:
+        '*':
+        - 'NotifyOnListen':
+            match_output: 'True'
+            tag: CIS-9.3.4
+            value_type: 'public'
+      description: Ensure 'Windows Firewall - Public - Settings - Display a notification' is set to 'Yes'
+    windows_firewall_public_settings_apply_local_firewall_rules:
+      data:
+        '*':
+        - 'AllowLocalFirewallRules':
+            match_output: 'False'
+            tag: CIS-9.3.5
+            value_type: 'public'
+      description: Ensure 'Windows Firewall - Public - Settings - Apply local firewall rules' is set to 'No'
+    windows_firewall_public_settings_apply_local_connection_security_rules:
+      data:
+        '*':
+        - 'AllowLocalIPsecRules':
+            match_output: 'False'
+            tag: CIS-9.3.6
+            value_type: 'public'
+      description: Ensure 'Windows Firewall - Public - Settings - Apply local connection security rules' is set to 'No'
+    windows_firewall_public_logging_name:
+      data:
+        '*':
+        - 'LogFileName':
+            match_output: '%SYSTEMROOT%\System32\logfiles\firewall\publicfw.log'
+            tag: CIS-9.3.7
+            value_type: 'public'
+      description: Ensure 'Windows Firewall - Public - Logging - Name' is set to '%SYSTEMROOT%\System32\logfiles\firewall\publicfw.log'
+    windows_firewall_public_logging_size_limit:
+      data:
+        '*':
+        - 'LogMaxSizeKilobytes':
+            match_output: '16383'
+            match_type: '>'
+            tag: CIS-9.3.8
+            value_type: 'public'
+      description: Ensure 'Windows Firewall - Public - Logging - Size limit (KB)' is set to '16,384 KB or greater'
+    windows_firewall_public_logging_log_dropped_packets:
+      data:
+        '*':
+        - 'LogBlocked':
+            match_output: 'True'
+            tag: CIS-9.3.9
+            value_type: 'public'
+      description: Ensure 'Windows Firewall - Public - Logging - Log dropped packets' is set to 'Yes'
+    windows_firewall_public_logging_log_successful_connections:
+      data:
+        '*':
+        - 'LogAllowed':
+            match_output: 'True'
+            tag: CIS-9.3.10
+            value_type: 'public'
+      description: Ensure 'Windows Firewall - Public - Logging - Log successful connections' is set to 'Yes'
+
+win_pkg:
+  whitelist:
+    laps_admpwd_gpo_extension_cse_is_installed:
+      data:
+        '*':
+        - 'laps_admpwd_gpo_extension_cse_is_installed':
+            match_output: 'Local Administrator Password Solution'
+            tag: CIS-18.2.1
+            value_type: 'equal'
+      description: Ensure LAPS AdmPwd GPO Extension / CSE is installed
+    emet_5_52:
+      data:
+        '*':
+        - 'EMET':
+            match_output: '5.51'
+            tag: CIS-18.9.24.1
+            value_type: 'more'
+      description: Ensure 'EMET 5.52' or higher is installed
+
+win_reg:
+  whitelist:
+    allow_microsoft_accounts_to_be_optional:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\MSAOptional':
+            match_output: '1'
+            tag: CIS-18.9.6.1
+            value_type: 'equal'
+      description: Ensure 'Allow Microsoft accounts to be optional' is set to 'Enabled'
+    allow_basic_authentication_client:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Client\AllowBasic':
+            match_output: '0'
+            tag: CIS-18.9.97.1.1
+            value_type: 'equal'
+      description: Ensure 'Allow Basic authentication' is set to 'Disabled' (WinRM Client)
+    allow_basic_authentication_service:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Service\AllowBasic':
+            match_output: '0'
+            tag: CIS-18.9.97.2.1
+            value_type: 'equal'
+      description: Ensure 'Allow Basic authentication' is set to 'Disabled' (WinRM Service)
+    allow_unencrypted_traffic_service:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Service\AllowUnencryptedTraffic':
+            match_output: '0'
+            tag: CIS-18.9.97.2.3
+            value_type: 'equal'
+      description: Ensure 'Allow unencrypted traffic' is set to 'Disabled' (WinRM Service)
+    allow_indexing_of_encrypted_files:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Windows_Search\AllowIndexingEncryptedStoresOrItems':
+            match_output: '0'
+            tag: CIS-18.9.60.2
+            value_type: 'equal'
+      description: Ensure 'Allow indexing of encrypted files' is set to 'Disabled'
+    allow_unencrypted_traffic_client:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Client\AllowUnencryptedTraffic':
+            match_output: '0'
+            tag: CIS-18.9.97.1.2
+            value_type: 'equal'
+      description: Ensure 'Allow unencrypted traffic' is set to 'Disabled' (WinRM Client)
+    allow_digest_client:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Client\AllowDigest':
+            match_output: '0'
+            tag: CIS-18.9.97.1.3
+            value_type: 'equal'
+      description: Ensure 'Allow unencrypted traffic' is set to 'Disabled' (WinRM Client AllowDigest)
+    always_install_with_elevated_privileges_hku:
+      data:
+        '*':
+        - 'HKEY_USERS\<SID>\Software\Policies\Microsoft\Windows\Installer\AlwaysInstallElevated':
+            match_output: '0'
+            tag: CIS-19.7.40.1
+            value_type: 'equal'
+      description: Ensure 'Always install with elevated privileges' is set to 'Disabled'
+    allow_user_control_over_installs:
+      data:
+        '*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Installer\EnableUserControl':
+              tag: CIS-18.9.85.1
+              match_output: '0'
+              value_type: 'equal'
+      description: Ensure 'Allow user control over installs' is set to 'Disabled'
+    always_install_with_elevated_privileges_hklm:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Installer\AlwaysInstallElevated':
+            match_output: '0'
+            tag: CIS-18.9.85.2
+            value_type: 'equal'
+      description: Ensure 'Always install with elevated privileges' is set to 'Disabled'
+    always_prompt_for_password_upon_connection:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows_NT\Terminal_Services\fPromptForPassword':
+            match_output: '1'
+            tag: CIS-18.9.58.3.9.1
+            value_type: 'equal'
+      description: Ensure 'Always prompt for password upon connection' is set to 'Enabled'
+    application_control_event_log_behavior_when_the_log_file_reaches_its_maximum_size:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\Retention':
+            match_output: '0'
+            tag: CIS-18.9.26.1.1
+            value_type: 'equal'
+      description: Ensure 'Application - Control Event Log behavior when the log file reaches its maximum size' is set to 'Disabled'
+    application_specify_the_maximum_log_file_size:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize':
+            match_output: '32768'
+            tag: CIS-18.9.26.1.2
+            value_type: 'more'
+      description: Ensure 'Application - Specify the maximum log file size (KB)' is set to 'Enabled - 32,768 or greater'
+    apply_uac_restrictions_to_local_accounts_on_network_logons:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\LocalAccountTokenFilterPolicy':
+            match_output: '1'
+            tag: CIS-18.3.1
+            value_type: 'equal'
+      description: Ensure 'Apply UAC restrictions to local accounts on network logons' is set to 'Enabled'
+    configure_smbv1_client_driver:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\mrxsmb10\Start':
+            match_output: '1'
+            tag: CIS-18.3.2
+            value_type: 'equal'
+      description: Ensure 'Configure SMB v1 client driver' is set to 'Enabled - Disable driver'
+    configure_smbv1_server:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\LanmanServer\Parameters\SMB1':
+            match_output: '1'
+            tag: CIS-18.3.3
+            value_type: 'equal'
+      description: Ensure 'Configure SMB v1 server' is set to 'Disabled'
+    enable_sehop:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session_Manager\kernel\DisableExceptionChainValidation':
+            match_output: '1'
+            tag: CIS-18.3.4
+            value_type: 'equal'
+      description: Ensure 'Enable Structured Exception Handling Overwrite Protection (SEHOP)' is set to 'Enabled'
+    automatically_send_memory_dumps_for_os-generated_error_reports:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Wow6432Node\Policies\Microsoft\Windows\Windows_Error_Reporting\AutoApproveOSDumps':
+            match_output: '0'
+            tag: CIS-18.9.81.3
+            value_type: 'equal'
+      description: Ensure 'Automatically send memory dumps for OS-generated error reports' is set to 'Disabled'
+    boot-start_driver_initialization_policy:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Policies\EarlyLaunch\DriverLoadPolicy':
+            match_output: '3'
+            tag: CIS-18.8.14.1
+            value_type: 'equal'
+      description: Ensure 'Boot-Start Driver Initialization Policy' is set to 'Enabled - Good, unknown and bad but critical'
+    configure_automatic_updates:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsUpdate\AU\NoAutoUpdate':
+            match_output: '0'
+            tag: CIS-18.9.101.2
+            value_type: 'equal'
+      description: Ensure 'Configure Automatic Updates' is set to 'Enabled'
+    configure_automatic_updates_scheduled_install_day:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsUpdate\AU\ScheduledInstallDay':
+            match_output: '0'
+            tag: CIS-18.9.101.3
+            value_type: 'equal'
+      description: Ensure 'Configure Automatic Updates - Scheduled install day' is set to '0 - Every day'
+    configure_local_settings_overide_for_reporting_to_microsoft_maps:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\\Windows_Defender\Spynet\LocalSettingOverrideSpynetReporting':
+            match_output: '0'
+            tag: CIS-18.9.76.3.1
+            value_type: 'equal'
+      description: Ensure 'Configure local setting override for reporting to Microsoft MAPS' is set to 'Disabled'
+    configure_default_consent:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Windows_Error_Reporting\Consent\DefaultConsent':
+            match_output: '1'
+            tag: CIS-18.9.81.2.1
+            value_type: 'equal'
+      description: Ensure 'Configure Default consent' is set to 'Enabled - Always ask before sending data'
+    require_password_when_computer_wakes_on_battery:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Power\PowerSettings\0e796bdb-100d-47d6-a2d5-f7d2daa51f51\DCSettingIndex':
+            match_output: '1'
+            tag: CIS-18.8.33.6.1
+            value_type: 'equal'
+      description: Ensure 'Require a password when a computer wakes (on battery)' is set to 'Enabled'
+    require_password_when_computer_wakes_plugged_in:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Power\PowerSettings\0e796bdb-100d-47d6-a2d5-f7d2daa51f51\ACSettingIndex':
+            match_output: '1'
+            tag: CIS-18.8.33.6.2
+            value_type: 'equal'
+      description: Ensure 'Require a password when a computer wakes (plugged in)' is set to 'Enabled'
+    configure_offer_remote_assistance:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\policies\Microsoft\Windows_NT\Terminal_Services\fAllowUnsolicited':
+            match_output: '0'
+            tag: CIS-18.8.35.1
+            value_type: 'equal'
+      description: Ensure 'Configure Offer Remote Assistance' is set to 'Disabled'
+    configure_solicited_remote_assistance:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\policies\Microsoft\Windows_NT\Terminal_Services\fAllowToGetHelp':
+            match_output: '0'
+            tag: CIS-18.8.35.2
+            value_type: 'equal'
+      description: Ensure 'Configure Solicited Remote Assistance' is set to 'Disabled'
+    configure_windows_defender_smartscreen:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\System\EnableSmartScreen':
+            match_output: '2'
+            tag: CIS-18.9.80.1.1
+            value_type: 'equal'
+      description: Ensure 'Configure Windows Defender SmartScreen' is set to 'Enabled - Warn and prevent bypass'
+    configure_registry_policy_processing_do_not_apply_during_periodic_background_processing:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Group_Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}\NoBackgroundPolicy':
+            match_output: '0'
+            tag: CIS-18.8.21.2
+            value_type: 'equal'
+      description: Ensure 'Configure registry policy processing - Do not apply during periodic background processing' is set to 'Enabled - FALSE'
+    configure_registry_policy_processing_process_even_if_the_group_policy_objects_have_not_changed:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Group_Policy\{35378EAC-683F-11D2-A89A-00C04FBBCFA2}\NoGPOListChanges':
+            match_output: '0'
+            tag: CIS-18.8.21.3
+            value_type: 'equal'
+      description: Ensure 'Configure registry policy processing - Process even if the Group Policy objects have not changed' is set to 'Enabled - TRUE'
+    default_action_and_mitigation_settings:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\SysSettings\AntiDetours':
+            match_output: '1'
+            tag: CIS-18.9.24.2
+            value_type: 'equal'
+      description: Ensure 'Default Action and Mitigation Settings' is set to 'Enabled' (plus subsettings)
+    default_protections_for_internet_explorer:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\Defaults\IE':
+            match_output: '1'
+            tag: CIS-18.9.24.3
+            value_type: 'equal'
+      description: Ensure 'Default Protections for Internet Explorer' is set to 'Enabled'
+    default_protections_for_popular_software:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\Defaults':
+            match_output: '1'
+            tag: CIS-18.9.24.4
+            value_type: 'equal'
+      description: Ensure 'Default Protections for Popular Software' is set to 'Enabled'
+    default_protections_for_recommended_software:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\Defaults':
+            match_output: '1'
+            tag: CIS-18.9.24.5
+            value_type: 'equal'
+      description: Ensure 'Default Protections for Recommended Software' is set to 'Enabled'
+    disallow_autoplay_for_non-volume_devices:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Explorer\NoAutoplayfornonVolume':
+            match_output: '1'
+            tag: CIS-18.9.8.1
+            value_type: 'equal'
+      description: Ensure 'Disallow Autoplay for non-volume devices' is set to 'Enabled'
+    disallow_digest_authentication:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Client\AllowDigest':
+            match_output: '0'
+            tag: CIS-18.9.97.1.3
+            value_type: 'equal'
+      description: Ensure 'Disallow Digest authentication' is set to 'Enabled'
+    disallow_winrm_from_storing_runas_credentials:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WinRM\Service\DisableRunAs':
+            match_output: '1'
+            tag: CIS-18.9.97.2.4
+            value_type: 'equal'
+      description: Ensure 'Disallow WinRM from storing RunAs credentials' is set to 'Enabled'
+    do_not_allow_password_expiration_time_longer_than_required_by_policy:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft_Services\AdmPwd\PwdExpirationProtectionEnabled':
+            match_output: '1'
+            tag: CIS-18.2.2
+            value_type: 'equal'
+      description: Ensure 'Do not allow password expiration time longer than required by policy' is set to 'Enabled'
+    do_not_preserve_zone_information_in_file_attachments:
+      data:
+        '*':
+        - 'HKEY_USERS\<SID>\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments\SaveZoneInformation':
+            match_output: '0'
+            tag: CIS-19.7.4.1
+            value_type: 'equal'
+      description: Ensure 'Do not preserve zone information in file attachments' is set to 'Disabled'
+    do_not_allow_drive_redirection:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows_NT\Terminal_Services\fDisableCdm':
+            match_output: '1'
+            tag: CIS-18.9.58.3.3.2
+            value_type: 'equal'
+      description: Ensure 'Do not allow drive redirection' is set to 'Enabled'
+    do_not_allow_passwords_to_be_saved:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows_NT\Terminal_Services\DisablePasswordSaving':
+            match_output: '1'
+            tag: CIS-18.9.58.2.2
+            value_type: 'equal'
+      description: Ensure 'Do not allow passwords to be saved' is set to 'Enabled'
+    do_not_delete_temp_folders_upon_exit:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows_NT\Terminal_Services\DeleteTempDirsOnExit':
+            match_output: '1'
+            tag: CIS-18.9.58.3.11.1
+            value_type: 'equal'
+      description: Ensure 'Do not delete temp folders upon exit' is set to 'Disabled'
+    do_not_display_network_selection_ui:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\System\DontDisplayNetworkSelectionUI':
+            match_output: '1'
+            tag: CIS-18.8.27.1
+            value_type: 'equal'
+      description: Ensure 'Do not display network selection UI' is set to 'Enabled'
+    do_not_display_the_password_reveal_button:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CredUI\DisablePasswordReveal':
+            match_output: '1'
+            tag: CIS-18.9.15.1
+            value_type: 'equal'
+      description: Ensure 'Do not display the password reveal button' is set to 'Enabled'
+    do_not_enumerate_connected_users_on_domain-joined_computers:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\System\DontEnumerateConnectedUsers':
+            match_output: '1'
+            tag: CIS-18.8.27.2
+            value_type: 'equal'
+      description: Ensure 'Do not enumerate connected users on domain-joined computers' is set to 'Enabled'
+    do_not_use_temporary_folders_per_session:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows_NT\Terminal_Services\PerSessionTempDir':
+            match_output: '1'
+            tag: CIS-18.9.58.3.11.2
+            value_type: 'equal'
+      description: Ensure 'Do not use temporary folders per session' is set to 'Disabled'
+    enable_local_admin_password_management:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft_Services\AdmPwd\AdmPwdEnabled':
+            match_output: '1'
+            tag: CIS-18.2.3
+            value_type: 'equal'
+      description: Ensure 'Enable Local Admin Password Management' is set to 'Enabled'
+    enable_screen_saver:
+      data:
+        '*':
+        - 'HKEY_USERS\<SID>\Software\Policies\Microsoft\Windows\Control_Panel\Desktop\ScreenSaveActive':
+            match_output: '1'
+            tag: CIS-19.1.3.1
+            value_type: 'equal'
+      description: Ensure 'Enable screen saver' is set to 'Enabled'
+    enable_rpc_endpoint_mapper_client_authentication:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows_NT\Rpc\EnableAuthEpResolution':
+            match_output: '1'
+            tag: CIS-18.8.36.1
+            value_type: 'equal'
+      description: Ensure 'Enable RPC Endpoint Mapper Client Authentication' is set to 'Enabled'
+    enumerate_administrator_accounts_on_elevation:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\CredUI\EnumerateAdministrators':
+            match_output: '0'
+            tag: CIS-18.9.15.2
+            value_type: 'equal'
+      description: Ensure 'Enumerate administrator accounts on elevation' is set to 'Disabled'
+    enumerate_local_users_on_domain-joined_computers:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\System\EnumerateLocalUsers':
+            match_output: '0'
+            tag: CIS-18.8.27.3
+            value_type: 'equal'
+      description: Ensure 'Enumerate local users on domain-joined computers' is set to 'Disabled'
+    force_specific_screen_saver_screen_saver_executable_name:
+      data:
+        '*':
+        - 'HKEY_USERS\<SID>\Software\Policies\Microsoft\Windows\Control_Panel\Desktop\SCRNSAVE.EXE':
+            match_output: '1'
+            tag: CIS-19.1.3.2
+            value_type: 'equal'
+      description: Ensure 'Force specific screen saver - Screen saver executable name' is set to 'Enabled - scrnsave.scr'
+    hardened_unc_paths:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\NetworkProvider\HardenedPaths\\*\NETLOGON':
+            match_output: 'RequireMutualAuthentication=1,RequireIntegrity=1'
+            tag: CIS-18.5.14.1
+            value_type: 'equal'
+      description: Ensure 'Hardened UNC Paths' is set to 'Enabled, with Require Mutual Authentication' and 'Require Integrity' set for all 'NETLOGON and SYSVOL shares'
+    include_command_line_in_process_creation_events:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\Audit\ProcessCreationIncludeCmdLine_Enabled':
+            match_output: '0'
+            tag: CIS-18.8.3.1
+            value_type: 'equal'
+      description: Ensure 'Include command line in process creation events' is set to 'Disabled'
+    allow_remote_host_delegation_of_non_exportable_credentials:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\CredentialsDelegation\AllowProtectedCreds':
+            match_output: '1'
+            tag: CIS-18.8.4.1
+            value_type: 'equal'
+      description: Ensure 'Remote host allows delegation of non-exportable credentials' is set to 'Enabled'
+    mss_enable_automatic_logon:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows_NT\CurrentVersion\Winlogon\AutoAdminLogon':
+            match_output: '0'
+            tag: CIS-18.4.1
+            value_type: 'equal'
+      description: Ensure 'MSS - (AutoAdminLogon) Enable Automatic Logon (not recommended)' is set to 'Disabled'
+    mss_disableipsourcerouting_ipv6_ip_source_routing_protection_level_protects_against_packet_spoofing:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\Tcpip6\Parameters\DisableIPSourceRouting':
+            match_output: '2'
+            tag: CIS-18.4.2
+            value_type: 'equal'
+      description: Ensure 'MSS - (DisableIPSourceRouting IPv6) IP source routing protection level (protects against packet spoofing)' is set to 'Enabled - Highest protection, source routing is completely disabled'
+    mss_ip_source_routing_protection_level_protects_against_packet_spoofing:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\Tcpip\Parameters\DisableIPSourceRouting':
+            match_output: '2'
+            tag: CIS-18.4.3
+            value_type: 'equal'
+      description: Ensure 'MSS - (DisableIPSourceRouting) IP source routing protection level (protects against packet spoofing)' is set to 'Enabled - Highest protection, source routing is completely disabled'
+    mss_allow_icmp_redirects_to_override_ospf_generated_routes:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\Tcpip\Parameters\EnableICMPRedirect':
+            match_output: '0'
+            tag: CIS-18.4.4
+            value_type: 'equal'
+      description: Ensure 'MSS - (EnableICMPRedirect) Allow ICMP redirects to override OSPF generated routes' is set to 'Disabled'
+    mss_allow_the_computer_to_ignore_netbios_name_release_requests_except_from_wins_servers:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\NetBT\Parameters\nonamereleaseondemand':
+            match_output: '1'
+            tag: CIS-18.4.6
+            value_type: 'equal'
+      description: Ensure 'MSS - (NoNameReleaseOnDemand) Allow the computer to ignore NetBIOS name release requests except from WINS servers' is set to 'Enabled'
+    mss_enable_safe_dll_search_mode:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Session_Manager\SafeDllSearchMode':
+            match_output: '1'
+            tag: CIS-18.4.8
+            value_type: 'equal'
+      description: Ensure 'MSS - (SafeDllSearchMode) Enable Safe DLL search mode (recommended)' is set to 'Enabled'
+    mss_the_time_in_seconds_before_the_screen_saver_grace_period_expires:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows_NT\CurrentVersion\Winlogon\ScreenSaverGracePeriod':
+            match_output: '6'
+            tag: CIS-18.4.9
+            value_type: 'less'
+      description: Ensure 'MSS - (ScreenSaverGracePeriod) The time in seconds before the screen saver grace period expires (0 recommended)' is set to 'Enabled - 5 or fewer seconds'
+    mss_percentage_threshold_for_the_security_event_log_at_which_the_system_will_generate_a_warning:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\Eventlog\Security\WarningLevel':
+            match_output: '90'
+            tag: CIS-18.4.12
+            value_type: 'less'
+      description: Ensure 'MSS - (WarningLevel) Percentage threshold for the security event log at which the system will generate a warning' is set to 'Enabled - 90% or less'
+    minimize_the_number_of_simultaneous_connections_to_the_internet_or_a_windows_domain:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WcmSvc\GroupPolicy\fMinimizeConnections':
+            match_output: '1'
+            tag: CIS-18.5.21.1
+            value_type: 'equal'
+      description: Ensure 'Minimize the number of simultaneous connections to the Internet or a Windows Domain' is set to 'Enabled'
+    force_netbios_to_use_p-node_to_register_and_resolve_names:
+      data:
+        '*':
+          - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Services\NetBT\Parameters\NodeType':
+              tag: CIS-18.5.4.1
+              match_output: '2'
+              value_type: 'equal'
+      description: Ensure 'NetBIOS node type' is set to 'P-node'
+    disable_multicast_name_resolution:
+      data:
+        '*':
+          - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows NT\DNSClient\EnableMulticast':
+              tag: CIS-18.5.4.2
+              match_output: '0'
+              value_type: 'equal'
+      description: Ensure 'Turn off multicast name resolution' is set to 'Enabled'
+    no_auto-restart_with_logged_on_users_for_scheduled_automatic_updates_installations:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\WindowsUpdate\AU\NoAutoRebootWithLoggedOnUsers':
+            match_output: '0'
+            tag: CIS-18.9.101.4
+            value_type: 'equal'
+      description: Ensure 'No auto-restart with logged on users for scheduled automatic updates installations' is set to 'Disabled'
+    notify_antivirus_programs_when_opening_attachments:
+      data:
+        '*':
+        - 'HKEY_USERS\<SID>\Software\Microsoft\Windows\CurrentVersion\Policies\Attachments\ScanWithAntiVirus':
+            match_output: '1'
+            tag: CIS-19.7.4.2
+            value_type: 'equal'
+      description: Ensure 'Notify antivirus programs when opening attachments' is set to 'Enabled'
+    password_protect_the_screen_saver:
+      data:
+        '*':
+        - 'HKEY_USERS\<SID>\Software\Policies\Microsoft\Windows\Control_Panel\Desktop\ScreenSaverIsSecure':
+            match_output: '1'
+            tag: CIS-19.1.3.3
+            value_type: 'equal'
+      description: Ensure 'Password protect the screen saver' is set to 'Enabled'
+    password_settings_password_age:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft_Services\AdmPwd\PasswordAgeDays':
+            match_output: '30'
+            tag: CIS-18.2.6
+            value_type: 'less'
+      description: Ensure 'Password Settings - Password Age (Days)' is set to 'Enabled - 30 or fewer'
+    password_settings_password_complexity:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft_Services\AdmPwd\PasswordComplexity':
+            match_output: '4'
+            tag: CIS-18.2.4
+            value_type: 'equal'
+      description: Ensure 'Password Settings - Password Complexity' is set to 'Enabled - Large letters + small letters + numbers + special characters'
+    password_settings_password_length:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft_Services\AdmPwd\PasswordLength':
+            match_output: '15'
+            tag: CIS-18.2.5
+            value_type: 'more'
+      description: Ensure 'Password Settings - Password Length' is set to 'Enabled - 15 or more'
+    prevent_enabling_lock_screen_camera:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Personalization\NoLockScreenCamera':
+            match_output: '1'
+            tag: CIS-18.1.1.1
+            value_type: 'equal'
+      description: Ensure 'Prevent enabling lock screen camera' is set to 'Enabled'
+    prevent_enabling_lock_screen_slide_show:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Personalization\NoLockScreenSlideshow':
+            match_output: '1'
+            tag: CIS-18.1.1.2
+            value_type: 'equal'
+      description: Ensure 'Prevent enabling lock screen slide show' is set to 'Enabled'
+    prevent_downloading_of_enclosures:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Internet_Explorer\Feeds\DisableEnclosureDownload':
+            match_output: '1'
+            tag: CIS-18.9.59.1
+            value_type: 'equal'
+      description: Ensure 'Prevent downloading of enclosures' is set to 'Enabled'
+    prevent_the_usage_of_onedrive_for_file_storage:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\OneDrive\DisableFileSyncNGSC':
+            match_output: '1'
+            tag: CIS-18.9.52.1
+            value_type: 'equal'
+      description: Ensure 'Prevent the usage of OneDrive for file storage' is set to 'Enabled'
+    prevent_the_usage_of_onedrive_for_file_storage_on_windows_8.1:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Skydrive\DisableFileSync':
+            match_output: '1'
+            tag: CIS-18.9.52.2
+            value_type: 'equal'
+      description: Ensure 'Prevent the usage of OneDrive for file storage on Windows 8.1' is set to 'Enabled'
+    prevent_users_from_sharing_files_within_their_profile.:
+      data:
+        '*':
+        - 'HKEY_USERS\<SID>\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoInplaceSharing':
+            match_output: '1'
+            tag: CIS-19.7.26.1
+            value_type: 'equal'
+      description: Ensure 'Prevent users from sharing files within their profile' is set to 'Enabled'
+    prohibit_installation_and_configuration_of_network_bridge_on_your_dns_domain_network:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Network_Connections\NC_AllowNetBridge_NLA':
+            match_output: '0'
+            tag: CIS-18.5.11.2
+            value_type: 'equal'
+      description: Ensure 'Prohibit installation and configuration of Network Bridge on your DNS domain network' is set to 'Enabled'
+    require_domain_users_to_elevate_when_setting_a_network:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Network_Connections\NC_StdDomainUserSetLocation':
+            match_output: '1'
+            tag: CIS-18.5.11.3
+            value_type: 'equal'
+      description: Ensure 'Require domain users to elevate when setting a networks location' is set to 'Enabled'
+    require_secure_rpc_communication:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows_NT\Terminal_Services\fEncryptRPCTraffic':
+            match_output: '1'
+            tag: CIS-18.9.58.3.9.2
+            value_type: 'equal'
+      description: Ensure 'Require secure RPC communication' is set to 'Enabled'
+    screen_saver_timeout:
+      data:
+        '*':
+        - 'HKEY_USERS\<SID>\Software\Policies\Microsoft\Windows\Control_Panel\Desktop\ScreenSaveTimeOut':
+            match_output: '900'
+            tag: CIS-19.1.3.4
+            value_type: 'less'
+      description: Ensure 'Screen saver timeout' is set to 'Enabled - 900 seconds or fewer, but not 0'
+    security_control_event_log_behavior_when_the_log_file_reaches_its_maximum_size:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Security\Retention':
+            match_output: '0'
+            tag: CIS-18.9.26.2.1
+            value_type: 'equal'
+      description: Ensure 'Security - Control Event Log behavior when the log file reaches its maximum size' is set to 'Disabled'
+    security_specify_the_maximum_log_file_size:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Security\MaxSize':
+            match_output: '196608'
+            tag: CIS-18.9.26.2.2
+            value_type: 'more'
+      description: Ensure 'Security - Specify the maximum log file size (KB)' is set to 'Enabled - 196,608 or greater'
+    set_the_default_behavior_for_autorun:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoAutorun':
+            match_output: '1'
+            tag: CIS-18.9.8.2
+            value_type: 'equal'
+      description: Ensure 'Set the default behavior for AutoRun' is set to 'Enabled - Do not execute any autorun commands'
+    set_client_connection_encryption_level:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows_NT\Terminal_Services\MinEncryptionLevel':
+            match_output: '3'
+            tag: CIS-18.9.58.3.9.3
+            value_type: 'equal'
+      description: Ensure 'Set client connection encryption level' is set to 'Enabled - High Level'
+    setup_control_event_log_behavior_when_the_log_file_reaches_its_maximum_size:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Setup\Retention':
+            match_output: '0'
+            tag: CIS-18.9.26.3.1
+            value_type: 'equal'
+      description: Ensure 'Setup - Control Event Log behavior when the log file reaches its maximum size' is set to 'Disabled'
+    setup_specify_the_maximum_log_file_size:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Setup\MaxSize':
+            match_output: '32768'
+            tag: CIS-18.9.26.3.2
+            value_type: 'more'
+      description: Ensure 'Setup - Specify the maximum log file size (KB)' is set to 'Enabled - 32,768 or greater'
+    sign-in_last_interactive_user_automatically_after_a_system-initiated_restart:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Installer\AlwaysInstallElevated':
+            match_output: '0'
+            tag: CIS-18.9.86.1
+            value_type: 'equal'
+      description: Ensure 'Sign-in last interactive user automatically after a system-initiated restart' is set to 'Disabled'
+    system_control_event_log_behavior_when_the_log_file_reaches_its_maximum_size:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\Retention':
+            match_output: '0'
+            tag: CIS-18.9.26.4.1
+            value_type: 'equal'
+      description: Ensure 'System - Control Event Log behavior when the log file reaches its maximum size' is set to 'Disabled'
+    system_specify_the_maximum_log_file_size:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize':
+            match_output: '32768'
+            tag: CIS-18.9.26.4.2
+            value_type: 'more'
+      description: Ensure 'System - Specify the maximum log file size (KB)' is set to 'Enabled - 32,768 or greater'
+    system_aslr:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\SysSettings\ASLR':
+            match_output: '1'
+            tag: CIS-18.9.24.6
+            value_type: 'equal'
+      description: Ensure 'System ASLR' is set to 'Enabled - Application Opt-In'
+    system_dep:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\SysSettings\DEP':
+            match_output: '2'
+            tag: CIS-18.9.24.7
+            value_type: 'equal'
+      description: Ensure 'System DEP' is set to 'Enabled - Application Opt-Out'
+    system_sehop:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\EMET\SysSettings\SEHOP':
+            match_output: '2'
+            tag: CIS-18.9.24.8
+            value_type: 'equal'
+      description: Ensure 'System SEHOP' is set to 'Enabled - Application Opt-Out'
+    turn_off_autoplay:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoDriveTypeAutoRun':
+            match_output: '255'
+            tag: CIS-18.9.8.3
+            value_type: 'equal'
+      description: Ensure 'Turn off Autoplay' is set to 'Enabled - All drives'
+    turn_off_toast_notifications_on_the_lock_screen:
+      data:
+        '*':
+        - 'HKEY_USERS\<SID>\Software\Policies\Microsoft\Windows\CurrentVersion\PushNotifications\NoToastApplicationNotificationOnLockScreen':
+            match_output: '1'
+            tag: CIS-19.5.1.1
+            value_type: 'equal'
+      description: Ensure 'Turn off toast notifications on the lock screen' is set to 'Enabled'
+    turn_off_automatic_download_and_install_of_updates:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\WindowsStore\AutoDownload':
+            match_output: '0'
+            tag: CIS-18.9.61.1
+            value_type: 'equal'
+      description: Ensure 'Turn off Automatic Download and Install of updates' is set to 'Disabled'
+    turn_off_data_execution_prevention_for_explorer:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Explorer\NoDataExecutionPrevention':
+            match_output: '0'
+            tag: CIS-18.9.30.2
+            value_type: 'equal'
+      description: Ensure 'Turn off Data Execution Prevention for Explorer' is set to 'Disabled'
+    turn_off_heap_termination_on_corruption:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\Explorer\NoHeapTerminationOnCorruption':
+            match_output: '0'
+            tag: CIS-18.9.30.3
+            value_type: 'equal'
+      description: Ensure 'Turn off heap termination on corruption' is set to 'Disabled'
+    turn_off_shell_protocol_protected_mode:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\PreXPSP2ShellProtocolBehavior':
+            match_output: '0'
+            tag: CIS-18.9.30.4
+            value_type: 'equal'
+      description: Ensure 'Turn off shell protocol protected mode' is set to 'Disabled'
+    turn_off_app_notifications_on_the_lock_screen:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\System\DisableLockScreenAppNotifications':
+            match_output: '1'
+            tag: CIS-18.8.27.4
+            value_type: 'equal'
+      description: Ensure 'Turn off app notifications on the lock screen' is set to 'Enabled'
+    turn_off_picture_password_sign_in:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\System\BlockDomainPicturePassword':
+            match_output: '1'
+            tag: CIS-18.8.27.5
+            value_type: 'equal'
+      description: Ensure 'Turn off picture password sign-in' is set to 'Enabled'
+    turn_off_background_refresh_of_group_policy:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\DisableBkGndGroupPolicy':
+            match_output: '0'
+            tag: CIS-18.8.21.4
+            value_type: 'equal'
+      description: Ensure 'Turn off background refresh of Group Policy' is set to 'Disabled'
+    turn_off_downloading_of_print_drivers_over_http:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows_NT\Printers\DisableWebPnPDownload':
+            match_output: '1'
+            tag: CIS-18.8.22.1.1
+            value_type: 'equal'
+      description: Ensure 'Turn off downloading of print drivers over HTTP' is set to 'Enabled'
+    turn_off_internet_download_for_web_publishing_and_online_ordering_wizards:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer\NoWebServices':
+            match_output: '1'
+            tag: CIS-18.8.22.1.5
+            value_type: 'equal'
+      description: Ensure 'Turn off Internet download for Web publishing and online ordering wizards' is set to 'Enabled'
+    turn_off_printing_over_http:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows_NT\Printers\DisableHTTPPrinting':
+            match_output: '1'
+            tag: CIS-18.8.22.1.6
+            value_type: 'equal'
+      description: Ensure 'Turn off printing over HTTP' is set to 'Enabled'
+    turn_off_the_offer_to_update_to_the_latest_version_of_windows:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\WindowsStore\DisableOSUpgrade':
+            match_output: '1'
+            tag: CIS-18.9.61.2
+            value_type: 'equal'
+      description: Ensure 'Turn off the offer to update to the latest version of Windows' is set to 'Enabled'
+    turn_on_behavior_monitoring:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows_Defender\Real-Time_Protection\DisableBehaviorMonitoring':
+            match_output: '1'
+            tag: CIS-18.9.76.7.1
+            value_type: 'equal'
+      description: Ensure 'Turn on behavior monitoring' is set to 'Enabled'
+    turn_on_email_scanning:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows_Defender\Scan\DisableEmailScanning':
+            match_output: '1'
+            tag: CIS-18.9.76.10.2
+            value_type: 'equal'
+      description: Ensure 'Turn on e-mail scanning' is set to 'Enabled'
+    turn_off_windows_defender_antivirus:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\SOFTWARE\Policies\Microsoft\Windows_Defender\DisableAntiSpyware':
+            match_output: '0'
+            tag: CIS-18.9.76.14
+            value_type: 'equal'
+      description: Ensure 'Turn off Windows Defender AntiVirus' is set to 'Disabled'
+    turn_on_powershell_script_block_logging:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging\EnableScriptBlockLogging':
+            match_output: '0'
+            tag: CIS-18.9.95.1
+            value_type: 'equal'
+      description: Ensure 'Turn on PowerShell Script Block Logging' is set to 'Disabled'
+    turn_on_powershell_transcription:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\PowerShell\Transcription\EnableTranscripting':
+            match_output: '0'
+            tag: CIS-18.9.95.2
+            value_type: 'equal'
+      description: Ensure 'Turn on PowerShell Transcription' is set to 'Disabled'
+    turn_on_convenience_pin_sign-in:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\System\AllowDomainPINLogon':
+            match_output: '0'
+            tag: CIS-18.8.27.6
+            value_type: 'equal'
+      description: Ensure 'Turn on convenience PIN sign-in' is set to 'Disabled'
+    wdigest_authentication:
+      data:
+        '*':
+        - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\SecurityProviders\WDigest\UseLogonCredential':
+            match_output: '0'
+            tag: CIS-18.3.5
+            value_type: 'equal'
+      description: Ensure 'WDigest Authentication' is set to 'Disabled'
+
+win_secedit:
+  blacklist:
+    accounts_rename_administrator_account:
+      data:
+        '*':
+        - 'NewAdministratorName':
+            match_output: 'Administrator'
+            tag: CIS-2.3.1.5
+            value_type: 'equal'
+      description: Configure 'Accounts - Rename administrator account'
+    accounts_rename_guest_account:
+      data:
+        '*':
+        - 'AccountsRenameguestaccount':
+            match_output: 'Guest'
+            tag: CIS-2.3.1.6
+            value_type: 'equal'
+      description: Configure 'Accounts - Rename guest account'
+    network_access_named_pipes_that_can_be_accessed_anonymously:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\':
+            match_output: ''
+            tag: CIS-2.3.10.6
+            value_type: 'equal'
+      description: Configure 'Network Access - Named Pipes that can be accessed anonymously'
+    network_access_shares_that_can_be_accessed_anonymously:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\NullSessionShares':
+            match_output: ''
+            tag: CIS-2.3.10.10
+            value_type: 'equal'
+      description: Ensure 'Network Access - Shares that can be accessed anonymously' is set to 'None'
+    access_credential_manager:
+      data:
+        '*':
+        - 'SeTrustedCredManAccessPrivilege':
+            match_output: 'No One'
+            tag: CIS-2.2.1
+            value_type: 'match'
+      description: Ensure 'Access Credential Manager as a trusted caller' is set to 'No One'
+    act_as_operating_system:
+      data:
+        '*':
+        - 'SeTcbPrivilege':
+            match_output: 'No One'
+            tag: CIS-2.2.3
+            value_type: 'match'
+      description: Ensure 'Act as part of the operating system' is set to 'No One'
+    create_a_token_object:
+      data:
+        '*':
+        - 'SeCreateTokenPrivilege':
+            match_output: 'No One'
+            tag: CIS-2.2.12
+            value_type: 'account'
+      description: Ensure 'Create a token object' is set to 'No One'
+    create_permanent_shared_objects:
+      data:
+        '*':
+        - 'Createpermanentsharedobjects':
+            match_output: 'No One'
+            tag: CIS-2.2.14
+            value_type: 'account'
+      description: Ensure 'Create permanent shared objects' is set to 'No One'
+    enable_computer_and_user_accounts_to_be_trusted_for_delegation:
+      data:
+        '*':
+        - 'SeEnableDelegationPrivilege':
+            match_output: 'No One'
+            tag: CIS-2.2.22
+            value_type: 'account'
+      description: Configure 'Enable computer and user accounts to be trusted for delegation'
+    lock_pages_in_memory:
+      data:
+        '*':
+        - 'SeLockMemoryPrivilege':
+            match_output: 'No One'
+            tag: CIS-2.2.28
+            value_type: 'account'
+      description: Ensure 'Lock pages in memory' is set to 'No One'
+    modify_an_object_label:
+      data:
+        '*':
+        - 'SeRelabelPrivilege':
+            match_output: 'No One'
+            tag: CIS-2.2.31
+            value_type: 'account'
+      description: Ensure 'Modify an object label' is set to 'No One'
+    synchronize_directory_service_data:
+      data:
+        '*':
+          - 'SeSyncAgentPrivilege':
+              tag: CIS-2.2.39
+              match_output: 'No One'
+              value_type: 'account'
+      description: Ensure 'Synchronize directory service data' is set to 'No One' (dc only)
+  whitelist:
+    accounts_administrator_account_status:
+      data:
+        '*':
+        - 'EnableAdminAccount':
+            match_output: '0'
+            tag: CIS-2.3.1.1
+            value_type: 'equal'
+      description: Ensure 'Accounts - Administrator account status' is set to 'Disabled'
+    accounts_block_microsoft_accounts:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\NoConnectedUser':
+            match_output: 'users cant add or log on with microsoft accounts'
+            tag: CIS-2.3.1.2
+            value_type: 'equal'
+      description: Ensure 'Accounts - Block Microsoft accounts' is set to 'Users cannot add or log on with Microsoft accounts'
+    accounts_guest_account_status:
+      data:
+        '*':
+        - 'EnableGuestAccount':
+            match_output: '0'
+            tag: CIS-2.3.1.3
+            value_type: 'equal'
+      description: Ensure 'Accounts - Guest account status' is set to 'Disabled'
+    accounts_limit_local_account_use_of_blank_passwords_to_console_logon_only:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\LimitBlankPasswordUse':
+            match_output: '4,1'
+            tag: CIS-2.3.1.4
+            value_type: 'equal'
+      description: Ensure 'Accounts - Limit local account use of blank passwords to console logon only' is set to 'Enabled'
+    audit_force_audit_policy_subcategory_settings_to_override_audit_policy_category_settings:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\SCENoApplyLegacyAuditPolicy':
+            match_output: '4,1'
+            tag: CIS-2.3.2.1
+            value_type: 'equal'
+      description: Ensure 'Audit - Force audit policy subcategory settings (Windows Vista or later) to override audit policy category settings' is set to 'Enabled'
+    audit_shut_down_system_immediately_if_unable_to_log_security_audits:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\CrashOnAuditFail':
+            match_output: '4,0'
+            tag: CIS-2.3.2.2
+            value_type: 'equal'
+      description: Ensure 'Audit - Shut down system immediately if unable to log security audits' is set to 'Disabled'
+    devices_allowed_to_format_and_eject_removable_media:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows_NT\CurrentVersion\Winlogon\AllocateDASD':
+            match_output: 'Administrators'
+            tag: CIS-2.3.4.1
+            value_type: 'equal'
+      description: Ensure 'Devices - Allowed to format and eject removable media' is set to 'administrators'
+    devices_prevent_users_from_installing_printer_drivers:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Print\Providers\LanMan_Print_Services\Servers\AddPrinterDrivers':
+            match_output: '4,1'
+            tag: CIS-2.3.4.2
+            value_type: 'equal'
+      description: Ensure 'Devices - Prevent users from installing printer drivers' is set to 'Enabled'
+    domain_member_digitally_encrypt_or_sign_secure_channel_data_always:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\RequireSignOrSeal':
+            match_output: '4,1'
+            tag: CIS-2.3.6.1
+            value_type: 'equal'
+      description: Ensure 'Domain Member - Digitally encrypt or sign secure channel data (always)' is set to 'Enabled'
+    domain_member_digitally_encrypt_secure_channel_data_when_possible:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\SealSecureChannel':
+            match_output: '4,1'
+            tag: CIS-2.3.6.2
+            value_type: 'equal'
+      description: Ensure 'Domain Member - Digitally encrypt secure channel data (when possible)' is set to 'Enabled'
+    domain_member_digitally_sign_secure_channel_data_when_possible:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\SignSecureChannel':
+            match_output: '4,1'
+            tag: CIS-2.3.6.3
+            value_type: 'equal'
+      description: Ensure 'Domain Member - Digitally sign secure channel data (when possible)' is set to 'Enabled'
+    domain_member_disable_machine_account_password_changes:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\DisablePasswordChange':
+            match_output: '4,0'
+            tag: CIS-2.3.6.4
+            value_type: 'equal'
+      description: Ensure 'Domain Member - Disable machine account password changes' is set to 'Disabled'
+    domain_member_maximum_machine_account_password_age:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\MaximumPasswordAge':
+            match_output: '31'
+            tag: CIS-2.3.6.5
+            value_type: 'less'
+      description: Ensure 'Domain Member - Maximum machine account password age' is set to '30 or fewer days, but not 0'
+    domain_member_require_strong_session_key:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\RequireStrongKey':
+            match_output: '4,1'
+            tag: CIS-2.3.6.6
+            value_type: 'equal'
+      description: Ensure 'Domain Member - Require strong (Windows 2000 or later) session key' is set to 'Enabled'
+    interactive_logon_do_not_display_last_user_name:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\DontDisplayLastUserName':
+            match_output: '4,1'
+            tag: CIS-2.3.7.1
+            value_type: 'equal'
+      description: Ensure 'Interactive Logon - Do not display last user name' is set to 'Enabled'
+    interactive_logon_do_not_require_ctrl+alt+del:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\DisableCAD':
+            match_output: '4,0'
+            tag: CIS-2.3.7.2
+            value_type: 'equal'
+      description: Ensure 'Interactive Logon - Do not require CTRL+ALT+DEL' is set to 'Disabled'
+    interactive_logon_machine_inactivity_limit:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\InactivityTimeoutSecs':
+            match_output: '4,901'
+            tag: CIS-2.3.7.3
+            value_type: 'less'
+      description: Ensure 'Interactive Logon - Machine inactivity limit' is set to '900 or fewer second(s), but not 0'
+    interactive_logon_message_text_for_users_attempting_to_log_on:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\LegalNoticeText':
+            match_output: ''
+            tag: CIS-2.3.7.4
+            value_type: 'configured'
+      description: Configure 'Interactive Logon - Message text for users attempting to log on'
+    interactive_logon_message_title_for_users_attempting_to_log_on:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\LegalNoticeCaption':
+            match_output: ''
+            tag: CIS-2.3.7.5
+            value_type: 'configured'
+      description: Configure 'Interactive Logon - Message title for users attempting to log on'
+    interactive_logon_prompt_user_to_change_password_before_expiration:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows_NT\CurrentVersion\Winlogon\PasswordExpiryWarning':
+            match_output: '15'
+            tag: CIS-2.3.7.7
+            value_type: 'less'
+      description: Ensure 'Interactive Logon - Prompt user to change password before expiration' is set to 'between 5 and 14 days'
+    interactive_logon_require_domain_controller_authentication_to_unlock_workstation:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows_NT\CurrentVersion\Winlogon\ForceUnlockLogon':
+            match_output: '4,1'
+            tag: CIS-2.3.7.8
+            value_type: 'equal'
+      description: Ensure 'Interactive Logon - Require Domain Controller Authentication to unlock workstation' is set to 'Enabled'
+    interactive_logon_smart_card_removal_behavior:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows_NT\CurrentVersion\Winlogon\ScRemoveOption':
+            match_output: 'Lock Workstation'
+            tag: CIS-2.3.7.9
+            value_type: 'equal'
+      description: Ensure 'Interactive Logon - Smart card removal behavior' is set to 'Lock Workstation' or higher
+    microsoft_network_require_client_digitally_sign_communications:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanmanWorkstation\Parameters\RequireSecuritySignature':
+            match_output: '4,1'
+            tag: CIS-2.3.8.1
+            value_type: 'equal'
+      description: Ensure 'Microsoft Network Client - Digitally sign communications (always)' is set to 'Enabled'
+    microsoft_network_client_digitally_sign_communications:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanmanWorkstation\Parameters\EnableSecuritySignature':
+            match_output: '4,1'
+            tag: CIS-2.3.8.2
+            value_type: 'equal'
+      description: Ensure 'Microsoft Network Client - Digitally sign communications (if server agrees)' is set to 'Enabled'
+    microsoft_network_client_send_unencrypted_password_to_third-party_smb_servers:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanmanWorkstation\Parameters\EnablePlainTextPassword':
+            match_output: '4,0'
+            tag: CIS-2.3.8.3
+            value_type: 'equal'
+      description: Ensure 'Microsoft Network Client - Send unencrypted password to third-party SMB servers' is set to 'Disabled'
+    microsoft_network_server_amount_of_idle_time_required_before_suspending_session:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\AutoDisconnect':
+            match_output: '16'
+            tag: CIS-2.3.9.1
+            value_type: 'less'
+      description: Ensure 'Microsoft Network Server - Amount of idle time required before suspending session' is set to '15 or fewer minute(s), but not 0'
+    microsoft_network_server_require_digitally_sign_communications:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanmanWorkstation\Parameters\RequireSecuritySignature':
+            match_output: '4,1'
+            tag: CIS-2.3.9.2
+            value_type: 'equal'
+      description: Ensure 'Microsoft Network Server - Digitally sign communications (always)' is set to 'Enabled'
+    microsoft_network_server_enable_digitally_sign_communications:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\EnableSecuritySignature':
+            match_output: '4,1'
+            tag: CIS-2.3.9.3
+            value_type: 'equal'
+      description: Ensure 'Microsoft Network Server - Digitally sign communications (if client agrees)' is set to 'Enabled'
+    microsoft_network_server_disconnect_clients_when_logon_hours_expire:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\EnableForcedLogOff':
+            match_output: '4,1'
+            tag: CIS-2.3.9.4
+            value_type: 'equal'
+      description: Ensure 'Microsoft Network Server - Disconnect clients when logon hours expire' is set to 'Enabled'
+    microsoft_network_server_server_spn_target_name_validation_level:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\SMBServerNameHardeningLevel':
+            match_output: '4,1'
+            tag: CIS-2.3.9.5
+            value_type: 'equal'
+      description: Ensure 'Microsoft Network Server - Server SPN target name validation level' is set to 'Accept if provided by client' or higher
+    network_security_allow_pku2u_authentication_requests_to_this_computer_to_use_online_identities:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\pku2u\AllowOnlineID':
+            match_output: '4,0'
+            tag: CIS-2.3.11.3
+            value_type: 'equal'
+      description: Ensure 'Network Security - Allow PKU2U authentication requests to this computer to use online identities' is set to 'Disabled'
+    network_security_configure_encryption_types_allowed_for_kerberos:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\Kerberos\Parameters\SupportedEncryptionTypes':
+            match_output: '4,2147483644'
+            tag: CIS-2.3.11.4
+            value_type: 'equal'
+      description: Ensure 'Network Security - Configure encryption types allowed for Kerberos' is set to 'rc4_hmac_md5, aes128_hmac_sha1, aes256_hmac_sha1, future encryption types'
+    network_access_allow_anonymous_sid/name_translation:
+      data:
+        '*':
+        - 'LSAAnonymousNameLookup':
+            match_output: '0'
+            tag: CIS-2.3.10.1
+            value_type: 'equal'
+      description: Ensure 'Network Access - Allow anonymous SID/Name translation' is set to 'Disabled'
+    network_access_do_not_allow_anonymous_enumeration_of_sam_accounts:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\RestrictAnonymousSAM':
+            match_output: '4,1'
+            tag: CIS-2.3.10.2
+            value_type: 'equal'
+      description: Ensure 'Network Access - Do not allow anonymous enumeration of SAM accounts' is set to 'Enabled'
+    network_access_do_not_allow_anonymous_enumeration_of_sam_accounts_and_shares:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\RestrictAnonymous':
+            match_output: '4,1'
+            tag: CIS-2.3.10.3
+            value_type: 'equal'
+      description: Ensure 'Network Access - Do not allow anonymous enumeration of SAM accounts and shares' is set to 'Enabled'
+    network_access_let_everyone_permissions_apply_to_anonymous_users:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\EveryoneIncludesAnonymous':
+            match_output: '4,0'
+            tag: CIS-2.3.10.5
+            value_type: 'equal'
+      description: Ensure 'Network Access - Let Everyone permissions apply to anonymous users' is set to 'Disabled'
+    network_access_remotely_accessible_registry_paths:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\SecurePipeServers\Winreg\AllowedExactPaths\Machine':
+            match_output: '7,System\CurrentControlSet\Control\ProductOptions,System\CurrentControlSet\Control\Server Applications,Software\Microsoft\Windows NT\CurrentVersion'
+            tag: CIS-2.3.10.7
+            value_type: 'equal'
+      description: Configure 'Network Access - Remotely accessible registry paths'
+    network_access_remotely_accessible_registry_paths_and_sub-paths:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\SecurePipeServers\Winreg\AllowedPaths\Machine':
+            match_output: '7,System\CurrentControlSet\Control\Print\Printers,System\CurrentControlSet\Services\Eventlog,Software\Microsoft\OLAP Server,Software\Microsoft\Windows NT\CurrentVersion\Print,Software\Microsoft\Windows NT\CurrentVersion\Windows,System\CurrentControlSet\Control\ContentIndex,System\CurrentControlSet\Control\Terminal Server,System\CurrentControlSet\Control\Terminal Server\UserConfig,System\CurrentControlSet\Control\Terminal Server\DefaultUserConfiguration,Software\Microsoft\Windows NT\CurrentVersion\Perflib, System\CurrentControlSet\Services\SysmonLog'
+            tag: CIS-2.3.10.8
+            value_type: 'equal'
+      description: Configure 'Network Access - Remotely accessible registry paths and sub-paths'
+    network_access_restrict_anonymous_access_to_named_pipes_and_shares:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\RestrictNullSessAccess':
+            match_output: '4,1'
+            tag: CIS-2.3.10.9
+            value_type: 'equal'
+      description: Ensure 'Network Access - Restrict anonymous access to Named Pipes and Shares' is set to 'Enabled'
+    network_access_sharing_and_security_model_for_local_accounts:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\ForceGuest':
+            match_output: '4,0'
+            tag: CIS-2.3.10.11
+            value_type: 'equal'
+      description: Ensure 'Network Access - Sharing and security model for local accounts' is set to 'Classic - local users authenticate as themselves'
+    network_security_allow_localsystem_null_session_fallback:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\MSV1_0\allownullsessionfallback':
+            match_output: '4,0'
+            tag: CIS-2.3.11.2
+            value_type: 'equal'
+      description: Ensure 'Network Security - Allow LocalSystem NULL session fallback' is set to 'Disabled'
+    network_security_allow_local_system_to_use_computer_identity_for_ntlm:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\UseMachineId':
+            match_output: '4,1'
+            tag: CIS-2.3.11.1
+            value_type: 'equal'
+      description: Ensure 'Network Security - Allow Local System to use computer identity for NTLM' is set to 'Enabled'
+    network_security_do_not_store_lan_manager_hash_value_on_next_password_change:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\NoLMHash':
+            match_output: '4,1'
+            tag: CIS-2.3.11.5
+            value_type: 'equal'
+      description: Ensure 'Network Security - Do not store LAN Manager hash value on next password change' is set to 'Enabled'
+    network_security_force_logoff_when_logon_hours_expire:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LanManServer\Parameters\EnableForcedLogOff':
+            match_output: '4,1'
+            tag: CIS-2.3.11.6
+            value_type: 'equal'
+      description: Ensure 'Network Security - Force logoff when logon hours expire' is set to 'Enabled'
+    network_security_lan_manager_authentication_level:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\LmCompatibilityLevel':
+            match_output: '4,5'
+            tag: CIS-2.3.11.7
+            value_type: 'equal'
+      description: Ensure 'Network Security - LAN Manager authentication level' is set to 'Send NTLMv2 response only. Refuse LM and NTLM'
+    network_security_ldap_client_signing_requirements:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Services\LDAP\LDAPClientIntegrity':
+            match_output: 'Negotiate signing'
+            tag: CIS-2.3.11.8
+            value_type: 'equal'
+      description: Ensure 'Network Security - LDAP client signing requirements' is set to 'Negotiate Signing' or higher
+    network_security_minimum_session_security_for_ntlm_ssp_based_clients:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\MSV1_0\NTLMMinClientSec':
+            match_output: 'Require NTLMv2 session security, Require 128-bit encryption'
+            tag: CIS-2.3.11.9
+            value_type: 'equal'
+      description: Ensure 'Network Security - Minimum session security for NTLM SSP based (including secure RPC) clients' is set to 'Require NTLMv2 session security, Require 128-bit encryption'
+    network_security_minimum_session_security_for_ntlm_ssp_based_servers:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Lsa\MSV1_0\NTLMMinServerSec':
+            match_output: 'Require NTLMv2 session security, Require 128-bit encryption'
+            tag: CIS-2.3.11.10
+            value_type: 'equal'
+      description: Ensure 'Network Security - Minimum session security for NTLM SSP based (including secure RPC) servers' is set to 'Require NTLMv2 session security, Require 128-bit encryption'
+    shutdown_allow_system_to_be_shut_down_without_having_to_log_on:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\ShutdownWithoutLogon':
+            match_output: '4,0'
+            tag: CIS-2.3.13.1
+            value_type: 'equal'
+      description: Ensure 'Shutdown - Allow system to be shut down without having to log on' is set to 'Disabled'
+    system_objects_require_case_insensitivity_for_non-windows_subsystems:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Session_Manager\Kernel\ObCaseInsensitive':
+            match_output: '4,1'
+            tag: CIS-2.3.15.1
+            value_type: 'equal'
+      description: Ensure 'System Objects - Require case insensitivity for non-Windows subsystems' is set to 'Enabled'
+    system_objects_strengthen_default_permissions_of_internal_system_objects:
+      data:
+        '*':
+        - 'MACHINE\System\CurrentControlSet\Control\Session_Manager\ProtectionMode':
+            match_output: '4,1'
+            tag: CIS-2.3.15.2
+            value_type: 'equal'
+      description: Ensure 'System Objects - Strengthen default permissions of internal System Objects (e.g. Symbolic Links)' is set to 'Enabled'
+    user_account_control_admin_approval_mode_for_the_built-in_administrator_account:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\FilterAdministratorToken':
+            match_output: '4,1'
+            tag: CIS-2.3.17.1
+            value_type: 'equal'
+      description: Ensure 'User Account Control - Admin Approval Mode for the Built-in Administrator account' is set to 'Enabled'
+    user_account_control_allow_uiaccess_applications_to_prompt_for_elevation_without_using_the_secure_desktop:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\EnableUIADesktopToggle':
+            match_output: '4,0'
+            tag: CIS-2.3.17.2
+            value_type: 'equal'
+      description: Ensure 'User Account Control - Allow UIAccess applications to prompt for elevation without using the secure desktop' is set to 'Disabled'
+    user_account_control_behavior_of_the_elevation_prompt_for_administrators_in_admin_approval_mode:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\ConsentPromptBehaviorAdmin':
+            match_output: 'Prompt for consent on the secure desktop'
+            tag: CIS-2.3.17.3
+            value_type: 'equal'
+      description: Ensure 'User Account Control - Behavior of the elevation prompt for administrators in Admin Approval Mode' is set to 'Prompt for consent on the secure desktop'
+    user_account_control_behavior_of_the_elevation_prompt_for_standard_users:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\ConsentPromptBehaviorUser':
+            match_output: 'Automatically deny elevation requests'
+            tag: CIS-2.3.17.4
+            value_type: 'equal'
+      description: Ensure 'User Account Control - Behavior of the elevation prompt for standard users' is set to 'Automatically deny elevation requests'
+    user_account_control_detect_application_installations_and_prompt_for_elevation:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\EnableInstallerDetection':
+            match_output: '4,1'
+            tag: CIS-2.3.17.5
+            value_type: 'equal'
+      description: Ensure 'User Account Control - Detect application installations and prompt for elevation' is set to 'Enabled'
+    user_account_control_only_elevate_uiaccess_applications_that_are_installed_in_secure_locations:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\EnableSecureUIAPaths':
+            match_output: '4,1'
+            tag: CIS-2.3.17.6
+            value_type: 'equal'
+      description: Ensure 'User Account Control - Only elevate UIAccess applications that are installed in secure locations' is set to 'Enabled'
+    user_account_control_run_all_administrators_in_admin_approval_mode:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\EnableLUA':
+            match_output: '4,1'
+            tag: CIS-2.3.17.7
+            value_type: 'equal'
+      description: Ensure 'User Account Control - Run all administrators in Admin Approval Mode' is set to 'Enabled'
+    user_account_control_switch_to_the_secure_desktop_when_prompting_for_elevation:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\PromptOnSecureDesktop':
+            match_output: '4,1'
+            tag: CIS-2.3.17.8
+            value_type: 'equal'
+      description: Ensure 'User Account Control - Switch to the secure desktop when prompting for elevation' is set to 'Enabled'
+    user_account_control_virtualize_file_and_registry_write_failures_to_per-user_locations:
+      data:
+        '*':
+        - 'MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies\System\EnableVirtualization':
+            match_output: '4,1'
+            tag: CIS-2.3.17.9
+            value_type: 'equal'
+      description: Ensure 'User Account Control - Virtualize file and registry write failures to per-user locations' is set to 'Enabled'
+    access_from_network:
+      data:
+        '*':
+        - 'SeNetworkLogonRight':
+            match_output: '*S-1-5-11,*S-1-5-32-544'
+            tag: CIS-2.2.2
+            value_type: 'account'
+      description: Configure 'Access this computer from the network'
+    adjust_memory_quotas:
+      data:
+        '*':
+        - 'SeIncreaseQuotaPrivilege':
+            match_output: '*S-1-5-19,*S-1-5-20,*S-1-5-32-544'
+            tag: CIS-2.2.5
+            value_type: 'account'
+      description: Ensure 'Adjust memory quotas for a process' is set to 'administrators, LOCAL SERVICE, NETWORK SERVICE'
+    allow_log_on_through_remote_desktop_services:
+      data:
+        '*':
+        - 'SeRemoteInteractiveLogonRight':
+            match_output: '*S-1-5-32-544,*S-1-5-32-555'
+            tag: CIS-2.2.7
+            value_type: 'account'
+      description: Configure 'Allow log on through Remote Desktop Services'
+    allow_logon_locally:
+      data:
+        '*':
+        - 'SeInteractiveLogonRight':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.6
+            value_type: 'account'
+      description: Configure 'Allow log on locally'
+    back_up_files_and_directories:
+      data:
+        '*':
+        - 'SeBackupPrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.8
+            value_type: 'account'
+      description: Ensure 'Back up files and directories' is set to 'administrators'
+    change_the_system_time:
+      data:
+        '*':
+        - 'SeTimeZonePrivilege':
+            match_output: '*S-1-5-19,*S-1-5-32-544'
+            tag: CIS-2.2.9
+            value_type: 'account'
+      description: Ensure 'Change the system time' is set to 'administrators, LOCAL SERVICE'
+    change_the_time_zone:
+      data:
+        '*':
+        - 'SeSystemtimePrivilege':
+            match_output: '*S-1-5-19,*S-1-5-32-544'
+            tag: CIS-2.2.10
+            value_type: 'account'
+      description: Ensure 'Change the time zone' is set to 'administrators, LOCAL SERVICE'
+    create_a_pagefile:
+      data:
+        '*':
+        - 'SeCreatePagefilePrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.11
+            value_type: 'account'
+      description: Ensure 'Create a pagefile' is set to 'administrators'
+    create_global_objects:
+      data:
+        '*':
+        - 'SeCreateGlobalPrivilege':
+            match_output: '*S-1-5-19,*S-1-5-20,*S-1-5-32-544,*S-1-5-6'
+            tag: CIS-2.2.13
+            value_type: 'account'
+      description: Ensure 'Create global objects' is set to 'administrators, LOCAL SERVICE, NETWORK SERVICE, SERVICE'
+    create_symbolic_links:
+      data:
+        '*':
+        - 'SeCreateSymbolicLinkPrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.15
+            value_type: 'account'
+      description: Configure 'Create symbolic links'
+    debug_programs:
+      data:
+        '*':
+        - 'SeDebugPrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.16
+            value_type: 'account'
+      description: Ensure 'Debug programs' is set to 'administrators'
+    deny_access_to_this_computer_from_the_network:
+      data:
+        '*':
+        - 'SeDenyNetworkLogonRight':
+            match_output: '*S-1-5-114,*S-1-5-32-546'
+            tag: CIS-2.2.17
+            value_type: 'account'
+      description: Configure 'Deny access to this computer from the network'
+    deny_log_on_as_a_batch_job:
+      data:
+        '*':
+        - 'SeDenyBatchLogonRight':
+            match_output: '*S-1-5-32-546'
+            tag: CIS-2.2.18
+            value_type: 'account'
+      description: Ensure 'Deny log on as a batch job' to include 'Guests'
+    deny_log_on_as_a_service:
+      data:
+        '*':
+        - 'SeDenyServiceLogonRight':
+            match_output: '*S-1-5-32-546'
+            tag: CIS-2.2.19
+            value_type: 'account'
+      description: Ensure 'Deny log on as a service' to include 'Guests'
+    deny_log_on_locally:
+      data:
+        '*':
+        - 'SeDenyInteractiveLogonRight':
+            match_output: '*S-1-5-32-546'
+            tag: CIS-2.2.20
+            value_type: 'account'
+      description: Ensure 'Deny log on locally' to include 'Guests'
+    deny_log_on_through_remote_desktop_services:
+      data:
+        '*':
+        - 'SeDenyRemoteInteractiveLogonRight':
+            match_output: '*S-1-5-113,*S-1-5-32-546'
+            tag: CIS-2.2.21
+            value_type: 'account'
+      description: Ensure 'Deny log on through Remote Desktop Services' to include 'guests, local account'
+    force_shutdown_from_a_remote_system:
+      data:
+        '*':
+        - 'SeRemoteShutdownPrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.23
+            value_type: 'account'
+      description: Ensure 'Force shutdown from a remote system' is set to 'administrators'
+    generate_security_audits:
+      data:
+        '*':
+        - 'SeAuditPrivilege':
+            match_output: '*S-1-5-19,*S-1-5-20'
+            tag: CIS-2.2.24
+            value_type: 'account'
+      description: Ensure 'Generate security audits' is set to 'LOCAL SERVICE, NETWORK SERVICE'
+    impersonate_a_client_after_authentication:
+      data:
+        '*':
+        - 'SeImpersonatePrivilege':
+            match_output: '*S-1-5-19,*S-1-5-32-544,*S-1-5-32-568,*S-1-5-6'
+            tag: CIS-2.2.25
+            value_type: 'account'
+      description: Configure 'Impersonate a client after authentication'
+    increase_scheduling_priority:
+      data:
+        '*':
+        - 'SeIncreaseBasePriorityPrivilege':
+            match_output: 'Administrators'
+            tag: CIS-2.2.26
+            value_type: 'account'
+      description: Ensure 'Increase scheduling priority' is set to 'administrators'
+    load_and_unload_device_drivers:
+      data:
+        '*':
+        - 'SeLoadDriverPrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.27
+            value_type: 'account'
+      description: Ensure 'Load and unload device drivers' is set to 'administrators'
+    lockout_duration:
+      data:
+        '*':
+        - 'LockoutDuration':
+            match_output: '14'
+            tag: CIS-1.2.1
+            value_type: 'more'
+      description: Ensure 'Account lockout duration' is set to '15 or more minute(s)'
+    lockout_threshold:
+      data:
+        '*':
+        - 'LockoutBadCount':
+            match_output: '11'
+            tag: CIS-1.2.2
+            value_type: 'less'
+      description: Ensure 'Account lockout threshold' is set to '10 or fewer invalid logon attempt(s), but not 0'
+    manage_auditing_and_security_log:
+      data:
+        '*':
+        - 'SeSecurityPrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.30
+            value_type: 'account'
+      description: Configure 'Manage auditing and security log'
+    maximum_password_age:
+      data:
+        '*':
+        - 'MaximumPasswordAge':
+            match_output: '61'
+            tag: CIS-1.1.2
+            value_type: 'less'
+      description: Ensure 'Maximum password age' is set to '60 or fewer days, but not 0'
+    minimum_password_age:
+      data:
+        '*':
+        - 'MinimumPasswordAge':
+            match_output: '1'
+            tag: CIS-1.1.3
+            value_type: 'more'
+      description: Ensure 'Minimum password age' is set to '1 or more day(s)'
+    minimum_password_length:
+      data:
+        '*':
+        - 'MinimumPasswordLength':
+            match_output: '14'
+            tag: CIS-1.1.4
+            value_type: 'more'
+      description: Ensure 'Minimum password length' is set to '14 or more character(s)'
+    modify_firmware_environment_values:
+      data:
+        '*':
+        - 'SeSystemEnvironmentPrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.32
+            value_type: 'account'
+      description: Ensure 'Modify firmware environment values' is set to 'administrators'
+    password_complexity:
+      data:
+        '*':
+        - 'PasswordComplexity':
+            match_output: '1'
+            tag: CIS-1.1.5
+            value_type: 'equal'
+      description: Ensure 'Password must meet complexity requirements' is set to 'Enabled'
+    password_history_size:
+      data:
+        '*':
+        - 'PasswordHistorySize':
+            match_output: '23'
+            tag: CIS-1.1.1
+            value_type: 'more'
+      description: Ensure 'Enforce password history' is set to '24 or more password(s)'
+    perform_volume_maintenance_tasks:
+      data:
+        '*':
+        - 'SeManageVolumePrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.33
+            value_type: 'account'
+      description: Ensure 'Perform volume maintenance tasks' is set to 'administrators'
+    profile_single_process:
+      data:
+        '*':
+        - 'SeProfileSingleProcessPrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.34
+            value_type: 'account'
+      description: Ensure 'Profile single process' is set to 'administrators'
+    profile_system_performance:
+      data:
+        '*':
+        - 'SeSystemProfilePrivilege':
+            match_output: '*S-1-5-32-544,*S-1-5-80-3139157870-2983391045-3678747466-658725712-1809340420'
+            tag: CIS-2.2.35
+            value_type: 'account'
+      description: Ensure 'Profile system performance' is set to 'administrators, NT SERVICE\WdiServiceHost'
+    replace_a_process_level_token:
+      data:
+        '*':
+        - 'SeAssignPrimaryTokenPrivilege':
+            match_output: '*S-1-5-19,*S-1-5-20'
+            tag: CIS-2.2.36
+            value_type: 'account'
+      description: Ensure 'Replace a process level token' is set to 'LOCAL SERVICE, NETWORK SERVICE'
+    reset_lockout_counter:
+      data:
+        '*':
+        - 'ResetLockoutCount':
+            match_output: '14'
+            tag: CIS-1.2.3
+            value_type: 'more'
+      description: Ensure 'Reset account lockout counter after' is set to '15 or more minute(s)'
+    restore_files_and_directories:
+      data:
+        '*':
+        - 'SeRestorePrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.37
+            value_type: 'account'
+      description: Ensure 'Restore files and directories' is set to 'administrators'
+    reversible_encryption:
+      data:
+        '*':
+        - 'ClearTextPassword':
+            match_output: '0'
+            tag: CIS-1.1.6
+            value_type: 'equal'
+      description: Ensure 'Store passwords using reversible encryption' is set to 'Disabled'
+    shut_down_the_system:
+      data:
+        '*':
+        - 'SeShutdownPrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.38
+            value_type: 'account'
+      description: Ensure 'Shut down the system' is set to 'administrators'
+    take_ownership_of_files_or_other_objects:
+      data:
+        '*':
+        - 'SeTakeOwnershipPrivilege':
+            match_output: '*S-1-5-32-544'
+            tag: CIS-2.2.40
+            value_type: 'account'
+      description: Ensure 'Take ownership of files or other objects' is set to 'administrators'

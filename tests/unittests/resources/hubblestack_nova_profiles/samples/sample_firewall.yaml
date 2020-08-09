@@ -1,0 +1,17 @@
+firewall:
+  whitelist:
+
+    ssh:
+      data:
+        tag: 'FIREWALL-TCP-22'
+        table: 'filter'
+        chain: INPUT
+        family: 'ipv4'
+        rule:
+          proto: tcp
+          dport: 22
+          match: state
+          connstate: RELATED,ESTABLISHED
+          jump: ACCEPT
+        description: 'ssh iptables rule check'
+

@@ -1,0 +1,51 @@
+# Default top.nova
+#
+# Subscribes to CIS, cve_scan, and misc.yaml for miscellaneous checks
+
+nova:
+  'G@osfinger:*CoreOS*':
+    - cis.coreos-level-1
+  'G@osfinger:CentOS-6':
+    - cis.centos-6-level-1-scored-v2-0-1
+  'G@osfinger:CentOS*Linux-7':
+    - cis.centos-7-level-1-scored-v2-2-0
+  'G@osfinger:Debian*7':
+    - cis.debian-7
+  'G@osfinger:Debian*8':
+    - cis.debian-8-level-1-scored-v1-0-0
+  'G@osfinger:Debian*9':
+    - cis.debian-9-level-1-scored-v1-0-0
+  'G@osfinger:Red*Hat*Enterprise*Linux*Server-6':
+    - cis.rhels-6-level-1-scored-v2-0-1
+  'G@osfinger:Red*Hat*Enterprise*Linux*Server-7':
+    - cis.rhels-7-level-1-scored-v2-2-0
+  'G@osfinger:Red*Hat*Enterprise*Linux*Workstation-7':
+    - cis.rhelw-7-level-1-scored-v2-1-0
+  'G@osfinger:Ubuntu-12.04':
+    - cis.ubuntu-1204-level-1-scored-v1-0-0
+  'G@osfinger:Ubuntu-14.04':
+    - cis.ubuntu-1404-level-1-scored-v1-0-0
+  'G@osfinger:Ubuntu-16.04':
+    - cis.ubuntu-1604-level-1-scored-v1-1-0
+  'G@osfinger:Ubuntu-18.04':
+    - cis.ubuntu-1804-level-1-scored-v1-0-0
+  'G@osfullname:Microsoft*Windows*Server*2008*':
+    - cis.windows-2008r2-level-1-scored-v3-0-1
+  'G@osfullname:Microsoft*Windows*Server*2012*':
+    - cis.windows-2012r2-level-1-scored-v2-3-0
+  'G@osfullname:Microsoft*Windows*Server*2016*':
+    - cis.windows-2016-level-1-scored-v1-0-0
+  'G@osfinger:Amazon*Linux*2014*':
+    - cis.amazon-201409-level-1-scored-v1-0-0
+  'G@osfinger:Amazon*Linux*2015*':
+    - cis.amazon-level-1-scored-v1-0-0
+  'G@osfinger:Amazon*Linux*2016*':
+    - cis.amazon-level-1-scored-v2-1-0
+  'G@osfinger:Amazon*Linux*2017*':
+    - cis.amazon-level-1-scored-v2-1-0
+  'G@osfinger:Amazon*Linux*2018*':
+    - cis.amazon-level-1-scored-v2-1-0
+  'G@kernel:Linux':
+    - security.meltdown_spectre
+    - security.ssh_passwordauthentication
+    - cis.distribution-independent-linux-level-1-all-v1-1-0

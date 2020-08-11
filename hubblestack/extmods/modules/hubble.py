@@ -111,23 +111,23 @@ def audit(configs=None,
     if labels:
         if not isinstance(labels, list):
             labels = labels.split(',')
-    if not called_from_top and __salt__['config.get']('hubblestack:nova:autoload', True):
+    if not called_from_top and __mods__['config.get']('hubblestack:nova:autoload', True):
         load()
     if not __nova__:
         return False, 'No nova modules/data have been loaded.'
 
     if verbose is None:
-        verbose = __salt__['config.get']('hubblestack:nova:verbose', False)
+        verbose = __mods__['config.get']('hubblestack:nova:verbose', False)
     if show_success is None:
-        show_success = __salt__['config.get']('hubblestack:nova:show_success', True)
+        show_success = __mods__['config.get']('hubblestack:nova:show_success', True)
     if show_compliance is None:
-        show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
+        show_compliance = __mods__['config.get']('hubblestack:nova:show_compliance', True)
     if show_profile is not None:
         log.warning(
             'Keyword argument \'show_profile\' is no longer supported'
         )
     if debug is None:
-        debug = __salt__['config.get']('hubblestack:nova:debug', False)
+        debug = __mods__['config.get']('hubblestack:nova:debug', False)
 
     if not isinstance(configs, list):
         # Convert string
@@ -182,7 +182,7 @@ def _get_nova_kwargs(**kwargs):
     """
     nova_kwargs = {}
     # Get values from config first (if any) and merge into nova_kwargs
-    nova_kwargs_config = __salt__['config.get']('hubblestack:nova:nova_kwargs', False)
+    nova_kwargs_config = __mods__['config.get']('hubblestack:nova:nova_kwargs', False)
     if nova_kwargs_config is not False:
         nova_kwargs.update(nova_kwargs_config)
     # Now process arguments from CLI and merge into nova_kwargs_dict
@@ -485,7 +485,7 @@ def top(topfile='top.nova',
         salt '*' hubble.top foo/bar/top.nova
         salt '*' hubble.top foo/bar.nova verbose=True
     """
-    if __salt__['config.get']('hubblestack:nova:autoload', True):
+    if __mods__['config.get']('hubblestack:nova:autoload', True):
         load_result = load()
         if not load_result[0]:
             return load_result
@@ -493,11 +493,11 @@ def top(topfile='top.nova',
         return False, 'No nova modules/data have been loaded.'
 
     if verbose is None:
-        verbose = __salt__['config.get']('hubblestack:nova:verbose', False)
+        verbose = __mods__['config.get']('hubblestack:nova:verbose', False)
     if show_success is None:
-        show_success = __salt__['config.get']('hubblestack:nova:show_success', True)
+        show_success = __mods__['config.get']('hubblestack:nova:show_success', True)
     if show_compliance is None:
-        show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
+        show_compliance = __mods__['config.get']('hubblestack:nova:show_compliance', True)
     if show_profile is not None:
         log.warning(
             'Keyword argument \'show_profile\' is no longer supported'
@@ -620,14 +620,14 @@ def sync(clean=False):
         salt '*' nova.sync saltenv=hubble
     """
     log.debug('syncing nova modules')
-    nova_profile_dir = __salt__['config.get']('hubblestack:nova:profile_dir',
+    nova_profile_dir = __mods__['config.get']('hubblestack:nova:profile_dir',
                                               'salt://hubblestack_nova_profiles')
     _nova_module_dir, cached_profile_dir = _hubble_dir()
-    saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
+    saltenv = __mods__['config.get']('hubblestack:nova:saltenv', 'base')
 
     # Clean previously synced files
     if clean:
-        __salt__['file.remove'](cached_profile_dir)
+        __mods__['file.remove'](cached_profile_dir)
 
     synced = []
     # Support optional salt:// in config
@@ -638,7 +638,7 @@ def sync(clean=False):
         path = 'salt://{0}'.format(nova_profile_dir)
 
     # Sync the files
-    cached = __salt__['cp.cache_dir'](path, saltenv=saltenv)
+    cached = __mods__['cp.cache_dir'](path, saltenv=saltenv)
 
     if cached and isinstance(cached, list):
         # Success! Trim the paths
@@ -661,7 +661,7 @@ def load():
     """
     Load the synced audit modules.
     """
-    if __salt__['config.get']('hubblestack:nova:autosync', True):
+    if __mods__['config.get']('hubblestack:nova:autosync', True):
         sync()
 
     for nova_dir in _hubble_dir():
@@ -671,13 +671,14 @@ def load():
     log.debug('loading nova modules')
 
     global __nova__
-    __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __grains__, __pillar__, __salt__)
+    __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __mods__)
 
     ret = {'loaded': list(__nova__._dict.keys()),
            'missing': __nova__.missing_modules,
            'data': list(__nova__.__data__.keys()),
            'missing_data': __nova__.__missing_data__}
-    return ret
+
+    return True, ret
 
 
 def version():
@@ -695,13 +696,13 @@ def _hubble_dir():
     Returns a tuple of two paths, the first for nova modules, the second for
     nova profiles
     """
-    nova_profile_dir = __salt__['config.get']('hubblestack:nova:profile_dir',
+    nova_profile_dir = __mods__['config.get']('hubblestack:nova:profile_dir',
                                               'salt://hubblestack_nova_profiles')
     nova_module_dir = os.path.join(__opts__['install_dir'], 'files', 'hubblestack_nova')
     # Support optional salt:// in config
     if 'salt://' in nova_profile_dir:
         _, _, nova_profile_dir = nova_profile_dir.partition('salt://')
-    saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
+    saltenv = __mods__['config.get']('hubblestack:nova:saltenv', 'base')
     cachedir = os.path.join(__opts__.get('cachedir'),
                             'files',
                             saltenv,
@@ -748,7 +749,7 @@ def _get_top_data(topfile):
     ret = []
 
     for match, data in topdata.items():
-        if __salt__['match.compound'](match):
+        if __mods__['match.compound'](match):
             ret.extend(data)
 
     return ret

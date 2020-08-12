@@ -88,7 +88,7 @@ fileserver_backend:
 #      flagfile: /path/to/confbase/osquery/osquery.flags
 #      logdir: /var/log/hubble_osquery
 #      databasepath: /var/cache/hubble/osquery
-#      pidfile: /var/run/osquery.pidfile
+#      pidfile: /var/run/hubble_osquery.pidfile
 #      hashfile: /var/cache/hubble/osquery/hash_of_flagfile.txt
 #    run_on_start: True
 #  nebula_osqueryd_log_parser:

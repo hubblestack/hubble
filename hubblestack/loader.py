@@ -185,7 +185,8 @@ def modules(
         static_modules=static_modules,
     )
 
-    ret.pack['__salt__'] = ret
+    ret.pack['__mods__'] = ret
+    ret.pack['__salt__'] = ret # XXX: to remove at a later date
 
     return ret
 minion_mods = modules # XXX: remove eventually

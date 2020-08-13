@@ -6,8 +6,20 @@ Author - Mudit Agarwal (muagarwa@adobe.com)
 """
 import salt.utils.platform
 import logging
+__virtualname__ = "docker_details"
 from hubblestack.utils.osquery_lib import query as osquery_util
 log = logging.getLogger(__name__)
+
+
+def __virtual__():
+  """
+  Load docker details grains
+  """
+
+  if salt.utils.platform.is_windows():
+    return False, "docker_details: Not available on Windows"
+  return __virtualname__
+
 
 def get_docker_details(grains):
   docker_grains = {}

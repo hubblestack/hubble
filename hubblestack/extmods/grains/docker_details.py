@@ -24,10 +24,6 @@ def __virtual__():
 def get_docker_details(grains):
   docker_grains = {}
 
-  if salt.utils.platform.is_windows():
-    log.debug('This grain is only available on linux')
-    return docker_grains
-
   docker_details = {}
   docker_details['installed'] = _is_docker_installed(grains)
   docker_details['running'] = False

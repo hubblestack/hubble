@@ -54,7 +54,7 @@ def test_key_alias_not_found_in_cmdline():
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
     log.debug("return value is {0}".format(val))
-    expected_value = (False, [])
+    expected_value = (True, [])
     assert val == expected_value
 
 
@@ -145,7 +145,7 @@ def test_do_not_match_partial_matching_key_alias():
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
     log.debug("return value is {0}".format(val))
-    expected_value = (False, [])
+    expected_value = (True, [])
     assert val == expected_value
 
 
@@ -163,7 +163,7 @@ def test_do_not_match_partial_matching_key_alias_short():
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
     log.debug("return value is {0}".format(val))
-    expected_value = (False, [])
+    expected_value = (True, [])
     assert val == expected_value
 
 

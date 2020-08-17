@@ -47,7 +47,8 @@ USER root
 
 #collect all files and prepare them into a tar file
 RUN mkdir -p /opt/osquery/lenses /opt/osquery/yara /opt/osquery/extensions \
- && cp /home/"$OSQUERY_BUILD_USER"/osquery/build/osquery/osqueryd /opt/osquery \
+ && cp /home/"$OSQUERY_BUILD_USER"/osquery/build/osquery/osqueryd /opt/osquery/hubble_osqueryd \
+ && cp /home/"$OSQUERY_BUILD_USER"/osquery/build/osquery/osqueryd /opt/osquery/osqueryi \
  && cp -r /home/"$OSQUERY_BUILD_USER"/osquery/libraries/cmake/source/augeas/src/lenses /opt/osquery/ \
  && rm -rf /opt/osquery/lenses/tests/ \
  && chown -R root. /opt/osquery \

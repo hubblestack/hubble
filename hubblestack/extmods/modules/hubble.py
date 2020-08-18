@@ -336,6 +336,12 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
     return results
 
 
+def _no_yaml(filename):
+    if filename.endswith('.yaml'):
+        return filename[:-5]
+    return filename
+
+
 def _build_audit_data(configs, results):
     """
     Helper function that goes over each config and extract the audit data sets
@@ -345,25 +351,16 @@ def _build_audit_data(configs, results):
     for config in configs:
         found_for_config = False
         for key in __nova__.__data__:
-            key_path_split = key.split('.yaml')[0].split(os.path.sep)
-            matches = True
-            if config != os.path.sep:
-                for i, path in enumerate(config.split(os.path.sep)):
-                    if i >= len(key_path_split) or path != key_path_split[i]:
-                        matches = False
-            if matches:
-                # Found a match, add the audit data to the set
-                found_for_config = True
+            if _no_yaml(key).startswith(config):
                 to_run.add(key)
+                found_for_config = True
         if not found_for_config:
             # No matches were found for this entry, add an error
             if 'Errors' not in results:
                 results['Errors'] = []
             results['Errors'].append(
                 {config: {'error': 'No matching profiles found for {0}'.format(config)}})
-
-    return [(key.split('.yaml')[0].split(os.path.sep)[-1],
-             __nova__.__data__[key]) for key in to_run]
+    return [(_no_yaml(os.path.basename(key)), __nova__.__data__[key]) for key in to_run]
 
 
 def _build_processed_controls(data_list, debug):

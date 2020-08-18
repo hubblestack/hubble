@@ -17,7 +17,7 @@ def test_match_key_alias_in_middle_of_cmdline():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["/etc/docker/daemon.json"])
     assert val == expected_value
 
@@ -35,7 +35,7 @@ def test_match_key_alias_at_end_of_cmdline():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["debug"])
     assert val == expected_value
 
@@ -53,7 +53,7 @@ def test_key_alias_not_found_in_cmdline():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, [])
     assert val == expected_value
 
@@ -71,7 +71,7 @@ def test_multiple_return_values():
               'delimiter': '='
               }
     val = command_line_parser.parse_cmdline(params = params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["a:b", "d:e"])
     assert val == expected_value
 
@@ -89,7 +89,7 @@ def test_multiple_key_aliases():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["a:b", "d:e"])
     assert val == expected_value
 
@@ -107,7 +107,7 @@ def test_values_with_single_quotes():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["a:b", "d:e"])
     assert val[0] == expected_value[0]
     assert val[1] == expected_value[1]
@@ -126,7 +126,7 @@ def test_second_regex():
         'delimiter': ' '
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["a:b", "d:e"])
     assert val == expected_value
 
@@ -144,7 +144,7 @@ def test_do_not_match_partial_matching_key_alias():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, [])
     assert val == expected_value
 
@@ -162,7 +162,7 @@ def test_do_not_match_partial_matching_key_alias_short():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, [])
     assert val == expected_value
 
@@ -180,7 +180,7 @@ def test_curl_example():
         'delimiter': ' '
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["username=yourusername&password=yourpassword"])
     assert val == expected_value
 
@@ -198,7 +198,7 @@ def test_curl_example_different_position():
         'delimiter': ' '
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["username=yourusername&password=yourpassword"])
     assert val == expected_value
 
@@ -216,7 +216,7 @@ def test_curl_quote_in_value():
         'delimiter': ' '
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["username=your'susername&password=yourpassword"])
     assert val == expected_value
 
@@ -234,7 +234,7 @@ def test_with_special_chars_in_value():
         'delimiter': ' '
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["X-Header: value"])
     assert val == expected_value
 
@@ -252,7 +252,7 @@ def test_key_alias_with_space():
         'delimiter': ' '
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["9f9408b2d29e"])
     assert val == expected_value
 
@@ -270,7 +270,7 @@ def test_long_option_with_complex_value():
         'delimiter': ' '
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["/tmp/docker_test.cid"])
     assert val == expected_value
 
@@ -288,7 +288,7 @@ def test_value_with_assignment_operator():
         'delimiter': ' '
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["size=120G"])
     assert val == expected_value
 
@@ -306,7 +306,7 @@ def test_value_is_a_list():
         'delimiter': ':'
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["[\"value1\", \"value2\"]"])
     assert val == expected_value
 
@@ -324,7 +324,7 @@ def test_java_example1():
         'delimiter': ':'
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["/var/run/nlserver6.pid"])
     assert val == expected_value
 
@@ -343,7 +343,7 @@ def test_java_example2():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["10"])
     assert val == expected_value
 
@@ -361,7 +361,7 @@ def test_java_example3():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["128m"])
     assert val == expected_value
 
@@ -379,7 +379,7 @@ def test_java_example4():
         'delimiter': ' '
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["/apps/api-etms/usage-tracking-services-launchpad.jar"])
     assert val == expected_value
 
@@ -414,7 +414,7 @@ def test_java_example5():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["2048"])
     assert val == expected_value
 
@@ -432,7 +432,7 @@ def test_value_with_multiple_special_chars():
         'delimiter': ' '
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["/run:rw,noexec,nosuid,size=65536k"])
     assert val == expected_value
 
@@ -450,7 +450,7 @@ def test_key_value_inside_dict():
         'delimiter': ':'
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["value1"])
     assert val == expected_value
 
@@ -468,7 +468,7 @@ def test_value_with_special_char():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ["http://localhost:9090/-/reload"])
     assert val == expected_value
 
@@ -486,7 +486,7 @@ def test_value_with_brackets():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ['{"labels":[{"key":"DCOS_PACKAGE_IS_FRAMEWORK","value":"false"}]}'])
     assert val == expected_value
 
@@ -504,7 +504,7 @@ def test_value_has_regex():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ['^(dm-\d+|ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+$'])
     assert val == expected_value
 
@@ -522,7 +522,7 @@ def test_value_has_regex2():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, ['^/proc|^/sys|^/dev|^/mnt|^/export|^/var/lib/mysql|^/volr'])
     assert val == expected_value
 
@@ -534,7 +534,7 @@ def test_fetch_bracketed_value():
     log.info("Executing test_fetch_bracketed_value")
     value = "[dummy]"
     val = command_line_parser._fetch_bracketed_value(value)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = ('[dummy]')
     assert val == expected_value
 
@@ -547,7 +547,7 @@ def test_no_params():
     log.info("Executing test_no_params")
     command_line = {"cmdline" : ""}
     val = command_line_parser.parse_cmdline(params='', chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     assert not val[0]
 
 
@@ -563,7 +563,7 @@ def test_no_keys_given():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     assert not val[0]
 
 
@@ -579,7 +579,7 @@ def test_no_chained_value_given():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained='')
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     assert not val[0]
 
 
@@ -596,7 +596,7 @@ def test_wrong_chained_value_format():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     assert not val[0]
 
 
@@ -612,7 +612,7 @@ def test_no_delimiter():
         'key_aliases': key_aliases
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     assert not val[0]
 
 
@@ -629,7 +629,7 @@ def test_extra_spaces():
         'delimiter': ' '
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, [('a:b')])
     assert val == expected_value
 
@@ -647,7 +647,7 @@ def test_extra_spaces_different_delimiter():
         'delimiter': '='
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
-    log.debug("return value is {0}".format(val))
+    log.debug("return value is %s", val)
     expected_value = (True, [('a:b')])
     assert val == expected_value
 

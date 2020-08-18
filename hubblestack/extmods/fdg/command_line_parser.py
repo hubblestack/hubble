@@ -151,10 +151,8 @@ def _get_match_list(regex, key_alias, command_line, delimiter):
     match_list = []
 
     matches = re.finditer(regex, command_line)
-    for matchNum, match in enumerate(matches, start=1):
-        log.info("Match {matchNum} was found at {start}-{end}: {match}".format(matchNum=matchNum,
-                                                                                   start=match.start(), end=match.end(),
-                                                                                   match=match.group()))
+    for match_num, match in enumerate(matches, start=1):
+        log.info("Match %d was found at %d-%d: %s", match_num, match.start(), match.end(), match.group())
         value = match.group().lstrip("-")
         value = value.replace("".join(["\"", key_alias, "\""]), key_alias)
         value = value.replace("".join(["\'", key_alias, "\'"]), key_alias)

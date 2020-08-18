@@ -294,7 +294,8 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
     # have available with the data list, so data will be processed multiple
     # times. However, for the scale we're working at this should be fine.
     # We can revisit if this ever becomes a big bottleneck
-    for key, func in __nova__._dict.items():
+
+    for key, func in __nova__.items():
         try:
             ret = func(data_list, tags, labels, **kwargs)
         except Exception:
@@ -670,9 +671,9 @@ def load():
     global __nova__
     __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __mods__)
 
-    ret = {'loaded': list(__nova__._dict.keys()),
+    ret = {'loaded': list(__nova__)),
            'missing': __nova__.missing_modules,
-           'data': list(__nova__.__data__.keys()),
+           'data': list(__nova__.__data__),
            'missing_data': __nova__.__missing_data__}
 
     return True, ret

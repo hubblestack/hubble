@@ -671,7 +671,7 @@ def load():
     global __nova__
     __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __mods__)
 
-    ret = {'loaded': list(__nova__)),
+    ret = {'loaded': list(__nova__),
            'missing': __nova__.missing_modules,
            'data': list(__nova__.__data__),
            'missing_data': __nova__.__missing_data__}

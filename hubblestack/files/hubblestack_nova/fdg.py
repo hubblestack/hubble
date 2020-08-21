@@ -18,6 +18,7 @@ fdg:
         starting_chained: 'value'  # value for fdg `starting_chained` (optional)
         true_for_success: True  # Whether a "truthy" value constitues success
         use_status: False  # Use the status result of the fdg run.
+        consolidation_operator: and/or
       '*':  # wildcard, will be run if no direct osfinger match
         fdg_file: 'salt://fdg/my_fdg_file.fdg'  # filename for fdg routine
         tag: 'CIS-1.1.1'  # audit tag
@@ -39,6 +40,10 @@ result returned from fdg will be used. If this is True, only the status result o
 the fdg run will be considered. If it is False, only the actual result of the
 fdg run will be considered. Regardless, the ``true_for_success`` argument
 will be respected.
+
+The consolidation_operator is used when chaining is done using xpipe and the
+returned result is a list. If the list contains more than one tuple, the
+result is consolidated based on the consolidation operator.
 """
 
 import logging

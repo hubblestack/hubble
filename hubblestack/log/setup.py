@@ -178,27 +178,6 @@ def emit_to_splunk(message, level, name):
     return True
 
 
-def workaround_salt_log_handler_queues():
-    """
-    Build a fake log handler and add it to LOGGING_STORE_HANDLER and LOGGING_NULL_HANDLER
-    """
-    class _FakeLogHandler(object):
-        level = 10
-        count = 0
-
-        def handle(self, _record):
-            """ Receive a record and increase the count """
-            self.count += 1
-
-    flh = _FakeLogHandler()
-    import salt.log.setup as sls
-    sls.LOGGING_STORE_HANDLER.sync_with_handlers([flh])
-    sls.LOGGING_NULL_HANDLER.sync_with_handlers([flh])
-    # if flh.count > 0:
-    #     log.info("pretended to handle %d logging record(s)
-    #     for salt.log.setup.LOGGING_*_HANDLER", flh.count)
-
-
 def filter_logs(opts_to_log, remove_dots=True):
     """
     Filters out keys containing certain patterns to avoid sensitive information being sent to logs

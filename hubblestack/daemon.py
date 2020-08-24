@@ -176,9 +176,6 @@ def main():
         try:
             log.debug('Executing schedule')
             sf_count = schedule()
-            if sf_count > 0:
-                log.debug('Executed %d schedule item(s)', sf_count)
-                hubblestack.log.workaround_salt_log_handler_queues()
         except Exception as exc:
             log.exception('Error executing schedule: %s', exc)
             if isinstance(exc, KeyboardInterrupt):

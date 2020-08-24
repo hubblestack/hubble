@@ -33,8 +33,8 @@ from croniter import croniter
 
 import hubblestack.loader
 import hubblestack.utils.signing
-import hubblestack.log.splunk
 import hubblestack.log
+import hubblestack.log.splunk
 import hubblestack.hec.opt
 import hubblestack.utils.stdrec
 from hubblestack import __version__

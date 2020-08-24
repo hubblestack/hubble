@@ -8,7 +8,7 @@ Logging for the hubble daemon
 import logging
 import time
 
-import hubblestack.splunklogging
+import hubblestack.log.splunk
 
 # These patterns will not be logged by "conf_publisher" and "emit_to_splunk"
 
@@ -153,7 +153,7 @@ def setup_splunk_logger():
     _remove_temp_handler()
     rootlogger = logging.getLogger()
 
-    handler = hubblestack.splunklogging.SplunkHandler()
+    handler = hubblestack.log.splunk.SplunkHandler()
     handler.setLevel(logging.SPLUNK)
 
     rootlogger.addHandler(handler)

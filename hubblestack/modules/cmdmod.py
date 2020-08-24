@@ -33,7 +33,7 @@ import hubblestack.utils.user
 import hubblestack.grains.extra
 from hubblestack.utils.exceptions import CommandExecutionError, TimedProcTimeoutError, \
     HubbleInvocationError
-from salt.log import LOG_LEVELS
+from hubblestack.log import LOG_LEVELS
 
 # Only available on POSIX systems, nonfatal on windows
 try:

@@ -33,7 +33,7 @@ from croniter import croniter
 
 import hubblestack.loader
 import hubblestack.utils.signing
-import hubblestack.splunklogging
+import hubblestack.log.splunk
 import hubblestack.log
 import hubblestack.hec.opt
 import hubblestack.utils.stdrec
@@ -812,10 +812,10 @@ def refresh_grains(initial=False):
     hubblestack.hec.opt.__salt__ = __mods__
     hubblestack.hec.opt.__opts__ = __opts__
 
-    hubblestack.splunklogging.__grains__ = __grains__
-    hubblestack.splunklogging.__mods__ = __mods__
-    hubblestack.splunklogging.__salt__ = __mods__
-    hubblestack.splunklogging.__opts__ = __opts__
+    hubblestack.log.splunk.__grains__ = __grains__
+    hubblestack.log.splunk.__mods__ = __mods__
+    hubblestack.log.splunk.__salt__ = __mods__
+    hubblestack.log.splunk.__opts__ = __opts__
 
     hubblestack.status.__opts__ = __opts__
     hubblestack.status.__mods__ = __mods__

@@ -139,11 +139,14 @@ def _get_consolidated_result(fdg_run, consolidation_operator):
                   "unexpected structure of %s found, it is not a list", fdg_run)
         return fdg_run, False
 
-    if consolidation_operator and consolidation_operator != "and" and consolidation_operator != "or":
+    if not consolidation_operator:
+        log.error("invalid value of consolidation operator %s found, returning False", consolidation_operator)
+        return fdg_run, False
+    if consolidation_operator != "and" and consolidation_operator != "or":
         log.error("operator %s not supported, returning False", consolidation_operator)
         return fdg_run, False
-    overall_result = consolidation_operator == 'and'
 
+    overall_result = consolidation_operator == 'and'
     for item in fdg_run_copy:
         if not isinstance(item, tuple):
             log.error("something went wrong while consolidating fdg_result, "
@@ -151,7 +154,7 @@ def _get_consolidated_result(fdg_run, consolidation_operator):
             return fdg_run, False
 
         fdg_result, fdg_status = item
-        if "and" in consolidation_operator:
+        if consolidation_operator == "and":
             overall_result = overall_result and fdg_status
         else:
             overall_result = overall_result or fdg_status

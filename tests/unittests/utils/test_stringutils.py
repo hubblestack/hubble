@@ -133,6 +133,46 @@ class StringutilsTestCase(TestCase):
             )
         )
 
+    def test_get_context(self):
+        expected_context = textwrap.dedent('''\
+            ---
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque eget urna a arcu lacinia sagittis.
+            Sed scelerisque, lacus eget malesuada vestibulum, justo diam facilisis tortor, in sodales dolor
+            [...]
+            ---''')
+        ret = hubblestack.utils.stringutils.get_context(LOREM_IPSUM, 1, num_lines=1)
+        self.assertEqual(ret, expected_context)
+
+    def test_get_context_has_enough_context(self):
+        template = '1\n2\n3\n4\n5\n6\n7\n8\n9\na\nb\nc\nd\ne\nf'
+        context = hubblestack.utils.stringutils.get_context(template, 8)
+        expected = '---\n[...]\n3\n4\n5\n6\n7\n8\n9\na\nb\nc\nd\n[...]\n---'
+        self.assertEqual(expected, context)
+
+    def test_get_context_at_top_of_file(self):
+        template = '1\n2\n3\n4\n5\n6\n7\n8\n9\na\nb\nc\nd\ne\nf'
+        context = hubblestack.utils.stringutils.get_context(template, 1)
+        expected = '---\n1\n2\n3\n4\n5\n6\n[...]\n---'
+        self.assertEqual(expected, context)
+
+    def test_get_context_at_bottom_of_file(self):
+        template = '1\n2\n3\n4\n5\n6\n7\n8\n9\na\nb\nc\nd\ne\nf'
+        context = hubblestack.utils.stringutils.get_context(template, 15)
+        expected = '---\n[...]\na\nb\nc\nd\ne\nf\n---'
+        self.assertEqual(expected, context)
+
+    def test_get_context_2_context_lines(self):
+        template = '1\n2\n3\n4\n5\n6\n7\n8\n9\na\nb\nc\nd\ne\nf'
+        context = hubblestack.utils.stringutils.get_context(template, 8, num_lines=2)
+        expected = '---\n[...]\n6\n7\n8\n9\na\n[...]\n---'
+        self.assertEqual(expected, context)
+
+    def test_get_context_with_marker(self):
+        template = '1\n2\n3\n4\n5\n6\n7\n8\n9\na\nb\nc\nd\ne\nf'
+        context = hubblestack.utils.stringutils.get_context(template, 8, num_lines=2, marker=' <---')
+        expected = '---\n[...]\n6\n7\n8 <---\n9\na\n[...]\n---'
+        self.assertEqual(expected, context)
+
     def test_to_str(self):
         for x in (123, (1, 2, 3), [1, 2, 3], {1: 23}, None):
             self.assertRaises(TypeError, hubblestack.utils.stringutils.to_str, x)

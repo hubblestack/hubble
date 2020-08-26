@@ -86,3 +86,33 @@ def escape_for_cmd_exe(arg):
         return meta_map[char]
 
     return meta_re.sub(escape_meta_chars, arg)
+
+def guid_to_squid(guid):
+    '''
+    Converts a GUID   to a compressed guid (SQUID)
+
+    Each Guid has 5 parts separated by '-'. For the first three each one will be
+    totally reversed, and for the remaining two each one will be reversed by
+    every other character. Then the final compressed Guid will be constructed by
+    concatenating all the reversed parts without '-'.
+
+    .. Example::
+
+        Input:                  2BE0FA87-5B36-43CF-95C8-C68D6673FB94
+        Reversed:               78AF0EB2-63B5-FC34-598C-6CD86637BF49
+        Final Compressed Guid:  78AF0EB263B5FC34598C6CD86637BF49
+
+    Args:
+
+        guid (str): A valid GUID
+
+    Returns:
+        str: A valid compressed GUID (SQUID)
+    '''
+    guid_pattern = re.compile(r'^\{(\w{8})-(\w{4})-(\w{4})-(\w\w)(\w\w)-(\w\w)(\w\w)(\w\w)(\w\w)(\w\w)(\w\w)\}$')
+    guid_match = guid_pattern.match(guid)
+    squid = ''
+    if guid_match is not None:
+        for index in range(1, 12):
+            squid += guid_match.group(index)[::-1]
+    return squid

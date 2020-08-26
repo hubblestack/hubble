@@ -41,6 +41,19 @@ logging.addLevelName(PROFILE, 'PROFILE')
 logging.addLevelName(TRACE, 'TRACE')
 logging.addLevelName(GARBAGE, 'GARBAGE')
 
+__CONSOLE_CONFIGURED = __LOGFILE_CONFIGURED = False
+
+
+def is_console_configured():
+    return __CONSOLE_CONFIGURED
+
+
+def is_logfile_configured():
+    return __LOGFILE_CONFIGURED
+
+
+def is_logging_configured():
+    return __CONSOLE_CONFIGURED or __LOGFILE_CONFIGURED
 
 def _splunk(self, message, *args, **kwargs):
     if self.isEnabledFor(logging.SPLUNK):
@@ -97,6 +110,11 @@ def _remove_temp_handler():
     """
     Remove temporary handler if it exists
     """
+
+    if is_logging_configured():
+        # In this case, the temporary logging handler has been removed, return!
+        return
+
     if TEMP_HANDLER and TEMP_HANDLER in logging.root.handlers:
         logging.root.handlers.remove(TEMP_HANDLER)
 
@@ -119,6 +137,8 @@ def setup_console_logger(log_level='error',
     handler.setFormatter(formatter)
 
     rootlogger.addHandler(handler)
+
+    __CONSOLE_CONFIGURED = True
 
 
 def setup_file_logger(log_file,
@@ -144,6 +164,8 @@ def setup_file_logger(log_file,
     handler.setFormatter(formatter)
 
     rootlogger.addHandler(handler)
+
+    __LOGFILE_CONFIGURED = True
 
 
 def setup_splunk_logger():

@@ -5,5 +5,8 @@ from hubblestack.log.setup import (
     emit_to_splunk,
     setup_splunk_logger,
     setup_console_logger,
-    setup_file_logger
+    setup_file_logger,
+    is_logfile_configured,
+    is_console_configured,
+    is_logging_configured
 )

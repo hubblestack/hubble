@@ -14,7 +14,6 @@ import os
 import re
 import yaml
 
-import salt.ext.six
 import salt.loader
 import hubblestack.utils.platform
 

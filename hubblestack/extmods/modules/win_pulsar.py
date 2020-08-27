@@ -13,7 +13,6 @@ import logging
 import os
 import yaml
 
-import salt.ext.six
 import salt.loader
 import hubblestack.utils.platform
 

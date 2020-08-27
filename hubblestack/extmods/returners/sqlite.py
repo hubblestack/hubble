@@ -20,7 +20,8 @@ except Exception:
 __virtualname__ = 'sqlite'
 
 log = logging.getLogger(__virtualname__)
-version = [int(num) for num in sqlite3.sqlite_version.split('.')]
+if HAS_SQLI:
+    version = [int(num) for num in sqlite3.sqlite_version.split('.')]
 
 
 def __virtual__():
@@ -72,12 +73,12 @@ def _get_conn():
             log.debug('creating missing directory %s', dir)
             try:
                 os.makedirs(dir, 0o755)
-            except OSError as err:
+            except OSError:
                 log.info('failed to create directory %s', dir)
         try:
             conn = sqlite3.connect(_options.get('dumpster', 'hubble-returns-testing.db'))
             IS_CONNECTED = True
-        except sqlite3.Error as e:
+        except sqlite3.Error:
             log.exception('failed to connect to sqlite database %s', database)
 
         log.debug('creating jid table')

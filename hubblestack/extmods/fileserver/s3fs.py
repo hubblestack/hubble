@@ -124,9 +124,9 @@ def update():
     if S3_SYNC_ON_UPDATE and metadata:
         # sync the buckets to the local cache
         log.info('Syncing local cache from S3...')
-        for saltenv, env_meta in iter(metadata.items()):
+        for saltenv, env_meta in metadata.items():
             for bucket_files in _find_files(env_meta):
-                for bucket, files in iter(bucket_files.items()):
+                for bucket, files in bucket_files.items():
                     for file_path in files:
                         cached_file_path = _get_cached_file_name(bucket, saltenv, file_path)
                         log.info('%s - %s : %s', bucket, saltenv, file_path)
@@ -162,7 +162,7 @@ def find_file(path, saltenv='base', **kwargs):
 
     # look for the files and check if they're ignored globally
     for bucket in env_files:
-        for bucket_name, files in iter(bucket.items()):
+        for bucket_name, files in bucket.items():
             if path in files and not fs.is_file_ignored(__opts__, path):
                 fnd['bucket'] = bucket_name
                 fnd['path'] = path
@@ -272,7 +272,7 @@ def file_list(load):
     if not metadata or saltenv not in metadata:
         return ret
     for bucket in _find_files(metadata[saltenv]):
-        for buckets in iter(bucket.values()):
+        for buckets in bucket.values():
             files = [f for f in buckets if not fs.is_file_ignored(__opts__, f)]
             ret += _trim_env_off_path(files, saltenv)
 
@@ -310,7 +310,7 @@ def dir_list(load):
 
     # grab all the dirs from the buckets cache file
     for bucket in _find_dirs(metadata[saltenv]):
-        for dirs in iter(bucket.values()):
+        for dirs in bucket.values():
             # trim env and trailing slash
             dirs = _trim_env_off_path(dirs, saltenv, trim_slash=True)
             # remove empty string left by the base env dir in single bucket mode
@@ -537,7 +537,7 @@ def _refresh_buckets_cache_file(cache_file):
 
     if _is_env_per_bucket():
         # Single environment per bucket
-        for saltenv, buckets in iter(_get_buckets().items()):
+        for saltenv, buckets in _get_buckets().items():
             ret = _parse_buckets(buckets=buckets, salt_env=saltenv)
             # S3 error
             if not ret:
@@ -592,7 +592,7 @@ def _find_files(metadata):
     found = {}
 
     for bucket_dict in metadata:
-        for bucket_name, data in iter(bucket_dict.items()):
+        for bucket_name, data in bucket_dict.items():
             file_paths = [k['Key'] for k in data]
             file_paths = [k for k in file_paths if not k.endswith('/')]
             if bucket_name not in found:
@@ -617,7 +617,7 @@ def _find_dirs(metadata):
     found = {}
 
     for bucket_dict in metadata:
-        for bucket_name, data in iter(bucket_dict.items()):
+        for bucket_name, data in bucket_dict.items():
             dir_paths = set()
             for path in [k['Key'] for k in data]:
                 prefix = ''

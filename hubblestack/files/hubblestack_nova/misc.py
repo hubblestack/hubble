@@ -45,7 +45,6 @@ import fnmatch
 import os
 import re
 import salt.utils
-from salt.ext import six
 from hubblestack.utils.exceptions import CommandExecutionError
 from collections import Counter
 
@@ -121,7 +120,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
                 if result is True:
                     ret['Success'].append(tag_data)
-                elif isinstance(result, six.string_types):
+                elif isinstance(result, str):
                     tag_data['failure_reason'] = result
                     ret['Failure'].append(tag_data)
                 else:

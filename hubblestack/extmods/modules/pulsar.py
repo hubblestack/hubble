@@ -24,7 +24,6 @@ import time
 from hubblestack.utils.exceptions import CommandExecutionError
 
 # Import salt libs
-import salt.ext.six
 import salt.loader
 import hubblestack.utils.platform
 
@@ -270,7 +269,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
     def _get_paths(self, *wdl):
         wdl = self._listify_anything(wdl)
-        return self._listify_anything([ k for k,v in salt.ext.six.iteritems(self.watch_db) if v in wdl ])
+        return self._listify_anything([ k for k,v in self.watch_db.items() if v in wdl ])
 
     def update_config(self):
         """ (re)check the config files for inotify_limits:
@@ -461,7 +460,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
 
     def _prune_paths_to_stop_watching(self):
         inverse_parent_db = {}
-        for k,v in salt.ext.six.iteritems(self.parent_db):
+        for k,v in self.parent_db.items():
             for i in v:
                 inverse_parent_db[i] = k
         for dirpath in self.watch_db:
@@ -507,7 +506,7 @@ class PulsarWatchManager(pyinotify.WatchManager):
         # the parent_db sets contain any of the removed dirpaths
         # and then make sure there's no empty sets in the parent_db
         to_fully_delete = set()
-        for d,s in salt.ext.six.iteritems(self.parent_db):
+        for d,s in self.parent_db.items():
             s -= plist
             if not s:
                 to_fully_delete.add(d)
@@ -801,7 +800,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                     # Don't checksum any file over 100MB
                     if os.path.getsize(pathname) < config.get('checksum_size', 104857600):
                         sum_type = config['checksum']
-                        if not isinstance(sum_type, salt.ext.six.string_types):
+                        if not isinstance(sum_type, str):
                             sum_type = 'sha256'
                         old_checksum = __context__['pulsar_checksums'].get(pathname)
                         new_checksum = __salt__['file.get_hash'](pathname, sum_type)
@@ -877,7 +876,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                     r_mask = 0
                     for sub in mask:
                         r_mask |= _get_mask(sub)
-                elif isinstance(mask, salt.ext.six.binary_type):
+                elif isinstance(mask, bytes):
                     r_mask = _get_mask(mask)
                 else:
                     r_mask = mask

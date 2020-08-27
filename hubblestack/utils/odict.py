@@ -116,7 +116,7 @@ except (ImportError, AttributeError):
             def clear(self):
                 'od.clear() -> None.  Remove all items from od.'
                 try:
-                    for node in six.itervalues(self.__map):
+                    for node in self.__map.values():
                         del node[:]
                     root = self.__root
                     root[:] = [root, root, None]
@@ -206,7 +206,7 @@ except (ImportError, AttributeError):
                 else:
                     for key, value in other:
                         self[key] = value
-                for key, value in six.iteritems(kwds):
+                for key, value in kwds.items():
                     self[key] = value
 
             __update = update  # let subclasses override update without breaking __init__

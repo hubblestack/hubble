@@ -188,7 +188,7 @@ def update():
     if not os.path.exists(mtime_map_path_dir):
         os.makedirs(mtime_map_path_dir)
     with hubblestack.utils.files.fopen(mtime_map_path, 'wb') as fp_:
-        for file_path, mtime in iter(new_mtime_map.items()):
+        for file_path, mtime in new_mtime_map.items():
             fp_.write(
                 hubblestack.utils.stringutils.to_bytes(
                     '{0}:{1}\n'.format(file_path, mtime)
@@ -442,5 +442,5 @@ def symlink_list(load):
 
     symlinks = _file_lists(load, 'links')
     return dict([(key, val)
-                 for key, val in iter(symlinks.items())
+                 for key, val in symlinks.items()
                  if key.startswith(prefix)])

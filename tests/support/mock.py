@@ -284,7 +284,7 @@ class MockCall(object):
                 # Remove trailing ', '
                 ret = ret[:-2]
         else:
-            for key, val in iter(self.kwargs.items()):
+            for key, val in self.kwargs.items():
                 ret += str('{0}={1}').format(
                     hubblestack.utils.stringutils.to_str(key),
                     repr(val)
@@ -471,7 +471,7 @@ class MockOpen(object):
         the results to files matching a given pattern.
         '''
         ret = []
-        for filename, handles in iter(self.filehandles.items()):
+        for filename, handles in self.filehandles.items():
             if path is None or fnmatch.fnmatch(filename, path):
                 for fh_ in handles:
                     ret.extend(fh_.write_calls)
@@ -483,7 +483,7 @@ class MockOpen(object):
         narrow the results to files matching a given pattern.
         '''
         ret = []
-        for filename, handles in iter(self.filehandles.items()):
+        for filename, handles in self.filehandles.items():
             if path is None or fnmatch.fnmatch(filename, path):
                 for fh_ in handles:
                     ret.extend(fh_.writelines_calls)

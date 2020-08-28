@@ -83,23 +83,28 @@ def _module_dirs(
         ext_dirs=True,
         ext_type_dirs=None,
         base_path=None,
+        explain=False,
         ):
 
     if tag is None:
         tag = ext_type
 
+    # NOTE: this ordering is most authoritative last. if we find a grains
+    # module in salt, we want to replace it with the grains module from hubble,
+    # so hubble's path should come last.
+
     ext_types = os.path.join(opts['extension_modules'], ext_type)
     sys_types = os.path.join(base_path or HUBBLE_BASE_PATH, int_type or ext_type)
 
-    # XXX should be removed eventually:
     hubblestack_type = 'hubblestack_' + (int_type or ext_type)
     files_base_types = os.path.join(base_path or HUBBLE_BASE_PATH, 'files', hubblestack_type)
+
+    # XXX should be removed eventually:
     salt_base_types = os.path.join(SALT_BASE_PATH, int_type or ext_type)
-    # /XXX
 
     ext_type_types = []
     if ext_dirs:
-        if ext_type_dirs is None:
+        if tag is not None and ext_type_dirs is None:
             ext_type_dirs = '{0}_dirs'.format(tag)
         if ext_type_dirs in opts:
             ext_type_types.extend(opts[ext_type_dirs])
@@ -125,7 +130,9 @@ def _module_dirs(
         if os.path.isdir(maybe_dir):
             cli_module_dirs.insert(0, maybe_dir)
 
-    return cli_module_dirs + ext_type_types + [ext_types, sys_types, files_base_types, salt_base_types]
+    if explain:
+        return (cli_module_dirs, ext_type_types, [files_base_types, salt_base_types, ext_types, sys_types])
+    return cli_module_dirs + ext_type_types + [files_base_types, salt_base_types, ext_types, sys_types]
 
 
 def modules(
@@ -401,8 +408,12 @@ def _generate_module(name):
 
 
 def _mod_type(module_path):
-    if module_path.startswith(SALT_BASE_PATH):
+    if module_path.startswith(HUBBLE_BASE_PATH):
+        if 'extmods' in module_path:
+            return 'e_int'
         return 'int'
+    if module_path.startswith(SALT_BASE_PATH):
+        return 'salt'
     return 'ext'
 
 

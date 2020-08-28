@@ -698,32 +698,30 @@ def _setup_dirs():
     __opts__['comparators_dirs'] = comparators_dirs
 
     module_dirs = __opts__.get('module_dirs', [])
-    module_dirs.append(os.path.join(this_dir, 'modules'))
-    module_dirs.append(os.path.join(this_dir, 'extmods', 'modules')) # XXX
+    module_dirs.append(os.path.join(this_dir, 'extmods', 'modules'))
     __opts__['module_dirs'] = module_dirs
-    grains_dirs = __opts__.get('grains_dirs', [])
-    grains_dirs.append(os.path.join(this_dir, 'grains'))
-    __opts__['grains_dirs'] = grains_dirs
+
     returner_dirs = __opts__.get('returner_dirs', [])
-    returner_dirs.append(os.path.join(this_dir, 'returners'))
-    returner_dirs.append(os.path.join(this_dir, 'extmods', 'returners')) # XXX
+    returner_dirs.append(os.path.join(this_dir, 'extmods', 'returners'))
     __opts__['returner_dirs'] = returner_dirs
+
     fileserver_dirs = __opts__.get('fileserver_dirs', [])
-    fileserver_dirs.append(os.path.join(this_dir, 'fileserver'))
-    fileserver_dirs.append(os.path.join(this_dir, 'extmods', 'fileserver')) # XXX
+    fileserver_dirs.append(os.path.join(this_dir, 'extmods', 'fileserver'))
     __opts__['fileserver_dirs'] = fileserver_dirs
+
     utils_dirs = __opts__.get('utils_dirs', [])
-    utils_dirs.append(os.path.join(this_dir, 'utils'))
-    utils_dirs.append(os.path.join(this_dir, 'extmods', 'utils')) # XXX
+    utils_dirs.append(os.path.join(this_dir, 'extmods', 'utils'))
     __opts__['utils_dirs'] = utils_dirs
+
     fdg_dirs = __opts__.get('fdg_dirs', [])
-    fdg_dirs.append(os.path.join(this_dir, 'fdg'))
-    fdg_dirs.append(os.path.join(this_dir, 'extmods', 'fdg')) # XXX
+    fdg_dirs.append(os.path.join(this_dir, 'extmods', 'fdg'))
     __opts__['fdg_dirs'] = fdg_dirs
+
     audit_dirs = __opts__.get('audit_dirs', [])
-    audit_dirs.append(os.path.join(this_dir, 'audit'))
-    audit_dirs.append(os.path.join(this_dir, 'extmods', 'audit')) # XXX
+    audit_dirs.append(os.path.join(this_dir, 'extmods', 'audit'))
     __opts__['audit_dirs'] = audit_dirs
+
+    # /XXX
 
     if 'file_roots' not in __opts__:
         __opts__['file_roots'] = dict(base=list())

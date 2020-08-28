@@ -8,7 +8,7 @@ Logging for the hubble daemon
 import logging
 import time
 
-import hubblestack.splunklogging
+import hubblestack.log.splunk
 
 # These patterns will not be logged by "conf_publisher" and "emit_to_splunk"
 
@@ -41,6 +41,19 @@ logging.addLevelName(PROFILE, 'PROFILE')
 logging.addLevelName(TRACE, 'TRACE')
 logging.addLevelName(GARBAGE, 'GARBAGE')
 
+__CONSOLE_CONFIGURED = __LOGFILE_CONFIGURED = False
+
+
+def is_console_configured():
+    return __CONSOLE_CONFIGURED
+
+
+def is_logfile_configured():
+    return __LOGFILE_CONFIGURED
+
+
+def is_logging_configured():
+    return __CONSOLE_CONFIGURED or __LOGFILE_CONFIGURED
 
 def _splunk(self, message, *args, **kwargs):
     if self.isEnabledFor(logging.SPLUNK):
@@ -97,6 +110,11 @@ def _remove_temp_handler():
     """
     Remove temporary handler if it exists
     """
+
+    if is_logging_configured():
+        # In this case, the temporary logging handler has been removed, return!
+        return
+
     if TEMP_HANDLER and TEMP_HANDLER in logging.root.handlers:
         logging.root.handlers.remove(TEMP_HANDLER)
 
@@ -119,6 +137,8 @@ def setup_console_logger(log_level='error',
     handler.setFormatter(formatter)
 
     rootlogger.addHandler(handler)
+
+    __CONSOLE_CONFIGURED = True
 
 
 def setup_file_logger(log_file,
@@ -145,6 +165,8 @@ def setup_file_logger(log_file,
 
     rootlogger.addHandler(handler)
 
+    __LOGFILE_CONFIGURED = True
+
 
 def setup_splunk_logger():
     """
@@ -153,7 +175,7 @@ def setup_splunk_logger():
     _remove_temp_handler()
     rootlogger = logging.getLogger()
 
-    handler = hubblestack.splunklogging.SplunkHandler()
+    handler = hubblestack.log.splunk.SplunkHandler()
     handler.setLevel(logging.SPLUNK)
 
     rootlogger.addHandler(handler)
@@ -176,27 +198,6 @@ def emit_to_splunk(message, level, name):
     handler.emit(MockRecord(message, level, time.asctime(), name))
 
     return True
-
-
-def workaround_salt_log_handler_queues():
-    """
-    Build a fake log handler and add it to LOGGING_STORE_HANDLER and LOGGING_NULL_HANDLER
-    """
-    class _FakeLogHandler(object):
-        level = 10
-        count = 0
-
-        def handle(self, _record):
-            """ Receive a record and increase the count """
-            self.count += 1
-
-    flh = _FakeLogHandler()
-    import salt.log.setup as sls
-    sls.LOGGING_STORE_HANDLER.sync_with_handlers([flh])
-    sls.LOGGING_NULL_HANDLER.sync_with_handlers([flh])
-    # if flh.count > 0:
-    #     log.info("pretended to handle %d logging record(s)
-    #     for salt.log.setup.LOGGING_*_HANDLER", flh.count)
 
 
 def filter_logs(opts_to_log, remove_dots=True):

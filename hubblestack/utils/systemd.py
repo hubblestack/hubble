@@ -51,7 +51,7 @@ def version(context=None):
     Attempts to run systemctl --version. Returns None if unable to determine
     version.
     '''
-    contextkey = 'hubblestacl.utils.systemd.version'
+    contextkey = 'hubblestack.utils.systemd.version'
     if isinstance(context, dict):
         # Can't put this if block on the same line as the above if block,
         # because it will break the elif below.

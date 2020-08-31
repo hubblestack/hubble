@@ -24,7 +24,6 @@ try:
 except ImportError:
     HAS_YUM = False
 
-# Import Salt libs
 import hubblestack.utils.args
 import hubblestack.utils.data
 import hubblestack.utils.pkg

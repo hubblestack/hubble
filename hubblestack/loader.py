@@ -46,6 +46,11 @@ import importlib.util
 
 import pkg_resources
 
+try:
+    from collections.abc import MutableMapping
+except ImportError:
+    from collections import MutableMapping
+
 log = logging.getLogger(__name__)
 
 SALT_BASE_PATH = os.path.abspath(salt.syspaths.INSTALL_DIR)
@@ -387,6 +392,32 @@ def grains(opts, force_refresh=False, proxy=None):
     else:
         grains_data.update(opts['grains'])
     return salt.utils.data.decode(grains_data, preserve_tuples=True)
+
+def render(opts, functions):
+    '''
+    Returns the render modules
+    '''
+    pack = {'__salt__': functions,
+            '__grains__': opts.get('grains', {})}
+    ret = LazyLoader(
+        _module_dirs(
+            opts,
+            'renderers',
+            'render',
+            ext_type_dirs='render_dirs',
+        ),
+        opts,
+        tag='render',
+        pack=pack,
+    )
+    rend = FilterDictWrapper(ret, '.render')
+
+    if not check_render_pipe_str(opts['renderer'], rend, opts['renderer_blacklist'], opts['renderer_whitelist']):
+        err = ('The renderer {0} is unavailable, this error is often because '
+               'the needed software is unavailable'.format(opts['renderer']))
+        log.critical(err)
+        raise LoaderError(err)
+    return rend
 
 
 def _generate_module(name):
@@ -1236,6 +1267,33 @@ class LazyLoader(salt.utils.lazy.LazyDict):
             return (False, module_name, error_reason, virtual_aliases)
 
         return (True, module_name, None, virtual_aliases)
+
+class FilterDictWrapper(MutableMapping):
+    '''
+    Create a dict which wraps another dict with a specific key suffix on get
+
+    This is to replace "filter_load"
+    '''
+    def __init__(self, d, suffix):
+        self._dict = d
+        self.suffix = suffix
+
+    def __setitem__(self, key, val):
+        self._dict[key] = val
+
+    def __delitem__(self, key):
+        del self._dict[key]
+
+    def __getitem__(self, key):
+        return self._dict[key + self.suffix]
+
+    def __len__(self):
+        return len(self._dict)
+
+    def __iter__(self):
+        for key in self._dict:
+            if key.endswith(self.suffix):
+                yield key.replace(self.suffix, '')
 
 
 def matchers(opts):

@@ -205,7 +205,7 @@ def _build_terse_results(ret, show_success, show_compliance):
         tag = tag_data['tag']
         description = tag_data.get('description')
         if (tag, description) not in tags_descriptions:
-            terse_results['Failure'].append({tag: description})
+            terse_results['Failure'].append({tag: description, 'detail': tag_data['detail']})
             tags_descriptions.add((tag, description))
 
     terse_results['Success'] = []

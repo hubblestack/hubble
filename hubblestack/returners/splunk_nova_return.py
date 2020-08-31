@@ -169,6 +169,12 @@ def _generate_event(args, cloud_details, custom_fields, check_type=None, data=No
             for key, value in data[args['check_id']].items():
                 if key not in ['tag']:
                     event[key] = value
+    if check_type == 'Failure':
+        detail = data['detail']
+        event.update({'cve': detail['cve'],
+                      'advisory': detail['advisory'],
+                      'severity': detail['severity'],
+                      'impated_pkgs': detail['installed']})
     event.update({'minion_id': args['minion_id'],
                   'dest_host': args['fqdn'],
                   'dest_ip': args['fqdn_ip4'],

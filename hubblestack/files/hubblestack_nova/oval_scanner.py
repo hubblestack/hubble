@@ -18,9 +18,10 @@ oval_scanner:
 oval_scanner is the primary key.  Each opt key's value under the primary key
 is optional and does not need to be specified.  If opt_baseurl,
 opt_remote_sourcefile, and opt_local_sourcefile values are not specified, the
-scanner will automatically pull the appropriate OVAL source definition file from
-the supported distro's public repository.  opt_local_sourcefile will override
-opt_baseurl and opt_remote_sourcefile even if their values are specified.
+scanner will automatically pull the appropriate OVAL source definition file
+from the supported distro's public repository.  opt_local_sourcefile will
+override opt_baseurl and opt_remote_sourcefile even if their values are
+specified.
 
 top.nova must also reference the yaml file.  Note that other CVE scanners
 must be disabled or conflicts will ensue.  The contents of top.nova can look as
@@ -32,26 +33,26 @@ nova:
     - cve.oval <-- assuming the yaml is oval.yaml in this example
 
 When run, the scanner will parse the source OVAL file into a readable
-dictionary, maps OVAL defintions directly to OVAL object and OVAL state
+dictionary, maps OVAL definitions directly to OVAL object and OVAL state
 references based on OVAL test reference data of the definition, and then makes
-a comparison to the local packages installed on the system to identify potential
-vulnerabilities.
+a comparison to the local packages installed on the system to identify
+potential vulnerabilities.
 
 This scanner currently only supports the Linux platform.
 """
 
+from __future__ import absolute_import
 
-
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as etree
+from xml.etree.ElementTree import Element
 import json
+import datetime
 import requests
 import logging
 import hubblestack.utils.platform
 
-
 def __virtual__():
     return not hubblestack.utils.platform.is_windows()
-
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
     """Hubble audit function"""
@@ -68,6 +69,11 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 logging.info('The oval CVE scanner does not currently support {0}'.format(distro_name.capitalize()))
                 return ret
             local_pkgs = __mods__['pkg.list_pkgs']()
+            if distro_name in ('debian'):
+                logging.info('Referencing source packages to binary packages. This could take awhile...'.format(distro_name.capitalize()))
+                pkg_src_ref = build_pkg_src_ref(local_pkgs)
+            else:
+                pkg_src_ref = {}
             # Scanner options
             opt_baseurl = data['oval_scanner']['opt_baseurl']
             opt_remote_sourcefile = data['oval_scanner']['opt_remote_sourcefile']
@@ -77,7 +83,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
             source_content = get_source_content(distro_name, distro_release, distro_codename, opt_baseurl, opt_remote_sourcefile, opt_local_sourcefile)
             oval_definition = build_oval(source_content)
             oval_and_maps = map_oval_ids(oval_definition)
-            vulns = create_vulns(oval_and_maps)
+            vulns = create_vulns(oval_and_maps, pkg_src_ref)
             report = get_impact_report(vulns, local_pkgs, distro_name)
             # Write report to file if specified
             if opt_output_file:
@@ -108,7 +114,14 @@ def parse_impact_report(report, local_pkgs, hubble_format, impacted_pkgs=[]):
 
 def write_report_to_file(opt_output_file, report):
     """Write report to local disk"""
+    logging.debug('write_report_to_file')
+    time = datetime.datetime.now()
+    now = time.strftime("%Y-%m-%d@%H:%M:%S")
     logging.info('Writing CVE data to {0}'.format(opt_output_file))
+    if __mods__['file.file_exists'](opt_output_file):
+        logging.info('Found existing log, backing up...')
+        back_up = opt_output_file + now
+        __mods__['file.rename'](opt_output_file, back_up)
     with open(opt_output_file, 'w') as outfile:
         outfile.write(json.dumps(report, indent=2, sort_keys=True))
 
@@ -133,17 +146,25 @@ def build_impact(vulns, local_pkgs, distro_name, result={}):
                 title = data['title']
                 cve = data['cve']
                 if 'severity' in data:
-                  severity = data['severity']
+                    severity = data['severity']
                 else:
-                  severity = 'N/A'
+                    severity = 'N/A'
                 if distro_name in ('centos', 'redhat'):
                     advisory = data['rhsa']
+                elif 'advisories' in data:
+                    advisory = data['advisories']
                 else:
-                    if 'advisories' in data:
-                      advisory = data['advisories']
-                    else:
-                      advisory = cve
-                impact = get_impact(local_pkgs[name], name, ver, title, cve, advisory, severity)
+                    advisory = cve
+                impact = get_impact(
+                    local_pkgs[name],
+                    distro_name,
+                    name=name,
+                    ver=ver,
+                    title=title,
+                    cve=cve,
+                    advisory=advisory,
+                    severity=severity
+                )
                 if impact:
                     result = build_impact_report(impact)
     return result
@@ -166,19 +187,48 @@ def build_impact_report(impact, report={}):
     return report
 
 
-def get_impact(local_ver, name, ver, title, cve, advisory, severity):
+def get_impact(local_ver, distro_name, **kargs):
     """Compare local package ver to vulnerability ver in rpm distros"""
     logging.debug('get_rpm_impact')
     impact = {}
-    if __mods__['pkg.version_cmp'](ver, local_ver) > 0:
-        impact[title] = {
-            'updated_pkg': {'name': name, 'version': ver},
-            'installed': {'name': name, 'version': local_ver},
-            'severity': severity,
-            'advisory': advisory,
-            'cve': cve
-        }
+    if __mods__['pkg.version_cmp'](kargs['ver'], local_ver) > 0:
+        impact = create_impact(impact, local_ver, **kargs)
     return impact
+
+
+def create_impact(impact, local_ver, **kargs):
+    """create impact based on local version"""
+    logging.debug('create_impact')
+    impact[kargs['title']] = {
+        'updated_pkg': {'name': kargs['name'], 'version': kargs['ver']},
+        'installed': {'name': kargs['name'], 'version': local_ver},
+        'severity': kargs['severity'],
+        'advisory': kargs['advisory'],
+        'cve': kargs['cve']
+    }
+    return impact
+
+
+# Build source package reference to binary packages (for Debian)
+def build_pkg_src_ref(local_pkgs, pkg_src_ref={}):
+    """Build source package reference for binary packages"""
+    logging.debug('build_pkg_src_ref')
+    pkg_detail = get_package_detail(local_pkgs)
+    for pkg, detail in pkg_detail.items():
+        if 'Source' in next(iter(detail.values())):
+            source = next(iter(detail.values()))['Source'].split()[0]
+            if source not in pkg_src_ref and not source == pkg:
+                pkg_src_ref[source] = []
+            if not source == pkg:
+                pkg_src_ref[source].append(pkg)
+    return pkg_src_ref
+
+
+def get_package_detail(local_pkgs):
+    """Get package details"""
+    logging.debug('get_package_detail')
+    for pkg in local_pkgs:
+        __mods__['pkg.show'](pkg)
 
 
 # Create vulnerability dictionary
@@ -346,7 +396,7 @@ def build_objects(root, namespace, objs={}):
             if is_et(object_name):
                 if object_name.text:
                     name = object_name.text
-                elif object_name.attrib['var_ref']:
+                elif 'var_ref' in object_name.attrib:
                     name = object_name.attrib['var_ref']
                 build_data['name'] = name
     return objs
@@ -372,9 +422,9 @@ def build_states(root, namespace, stes={}):
 def build_vars(root, namespace, vrs={}):
     """Build element vars from source into oval dict (aka Ubuntu pkg names)"""
     logging.debug('build_vars')
-    vars = root.find('oval:variables', namespace)
-    if is_et(vars):
-        for vr in vars:
+    var_refs = root.find('oval:variables', namespace)
+    if is_et(var_refs):
+        for vr in var_refs:
             primary_key = vr.attrib['id']
             vrs[primary_key] = {}
             var_data = vrs[primary_key]
@@ -388,13 +438,13 @@ def build_vars(root, namespace, vrs={}):
 
 def is_et(item):
     """Determine if specific item is a valid ElementTree element"""
-    return isinstance(item, ET.Element)
+    return isinstance(item, Element)
 
 
 def build_element_tree(source_content):
     """Build an element tree from source content"""
     logging.debug('build_element_tree')
-    return ET.fromstring(source_content)
+    return etree.fromstring(source_content)
 
 
 # Get oval source

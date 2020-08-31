@@ -18,6 +18,7 @@ fdg:
         starting_chained: 'value'  # value for fdg `starting_chained` (optional)
         true_for_success: True  # Whether a "truthy" value constitues success
         use_status: False  # Use the status result of the fdg run.
+        consolidation_operator: and/or
       '*':  # wildcard, will be run if no direct osfinger match
         fdg_file: 'salt://fdg/my_fdg_file.fdg'  # filename for fdg routine
         tag: 'CIS-1.1.1'  # audit tag
@@ -39,6 +40,10 @@ result returned from fdg will be used. If this is True, only the status result o
 the fdg run will be considered. If it is False, only the actual result of the
 fdg run will be considered. Regardless, the ``true_for_success`` argument
 will be respected.
+
+The consolidation_operator is used when chaining is done using xpipe and the
+returned result is a list. If the list contains more than one tuple, the
+result is consolidated based on the consolidation operator.
 """
 
 import logging
@@ -49,7 +54,7 @@ import copy
 from salt.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
-
+default_consolidation_operator = "and"
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
     """
@@ -92,8 +97,16 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 use_status = tag_data.get('use_status', False)
 
                 _, fdg_run = __salt__['fdg.fdg'](fdg_file, starting_chained=starting_chained)
-                fdg_result, fdg_status = fdg_run
 
+                if not isinstance(fdg_run, tuple):
+                    if 'consolidation_operator' not in tag_data:
+                        consolidation_operator = default_consolidation_operator
+                    else:
+                        consolidation_operator = tag_data['consolidation_operator']
+                    log.debug("consolidation_operator is %s", consolidation_operator)
+                    fdg_run = _get_consolidated_result(fdg_run, consolidation_operator)
+
+                fdg_result, fdg_status = fdg_run
                 tag_data['fdg_result'] = fdg_result
                 tag_data['fdg_status'] = fdg_status
 
@@ -113,6 +126,39 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                     else:
                         ret['Success'].append(tag_data)
     return ret
+
+
+def _get_consolidated_result(fdg_run, consolidation_operator):
+    fdg_run_copy = fdg_run
+
+    while isinstance(fdg_run_copy, list) and isinstance(fdg_run_copy[0], list):
+        fdg_run_copy = fdg_run_copy[0]
+
+    if not isinstance(fdg_run_copy, list):
+        log.error("something went wrong while consolidating fdg_result, "
+                  "unexpected structure of %s found, it is not a list", fdg_run)
+        return fdg_run, False
+
+    if not consolidation_operator:
+        log.error("invalid value of consolidation operator %s found, returning False", consolidation_operator)
+        return fdg_run, False
+    if consolidation_operator != "and" and consolidation_operator != "or":
+        log.error("operator %s not supported, returning False", consolidation_operator)
+        return fdg_run, False
+
+    overall_result = consolidation_operator == 'and'
+    for item in fdg_run_copy:
+        if not isinstance(item, tuple):
+            log.error("something went wrong while consolidating fdg_result, "
+                      "unexpected structure of %s found, it is not a tuple", fdg_run)
+            return fdg_run, False
+
+        fdg_result, fdg_status = item
+        if consolidation_operator == "and":
+            overall_result = overall_result and fdg_status
+        else:
+            overall_result = overall_result or fdg_status
+    return fdg_run, overall_result
 
 
 def _merge_yaml(ret, data, profile=None):

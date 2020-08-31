@@ -242,3 +242,13 @@ def safe_walk(top, topdown=True, onerror=None, followlinks=True, _seen=None):
                 yield x
     if not topdown:
         yield top, dirs, nondirs
+
+def is_empty(filename):
+    '''
+    Is a file empty?
+    '''
+    try:
+        return os.stat(filename).st_size == 0
+    except OSError:
+        # Non-existent file or permission denied to the parent dir
+        return False

@@ -100,6 +100,7 @@ def pytest_runtest_call(item):
         profile_name = filename.split('/')[-1][:-3]
         profile_name += '-' + funcname + '.pstats'
         prof_filename = os.path.join(output_dir, profile_name)
+        prof_filenames.add(prof_filename)
         try:
             os.makedirs(output_dir)
         except OSError:

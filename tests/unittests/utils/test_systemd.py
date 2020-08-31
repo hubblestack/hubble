@@ -5,13 +5,11 @@ from __future__ import absolute_import, print_function, unicode_literals
 import errno
 import os
 
-# Import Salt Testing libs
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import Mock, patch, NO_MOCK, NO_MOCK_REASON
 
-# Import Salt libs
 import hubblestack.utils.systemd as _systemd
-from salt.exceptions import SaltInvocationError
+from hubblestack.utils.exceptions import HubbleInvocationError
 
 
 def _booted_effect(path):
@@ -73,10 +71,10 @@ class SystemdTestCase(TestCase):
     def test_booted_invalid_context(self):
         '''
         Test with invalid context data. The context value must be a dict, so
-        this should raise a SaltInvocationError.
+        this should raise a HubbleInvocationError.
         '''
         # Test with invalid context data
-        with self.assertRaises(SaltInvocationError):
+        with self.assertRaises(HubbleInvocationError):
             _systemd.booted(99999)
 
     def test_version(self):
@@ -134,16 +132,16 @@ class SystemdTestCase(TestCase):
     def test_version_invalid_context(self):
         '''
         Test with invalid context data. The context value must be a dict, so
-        this should raise a SaltInvocationError.
+        this should raise a HubbleInvocationError.
         '''
         # Test with invalid context data
-        with self.assertRaises(SaltInvocationError):
+        with self.assertRaises(HubbleInvocationError):
             _systemd.version(99999)
 
     def test_version_parse_problem(self):
         '''
         Test with invalid context data. The context value must be a dict, so
-        this should raise a SaltInvocationError.
+        this should raise a HubbleInvocationError.
         '''
         with patch('subprocess.Popen') as popen_mock:
             popen_mock.return_value = Mock(
@@ -296,8 +294,8 @@ class SystemdTestCase(TestCase):
     def test_has_scope_invalid_context(self):
         '''
         Test with invalid context data. The context value must be a dict, so
-        this should raise a SaltInvocationError.
+        this should raise a HubbleInvocationError.
         '''
         # Test with invalid context data
-        with self.assertRaises(SaltInvocationError):
+        with self.assertRaises(HubbleInvocationError):
             _systemd.has_scope(99999)

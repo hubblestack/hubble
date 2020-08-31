@@ -28,10 +28,10 @@ class LooseVersion(_LooseVersion):
 
         # Convert every part of the version to string in order to be able to compare
         self._str_version = [
-            six.text_type(vp).zfill(8) if isinstance(vp, int) else vp for vp in self.version]
+            str(vp).zfill(8) if isinstance(vp, int) else vp for vp in self.version]
 
     def _cmp(self, other):
-        if isinstance(other, six.string_types):
+        if isinstance(other, str):
             other = LooseVersion(other)
 
         string_in_version = False
@@ -60,8 +60,8 @@ def version_cmp(pkg1, pkg2, ignore_epoch=False):
     version2, and 1 if version1 > version2. Return None if there was a problem
     making the comparison.
     '''
-    normalize = lambda x: six.text_type(x).split(':', 1)[-1] \
-                if ignore_epoch else six.text_type(x)
+    normalize = lambda x: str(x).split(':', 1)[-1] \
+                if ignore_epoch else str(x)
     pkg1 = normalize(pkg1)
     pkg2 = normalize(pkg2)
 

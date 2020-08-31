@@ -18,9 +18,10 @@ oval_scanner:
 oval_scanner is the primary key.  Each opt key's value under the primary key
 is optional and does not need to be specified.  If opt_baseurl,
 opt_remote_sourcefile, and opt_local_sourcefile values are not specified, the
-scanner will automatically pull the appropriate OVAL source definition file from
-the supported distro's public repository.  opt_local_sourcefile will override
-opt_baseurl and opt_remote_sourcefile even if their values are specified.
+scanner will automatically pull the appropriate OVAL source definition file
+from the supported distro's public repository.  opt_local_sourcefile will
+override opt_baseurl and opt_remote_sourcefile even if their values are
+specified.
 
 top.nova must also reference the yaml file.  Note that other CVE scanners
 must be disabled or conflicts will ensue.  The contents of top.nova can look as
@@ -32,25 +33,31 @@ nova:
     - cve.oval <-- assuming the yaml is oval.yaml in this example
 
 When run, the scanner will parse the source OVAL file into a readable
-dictionary, maps OVAL defintions directly to OVAL object and OVAL state
+dictionary, maps OVAL definitions directly to OVAL object and OVAL state
 references based on OVAL test reference data of the definition, and then makes
-a comparison to the local packages installed on the system to identify potential
-vulnerabilities.
+a comparison to the local packages installed on the system to identify
+potential vulnerabilities.
 
 This scanner currently only supports the Linux platform.
 """
 
-
+from __future__ import absolute_import
 
 import xml.etree.ElementTree as ET
+import re
 import json
+import datetime
+import functools
+import threading
+from queue import Queue
 import requests
 import logging
 import salt.utils.platform
+from pkg_resources import parse_version
 
 
 def __virtual__():
-    return not salt.utils.platform.is_windows() 
+    return not salt.utils.platform.is_windows()
 
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
@@ -58,6 +65,8 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
     ret = {'Success': [], 'Failure': []}
     for profile, data in data_list:
         if 'oval_scanner' in data:
+            # Create queue for threaded jobs
+            queue = Queue()
             # Distro facts
             distro_name = __grains__.get('os').lower()
             distro_release = __grains__.get('osmajorrelease')
@@ -68,6 +77,11 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 logging.info('The oval CVE scanner does not currently support {0}'.format(distro_name.capitalize()))
                 return ret
             local_pkgs = __salt__['pkg.list_pkgs']()
+            if distro_name in ('debian'):
+                logging.info('Referencing source packages to binary packages. This could take awhile...'.format(distro_name.capitalize()))
+                pkg_src_ref = build_pkg_src_ref(local_pkgs, queue)
+            else:
+                pkg_src_ref = {}
             # Scanner options
             opt_baseurl = data['oval_scanner']['opt_baseurl']
             opt_remote_sourcefile = data['oval_scanner']['opt_remote_sourcefile']
@@ -77,8 +91,8 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
             source_content = get_source_content(distro_name, distro_release, distro_codename, opt_baseurl, opt_remote_sourcefile, opt_local_sourcefile)
             oval_definition = build_oval(source_content)
             oval_and_maps = map_oval_ids(oval_definition)
-            vulns = create_vulns(oval_and_maps)
-            report = get_impact_report(vulns, local_pkgs, distro_name)
+            vulns = create_vulns(oval_and_maps, pkg_src_ref)
+            report = get_impact_report(vulns, local_pkgs, distro_name, queue)
             # Write report to file if specified
             if opt_output_file:
                 write_report_to_file(opt_output_file, report)
@@ -108,44 +122,38 @@ def parse_impact_report(report, local_pkgs, hubble_format, impacted_pkgs=[]):
 
 def write_report_to_file(opt_output_file, report):
     """Write report to local disk"""
+    time = datetime.datetime.now()
+    now = time.strftime("%Y-%m-%d@%H:%M:%S")
     logging.info('Writing CVE data to {0}'.format(opt_output_file))
+    if __salt__['file.file_exists'](opt_output_file):
+        logging.info('Found existing log, backing up...')
+        back_up = opt_output_file + now
+        __salt__['file.rename'](opt_output_file, back_up)
     with open(opt_output_file, 'w') as outfile:
         outfile.write(json.dumps(report, indent=2, sort_keys=True))
 
 
-def get_impact_report(vulns, local_pkgs, distro_name):
+def get_impact_report(vulns, local_pkgs, distro_name, queue):
     """Get impact report"""
     logging.debug('get_impact_report')
-    report = build_impact(vulns, local_pkgs, distro_name)
+    report = build_impact(vulns, local_pkgs, distro_name, queue)
     logging.debug(json.dumps(report, indent=4, sort_keys=True))
     return report
 
 
 # Build an impact report
-def build_impact(vulns, local_pkgs, distro_name, result={}):
-    """Build impacts based on pkg comparisons"""
+def build_impact(vulns, local_pkgs, distro_name, queue, result={}):
+    """Build impact"""
     logging.debug('build_impact')
-    for data in vulns.values():
-        for pkg in data['pkg']:
-            name = pkg['name']
-            ver = pkg['version']
-            if name in local_pkgs:
-                title = data['title']
-                cve = data['cve']
-                if 'severity' in data:
-                  severity = data['severity']
-                else:
-                  severity = 'N/A'
-                if distro_name in ('centos', 'redhat'):
-                    advisory = data['rhsa']
-                else:
-                    if 'advisories' in data:
-                      advisory = data['advisories']
-                    else:
-                      advisory = cve
-                impact = get_impact(local_pkgs[name], name, ver, title, cve, advisory, severity)
-                if impact:
-                    result = build_impact_report(impact)
+    determine_impact(vulns, local_pkgs, distro_name, queue)
+    while not queue.empty():
+        impact = queue.get()
+        if impact:
+            if 'kernel-aarch64' in list(impact.keys())[0]:
+                queue.task_done()
+                continue
+            result = build_impact_report(impact)
+        queue.task_done()
     return result
 
 
@@ -166,23 +174,128 @@ def build_impact_report(impact, report={}):
     return report
 
 
-def get_impact(local_ver, name, ver, title, cve, advisory, severity):
-    """Compare local package ver to vulnerability ver in rpm distros"""
-    logging.debug('get_rpm_impact')
+def determine_impact(vulns, local_pkgs, distro_name, queue):
+    """Determine impacts based on pkg comparisons"""
+    threads = []
+    for data in vulns.values():
+        for pkg in data['pkg']:
+            name = pkg['name']
+            ver = pkg['version']
+            if name in local_pkgs:
+                title = data['title']
+                cve = data['cve']
+                if 'severity' in data:
+                    severity = data['severity']
+                else:
+                    severity = 'N/A'
+                if distro_name in ('centos', 'redhat'):
+                    advisory = data['rhsa']
+                elif 'advisories' in data:
+                    advisory = data['advisories']
+                else:
+                    advisory = cve
+                worker = threading.Thread(target=functools.partial(
+                    get_impact,
+                    local_pkgs[name],
+                    queue,
+                    distro_name,
+                    title=title,
+                    cve=cve,
+                    name=name,
+                    ver=ver,
+                    severity=severity,
+                    advisory=advisory
+                ))
+                threads.append(worker)
+                worker.start()
+    for thread in threads:
+        thread.join()
+
+
+def get_impact(local_ver, queue, distro_name, **kargs):
+    """Add impact worker to queue"""
+    queue.put(impact_worker(local_ver, distro_name, **kargs))
+
+
+def impact_worker(local_ver, distro_name, **kargs):
+    """Compare local package version to vulnerability version"""
+    logging.debug('impact_worker')
     impact = {}
-    if __salt__['pkg.version_cmp'](ver, local_ver) > 0:
-        impact[title] = {
-            'updated_pkg': {'name': name, 'version': ver},
-            'installed': {'name': name, 'version': local_ver},
-            'severity': severity,
-            'advisory': advisory,
-            'cve': cve
-        }
+    if distro_name in ('centos', 'redhat'):
+        impact = parse_rpm_version(impact, local_ver, **kargs)
+    elif __salt__['pkg.version_cmp'](kargs['ver'], local_ver) > 0:
+        impact = create_impact(impact, local_ver, **kargs)
     return impact
 
 
+def parse_rpm_version(impact, local_ver, **kargs):
+    """rpmdevtools ver comparison is broken, so manually compare versions"""
+    logging.debug('parse_rpm_version')
+    local_version = local_ver.split('.centos')[0]
+    if not re.search(":", local_version):
+        local_version = '0:' + local_version
+    split_local_ver = re.split(':+|.el', local_version)
+    split_impact_ver = re.split(':+|.el', kargs['ver'])
+    if (
+        not re.search('.el', local_ver, re.IGNORECASE)
+        and parse_version(split_local_ver[0]) <= parse_version(split_impact_ver[0])
+        and parse_version(split_local_ver[1]) < parse_version(split_impact_ver[1])
+    ) or (
+        parse_version(split_local_ver[0]) <= parse_version(split_impact_ver[0])
+        and parse_version(split_local_ver[1]) < parse_version(split_impact_ver[1])
+        and split_local_ver[2] <= split_impact_ver[2]
+    ):
+        impact = create_impact(impact, local_ver, **kargs)
+    return impact
+
+
+def create_impact(impact, local_ver, **kargs):
+    impact[kargs['title']] = {
+        'updated_pkg': {'name': kargs['name'], 'version': kargs['ver']},
+        'installed': {'name': kargs['name'], 'version': local_ver},
+        'severity': kargs['severity'],
+        'advisory': kargs['advisory'],
+        'cve': kargs['cve']
+    }
+    return impact
+
+
+# Build source package reference to binary packages
+def build_pkg_src_ref(local_pkgs, queue, pkg_src_ref={}):
+    """Build source package reference for binary packages"""
+    logging.debug('build_pkg_src_ref')
+    get_package_detail(local_pkgs, queue)
+    while not queue.empty():
+        pkg_detail = queue.get()
+        for pkg, detail in pkg_detail.items():
+            if 'Source' in next(iter(detail.values())):
+                source = next(iter(detail.values()))['Source'].split()[0]
+                if source not in pkg_src_ref and not source == pkg:
+                    pkg_src_ref[source] = []
+                if not source == pkg:
+                    pkg_src_ref[source].append(pkg)
+        queue.task_done()
+    return pkg_src_ref
+
+
+def get_package_detail(local_pkgs, queue):
+    """Get package details"""
+    threads = []
+    for pkg in local_pkgs:
+        worker = threading.Thread(target=pkg_show, args=(pkg, queue,))
+        threads.append(worker)
+        worker.start()
+    for thread in threads:
+        thread.join()
+
+
+def pkg_show(pkg, queue):
+    """Add package show worker to queue"""
+    queue.put(__salt__['pkg.show'](pkg))
+
+
 # Create vulnerability dictionary
-def create_vulns(oval_and_maps, vulns={}):
+def create_vulns(oval_and_maps, pkg_src_ref=None, vulns={}):
     """Create vuln dict that maps definitions directly to objects and states"""
     logging.debug('create_vulns')
     id_maps = oval_and_maps[0]
@@ -199,6 +312,8 @@ def create_vulns(oval_and_maps, vulns={}):
                     name = oval['objects'][obj['object_id']]['name']
                     if name in oval['vars']:
                         pkg_group = oval['vars'][name]['pkg_names']
+                    elif name in pkg_src_ref:
+                        pkg_group = pkg_src_ref[name]
                 else:
                     continue
                 if 'version' in oval['states'][obj['state_id']]:
@@ -372,9 +487,9 @@ def build_states(root, namespace, stes={}):
 def build_vars(root, namespace, vrs={}):
     """Build element vars from source into oval dict (aka Ubuntu pkg names)"""
     logging.debug('build_vars')
-    vars = root.find('oval:variables', namespace)
-    if is_et(vars):
-        for vr in vars:
+    var_refs = root.find('oval:variables', namespace)
+    if is_et(var_refs):
+        for vr in var_refs:
             primary_key = vr.attrib['id']
             vrs[primary_key] = {}
             var_data = vrs[primary_key]

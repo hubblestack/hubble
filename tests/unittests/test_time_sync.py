@@ -6,6 +6,13 @@ import hubblestack.extmods.fdg.time_sync
 import pytest
 import socket
 
+try:
+    import ntplib
+    IGNORE_NTP_EXCEPTIONS = (socket.timeout, ntplib.NTPException)
+except:
+    IGNORE_NTP_EXCEPTIONS = socket.timeout
+
+
 class TestTimesync():
     '''
     Class used to test the functions in ``time_sync.py``
@@ -56,7 +63,8 @@ class TestTimesync():
         assert status is False
         assert ret is False
 
-    @pytest.mark.xfail(raises=socket.timeout)
+    @pytest.mark.xfail(raises=IGNORE_NTP_EXCEPTIONS,
+        reason="0.pool.ntp.org has boring network and dns timeouts from certain flakey NAT environments, ignoring")
     def test__queryNtpServer_validServer_validReturn(self):
         '''
         Test that when a valid NTP server is passed,

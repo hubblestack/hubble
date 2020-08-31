@@ -15,7 +15,7 @@ import hubblestack.utils.files
 import hubblestack.utils.platform
 import hubblestack.modules.cmdmod as cmdmod
 from hubblestack.utils.exceptions import CommandExecutionError
-from salt.log import LOG_LEVELS
+from hubblestack.log import LOG_LEVELS
 
 # Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin

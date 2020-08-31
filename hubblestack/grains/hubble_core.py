@@ -53,7 +53,7 @@ except ImportError:
     from distro import linux_distribution
 
 import hubblestack.utils.exceptions
-import salt.log
+import hubblestack.log
 import hubblestack.utils.dns
 import hubblestack.utils.files
 import hubblestack.utils.network
@@ -720,7 +720,7 @@ def _virtual(osdata):
                 try:
                     ret = __salt__['cmd.run_all']('{0} -a'.format(virtinfo))
                 except hubblestack.utils.exceptions.CommandExecutionError:
-                    if salt.log.is_logging_configured():
+                    if hubblestack.log.is_logging_configured():
                         failed_commands.add(virtinfo)
                 else:
                     if ret['stdout'].endswith('not supported'):
@@ -741,7 +741,7 @@ def _virtual(osdata):
             ret = __salt__['cmd.run_all'](cmd)
 
             if ret['retcode'] > 0:
-                if salt.log.is_logging_configured():
+                if hubblestack.log.is_logging_configured():
                     # systemd-detect-virt always returns > 0 on non-virtualized
                     # systems
                     # prtdiag only works in the global zone, skip if it fails
@@ -750,7 +750,7 @@ def _virtual(osdata):
                     failed_commands.add(command)
                 continue
         except hubblestack.utils.exceptions.CommandExecutionError:
-            if salt.log.is_logging_configured():
+            if hubblestack.log.is_logging_configured():
                 if hubblestack.utils.platform.is_windows():
                     continue
                 failed_commands.add(command)

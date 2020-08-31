@@ -154,7 +154,7 @@ class SplunkHandler(logging.Handler):
         # Matching 'name' works, but relies on devs using getLogger(__name__)
         # and not some other arbitrary string.
 
-        filtered = ('hubblestack.splunklogging', 'hubblestack.hec', 'urllib3.connectionpool')
+        filtered = ('hubblestack.log.splunk', 'hubblestack.hec', 'urllib3.connectionpool')
         rpn = getattr(record, 'name', '')
         for i in filtered:
             if i in rpn:

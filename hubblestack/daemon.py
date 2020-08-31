@@ -33,8 +33,8 @@ from croniter import croniter
 
 import hubblestack.loader
 import hubblestack.utils.signing
-import hubblestack.splunklogging
 import hubblestack.log
+import hubblestack.log.splunk
 import hubblestack.hec.opt
 import hubblestack.utils.stdrec
 from hubblestack import __version__
@@ -176,9 +176,6 @@ def main():
         try:
             log.debug('Executing schedule')
             sf_count = schedule()
-            if sf_count > 0:
-                log.debug('Executed %d schedule item(s)', sf_count)
-                hubblestack.log.workaround_salt_log_handler_queues()
         except Exception as exc:
             log.exception('Error executing schedule: %s', exc)
             if isinstance(exc, KeyboardInterrupt):
@@ -688,33 +685,32 @@ def _setup_dirs():
 
     this_dir = os.path.dirname(__file__)
 
+    # XXX: remove any section that nolonger needs an 'extmods' dir
     module_dirs = __opts__.get('module_dirs', [])
-    module_dirs.append(os.path.join(this_dir, 'modules'))
-    module_dirs.append(os.path.join(this_dir, 'extmods', 'modules')) # XXX
+    module_dirs.append(os.path.join(this_dir, 'extmods', 'modules'))
     __opts__['module_dirs'] = module_dirs
-    grains_dirs = __opts__.get('grains_dirs', [])
-    grains_dirs.append(os.path.join(this_dir, 'grains'))
-    __opts__['grains_dirs'] = grains_dirs
+
     returner_dirs = __opts__.get('returner_dirs', [])
-    returner_dirs.append(os.path.join(this_dir, 'returners'))
-    returner_dirs.append(os.path.join(this_dir, 'extmods', 'returners')) # XXX
+    returner_dirs.append(os.path.join(this_dir, 'extmods', 'returners'))
     __opts__['returner_dirs'] = returner_dirs
+
     fileserver_dirs = __opts__.get('fileserver_dirs', [])
-    fileserver_dirs.append(os.path.join(this_dir, 'fileserver'))
-    fileserver_dirs.append(os.path.join(this_dir, 'extmods', 'fileserver')) # XXX
+    fileserver_dirs.append(os.path.join(this_dir, 'extmods', 'fileserver'))
     __opts__['fileserver_dirs'] = fileserver_dirs
+
     utils_dirs = __opts__.get('utils_dirs', [])
-    utils_dirs.append(os.path.join(this_dir, 'utils'))
-    utils_dirs.append(os.path.join(this_dir, 'extmods', 'utils')) # XXX
+    utils_dirs.append(os.path.join(this_dir, 'extmods', 'utils'))
     __opts__['utils_dirs'] = utils_dirs
+
     fdg_dirs = __opts__.get('fdg_dirs', [])
-    fdg_dirs.append(os.path.join(this_dir, 'fdg'))
-    fdg_dirs.append(os.path.join(this_dir, 'extmods', 'fdg')) # XXX
+    fdg_dirs.append(os.path.join(this_dir, 'extmods', 'fdg'))
     __opts__['fdg_dirs'] = fdg_dirs
+
     audit_dirs = __opts__.get('audit_dirs', [])
-    audit_dirs.append(os.path.join(this_dir, 'audit'))
-    audit_dirs.append(os.path.join(this_dir, 'extmods', 'audit')) # XXX
+    audit_dirs.append(os.path.join(this_dir, 'extmods', 'audit'))
     __opts__['audit_dirs'] = audit_dirs
+
+    # /XXX
 
     if 'file_roots' not in __opts__:
         __opts__['file_roots'] = dict(base=list())
@@ -812,10 +808,10 @@ def refresh_grains(initial=False):
     hubblestack.hec.opt.__salt__ = __mods__
     hubblestack.hec.opt.__opts__ = __opts__
 
-    hubblestack.splunklogging.__grains__ = __grains__
-    hubblestack.splunklogging.__mods__ = __mods__
-    hubblestack.splunklogging.__salt__ = __mods__
-    hubblestack.splunklogging.__opts__ = __opts__
+    hubblestack.log.splunk.__grains__ = __grains__
+    hubblestack.log.splunk.__mods__ = __mods__
+    hubblestack.log.splunk.__salt__ = __mods__
+    hubblestack.log.splunk.__opts__ = __opts__
 
     hubblestack.status.__opts__ = __opts__
     hubblestack.status.__mods__ = __mods__

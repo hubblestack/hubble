@@ -64,3 +64,16 @@ def shlex_split(s, **kwargs):
     else:
         return s
 
+def split_input(val, mapper=None):
+    '''
+    Take an input value and split it into a list, returning the resulting list
+    '''
+    if mapper is None:
+        mapper = lambda x: x
+    if isinstance(val, list):
+        return list(map(mapper, val))
+    try:
+        return list(map(mapper, [x.strip() for x in val.split(',')]))
+    except AttributeError:
+        return list(map(mapper, [x.strip() for x in str(val).split(',')]))
+

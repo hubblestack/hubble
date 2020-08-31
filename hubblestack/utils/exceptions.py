@@ -136,3 +136,49 @@ class FileserverConfigError(HubbleException):
     '''
     Used when invalid fileserver settings are detected
     '''
+
+class HubbleRenderError(HubbleException):
+    '''
+    Used when a renderer needs to raise an explicit error. If a line number and
+    buffer string are passed, get_context will be invoked to get the location
+    of the error.
+    '''
+    def __init__(self,
+                 message,
+                 line_num=None,
+                 buf='',
+                 marker='    <======================',
+                 trace=None):
+        # Avoid circular import
+        import hubblestack.utils.stringutils
+        self.error = message
+        try:
+            exc_str = hubblestack.utils.stringutils.to_unicode(message)
+        except TypeError:
+            # Exception class instance passed. The HubbleException __init__ will
+            # gracefully handle non-string types passed to it, but since this
+            # class needs to do some extra stuff with the exception "message"
+            # before handing it off to the parent class' __init__, we'll need
+            # to extract the message from the exception instance here
+            try:
+                exc_str = str(message)
+            except UnicodeDecodeError:
+                exc_str = hubblestack.utils.stringutils.to_unicode(str(message))  # future lint: disable=blacklisted-function
+        self.line_num = line_num
+        self.buffer = buf
+        self.context = ''
+        if trace:
+            exc_str += '\n{0}\n'.format(trace)
+        if self.line_num and self.buffer:
+            # Avoid circular import
+            import hubblestack.utils.templates
+            self.context = hubblestack.utils.stringutils.get_context(
+                self.buffer,
+                self.line_num,
+                marker=marker
+            )
+            exc_str += '; line {0}\n\n{1}'.format(
+                self.line_num,
+                hubblestack.utils.stringutils.to_unicode(self.context),
+            )
+        super(HubbleRenderError, self).__init__(exc_str)

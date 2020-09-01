@@ -60,7 +60,6 @@ import tests.support.paths as paths
 import tests.support.helpers
 
 # Import 3rd-party libs
-from salt.ext import six
 try:
     import coverage  # pylint: disable=import-error
     HAS_COVERAGE = True
@@ -113,7 +112,7 @@ log = logging.getLogger(__name__)
 
 class RootsDict(dict):
     def merge(self, data):
-        for key, values in six.iteritems(data):
+        for key, values in iter(data.items()):
             if key not in self:
                 self[key] = values
                 continue
@@ -165,7 +164,7 @@ class RuntimeVars(object):
         self._locked = True
 
     def __iter__(self):
-        for name, value in six.iteritems(self._vars):
+        for name, value in iter(self._vars.items()):
             yield name, value
 
     def __getattribute__(self, name):

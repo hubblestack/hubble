@@ -22,8 +22,7 @@ import fnmatch
 import sys
 
 # Import salt libs
-from salt.ext import six
-import salt.utils.stringutils
+import hubblestack.utils.stringutils
 
 try:
     from unittest.mock import (
@@ -129,7 +128,7 @@ class MockFH(object):
         '''
         # Newline will always be a bytestring on PY2 because mock_open will have
         # normalized it to one.
-        newline = b'\n' if isinstance(read_data, six.binary_type) else '\n'
+        newline = b'\n' if isinstance(read_data, bytes) else '\n'
 
         read_data = [line + newline for line in read_data.split(newline)]
 
@@ -166,7 +165,7 @@ class MockFH(object):
     def __check_read_data(self):
         if not self.__read_data_ok:
             if self.binary_mode:
-                if not isinstance(self.read_data, six.binary_type):
+                if not isinstance(self.read_data, bytes):
                     raise TypeError(
                         '{0} opened in binary mode, expected read_data to be '
                         'bytes, not {1}'.format(
@@ -190,7 +189,7 @@ class MockFH(object):
         self.__check_read_data()
         if not self.read_mode:
             raise IOError('File not open for reading')
-        if not isinstance(size, six.integer_types) or size < 0:
+        if not isinstance(size, int) or size < 0:
             raise TypeError('a positive integer is required')
 
         joined = self.empty_string.join(self.read_data_iter)
@@ -243,25 +242,19 @@ class MockFH(object):
     def _write(self, content):
         if not self.write_mode:
             raise IOError('File not open for writing')
-        if six.PY2:
-            if isinstance(content, six.text_type):
-                # encoding intentionally not specified to force a
-                # UnicodeEncodeError when non-ascii unicode type is passed
-                content.encode()
-        else:
-            content_type = type(content)
-            if self.binary_mode and content_type is not bytes:
-                raise TypeError(
-                    'a bytes-like object is required, not \'{0}\''.format(
-                        content_type.__name__
-                    )
+        content_type = type(content)
+        if self.binary_mode and content_type is not bytes:
+            raise TypeError(
+                'a bytes-like object is required, not \'{0}\''.format(
+                    content_type.__name__
                 )
-            elif not self.binary_mode and content_type is not str:
-                raise TypeError(
-                    'write() argument must be str, not {0}'.format(
-                        content_type.__name__
-                    )
+            )
+        elif not self.binary_mode and content_type is not str:
+            raise TypeError(
+                'write() argument must be str, not {0}'.format(
+                    content_type.__name__
                 )
+            )
 
     def _writelines(self, lines):
         if not self.write_mode:
@@ -291,9 +284,9 @@ class MockCall(object):
                 # Remove trailing ', '
                 ret = ret[:-2]
         else:
-            for key, val in six.iteritems(self.kwargs):
+            for key, val in iter(self.kwargs.items()):
                 ret += str('{0}={1}').format(
-                    salt.utils.stringutils.to_str(key),
+                    hubblestack.utils.stringutils.to_str(key),
                     repr(val)
                 )
         ret += str(')')
@@ -417,21 +410,6 @@ class MockOpen(object):
         if not isinstance(read_data, dict):
             read_data = {'*': read_data}
 
-        if six.PY2:
-            # .__class__() used here to preserve the dict class in the event that
-            # an OrderedDict was used.
-            new_read_data = read_data.__class__()
-            for key, val in six.iteritems(read_data):
-                try:
-                    val = salt.utils.data.decode(val, to_str=True)
-                except TypeError:
-                    if not isinstance(val, BaseException):
-                        raise
-                new_read_data[key] = val
-
-            read_data = new_read_data
-            del new_read_data
-
         self.read_data = read_data
         self.filehandles = {}
         self.calls = []
@@ -493,7 +471,7 @@ class MockOpen(object):
         the results to files matching a given pattern.
         '''
         ret = []
-        for filename, handles in six.iteritems(self.filehandles):
+        for filename, handles in iter(self.filehandles.items()):
             if path is None or fnmatch.fnmatch(filename, path):
                 for fh_ in handles:
                     ret.extend(fh_.write_calls)
@@ -505,7 +483,7 @@ class MockOpen(object):
         narrow the results to files matching a given pattern.
         '''
         ret = []
-        for filename, handles in six.iteritems(self.filehandles):
+        for filename, handles in iter(self.filehandles.items()):
             if path is None or fnmatch.fnmatch(filename, path):
                 for fh_ in handles:
                     ret.extend(fh_.writelines_calls)

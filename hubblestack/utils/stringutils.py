@@ -9,9 +9,9 @@ import logging
 import re
 import unicodedata
 
-from hubblestack.utils.decorators.jinja import jinja_filter
 
 log = logging.getLogger(__name__)
+
 
 def to_unicode(string_to_convert, encoding=None, errors='strict', normalize=False):
     '''
@@ -31,6 +31,7 @@ def to_unicode(string_to_convert, encoding=None, errors='strict', normalize=Fals
     elif isinstance(string_to_convert, (bytes, bytearray)):
         return _normalize(to_str(string_to_convert, encoding, errors), normalize)
     raise TypeError('expected str, bytes, or bytearray')
+
 
 def to_bytes(string_to_convert, encoding=None, errors='strict'):
     '''
@@ -62,6 +63,7 @@ def to_bytes(string_to_convert, encoding=None, errors='strict'):
         # other exception).
         raise exc  # pylint: disable=raising-bad-type
     raise TypeError('expected bytes, bytearray, or str')
+
 
 def to_str(string_to_convert, encoding=None, errors='strict', normalize=False):
     '''
@@ -95,6 +97,7 @@ def to_str(string_to_convert, encoding=None, errors='strict', normalize=False):
         raise exc  # pylint: disable=raising-bad-type
     raise TypeError('expected str, bytes, or bytearray not {}'.format(type(string_to_convert)))
 
+
 def _normalize(string_to_convert, normalize=False):
     '''
     a utility method for normalizing string
@@ -103,6 +106,7 @@ def _normalize(string_to_convert, normalize=False):
         return unicodedata.normalize('NFC', string_to_convert) if normalize else string_to_convert
     except TypeError:
         return string_to_convert
+
 
 def is_binary(data):
     '''
@@ -133,6 +137,7 @@ def is_binary(data):
         return True
     return False
 
+
 def to_num(text):
     '''
     Convert a string to a number.
@@ -147,6 +152,7 @@ def to_num(text):
             return float(text)
         except ValueError:
             return text
+
 
 def get_context(template, line, num_lines=5, marker=None):
     '''
@@ -183,7 +189,6 @@ def get_context(template, line, num_lines=5, marker=None):
     return '---\n{0}\n---'.format('\n'.join(buf))
 
 
-@jinja_filter("is_hex")
 def is_hex(value):
     """
     Returns True if value is a hexadecimal string, otherwise returns False
@@ -223,7 +228,6 @@ def expr_match(line, expr):
     return False
 
 
-@jinja_filter("check_whitelist_blacklist")
 def check_whitelist_blacklist(value, whitelist=None, blacklist=None):
     """
     Check a whitelist and/or blacklist to see if the value matches it.

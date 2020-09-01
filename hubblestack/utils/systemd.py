@@ -20,7 +20,7 @@ def booted(context=None):
     Return True if the system was booted with systemd, False otherwise.  If the
     loader context dict ``__context__`` is passed, this function will set the
     ``hubblestack.utils.systemd.booted`` key to represent if systemd is running and
-    keep the logic below from needing to be run again during the same run.
+    keep the logic below from needing to be run again during the same salt run.
     '''
     contextkey = 'hubblestack.utils.systemd.booted'
     if isinstance(context, dict):
@@ -45,6 +45,17 @@ def booted(context=None):
 
     return ret
 
+def has_scope(context=None):
+    '''
+    Scopes were introduced in systemd 205, this function returns a boolean
+    which is true when the minion is systemd-booted and running systemd>=205.
+    '''
+    if not booted(context):
+        return False
+    _sd_version = version(context)
+    if _sd_version is None:
+        return False
+    return _sd_version >= 205
 
 def version(context=None):
     '''
@@ -78,16 +89,3 @@ def version(context=None):
         except TypeError:
             pass
         return ret
-
-
-def has_scope(context=None):
-    '''
-    Scopes were introduced in systemd 205, this function returns a boolean
-    which is true when the minion is systemd-booted and running systemd>=205.
-    '''
-    if not booted(context):
-        return False
-    _sd_version = version(context)
-    if _sd_version is None:
-        return False
-    return _sd_version >= 205

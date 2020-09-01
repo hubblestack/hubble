@@ -26,7 +26,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 import os
 import sys
 import logging
-from salt.ext import six
 try:
     import psutil
     HAS_PSUTIL = True
@@ -99,7 +98,7 @@ class TestSuite(_TestSuite):
                         attr_value = getattr(previousClass, attr, None)
                         if attr_value is None:
                             continue
-                        if isinstance(attr_value, (bool,) + six.string_types + six.integer_types):
+                        if isinstance(attr_value, (bool,) + str + int):
                             setattr(previousClass, attr, None)
                             continue
                         log.warning('Deleting extra class attribute after test run: %s.%s(%s). '
@@ -128,7 +127,7 @@ class TestCase(_TestCase):
                 attr_value = getattr(self, attr, None)
                 if attr_value is None:
                     continue
-                if isinstance(attr_value, (bool,) + six.string_types + six.integer_types):
+                if isinstance(attr_value, (bool,) + str + int):
                     setattr(self, attr, None)
                     continue
                 log.warning('Deleting extra class attribute after test run: %s.%s(%s). '
@@ -208,7 +207,7 @@ class TestCase(_TestCase):
         after running states.
         '''
         assert isinstance(state_ret, dict), state_ret
-        return {x.split('_|-')[1]: y for x, y in six.iteritems(state_ret)}
+        return {x.split('_|-')[1]: y for x, y in iter(state_ret.items())}
 
     def failUnlessEqual(self, *args, **kwargs):
         raise DeprecationWarning(
@@ -269,72 +268,32 @@ class TestCase(_TestCase):
         except AttributeError:
             log.warning('assert_called_once invoked, but not available')
 
-    if six.PY2:
-        def assertRegexpMatches(self, *args, **kwds):
-            raise DeprecationWarning(
-                'The {0}() function will be deprecated in python 3. Please start '
-                'using {1}() instead.'.format(
-                    'assertRegexpMatches',
-                    'assertRegex'
-                )
+    def assertRegexpMatches(self, *args, **kwds):
+        raise DeprecationWarning(
+            'The {0}() function is deprecated. Please start using {1}() '
+            'instead.'.format(
+                'assertRegexpMatches',
+                'assertRegex'
             )
+        )
 
-        def assertRegex(self, text, regex, msg=None):
-            # In python 2, alias to the future python 3 function
-            return _TestCase.assertRegexpMatches(self, text, regex, msg=msg)
-
-        def assertNotRegexpMatches(self, *args, **kwds):
-            raise DeprecationWarning(
-                'The {0}() function will be deprecated in python 3. Please start '
-                'using {1}() instead.'.format(
-                    'assertNotRegexpMatches',
-                    'assertNotRegex'
-                )
+    def assertNotRegexpMatches(self, *args, **kwds):
+        raise DeprecationWarning(
+            'The {0}() function is deprecated. Please start using {1}() '
+            'instead.'.format(
+                'assertNotRegexpMatches',
+                'assertNotRegex'
             )
+        )
 
-        def assertNotRegex(self, text, regex, msg=None):
-            # In python 2, alias to the future python 3 function
-            return _TestCase.assertNotRegexpMatches(self, text, regex, msg=msg)
-
-        def assertRaisesRegexp(self, *args, **kwds):
-            raise DeprecationWarning(
-                'The {0}() function will be deprecated in python 3. Please start '
-                'using {1}() instead.'.format(
-                    'assertRaisesRegexp',
-                    'assertRaisesRegex'
-                )
+    def assertRaisesRegexp(self, *args, **kwds):
+        raise DeprecationWarning(
+            'The {0}() function is deprecated. Please start using {1}() '
+            'instead.'.format(
+                'assertRaisesRegexp',
+                'assertRaisesRegex'
             )
-
-        def assertRaisesRegex(self, exception, regexp, *args, **kwds):
-            # In python 2, alias to the future python 3 function
-            return _TestCase.assertRaisesRegexp(self, exception, regexp, *args, **kwds)
-    else:
-        def assertRegexpMatches(self, *args, **kwds):
-            raise DeprecationWarning(
-                'The {0}() function is deprecated. Please start using {1}() '
-                'instead.'.format(
-                    'assertRegexpMatches',
-                    'assertRegex'
-                )
-            )
-
-        def assertNotRegexpMatches(self, *args, **kwds):
-            raise DeprecationWarning(
-                'The {0}() function is deprecated. Please start using {1}() '
-                'instead.'.format(
-                    'assertNotRegexpMatches',
-                    'assertNotRegex'
-                )
-            )
-
-        def assertRaisesRegexp(self, *args, **kwds):
-            raise DeprecationWarning(
-                'The {0}() function is deprecated. Please start using {1}() '
-                'instead.'.format(
-                    'assertRaisesRegexp',
-                    'assertRaisesRegex'
-                )
-            )
+        )
 
 
 class TextTestResult(_TextTestResult):

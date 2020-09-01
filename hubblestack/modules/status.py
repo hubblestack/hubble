@@ -39,7 +39,6 @@ def __virtual__():
 
     return __virtualname__
 
-
 def pid(sig):
     '''
     Return the PID or an empty string if the process is running or not.

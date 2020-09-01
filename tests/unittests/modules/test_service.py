@@ -2,10 +2,8 @@
 '''
     :codeauthor: Jayesh Kariya <jayeshk@saltstack.com>
 '''
-# Import Python libs
 import os
 
-# Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.unit import skipIf, TestCase
 from tests.support.mock import (

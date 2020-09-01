@@ -98,7 +98,7 @@ class TestSuite(_TestSuite):
                         attr_value = getattr(previousClass, attr, None)
                         if attr_value is None:
                             continue
-                        if isinstance(attr_value, (bool,) + (str,) + (int,)):
+                        if isinstance(attr_value, (bool,str,int)):
                             setattr(previousClass, attr, None)
                             continue
                         log.warning('Deleting extra class attribute after test run: %s.%s(%s). '
@@ -127,7 +127,7 @@ class TestCase(_TestCase):
                 attr_value = getattr(self, attr, None)
                 if attr_value is None:
                     continue
-                if isinstance(attr_value, (bool,) + (str,) + (int,)):
+                if isinstance(attr_value, (bool,str,int)):
                     setattr(self, attr, None)
                     continue
                 log.warning('Deleting extra class attribute after test run: %s.%s(%s). '
@@ -207,7 +207,7 @@ class TestCase(_TestCase):
         after running states.
         '''
         assert isinstance(state_ret, dict), state_ret
-        return {x.split('_|-')[1]: y for x, y in state_ret.items()}
+        return {x.split('_|-')[1]: y for x, y in iter(state_ret.items())}
 
     def failUnlessEqual(self, *args, **kwargs):
         raise DeprecationWarning(

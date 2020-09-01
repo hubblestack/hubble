@@ -21,13 +21,13 @@ UNICODE_KEY = "Unicode Key \N{TRADE MARK SIGN}"
 UNICODE_VALUE = (
     "Unicode Value " "\N{COPYRIGHT SIGN},\N{TRADE MARK SIGN},\N{REGISTERED SIGN}"
 )
-FAKE_KEY = "SOFTWARE\\{}".format(random_string("SaltTesting-", lowercase=False))
+FAKE_KEY = "SOFTWARE\\{}".format(random_string("HubblestackTesting-", lowercase=False))
 
 
 @skipIf(not HAS_WIN32, "Tests require win32 libraries")
 class WinFunctionsTestCase(TestCase, LoaderModuleMockMixin):
     """
-    Test cases for salt.modules.reg
+    Test cases for hubblestack.modules.reg
     """
 
     def setup_loader_modules(self):
@@ -117,7 +117,7 @@ class WinFunctionsTestCase(TestCase, LoaderModuleMockMixin):
         mock_error = MagicMock(
             side_effect=win32api.error(123, "RegOpenKeyEx", "Unknown error")
         )
-        with patch("salt.utils.win_reg.win32api.RegOpenKeyEx", mock_error):
+        with patch("hubblestack.utils.win_reg.win32api.RegOpenKeyEx", mock_error):
             self.assertRaises(
                 win32api.error,
                 reg.read_value,
@@ -133,7 +133,7 @@ class WinFunctionsTestCase(TestCase, LoaderModuleMockMixin):
         mock_error = MagicMock(
             side_effect=win32api.error(123, "RegQueryValueEx", "Unknown error")
         )
-        with patch("salt.utils.win_reg.win32api.RegQueryValueEx", mock_error):
+        with patch("hubblestack.utils.win_reg.win32api.RegQueryValueEx", mock_error):
             self.assertRaises(
                 win32api.error,
                 reg.read_value,

@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function, unicode_literals
-import re
-import sys
-import textwrap
 import builtins
+import textwrap
 
-# Import Salt libs
 from tests.support.mock import patch
 from tests.support.unit import TestCase, LOREM_IPSUM
 import hubblestack.utils.stringutils

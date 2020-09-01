@@ -63,7 +63,7 @@ Value:
         - `BTMTrayAgent`
     - Each value name has a corresponding value
 
-:depends:   - salt.utils.win_reg
+:depends:   - hubblestack.utils.win_reg
 """
 # When production windows installer is using Python 3, Python 2 code can be removed
 from __future__ import absolute_import, print_function, unicode_literals
@@ -71,7 +71,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 # Import python libs
 import logging
 
-# Import Salt libs
+# Import Hubble libs
 import hubblestack.utils.platform
 
 log = logging.getLogger(__name__)
@@ -94,7 +94,7 @@ def __virtual__():
     if "reg.read_value" not in __utils__:
         return (
             False,
-            "reg execution module failed to load: The reg salt util is unavailable",
+            "reg execution module failed to load: The reg hubblestack util is unavailable",
         )
 
     return __virtualname__

@@ -1,119 +1,56 @@
-from unittest import TestCase
-import pytest
+# -*- coding: utf-8 -*-
+'''
+    :codeauthor: Jayesh Kariya <jayeshk@saltstack.com>
+'''
+# Import Python libs
+import os
 
-from hubblestack.extmods.hubble_mods import service
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+# Import Salt Testing Libs
+from tests.support.mixins import LoaderModuleMockMixin
+from tests.support.unit import skipIf, TestCase
+from tests.support.mock import (
+    NO_MOCK,
+    NO_MOCK_REASON,
+    MagicMock,
+    patch)
+
+# Import Salt Libs
+import hubblestack.modules.service as service
 
 
-class TestService(TestCase):
-    """
-    Unit tests for service module
-    """
-    def test_invalid_params1(self):
-        """
-        No mandatory param is passed
-        should fail
-        """
-        block_dict={}
-        check_id = "test-1"
+@skipIf(NO_MOCK, NO_MOCK_REASON)
+class ServiceTestCase(TestCase, LoaderModuleMockMixin):
+    '''
+    Test cases for hubblestack.modules.service
+    '''
+    def setup_loader_modules(self):
+        return {service: {}}
 
-        with pytest.raises(HubbleCheckValidationError) as exception:
-            service.validate_params(check_id, block_dict, {})
-            pytest.fail("Check should not have passed")
+    def test_status(self):
+        '''
+        Test to return the status for a service, returns the PID or an empty
+        string if the service is running or not, pass a signature to use to
+        find the service via ps
+        '''
+        with patch.dict(service.__salt__,
+                        {'status.pid': MagicMock(return_value=True)}):
+            self.assertTrue(service.status('name'))
 
-    def test_valid_params1(self):
-        """
-        valid param, should pass
-        """
-        block_dict={"args": {"name": "test"}}
-        check_id = "test-1"
+    def test_available(self):
+        '''
+        Test to returns ``True`` if the specified service is available,
+        otherwise returns ``False``.
+        '''
+        with patch.object(service, 'get_all', return_value=['name', 'A']):
+            self.assertTrue(service.available('name'))
 
-        service.validate_params(check_id, block_dict, {})
+    def test_get_all(self):
+        '''
+        Test to return a list of all available services
+        '''
+        with patch.object(os.path, 'isdir', side_effect=[False, True]):
 
-    def test_filtered_logs1(self):
-        """
-        valid param, should pass
-        """
-        block_dict={"args": {"name": "test234"}}
-        check_id = "test-1"
+            self.assertEqual(service.get_all(), [])
 
-        res = service.get_filtered_params_to_log(check_id, block_dict, {})
-        self.assertEqual(res, {"name": "test234"})
-
-    def test_execute1(self):
-        """
-        Query for a service. Should pass
-        """
-        def _get_all():
-            return ["service1", "service2"]
-        def _status(name):
-            if name == "service1":
-                return True
-            elif name == "service2":
-                return False
-            return True
-        def _enabled(name):
-            return True
-        service.__salt__ = {
-            "service.get_all": _get_all,
-            "service.status": _status,
-            "service.enabled": _enabled
-        }
-        block_dict={"args": {"name": "service1"}}
-        check_id = "test-1"
-
-        status, res = service.execute(check_id, block_dict, {})
-        self.assertEqual(res, {"result": [{"name": "service1", "running": True, "enabled": True}]})
-
-    def test_execute2(self):
-        """
-        Query for a service, match running: False
-        """
-        def _get_all():
-            return ["service1", "service2"]
-        def _status(name):
-            if name == "service1":
-                return True
-            elif name == "service2":
-                return False
-            return True
-        def _enabled(name):
-            return True
-        service.__salt__ = {
-            "service.get_all": _get_all,
-            "service.status": _status,
-            "service.enabled": _enabled
-        }
-        block_dict={"args": {"name": "service2"}}
-        check_id = "test-1"
-
-        status, res = service.execute(check_id, block_dict, {})
-        self.assertEqual(res, {"result": [{"name": "service2", "running": False, "enabled": True}]})
-
-    def test_execute3(self):
-        """
-        Check for '*'
-        """
-        def _get_all():
-            return ["service1", "service2"]
-        def _status(name):
-            if name == "service1":
-                return True
-            elif name == "service2":
-                return False
-            return True
-        def _enabled(name):
-            return True
-        service.__salt__ = {
-            "service.get_all": _get_all,
-            "service.status": _status,
-            "service.enabled": _enabled
-        }
-        block_dict={"args": {"name": "s*"}}
-        check_id = "test-1"
-
-        status, res = service.execute(check_id, block_dict, {})
-        self.assertEqual(res, {"result": [
-            {"name": "service1", "running": True, "enabled": True},
-            {"name": "service2", "running": False, "enabled": True}
-            ]})
+            with patch.object(os, 'listdir', return_value=['A', 'B']):
+                self.assertListEqual(service.get_all(), ['A', 'B'])

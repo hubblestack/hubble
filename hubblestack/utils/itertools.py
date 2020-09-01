@@ -8,7 +8,6 @@ from __future__ import absolute_import, unicode_literals
 import fnmatch
 import re
 
-# Import Salt libs
 import hubblestack.utils.files
 
 
@@ -36,7 +35,6 @@ def split(orig, sep=None):
         if pos < match.start() or sep is not None:
             yield orig[pos:match.start()]
         pos = match.end()
-
 
 def read_file(fh_, chunk_size=1048576):
     '''

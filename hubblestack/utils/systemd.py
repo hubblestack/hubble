@@ -9,7 +9,6 @@ import os
 import re
 import subprocess
 
-# Import Salt libs
 from hubblestack.utils.exceptions import HubbleInvocationError
 import hubblestack.utils.stringutils
 

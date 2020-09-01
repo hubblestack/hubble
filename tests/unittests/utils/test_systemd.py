@@ -9,7 +9,6 @@ import os
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import Mock, patch, NO_MOCK, NO_MOCK_REASON
 
-# Import Salt libs
 import hubblestack.utils.systemd as _systemd
 from hubblestack.utils.exceptions import HubbleInvocationError
 

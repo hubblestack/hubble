@@ -6,9 +6,14 @@
 import copy
 import fnmatch
 import logging
-import salt.utils
 import hubblestack.utils.platform
+import hubblestack.modules.cmdmod
+import hubblestack.modules.reg
 
+__salt__ = {
+    'cmd.run': hubblestack.modules.cmdmod._run_quiet,
+    'reg.read_value': hubblestack.modules.reg.read_value
+}
 
 log = logging.getLogger(__name__)
 __virtualname__ = 'win_reg'

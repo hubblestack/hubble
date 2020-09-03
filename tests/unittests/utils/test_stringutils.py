@@ -1,11 +1,7 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function, unicode_literals
-import re
-import sys
-import textwrap
 import builtins
+import textwrap
 
-# Import Salt libs
 from tests.support.mock import patch
 from tests.support.unit import TestCase, LOREM_IPSUM
 import hubblestack.utils.stringutils
@@ -230,3 +226,194 @@ class StringutilsTestCase(TestCase):
     def test_to_unicode_multi_encoding(self):
         result = hubblestack.utils.stringutils.to_unicode(LATIN1_BYTES, encoding=('utf-8', 'latin1'))
         assert result == LATIN1_UNICODE
+
+    def test_expr_match(self):
+        val = "foo/bar/baz"
+        # Exact match
+        self.assertTrue(hubblestack.utils.stringutils.expr_match(val, val))
+        # Glob match
+        self.assertTrue(hubblestack.utils.stringutils.expr_match(val, "foo/*/baz"))
+        # Glob non-match
+        self.assertFalse(hubblestack.utils.stringutils.expr_match(val, "foo/*/bar"))
+        # Regex match
+        self.assertTrue(hubblestack.utils.stringutils.expr_match(val, r"foo/\w+/baz"))
+        # Regex non-match
+        self.assertFalse(hubblestack.utils.stringutils.expr_match(val, r"foo/\w/baz"))
+
+    def test_check_whitelist_blacklist(self):
+        """
+        Ensure that whitelist matching works on both PY2 and PY3
+        """
+        whitelist = ["one/two/three", r"web[0-9]"]
+        blacklist = ["four/five/six", r"web[5-9]"]
+
+        # Tests with string whitelist/blacklist
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_one", whitelist=whitelist[1], blacklist=None,
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_one", whitelist=whitelist[1], blacklist=[],
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web1", whitelist=whitelist[1], blacklist=None,
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web1", whitelist=whitelist[1], blacklist=[],
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web5", whitelist=None, blacklist=blacklist[1],
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web5", whitelist=[], blacklist=blacklist[1],
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_five", whitelist=None, blacklist=blacklist[1],
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_five", whitelist=[], blacklist=blacklist[1],
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web5", whitelist=whitelist[1], blacklist=blacklist[1],
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web4", whitelist=whitelist[1], blacklist=blacklist[1],
+            )
+        )
+
+        # Tests with list whitelist/blacklist
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_one", whitelist=whitelist, blacklist=None,
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_one", whitelist=whitelist, blacklist=[],
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web1", whitelist=whitelist, blacklist=None,
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web1", whitelist=whitelist, blacklist=[],
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web5", whitelist=None, blacklist=blacklist,
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web5", whitelist=[], blacklist=blacklist,
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_five", whitelist=None, blacklist=blacklist,
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_five", whitelist=[], blacklist=blacklist,
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web5", whitelist=whitelist, blacklist=blacklist,
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web4", whitelist=whitelist, blacklist=blacklist,
+            )
+        )
+
+        # Tests with set whitelist/blacklist
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_one", whitelist=set(whitelist), blacklist=None,
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_one", whitelist=set(whitelist), blacklist=set(),
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web1", whitelist=set(whitelist), blacklist=None,
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web1", whitelist=set(whitelist), blacklist=set(),
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web5", whitelist=None, blacklist=set(blacklist),
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web5", whitelist=set(), blacklist=set(blacklist),
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_five", whitelist=None, blacklist=set(blacklist),
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web_five", whitelist=set(), blacklist=set(blacklist),
+            )
+        )
+        self.assertFalse(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web5", whitelist=set(whitelist), blacklist=set(blacklist),
+            )
+        )
+        self.assertTrue(
+            hubblestack.utils.stringutils.check_whitelist_blacklist(
+                "web4", whitelist=set(whitelist), blacklist=set(blacklist),
+            )
+        )
+
+        # Test with invalid type for whitelist/blacklist
+        self.assertRaises(
+            TypeError,
+            hubblestack.utils.stringutils.check_whitelist_blacklist,
+            "foo",
+            whitelist=123,
+        )
+        self.assertRaises(
+            TypeError,
+            hubblestack.utils.stringutils.check_whitelist_blacklist,
+            "foo",
+            blacklist=123,
+        )
+

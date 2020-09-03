@@ -9,6 +9,7 @@ import errno
 import logging
 import os
 import shutil
+import tempfile
 
 import hubblestack.utils.stringutils
 import hubblestack.utils.exceptions
@@ -252,3 +253,21 @@ def is_empty(filename):
     except OSError:
         # Non-existent file or permission denied to the parent dir
         return False
+
+
+def mkstemp(*args, **kwargs):
+    """
+    Helper function which does exactly what ``tempfile.mkstemp()`` does but
+    accepts another argument, ``close_fd``, which, by default, is true and closes
+    the fd before returning the file path. Something commonly done throughout
+    Salt's code.
+    """
+    if "prefix" not in kwargs:
+        kwargs["prefix"] = "__salt.tmp."
+    close_fd = kwargs.pop("close_fd", True)
+    fd_, f_path = tempfile.mkstemp(*args, **kwargs)
+    if close_fd is False:
+        return fd_, f_path
+    os.close(fd_)
+    del fd_
+    return f_path

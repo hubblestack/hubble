@@ -68,7 +68,7 @@ class DarwinSysctlTestCase(TestCase, LoaderModuleMockMixin):
         Tests adding of config file failure
         """
         read_data = IOError(13, "Permission denied", "/file")
-        with patch("salt.utils.files.fopen", mock_open(read_data=read_data)), patch(
+        with patch("hubblestack.utils.files.fopen", mock_open(read_data=read_data)), patch(
             "os.path.isfile", MagicMock(return_value=False)
         ):
             self.assertRaises(
@@ -85,7 +85,7 @@ class DarwinSysctlTestCase(TestCase, LoaderModuleMockMixin):
         """
         config = "/etc/sysctl.conf"
         isfile_mock = MagicMock(side_effect=lambda x: False if x == config else DEFAULT)
-        with patch("salt.utils.files.fopen", mock_open()) as m_open, patch(
+        with patch("hubblestack.utils.files.fopen", mock_open()) as m_open, patch(
             "os.path.isfile", isfile_mock
         ):
             mac_sysctl.persist("net.inet.icmp.icmplim", 50, config=config)
@@ -115,7 +115,7 @@ class DarwinSysctlTestCase(TestCase, LoaderModuleMockMixin):
         ]
         isfile_mock = MagicMock(side_effect=lambda x: True if x == config else DEFAULT)
         with patch(
-            "salt.utils.files.fopen", mock_open(read_data=to_write)
+            "hubblestack.utils.files.fopen", mock_open(read_data=to_write)
         ) as m_open, patch("os.path.isfile", isfile_mock):
             mac_sysctl.persist("net.inet.icmp.icmplim", 50, config=config)
             # We only should have opened the one file

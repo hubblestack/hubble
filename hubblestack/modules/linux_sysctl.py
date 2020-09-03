@@ -9,7 +9,7 @@ import logging
 import os
 import re
 
-import salt.utils.systemd
+import hubblestack.utils.systemd
 from hubblestack.utils.exceptions import CommandExecutionError
 import hubblestack.utils.data
 import hubblestack.utils.files
@@ -47,8 +47,8 @@ def default_config():
         salt -G 'kernel:Linux' sysctl.default_config
     """
     if (
-        salt.utils.systemd.booted(__context__)
-        and salt.utils.systemd.version(__context__) >= 207
+        hubblestack.utils.systemd.booted(__context__)
+        and hubblestack.utils.systemd.version(__context__) >= 207
     ):
         return "/etc/sysctl.d/99-salt.conf"
     return "/etc/sysctl.conf"

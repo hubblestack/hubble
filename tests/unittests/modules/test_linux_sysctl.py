@@ -99,9 +99,10 @@ class LinuxSysctlTestCase(TestCase, LoaderModuleMockMixin):
         mock_asn_cmd = MagicMock(return_value=asn_cmd)
         cmd = "sysctl -w net.ipv4.ip_forward=1"
         mock_cmd = MagicMock(return_value=cmd)
+        mock_run = MagicMock(return_value='sysctl')
         with patch.dict(
             linux_sysctl.__salt__,
-            {"cmd.run_stdout": mock_cmd, "cmd.run_all": mock_asn_cmd},
+            {"cmd.run_stdout": mock_cmd, "cmd.run_all": mock_asn_cmd, "cmd.run": mock_run},
         ):
             with patch("salt.utils.files.fopen", mock_open()) as m_open:
                 self.assertRaises(

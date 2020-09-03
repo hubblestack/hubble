@@ -23,8 +23,7 @@ import yaml
 import time
 from hubblestack.utils.exceptions import CommandExecutionError
 
-# Import salt libs
-import salt.loader
+import hubblestack.loader
 import hubblestack.utils.platform
 
 # Import third party libs

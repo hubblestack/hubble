@@ -158,6 +158,12 @@ def setup_splunk_logger():
     SPLUNK_HANDLER = handler
 
 
+def refresh_handler_std_info():
+    if SPLUNK_HANDLER is None:
+        return False
+    SPLUNK_HANDLER.update_event_std_info()
+
+
 def emit_to_splunk(message, level, name, remove_sensitive_logs=False):
     '''
     Emit a single message to splunk

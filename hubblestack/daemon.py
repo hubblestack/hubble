@@ -803,8 +803,11 @@ def refresh_grains(initial=False):
     hubblestack.status.__salt__ = __salt__
     hubble_status.start_sigusr1_signal_handler()
 
+    hubblestack.log.refresh_handler_std_info()
+
     if not initial and __salt__['config.get']('splunklogging', False):
         hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report', remove_sensitive_logs=True)
+
 
 def emit_to_syslog(grains_to_emit):
     '''

@@ -632,7 +632,6 @@ def subdict_match(
             pattern = str(pattern).lower()
         except UnicodeDecodeError:
             pattern = hubblestack.utils.stringutils.to_unicode(pattern).lower()
-
         if regex_match:
             try:
                 return re.match(pattern, target)

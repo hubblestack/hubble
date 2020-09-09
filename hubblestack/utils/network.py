@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Define some generic socket functions for network modules
-'''
+"""
 
 # Import python libs
 import os
@@ -34,9 +34,9 @@ except (ImportError, OSError, AttributeError, TypeError):
 
 
 def natural_ipv4_netmask(ip, fmt='prefixlen'):
-    '''
+    """
     Returns the "natural" mask of an IPv4 address
-    '''
+    """
     bits = _ipv4_to_bits(ip)
 
     if bits.startswith('11'):
@@ -53,17 +53,17 @@ def natural_ipv4_netmask(ip, fmt='prefixlen'):
 
 
 def _ipv4_to_bits(ipaddr):
-    '''
+    """
     Accepts an IPv4 dotted quad and returns a string representing its binary
     counterpart
-    '''
+    """
     return ''.join([bin(int(x))[2:].rjust(8, '0') for x in ipaddr.split('.')])
 
 
 def cidr_to_ipv4_netmask(cidr_bits):
-    '''
+    """
     Returns an IPv4 netmask
-    '''
+    """
     try:
         cidr_bits = int(cidr_bits)
         if not 1 <= cidr_bits <= 32:
@@ -85,9 +85,9 @@ def cidr_to_ipv4_netmask(cidr_bits):
 
 
 def interfaces():
-    '''
+    """
     Return a dictionary of information about all the interfaces on the minion
-    '''
+    """
     if hubblestack.utils.platform.is_windows():
         return win_interfaces()
     elif hubblestack.utils.platform.is_netbsd():
@@ -97,9 +97,9 @@ def interfaces():
 
 
 def win_interfaces():
-    '''
+    """
     Obtain interface information for Windows systems
-    '''
+    """
     with hubblestack.utils.winapi.Com():
         c = wmi.WMI()
         ifaces = {}
@@ -143,9 +143,9 @@ def win_interfaces():
 
 
 def linux_interfaces():
-    '''
+    """
     Obtain interface information for *NIX/BSD variants
-    '''
+    """
     ifaces = dict()
     ip_path = hubblestack.utils.path.which('ip')
     ifconfig_path = None if ip_path else hubblestack.utils.path.which('ifconfig')
@@ -176,17 +176,17 @@ def linux_interfaces():
 
 
 def _interfaces_ip(out):
-    '''
+    """
     Uses ip to return a dictionary of interfaces with various information about
     each (up/down state, ip address, netmask, and hwaddr)
-    '''
+    """
     ret = dict()
 
     def parse_network(value, cols):
-        '''
+        """
         Return a tuple of ip, netmask, broadcast
         based on the current set of cols
-        '''
+        """
         brd = None
         scope = None
         if '/' in value:  # we have a CIDR in this address
@@ -269,10 +269,10 @@ def _interfaces_ip(out):
 
 
 def _interfaces_ifconfig(out):
-    '''
+    """
     Uses ifconfig to return a dictionary of interfaces with various information
     about each (up/down state, ip address, netmask, and hwaddr)
-    '''
+    """
     ret = dict()
 
     piface = re.compile(r'^([^\s:]+)')
@@ -366,18 +366,18 @@ def _interfaces_ifconfig(out):
 
 
 def _number_of_set_bits_to_ipv4_netmask(set_bits):  # pylint: disable=C0103
-    '''
+    """
     Returns an IPv4 netmask from the integer representation of that mask.
 
     Ex. 0xffffff00 -> '255.255.255.0'
-    '''
+    """
     return cidr_to_ipv4_netmask(_number_of_set_bits(set_bits))
 
 
 def _number_of_set_bits(x):
-    '''
+    """
     Returns the number of bits that are set in a 32bit int
-    '''
+    """
     # Taken from http://stackoverflow.com/a/4912729. Many thanks!
     x -= (x >> 1) & 0x55555555
     x = ((x >> 2) & 0x33333333) + (x & 0x33333333)
@@ -388,11 +388,11 @@ def _number_of_set_bits(x):
 
 
 def netbsd_interfaces():
-    '''
+    """
     Obtain interface information for NetBSD >= 8 where the ifconfig
     output diverged from other BSD variants (Netmask is now part of the
     address)
-    '''
+    """
     # NetBSD versions prior to 8.0 can still use linux_interfaces()
     if LooseVersion(os.uname()[2]) < LooseVersion('8.0'):
         return linux_interfaces()
@@ -407,10 +407,10 @@ def netbsd_interfaces():
 
 
 def _netbsd_interfaces_ifconfig(out):
-    '''
+    """
     Uses ifconfig to return a dictionary of interfaces with various information
     about each (up/down state, ip address, netmask, and hwaddr)
-    '''
+    """
     ret = dict()
 
     piface = re.compile(r'^([^\s:]+)')
@@ -467,9 +467,9 @@ def _netbsd_interfaces_ifconfig(out):
 
 
 def get_fqhostname():
-    '''
+    """
     Returns the fully qualified hostname
-    '''
+    """
     l = [socket.getfqdn()]
 
     # try socket.getaddrinfo
@@ -489,20 +489,20 @@ def get_fqhostname():
 
 
 def ip_addrs(interface=None, include_loopback=False, interface_data=None):
-    '''
+    """
     Returns a list of IPv4 addresses assigned to the host. 127.0.0.1 is
     ignored, unless 'include_loopback=True' is indicated. If 'interface' is
     provided, then only IP addresses from that interface will be returned.
-    '''
+    """
     return _ip_addrs(interface, include_loopback, interface_data, 'inet')
 
 
 def _ip_addrs(interface=None, include_loopback=False, interface_data=None, proto='inet'):
-    '''
+    """
     Return the full list of IP adresses matching the criteria
 
     proto = inet|inet6
-    '''
+    """
     ret = set()
 
     ifaces = interface_data \
@@ -527,18 +527,18 @@ def _ip_addrs(interface=None, include_loopback=False, interface_data=None, proto
 
 
 def ip_addrs6(interface=None, include_loopback=False, interface_data=None):
-    '''
+    """
     Returns a list of IPv6 addresses assigned to the host. ::1 is ignored,
     unless 'include_loopback=True' is indicated. If 'interface' is provided,
     then only IP addresses from that interface will be returned.
-    '''
+    """
     return _ip_addrs(interface, include_loopback, interface_data, 'inet6')
 
 
 def is_ipv6(ip):
-    '''
+    """
     Returns a bool telling if the value passed to it was a valid IPv6 address
-    '''
+    """
     try:
         return ipaddress.ip_address(ip).version == 6
     except ValueError:
@@ -546,9 +546,9 @@ def is_ipv6(ip):
 
 
 def is_ipv4(ip):
-    '''
+    """
     Returns a bool telling if the value passed to it was a valid IPv4 address
-    '''
+    """
     try:
         return ipaddress.ip_address(ip).version == 4
     except ValueError:
@@ -556,11 +556,30 @@ def is_ipv4(ip):
 
 
 def refresh_dns():
-    '''
+    """
     issue #21397: force glibc to re-read resolv.conf
-    '''
+    """
     try:
         res_init()
     except NameError:
         # Exception raised loading the library, thus res_init is not defined
         pass
+
+
+def in_subnet(cidr, addr=None):
+    """
+    Returns True if host or (any of) addrs is within specified subnet, otherwise False
+    """
+    try:
+        cidr = ipaddress.ip_network(cidr)
+    except ValueError:
+        log.error("Invalid CIDR '%s'", cidr)
+        return False
+
+    if addr is None:
+        addr = ip_addrs()
+        addr.extend(ip_addrs6())
+    elif not isinstance(addr, (list, tuple)):
+        addr = (addr,)
+
+    return any(ipaddress.ip_address(item) in cidr for item in addr)

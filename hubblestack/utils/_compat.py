@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
-
+from __future__ import absolute_import, unicode_literals, print_function
+import io
+import logging
 import binascii
+
 from hubblestack.utils.exceptions import HubbleException
+
+log = logging.getLogger(__name__)
 
 try:
     import ipaddress
@@ -25,6 +30,70 @@ except Exception:
                 import elementtree.ElementTree as ElementTree
             except Exception:
                 ElementTree = None
+
+
+import builtins
+exceptions = builtins
+
+
+def text_(s, encoding='latin-1', errors='strict'):
+    '''
+    If ``s`` is an instance of ``bytes``, return
+    ``s.decode(encoding, errors)``, otherwise return ``s``
+    '''
+    return s.decode(encoding, errors) if isinstance(s, bytes) else s
+
+
+def bytes_(s, encoding='latin-1', errors='strict'):
+    '''
+    If ``s`` is an instance of ``str``, return
+    ``s.encode(encoding, errors)``, otherwise return ``s``
+    '''
+    return s.encode(encoding, errors) if isinstance(s, str) else s
+
+
+def ascii_native_(s):
+    '''
+    Python 3: If ``s`` is an instance of ``str``, return
+    ``s.encode('ascii')``, otherwise return ``str(s, 'ascii', 'strict')``
+
+    Python 2: If ``s`` is an instance of ``str``, return
+    ``s.encode('ascii')``, otherwise return ``str(s)``
+    '''
+    if isinstance(s, str):
+        s = s.encode('ascii')
+
+    return str(s, 'ascii', 'strict')
+
+
+def native_(s, encoding='latin-1', errors='strict'):
+    '''
+    Python 3: If ``s`` is an instance of ``str``, return ``s``, otherwise
+    return ``str(s, encoding, errors)``
+
+    Python 2: If ``s`` is an instance of ``str``, return
+    ``s.encode(encoding, errors)``, otherwise return ``str(s)``
+    '''
+    out = s if isinstance(s, str) else str(s, encoding, errors)
+
+    return out
+
+
+def string_io(data=None):  # cStringIO can't handle unicode
+    '''
+    Pass data through to stringIO module and return result
+    '''
+    try:
+        return io.BytesIO(bytes(data))
+    except (UnicodeEncodeError, TypeError):
+        return io.StringIO(data)
+
+
+try:
+    import ipaddress
+except ImportError:
+    ipaddress = None
+
 
 class IPv6AddressScoped(ipaddress.IPv6Address):
     '''
@@ -109,6 +178,24 @@ class IPv6AddressScoped(ipaddress.IPv6Address):
         return str(self._string_from_ip_int(self._ip) +
                          ('%' + self.scope if self.scope is not None else ''))
 
+
+class IPv6InterfaceScoped(ipaddress.IPv6Interface, IPv6AddressScoped):
+    '''
+    Update
+    '''
+    def __init__(self, address):
+        if isinstance(address, (bytes, int)):
+            IPv6AddressScoped.__init__(self, address)
+            self.network = ipaddress.IPv6Network(self._ip)
+            self._prefixlen = self._max_prefixlen
+            return
+
+        addr = ipaddress._split_optional_netmask(address)
+        IPv6AddressScoped.__init__(self, addr[0])
+        self.network = ipaddress.IPv6Network(address, strict=False)
+        self.netmask = self.network.netmask
+        self._prefixlen = self.network._prefixlen
+        self.hostmask = self.network.hostmask
 
 
 if ipaddress:

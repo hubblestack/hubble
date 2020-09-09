@@ -3,9 +3,8 @@
 Various functions to be used by windows during start up and to monkey patch
 missing functions in other modules
 '''
-import platform
 import re
-import ctypes
+from hubblestack.utils.exceptions import CommandExecutionError
 
 # Import 3rd Party Libs
 try:
@@ -15,6 +14,7 @@ try:
     import win32net
     import win32security
     from win32con import HWND_BROADCAST, WM_SETTINGCHANGE, SMTO_ABORTIFHUNG
+
     HAS_WIN32 = True
 except ImportError:
     HAS_WIN32 = False
@@ -30,6 +30,7 @@ def __virtual__():
         return False, 'This utility requires pywin32'
 
     return 'win_functions'
+
 
 def escape_argument(arg, escape=True):
     '''
@@ -87,6 +88,7 @@ def escape_for_cmd_exe(arg):
 
     return meta_re.sub(escape_meta_chars, arg)
 
+
 def guid_to_squid(guid):
     '''
     Converts a GUID   to a compressed guid (SQUID)
@@ -116,3 +118,27 @@ def guid_to_squid(guid):
         for index in range(1, 12):
             squid += guid_match.group(index)[::-1]
     return squid
+
+
+def get_sid_from_name(name):
+    '''
+    This is a tool for getting a sid from a name. The name can be any object.
+    Usually a user or a group
+
+    Args:
+        name (str): The name of the user or group for which to get the sid
+
+    Returns:
+        str: The corresponding SID
+    '''
+    # If None is passed, use the Universal Well-known SID "Null SID"
+    if name is None:
+        name = 'NULL SID'
+
+    try:
+        sid = win32security.LookupAccountName(None, name)[0]
+    except pywintypes.error as exc:
+        raise CommandExecutionError(
+            'User {0} not found: {1}'.format(name, exc))
+
+    return win32security.ConvertSidToStringSid(sid)

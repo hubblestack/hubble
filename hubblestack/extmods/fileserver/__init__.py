@@ -856,7 +856,7 @@ class Fileserver(object):
 class FSChan(object):
     '''
     A class that mimics the transport channels allowing for local access to
-    to the fileserver class class structure
+    to the fileserver class structure
     '''
     def __init__(self, opts, **kwargs):
         self.opts = opts

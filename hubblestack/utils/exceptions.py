@@ -177,8 +177,6 @@ class HubbleRenderError(HubbleException):
         if trace:
             exc_str += '\n{0}\n'.format(trace)
         if self.line_num and self.buffer:
-            # Avoid circular import
-            import hubblestack.utils.templates
             self.context = hubblestack.utils.stringutils.get_context(
                 self.buffer,
                 self.line_num,

@@ -10,7 +10,7 @@ import logging
 import subprocess
 import socket
 
-from salt.utils.versions import LooseVersion
+from hubblestack.utils.versions import LooseVersion
 import hubblestack.utils.path
 import hubblestack.utils.platform
 from hubblestack.utils._compat import ipaddress
@@ -23,6 +23,15 @@ except ImportError:
     pass
 
 log = logging.getLogger(__name__)
+
+try:
+    import ctypes
+    import ctypes.util
+    libc = ctypes.cdll.LoadLibrary(ctypes.util.find_library("c"))
+    res_init = libc.__res_init
+except (ImportError, OSError, AttributeError, TypeError):
+    pass
+
 
 def natural_ipv4_netmask(ip, fmt='prefixlen'):
     '''
@@ -42,12 +51,14 @@ def natural_ipv4_netmask(ip, fmt='prefixlen'):
     else:
         return '/' + mask
 
+
 def _ipv4_to_bits(ipaddr):
     '''
     Accepts an IPv4 dotted quad and returns a string representing its binary
     counterpart
     '''
     return ''.join([bin(int(x))[2:].rjust(8, '0') for x in ipaddr.split('.')])
+
 
 def cidr_to_ipv4_netmask(cidr_bits):
     '''
@@ -72,6 +83,7 @@ def cidr_to_ipv4_netmask(cidr_bits):
             cidr_bits = 0
     return netmask
 
+
 def interfaces():
     '''
     Return a dictionary of information about all the interfaces on the minion
@@ -82,6 +94,7 @@ def interfaces():
         return netbsd_interfaces()
     else:
         return linux_interfaces()
+
 
 def win_interfaces():
     '''
@@ -128,6 +141,7 @@ def win_interfaces():
                 ifaces[iface.Description]['up'] = False
     return ifaces
 
+
 def linux_interfaces():
     '''
     Obtain interface information for *NIX/BSD variants
@@ -159,6 +173,7 @@ def linux_interfaces():
             stderr=subprocess.STDOUT).communicate()[0]
         ifaces = _interfaces_ifconfig(hubblestack.utils.stringutils.to_str(cmd))
     return ifaces
+
 
 def _interfaces_ip(out):
     '''
@@ -269,7 +284,8 @@ def _interfaces_ifconfig(out):
     else:
         pip = re.compile(r'.*?(?:inet addr:|inet [^\d]*)(.*?)\s')
         pip6 = re.compile('.*?(?:inet6 addr: (.*?)/|inet6 )([0-9a-fA-F:]+)')
-        pmask6 = re.compile(r'.*?(?:inet6 addr: [0-9a-fA-F:]+/(\d+)|prefixlen (\d+))(?: Scope:([a-zA-Z]+)| scopeid (0x[0-9a-fA-F]))?')
+        pmask6 = re.compile(
+            r'.*?(?:inet6 addr: [0-9a-fA-F:]+/(\d+)|prefixlen (\d+))(?: Scope:([a-zA-Z]+)| scopeid (0x[0-9a-fA-F]))?')
     pmask = re.compile(r'.*?(?:Mask:|netmask )(?:((?:0x)?[0-9a-fA-F]{8})|([\d\.]+))')
     pupdown = re.compile('UP')
     pbcast = re.compile(r'.*?(?:Bcast:|broadcast )([\d\.]+)')
@@ -348,6 +364,7 @@ def _interfaces_ifconfig(out):
         del data
     return ret
 
+
 def _number_of_set_bits_to_ipv4_netmask(set_bits):  # pylint: disable=C0103
     '''
     Returns an IPv4 netmask from the integer representation of that mask.
@@ -355,6 +372,7 @@ def _number_of_set_bits_to_ipv4_netmask(set_bits):  # pylint: disable=C0103
     Ex. 0xffffff00 -> '255.255.255.0'
     '''
     return cidr_to_ipv4_netmask(_number_of_set_bits(set_bits))
+
 
 def _number_of_set_bits(x):
     '''
@@ -367,6 +385,7 @@ def _number_of_set_bits(x):
     x += x >> 8
     x += x >> 16
     return x & 0x0000003f
+
 
 def netbsd_interfaces():
     '''
@@ -385,6 +404,7 @@ def netbsd_interfaces():
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT).communicate()[0]
     return _netbsd_interfaces_ifconfig(hubblestack.utils.stringutils.to_str(cmd))
+
 
 def _netbsd_interfaces_ifconfig(out):
     '''
@@ -445,6 +465,7 @@ def _netbsd_interfaces_ifconfig(out):
         del data
     return ret
 
+
 def get_fqhostname():
     '''
     Returns the fully qualified hostname
@@ -466,6 +487,7 @@ def get_fqhostname():
 
     return l and l[0] or None
 
+
 def ip_addrs(interface=None, include_loopback=False, interface_data=None):
     '''
     Returns a list of IPv4 addresses assigned to the host. 127.0.0.1 is
@@ -473,6 +495,7 @@ def ip_addrs(interface=None, include_loopback=False, interface_data=None):
     provided, then only IP addresses from that interface will be returned.
     '''
     return _ip_addrs(interface, include_loopback, interface_data, 'inet')
+
 
 def _ip_addrs(interface=None, include_loopback=False, interface_data=None, proto='inet'):
     '''
@@ -502,6 +525,7 @@ def _ip_addrs(interface=None, include_loopback=False, interface_data=None, proto
                 ret.add(addr)
     return [str(addr) for addr in sorted(ret)]
 
+
 def ip_addrs6(interface=None, include_loopback=False, interface_data=None):
     '''
     Returns a list of IPv6 addresses assigned to the host. ::1 is ignored,
@@ -509,6 +533,7 @@ def ip_addrs6(interface=None, include_loopback=False, interface_data=None):
     then only IP addresses from that interface will be returned.
     '''
     return _ip_addrs(interface, include_loopback, interface_data, 'inet6')
+
 
 def is_ipv6(ip):
     '''
@@ -519,6 +544,7 @@ def is_ipv6(ip):
     except ValueError:
         return False
 
+
 def is_ipv4(ip):
     '''
     Returns a bool telling if the value passed to it was a valid IPv4 address
@@ -527,3 +553,14 @@ def is_ipv4(ip):
         return ipaddress.ip_address(ip).version == 4
     except ValueError:
         return False
+
+
+def refresh_dns():
+    '''
+    issue #21397: force glibc to re-read resolv.conf
+    '''
+    try:
+        res_init()
+    except NameError:
+        # Exception raised loading the library, thus res_init is not defined
+        pass

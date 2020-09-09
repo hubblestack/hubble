@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    salt.utils.gzip
+    hubblestack.utils.gzip
     ~~~~~~~~~~~~~~~
     Helper module for handling gzip consistently between 2.7+ and 2.6-
 """

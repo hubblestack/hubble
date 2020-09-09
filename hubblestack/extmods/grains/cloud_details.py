@@ -3,7 +3,9 @@ HubbleStack Cloud Details Grain
 """
 
 import requests
+import logging
 
+log = logging.getLogger(__name__)
 
 def get_cloud_details():
     """
@@ -12,15 +14,23 @@ def get_cloud_details():
     grains = {}
 
     aws = _get_aws_details()
-    azure = _get_azure_details()
-    gcp = _get_gcp_details()
-
-    if aws['cloud_details']:
+    if not aws['cloud_details']: # Unable to fetch details from AWS. Let's try from Azure
+        log.debug("Unable to fetch AWS details. Now trying to fetch Azure details")
+        azure = _get_azure_details()
+        if not azure['cloud_details']: # Unable to fetch details from Azure. Let's try from GCP
+            log.debug("Unable to fetch Azure details. Now trying to fetch GCP details")
+            gcp = _get_gcp_details()
+            if gcp['cloud_details']:
+                log.debug("Fetched instance metadata from GCP")
+                grains.update(gcp)
+            else:
+                log.error("Unable to fetch details from AWS/Azure/GCP. Please verify the instance settings.")
+        else:
+            log.debug("Fetched instance metadata from Azure")
+            grains.update(azure)
+    else:
+        log.debug("Fetched instance metadata from AWS")
         grains.update(aws)
-    if azure['cloud_details']:
-        grains.update(azure)
-    if gcp['cloud_details']:
-        grains.update(gcp)
 
     return grains
 
@@ -40,18 +50,27 @@ def _get_aws_details():
         token_request = requests.put(token_url, headers=ttl_header, timeout=3, proxies=proxies)
         token = token_request.text
         aws_token_header = {'X-aws-ec2-metadata-token': token}
-        res = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
-                            headers=aws_token_header, timeout=3, proxies=proxies).json()
-        aws['cloud_account_id'] = res.get('accountId', 'unknown')
+        response = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
+                            headers=aws_token_header, timeout=3, proxies=proxies)
+        if response.status_code == requests.codes.ok:
+            res = response.json()
+            aws['cloud_account_id'] = res.get('accountId', 'unknown')
 
-        # AWS account id is always an integer number
-        # So if it's an aws machine it must be a valid integer number
-        # Else it will throw an Exception
-        int(aws['cloud_account_id'])
-        aws['cloud_instance_id'] = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
-                                                headers=aws_token_header, timeout=3,
-                                                proxies=proxies).text
-    except (requests.exceptions.RequestException, ValueError):
+            # AWS account id is always an integer number
+            # So if it's an aws machine it must be a valid integer number
+            # Else it will throw an Exception
+            int(aws['cloud_account_id'])
+        else:
+            raise ValueError("Error while fetching AWS account id. Got status code: %s " % (response.status_code))
+
+        response = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
+                                headers=aws_token_header, timeout=3, proxies=proxies)
+        if response.status_code == requests.codes.ok:
+            aws['cloud_instance_id'] = response.text
+        else:
+            raise ValueError("Error while fetching AWS account id. Got status code: %s " % (response.status_code))
+    except (requests.exceptions.RequestException, ValueError) as e:
+        log.error(e)
         # Not on an AWS box
         aws = None
     if aws:
@@ -77,7 +96,8 @@ def _get_aws_details():
                 if not aws_extra[key]:
                     aws_extra.pop(key)
 
-        except (requests.exceptions.RequestException, ValueError):
+        except (requests.exceptions.RequestException, ValueError) as e:
+            log.error(e)
             aws_extra = None
 
     ret['cloud_details'] = aws
@@ -97,13 +117,17 @@ def _get_azure_details():
 
     try:
         # Reminder: rev the api version for access to more details
-        instance_info = requests.get(
+        response = requests.get(
             'http://169.254.169.254/metadata/instance/compute?api-version=2017-08-01',
-            headers=azure_header, timeout=3, proxies=proxies).json()
-        azure['cloud_instance_id'] = instance_info['vmId']
-        azure['cloud_account_id'] = instance_info['subscriptionId']
-
-    except (requests.exceptions.RequestException, ValueError):
+            headers=azure_header, timeout=3, proxies=proxies)
+        if response.status_code == requests.codes.ok:
+            instance_info = response.json()
+            azure['cloud_instance_id'] = instance_info['vmId']
+            azure['cloud_account_id'] = instance_info['subscriptionId']
+        else:
+            raise ValueError("Error while fetching Azure instance metadata. Got status code: %s " % (response.status_code))
+    except (requests.exceptions.RequestException, ValueError) as e:
+        log.error(e)
         # Not on an Azure box
         azure = None
 
@@ -118,26 +142,30 @@ def _get_azure_details():
             azure_extra['cloud_tags'] = instance_info['tags']
             azure_extra['cloud_image_version'] = instance_info['version']
             azure_extra['cloud_size'] = instance_info['vmSize']
-            interface_list = requests.get(
+            response = requests.get(
                 'http://169.254.169.254/metadata/instance/network/interface?api-version=2017-08-01',
-                headers=azure_header, timeout=3, proxies=proxies).json()
-            for counter, value in enumerate(interface_list):
-                grain_name_private_ipv4 = "cloud_interface_{0}_private_ipv4".format(counter)
-                azure_extra[grain_name_private_ipv4] = value['ipv4']['ipAddress'][0][
-                    'privateIpAddress']
+                headers=azure_header, timeout=3, proxies=proxies)
+            if response.status_code == requests.codes.ok:
+                interface_list = response.json()
+                for counter, value in enumerate(interface_list):
+                    grain_name_private_ipv4 = "cloud_interface_{0}_private_ipv4".format(counter)
+                    azure_extra[grain_name_private_ipv4] = value['ipv4']['ipAddress'][0][
+                        'privateIpAddress']
 
-                grain_name_public_ipv4 = "cloud_interface_{0}_public_ipv4".format(counter)
-                azure_extra[grain_name_public_ipv4] = value['ipv4']['ipAddress'][0][
-                    'publicIpAddress']
+                    grain_name_public_ipv4 = "cloud_interface_{0}_public_ipv4".format(counter)
+                    azure_extra[grain_name_public_ipv4] = value['ipv4']['ipAddress'][0][
+                        'publicIpAddress']
 
-                grain_name_mac = "cloud_interface_{0}_mac_address".format(counter)
-                azure_extra[grain_name_mac] = value['macAddress']
+                    grain_name_mac = "cloud_interface_{0}_mac_address".format(counter)
+                    azure_extra[grain_name_mac] = value['macAddress']
 
-            for key in list(azure_extra):
-                if not azure_extra[key]:
-                    azure_extra.pop(key)
-
-        except (requests.exceptions.RequestException, ValueError):
+                for key in list(azure_extra):
+                    if not azure_extra[key]:
+                        azure_extra.pop(key)
+            else:
+                raise ValueError("Error while fetching metadata for Azure instance: %s. Got status code: %s" % (azure['cloud_instance_id'], response.status_code))
+        except (requests.exceptions.RequestException, ValueError) as e:
+            log.error(e)
             azure_extra = None
 
     ret['cloud_details'] = azure
@@ -152,25 +180,32 @@ def _get_gcp_details():
     gcp = {'cloud_instance_id': None, 'cloud_account_id': None, 'cloud_type': 'gcp'}
     gcp_header = {'Metadata-Flavor': 'Google'}
     proxies = {'http': None}
+    metadata = {}
 
     try:
-        gcp['cloud_instance_id'] = requests.get(
-            'http://metadata.google.internal/computeMetadata/v1/instance/id',
-            headers=gcp_header, timeout=3, proxies=proxies).text
-        gcp['cloud_account_id'] = requests.get(
-            'http://metadata.google.internal/computeMetadata/v1/project/numeric-project-id',
-            headers=gcp_header, timeout=3, proxies=proxies).text
-    except (requests.exceptions.RequestException, ValueError):
+        response = requests.get(
+            'http://metadata.google.internal/computeMetadata/v1/?recursive=true',
+            headers=gcp_header, timeout=3, proxies=proxies)
+        if response.status_code == requests.codes.ok:
+            metadata = response.json()
+            gcp['cloud_instance_id'] = metadata['instance']['id']
+            gcp['cloud_account_id'] = metadata['project']['numericProjectId']
+        else:
+            raise ValueError("Error while fetching GCP instance metadata. Got status code: %s" % (response.status_code))
+
+    except (requests.exceptions.RequestException, KeyError, ValueError) as e:
+        log.error(e)
         # Not on gcp box
         gcp = None
     if gcp:
         try:
             # build gcp extra
-            gcp_extra = _build_gpc_extra(gcp_header, proxies)
-            for key in gcp_extra:
+            gcp_extra = _build_gcp_extra(metadata)
+            for key in gcp_extra.copy():
                 if not gcp_extra[key]:
                     gcp_extra.pop(key)
-        except (requests.exceptions.RequestException, ValueError):
+        except (requests.exceptions.RequestException, KeyError, ValueError) as e:
+            log.error(e)
             gcp_extra = None
 
     ret['cloud_details'] = gcp
@@ -178,33 +213,17 @@ def _get_gcp_details():
     return ret
 
 
-def _build_gpc_extra(gcp_header, proxies):
+def _build_gcp_extra(metadata):
     """ Helper function to build the gcp extra dict """
-    gcp_extra = {
-        'cloud_project_id': requests.get(
-            'http://metadata.google.internal/computeMetadata/v1/project/project-id',
-            headers=gcp_header, timeout=3, proxies=proxies).text,
-        'cloud_name': requests.get(
-            'http://metadata.google.internal/computeMetadata/v1/instance/name',
-            headers=gcp_header, timeout=3, proxies=proxies).text,
-        'cloud_hostname': requests.get(
-            'http://metadata.google.internal/computeMetadata/v1/instance/hostname',
-            headers=gcp_header, timeout=3, proxies=proxies).text,
-        'cloud_zone': requests.get(
-            'http://metadata.google.internal/computeMetadata/v1/instance/zone',
-            headers=gcp_header, timeout=3, proxies=proxies).text,
-        'cloud_image': requests.get(
-            'http://metadata.google.internal/computeMetadata/v1/instance/image',
-            headers=gcp_header, timeout=3, proxies=proxies).text,
-        'cloud_machine_type': requests.get(
-            'http://metadata.google.internal/computeMetadata/v1/instance/machine-type',
-            headers=gcp_header, timeout=3, proxies=proxies).text,
-        'cloud_tags': requests.get(
-            'http://metadata.google.internal/computeMetadata/v1/instance/tags?recursive=true',
-            headers=gcp_header, timeout=3, proxies=proxies).json()}
-    interface_list = requests.get(
-        'http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces'
-        '/?recursive=true', headers=gcp_header, timeout=3, proxies=proxies).json()
+    gcp_extra= {}
+    gcp_extra['cloud_project_id']=metadata['project']['projectId']
+    gcp_extra['cloud_name'] = metadata['instance']['name']
+    gcp_extra['cloud_hostname'] = metadata['instance']['hostname']
+    gcp_extra['cloud_zone'] = metadata['instance']['zone']
+    gcp_extra['cloud_image'] = metadata['instance']['image']
+    gcp_extra['cloud_machine_type'] = metadata['instance']['machineType']
+    gcp_extra['cloud_tags'] = metadata['instance']['tags']
+    interface_list = metadata['instance']['networkInterfaces']
 
     for counter, value in enumerate(interface_list):
         grain_name_network = "cloud_interface_{0}_network".format(counter)

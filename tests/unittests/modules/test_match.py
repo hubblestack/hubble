@@ -2,7 +2,6 @@
 """
     :codeauthor: Oleg Lipovchenko <oleg.lipovchenko@gmail.com>
 """
-
 import hubblestack.loader
 import hubblestack.matchers.compound_match as compound_match
 import hubblestack.matchers.grain_match as grain_match
@@ -113,4 +112,3 @@ class MatchTestCase(TestCase, LoaderModuleMockMixin):
         self.assertTrue(compound_match.match("L@rest03", {"id": "rest03"}))
         self.assertFalse(compound_match.match("L@rest03"))
         self.assertFalse(compound_match.match("G@bar03"))
-

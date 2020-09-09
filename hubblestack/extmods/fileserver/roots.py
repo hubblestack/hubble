@@ -23,7 +23,6 @@ import errno
 import logging
 
 import hubblestack.extmods.fileserver
-import hubblestack.utils.event
 import hubblestack.utils.files
 import hubblestack.utils.gzip_util
 import hubblestack.utils.hashutils
@@ -195,17 +194,6 @@ def update():
                     '{0}:{1}\n'.format(file_path, mtime)
                 )
             )
-
-    if __opts__.get('fileserver_events', False):
-        # if there is a change, fire an event
-        event = hubblestack.utils.event.get_event(
-                'master',
-                __opts__['sock_dir'],
-                __opts__['transport'],
-                opts=__opts__,
-                listen=False)
-        event.fire_event(data,
-                         hubblestack.utils.event.tagify(['roots', 'update'], prefix='fileserver'))
 
 
 def file_hash(load, fnd):

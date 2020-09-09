@@ -16,17 +16,16 @@ try:
 except ImportError:
     HAS_REQUESTS = False  # pylint: disable=W0612
 
-# Import Salt libs
 import os
-import salt.utils.aws
+import hubblestack.utils.aws
 import hubblestack.utils.files
-import salt.utils.hashutils
-import salt.utils.xmlutil as xml
+import hubblestack.utils.hashutils
+import hubblestack.utils.xmlutil as xml
 import time
+
 from hubblestack.utils._compat import ElementTree as ET
 from hubblestack.utils.exceptions import CommandExecutionError
-from salt.ext.six.moves.urllib.parse import quote as _quote   # pylint: disable=import-error,no-name-in-module
-from salt.ext import six
+from urllib.parse import quote as _quote   # pylint: disable=import-error,no-name-in-module
 
 log = logging.getLogger(__name__)
 
@@ -123,24 +122,24 @@ def query(key, keyid, method='GET', params=None, headers=None,
 
     # Try grabbing the credentials from the EC2 instance IAM metadata if available
     if not key:
-        key = salt.utils.aws.IROLE_CODE
+        key = hubblestack.utils.aws.IROLE_CODE
 
     if not keyid:
-        keyid = salt.utils.aws.IROLE_CODE
+        keyid = hubblestack.utils.aws.IROLE_CODE
 
     if kms_keyid is not None and method in ('PUT', 'POST'):
         headers['x-amz-server-side-encryption'] = 'aws:kms'
         headers['x-amz-server-side-encryption-aws-kms-key-id'] = kms_keyid
 
     if not location:
-        location = salt.utils.aws.get_location()
+        location = hubblestack.utils.aws.get_location()
 
     data = ''
     fh = None
     payload_hash = None
     if method == 'PUT':
         if local_file:
-            payload_hash = salt.utils.hashutils.get_hash(local_file, form='sha256')
+            payload_hash = hubblestack.utils.hashutils.get_hash(local_file, form='sha256')
 
     if path is None:
         path = ''
@@ -148,7 +147,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
 
     if not requesturl:
         requesturl = (('https' if https_enable else 'http')+'://{0}/{1}').format(endpoint, path)
-        headers, requesturl = salt.utils.aws.sig4(
+        headers, requesturl = hubblestack.utils.aws.sig4(
             method,
             endpoint,
             params,
@@ -245,7 +244,7 @@ def query(key, keyid, method='GET', params=None, headers=None,
         return None
 
     if method == 'DELETE':
-        if not six.text_type(result.status_code).startswith('2'):
+        if not str(result.status_code).startswith('2'):
             if path:
                 raise CommandExecutionError(
                     'Failed to delete {0} from bucket {1}. {2}: {3}'.format(

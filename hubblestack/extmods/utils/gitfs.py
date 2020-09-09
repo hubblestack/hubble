@@ -11,6 +11,7 @@ import errno
 import fnmatch
 import glob
 import hashlib
+import io
 import logging
 import os
 import shlex
@@ -23,32 +24,29 @@ import weakref
 from datetime import datetime
 
 # Import salt libs
-import salt.utils.configparser
+import hubblestack.utils.configparser
 import hubblestack.utils.data
 import hubblestack.utils.files
-import salt.utils.gzip_util
-import salt.utils.hashutils
-import salt.utils.itertools
+import hubblestack.utils.gzip_util
+import hubblestack.utils.hashutils
+import hubblestack.utils.itertools
 import hubblestack.utils.path
 import hubblestack.utils.platform
 import hubblestack.utils.stringutils
-import salt.utils.url
+import hubblestack.utils.url
 import hubblestack.utils.user
-import salt.utils.versions
-import salt.fileserver
+import hubblestack.utils.versions
+import hubblestack.extmods.fileserver
 from salt.config import DEFAULT_MASTER_OPTS as _DEFAULT_MASTER_OPTS
-from salt.utils.odict import OrderedDict
-from salt.utils.process import os_is_running as pid_exists
+from hubblestack.utils.odict import OrderedDict
+from hubblestack.utils.process import os_is_running as pid_exists
 from hubblestack.utils.exceptions import (
     FileserverConfigError,
     GitLockError,
     get_error_message
 )
-from salt.utils.event import tagify
-from salt.utils.versions import LooseVersion as _LooseVersion
+from hubblestack.utils.versions import LooseVersion as _LooseVersion
 
-# Import third party libs
-from salt.ext import six
 
 VALID_REF_TYPES = _DEFAULT_MASTER_OPTS['gitfs_ref_types']
 
@@ -174,7 +172,7 @@ def enforce_types(key, val):
                     ret = item
                     break
             except TypeError:
-                if key.endswith('_' + six.text_type(item)):
+                if key.endswith('_' + str(item)):
                     ret = item
                     break
         else:
@@ -184,15 +182,15 @@ def enforce_types(key, val):
     if key not in non_string_params:
         key = _find_global(key)
         if key is None:
-            return six.text_type(val)
+            return str(val)
 
     expected = non_string_params[key]
     if expected == 'stringlist':
-        if not isinstance(val, (six.string_types, list)):
-            val = six.text_type(val)
-        if isinstance(val, six.string_types):
+        if not isinstance(val, (str, list)):
+            val = str(val)
+        if isinstance(val, str):
             return [x.strip() for x in val.split(',')]
-        return [six.text_type(x) for x in val]
+        return [str(x) for x in val]
     else:
         try:
             return expected(val)
@@ -201,7 +199,7 @@ def enforce_types(key, val):
                 'Failed to enforce type for key=%s with val=%s, falling back '
                 'to a string', key, val
             )
-            return six.text_type(val)
+            return str(val)
 
 
 def failhard(role):
@@ -227,16 +225,16 @@ class GitProvider(object):
             self.opts.get('{0}_saltenv'.format(self.role), []),
             strict=True,
             recurse=True,
-            key_cb=six.text_type,
-            val_cb=lambda x, y: six.text_type(y))
+            key_cb=str,
+            val_cb=lambda x, y: str(y))
         self.conf = copy.deepcopy(per_remote_defaults)
 
         # Remove the 'salt://' from the beginning of any globally-defined
         # per-saltenv mountpoints
-        for saltenv, saltenv_conf in six.iteritems(self.global_saltenv):
+        for saltenv, saltenv_conf in iter(self.global_saltenv.items()):
             if 'mountpoint' in saltenv_conf:
                 self.global_saltenv[saltenv]['mountpoint'] = \
-                    salt.utils.url.strip_proto(
+                    hubblestack.utils.url.strip_proto(
                         self.global_saltenv[saltenv]['mountpoint']
                     )
 
@@ -263,7 +261,7 @@ class GitProvider(object):
                 remote[self.id],
                 strict=True,
                 recurse=True,
-                key_cb=six.text_type,
+                key_cb=str,
                 val_cb=enforce_types)
 
             if not per_remote_conf:
@@ -344,7 +342,7 @@ class GitProvider(object):
             # Remove the 'salt://' from the beginning of the mountpoint, as
             # well as any additional leading/trailing slashes
             self.conf['mountpoint'] = \
-                salt.utils.url.strip_proto(self.conf['mountpoint']).strip('/')
+                hubblestack.utils.url.strip_proto(self.conf['mountpoint']).strip('/')
         else:
             # For providers which do not use a mountpoint, assume the
             # filesystem is mounted at the root of the fileserver.
@@ -353,13 +351,13 @@ class GitProvider(object):
         if 'saltenv' not in self.conf:
             self.conf['saltenv'] = {}
         else:
-            for saltenv, saltenv_conf in six.iteritems(self.conf['saltenv']):
+            for saltenv, saltenv_conf in iter(self.conf['saltenv'].items()):
                 if 'mountpoint' in saltenv_conf:
                     saltenv_ptr = self.conf['saltenv'][saltenv]
                     saltenv_ptr['mountpoint'] = \
-                        salt.utils.url.strip_proto(saltenv_ptr['mountpoint'])
+                        hubblestack.utils.url.strip_proto(saltenv_ptr['mountpoint'])
 
-        for key, val in six.iteritems(self.conf):
+        for key, val in iter(self.conf.items()):
             if key not in PER_SALTENV_PARAMS and not hasattr(self, key):
                 setattr(self, key, val)
 
@@ -393,12 +391,12 @@ class GitProvider(object):
         for item in ('env_whitelist', 'env_blacklist'):
             val = getattr(self, item, None)
             if val:
-                salt.utils.versions.warn_until(
-                    'Neon',
-                    'The gitfs_{0} config option (and {0} per-remote config '
-                    'option) have been renamed to gitfs_salt{0} (and '
-                    'salt{0}). Please update your configuration.'.format(item)
-                )
+                # hubblestack.utils.versions.warn_until(
+                #     'Neon',
+                #     'The gitfs_{0} config option (and {0} per-remote config '
+                #     'option) have been renamed to gitfs_salt{0} (and '
+                #     'salt{0}). Please update your configuration.'.format(item)
+                # )
                 setattr(self, 'salt{0}'.format(item), val)
 
         # Discard the conf dictionary since we have set all of the config
@@ -422,7 +420,7 @@ class GitProvider(object):
                 )
                 failhard(self.role)
 
-        if not isinstance(self.url, six.string_types):
+        if not isinstance(self.url, str):
             log.critical(
                 'Invalid %s remote \'%s\'. Remotes must be strings, you '
                 'may need to enclose the URL in quotes', self.role, self.id
@@ -430,12 +428,9 @@ class GitProvider(object):
             failhard(self.role)
 
         hash_type = getattr(hashlib, self.opts.get('hash_type', 'md5'))
-        if six.PY3:
-            # We loaded this data from yaml configuration files, so, its safe
-            # to use UTF-8
-            self.hash = hash_type(self.id.encode('utf-8')).hexdigest()
-        else:
-            self.hash = hash_type(self.id).hexdigest()
+        # We loaded this data from yaml configuration files, so, its safe
+        # to use UTF-8
+        self.hash = hash_type(self.id.encode('utf-8')).hexdigest()
         self.cachedir_basename = getattr(self, 'name', self.hash)
         self.cachedir = hubblestack.utils.path.join(cache_root, self.cachedir_basename)
         self.linkdir = hubblestack.utils.path.join(cache_root,
@@ -601,8 +596,7 @@ class GitProvider(object):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
         output = cmd.communicate()[0]
-        if six.PY3:
-            output = output.decode(__salt_system_encoding__)
+        output = output.decode(__salt_system_encoding__)
         if cmd.returncode != 0:
             log.warning(
                 'Failed to prune stale branches for %s remote \'%s\'. '
@@ -611,7 +605,7 @@ class GitProvider(object):
             )
         else:
             marker = ' * [pruned] '
-            for line in salt.utils.itertools.split(output, '\n'):
+            for line in hubblestack.utils.itertools.split(output, '\n'):
                 if line.startswith(marker):
                     cleaned.append(line[len(marker):].strip())
             if cleaned:
@@ -668,7 +662,7 @@ class GitProvider(object):
         ensure that the git config file is configured as desired.
         '''
         git_config = os.path.join(self.gitdir, 'config')
-        conf = salt.utils.configparser.GitConfigParser()
+        conf = hubblestack.utils.configparser.GitConfigParser()
         if not conf.read(git_config):
             log.error('Failed to read from git config file %s', git_config)
         else:
@@ -682,7 +676,7 @@ class GitProvider(object):
             # 1. URL
             try:
                 url = conf.get(remote_section, 'url')
-            except salt.utils.configparser.NoSectionError:
+            except hubblestack.utils.configparser.NoSectionError:
                 # First time we've init'ed this repo, we need to add the
                 # section for the remote to the git config
                 conf.add_section(remote_section)
@@ -704,7 +698,7 @@ class GitProvider(object):
             try:
                 refspecs = sorted(
                     conf.get(remote_section, 'fetch', as_list=True))
-            except salt.utils.configparser.NoOptionError:
+            except hubblestack.utils.configparser.NoOptionError:
                 # No 'fetch' option present in the remote section. Should never
                 # happen, but if it does for some reason, don't let it cause a
                 # traceback.
@@ -725,12 +719,12 @@ class GitProvider(object):
             # 3. http.sslVerify
             try:
                 ssl_verify = conf.get('http', 'sslVerify')
-            except salt.utils.configparser.NoSectionError:
+            except hubblestack.utils.configparser.NoSectionError:
                 conf.add_section('http')
                 ssl_verify = None
-            except salt.utils.configparser.NoOptionError:
+            except hubblestack.utils.configparser.NoOptionError:
                 ssl_verify = None
-            desired_ssl_verify = six.text_type(self.ssl_verify).lower()
+            desired_ssl_verify = str(self.ssl_verify).lower()
             log.debug(
                 'Current http.sslVerify for %s remote \'%s\': %s (desired: %s)',
                 self.role, self.id, ssl_verify, desired_ssl_verify
@@ -790,7 +784,7 @@ class GitProvider(object):
                           os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             with os.fdopen(fh_, 'wb'):
                 # Write the lock file and close the filehandle
-                os.write(fh_, hubblestack.utils.stringutils.to_bytes(six.text_type(os.getpid())))
+                os.write(fh_, hubblestack.utils.stringutils.to_bytes(str(os.getpid())))
         except (OSError, IOError) as exc:
             if exc.errno == errno.EEXIST:
                 with hubblestack.utils.files.fopen(self._get_lock_file(lock_type), 'r') as fd_:
@@ -886,7 +880,7 @@ class GitProvider(object):
         '''
         Set and automatically clear a lock
         '''
-        if not isinstance(lock_type, six.string_types):
+        if not isinstance(lock_type, str):
             raise GitLockError(
                 errno.EINVAL,
                 'Invalid lock_type \'{0}\''.format(lock_type)
@@ -902,7 +896,7 @@ class GitProvider(object):
             if timeout < 0:
                 timeout = 0
 
-        if not isinstance(poll_interval, (six.integer_types, float)) \
+        if not isinstance(poll_interval, (int, float)) \
                 or poll_interval < 0:
             poll_interval = 0.5
 
@@ -1004,7 +998,7 @@ class GitProvider(object):
                 or 'base'
             return self.base \
                 if target == 'base' \
-                else six.text_type(target)
+                else str(target)
         return self.branch
 
     def get_tree(self, tgt_env):
@@ -1307,7 +1301,7 @@ class GitPython(GitProvider):
             file_path = add_mountpoint(relpath(file_blob.path))
             files.add(file_path)
             if stat.S_ISLNK(file_blob.mode):
-                stream = six.StringIO()
+                stream = io.StringIO()
                 file_blob.stream_data(stream)
                 stream.seek(0)
                 link_tgt = stream.read()
@@ -1337,7 +1331,7 @@ class GitPython(GitProvider):
                     # this path's object ID will be the target of the
                     # symlink. Follow the symlink and set path to the
                     # location indicated in the blob data.
-                    stream = six.StringIO()
+                    stream = io.StringIO()
                     file_blob.stream_data(stream)
                     stream.seek(0)
                     link_tgt = stream.read()
@@ -1528,7 +1522,7 @@ class Pygit2(GitProvider):
                     # Therefore, there is no need to add a local reference. If
                     # head_ref == local_ref, then the local reference for HEAD
                     # in refs/heads/ already exists and again, no need to add.
-                    if isinstance(head_ref, six.string_types) \
+                    if isinstance(head_ref, str) \
                             and head_ref not in refs and head_ref != local_ref:
                         branch_name = head_ref.partition('refs/heads/')[-1]
                         if not branch_name:
@@ -1836,7 +1830,7 @@ class Pygit2(GitProvider):
             self.mountpoint(tgt_env), path, use_posixpath=True)
         for repo_path in blobs.get('files', []):
             files.add(add_mountpoint(relpath(repo_path)))
-        for repo_path, link_tgt in six.iteritems(blobs.get('symlinks', {})):
+        for repo_path, link_tgt in iter(blobs.get('symlinks', {}).items()):
             symlinks[add_mountpoint(relpath(repo_path))] = link_tgt
         return files, symlinks
 
@@ -2094,7 +2088,7 @@ class GitBase(object):
         .. code-block:: Python
 
             import salt.utils.gitfs
-            from salt.fileserver.gitfs import PER_REMOTE_OVERRIDES, PER_REMOTE_ONLY
+            from hubblestack.extmods.fileserver.gitfs import PER_REMOTE_OVERRIDES, PER_REMOTE_ONLY
 
             class CustomPygit2(salt.utils.gitfs.Pygit2):
                 def fetch_remotes(self):
@@ -2207,7 +2201,7 @@ class GitBase(object):
                 # available envs.
                 repo_obj.saltenv_revmap = {}
 
-                for saltenv, saltenv_conf in six.iteritems(repo_obj.saltenv):
+                for saltenv, saltenv_conf in iter(repo_obj.saltenv.items()):
                     if 'ref' in saltenv_conf:
                         ref = saltenv_conf['ref']
                         repo_obj.saltenv_revmap.setdefault(
@@ -2232,12 +2226,12 @@ class GitBase(object):
                 # per-remote 'saltenv' param. We won't add any matching envs
                 # from the global saltenv map to the revmap.
                 all_envs = []
-                for env_names in six.itervalues(repo_obj.saltenv_revmap):
+                for env_names in iter(repo_obj.saltenv_revmap.values()):
                     all_envs.extend(env_names)
 
                 # Add the global saltenv map to the reverse map, skipping envs
                 # explicitly mapped in the per-remote 'saltenv' param.
-                for key, conf in six.iteritems(repo_obj.global_saltenv):
+                for key, conf in iter(repo_obj.global_saltenv.values()):
                     if key not in all_envs and 'ref' in conf:
                         repo_obj.saltenv_revmap.setdefault(
                             conf['ref'], []).append(key)
@@ -2333,7 +2327,7 @@ class GitBase(object):
                         continue
                 except TypeError:
                     # remote was non-string, try again
-                    if not fnmatch.fnmatch(repo.url, six.text_type(remote)):
+                    if not fnmatch.fnmatch(repo.url, str(remote)):
                         continue
             success, failed = repo.clear_lock(lock_type=lock_type)
             cleared.extend(success)
@@ -2390,7 +2384,7 @@ class GitBase(object):
                         continue
                 except TypeError:
                     # remote was non-string, try again
-                    if not fnmatch.fnmatch(repo.url, six.text_type(remote)):
+                    if not fnmatch.fnmatch(repo.url, str(remote)):
                         continue
             success, failed = repo.lock()
             locked.extend(success)
@@ -2432,20 +2426,8 @@ class GitBase(object):
                 fp_.write(serial.dumps(new_envs))
                 log.trace('Wrote env cache data to %s', self.env_cache)
 
-        # if there is a change, fire an event
-        if self.opts.get('fileserver_events', False):
-            event = salt.utils.event.get_event(
-                    'master',
-                    self.opts['sock_dir'],
-                    self.opts['transport'],
-                    opts=self.opts,
-                    listen=False)
-            event.fire_event(
-                data,
-                tagify(['gitfs', 'update'], prefix='fileserver')
-            )
         try:
-            salt.fileserver.reap_fileserver_cache_dir(
+            hubblestack.extmods.fileserver.reap_fileserver_cache_dir(
                 self.hash_cachedir,
                 self.find_file
             )
@@ -2485,7 +2467,7 @@ class GitBase(object):
                 except AttributeError:
                     # Should only happen if someone does something silly like
                     # set the provider to a numeric value.
-                    desired_provider = six.text_type(desired_provider).lower()
+                    desired_provider = str(desired_provider).lower()
                 if desired_provider not in self.git_providers:
                     log.critical(
                         'Invalid %s_provider \'%s\'. Valid choices are: %s',
@@ -2731,7 +2713,7 @@ class GitFS(GitBase):
         Return a list of refs that can be used as environments
         '''
         if not ignore_cache:
-            cache_match = salt.fileserver.check_env_cache(
+            cache_match = hubblestack.extmods.fileserver.check_env_cache(
                 self.opts,
                 self.env_cache
             )
@@ -2740,7 +2722,7 @@ class GitFS(GitBase):
         ret = set()
         for repo in self.remotes:
             repo_envs = repo.envs()
-            for env_list in six.itervalues(repo.saltenv_revmap):
+            for env_list in iter(repo.saltenv_revmap.values()):
                 repo_envs.update(env_list)
             ret.update([x for x in repo_envs if repo.env_is_exposed(x)])
         return sorted(ret)
@@ -2809,7 +2791,7 @@ class GitFS(GitBase):
                     fnd['stat'] = [mode]
                 return fnd
 
-            salt.fileserver.wait_lock(lk_fn, dest)
+            hubblestack.extmods.fileserver.wait_lock(lk_fn, dest)
             try:
                 with hubblestack.utils.files.fopen(blobshadest, 'r') as fp_:
                     sha = hubblestack.utils.stringutils.to_unicode(fp_.read())
@@ -2870,10 +2852,10 @@ class GitFS(GitBase):
         with hubblestack.utils.files.fopen(fpath, 'rb') as fp_:
             fp_.seek(load['loc'])
             data = fp_.read(self.opts['file_buffer_size'])
-            if data and six.PY3 and not hubblestack.utils.files.is_binary(fpath):
+            if data and not hubblestack.utils.files.is_binary(fpath):
                 data = data.decode(__salt_system_encoding__)
             if gzip and data:
-                data = salt.utils.gzip_util.compress(data, gzip)
+                data = hubblestack.utils.gzip_util.compress(data, gzip)
                 ret['gzip'] = gzip
             ret['data'] = data
         return ret
@@ -2909,7 +2891,7 @@ class GitFS(GitBase):
             if exc.errno != errno.EEXIST:
                 raise exc
 
-        ret['hsum'] = salt.utils.hashutils.get_hash(path, self.opts['hash_type'])
+        ret['hsum'] = hubblestack.utils.hashutils.get_hash(path, self.opts['hash_type'])
         with hubblestack.utils.files.fopen(hashdest, 'w+') as fp_:
             fp_.write(ret['hsum'])
         return ret
@@ -2937,7 +2919,7 @@ class GitFS(GitBase):
             '.{0}.w'.format(load['saltenv'].replace(os.path.sep, '_|-'))
         )
         cache_match, refresh_cache, save_cache = \
-            salt.fileserver.check_file_list_cache(
+            hubblestack.extmods.fileserver.check_file_list_cache(
                 self.opts, form, list_cache, w_lock
             )
         if cache_match is not None:
@@ -2955,7 +2937,7 @@ class GitFS(GitBase):
             ret['dirs'] = sorted(ret['dirs'])
 
             if save_cache:
-                salt.fileserver.write_file_list_cache(
+                hubblestack.extmods.fileserver.write_file_list_cache(
                     self.opts, ret, list_cache, w_lock
                 )
             # NOTE: symlinks are organized in a dict instead of a list, however
@@ -2996,7 +2978,7 @@ class GitFS(GitBase):
             prefix = ''
         symlinks = self._file_lists(load, 'symlinks')
         return dict([(key, val)
-                     for key, val in six.iteritems(symlinks)
+                     for key, val in iter(symlinks.items())
                      if key.startswith(prefix)])
 
 

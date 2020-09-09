@@ -121,6 +121,22 @@ def _unlock_cache(w_lock):
         log.trace('Error removing lockfile %s: %s', w_lock, exc)
 
 
+def check_env_cache(opts, env_cache):
+    '''
+    Returns cached env names, if present. Otherwise returns None.
+    '''
+    if not os.path.isfile(env_cache):
+        return None
+    try:
+        with hubblestack.utils.files.fopen(env_cache, 'rb') as fp_:
+            log.trace('Returning env cache data from %s', env_cache)
+            serial = salt.payload.Serial(opts)
+            return hubblestack.utils.data.decode(serial.load(fp_))
+    except (IOError, OSError):
+        pass
+    return None
+
+
 def reap_fileserver_cache_dir(cache_base, find_func):
     """
     Remove unused cache items assuming the cache directory follows a directory

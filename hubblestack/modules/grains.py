@@ -16,7 +16,10 @@ import math
 
 import hubblestack.utils.data
 import hubblestack.utils.json
-DEFAULT_TARGET_DELIM = ":"
+from hubblestack.defaults import (  # pylint: disable=3rd-party-module-not-gated
+    DEFAULT_TARGET_DELIM,
+)
+
 
 __proxyenabled__ = ["*"]
 

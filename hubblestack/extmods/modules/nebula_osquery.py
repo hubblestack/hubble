@@ -627,7 +627,7 @@ def _get_top_data(topfile):
 
     for topmatch in topdata:
         for match, data in topmatch.items():
-            if __salt__['match.compound'](match):
+            if __mods__['match.compound'](match):
                 ret.extend(data)
 
     return ret

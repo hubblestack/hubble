@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 The default file server backend
 
 This fileserver backend serves files from the Master's local filesystem. If
@@ -14,7 +14,7 @@ be in the :conf_master:`fileserver_backend` list to enable this backend.
 
 Fileserver environments are defined using the :conf_master:`file_roots`
 configuration option.
-'''
+"""
 from __future__ import absolute_import, print_function, unicode_literals
 
 # Import python libs
@@ -22,17 +22,14 @@ import os
 import errno
 import logging
 
-# Import salt libs
-import salt.fileserver
-import salt.utils.event
+import hubblestack.extmods.fileserver
+import hubblestack.utils.event
 import hubblestack.utils.files
-import salt.utils.gzip_util
-import salt.utils.hashutils
+import hubblestack.utils.gzip_util
+import hubblestack.utils.hashutils
 import hubblestack.utils.path
 import hubblestack.utils.platform
 import hubblestack.utils.stringutils
-import salt.utils.versions
-from salt.ext import six
 
 from hubblestack.utils.signing import find_wrapf
 
@@ -40,9 +37,9 @@ log = logging.getLogger(__name__)
 
 @find_wrapf(not_found={'path': '', 'rel': ''})
 def find_file(path, saltenv='base', **kwargs):
-    '''
+    """
     Search the environment for the relative path.
-    '''
+    """
     if 'env' in kwargs:
         # "env" is not supported; Use "saltenv".
         kwargs.pop('env')
@@ -56,7 +53,7 @@ def find_file(path, saltenv='base', **kwargs):
         return fnd
 
     def _add_file_stat(fnd):
-        '''
+        """
         Stat the file and, assuming no errors were found, convert the stat
         result to a list of values and add to the return dict.
 
@@ -73,7 +70,7 @@ def find_file(path, saltenv='base', **kwargs):
         7 => st_atime=1468284229
         8 => st_mtime=1456338235
         9 => st_ctime=1456338235
-        '''
+        """
         try:
             fnd['stat'] = list(os.stat(fnd['path']))
         except Exception:
@@ -90,14 +87,14 @@ def find_file(path, saltenv='base', **kwargs):
             # An invalid index option was passed
             return fnd
         full = os.path.join(root, path)
-        if os.path.isfile(full) and not salt.fileserver.is_file_ignored(__opts__, full):
+        if os.path.isfile(full) and not hubblestack.extmods.fileserver.is_file_ignored(__opts__, full):
             fnd['path'] = full
             fnd['rel'] = path
             return _add_file_stat(fnd)
         return fnd
     for root in __opts__['file_roots'][saltenv]:
         full = os.path.join(root, path)
-        if os.path.isfile(full) and not salt.fileserver.is_file_ignored(__opts__, full):
+        if os.path.isfile(full) and not hubblestack.extmods.fileserver.is_file_ignored(__opts__, full):
             fnd['path'] = full
             fnd['rel'] = path
             return _add_file_stat(fnd)
@@ -105,16 +102,16 @@ def find_file(path, saltenv='base', **kwargs):
 
 
 def envs():
-    '''
+    """
     Return the file server environments
-    '''
+    """
     return sorted(__opts__['file_roots'])
 
 
 def serve_file(load, fnd):
-    '''
+    """
     Return a chunk from a file based on the data received
-    '''
+    """
     if 'env' in load:
         # "env" is not supported; Use "saltenv".
         load.pop('env')
@@ -132,18 +129,18 @@ def serve_file(load, fnd):
         fp_.seek(load['loc'])
         data = fp_.read(__opts__['file_buffer_size'])
         if gzip and data:
-            data = salt.utils.gzip_util.compress(data, gzip)
+            data = hubblestack.utils.gzip_util.compress(data, gzip)
             ret['gzip'] = gzip
         ret['data'] = data
     return ret
 
 
 def update():
-    '''
+    """
     When we are asked to update (regular interval) lets reap the cache
-    '''
+    """
     try:
-        salt.fileserver.reap_fileserver_cache_dir(
+        hubblestack.extmods.fileserver.reap_fileserver_cache_dir(
             os.path.join(__opts__['cachedir'], 'roots', 'hash'),
             find_file
         )
@@ -158,7 +155,7 @@ def update():
             'backend': 'roots'}
 
     # generate the new map
-    new_mtime_map = salt.fileserver.generate_mtime_map(__opts__, __opts__['file_roots'])
+    new_mtime_map = hubblestack.extmods.fileserver.generate_mtime_map(__opts__, __opts__['file_roots'])
 
     old_mtime_map = {}
     # if you have an old map, load that
@@ -179,7 +176,7 @@ def update():
                     )
 
     # compare the maps, set changed to the return value
-    data['changed'] = salt.fileserver.diff_mtime_map(old_mtime_map, new_mtime_map)
+    data['changed'] = hubblestack.extmods.fileserver.diff_mtime_map(old_mtime_map, new_mtime_map)
 
     # compute files that were removed and added
     old_files = set(old_mtime_map.keys())
@@ -192,7 +189,7 @@ def update():
     if not os.path.exists(mtime_map_path_dir):
         os.makedirs(mtime_map_path_dir)
     with hubblestack.utils.files.fopen(mtime_map_path, 'wb') as fp_:
-        for file_path, mtime in six.iteritems(new_mtime_map):
+        for file_path, mtime in iter(new_mtime_map.items()):
             fp_.write(
                 hubblestack.utils.stringutils.to_bytes(
                     '{0}:{1}\n'.format(file_path, mtime)
@@ -201,20 +198,20 @@ def update():
 
     if __opts__.get('fileserver_events', False):
         # if there is a change, fire an event
-        event = salt.utils.event.get_event(
+        event = hubblestack.utils.event.get_event(
                 'master',
                 __opts__['sock_dir'],
                 __opts__['transport'],
                 opts=__opts__,
                 listen=False)
         event.fire_event(data,
-                         salt.utils.event.tagify(['roots', 'update'], prefix='fileserver'))
+                         hubblestack.utils.event.tagify(['roots', 'update'], prefix='fileserver'))
 
 
 def file_hash(load, fnd):
-    '''
+    """
     Return a file hash, the hash type is set in the master config file
-    '''
+    """
     if 'env' in load:
         # "env" is not supported; Use "saltenv".
         load.pop('env')
@@ -267,7 +264,7 @@ def file_hash(load, fnd):
             return file_hash(load, fnd)
 
     # if we don't have a cache entry-- lets make one
-    ret['hsum'] = salt.utils.hashutils.get_hash(path, __opts__['hash_type'])
+    ret['hsum'] = hubblestack.utils.hashutils.get_hash(path, __opts__['hash_type'])
     cache_dir = os.path.dirname(cache_path)
     # make cache directory if it doesn't exist
     if not os.path.exists(cache_dir):
@@ -288,9 +285,9 @@ def file_hash(load, fnd):
 
 
 def _file_lists(load, form):
-    '''
+    """
     Return a dict containing the file lists for files, dirs, emtydirs and symlinks
-    '''
+    """
     if 'env' in load:
         # "env" is not supported; Use "saltenv".
         load.pop('env')
@@ -308,7 +305,7 @@ def _file_lists(load, form):
     list_cache = os.path.join(list_cachedir, '{0}.p'.format(load['saltenv']))
     w_lock = os.path.join(list_cachedir, '.{0}.w'.format(load['saltenv']))
     cache_match, refresh_cache, save_cache = \
-        salt.fileserver.check_file_list_cache(
+        hubblestack.extmods.fileserver.check_file_list_cache(
             __opts__, form, list_cache, w_lock
         )
     if cache_match is not None:
@@ -322,13 +319,13 @@ def _file_lists(load, form):
         }
 
         def _add_to(tgt, fs_root, parent_dir, items):
-            '''
+            """
             Add the files to the target set
-            '''
+            """
             def _translate_sep(path):
-                '''
+                """
                 Translate path separators for Windows masterless minions
-                '''
+                """
                 return path.replace('\\', '/') if os.path.sep == '\\' else path
 
             for item in items:
@@ -343,7 +340,7 @@ def _file_lists(load, form):
                     continue
                 rel_path = _translate_sep(os.path.relpath(abs_path, fs_root))
                 log.trace('roots: %s relative path is %s', abs_path, rel_path)
-                if salt.fileserver.is_file_ignored(__opts__, rel_path):
+                if hubblestack.extmods.fileserver.is_file_ignored(__opts__, rel_path):
                     continue
                 tgt.add(rel_path)
                 try:
@@ -405,7 +402,7 @@ def _file_lists(load, form):
 
         if save_cache:
             try:
-                salt.fileserver.write_file_list_cache(
+                hubblestack.extmods.fileserver.write_file_list_cache(
                     __opts__, ret, list_cache, w_lock
                 )
             except NameError:
@@ -417,31 +414,31 @@ def _file_lists(load, form):
 
 
 def file_list(load):
-    '''
+    """
     Return a list of all files on the file server in a specified
     environment
-    '''
+    """
     return _file_lists(load, 'files')
 
 
 def file_list_emptydirs(load):
-    '''
+    """
     Return a list of all empty directories on the master
-    '''
+    """
     return _file_lists(load, 'empty_dirs')
 
 
 def dir_list(load):
-    '''
+    """
     Return a list of all directories on the master
-    '''
+    """
     return _file_lists(load, 'dirs')
 
 
 def symlink_list(load):
-    '''
+    """
     Return a dict of all symlinks based on a given path on the Master
-    '''
+    """
     if 'env' in load:
         # "env" is not supported; Use "saltenv".
         load.pop('env')
@@ -457,5 +454,5 @@ def symlink_list(load):
 
     symlinks = _file_lists(load, 'links')
     return dict([(key, val)
-                 for key, val in six.iteritems(symlinks)
+                 for key, val in iter(symlinks.items())
                  if key.startswith(prefix)])

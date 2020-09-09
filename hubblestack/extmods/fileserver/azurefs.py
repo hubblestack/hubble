@@ -48,7 +48,6 @@ permissions. Proxy can also be provided in the configuration.
 
 # Import python libs
 
-from distutils.version import LooseVersion
 import base64
 import json
 import logging
@@ -56,11 +55,11 @@ import os
 import os.path
 import shutil
 
+import hubblestack.extmods.fileserver
 import hubblestack.utils.files
-
-# Import salt libs
-import salt.fileserver
-import salt.utils
+import hubblestack.utils.gzip_util
+import hubblestack.utils.hashutils
+from hubblestack.utils.signing import find_wrapf
 
 try:
     import azure.storage.common
@@ -68,11 +67,6 @@ try:
     HAS_AZURE = True
 except ImportError:
     HAS_AZURE = False
-
-# Import third party libs
-import salt.ext.six as six
-
-from hubblestack.utils.signing import find_wrapf
 
 __virtualname__ = 'azurefs'
 
@@ -109,7 +103,7 @@ def find_file(path, saltenv='base', **kwargs):
         if container.get('saltenv', 'base') != saltenv:
             continue
         full = os.path.join(_get_container_path(container), path)
-        if os.path.isfile(full) and not salt.fileserver.is_file_ignored(
+        if os.path.isfile(full) and not hubblestack.extmods.fileserver.is_file_ignored(
                                                                 __opts__, path):
             fnd['path'] = full
             fnd['rel'] = path
@@ -168,10 +162,10 @@ def serve_file(load, fnd):
     with hubblestack.utils.files.fopen(fpath, 'rb') as fp_:
         fp_.seek(load['loc'])
         data = fp_.read(__opts__['file_buffer_size'])
-        if data and six.PY3 and not salt.utils.is_bin_file(fpath):
+        if data and not hubblestack.utils.files.is_binary(fpath):
             data = data.decode(__salt_system_encoding__)
         if gzip and data:
-            data = salt.utils.gzip_util.compress(data, gzip)
+            data = hubblestack.utils.gzip_util.compress(data, gzip)
             ret['gzip'] = gzip
         ret['data'] = data
     return ret
@@ -240,7 +234,7 @@ def update():
                 fname = os.path.join(root, f)
                 relpath = os.path.relpath(fname, path)
                 if relpath not in blob_set:
-                    salt.fileserver.wait_lock(fname + '.lk', fname)
+                    hubblestack.extmods.fileserver.wait_lock(fname + '.lk', fname)
                     try:
                         os.unlink(fname)
                     except Exception:
@@ -254,7 +248,7 @@ def update():
             if os.path.exists(fname):
                 # File exists, check the hashes
                 source_md5 = blob.properties.content_settings.content_md5
-                local_md5_hex = salt.utils.hashutils.get_hash(fname, 'md5')
+                local_md5_hex = hubblestack.utils.hashutils.get_hash(fname, 'md5')
                 local_md5 = base64.b64encode(bytes.fromhex(local_md5_hex))
                 if local_md5 != source_md5:
                     update = True
@@ -266,7 +260,7 @@ def update():
                     os.makedirs(os.path.dirname(fname))
                 # Lock writes
                 lk_fn = fname + '.lk'
-                salt.fileserver.wait_lock(lk_fn, fname)
+                hubblestack.extmods.fileserver.wait_lock(lk_fn, fname)
                 with hubblestack.utils.files.fopen(lk_fn, 'w+') as fp_:
                     fp_.write('')
 
@@ -304,7 +298,7 @@ def update():
         # Write out file list
         container_list = path + '.list'
         lk_fn = container_list + '.lk'
-        salt.fileserver.wait_lock(lk_fn, container_list)
+        hubblestack.extmods.fileserver.wait_lock(lk_fn, container_list)
         with hubblestack.utils.files.fopen(lk_fn, 'w+') as fp_:
             fp_.write('')
         with hubblestack.utils.files.fopen(container_list, 'w') as fp_:
@@ -339,7 +333,7 @@ def file_hash(load, fnd):
     if not os.path.isfile(hashdest):
         if not os.path.exists(os.path.dirname(hashdest)):
             os.makedirs(os.path.dirname(hashdest))
-        ret['hsum'] = salt.utils.hashutils.get_hash(path, __opts__['hash_type'])
+        ret['hsum'] = hubblestack.utils.hashutils.get_hash(path, __opts__['hash_type'])
         with hubblestack.utils.files.fopen(hashdest, 'w+') as fp_:
             fp_.write(ret['hsum'])
         return ret
@@ -360,7 +354,7 @@ def file_list(load):
                 continue
             container_list = _get_container_path(container) + '.list'
             lk = container_list + '.lk'
-            salt.fileserver.wait_lock(lk, container_list, 5)
+            hubblestack.extmods.fileserver.wait_lock(lk, container_list, 5)
             if not os.path.exists(container_list):
                 continue
             with hubblestack.utils.files.fopen(container_list, 'r') as fp_:

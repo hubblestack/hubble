@@ -87,18 +87,14 @@ import pickle
 import logging
 
 # Import salt libs
-import salt.fileserver as fs
-import salt.modules
+import hubblestack.extmods.fileserver as fs
 import hubblestack.utils.files
-import salt.utils.gzip_util
-import salt.utils.hashutils
-import salt.utils.versions
+import hubblestack.utils.gzip_util
+import hubblestack.utils.hashutils
 
 # Import 3rd-party libs
 # pylint: disable=import-error,no-name-in-module,redefined-builtin
-from salt.ext import six
-from salt.ext.six.moves import filter
-from salt.ext.six.moves.urllib.parse import quote as _quote
+from urllib.parse import quote as _quote
 # pylint: enable=import-error,no-name-in-module,redefined-builtin
 
 from hubblestack.utils.signing import find_wrapf
@@ -128,9 +124,9 @@ def update():
     if S3_SYNC_ON_UPDATE and metadata:
         # sync the buckets to the local cache
         log.info('Syncing local cache from S3...')
-        for saltenv, env_meta in six.iteritems(metadata):
+        for saltenv, env_meta in iter(metadata.items()):
             for bucket_files in _find_files(env_meta):
-                for bucket, files in six.iteritems(bucket_files):
+                for bucket, files in iter(bucket_files.items()):
                     for file_path in files:
                         cached_file_path = _get_cached_file_name(bucket, saltenv, file_path)
                         log.info('%s - %s : %s', bucket, saltenv, file_path)
@@ -166,7 +162,7 @@ def find_file(path, saltenv='base', **kwargs):
 
     # look for the files and check if they're ignored globally
     for bucket in env_files:
-        for bucket_name, files in six.iteritems(bucket):
+        for bucket_name, files in iter(bucket.items()):
             if path in files and not fs.is_file_ignored(__opts__, path):
                 fnd['bucket'] = bucket_name
                 fnd['path'] = path
@@ -212,7 +208,7 @@ def file_hash(load, fnd):
         fnd['path'])
 
     if os.path.isfile(cached_file_path):
-        ret['hsum'] = salt.utils.hashutils.get_hash(cached_file_path)
+        ret['hsum'] = hubblestack.utils.hashutils.get_hash(cached_file_path)
         ret['hash_type'] = 'md5'
 
     return ret
@@ -248,10 +244,10 @@ def serve_file(load, fnd):
     with hubblestack.utils.files.fopen(cached_file_path, 'rb') as fp_:
         fp_.seek(load['loc'])
         data = fp_.read(__opts__['file_buffer_size'])
-        if data and six.PY3 and not hubblestack.utils.files.is_binary(cached_file_path):
+        if data and not hubblestack.utils.files.is_binary(cached_file_path):
             data = data.decode(__salt_system_encoding__)
         if gzip and data:
-            data = salt.utils.gzip_util.compress(data, gzip)
+            data = hubblestack.utils.gzip_util.compress(data, gzip)
             ret['gzip'] = gzip
         ret['data'] = data
     return ret
@@ -276,7 +272,7 @@ def file_list(load):
     if not metadata or saltenv not in metadata:
         return ret
     for bucket in _find_files(metadata[saltenv]):
-        for buckets in six.itervalues(bucket):
+        for buckets in iter(bucket.values()):
             files = [f for f in buckets if not fs.is_file_ignored(__opts__, f)]
             ret += _trim_env_off_path(files, saltenv)
 
@@ -314,7 +310,7 @@ def dir_list(load):
 
     # grab all the dirs from the buckets cache file
     for bucket in _find_dirs(metadata[saltenv]):
-        for dirs in six.itervalues(bucket):
+        for dirs in iter(bucket.values()):
             # trim env and trailing slash
             dirs = _trim_env_off_path(dirs, saltenv, trim_slash=True)
             # remove empty string left by the base env dir in single bucket mode
@@ -541,7 +537,7 @@ def _refresh_buckets_cache_file(cache_file):
 
     if _is_env_per_bucket():
         # Single environment per bucket
-        for saltenv, buckets in six.iteritems(_get_buckets()):
+        for saltenv, buckets in iter(_get_buckets().items()):
             ret = _parse_buckets(buckets=buckets, salt_env=saltenv)
             # S3 error
             if not ret:
@@ -596,7 +592,7 @@ def _find_files(metadata):
     found = {}
 
     for bucket_dict in metadata:
-        for bucket_name, data in six.iteritems(bucket_dict):
+        for bucket_name, data in iter(bucket_dict.items()):
             file_paths = [k['Key'] for k in data]
             file_paths = [k for k in file_paths if not k.endswith('/')]
             if bucket_name not in found:
@@ -621,7 +617,7 @@ def _find_dirs(metadata):
     found = {}
 
     for bucket_dict in metadata:
-        for bucket_name, data in six.iteritems(bucket_dict):
+        for bucket_name, data in iter(bucket_dict.items()):
             dir_paths = set()
             for path in [k['Key'] for k in data]:
                 prefix = ''
@@ -702,10 +698,10 @@ def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
             for header_name, header_value in ret['headers'].items():
                 header_name = header_name.strip()
                 header_value = header_value.strip()
-                if six.text_type(header_name).lower() == 'last-modified':
+                if str(header_name).lower() == 'last-modified':
                     s3_file_mtime = datetime.datetime.strptime(
                         header_value, '%a, %d %b %Y %H:%M:%S %Z')
-                elif six.text_type(header_name).lower() == 'content-length':
+                elif str(header_name).lower() == 'content-length':
                     s3_file_size = int(header_value)
             if cached_file_data['size'] == s3_file_size and \
                     cached_file_data['mtime'] > s3_file_mtime:
@@ -721,7 +717,7 @@ def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
         file_meta = _find_file_meta(metadata, bucket_name, saltenv, path)
         if file_meta:
             if file_meta['ETag'].find('-') == -1:
-                cached_md5 = salt.utils.hashutils.get_hash(cached_file_path, 'md5')
+                cached_md5 = hubblestack.utils.hashutils.get_hash(cached_file_path, 'md5')
 
                 # hashes match we have a cache hit
                 if cached_md5 == file_meta['ETag']:

@@ -286,7 +286,7 @@ def _get_top_data(topfile):
     ret = []
 
     for match, data in topdata.items():
-        if __salt__['match.compound'](match):
+        if __mods__['match.compound'](match):
             ret.extend(data)
 
     return ret
@@ -443,7 +443,7 @@ def _process_data(data, tags, labels, label_list):
 
     # Process target
     target = data.get('target', '*')
-    if not __salt__['match.compound'](target):
+    if not __mods__['match.compound'](target):
         log.debug('Skipping audit %s due to target mismatch: %s', audit_id, target)
         return False
 

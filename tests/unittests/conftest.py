@@ -8,6 +8,7 @@ import collections
 import salt.config
 import pstats
 import subprocess
+import yaml
 import hubblestack.loader
 import hubblestack.daemon
 import hubblestack.syspaths
@@ -23,9 +24,6 @@ ext_dir = os.path.join(hubble_dir, 'extmods')
 
 if sources_dir not in sys.path:
     sys.path.insert(0, sources_dir)
-
-if not os.path.isdir(output_dir):
-    os.makedirs(output_dir)
 
 # docker as root, developer homedir as 1000
 # set HS_CHOWN_BACK=1000:1000 to chown -R $HS_CHOWN_BACK sources_dir
@@ -61,13 +59,23 @@ def quiet_salt():
     for handler in logging.root.handlers:
         handler.addFilter(qs)
 
+def update_config():
+    with open('tests/unittests/hubble.config') as ifh:
+        dat = yaml.load(ifh, Loader=yaml.SafeLoader)
+    dat['log_file'] = os.path.join(output_dir, 'hubble.log')
+    with open('tests/unittests/hubble.config', 'w') as ofh:
+        yaml.dump(dat, ofh)
+
 @pytest.fixture(scope='session')
 def HSL(hubblestack_loaders):
     return hubblestack_loaders
 
 @pytest.fixture(scope='session')
 def hubblestack_loaders():
+    if not os.path.isdir(output_dir):
+        os.makedirs(output_dir)
     quiet_salt()
+    update_config()
     config_file = os.path.join(tests_dir, 'hubble.config')
     hubblestack.daemon.load_config(['-c', config_file])
 

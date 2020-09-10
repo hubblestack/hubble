@@ -169,6 +169,7 @@ def salt_loaders():
 
     yield salt_loaders
 
+
 @pytest.fixture(scope='session')
 def __salt__(salt_loaders):
     return salt_loaders.salt

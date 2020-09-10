@@ -21,6 +21,9 @@ ext_dir = os.path.join(hubble_dir, 'extmods')
 if sources_dir not in sys.path:
     sys.path.insert(0, sources_dir)
 
+if not os.path.isdir(output_dir):
+    os.makedirs(output_dir)
+
 # docker as root, developer homedir as 1000
 # set HS_CHOWN_BACK=1000:1000 to chown -R $HS_CHOWN_BACK sources_dir
 please_chown_my_files_back_to_me = 'HS_CHOWN_BACK'

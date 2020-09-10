@@ -59,28 +59,32 @@ def quiet_salt():
     for handler in logging.root.handlers:
         handler.addFilter(qs)
 
-def update_config():
-    with open('tests/unittests/hubble.config') as ifh:
+def update_config(config_file):
+    with open(config_file) as ifh:
         dat = yaml.load(ifh, Loader=yaml.SafeLoader)
 
     dat['log_file'] = os.path.join(output_dir, 'hubble.log')
     dat['cachedir'] = os.path.join(output_dir, '.cache')
     dat['pidfile']  = os.path.join(output_dir, '.pidfile')
 
-    with open('tests/unittests/hubble.config', 'w') as ofh:
+    with open(config_file, 'w') as ofh:
         yaml.dump(dat, ofh)
+
 
 @pytest.fixture(scope='session')
 def HSL(hubblestack_loaders):
     return hubblestack_loaders
 
 @pytest.fixture(scope='session')
-def hubblestack_loaders():
+def config_file():
+    return os.path.join(tests_dir, 'hubble.config')
+
+@pytest.fixture(scope='session')
+def hubblestack_loaders(config_file):
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
     quiet_salt()
-    update_config()
-    config_file = os.path.join(tests_dir, 'hubble.config')
+    update_config(config_file)
     hubblestack.daemon.load_config(['-c', config_file])
 
     hsl = Loaders(hubblestack.daemon.__opts__, hubblestack.daemon.__mods__,

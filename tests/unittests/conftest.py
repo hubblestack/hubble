@@ -70,6 +70,7 @@ def update_config(config_file):
     with open(config_file, 'w') as ofh:
         yaml.dump(dat, ofh)
 
+
 @pytest.fixture(scope='session')
 def HSL(hubblestack_loaders):
     return hubblestack_loaders

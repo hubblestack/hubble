@@ -1,6 +1,5 @@
 argparse
 daemon
-pprint
 backports-abc
 bandit
 certifi
@@ -25,7 +24,7 @@ pytest-pythonpath
 python-dateutil
 pyyaml
 requests
-salt-ssh
+salt-ssh=2019.2.3
 pylint
 saltpylint
 singledispatch

@@ -6,7 +6,6 @@ cryptography
 pyopenssl>=16.2.0
 argparse
 requests>=2.13.0
-pprint
 daemon
 boto3
 botocore

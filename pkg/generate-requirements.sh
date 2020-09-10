@@ -11,4 +11,5 @@ cat "$setup_py_dir/hubblestack.egg-info/requires.txt" \
     \
     | tr A-Z a-z | grep -v ^# | grep . | sort -u \
     | perl -ne 'chomp; $P{$1} = $_ if m/^([^<>=]+)/ and length($_) > length($P{$1});
-      END { print "$_\n" for sort values %P }'
+      END { print "$_\n" for sort values %P }' \
+    | grep -v "pprint"

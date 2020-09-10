@@ -27,7 +27,6 @@ msgpack
 ntplib
 objgraph
 patch==1.*
-pprint
 pycryptodome
 pygit2<0.27.0
 pyinotify

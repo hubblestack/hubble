@@ -8,8 +8,8 @@ import hubblestack.loader as L
 import hubblestack.daemon as D
 
 @pytest.fixture(scope='module')
-def module_dirs():
-    D.load_config(args=[])
+def module_dirs(config_file):
+    D.load_config(args=['-c', config_file])
     md = L._module_dirs(D.__opts__, 'modules', 'module')
     return md
 

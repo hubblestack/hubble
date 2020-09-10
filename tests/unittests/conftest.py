@@ -62,7 +62,11 @@ def quiet_salt():
 def update_config():
     with open('tests/unittests/hubble.config') as ifh:
         dat = yaml.load(ifh, Loader=yaml.SafeLoader)
+
     dat['log_file'] = os.path.join(output_dir, 'hubble.log')
+    dat['cachedir'] = os.path.join(output_dir, '.cache')
+    dat['pidfile']  = os.path.join(output_dir, '.pidfile')
+
     with open('tests/unittests/hubble.config', 'w') as ofh:
         yaml.dump(dat, ofh)
 

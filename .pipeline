@@ -34,7 +34,8 @@ pipeline {
                     PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv
                     source ./venv/bin/activate
                     pip install --cache-dir ./pip.cache -U pip
-                    pip install --cache-dir ./pip.cache -U -r test-requirements.txt
+                    echo no | ./mk-requires.sh
+                    pip install --cache-dir ./pip.cache -U -r requirements.txt
                     '''
                 sh '''#!/bin/bash
                     # NOTE: CHANGE_TARGET and BRANCH_NAME are only populated on multibranch pipeline.

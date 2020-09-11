@@ -9,19 +9,33 @@ import errno
 import logging
 import os
 import shutil
+import stat
 import tempfile
 
 import hubblestack.utils.stringutils
+import hubblestack.utils.platform
 import hubblestack.utils.exceptions
 
 try:
     import fcntl
+
     HAS_FCNTL = True
 except ImportError:
     # fcntl is not available on windows
     HAS_FCNTL = False
 
 log = logging.getLogger(__name__)
+
+HASHES = {
+    'sha512': 128,
+    'sha384': 96,
+    'sha256': 64,
+    'sha224': 56,
+    'sha1': 40,
+    'md5': 32,
+}
+HASHES_REVMAP = dict([(y, x) for x, y in iter(HASHES.items())])
+
 
 def fopen(*args, **kwargs):
     '''
@@ -85,19 +99,21 @@ def fopen(*args, **kwargs):
         # modify the file descriptor on systems with fcntl
         # unix and unix-like systems only
         try:
-            FD_CLOEXEC = fcntl.FD_CLOEXEC   # pylint: disable=C0103
+            FD_CLOEXEC = fcntl.FD_CLOEXEC  # pylint: disable=C0103
         except AttributeError:
-            FD_CLOEXEC = 1                  # pylint: disable=C0103
+            FD_CLOEXEC = 1  # pylint: disable=C0103
         old_flags = fcntl.fcntl(f_handle.fileno(), fcntl.F_GETFD)
         fcntl.fcntl(f_handle.fileno(), fcntl.F_SETFD, old_flags | FD_CLOEXEC)
 
     return f_handle
+
 
 def is_fcntl_available():
     '''
     Simple function to check if the ``fcntl`` module is available or not.
     '''
     return HAS_FCNTL
+
 
 @contextlib.contextmanager
 def flopen(*args, **kwargs):
@@ -118,6 +134,7 @@ def flopen(*args, **kwargs):
             if is_fcntl_available():
                 fcntl.flock(f_handle.fileno(), fcntl.LOCK_UN)
 
+
 def is_binary(path):
     '''
     Detects if the file is a binary, returns bool. Returns True if the file is
@@ -136,6 +153,7 @@ def is_binary(path):
     except os.error:
         return False
 
+
 def remove(path):
     '''
     Runs os.remove(path) and suppresses the OSError if the file doesn't exist
@@ -145,6 +163,7 @@ def remove(path):
     except OSError as exc:
         if exc.errno != errno.ENOENT:
             raise
+
 
 def rename(src, dst):
     '''
@@ -169,6 +188,7 @@ def rename(src, dst):
                 )
         os.rename(src, dst)
 
+
 def safe_rm(tgt):
     '''
     Safely remove a file
@@ -177,6 +197,7 @@ def safe_rm(tgt):
         os.remove(tgt)
     except (IOError, OSError):
         pass
+
 
 def recursive_copy(source, dest):
     '''
@@ -194,6 +215,7 @@ def recursive_copy(source, dest):
             file_path_from_source = os.path.join(source, path_from_source, name)
             target_path = os.path.join(target_directory, name)
             shutil.copyfile(file_path_from_source, target_path)
+
 
 def safe_walk(top, topdown=True, onerror=None, followlinks=True, _seen=None):
     '''
@@ -244,6 +266,7 @@ def safe_walk(top, topdown=True, onerror=None, followlinks=True, _seen=None):
     if not topdown:
         yield top, dirs, nondirs
 
+
 def is_empty(filename):
     '''
     Is a file empty?
@@ -271,3 +294,51 @@ def mkstemp(*args, **kwargs):
     os.close(fd_)
     del fd_
     return f_path
+
+
+def set_umask(mask):
+    '''
+    Temporarily set the umask and restore once the contextmanager exits
+    '''
+    if mask is None or hubblestack.utils.platform.is_windows():
+        # Don't attempt on Windows, or if no mask was passed
+        yield
+    else:
+        try:
+            orig_mask = os.umask(mask)  # pylint: disable=blacklisted-function
+            yield
+        finally:
+            os.umask(orig_mask)  # pylint: disable=blacklisted-function
+
+
+def rm_rf(path):
+    '''
+    Platform-independent recursive delete. Includes code from
+    http://stackoverflow.com/a/2656405
+    '''
+    def _onerror(func, path, exc_info):
+        '''
+        Error handler for `shutil.rmtree`.
+
+        If the error is due to an access error (read only file)
+        it attempts to add write permission and then retries.
+
+        If the error is for another reason it re-raises the error.
+
+        Usage : `shutil.rmtree(path, onerror=onerror)`
+        '''
+        if hubblestack.utils.platform.is_windows() and not os.access(path, os.W_OK):
+            # Is the error an access error ?
+            os.chmod(path, stat.S_IWUSR)
+            func(path)
+        else:
+            raise  # pylint: disable=E0704
+    if os.path.islink(path) or not os.path.isdir(path):
+        os.remove(path)
+    else:
+        if hubblestack.utils.platform.is_windows():
+            try:
+                path = hubblestack.utils.stringutils.to_unicode(path)
+            except TypeError:
+                pass
+        shutil.rmtree(path, onerror=_onerror)

@@ -13,9 +13,64 @@ except ImportError:
 
 import hubblestack.utils.stringutils
 
-import salt.utils.yaml
+import hubblestack.utils.yaml
+from hubblestack.utils.odict import OrderedDict
 
 log = logging.getLogger(__name__)
+
+
+class CaseInsensitiveDict(MutableMapping):
+    '''
+    Inspired by requests' case-insensitive dict implementation, but works with
+    non-string keys as well.
+    '''
+
+    def __init__(self, init=None, **kwargs):
+        '''
+        Force internal dict to be ordered to ensure a consistent iteration
+        order, irrespective of case.
+        '''
+        self._data = OrderedDict()
+        self.update(init or {}, **kwargs)
+
+    def __len__(self):
+        return len(self._data)
+
+    def __setitem__(self, key, value):
+        # Store the case-sensitive key so it is available for dict iteration
+        self._data[to_lowercase(key)] = (key, value)
+
+    def __delitem__(self, key):
+        del self._data[to_lowercase(key)]
+
+    def __getitem__(self, key):
+        return self._data[to_lowercase(key)][1]
+
+    def __iter__(self):
+        return (item[0] for item in iter(self._data.values()))
+
+    def __eq__(self, rval):
+        if not isinstance(rval, Mapping):
+            # Comparing to non-mapping type (e.g. int) is always False
+            return False
+        return dict(self.items_lower()) == dict(CaseInsensitiveDict(rval).items_lower())
+
+    def __repr__(self):
+        return repr(dict(iter(self.items())))
+
+    def items_lower(self):
+        '''
+        Returns a generator iterating over keys and values, with the keys all
+        being lowercase.
+        '''
+        return ((key, val[1]) for key, val in iter(self._data.items()))
+
+    def copy(self):
+        '''
+        Returns a copy of the object
+        '''
+        return CaseInsensitiveDict(iter(self._data.items()))
+
 
 def decode(data, encoding=None, errors='strict', keep=False,
            normalize=False, preserve_dict_class=False, preserve_tuples=False,
@@ -75,6 +130,7 @@ def decode(data, encoding=None, errors='strict', keep=False,
                 raise
         return data
 
+
 def encode(data, encoding=None, errors='strict', keep=False,
            preserve_dict_class=False, preserve_tuples=False):
     '''
@@ -109,6 +165,7 @@ def encode(data, encoding=None, errors='strict', keep=False,
             if not keep:
                 raise
         return data
+
 
 def encode_dict(data, encoding=None, errors='strict', keep=False,
                 preserve_dict_class=False, preserve_tuples=False):
@@ -160,6 +217,7 @@ def encode_dict(data, encoding=None, errors='strict', keep=False,
         rv[key] = value
     return rv
 
+
 def encode_list(data, encoding=None, errors='strict', keep=False,
                 preserve_dict_class=False, preserve_tuples=False):
     '''
@@ -201,6 +259,7 @@ def encode_tuple(data, encoding=None, errors='strict', keep=False,
     '''
     return tuple(
         encode_list(data, encoding, errors, keep, preserve_dict_class, True))
+
 
 def decode_dict(data, encoding=None, errors='strict', keep=False,
                 normalize=False, preserve_dict_class=False,
@@ -260,6 +319,7 @@ def decode_dict(data, encoding=None, errors='strict', keep=False,
         ret_val[key] = value
     return ret_val
 
+
 def decode_list(data, encoding=None, errors='strict', keep=False,
                 normalize=False, preserve_dict_class=False,
                 preserve_tuples=False, to_str=False):
@@ -311,6 +371,7 @@ def decode_tuple(data, encoding=None, errors='strict', keep=False,
                     preserve_dict_class, True, to_str)
     )
 
+
 def repack_dictlist(data,
                     strict=False,
                     recurse=False,
@@ -322,8 +383,8 @@ def repack_dictlist(data,
     '''
     if isinstance(data, str):
         try:
-            data = salt.utils.yaml.safe_load(data)
-        except salt.utils.yaml.parser.ParserError as err:
+            data = hubblestack.utils.yaml.safe_load(data)
+        except hubblestack.utils.yaml.parser.ParserError as err:
             log.error(err)
             return {}
 
@@ -380,6 +441,7 @@ def repack_dictlist(data,
                 ret[key_cb(key)] = val_cb(key, val)
     return ret
 
+
 def is_dictlist(data):
     '''
     Returns True if data is a list of one-element dicts (as found in many SLS
@@ -394,6 +456,7 @@ def is_dictlist(data):
                 return False
         return True
     return False
+
 
 def compare_dicts(old=None, new=None):
     '''
@@ -415,6 +478,7 @@ def compare_dicts(old=None, new=None):
             ret[key] = {'old': old[key],
                         'new': new[key]}
     return ret
+
 
 def traverse_dict_and_list(data, key, default=None, delimiter=':'):
     '''
@@ -457,6 +521,7 @@ def traverse_dict_and_list(data, key, default=None, delimiter=':'):
                 return default
     return ptr
 
+
 def stringify(data):
     '''
     Given an iterable, returns its items as a list, with any non-string items
@@ -468,9 +533,10 @@ def stringify(data):
             item = str(item)
         elif isinstance(item, str):
             item = hubblestack.utils.stringutils.to_unicode(item)
-        
+
         ret.append(item)
     return ret
+
 
 def is_true(value=None):
     '''
@@ -498,3 +564,35 @@ def is_true(value=None):
         return str(value).lower() == 'true'
     else:
         return bool(value)
+
+
+def __change_case(data, attr, preserve_dict_class=False):
+    try:
+        return getattr(data, attr)()
+    except AttributeError:
+        pass
+
+    data_type = data.__class__
+
+    if isinstance(data, Mapping):
+        return (data_type if preserve_dict_class else dict)(
+            (__change_case(key, attr, preserve_dict_class),
+             __change_case(val, attr, preserve_dict_class))
+            for key, val in iter(data.items())
+        )
+    elif isinstance(data, Sequence):
+        return data_type(
+            __change_case(item, attr, preserve_dict_class) for item in data)
+    else:
+        return data
+
+
+def to_lowercase(data, preserve_dict_class=False):
+    return __change_case(data, 'lower', preserve_dict_class)
+
+
+def is_list(value):
+    '''
+    Check if a variable is a list.
+    '''
+    return isinstance(value, list)

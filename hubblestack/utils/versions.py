@@ -52,9 +52,10 @@ class LooseVersion(_LooseVersion):
         if self._str_version > other._str_version:
             return 1
 
+
 def version_cmp(pkg1, pkg2, ignore_epoch=False):
     '''
-    Compares two version strings using salt.utils.versions.LooseVersion. This
+    Compares two version strings using hubblestack.utils.versions.LooseVersion. This
     is a fallback for providers which don't have a version comparison utility
     built into them.  Return -1 if version1 < version2, 0 if version1 ==
     version2, and 1 if version1 > version2. Return None if there was a problem

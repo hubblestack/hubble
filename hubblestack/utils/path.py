@@ -16,12 +16,15 @@ import hubblestack.utils.args
 import hubblestack.utils.data
 from hubblestack.utils.decorators.memoize import memoize
 from hubblestack.utils.exceptions import CommandNotFoundError
+
 log = logging.getLogger(__name__)
+
 
 def which(exe=None):
     '''
     Python clone of /usr/bin/which
     '''
+
     def _is_executable_file_or_link(exe):
         # check for os.X_OK doesn't suffice because directory may executable
         return (os.access(exe, os.X_OK) and
@@ -88,6 +91,7 @@ def which(exe=None):
 
     return None
 
+
 def which_bin(exes):
     '''
     Scan over some possible executables and return the first one that is found
@@ -100,6 +104,7 @@ def which_bin(exes):
             continue
         return path
     return None
+
 
 def join(*parts, **kwargs):
     '''
@@ -138,17 +143,20 @@ def join(*parts, **kwargs):
         ret = pathlib.join(root, *hubblestack.utils.data.decode(stripped))
     return pathlib.normpath(ret)
 
+
 def islink(path):
     '''
     call to os.path.islink()
     '''
     return os.path.islink(path)
 
+
 def readlink(path):
     '''
     call to os.readlink()
     '''
     return os.readlink(path)
+
 
 def os_walk(top, *args, **kwargs):
     '''
@@ -158,6 +166,7 @@ def os_walk(top, *args, **kwargs):
     top_query = hubblestack.utils.stringutils.to_str(top)
     for item in os.walk(top_query, *args, **kwargs):
         yield hubblestack.utils.data.decode(item, preserve_tuples=True)
+
 
 def sanitize_win_path(winpath):
     '''
@@ -172,6 +181,7 @@ def sanitize_win_path(winpath):
         winpath = winpath.translate(trantab)
     return winpath
 
+
 def check_or_die(command):
     '''
     Simple convenience function for modules to use for gracefully blowing up
@@ -185,6 +195,7 @@ def check_or_die(command):
 
     if not which(command):
         raise CommandNotFoundError('\'{0}\' is not in the path'.format(command))
+
 
 def safe_path(path, allow_path=None):
     r'''

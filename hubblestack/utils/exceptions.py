@@ -132,6 +132,13 @@ class MissingSmb(HubbleException):
     Raised when no smb library is found.
     '''
 
+
+class MinionError(HubbleException):
+    '''
+    Minion problems reading uris such as salt:// or http://
+    '''
+
+
 class FileserverConfigError(HubbleException):
     '''
     Used when invalid fileserver settings are detected
@@ -170,8 +177,6 @@ class HubbleRenderError(HubbleException):
         if trace:
             exc_str += '\n{0}\n'.format(trace)
         if self.line_num and self.buffer:
-            # Avoid circular import
-            import hubblestack.utils.templates
             self.context = hubblestack.utils.stringutils.get_context(
                 self.buffer,
                 self.line_num,
@@ -182,3 +187,8 @@ class HubbleRenderError(HubbleException):
                 hubblestack.utils.stringutils.to_unicode(self.context),
             )
         super(HubbleRenderError, self).__init__(exc_str)
+
+class HubbleDeserializationError(HubbleException):
+    '''
+    Thrown when hubble cannot deserialize data.
+    '''

@@ -112,7 +112,7 @@ log = logging.getLogger(__name__)
 
 class RootsDict(dict):
     def merge(self, data):
-        for key, values in iter(data.items()):
+        for key, values in data.items():
             if key not in self:
                 self[key] = values
                 continue
@@ -164,7 +164,7 @@ class RuntimeVars(object):
         self._locked = True
 
     def __iter__(self):
-        for name, value in iter(self._vars.items()):
+        for name, value in self._vars.items():
             yield name, value
 
     def __getattribute__(self, name):

@@ -231,7 +231,7 @@ class GitProvider(object):
 
         # Remove the 'salt://' from the beginning of any globally-defined
         # per-saltenv mountpoints
-        for saltenv, saltenv_conf in iter(self.global_saltenv.items()):
+        for saltenv, saltenv_conf in self.global_saltenv.items():
             if 'mountpoint' in saltenv_conf:
                 self.global_saltenv[saltenv]['mountpoint'] = \
                     hubblestack.utils.url.strip_proto(
@@ -351,13 +351,13 @@ class GitProvider(object):
         if 'saltenv' not in self.conf:
             self.conf['saltenv'] = {}
         else:
-            for saltenv, saltenv_conf in iter(self.conf['saltenv'].items()):
+            for saltenv, saltenv_conf in self.conf['saltenv'].items():
                 if 'mountpoint' in saltenv_conf:
                     saltenv_ptr = self.conf['saltenv'][saltenv]
                     saltenv_ptr['mountpoint'] = \
                         hubblestack.utils.url.strip_proto(saltenv_ptr['mountpoint'])
 
-        for key, val in iter(self.conf.items()):
+        for key, val in self.conf.items():
             if key not in PER_SALTENV_PARAMS and not hasattr(self, key):
                 setattr(self, key, val)
 
@@ -1830,7 +1830,7 @@ class Pygit2(GitProvider):
             self.mountpoint(tgt_env), path, use_posixpath=True)
         for repo_path in blobs.get('files', []):
             files.add(add_mountpoint(relpath(repo_path)))
-        for repo_path, link_tgt in iter(blobs.get('symlinks', {}).items()):
+        for repo_path, link_tgt in blobs.get('symlinks', {}).items():
             symlinks[add_mountpoint(relpath(repo_path))] = link_tgt
         return files, symlinks
 
@@ -2201,7 +2201,7 @@ class GitBase(object):
                 # available envs.
                 repo_obj.saltenv_revmap = {}
 
-                for saltenv, saltenv_conf in iter(repo_obj.saltenv.items()):
+                for saltenv, saltenv_conf in repo_obj.saltenv.items():
                     if 'ref' in saltenv_conf:
                         ref = saltenv_conf['ref']
                         repo_obj.saltenv_revmap.setdefault(
@@ -2226,12 +2226,12 @@ class GitBase(object):
                 # per-remote 'saltenv' param. We won't add any matching envs
                 # from the global saltenv map to the revmap.
                 all_envs = []
-                for env_names in iter(repo_obj.saltenv_revmap.values()):
+                for env_names in repo_obj.saltenv_revmap.values():
                     all_envs.extend(env_names)
 
                 # Add the global saltenv map to the reverse map, skipping envs
                 # explicitly mapped in the per-remote 'saltenv' param.
-                for key, conf in iter(repo_obj.global_saltenv.values()):
+                for key, conf in repo_obj.global_saltenv.items():
                     if key not in all_envs and 'ref' in conf:
                         repo_obj.saltenv_revmap.setdefault(
                             conf['ref'], []).append(key)
@@ -2722,7 +2722,7 @@ class GitFS(GitBase):
         ret = set()
         for repo in self.remotes:
             repo_envs = repo.envs()
-            for env_list in iter(repo.saltenv_revmap.values()):
+            for env_list in repo.saltenv_revmap.values():
                 repo_envs.update(env_list)
             ret.update([x for x in repo_envs if repo.env_is_exposed(x)])
         return sorted(ret)
@@ -2978,7 +2978,7 @@ class GitFS(GitBase):
             prefix = ''
         symlinks = self._file_lists(load, 'symlinks')
         return dict([(key, val)
-                     for key, val in iter(symlinks.items())
+                     for key, val in symlinks.items()
                      if key.startswith(prefix)])
 
 

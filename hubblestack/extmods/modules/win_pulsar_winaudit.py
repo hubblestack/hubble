@@ -281,7 +281,7 @@ def canary(change_file=None):
     if change_file is None:
         conf_dir = os.path.dirname(__opts__['conf_file'])
         change_file = os.path.join(conf_dir, 'fim_canary.tmp')
-    __salt__['file.touch'](change_file)
+    __mods__['file.touch'](change_file)
     os.remove(change_file)
 
 
@@ -583,7 +583,7 @@ def _get_item_hash(item, checksum):
     item = item.replace('\\\\', '\\')
     if os.path.isfile(item):
         try:
-            hashy = __salt__['file.get_hash']('{0}'.format(item), form=checksum)
+            hashy = __mods__['file.get_hash']('{0}'.format(item), form=checksum)
             return hashy
         except Exception:
             return ''

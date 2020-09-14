@@ -19,6 +19,7 @@ import functools
 import inspect
 import logging
 import os
+import psutil
 import random
 import shutil
 import signal
@@ -28,9 +29,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
-import threading
 import time
-import tornado.ioloop
 import tornado.web
 import types
 
@@ -1377,3 +1376,84 @@ def random_string(prefix, size=6, uppercase=True, lowercase=True, digits=True):
         choices.extend(string.digits)
 
     return prefix + "".join(random.choice(choices) for _ in range(size))
+
+
+class TstSuiteLoggingHandler:
+    """
+    Simple logging handler which can be used to test if certain logging
+    messages get emitted or not:
+    .. code-block:: python
+        with TstSuiteLoggingHandler() as handler:
+            # (...)               Do what ever you wish here
+            handler.messages    # here are the emitted log messages
+    """
+
+    def __init__(self, level=0, format="%(levelname)s:%(message)s"):
+        self.level = level
+        self.format = format
+        self.activated = False
+        self.prev_logging_level = None
+
+    def activate(self):
+        class Handler(logging.Handler):
+            def __init__(self, level):
+                logging.Handler.__init__(self, level)
+                self.messages = []
+
+            def emit(self, record):
+                self.messages.append(self.format(record))
+
+        self.handler = Handler(self.level)
+        formatter = logging.Formatter(self.format)
+        self.handler.setFormatter(formatter)
+        logging.root.addHandler(self.handler)
+        self.activated = True
+        # Make sure we're running with the lowest logging level with our
+        # tests logging handler
+        current_logging_level = logging.root.getEffectiveLevel()
+        if current_logging_level > logging.DEBUG:
+            self.prev_logging_level = current_logging_level
+            logging.root.setLevel(0)
+
+    def deactivate(self):
+        if not self.activated:
+            return
+        logging.root.removeHandler(self.handler)
+        # Restore previous logging level if changed
+        if self.prev_logging_level is not None:
+            logging.root.setLevel(self.prev_logging_level)
+
+    @property
+    def messages(self):
+        if not self.activated:
+            return []
+        return self.handler.messages
+
+    def clear(self):
+        self.handler.messages = []
+
+    def __enter__(self):
+        self.activate()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.deactivate()
+        self.activated = False
+
+    # Mimic some handler attributes and methods
+    @property
+    def lock(self):
+        if self.activated:
+            return self.handler.lock
+
+    def createLock(self):
+        if self.activated:
+            return self.handler.createLock()
+
+    def acquire(self):
+        if self.activated:
+            return self.handler.acquire()
+
+    def release(self):
+        if self.activated:
+            return self.handler.release()

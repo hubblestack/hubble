@@ -122,7 +122,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
                 # getting the stats using salt
                 if os.path.exists(name):
-                    salt_ret = __salt__['file.stats'](name)
+                    salt_ret = __mods__['file.stats'](name)
                 else:
                     salt_ret = {}
                 if not salt_ret:

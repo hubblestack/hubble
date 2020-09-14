@@ -1,44 +1,55 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Functions for querying and modifying a user account and the groups to which it
 belongs.
-'''
+"""
 
 # Import Python libs
-import ctypes
 import getpass
 import logging
 import os
 import sys
 
+import hubblestack.utils.stringutils
 from hubblestack.utils.exceptions import CommandExecutionError
 
 # Conditional imports
 try:
     import pwd
+
     HAS_PWD = True
 except ImportError:
     HAS_PWD = False
 
 try:
     import grp
+
     HAS_GRP = True
 except ImportError:
     HAS_GRP = False
 
 try:
     import pysss
+
     HAS_PYSSS = True
 except ImportError:
     HAS_PYSSS = False
 
+try:
+    import hubblestack.utils.win_functions
+
+    HAS_WIN_FUNCTIONS = True
+except ImportError:
+    HAS_WIN_FUNCTIONS = False
+
 log = logging.getLogger(__name__)
 
+
 def chugid_and_umask(runas, umask, group=None):
-    '''
+    """
     Helper method for for subprocess.Popen to initialise uid/gid and umask
     for the new process.
-    '''
+    """
     set_runas = False
     set_grp = False
 
@@ -61,11 +72,12 @@ def chugid_and_umask(runas, umask, group=None):
     if umask is not None:
         os.umask(umask)  # pylint: disable=blacklisted-function
 
+
 def chugid(runas, group=None):
-    '''
+    """
     Change the current process to belong to the specified user (and the groups
     to which it belongs)
-    '''
+    """
     uinfo = pwd.getpwnam(runas)
     supgroups = []
     supgroups_seen = set()
@@ -98,7 +110,7 @@ def chugid(runas, group=None):
     for group_name in group_list:
         gid = group_list[group_name]
         if (gid not in supgroups_seen
-           and not supgroups_seen.add(gid)):
+                and not supgroups_seen.add(gid)):
             supgroups.append(gid)
 
     if os.getgid() != target_pw_gid:
@@ -132,12 +144,13 @@ def chugid(runas, group=None):
                 )
             )
 
+
 def get_group_dict(user=None, include_default=True):
-    '''
+    """
     Returns a dict of all of the system groups as keys, and group ids
     as values, of which the user is a member.
     E.g.: {'staff': 501, 'sudo': 27}
-    '''
+    """
     if HAS_GRP is False or HAS_PWD is False:
         return {}
     group_dict = {}
@@ -146,11 +159,12 @@ def get_group_dict(user=None, include_default=True):
         group_dict.update({group: grp.getgrnam(group).gr_gid})
     return group_dict
 
+
 def get_group_list(user, include_default=True):
-    '''
+    """
     Returns a list of all of the system group names of which the user
     is a member.
-    '''
+    """
     if HAS_GRP is False or HAS_PWD is False:
         return []
     group_names = None
@@ -204,11 +218,27 @@ def get_group_list(user, include_default=True):
     log.trace('Group list for user \'%s\': %s', user, sorted(ugroups))
     return sorted(ugroups)
 
+
 def get_default_group(user):
-    '''
+    """
     Returns the specified user's default group. If the user doesn't exist, a
     KeyError will be raised.
-    '''
+    """
     return grp.getgrgid(pwd.getpwnam(user).pw_gid).gr_name \
         if HAS_GRP and HAS_PWD \
         else None
+
+
+def get_user():
+    """
+    Get the current user
+    """
+    if HAS_PWD:
+        ret = pwd.getpwuid(os.geteuid()).pw_name
+    elif HAS_WIN_FUNCTIONS and hubblestack.utils.win_functions.HAS_WIN32:
+        ret = hubblestack.utils.win_functions.get_current_user()
+    else:
+        raise CommandExecutionError(
+            "Required external library (pwd or win32api) not installed"
+        )
+    return hubblestack.utils.stringutils.to_unicode(ret)

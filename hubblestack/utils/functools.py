@@ -1,23 +1,20 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Utility functions to modify other functions
-'''
-
-from __future__ import absolute_import, unicode_literals, print_function
-
+"""
 # Import Python libs
 import types
 
 
 def namespaced_function(function, global_dict, defaults=None, preserve_context=False):
-    '''
+    """
     Redefine (clone) a function under a different globals() namespace scope
 
         preserve_context:
             Allow keeping the context taken from orignal namespace,
             and extend it with globals() taken from
             new targetted namespace.
-    '''
+    """
     if defaults is None:
         defaults = function.__defaults__
 

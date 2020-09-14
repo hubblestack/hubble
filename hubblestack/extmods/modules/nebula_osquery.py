@@ -1766,7 +1766,7 @@ def _get_file(path, dest, mode='600', user='root', group='root'):
                       'an issue finding the file in S3.', path, dest)
             return False
         shutil.copyfile(local_path, dest)
-        ret = __salt__['file.check_perms'](name=local_path,
+        ret = __mods__['file.check_perms'](name=local_path,
                                            ret=None,
                                            user=user,
                                            group=group,

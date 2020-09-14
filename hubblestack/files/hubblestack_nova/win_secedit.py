@@ -226,7 +226,7 @@ def _secedit_export():
         ret = __salt__['cmd.run']('secedit /export /cfg {0}'.format(dump))
         if ret:
             secedit_ret = _secedit_import(dump)
-            ret = __salt__['file.remove'](dump)
+            ret = __mods__['file.remove'](dump)
             return secedit_ret
     except Exception:
         log.debug('Error occurred while trying to get / export secedit data')

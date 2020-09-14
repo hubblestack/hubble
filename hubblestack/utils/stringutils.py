@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Functions for manipulating or otherwise processing strings
-'''
+"""
 
 # Import Python libs
+import difflib
 import fnmatch
 import logging
 import re
@@ -14,9 +15,9 @@ log = logging.getLogger(__name__)
 
 
 def to_unicode(string_to_convert, encoding=None, errors='strict', normalize=False):
-    '''
+    """
     Given str or unicode, return unicode (str for python 3)
-    '''
+    """
     if encoding is None:
         # Try utf-8 first, and fall back to detected encoding
         encoding = ('utf-8', __salt_system_encoding__)
@@ -34,9 +35,9 @@ def to_unicode(string_to_convert, encoding=None, errors='strict', normalize=Fals
 
 
 def to_bytes(string_to_convert, encoding=None, errors='strict'):
-    '''
+    """
     Given bytes, bytearray, str, or unicode, return bytes
-    '''
+    """
     if encoding is None:
         # Try utf-8 first, and fall back to detected encoding
         encoding = ('utf-8', __salt_system_encoding__)
@@ -66,9 +67,9 @@ def to_bytes(string_to_convert, encoding=None, errors='strict'):
 
 
 def to_str(string_to_convert, encoding=None, errors='strict', normalize=False):
-    '''
+    """
     Given str, bytes, bytearray, or unicode (py2), return str
-    '''
+    """
     if encoding is None:
         # Try utf-8 first, and fall back to detected encoding
         encoding = ('utf-8', __salt_system_encoding__)
@@ -99,9 +100,9 @@ def to_str(string_to_convert, encoding=None, errors='strict', normalize=False):
 
 
 def _normalize(string_to_convert, normalize=False):
-    '''
+    """
     a utility method for normalizing string
-    '''
+    """
     try:
         return unicodedata.normalize('NFC', string_to_convert) if normalize else string_to_convert
     except TypeError:
@@ -109,9 +110,9 @@ def _normalize(string_to_convert, normalize=False):
 
 
 def is_binary(data):
-    '''
+    """
     Detects if the passed string of data is binary or text
-    '''
+    """
     if not data or not isinstance(data, (str, bytes)):
         return False
 
@@ -139,12 +140,12 @@ def is_binary(data):
 
 
 def to_num(text):
-    '''
+    """
     Convert a string to a number.
     Returns an integer if the string represents an integer, a floating
     point number if the string is a real number, or the string unchanged
     otherwise.
-    '''
+    """
     try:
         return int(text)
     except ValueError:
@@ -155,11 +156,11 @@ def to_num(text):
 
 
 def get_context(template, line, num_lines=5, marker=None):
-    '''
+    """
     Returns debugging context around a line in a given string
 
     Returns:: string
-    '''
+    """
     template_lines = template.splitlines()
     num_template_lines = len(template_lines)
 
@@ -293,7 +294,7 @@ def check_whitelist_blacklist(value, whitelist=None, blacklist=None):
 
 
 def check_include_exclude(path_str, include_pat=None, exclude_pat=None):
-    '''
+    """
     Check for glob or regexp patterns for include_pat and exclude_pat in the
     'path_str' string and return True/False conditions as follows.
       - Default: return 'True' if no include_pat or exclude_pat patterns are
@@ -302,7 +303,7 @@ def check_include_exclude(path_str, include_pat=None, exclude_pat=None):
         passes the include_pat test or fails exclude_pat test respectively
       - If both include_pat and exclude_pat are supplied: return 'True' if
         include_pat matches AND exclude_pat does not match
-    '''
+    """
     ret = True  # -- default true
     # Before pattern match, check if it is regexp (E@'') or glob(default)
     if include_pat:
@@ -340,3 +341,23 @@ def check_include_exclude(path_str, include_pat=None, exclude_pat=None):
         ret = True
 
     return ret
+
+
+def get_diff(a, b, *args, **kwargs):
+    """
+    Perform diff on two iterables containing lines from two files, and return
+    the diff as as string. Lines are normalized to str types to avoid issues
+    with unicode on PY2.
+    """
+    encoding = ("utf-8", "latin-1", __salt_system_encoding__)
+    # Late import to avoid circular import
+    import hubblestack.utils.data
+
+    return "".join(
+        difflib.unified_diff(
+            hubblestack.utils.data.decode_list(a, encoding=encoding),
+            hubblestack.utils.data.decode_list(b, encoding=encoding),
+            *args,
+            **kwargs
+        )
+    )

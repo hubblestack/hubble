@@ -1,6 +1,5 @@
 argparse
 daemon
-pprint
 backports-abc
 bandit
 certifi

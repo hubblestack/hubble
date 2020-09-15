@@ -100,10 +100,10 @@ class TestPulsar(object):
             ''' pretend match.compound '''
             return value
 
-        __salt__ = {}
-        __salt__['cp.cache_file'] = cp_cache_file
-        __salt__['match.compound'] = match_compound
+        __mods__ = {'cp.cache_file': cp_cache_file}
+        __salt__ = {'match.compound': match_compound}
         pulsar.__salt__ = __salt__
+        pulsar.__mods__ = __mods__
         get_top_data_config = pulsar.get_top_data(topfile)
         configs = ['salt://hubblestack_pulsar/' + config.replace('.', '/') + '.yaml'
                    for config in get_top_data_config]
@@ -120,10 +120,10 @@ class TestPulsar(object):
             ''' pretend match.compound '''
             return value
 
-        __salt__ = {}
-        __salt__['cp.cache_file'] = cp_cache_file
-        __salt__['match.compound'] = match_compound
+        __mods__ = {'cp.cache_file': cp_cache_file}
+        __salt__ = {'match.compound': match_compound}
         pulsar.__salt__ = __salt__
+        pulsar.__mods__ = __mods__
         result = pulsar.get_top_data(topfile)
         pulsar.__salt__ = {}
         assert isinstance(result, list)
@@ -140,10 +140,10 @@ class TestPulsar(object):
             ''' pretend match.compound '''
             return value
 
-        __salt__ = {}
-        __salt__['cp.cache_file'] = cp_cache_file
-        __salt__['match.compound'] = match_compound
+        __mods__ = {'cp.cache_file': cp_cache_file}
+        __salt__ = {'match.compound': match_compound}
         pulsar.__salt__ = __salt__
+        pulsar.__mods__ = __mods__
         try:
             result = pulsar.get_top_data(topfile)
             pulsar.__salt__ = {}
@@ -170,10 +170,10 @@ class TestPulsar2(object):
             ''' pretend salt[cp.cache_file] '''
             return 'tests/unittests/resources/top.pulsar'
 
-        __salt__ = {}
-        __salt__['config.get'] = config_get
-        __salt__['cp.cache_file'] = cp_cache_file
+        __salt__ = {'config.get': config_get}
+        __mods__ = {'cp.cache_file': cp_cache_file}
         pulsar.__salt__ = __salt__
+        pulsar.__mods__ = __mods__
         pulsar.__opts__ = {'pulsar': kwargs}
         pulsar.__context__ = {}
         self.nuke_tdir()

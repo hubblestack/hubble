@@ -279,7 +279,7 @@ def _get_query_data(query_file):
     for file_path in query_file:
         if 'salt://' in file_path:
             orig_fh = file_path
-            file_path = __salt__['cp.cache_file'](file_path)
+            file_path = __mods__['cp.cache_file'](file_path)
         if not file_path:
             log.error('Could not find file %s.', orig_fh)
             return None
@@ -604,7 +604,7 @@ def _get_top_data(topfile):
     Function that reads the topfile and returns a list of matched configs that
     represent .yaml config files
     """
-    topfile = __salt__['cp.cache_file'](topfile)
+    topfile = __mods__['cp.cache_file'](topfile)
 
     if not topfile:
         raise CommandExecutionError('Topfile not found.')
@@ -654,7 +654,7 @@ def _generate_osquery_conf_file(conftopfile):
     for osqd_conf in osqd_configs:
         if 'salt://' in osqd_conf:
             orig_fh = osqd_conf
-            osqd_conf = __salt__['cp.cache_file'](osqd_conf)
+            osqd_conf = __mods__['cp.cache_file'](osqd_conf)
         if not osqd_conf:
             log.error('Could not find file %s.', orig_fh)
             return None
@@ -700,7 +700,7 @@ def _generate_osquery_flags_file(flagstopfile):
     for out_file in osqd_flags:
         if 'salt://' in out_file:
             orig_fh = out_file
-            out_file = __salt__['cp.cache_file'](out_file)
+            out_file = __mods__['cp.cache_file'](out_file)
         if not out_file:
             log.error('Could not find file %s.', orig_fh)
             return None
@@ -815,7 +815,7 @@ def _mask_object(object_to_be_masked, topfile):
         for mask_file in mask_files:
             if 'salt://' in mask_file:
                 orig_fh = mask_file
-                mask_file = __salt__['cp.cache_file'](mask_file)
+                mask_file = __mods__['cp.cache_file'](mask_file)
             if not mask_file:
                 log.error('Could not find file %s.', orig_fh)
                 return None
@@ -1690,7 +1690,7 @@ def _get_file_data(topdata):
     for ext_file in topdata:
         if 'salt://' in ext_file:
             orig_fh = ext_file
-            ext_file = __salt__['cp.cache_file'](ext_file)
+            ext_file = __mods__['cp.cache_file'](ext_file)
         if not ext_file:
             log.error('Could not find file %s.', orig_fh)
             continue
@@ -1760,7 +1760,7 @@ def _get_file(path, dest, mode='600', user='root', group='root'):
     """
     try:
         mode = str(mode)
-        local_path = __salt__['cp.cache_file'](path)
+        local_path = __mods__['cp.cache_file'](path)
         if not local_path:
             log.error('Couldn\'t cache %s to %s. This is probably due to '
                       'an issue finding the file in S3.', path, dest)

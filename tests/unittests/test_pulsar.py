@@ -79,13 +79,13 @@ class TestPulsar(object):
             ''' pretend salt[config.get] '''
             return default
 
-        __salt__ = {}
-        __salt__['config.get'] = config_get
-        pulsar.__salt__ = __salt__
+        __mods__ = {}
+        __mods__['config.get'] = config_get
+        pulsar.__mods__ = pulsar.__salt__ = __mods__
         pulsar.__opts__ = {}
         pulsar.__context__ = {}
         var = pulsar.process(configfile, verbose)
-        pulsar.__salt__ = {}
+        pulsar.__mods__ = pulsar.__salt__ = {}
         assert len(var) == 0
         assert isinstance(var, list)
 
@@ -100,10 +100,8 @@ class TestPulsar(object):
             ''' pretend match.compound '''
             return value
 
-        __salt__ = {'cp.cache_file': cp_cache_file}
-        __mods__ = {'match.compound': match_compound}
-        pulsar.__salt__ = __salt__
-        pulsar.__mods__ = __mods__
+        __mods__ = {'cp.cache_file': cp_cache_file,. 'match.compound': match_compound}
+        pulsar.__mods__ = pulsar.__salt__ = __mods__
         get_top_data_config = pulsar.get_top_data(topfile)
         configs = ['salt://hubblestack_pulsar/' + config.replace('.', '/') + '.yaml'
                    for config in get_top_data_config]
@@ -120,12 +118,10 @@ class TestPulsar(object):
             ''' pretend match.compound '''
             return value
 
-        __salt__ = {'cp.cache_file': cp_cache_file}
-        __mods__ = {'match.compound': match_compound}
-        pulsar.__salt__ = __salt__
-        pulsar.__mods__ = __mods__
+        __mods__ = {'cp.cache_file': cp_cache_file, 'match.compound': match_compound}
+        pulsar.__mods__ = pulsar.__salt__ = __mods__
         result = pulsar.get_top_data(topfile)
-        pulsar.__salt__ = {}
+        pulsar.__mods__ = pulsar.__salt__ = {}
         assert isinstance(result, list)
         assert result[0] == 'hubblestack_pulsar_config'
 
@@ -140,13 +136,11 @@ class TestPulsar(object):
             ''' pretend match.compound '''
             return value
 
-        __salt__ = {'cp.cache_file': cp_cache_file}
-        __mods__ = {'match.compound': match_compound}
-        pulsar.__salt__ = __salt__
-        pulsar.__mods__ = __mods__
+        __mods__ = {'cp.cache_file': cp_cache_file, 'match.compound': match_compound}
+        pulsar.__mods__ = pulsar.__salt__ = __mods__
         try:
             _result = pulsar.get_top_data(topfile)
-            pulsar.__salt__ = {}
+            pulsar.__mods__ = pulsar.__salt__ = {}
         except CommandExecutionError:
             pass
 
@@ -170,10 +164,8 @@ class TestPulsar2(object):
             ''' pretend salt[cp.cache_file] '''
             return 'tests/unittests/resources/top.pulsar'
 
-        __salt__ = {}
-        __salt__['config.get'] = config_get
-        __salt__['cp.cache_file'] = cp_cache_file
-        pulsar.__salt__ = __salt__
+        __mods__ = {'config.get': config_get, 'cp.cache_file': cp_cache_file}
+        pulsar.__mods__ = pulsar.__salt__ = __mods__
         pulsar.__opts__ = {'pulsar': kwargs}
         pulsar.__context__ = {}
         self.nuke_tdir()

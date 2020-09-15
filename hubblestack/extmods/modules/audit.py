@@ -350,6 +350,7 @@ def _build_data_by_tag(topfile, results):
 
 
 def _get_top_data(topfile):
+<<<<<<< 100975a495e33347f5e52225035d8a484a8e90f3
     """
     Helper method to retrieve and parse the Audit topfile
     """
@@ -359,6 +360,13 @@ def _get_top_data(topfile):
     if not topfile_cache_path:
         log.error('Could not find top file %s', topfile)
         return None
+=======
+    topfile = __mods__['cp.cache_file'](topfile)
+
+    if not topfile:
+        raise CommandExecutionError('Topfile not found.')
+
+>>>>>>> add cp module dependencies
     try:
         with open(topfile_cache_path) as handle:
             topdata = yaml.safe_load(handle)

@@ -298,6 +298,7 @@ def mkstemp(*args, **kwargs):
     return f_path
 
 
+@contextlib.contextmanager
 def set_umask(mask):
     """
     Temporarily set the umask and restore once the contextmanager exits

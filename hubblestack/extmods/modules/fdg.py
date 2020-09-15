@@ -146,7 +146,7 @@ def fdg(fdg_file, starting_chained=None):
         the ``chained`` argument for the ``main`` block. Optional.
     """
     if fdg_file and fdg_file.startswith('salt://'):
-        cached = __salt__['cp.cache_file'](fdg_file)
+        cached = __mods__['cp.cache_file'](fdg_file)
     else:
         cached = fdg_file
     if not cached:
@@ -360,7 +360,7 @@ def _check_block(block, block_id):
 
 def _get_top_data(topfile):
 
-    cached_topfile = __salt__['cp.cache_file'](topfile)
+    cached_topfile = __mods__['cp.cache_file'](topfile)
 
     if not cached_topfile:
         log.debug('FDG topfile %s not found from fileserver. Aborting.', topfile)

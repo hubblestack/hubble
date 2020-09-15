@@ -170,7 +170,7 @@ def audit(audit_files=None,
 
     for audit_file in audit_files:
         # Cache audit file
-        path = __salt__['cp.cache_file'](audit_file)
+        path = __mods__['cp.cache_file'](audit_file)
 
         # Fileserver will return False if the file is not found
         if not path:
@@ -266,7 +266,7 @@ def top(topfile='salt://hubblestack_audit/top.audit',
 
 
 def _get_top_data(topfile):
-    topfile = __salt__['cp.cache_file'](topfile)
+    topfile = __mods__['cp.cache_file'](topfile)
 
     if not topfile:
         raise CommandExecutionError('Topfile not found.')

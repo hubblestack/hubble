@@ -26,6 +26,8 @@ except ImportError:
 
 log = logging.getLogger(__name__)
 
+REMOTE_PROTOS = ("http", "https", "ftp", "swift", "s3")
+
 HASHES = {
     'sha512': 128,
     'sha384': 96,

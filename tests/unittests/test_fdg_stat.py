@@ -26,8 +26,8 @@ def test_match_stats_positive():
                 'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322,
                 'ctime': 1491870657.914388}
     chained = {'file_stats': file_stats, 'filepath': "/etc/docker/daemon.json"}
-    hubblestack.utils.stat_functions.check_mode = mock.Mock(return_value=True)
-    val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+    with mock.patch.object(hubblestack.utils.stat_functions, 'check_mode', return_value=True):
+        val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert val[0]
     assert isinstance(val[1], dict)
@@ -55,8 +55,8 @@ def test_match_stats_negative():
                   'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322,
                   'ctime': 1491870657.914388}
     chained = {'file_stats': file_stats, 'filepath': "/etc/docker/daemon.json"}
-    hubblestack.utils.stat_functions.check_mode = mock.Mock(return_value=False)
-    val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+    with mock.patch.object(hubblestack.utils.stat_functions, 'check_mode', return_value=False):
+        val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert not val[0]
     assert isinstance(val[1], dict)
@@ -84,8 +84,8 @@ def test_match_stats_negative_subcheck_failed():
                 'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322,
                 'ctime': 1491870657.914388}
     chained = {'file_stats': file_stats, 'filepath': "/etc/docker/daemon.json"}
-    hubblestack.utils.stat_functions.check_mode = mock.Mock(return_value=False)
-    val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+    with mock.patch.object(hubblestack.utils.stat_functions, 'check_mode', return_value=False):
+        val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert not val[0]
     assert isinstance(val[1], dict)

@@ -15,6 +15,7 @@ markupsafe
 mock
 msgpack
 ntplib
+psutil
 pyinotify
 pytest
 pytest-cov

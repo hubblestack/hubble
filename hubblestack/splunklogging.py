@@ -170,7 +170,7 @@ class SplunkHandler(logging.Handler):
         grains and other values that were updated to be updated here.
         '''
         for entry in self.endpoint_list:
-            entry[1] = entry[1].update(hubblestack.utils.stdrec.std_info())
+            entry[1].update(hubblestack.utils.stdrec.std_info())
 
     def format_record(self, record):
         '''

@@ -164,7 +164,7 @@ def _get_tags(data):
 
 
 def _get_gp_templates():
-    domain_check = __salt__['system.get_domain_workgroup']()
+    domain_check = __mods__['system.get_domain_workgroup']()
     if 'Workgroup' in domain_check:
         return []
 

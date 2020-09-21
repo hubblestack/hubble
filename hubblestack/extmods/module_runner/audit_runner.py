@@ -33,7 +33,6 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
     def _execute(self, audit_data_dict, audit_file, args):
         # got data for one audit file
         # lets parse, validate and execute one by one
-
         tags = args.get('tags', '*')
         labels = args.get('labels', None)
         verbose = args.get('verbose', None)
@@ -46,6 +45,7 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
             audit_impl = self._get_matched_implementation(audit_id, audit_data, tags, labels)
             if not audit_impl:
                 # no matched impl found
+                log.debug('No matched implementation found for check-id: %s in nova profile: %s', audit_id, audit_profile)
                 continue
 
             if not self._validate_audit_data(audit_id, audit_impl):
@@ -235,7 +235,6 @@ class AuditRunner(hubblestack.extmods.module_runner.runner.Runner):
                 if failure_reasons:
                     failure_reasons = set(failure_reasons)
                     audit_result['failure_reason'] = ', '.join(failure_reasons)
-
         return audit_result
 
     def _evaluate_boolean_expression(self, boolean_expr_check_list, verbose, audit_profile, result_list):

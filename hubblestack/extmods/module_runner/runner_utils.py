@@ -4,7 +4,9 @@ It has utility methods to prepare return results as well. So that, the result fo
 """
 
 import logging
+
 log = logging.getLogger(__name__)
+
 
 def get_param_for_module(block_id, block_dict, param_name, chain_args=None):
     """
@@ -30,13 +32,12 @@ def get_param_for_module(block_id, block_dict, param_name, chain_args=None):
     So, chaining argument will have higher priority over yaml block.
 
     Example: Stat module works on a file.
-    For Audit, 'filepath' param is mandatory.
-    For FDG, 'filepath' can come from either yaml or chaining. Chaining will have higher priority
+    For Audit, 'path' param is mandatory.
+    For FDG, 'path' can come from either yaml or chaining. Chaining will have higher priority
     """
 
-    log.debug('Getting value for param name: {0}, for id: {1}'.format(param_name, block_id))    
-    #First try to look in chaining, if it exists
-
+    log.debug('Getting value for param name: {0}, for id: {1}'.format(param_name, block_id))
+    # First try to look in chaining, if it exists
     if chain_args and 'result' in chain_args:
         return chain_args['result']
 
@@ -45,8 +46,9 @@ def get_param_for_module(block_id, block_dict, param_name, chain_args=None):
 
     if param_name in block_dict['args']:
         return block_dict['args'][param_name]
-    
+
     return None
+
 
 def prepare_negative_result_for_module(block_id, error_string):
     """
@@ -64,6 +66,7 @@ def prepare_negative_result_for_module(block_id, error_string):
     log.debug('Preparing error return result for id: {0}, error_string: {1}'.format(block_id, error_string))
 
     return False, {'error': error_string}
+
 
 def prepare_positive_result_for_module(block_id, result):
     """

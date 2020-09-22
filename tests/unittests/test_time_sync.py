@@ -4,14 +4,6 @@ import mock
 import os
 import hubblestack.extmods.fdg.time_sync
 import pytest
-import socket
-
-try:
-    import ntplib
-    IGNORE_NTP_EXCEPTIONS = (socket.timeout, ntplib.NTPException)
-except:
-    IGNORE_NTP_EXCEPTIONS = socket.timeout
-
 
 class TestTimesync():
     '''
@@ -63,8 +55,8 @@ class TestTimesync():
         assert status is False
         assert ret is False
 
-    @pytest.mark.xfail(raises=IGNORE_NTP_EXCEPTIONS,
-        reason="0.pool.ntp.org has boring network and dns timeouts from certain flakey NAT environments, ignoring")
+    @pytest.mark.skipif(os.environ.get('SKIP_0_POOL_NTP_TEST'),
+        reason="0.pool.ntp.org can be flakey in certain Docker environments (e.g., our Jenkins)")
     def test__queryNtpServer_validServer_validReturn(self):
         '''
         Test that when a valid NTP server is passed,

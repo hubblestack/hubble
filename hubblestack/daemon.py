@@ -343,10 +343,8 @@ def schedule():
             if run:
                 _execute_function(jobdata, func, returners, args, kwargs)
                 sf_count += 1
-        except Exception as e:
-            log.error("Exception in running job: {0}. Exception: {1} . Continuing with next job....".format(jobname, e))
-            tb = traceback.format_exc()
-            log.error("Exception stacktrace: {0}".format(tb))
+        except:
+            log.error("Exception in running job: %s; continuing with next job...", jobname, exc_info=True)
     return sf_count
 
 

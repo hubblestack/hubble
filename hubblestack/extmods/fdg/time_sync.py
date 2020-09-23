@@ -96,7 +96,7 @@ def _query_ntp_server(ntp_server):
         ntp_client = ntplib.NTPClient()
         response = ntp_client.request(ntp_server, version=3)
         ret = response.offset
-    except Exception:
+    except (Exception, ntplib.NTPException):
         log.error("Unexpected error occured while querying the server.", exc_info=True)
 
     return ret

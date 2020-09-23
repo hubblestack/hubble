@@ -24,7 +24,6 @@ from zipimport import zipimporter
 # Import salt libs
 # XXX: all these should be hubble.config, hubble.defaults.x, hubble.utils.x, etc
 import salt.config
-import salt.defaults.exitcodes
 import salt.syspaths
 import salt.utils.args
 import salt.utils.context
@@ -944,7 +943,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
                     # Race conditon, SIGTERM or SIGINT received while loader
                     # was in process of loading a module. Call sys.exit to
                     # ensure that the process is killed.
-                    sys.exit(salt.defaults.exitcodes.EX_OK)
+                    sys.exit(0)
             log.error(
                 'Failed to import %s %s as the module called exit()\n',
                 self.tag, name, exc_info=True

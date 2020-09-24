@@ -8,7 +8,7 @@ from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
 class TestService(TestCase):
     """
-    Unit tests for service audit module
+    Unit tests for service module
     """
     def test_invalid_params1(self):
         """

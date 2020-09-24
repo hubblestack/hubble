@@ -15,7 +15,7 @@ check_unique_id:
       items:
         - args:
             file: /etc/ssh/ssh_config
-            pattern: '"^MACs"'
+            pattern: '"^host"'
             flags: '-E'
 
 FDG Example:
@@ -25,12 +25,16 @@ main:
   module: grep
   args:
     path: /etc/ssh/ssh_config
-    pattern: 'MACs'
+    pattern: 'host'
 Mandatory parameters:
     path - file path
 Multiple paths can be provided in a single implementation under attribute: "items"
 
 Note: Comparison logic is moved to comparators. Module will just invoke the grep command.
+Comparator compatible with this module - string
+
+Sample Output:
+'Thus, host-specific definitions should be at the beginning of the\n#   RhostsRSAAuthentication no'
 """
 
 import os
@@ -104,8 +108,13 @@ def execute(block_id, block_dict, chain_args=None):
     if not os.path.isfile(filepath):
         return runner_utils.prepare_negative_result_for_module(block_id, 'file_not_found')
 
-    grep_result = _grep(filepath, pattern, *flags).get('stdout')
-    return runner_utils.prepare_positive_result_for_module(block_id, grep_result)
+    grep_result = _grep(filepath, pattern, *flags)
+    ret_code = grep_result.get('retcode')
+    result = grep_result.get('stdout')
+    if ret_code != 0:
+        return runner_utils.prepare_negative_result_for_module(block_id, "non_zero_return_code")
+
+    return runner_utils.prepare_positive_result_for_module(block_id, result)
 
 
 def get_filtered_params_to_log(block_id, block_dict, chain_args=None):

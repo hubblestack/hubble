@@ -34,6 +34,7 @@ main:
 Arg: name is an optional one. If called without any argument, it will list all services
 
 Note: Comparison logic is moved to comparators. Module will just invoke the service command.
+Comparator compatible with this module - list
 
 Sample Output:
 [
@@ -42,7 +43,6 @@ Sample Output:
     {name: 'xyz', running: true, enabled: true}
 ]
 """
-import os
 import logging
 import fnmatch
 

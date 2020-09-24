@@ -29,20 +29,21 @@ Mandatory parameters:
 Multiple paths can be provided in a single implementation under attribute: "items"
 
 Note: Comparison logic is moved to comparators. Module will just invoke the stat command.
+Comparator compatible with this module - dict
 
 Sample Output:
 {
-  'inode': 34881435, 
-  'uid': 0, 
-  'gid': 0, 
-  'group': 'root', 
-  'user': 'root', 
-  'atime': 1598525499.6568148, 
-  'mtime': 1598521394.6416965, 
-  'ctime': 1598525484.2277226, 
-  'size': 373, 
-  'mode': '0666', 
-  'type': 'file', 
+  'inode': 34881435,
+  'uid': 0,
+  'gid': 0,
+  'group': 'root',
+  'user': 'root',
+  'atime': 1598525499.6568148,
+  'mtime': 1598521394.6416965,
+  'ctime': 1598525484.2277226,
+  'size': 373,
+  'mode': '0666',
+  'type': 'file',
   'target': '/hubble_build/pytest.ini'
 }
 """

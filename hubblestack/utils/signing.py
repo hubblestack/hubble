@@ -146,8 +146,10 @@ class Options(object):
         except AttributeError:
             raise
 
+
 # replace class with instance
-Options = Options() # pylint: disable=invalid-name ; this is fine
+Options = Options()  # pylint: disable=invalid-name ; this is fine
+
 
 def split_certs(fh):
     """ attempt to split certs found in given filehandle into separate openssl cert objects
@@ -176,6 +178,7 @@ def split_certs(fh):
                             short_fname, fh.name, status)
                     yield load_pem_private_key(ret, password=None, backend=default_backend())
                 ret = None
+
 
 def read_certs(*fnames):
     """ given a list of filenames (as varargs), attempt to find all certs in all named files.
@@ -230,7 +233,7 @@ class X509AwareCertBucket:
             return STATUS.VERIFIED
         return STATUS.UNKNOWN
 
-    def __init__(self, public_crt=None, ca_crt=None):
+    def __init__(self, public_crt=None, ca_crt=None, extra_crt=None):
         try:
             import hubblestack.pre_packaged_certificates as HPPC
             # iff we have hardcoded certs then we're meant to ignore any other
@@ -257,6 +260,10 @@ class X509AwareCertBucket:
 
         if not isinstance(public_crt, (list, tuple)):
             public_crt = [ public_crt ]
+
+        if extra_crt:
+            untrusted_crt = list(untrusted_crt)
+            untrusted_crt.append(extra_crt)
 
         self.store = ossl.X509Store()
         self.trusted = list()
@@ -369,9 +376,11 @@ def stringify_ossl_cert(a_cert_obj):
         return ', '.join([ stringify_ossl_cert(i) for i in a_cert_obj ])
     return '/'.join([ '='.join([ j.decode() for j in i ]) for i in a_cert_obj.get_subject().get_components() ])
 
+
 def jsonify(obj, indent=2):
     """ cury function to add default indent=2 to json.dumps(obj, indent=indent) """
     return json.dumps(obj, indent=indent)
+
 
 def normalize_path(path, trunc=None):
     """ attempt to translate /home/./jettero////files/.bashrc
@@ -390,6 +399,7 @@ def normalize_path(path, trunc=None):
             norm = norm[len(trunc):]
     # log.debug("normalize_path(%s) --> %s", path, norm)
     return norm
+
 
 def hash_target(fname, obj_mode=False, chosen_hash=None):
     """ read in a file (fname) and either return the hex digest
@@ -412,6 +422,7 @@ def hash_target(fname, obj_mode=False, chosen_hash=None):
     log.debug('hashed %s: %s', fname, hex_digest)
     return hex_digest
 
+
 def descend_targets(targets, callback):
     """
     recurse into the given `targets` (files or directories) and invoke the `callback`
@@ -426,6 +437,7 @@ def descend_targets(targets, callback):
                     fname_ = os.path.join(dirpath, fname)
                     callback(fname_)
 
+
 def manifest(targets, mfname='MANIFEST'):
     """
     Produce a manifest file given `targets`.
@@ -437,6 +449,7 @@ def manifest(targets, mfname='MANIFEST'):
             mfh.write('{} {}\n'.format(digest, fname))
             log.debug('wrote %s %s to %s', digest, fname, mfname)
         descend_targets(targets, append_hash)
+
 
 def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: disable=unused-argument
     """
@@ -463,7 +476,8 @@ def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: d
         fh.write(PEM.encode(sig, 'Detached Signature of {}'.format(fname)))
         fh.write('\n')
 
-def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt', **kwargs): # pylint: disable=unused-argument
+
+def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt', extra_crt=None, **kwargs): # pylint: disable=unused-argument
     ### make
     """
         Given the fname, sfname public_crt and ca_crt:
@@ -488,7 +502,7 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
             log_level = log.error
         log_level('%s | file "%s" | status: %s ', short_fname, fname, status)
         return status
-    x509 = X509AwareCertBucket(public_crt, ca_crt)
+    x509 = X509AwareCertBucket(public_crt, ca_crt, extra_crt)
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
 
@@ -505,14 +519,14 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
         try:
             pubkey.verify(**args)
             log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
-                    short_fname, fname, status, sha256sum, txt )
+                    short_fname, fname, status, sha256sum, txt)
             return status
         except InvalidSignature:
             status = STATUS.FAIL
             if check_verif_timestamp(fname):
                 log_level = log.critical
             log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
-                    short_fname, fname, status, sha256sum, txt )
+                    short_fname, fname, status, sha256sum, txt)
             pass
     return STATUS.FAIL
 
@@ -531,7 +545,7 @@ def iterate_manifest(mfname):
                 yield manifested_fname
 
 
-def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='public.crt', ca_crt='ca-root.crt'):
+def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='public.crt', ca_crt='ca-root.crt', extra_crt=None):
     """ given a list of `targets`, a MANIFEST, and a SIGNATURE file:
 
         1. Check the signature of the manifest, mark the 'MANIFEST' item of the return as:
@@ -555,7 +569,7 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
             targets, mfname, sfname, public_crt, ca_crt)
 
     ret = OrderedDict()
-    ret[mfname] = verify_signature(mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt)
+    ret[mfname] = verify_signature(mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt, extra_crt=extra_crt)
     # ret[mfname] is the strongest claim we can make about the files we're
     # verifiying if they match their hash in the manifest, the best we can say
     # is whatever is the status of the manifest iteslf.
@@ -654,17 +668,19 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
         def inner(path, saltenv, *a, **kwargs):
             f_mani = find_file_f('MANIFEST', saltenv, *a, **kwargs )
             f_sign = find_file_f('SIGNATURE', saltenv, *a, **kwargs )
+            f_pub_cert = find_file_f('CERTIFICATES', saltenv, *a, **kwargs)
             f_path = find_file_f(path, saltenv, *a, **kwargs)
             real_path = _p(f_path)
             mani_path = _p(f_mani)
             sign_path = _p(f_sign)
+            cert_path = _p(f_pub_cert)
             log.debug('path: %s | manifest: "%s" | signature: "%s"',
                     path,  mani_path, sign_path)
             if not real_path:
                 return f_path
             verify_res = verify_files([real_path],
-                    mfname=mani_path, sfname=sign_path,
-                    public_crt=Options.public_crt, ca_crt=Options.ca_crt)
+                                        mfname=mani_path, sfname=sign_path,
+                                        public_crt=Options.public_crt, ca_crt=Options.ca_crt, extra_crt=cert_path)
             log.debug('verify: %s', dict(**verify_res))
             vrg = verify_res.get(real_path, STATUS.UNKNOWN)
             if vrg == STATUS.VERIFIED:
@@ -675,3 +691,4 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             return dict(**not_found)
         return inner
     return wrapper
+

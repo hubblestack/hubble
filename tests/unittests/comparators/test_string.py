@@ -34,19 +34,6 @@ class TestStringMatch(TestCase):
         status, result = string_comparator.match("test-2", result_to_compare, args)
         self.assertFalse(status)
 
-    def test_match3(self):
-        """
-        Match simple string. Case insensitive match. Must pass
-        """
-        result_to_compare = "RooT"
-        args = {
-            "type": "string",
-            "match": "root",
-            "case_sensitive": False
-        }
-        status, result = string_comparator.match("test-2", result_to_compare, args)
-        self.assertTrue(status)
-
     def test_match4(self):
         """
         Match simple string. Case insensitive match. Must fail
@@ -59,19 +46,6 @@ class TestStringMatch(TestCase):
         }
         status, result = string_comparator.match("test-2", result_to_compare, args)
         self.assertFalse(status)
-
-    def test_match5(self):
-        """
-        Match simple string. exact_match=false. Must pass
-        """
-        result_to_compare = "roots"
-        args = {
-            "type": "string",
-            "match": "root",
-            "exact_match": False
-        }
-        status, result = string_comparator.match("test-2", result_to_compare, args)
-        self.assertTrue(status)
 
     def test_match6(self):
         """
@@ -159,24 +133,6 @@ class TestStringMatchAny(TestCase):
                 "^r"
             },
             "is_regex": True
-        }
-        status, result = string_comparator.match_any("test-1", result_to_compare, args)
-        self.assertTrue(status)
-
-    def test_match_any4(self):
-        """
-        Match list of strings. must pass for exact_match=false and case_sensitive=false
-        """
-        result_to_compare = "root"
-        args = {
-            "type": "string",
-            "match_any": {
-                "toor",
-                "shadow",
-                "Roo"
-            },
-            "exact_match": False,
-            "case_sensitive": False
         }
         status, result = string_comparator.match_any("test-1", result_to_compare, args)
         self.assertTrue(status)

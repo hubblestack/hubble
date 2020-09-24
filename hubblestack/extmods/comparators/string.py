@@ -9,8 +9,7 @@ String comparator exposes various commands:
         type: string
         match: '^root'
         is_regex: true # Optional, default False
-        exact_match: false # Optional, default True
-        case_sensitive: false # Optional, default True
+        is_multiline: true # Optional, default=True. Works only when is_regex=True
 
 - "match_any" command example:
   
@@ -20,10 +19,7 @@ String comparator exposes various commands:
             - '^root'
             - 'shadow'
         is_regex: true # Optional, default False
-        exact_match: false # Optional, default True
-        case_sensitive: false # Optional, default True
-
-Note: If is_regex=True, then exact_match will be ignored
+        is_multiline: false # Optional. Works only when is_regex=True
 """
 import logging
 import re
@@ -68,22 +64,15 @@ def match_any(audit_id, result_to_compare, args):
 def _compare(result_to_compare, expected_string, args):
     """
     Compare two strings, by processing different options
-        (case_sensitive, is_regex, exact_match)
+        (is_regex)
     """
-    # process case_sensitive option
-    is_case_sensitive = args.get('case_sensitive', True)
-    if not is_case_sensitive:
-        result_to_compare = result_to_compare.lower()
-        expected_string = expected_string.lower()
 
     # process is_regex
     is_regex = args.get('is_regex', False)
     if is_regex:
+        is_multiline = args.get('is_multiline', True)
+        if is_multiline:
+            return re.search(expected_string, result_to_compare, re.MULTILINE)
         return re.search(expected_string, result_to_compare)
     else:
-        # process exact_match
-        exact_match = args.get('exact_match', True)
-        if exact_match:
-            return result_to_compare == expected_string
-        else:
-            return expected_string in result_to_compare
+        return result_to_compare == expected_string

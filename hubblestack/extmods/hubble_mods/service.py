@@ -4,51 +4,47 @@ Module for running stat command. Same can be used in both Audit/FDG
 
 Audit Example:
 ---------------
-check_unique_id:
-  description: 'stat check'
-  tag: 'ADOBE-01'
+check_id:
+  description: 'sample description'
+  tag: 'ADOBE-00041'
   implementations:
     - filter:
         grains: 'G@osfinger:CentOS*Linux-7'
-      hubble_version: '>3 AND <7 AND <8'
-      module: stat
+      module: service
       items:
         - args:
-            path: /etc/ssh/ssh_config1
+            name: 'abc*'
+          comparator:
+            type: "list"
+            match_any:
+              - name: abc2
+                status: true
+              - name: xyz
+                status: false
 
 FDG Example:
 ------------
+
 main:
-  description: 'stat check'
-  module: stat
+  description: 'service'
+  module: service
   args:
-    path: /etc/ssh/ssh_config1
+    name: 'abc*'
 
-Mandatory parameters:
-    path - file path
-Multiple paths can be provided in a single implementation under attribute: "items"
+Arg: name is an optional one. If called without any argument, it will list all services
 
-Note: Comparison logic is moved to comparators. Module will just invoke the stat command.
+Note: Comparison logic is moved to comparators. Module will just invoke the service command.
 
 Sample Output:
-{
-  'inode': 34881435, 
-  'uid': 0, 
-  'gid': 0, 
-  'group': 'root', 
-  'user': 'root', 
-  'atime': 1598525499.6568148, 
-  'mtime': 1598521394.6416965, 
-  'ctime': 1598525484.2277226, 
-  'size': 373, 
-  'mode': '0666', 
-  'type': 'file', 
-  'target': '/hubble_build/pytest.ini'
-}
+[
+    {name: 'rsh', running: false, enabled: false},
+    {name: 'abc', running: true, enabled: false}
+    {name: 'xyz', running: true, enabled: true}
+]
 """
-
 import os
 import logging
+import fnmatch
 
 import hubblestack.extmods.module_runner.runner_utils as runner_utils
 from hubblestack.utils.hubble_error import HubbleCheckValidationError
@@ -70,13 +66,13 @@ def validate_params(block_id, block_dict, chain_args=None):
     Raises:
         AuditCheckValidationError: For any validation error
     """
-    log.debug('Module: stat Start validating params for check-id: {0}'.format(block_id))
+    log.debug('Module: service Start validating params for check-id: {0}'.format(block_id))
 
     #fetch required param
-    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path', chain_args)
+    name = runner_utils.get_param_for_module(block_id, block_dict, 'name', chain_args)
     
-    if not filepath:
-        raise HubbleCheckValidationError('Mandatory parameter: {0} not found for id: {1}'.format('path', block_id))
+    if not name:
+        raise HubbleCheckValidationError('Mandatory parameter: {0} not found for id: {1}'.format('name', block_id))
 
     log.debug('Validation success for check-id: {0}'.format(block_id))
 
@@ -98,14 +94,20 @@ def execute(block_id, block_dict, chain_args=None):
     log.debug('Executing stat module for id: {0}'.format(block_id))
 
     #fetch required param
-    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path', chain_args)
+    name = runner_utils.get_param_for_module(block_id, block_dict, 'name', chain_args)
 
-    # check filepath existence
-    if not os.path.isfile(filepath):
-        return runner_utils.prepare_negative_result_for_module(block_id, 'file_not_found')
+    result = []
+    matched_services = fnmatch.filter(__salt__['service.get_all'](), name)
+    for matched_service in matched_services:
+        service_status = __salt__['service.status'](matched_service)
+        is_enabled = __salt__['service.enabled'](matched_service)
+        result.append({
+            "name": matched_service,
+            "running": service_status,
+            "enabled": is_enabled
+        })
 
-    stat_res = __salt__['file.stats'](filepath)
-    return runner_utils.prepare_positive_result_for_module(block_id, stat_res)
+    return runner_utils.prepare_positive_result_for_module(block_id, result)
 
 def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
     """
@@ -122,5 +124,5 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
     #fetch required param
-    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path', chain_args)
-    return {'path': filepath}
+    name = runner_utils.get_param_for_module(block_id, block_dict, 'name', chain_args)
+    return {'name': name}

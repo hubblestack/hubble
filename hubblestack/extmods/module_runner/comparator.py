@@ -36,7 +36,10 @@ def run(audit_id, args, module_result, module_status=True):
         # raise error when no matched command found
         raise HubbleCheckFailedError('Unknown comparator or command for: {0}'.format(args['type']))
 
-    result_val = module_result['result'] if 'result' in module_result else module_result
+    if isinstance(module_result, int):
+        result_val = module_result
+    else:    
+        result_val = module_result['result'] if 'result' in module_result else module_result
     comparator_result = __comparator__[comparator_command_method_name](audit_id, result_val, args)
 
     # handle invert_result
@@ -58,5 +61,4 @@ def _find_comparator_command(args):
         method_name = '{0}.{1}'.format(args['type'], comparator_key)
         if method_name in __comparator__:
             return method_name
-
     return None

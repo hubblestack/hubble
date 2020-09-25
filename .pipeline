@@ -57,13 +57,11 @@ pipeline {
                         LHS=$(cut -d' ' -f1 < nearest-ancestor.txt)
                         echo "using nearest ancestor for LHS (because it was empty)"
                     fi
-                    echo "computed git diff LHS: $RHS"
 
                     if [ -z "$RHS" ]; then
                         echo "using HEAD for RHS (because it was empty)"
                         RHS=HEAD
                     fi
-                    echo "computed git diff RHS: $RHS"
 
                     echo "computed git diff LHS: $LHS"
                     echo "computed git diff RHS: $RHS"
@@ -86,11 +84,11 @@ pipeline {
                     echo "pyenv version-name: $(pyenv version-name)"
                     set -e
                     pip install --cache-dir .pip-cache -t ./vlib virtualenv
-                    PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv --system-site-packages
+                    PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv
                     source ./venv/bin/activate
-                    pip install --upgrade --cache-dir .pip-cache -U pip
+                    pip install --cache-dir .pip-cache -U pip
                     echo no | ./mk-requires.sh
-                    pip install --upgrade --cache-dir .pip-cache -U -r requirements.txt
+                    pip install --cache-dir .pip-cache -U -r requirements.txt
                     '''
             }
         }
@@ -100,7 +98,7 @@ pipeline {
                     steps {
                         sh '''#!/bin/bash
                             source ./venv/bin/activate
-                            python -m pytest tests/unittests --html=tests/unittests/output/pytest.html
+                            pytest -v tests/unittests --html=tests/unittests/output/pytest.html
                             x=$?
                             cp tests/unittests/output/combined.svg tests/unittests/output/profile-diagram.svg
                             exit $x

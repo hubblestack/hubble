@@ -57,11 +57,13 @@ pipeline {
                         LHS=$(cut -d' ' -f1 < nearest-ancestor.txt)
                         echo "using nearest ancestor for LHS (because it was empty)"
                     fi
+                    echo "computed git diff LHS: $RHS"
 
                     if [ -z "$RHS" ]; then
                         echo "using HEAD for RHS (because it was empty)"
                         RHS=HEAD
                     fi
+                    echo "computed git diff RHS: $RHS"
 
                     echo "computed git diff LHS: $LHS"
                     echo "computed git diff RHS: $RHS"

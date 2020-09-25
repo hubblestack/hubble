@@ -77,42 +77,6 @@ pipeline {
 
                 sh '''#!/bin/bash
                     echo "---=: CONFIGURE TEST ENVIRONMENT :=---"
-                    if [ -z "$CHANGE_TARGET" ]; then
-                        git log --decorate --pretty=%H%d --simplify-by-decoration > git-log.txt
-                        tail -n +2 git-log.txt | head -n 1 > nearest-ancestor.txt
-                        echo "nearest ancestor seems to be $(<nearest-ancestor.txt)"
-                        CHANGE_TARGET=$(cut -d' ' -f1 < nearest-ancestor.txt)
-                        echo "set CHANGE_TARGET=\"$CHANGE_TARGET\" (becuase it was empty)"
-                    fi
-
-                    if [ -z "$BRANCH_NAME" ]; then
-                        echo "setting BRANCH_NAME=HEAD (because it was empty)"
-                        BRANCH_NAME=HEAD
-                    fi
-
-                    if tmp=$(git rev-parse origin/$CHANGE_TARGET)
-                    then LHS=$tmp
-                    else LHS=$CHANGE_TARGET
-                    fi
-                    echo "computed git diff LHS: $RHS"
-
-                    if tmp=$(git rev-parse origin/$BRANCH_NAME)
-                    then RHS=$tmp
-                    else RHS=$BRANCH_NAME
-                    fi
-                    echo "computed git diff RHS: $RHS"
-
-                    if [ -n "$LHS" -a -n "$RHS" ]
-                    then find hubblestack -name "*.py" -print0 \\
-                        | xargs -r0 git diff --name-only "$LHS" "$RHS" > $REF
-                        head -v $REF
-                    else cat /dev/null > $REF
-                         echo "*** NULL $REF ***"
-                    fi
-                '''
-
-                sh '''#!/bin/bash
-                    echo "---=: CONFIGURE TEST ENVIRONMENT :=---"
                     source /etc/profile.d/kersplat.sh
                     export PY_V="$TEST_PY_V"
                     pyenv local $TEST_PY_V

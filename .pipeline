@@ -47,6 +47,14 @@ pipeline {
                         BRANCH_NAME=HEAD
                     fi
 
+                    if tmp=$(git rev-parse $CHANGE_TARGET)
+                    then CHANGE_TARGET=$tmp
+                    fi
+
+                    if tmp=$(git rev-parse $BRANCH_NAME)
+                    then BRANCH_NAME=$tmp
+                    fi
+
                     echo =:------------------------------:=
                     echo "about to compute relevant-files.txt"
                     echo "CHANGE_TARGET: $CHANGE_TARGET"

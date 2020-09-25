@@ -34,14 +34,19 @@ pipeline {
 
                 sh '''#!/bin/bash
                     echo "---=: RELEVANT-FILES.TXT :=---"
-                    if tmp=$(git rev-parse origin/$CHANGE_TARGET 2>/dev/null)
-                    then LHS=$tmp
-                    else LHS=$CHANGE_TARGET
+                    LHS='' RHS=''
+                    if [ -n "$CHANGE_TARGET" ]; then
+                        if tmp=$(git rev-parse origin/$CHANGE_TARGET 2>/dev/null)
+                        then LHS=$tmp
+                        else LHS=$CHANGE_TARGET
+                        fi
                     fi
 
-                    if tmp=$(git rev-parse origin/$BRANCH_NAME 2>/dev/null)
-                    then RHS=$tmp
-                    else RHS=$BRANCH_NAME
+                    if [ -n "$BRANCH_NAME" ]; then
+                        if tmp=$(git rev-parse origin/$BRANCH_NAME 2>/dev/null)
+                        then RHS=$tmp
+                        else RHS=$BRANCH_NAME
+                        fi
                     fi
 
                     if [ -z "$LHS" ]; then
@@ -49,11 +54,11 @@ pipeline {
                         tail -n +2 git-log.txt | head -n 1 > nearest-ancestor.txt
                         echo "nearest ancestor seems to be $(<nearest-ancestor.txt)"
                         LHS=$(cut -d' ' -f1 < nearest-ancestor.txt)
-                        echo "set LHS=\"$LHS\" (becuase it was empty)"
+                        echo "using nearest ancestor for LHS (because it was empty)"
                     fi
 
                     if [ -z "$RHS" ]; then
-                        echo "setting RHS=HEAD (because it was empty)"
+                        echo "using HEAD for RHS (because it was empty)"
                         RHS=HEAD
                     fi
 

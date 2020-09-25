@@ -84,7 +84,7 @@ pipeline {
                     echo "pyenv version-name: $(pyenv version-name)"
                     set -e
                     pip install --cache-dir .pip-cache -t ./vlib virtualenv
-                    PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv --system-site-packages
+                    PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv
                     source ./venv/bin/activate
                     pip install --cache-dir .pip-cache -U pip
                     echo no | ./mk-requires.sh

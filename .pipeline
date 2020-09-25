@@ -57,7 +57,7 @@ pipeline {
                         RHS=HEAD
                     fi
 
-                    echo "computed git diff LHS: $RHS"
+                    echo "computed git diff LHS: $LHS"
                     echo "computed git diff RHS: $RHS"
 
                     if [ -n "$LHS" -a -n "$RHS" ]

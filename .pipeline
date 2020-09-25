@@ -34,29 +34,30 @@ pipeline {
 
                 sh '''#!/bin/bash
                     echo "---=: RELEVANT-FILES.TXT :=---"
-                    if [ -z "$CHANGE_TARGET" ]; then
-                        git log --decorate --pretty=%H%d --simplify-by-decoration > git-log.txt
-                        tail -n +2 git-log.txt | head -n 1 > nearest-ancestor.txt
-                        echo "nearest ancestor seems to be $(<nearest-ancestor.txt)"
-                        CHANGE_TARGET=$(cut -d' ' -f1 < nearest-ancestor.txt)
-                        echo "set CHANGE_TARGET=\"$CHANGE_TARGET\" (becuase it was empty)"
-                    fi
-
-                    if [ -z "$BRANCH_NAME" ]; then
-                        echo "setting BRANCH_NAME=HEAD (because it was empty)"
-                        BRANCH_NAME=HEAD
-                    fi
-
-                    if tmp=$(git rev-parse origin/$CHANGE_TARGET)
+                    if tmp=$(git rev-parse origin/$CHANGE_TARGET 2>/dev/null)
                     then LHS=$tmp
                     else LHS=$CHANGE_TARGET
                     fi
-                    echo "computed git diff LHS: $RHS"
 
-                    if tmp=$(git rev-parse origin/$BRANCH_NAME)
+                    if tmp=$(git rev-parse origin/$BRANCH_NAME 2>/dev/null)
                     then RHS=$tmp
                     else RHS=$BRANCH_NAME
                     fi
+
+                    if [ -z "$LHS" ]; then
+                        git log --decorate --pretty=%H%d --simplify-by-decoration > git-log.txt
+                        tail -n +2 git-log.txt | head -n 1 > nearest-ancestor.txt
+                        echo "nearest ancestor seems to be $(<nearest-ancestor.txt)"
+                        LHS=$(cut -d' ' -f1 < nearest-ancestor.txt)
+                        echo "set LHS=\"$LHS\" (becuase it was empty)"
+                    fi
+
+                    if [ -z "$RHS" ]; then
+                        echo "setting RHS=HEAD (because it was empty)"
+                        RHS=HEAD
+                    fi
+
+                    echo "computed git diff LHS: $RHS"
                     echo "computed git diff RHS: $RHS"
 
                     if [ -n "$LHS" -a -n "$RHS" ]

@@ -90,7 +90,7 @@ pipeline {
                     steps {
                         sh '''#!/bin/bash
                             source ./venv/bin/activate
-                            pytest tests/unittests --html=tests/unittests/output/pytest.html
+                            python -m pytest tests/unittests --html=tests/unittests/output/pytest.html
                             x=$?
                             cp tests/unittests/output/combined.svg tests/unittests/output/profile-diagram.svg
                             exit $x
@@ -102,7 +102,7 @@ pipeline {
                         sh '''#!/bin/bash
                             source ./venv/bin/activate
                             if [ -s $REF ]
-                            then xargs -r pylint --output-format=json < $REF > $OUTPUT/pylint.json; x=$?
+                            then xargs -r python -m pylint --output-format=json < $REF > $OUTPUT/pylint.json; x=$?
                                  echo "Wrote $(wc -l < $OUTPUT/pylint.json) line(s) to $OUTPUT/pylint.json with exit($x)"
                             else echo SKIPPING PYLINT "$REF is empty"; x=0
                             fi

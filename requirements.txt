@@ -6,7 +6,6 @@ azure-storage-blob==2.1.0
 azure-storage-common==2.1.0
 azure==4.0.0
 backports-abc
-bandit
 boto3
 botocore
 certifi

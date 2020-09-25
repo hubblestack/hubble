@@ -1,7 +1,6 @@
 argparse
 daemon
 backports-abc
-bandit
 certifi
 chardet
 croniter

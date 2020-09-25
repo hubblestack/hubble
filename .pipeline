@@ -75,13 +75,12 @@ pipeline {
                     pyenv local $TEST_PY_V
                     pyenv shell $TEST_PY_V
                     echo "pyenv version-name: $(pyenv version-name)"
-                    set -x -e
-                    pip install --cache-dir .pip-cache -t ./vlib virtualenv
+                    pip install --upgrade --cache-dir .pip-cache -t ./vlib virtualenv
                     PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv --system-site-packages
                     source ./venv/bin/activate
-                    pip install --cache-dir .pip-cache -U pip
+                    pip install --upgrade --cache-dir .pip-cache -U pip
                     echo no | ./mk-requires.sh
-                    pip install --cache-dir .pip-cache -U -r requirements.txt
+                    pip install --upgrade --cache-dir .pip-cache -U -r requirements.txt
                     '''
             }
         }

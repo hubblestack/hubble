@@ -76,10 +76,7 @@ pipeline {
                 '''
 
                 sh '''#!/bin/bash
-<<<<<<< 1a5e24ee37bc79410c493c23fbacda0c39ce1237
                     echo "---=: CONFIGURE TEST ENVIRONMENT :=---"
-=======
-                    echo =:------------------------------:=
                     if [ -z "$CHANGE_TARGET" ]; then
                         git log --decorate --pretty=%H%d --simplify-by-decoration > git-log.txt
                         tail -n +2 git-log.txt | head -n 1 > nearest-ancestor.txt
@@ -105,9 +102,10 @@ pipeline {
                     fi
 
                     head -v $REF
-                    echo =:------------------------------:=
                 '''
+
                 sh '''#!/bin/bash
+                    echo "---=: CONFIGURE TEST ENVIRONMENT :=---"
                     source /etc/profile.d/kersplat.sh
                     export PY_V="$TEST_PY_V"
                     pyenv local $TEST_PY_V

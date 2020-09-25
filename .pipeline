@@ -90,26 +90,25 @@ pipeline {
                         BRANCH_NAME=HEAD
                     fi
 
-                    if tmp=$(git rev-parse $CHANGE_TARGET)
-                    then CHANGE_TARGET=$tmp
+                    if tmp=$(git rev-parse origin/$CHANGE_TARGET)
+                    then LHS=$tmp
+                    else LHS=$CHANGE_TARGET
                     fi
+                    echo "computed git diff LHS: $RHS"
 
-                    if tmp=$(git rev-parse $BRANCH_NAME)
-                    then BRANCH_NAME=$tmp
+                    if tmp=$(git rev-parse origin/$BRANCH_NAME)
+                    then RHS=$tmp
+                    else RHS=$BRANCH_NAME
                     fi
+                    echo "computed git diff RHS: $RHS"
 
-                    echo =:------------------------------:=
-                    echo "about to compute relevant-files.txt"
-                    echo "CHANGE_TARGET: $CHANGE_TARGET"
-                    echo "BRANCH_NAME:   $BRANCH_NAME"
-
-                    if [ -n "$CHANGE_TARGET" -a -n "$BRANCH_NAME" ]
+                    if [ -n "$LHS" -a -n "$RHS" ]
                     then find hubblestack -name "*.py" -print0 \\
-                        | xargs -r0 git diff --name-only "$CHANGE_TARGET" "$BRANCH_NAME" > $REF
+                        | xargs -r0 git diff --name-only "$LHS" "$RHS" > $REF
+                        head -v $REF
                     else cat /dev/null > $REF
+                         echo "*** NULL $REF ***"
                     fi
-
-                    head -v $REF
                 '''
 
                 sh '''#!/bin/bash

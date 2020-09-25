@@ -34,6 +34,7 @@ pipeline {
 
                 sh '''#!/bin/bash
                     echo "---=: RELEVANT-FILES.TXT :=---"
+                    echo "CHANGE_TARGET=$CHANGE_TARGET BRANCH_NAME=$BRANCH_NAME"
                     LHS='' RHS=''
                     if [ -n "$CHANGE_TARGET" ]; then
                         if tmp=$(git rev-parse origin/$CHANGE_TARGET 2>/dev/null)

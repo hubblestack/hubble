@@ -27,11 +27,13 @@ pipeline {
         stage('setup') {
             steps {
                 sh '''#!/bin/bash
+                    echo "---=: CLEAN UP WORKSPACE :=---"
                     git clean -dfx -e .pip-cache
                     mkdir -vp $OUTPUT
                     '''
+
                 sh '''#!/bin/bash
-                    echo =:------------------------------:=
+                    echo "---=: RELEVANT-FILES.TXT :=---"
                     if [ -z "$CHANGE_TARGET" ]; then
                         git log --decorate --pretty=%H%d --simplify-by-decoration > git-log.txt
                         tail -n +2 git-log.txt | head -n 1 > nearest-ancestor.txt
@@ -57,9 +59,10 @@ pipeline {
                     fi
 
                     head -v $REF
-                    echo =:------------------------------:=
                 '''
+
                 sh '''#!/bin/bash
+                    echo "---=: CONFIGURE TEST ENVIRONMENT :=---"
                     source /etc/profile.d/kersplat.sh
                     export PY_V="$TEST_PY_V"
                     pyenv local $TEST_PY_V

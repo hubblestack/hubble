@@ -106,18 +106,20 @@ pipeline {
                 }
                 stage('pylint') {
                     steps {
-                        sh '''#!/bin/bash
-                            source ./venv/bin/activate
-                            if [ -s $REF ]
-                            then xargs -r pylint --output-format=json < $REF > $OUTPUT/pylint.json; x=$?
-                                 echo "Wrote $(wc -l < $OUTPUT/pylint.json) line(s) to $OUTPUT/pylint.json with exit($x)"
-                            else echo SKIPPING PYLINT "$REF is empty"; x=0
-                            fi
-                            test -s $OUTPUT/pylint.json || echo '[]' > $OUTPUT/pylint.json
-                            python ./tests/automation/pylint-json-to-html $OUTPUT/pylint.json
-                            echo "Wrote $(wc -l < $OUTPUT/pylint.html) line(s) to $OUTPUT/pylint.html (see test reports)"
-                            exit $x
-                            '''
+                        catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+                            sh '''#!/bin/bash
+                                source ./venv/bin/activate
+                                if [ -s $REF ]
+                                then xargs -r pylint --output-format=json < $REF > $OUTPUT/pylint.json; x=$?
+                                     echo "Wrote $(wc -l < $OUTPUT/pylint.json) line(s) to $OUTPUT/pylint.json with exit($x)"
+                                else echo SKIPPING PYLINT "$REF is empty"; x=0
+                                fi
+                                test -s $OUTPUT/pylint.json || echo '[]' > $OUTPUT/pylint.json
+                                python ./tests/automation/pylint-json-to-html $OUTPUT/pylint.json
+                                echo "Wrote $(wc -l < $OUTPUT/pylint.html) line(s) to $OUTPUT/pylint.html (see test reports)"
+                                exit $x
+                                '''
+                        }
                     }
                 }
             }

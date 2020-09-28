@@ -1,7 +1,6 @@
 argparse
 daemon
 backports-abc
-bandit
 certifi
 chardet
 croniter
@@ -24,7 +23,7 @@ pytest-pythonpath
 python-dateutil
 pyyaml
 requests
-salt-ssh
+salt-ssh==2019.2.3
 pylint
 saltpylint
 singledispatch

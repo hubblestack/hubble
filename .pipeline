@@ -82,6 +82,7 @@ pipeline {
                     pyenv local $TEST_PY_V
                     pyenv shell $TEST_PY_V
                     echo "pyenv version-name: $(pyenv version-name)"
+                    set -e
                     pip install --cache-dir .pip-cache -t ./vlib virtualenv
                     PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv
                     source ./venv/bin/activate

@@ -27,45 +27,61 @@ pipeline {
         stage('setup') {
             steps {
                 sh '''#!/bin/bash
+                    echo "---=: CLEAN UP WORKSPACE :=---"
                     git clean -dfx -e .pip-cache
                     mkdir -vp $OUTPUT
                     '''
+
                 sh '''#!/bin/bash
-                    echo =:------------------------------:=
-                    if [ -z "$CHANGE_TARGET" ]; then
+                    echo "---=: RELEVANT-FILES.TXT :=---"
+                    echo "CHANGE_TARGET=$CHANGE_TARGET BRANCH_NAME=$BRANCH_NAME"
+                    LHS='' RHS=''
+                    if [ -n "$CHANGE_TARGET" ]; then
+                        if tmp=$(git rev-parse origin/$CHANGE_TARGET 2>/dev/null)
+                        then LHS=$tmp
+                        else LHS=$CHANGE_TARGET
+                        fi
+                    fi
+
+                    if [ -n "$BRANCH_NAME" ]; then
+                        if tmp=$(git rev-parse origin/$BRANCH_NAME 2>/dev/null)
+                        then RHS=$tmp
+                        else RHS=$BRANCH_NAME
+                        fi
+                    fi
+
+                    if [ -z "$LHS" ]; then
                         git log --decorate --pretty=%H%d --simplify-by-decoration > git-log.txt
                         tail -n +2 git-log.txt | head -n 1 > nearest-ancestor.txt
                         echo "nearest ancestor seems to be $(<nearest-ancestor.txt)"
-                        CHANGE_TARGET=$(cut -d' ' -f1 < nearest-ancestor.txt)
-                        echo "set CHANGE_TARGET=\"$CHANGE_TARGET\" (becuase it was empty)"
+                        LHS=$(cut -d' ' -f1 < nearest-ancestor.txt)
+                        echo "using nearest ancestor for LHS (because it was empty)"
                     fi
 
-                    if [ -z "$BRANCH_NAME" ]; then
-                        echo "setting BRANCH_NAME=HEAD (because it was empty)"
-                        BRANCH_NAME=HEAD
+                    if [ -z "$RHS" ]; then
+                        echo "using HEAD for RHS (because it was empty)"
+                        RHS=HEAD
                     fi
 
-                    echo =:------------------------------:=
-                    echo "about to compute relevant-files.txt"
-                    echo "CHANGE_TARGET: $CHANGE_TARGET"
-                    echo "BRANCH_NAME:   $BRANCH_NAME"
+                    echo "computed git diff LHS: $LHS"
+                    echo "computed git diff RHS: $RHS"
 
-                    if [ -n "$CHANGE_TARGET" -a -n "$BRANCH_NAME" ]
+                    if [ -n "$LHS" -a -n "$RHS" ]
                     then find hubblestack -name "*.py" -print0 \\
-                        | xargs -r0 git diff --name-only "$CHANGE_TARGET" "$BRANCH_NAME" > $REF
+                        | xargs -r0 git diff --name-only "$LHS" "$RHS" > $REF
+                        head -v $REF
                     else cat /dev/null > $REF
+                         echo "*** NULL $REF ***"
                     fi
-
-                    head -v $REF
-                    echo =:------------------------------:=
                 '''
+
                 sh '''#!/bin/bash
+                    echo "---=: CONFIGURE TEST ENVIRONMENT :=---"
                     source /etc/profile.d/kersplat.sh
                     export PY_V="$TEST_PY_V"
                     pyenv local $TEST_PY_V
                     pyenv shell $TEST_PY_V
                     echo "pyenv version-name: $(pyenv version-name)"
-                    set -x -e
                     pip install --cache-dir .pip-cache -t ./vlib virtualenv
                     PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv
                     source ./venv/bin/activate

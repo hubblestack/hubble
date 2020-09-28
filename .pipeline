@@ -1,8 +1,12 @@
 
-def imgname = 'hubblestack/jenkins:centos-v1.0.14'
+def imgname = 'hubblestack/jenkins:centos-v1.0.16'
 
 pipeline {
-    agent { docker { image "${imgname}" } }
+    agent {
+        docker {
+            image "${imgname}"
+        }
+    }
 
     options {
         timestamps()
@@ -14,46 +18,61 @@ pipeline {
         PY_COLORS = 1
         HS_PROFILE = 1
         TEST_PY_V = '3.6.10'
+        OUTPUT = 'tests/unittests/output'
+        REF = 'tests/unittests/output/relevant-files.txt'
+        SKIP_0_POOL_NTP_TEST = 1
     }
 
     stages {
         stage('setup') {
             steps {
                 sh '''#!/bin/bash
-                    git clean -dfx
+                    git clean -dfx -e .pip-cache
+                    mkdir -vp $OUTPUT
                     '''
+                sh '''#!/bin/bash
+                    echo =:------------------------------:=
+                    if [ -z "$CHANGE_TARGET" ]; then
+                        git log --decorate --pretty=%H%d --simplify-by-decoration > git-log.txt
+                        tail -n +2 git-log.txt | head -n 1 > nearest-ancestor.txt
+                        echo "nearest ancestor seems to be $(<nearest-ancestor.txt)"
+                        CHANGE_TARGET=$(cut -d' ' -f1 < nearest-ancestor.txt)
+                        echo "set CHANGE_TARGET=\"$CHANGE_TARGET\" (becuase it was empty)"
+                    fi
+
+                    if [ -z "$BRANCH_NAME" ]; then
+                        echo "setting BRANCH_NAME=HEAD (because it was empty)"
+                        BRANCH_NAME=HEAD
+                    fi
+
+                    echo =:------------------------------:=
+                    echo "about to compute relevant-files.txt"
+                    echo "CHANGE_TARGET: $CHANGE_TARGET"
+                    echo "BRANCH_NAME:   $BRANCH_NAME"
+
+                    if [ -n "$CHANGE_TARGET" -a -n "$BRANCH_NAME" ]
+                    then find hubblestack -name "*.py" -print0 \\
+                        | xargs -r0 git diff --name-only "$CHANGE_TARGET" "$BRANCH_NAME" > $REF
+                    else cat /dev/null > $REF
+                    fi
+
+                    head -v $REF
+                    echo =:------------------------------:=
+                '''
                 sh '''#!/bin/bash
                     source /etc/profile.d/kersplat.sh
                     export PY_V="$TEST_PY_V"
                     pyenv local $TEST_PY_V
                     pyenv shell $TEST_PY_V
                     echo "pyenv version-name: $(pyenv version-name)"
-                    set -x -e
-                    rm -rf vlib venv .pytest_cache
-                    pip install --cache-dir ./pip.cache -t ./vlib virtualenv
+                    set -e
+                    pip install --cache-dir .pip-cache -t ./vlib virtualenv
                     PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv
                     source ./venv/bin/activate
-                    pip install --cache-dir ./pip.cache -U pip
-                    pip install --cache-dir ./pip.cache -U -r test-requirements.txt
+                    pip install --cache-dir .pip-cache -U pip
+                    echo no | ./mk-requires.sh
+                    pip install --cache-dir .pip-cache -U -r requirements.txt
                     '''
-                sh '''#!/bin/bash
-                    # NOTE: CHANGE_TARGET and BRANCH_NAME are only populated on multibranch pipeline.
-                    # For other environments, we have to fake it with 'origin/develop' and 'HEAD'
-                    echo "CHANGE_TARGET=$CHANGE_TARGET BRANCH_NAME=$BRANCH_NAME"
-                    /usr/bin/git fetch --no-tags --progress https://github.com/hubblestack/hubble.git +refs/heads/develop:refs/remotes/origin/develop
-                    echo git branch -vva
-                    git branch -vva
-                    LHS="origin/${CHANGE_TARGET:-develop}"
-                    RHS="${BRANCH_NAME:+origin/}${BRANCH_NAME:-HEAD}"
-                    echo "LHS=$LHS RHS=$RHS"
-                    if [[ $(git show -s --format='%s%n%b' "${LHS}..${RHS}") =~ LINT-FULL ]]
-                    then find hubblestack -name "*.py"
-                    else find hubblestack -name "*.py" -print0 | xargs -r0 git diff --name-only "$LHS" "$RHS"
-                    fi > relevant-files.txt
-                    '''
-                sh ''' mkdir -vp tests/unittests/output
-                       cp relevant-files.txt tests/unittests/output
-                   '''
             }
         }
         stage('lint/test') {
@@ -62,7 +81,7 @@ pipeline {
                     steps {
                         sh '''#!/bin/bash
                             source ./venv/bin/activate
-                            pytest --log-cli-level INFO tests/unittests --html=tests/unittests/output/pytest.html
+                            pytest tests/unittests --html=tests/unittests/output/pytest.html
                             x=$?
                             cp tests/unittests/output/combined.svg tests/unittests/output/profile-diagram.svg
                             exit $x
@@ -71,27 +90,17 @@ pipeline {
                 }
                 stage('pylint') {
                     steps {
-                        sh '''#!/bin/bash
-                            source ./venv/bin/activate
-                            < relevant-files.txt  xargs -r pylint --output-format=json \
-                                > tests/unittests/output/pylint.json
-                            x=$?
-                            python ./tests/automation/pylint-json-to-html tests/unittests/output/pylint.json
-                            exit $x
-                            '''
-                    }
-                }
-                stage('bandit') {
-                    steps {
                         catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
                             sh '''#!/bin/bash
                                 source ./venv/bin/activate
-                                < relevant-files.txt  xargs -r bandit -lif html \
-                                  > tests/unittests/output/bandit.html
-                                x=$?
-                                cp tests/static/bandit.css tests/unittests/output/bandit.css
-                                sed -i -e '/<style/,/<.style/c<link rel="stylesheet" href="bandit.css">' \
-                                  tests/unittests/output/bandit.html
+                                if [ -s $REF ]
+                                then xargs -r pylint --output-format=json < $REF > $OUTPUT/pylint.json; x=$?
+                                     echo "Wrote $(wc -l < $OUTPUT/pylint.json) line(s) to $OUTPUT/pylint.json with exit($x)"
+                                else echo SKIPPING PYLINT "$REF is empty"; x=0
+                                fi
+                                test -s $OUTPUT/pylint.json || echo '[]' > $OUTPUT/pylint.json
+                                python ./tests/automation/pylint-json-to-html $OUTPUT/pylint.json
+                                echo "Wrote $(wc -l < $OUTPUT/pylint.html) line(s) to $OUTPUT/pylint.html (see test reports)"
                                 exit $x
                                 '''
                         }
@@ -108,7 +117,7 @@ pipeline {
                 alwaysLinkToLastBuild: false,
                 keepAll: true,
                 reportDir: 'tests/unittests/output',
-                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg, bandit.html, relevant-files.txt',
+                reportFiles: 'pytest.html, coverage/index.html, pylint.html, profile-diagram.svg, relevant-files.txt',
                 reportName: "Test Reports"
             ])
         }

@@ -820,6 +820,8 @@ def refresh_grains(initial=False):
     hubblestack.utils.signing.__mods__ = __mods__
     hubblestack.utils.signing.__salt__ = __mods__
 
+    clear_selective_context()
+
     if not initial and __mods__['config.get']('splunklogging', False):
         hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
 
@@ -845,6 +847,17 @@ def emit_to_syslog(grains_to_emit):
     except Exception as exc:
         log.exception('An exception occurred on emitting a message to syslog: %s', exc)
 
+def clear_selective_context():
+    """
+    Clear keys from __context__ global dictionary of salt
+    Some modules saves data in this dictionary for system command execution
+    If these keys exist in this dictionary, they just return data from there
+    """
+    global __context__
+
+    # Fixing bug: Package list is not refreshed
+    # clear the package list so that pkg module can fetch it as fresh in next cycle
+    __context__.pop('pkg.list_pkgs', None)
 
 def parse_args(args=None):
     """

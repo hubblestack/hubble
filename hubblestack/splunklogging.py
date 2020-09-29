@@ -124,7 +124,7 @@ class SplunkHandler(logging.Handler):
             if fields:
                 payload.update({'fields': fields})
 
-            self.endpoint_list.append((hec, event, payload))
+            self.endpoint_list.append([hec, event, payload])
 
     def emit(self, record):
         '''
@@ -163,6 +163,14 @@ class SplunkHandler(logging.Handler):
             hec.batchEvent(payload, eventtime=time.time(), no_queue=True)
             hec.flushBatch()
         return True
+
+    def update_event_std_info(self):
+        '''
+        Update the `event` template in the `endpoint_list` object. This allows
+        grains and other values that were updated to be updated here.
+        '''
+        for entry in self.endpoint_list:
+            entry[1].update(hubblestack.utils.stdrec.std_info())
 
     def format_record(self, record):
         '''

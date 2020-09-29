@@ -70,7 +70,7 @@ class SplunkHandler(logging.Handler):
             args, kwargs = make_hec_args(opts)
             hec = http_event_collector(*args, **kwargs)
 
-            fqdn = SplunkHandler._get_fqdn(__grains__['id'])
+            fqdn = hubblestack.utils.stdrec.get_fqdn()
 
             event = {}
             event.update(hubblestack.utils.stdrec.std_info())
@@ -97,41 +97,7 @@ class SplunkHandler(logging.Handler):
             if fields:
                 payload.update({'fields': fields})
 
-            self.endpoint_list.append((hec, event, payload))
-
-    @staticmethod
-    def _get_fqdn(minion_id):
-        """
-        Extract fqdn from __grains__, check if it is valid and, if not,
-        get it using another method.
-        """
-        fqdn = __grains__['fqdn']
-        # Sometimes fqdn is blank. If it is, replace it with minion_id
-        fqdn = fqdn if fqdn else minion_id
-        try:
-            fqdn_ip4 = __grains__.get('local_ip4')
-            if not fqdn_ip4:
-                fqdn_ip4 = __grains__['fqdn_ip4'][0]
-        except IndexError:
-            try:
-                fqdn_ip4 = __grains__['ipv4'][0]
-            except IndexError:
-                raise Exception('No ipv4 grains found. Is net-tools installed?')
-        if fqdn_ip4.startswith('127.'):
-            for ip4_addr in __grains__['ipv4']:
-                if ip4_addr and not ip4_addr.startswith('127.'):
-                    fqdn_ip4 = ip4_addr
-                    break
-
-        # Sometimes fqdn reports a value of localhost. If that happens, try another method.
-        bad_fqdns = ['localhost', 'localhost.localdomain', 'localhost6.localdomain6']
-        if fqdn in bad_fqdns:
-            new_fqdn = socket.gethostname()
-            if '.' not in new_fqdn or new_fqdn in bad_fqdns:
-                new_fqdn = fqdn_ip4
-            fqdn = new_fqdn
-
-        return fqdn
+            self.endpoint_list.append([hec, event, payload])
 
     def emit(self, record):
         """
@@ -170,6 +136,14 @@ class SplunkHandler(logging.Handler):
             hec.batchEvent(payload, eventtime=time.time(), no_queue=True)
             hec.flushBatch()
         return True
+
+    def update_event_std_info(self):
+        """
+        Update the `event` template in the `endpoint_list` object. This allows
+        grains and other values that were updated to be updated here.
+        """
+        for entry in self.endpoint_list:
+            entry[1].update(hubblestack.utils.stdrec.std_info())
 
     @staticmethod
     def format_record(record):

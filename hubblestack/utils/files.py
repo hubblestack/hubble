@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Functions for working with files
-'''
+"""
 
 # Import Python libs
 import contextlib
@@ -26,6 +26,8 @@ except ImportError:
 
 log = logging.getLogger(__name__)
 
+REMOTE_PROTOS = ("http", "https", "ftp", "swift", "s3")
+
 HASHES = {
     'sha512': 128,
     'sha384': 96,
@@ -38,7 +40,7 @@ HASHES_REVMAP = dict([(y, x) for x, y in iter(HASHES.items())])
 
 
 def fopen(*args, **kwargs):
-    '''
+    """
     Wrapper around open() built-in to set CLOEXEC on the fd.
 
     This flag specifies that the file descriptor should be closed when an exec
@@ -49,7 +51,7 @@ def fopen(*args, **kwargs):
     survive into the new program after exec.
 
     NB! We still have small race condition between open and fcntl.
-    '''
+    """
     try:
         # Don't permit stdin/stdout/stderr to be opened. The boolean False
         # and True are treated by Python 3's open() as file descriptors 0
@@ -109,17 +111,17 @@ def fopen(*args, **kwargs):
 
 
 def is_fcntl_available():
-    '''
+    """
     Simple function to check if the ``fcntl`` module is available or not.
-    '''
+    """
     return HAS_FCNTL
 
 
 @contextlib.contextmanager
 def flopen(*args, **kwargs):
-    '''
+    """
     Shortcut for fopen with lock and context manager.
-    '''
+    """
     filename, args = args[0], args[1:]
     writing = 'wa'
     with fopen(filename, *args, **kwargs) as f_handle:
@@ -136,10 +138,10 @@ def flopen(*args, **kwargs):
 
 
 def is_binary(path):
-    '''
+    """
     Detects if the file is a binary, returns bool. Returns True if the file is
     a bin, False if the file is not and None if the file is not available.
-    '''
+    """
     if not os.path.isfile(path):
         return False
     try:
@@ -155,9 +157,9 @@ def is_binary(path):
 
 
 def remove(path):
-    '''
+    """
     Runs os.remove(path) and suppresses the OSError if the file doesn't exist
-    '''
+    """
     try:
         os.remove(path)
     except OSError as exc:
@@ -166,11 +168,11 @@ def remove(path):
 
 
 def rename(src, dst):
-    '''
+    """
     On Windows, os.rename() will fail with a WindowsError exception if a file
     exists at the destination path. This function checks for this error and if
     found, it deletes the destination path first.
-    '''
+    """
     try:
         os.rename(src, dst)
     except OSError as exc:
@@ -190,9 +192,9 @@ def rename(src, dst):
 
 
 def safe_rm(tgt):
-    '''
+    """
     Safely remove a file
-    '''
+    """
     try:
         os.remove(tgt)
     except (IOError, OSError):
@@ -200,12 +202,12 @@ def safe_rm(tgt):
 
 
 def recursive_copy(source, dest):
-    '''
+    """
     Recursively copy the source directory to the destination,
     leaving files with the source does not explicitly overwrite.
 
     (identical to cp -r on a unix machine)
-    '''
+    """
     for root, _, files in hubblestack.utils.path.os_walk(source):
         path_from_source = root.replace(source, '').lstrip(os.sep)
         target_directory = os.path.join(dest, path_from_source)
@@ -218,10 +220,10 @@ def recursive_copy(source, dest):
 
 
 def safe_walk(top, topdown=True, onerror=None, followlinks=True, _seen=None):
-    '''
+    """
     A clone of the python os.walk function with some checks for recursive
     symlinks. Unlike os.walk this follows symlinks by default.
-    '''
+    """
     if _seen is None:
         _seen = set()
 
@@ -268,9 +270,9 @@ def safe_walk(top, topdown=True, onerror=None, followlinks=True, _seen=None):
 
 
 def is_empty(filename):
-    '''
+    """
     Is a file empty?
-    '''
+    """
     try:
         return os.stat(filename).st_size == 0
     except OSError:
@@ -296,10 +298,11 @@ def mkstemp(*args, **kwargs):
     return f_path
 
 
+@contextlib.contextmanager
 def set_umask(mask):
-    '''
+    """
     Temporarily set the umask and restore once the contextmanager exits
-    '''
+    """
     if mask is None or hubblestack.utils.platform.is_windows():
         # Don't attempt on Windows, or if no mask was passed
         yield
@@ -312,12 +315,12 @@ def set_umask(mask):
 
 
 def rm_rf(path):
-    '''
+    """
     Platform-independent recursive delete. Includes code from
     http://stackoverflow.com/a/2656405
-    '''
+    """
     def _onerror(func, path, exc_info):
-        '''
+        """
         Error handler for `shutil.rmtree`.
 
         If the error is due to an access error (read only file)
@@ -326,7 +329,7 @@ def rm_rf(path):
         If the error is for another reason it re-raises the error.
 
         Usage : `shutil.rmtree(path, onerror=onerror)`
-        '''
+        """
         if hubblestack.utils.platform.is_windows() and not os.access(path, os.W_OK):
             # Is the error an access error ?
             os.chmod(path, stat.S_IWUSR)

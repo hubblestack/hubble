@@ -183,7 +183,7 @@ def _get_config_from_fileserver(config):
     if isinstance(config.get('paths'), list):
         for path in config['paths']:
             if 'salt://' in path:
-                path = __salt__['cp.cache_file'](path)
+                path = __mods__['cp.cache_file'](path)
             if os.path.isfile(path):
                 with open(path, 'r') as conf_file:
                     new_config = _dict_update(new_config,
@@ -518,7 +518,7 @@ def get_top_data(topfile):
     else:
         log.debug('Missing/stale cached topdata found for pulsar,'
                   ' retrieving fresh from fileserver.')
-        topfile = __salt__['cp.cache_file'](topfile)
+        topfile = __mods__['cp.cache_file'](topfile)
         try:
             with open(topfile) as handle:
                 topdata = yaml.safe_load(handle)

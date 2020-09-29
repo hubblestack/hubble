@@ -55,7 +55,7 @@ def run(command, args=None, override_file=None, timeout=30):
     # Check for an override file for args
     override_args = None
     if override_file:
-        override = __salt__['cp.cache_file'](override_file)
+        override = __mods__['cp.cache_file'](override_file)
         if override:
             try:
                 with open(override, 'r') as args_file:

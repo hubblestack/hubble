@@ -440,10 +440,10 @@ def _generate_module(name):
 def _mod_type(module_path):
     if module_path.startswith(HUBBLE_BASE_PATH):
         if 'extmods' in module_path:
-            return 'e_int'
+            return 'e_int' # XXX: we should remove this when we nolonger have internal extmods
         return 'int'
     if module_path.startswith(SALT_BASE_PATH):
-        return 'salt'
+        return 'salt' # XXX: we should remove this after we nolonger depend on salt
     return 'ext'
 
 
@@ -559,10 +559,10 @@ class LazyLoader(salt.utils.lazy.LazyDict):
 
         super(LazyLoader, self).__init__()  # late init the lazy loader
         # create all of the import namespaces
-        _generate_module('{0}.int'.format(self.loaded_base_name))
-        _generate_module('{0}.int.{1}'.format(self.loaded_base_name, tag))
-        _generate_module('{0}.ext'.format(self.loaded_base_name))
-        _generate_module('{0}.ext.{1}'.format(self.loaded_base_name, tag))
+
+        for subspace in ('int', 'ext', 'e_int', 'salt'):
+            _generate_module('.'.join([self.loaded_base_name, tag]))
+            _generate_module('.'.join([self.loaded_base_name, tag, subspace]))
 
     def __getitem__(self, item):
         '''

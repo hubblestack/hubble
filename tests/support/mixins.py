@@ -425,9 +425,9 @@ class LoaderModuleMockMixin(with_metaclass(_FixLoaderModuleMockMixinMroOrder, ob
                     'variables for each of the module being mocked. For example \'__salt__\', '
                     '\'__opts__\', etc.'.format(self.__class__.__name__)
                 )
-
+            # XXX: to remove __salt__ at a later date
             salt_dunders = (
-                '__opts__', '__salt__', '__runner__', '__context__', '__utils__',
+                '__opts__', '__salt__', '__mods__', '__runner__', '__context__', '__utils__',
                 '__ext_pillar__', '__thorium__', '__states__', '__serializers__', '__ret__',
                 '__grains__', '__pillar__', '__sdb__',
                 # Proxy is commented out on purpose since some code in salt expects a NameError
@@ -456,6 +456,8 @@ class LoaderModuleMockMixin(with_metaclass(_FixLoaderModuleMockMixinMroOrder, ob
                 module_blacklisted_dunders = module_globals.pop('blacklisted_dunders', ())
 
                 minion_funcs = {}
+
+                # XXX: to remove __salt__ at a later date
                 if '__salt__' in module_globals and module_globals['__salt__'] == 'autoload':
                     if '__opts__' not in module_globals:
                         raise RuntimeError(
@@ -474,6 +476,25 @@ class LoaderModuleMockMixin(with_metaclass(_FixLoaderModuleMockMixinMroOrder, ob
                         utils=module_globals.get('__utils__'),
                     )
                     module_globals['__salt__'] = minion_funcs
+
+                if '__mods__' in module_globals and module_globals['__mods__'] == 'autoload':
+                    if '__opts__' not in module_globals:
+                        raise RuntimeError(
+                            'You must provide \'__opts__\' on the {} module globals dictionary '
+                            'to auto load the minion functions'.format(module.__name__)
+                        )
+                    import hubblestack.loader
+                    ctx = {}
+                    if '__utils__' not in module_globals:
+                        utils = hubblestack.loader.utils(module_globals['__opts__'],
+                                                  context=module_globals.get('__context__') or ctx)
+                        module_globals['__utils__'] = utils
+                    minion_funcs = hubblestack.loader.minion_mods(
+                        module_globals['__opts__'],
+                        context=module_globals.get('__context__') or ctx,
+                        utils=module_globals.get('__utils__'),
+                    )
+                    module_globals['__mods__'] = minion_funcs
 
                 for dunder_name in salt_dunders:
                     if dunder_name not in module_globals:

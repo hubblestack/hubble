@@ -130,3 +130,20 @@ def get_function_argspec(func, is_class_method=None):
             'Cannot inspect argument list for \'{0}\''.format(func)
         )
     return aspec
+
+
+def test_mode(**kwargs):
+    """
+    Examines the kwargs passed and returns True if any kwarg which matching
+    "Test" in any variation on capitalization (i.e. "TEST", "Test", "TeSt",
+    etc) contains a True value (as determined by salt.utils.data.is_true).
+    """
+    # Once is_true is moved, remove this import and fix the ref below
+
+    for arg, value in kwargs.items():
+        try:
+            if arg.lower() == "test" and hubblestack.utils.data.is_true(value):
+                return True
+        except AttributeError:
+            continue
+    return False

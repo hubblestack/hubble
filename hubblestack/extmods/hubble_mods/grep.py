@@ -17,6 +17,10 @@ check_unique_id:
             file: /etc/ssh/ssh_config
             pattern: '"^host"'
             flags: '-E'
+          comparator:
+            type: "string"
+            match: "host*"
+            is_regex: true
 
 FDG Example:
 ------------

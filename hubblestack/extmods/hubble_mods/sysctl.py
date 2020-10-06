@@ -1,51 +1,47 @@
 # -*- encoding: utf-8 -*-
 """
-Module for running pkg command. Same can be used in both Audit/FDG
+Module to check kernel parameters. Same can be used in both Audit/FDG
 
 Audit Example:
 ---------------
 check_unique_id:
-  description: 'pkg check'
+  description: 'sysctl check'
   tag: 'ADOBE-01'
   implementations:
     - filter:
         grains: 'G@osfinger:CentOS*Linux-7'
       hubble_version: '>3 AND <7 AND <8'
-      module: pkg
+      module: sysctl
       items:
         - args:
-            name: perl*
+            name: vm.zone_reclaim_mode
           comparator:
             type: "dict"
-            match_any:
-              'perl-srpm-macros': '1-8.el7'
+            match:
+              "vm.zone_reclaim_mode": "8"
 
 FDG Example:
 ------------
 main:
-  description: 'pkg check'
-  module: pkg
+  description: 'sysctl check'
+  module: sysctl
   args:
-    name: perl*
-Mandatory parameters:
-    name - name of package
-Multiple package names can be provided in a single implementation under attribute: "items"
+    name: vm.zone_reclaim_mode
 
-Note: Comparison logic is moved to comparators. Module will just invoke the pkg command.
+Mandatory parameters:
+    name - name of kernel parameter
+Multiple names can be provided in a single implementation under attribute: "items"
+
+Note: Comparison logic is moved to comparators. Module will just invoke the sysctl command.
 Comparator compatible with this module - dict
 
 Sample Output:
 {
-    'perl-srpm-macros': '1-8.el7',
-    'perl-parent': '1:0.225-244.el7',
-    'perl-podlators': '2.5.1-3.el7',
-    'perl-Pod-Escapes': '1:1.04-295.el7',
-    'perl-Encode': '2.51-7.el7'
+'vm.zone_reclaim_mode': '8'
 }
 """
 
 import logging
-import fnmatch
 
 import hubblestack.extmods.module_runner.runner_utils as runner_utils
 from hubblestack.utils.hubble_error import HubbleCheckValidationError
@@ -63,18 +59,19 @@ def validate_params(block_id, block_dict, chain_args=None):
         parameter for this module
     :param chain_args:
         Chained argument dictionary, (If any)
-        Example: {'result': "/some/path/file.txt", 'status': True}
+        Example: {'result': "vm.zone_reclaim_mode", 'status': True}
 
     Raises:
         AuditCheckValidationError: For any validation error
     """
-    log.debug('Module: pkg Start validating params for check-id: {0}'.format(block_id))
+    log.debug('Module: sysctl Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
     name_param_chained = runner_utils.get_chained_param(chain_args)
     name_param = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+
     if not name_param_chained and not name_param:
-        error['name'] = 'Mandatory parameter: name not found for id: %s' % (block_id)
+        error['name'] = 'Mandatory parameter: name not found for id: %s' %(block_id)
 
     if error:
         raise HubbleCheckValidationError(error)
@@ -84,7 +81,7 @@ def validate_params(block_id, block_dict, chain_args=None):
 
 def execute(block_id, block_dict, chain_args=None):
     """
-    For getting params to log, in non-verbose logging
+    Execute the module
 
     :param block_id:
         id of the block
@@ -92,25 +89,27 @@ def execute(block_id, block_dict, chain_args=None):
         parameter for this module
     :param chain_args:
         Chained argument dictionary, (If any)
-        Example: {'result': {'test-package': '1.2.3'}, 'status': True}
+        Example: {'result': "vm.zone_reclaim_mode", 'status': True}
 
     returns:
         tuple of result(value) and status(boolean)
     """
-    log.debug('Executing pkg module for id: {0}'.format(block_id))
+    log.debug('Executing sysctl module for id: {0}'.format(block_id))
 
     # fetch required param
     name = runner_utils.get_chained_param(chain_args)
     if not name:
         name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
 
-    installed_pkgs_dict = __salt__['pkg.list_pkgs']()
-    filtered_pkgs_list = fnmatch.filter(installed_pkgs_dict, name)
-    result_dict = {}
-    for package in filtered_pkgs_list:
-        result_dict[package] = installed_pkgs_dict[package]
+    sysctl_res = __salt__['sysctl.get'](name)
+    result = {name: sysctl_res}
+    if not sysctl_res or "No such file or directory" in sysctl_res:
+        return runner_utils.prepare_negative_result_for_module(block_id, "Could not find attribute %s in the kernel" %(name))
+    if sysctl_res.lower().startswith("error"):
+        return runner_utils.prepare_negative_result_for_module(block_id, "An error occurred while reading the value "
+                                                                         "of kernel attribute %s" %(name))
 
-    return runner_utils.prepare_positive_result_for_module(block_id, result_dict)
+    return runner_utils.prepare_positive_result_for_module(block_id, result)
 
 
 def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
@@ -123,7 +122,7 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
         parameter for this module
     :param chain_args:
         Chained argument dictionary, (If any)
-        Example: {'result': {'test-package': '1.2.3'}, 'status': True}
+        Example: {'result': "vm.zone_reclaim_mode", 'status': True}
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
@@ -131,5 +130,4 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
     name = runner_utils.get_chained_param(chain_args)
     if not name:
         name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
-
     return {'name': name}

@@ -15,6 +15,23 @@ check_unique_id:
       items:
         - args:
             path: /etc/ssh/ssh_config1
+          comparator:
+            type: "dict"
+            match:
+              gid: 0
+              group:
+                type: 'string'
+                is_regex: true
+                match_any:
+                  - "^root"
+                  - "shadow"
+              uid: 0
+              user: "root"
+              mode:
+                type: "file_permission"
+                match:
+                  required_value:  "644"
+                  allow_more_strict: true
 
 FDG Example:
 ------------

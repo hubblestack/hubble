@@ -74,8 +74,10 @@ def validate_params(block_id, block_dict, chain_args=None):
     log.debug('Module: stat Start validating params for check-id: {0}'.format(block_id))
 
     #fetch required param
-    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path', chain_args)
-    
+    filepath = runner_utils.get_chained_param(chain_args)
+    if not filepath:
+        filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
+
     if not filepath:
         raise HubbleCheckValidationError('Mandatory parameter: {0} not found for id: {1}'.format('path', block_id))
 
@@ -99,7 +101,9 @@ def execute(block_id, block_dict, chain_args=None):
     log.debug('Executing stat module for id: {0}'.format(block_id))
 
     #fetch required param
-    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path', chain_args)
+    filepath = runner_utils.get_chained_param(chain_args)
+    if not filepath:
+        filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
 
     # check filepath existence
     if not os.path.isfile(filepath):
@@ -123,5 +127,7 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
     #fetch required param
-    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path', chain_args)
+    filepath = runner_utils.get_chained_param(chain_args)
+    if not filepath:
+        filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
     return {'path': filepath}

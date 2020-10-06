@@ -35,6 +35,8 @@ Comparator compatible with this module - string
 
 Sample Output:
 'Thus, host-specific definitions should be at the beginning of the\n#   RhostsRSAAuthentication no'
+
+Note: In normal execution, this module expects a filepath. In case of chaining, it expects a string from chaining
 """
 
 import os
@@ -64,13 +66,17 @@ def validate_params(block_id, block_dict, chain_args=None):
     """
     log.debug('Module: grep Start validating params for check-id: {0}'.format(block_id))
 
-    # fetch required param
-    mandatory_params = ['file', 'pattern']
     error = {}
-    for param in mandatory_params:
-        param_val = runner_utils.get_param_for_module(block_id, block_dict, param, chain_args)
-        if not param_val:
-            error[param] = 'Mandatory parameter: %s not found for id: %s' % (param, block_id)
+
+    # fetch required param
+    file_content = runner_utils.get_chained_param(chain_args)
+    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'file')
+    if not file_content and not filepath:
+        error['file'] = 'Mandatory parameter: file not found for id: %s' % (block_id)
+
+    pattern_val = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
+    if not pattern_val:
+        error['pattern'] = 'Mandatory parameter: pattern not found for id: %s' % (block_id)
 
     if error:
         raise HubbleCheckValidationError(error)
@@ -95,20 +101,31 @@ def execute(block_id, block_dict, chain_args=None):
     """
     log.debug('Executing grep module for id: {0}'.format(block_id))
 
+    # default mode=file, search in file.
+    # In chaining, this will search in chained content
+    file_mode = True
+    filepath = None
+
+    # check if chained content is available
+    file_content = runner_utils.get_chained_param(chain_args)
+    if file_content:
+        file_mode = False
+
     # fetch required param
-    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'file', chain_args)
-    pattern = runner_utils.get_param_for_module(block_id, block_dict, 'pattern', chain_args)
-    flags = runner_utils.get_param_for_module(block_id, block_dict, 'flags', chain_args)
+    if file_mode:
+        filepath = runner_utils.get_param_for_module(block_id, block_dict, 'file')
+    pattern = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
+    flags = runner_utils.get_param_for_module(block_id, block_dict, 'flags')
     if flags is None:
         flags = []
     if isinstance(flags, str):
         flags = [flags]
 
     # check filepath existence
-    if not os.path.isfile(filepath):
+    if file_mode and not os.path.isfile(filepath):
         return runner_utils.prepare_negative_result_for_module(block_id, 'file_not_found')
 
-    grep_result = _grep(filepath, pattern, *flags)
+    grep_result = _grep(filepath, file_content, pattern, *flags)
     ret_code = grep_result.get('retcode')
     result = grep_result.get('stdout')
     if ret_code != 0:
@@ -132,16 +149,18 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
     # fetch required param
-    file = runner_utils.get_param_for_module(block_id, block_dict, 'file', chain_args)
-    pattern = runner_utils.get_param_for_module(block_id, block_dict, 'pattern', chain_args)
+    file = runner_utils.get_param_for_module(block_id, block_dict, 'file')
+    pattern = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
 
     return {'file': file,
             'pattern': pattern}
 
 
 def _grep(path,
+          string,
           pattern,
-          *args):
+          *args
+          ):
     """
     Grep for a string in the specified file
 
@@ -157,6 +176,9 @@ def _grep(path,
             is being used then the path should be quoted to keep the shell from
             attempting to expand the glob expression.
 
+    string
+        String to search (Only used while chaining)
+
     pattern
         Pattern to match. For example: ``test``, or ``a[0-5]``
 
@@ -164,23 +186,21 @@ def _grep(path,
         Additional command-line flags to pass to the grep command. For example:
         ``-v``, or ``-i -B2``
     """
-    path = os.path.expanduser(path)
+    if path:
+        path = os.path.expanduser(path)
 
     if args:
-        options = ' '.join(args)
+        options = [' '.join(args)]
     else:
-        options = ''
-    cmd = (
-        r'''grep  {options} {pattern} {path}'''
-            .format(
-            options=options,
-            pattern=pattern,
-            path=path,
-        )
-    )
+        options = []
+    
+    # prepare the command
+    cmd = ['grep'] + options + [pattern]
+    if path:
+        cmd += [path]
 
     try:
-        ret = __salt__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
+        ret = __salt__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True, stdin=string)
     except (IOError, OSError) as exc:
         raise CommandExecutionError(exc.strerror)
 

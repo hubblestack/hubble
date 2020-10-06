@@ -79,32 +79,57 @@ class Runner(ABC):
                                     pack={'__salt__': __salt__,
                                         '__grains__': __grains__})
 
-        ## Initializing comparator only for Audit
-        if self._caller == Caller.AUDIT:
-            global __comparator__
-            __comparator__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'comparators'),
-                                        __opts__,
-                                        tag='comparators',
-                                        pack={'__salt__': __salt__,
-                                            '__grains__': __grains__})
-            hubblestack.extmods.module_runner.comparator.__comparator__ = __comparator__
+        # Comparator can be needed in both Audit/FDG
+        global __comparator__
+        __comparator__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'comparators'),
+                                    __opts__,
+                                    tag='comparators',
+                                    pack={'__salt__': __salt__,
+                                        '__grains__': __grains__})
+        hubblestack.extmods.module_runner.comparator.__comparator__ = __comparator__
 
 
     ######################################################
     ################# Non-Public methods #################
     ######################################################
 
-    def _validate_module_params(self, module_name, profile_id, module_args):
+    def _validate_module_params(self, module_name, profile_id, module_args, extra_args=None):
         """
         A helper method to invoke module's validate_params method
         """
+        if not module_args:
+            raise CommandExecutionError('Could not execute block \'{0}\', as it is not found.'
+                                        .format(profile_id))
+
         validate_param_method = '{0}.validate_params'.format(module_name)
-        __hmods__[validate_param_method](profile_id, module_args)
+        if extra_args:
+            __hmods__[validate_param_method](profile_id, module_args, extra_args)
+        else:
+            __hmods__[validate_param_method](profile_id, module_args)
 
         # Comparators must exist in Audit
         if self._caller == Caller.AUDIT:
             if 'comparator' not in module_args:
                 raise HubbleCheckValidationError('No mention of comparator in audit-id: {0}'.format(profile_id))
+        elif self._caller == Caller.FDG:
+            if 'module' not in module_args:
+                raise CommandExecutionError('Could not execute block \'{0}\': no \'module\' found.'
+                                        .format(block_id))
+            acceptable_block_args = {
+                'return', 'module', 'args', 'comparator',
+                'xpipe_on_true', 'xpipe_on_false', 'xpipe', 'pipe',
+                'pipe_on_true', 'pipe_on_false',
+            }
+            for key in module_args:
+                if key not in acceptable_block_args:
+                    raise CommandExecutionError('Could not execute block \'{0}\': '
+                                                '\'{1}\' is not a valid block key'
+                                                .format(profile_id, key))
+            if 'args' not in module_args and 'comparator' not in module_args:
+                raise CommandExecutionError('Could not execute block \'{0}\': '
+                                                '\'{1}\' is not a valid block key'
+                                                .format(profile_id, key))
+
 
     def _execute_module(self, module_name, profile_id, module_args, extra_args=None):
         """

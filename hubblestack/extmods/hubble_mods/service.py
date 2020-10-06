@@ -69,10 +69,14 @@ def validate_params(block_id, block_dict, chain_args=None):
     log.debug('Module: service Start validating params for check-id: {0}'.format(block_id))
 
     #fetch required param
-    name = runner_utils.get_param_for_module(block_id, block_dict, 'name', chain_args)
+    error = {}
+    name_param_chained = runner_utils.get_chained_param(chain_args)
+    name_param = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+    if not name_param_chained and not name_param:
+        error['name'] = 'Mandatory parameter: name not found for id: %s' % (block_id)
     
-    if not name:
-        raise HubbleCheckValidationError('Mandatory parameter: {0} not found for id: {1}'.format('name', block_id))
+    if error:
+        raise HubbleCheckValidationError(error)
 
     log.debug('Validation success for check-id: {0}'.format(block_id))
 
@@ -94,7 +98,9 @@ def execute(block_id, block_dict, chain_args=None):
     log.debug('Executing stat module for id: {0}'.format(block_id))
 
     #fetch required param
-    name = runner_utils.get_param_for_module(block_id, block_dict, 'name', chain_args)
+    name = runner_utils.get_chained_param(chain_args)
+    if not name:
+        name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
 
     result = []
     matched_services = fnmatch.filter(__salt__['service.get_all'](), name)
@@ -124,5 +130,7 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
     #fetch required param
-    name = runner_utils.get_param_for_module(block_id, block_dict, 'name', chain_args)
+    name = runner_utils.get_chained_param(chain_args)
+    if not name:
+        name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     return {'name': name}

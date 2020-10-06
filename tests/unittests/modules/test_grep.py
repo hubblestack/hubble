@@ -91,7 +91,7 @@ class TestGrep(TestCase):
                 'pattern': 'test'
             }
         }
-        mockGrep.return_value = {"stdout": text}
+        mockGrep.return_value = {"stdout": text, "retcode": 0}
         mockOS.return_value = True
 
         expected_dict={'result': text}
@@ -108,7 +108,7 @@ class TestGrep(TestCase):
         path = 'test-file'
         pattern = 'test'
 
-        def mock_grep(cmd, python_shell, ignore_retcode):
+        def mock_grep(cmd, python_shell, ignore_retcode, stdin):
             return {"stdout": text}
         mockOS.return_value = path
         __salt__ = {}
@@ -116,5 +116,5 @@ class TestGrep(TestCase):
 
         grep.__salt__ = __salt__
         expected_dict = {'stdout': text}
-        result = grep._grep(path, pattern)
+        result = grep._grep(path, None, pattern)
         self.assertDictEqual(expected_dict, result)

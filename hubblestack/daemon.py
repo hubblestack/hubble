@@ -822,6 +822,7 @@ def refresh_grains(initial=False):
     hubblestack.extmods.module_runner.fdg_runner.__salt__ = __salt__
     hubblestack.extmods.module_runner.fdg_runner.__grains__ = __grains__
     hubblestack.extmods.module_runner.fdg_runner.__opts__ = __opts__
+    hubblestack.extmods.module_runner.fdg_runner.__returners__ = __returners__
 
     hubblestack.log.refresh_handler_std_info()
 

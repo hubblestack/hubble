@@ -66,13 +66,11 @@ def validate_params(block_id, block_dict, chain_args=None):
     """
     log.debug('Module: pkg Start validating params for check-id: {0}'.format(block_id))
 
-    # fetch required param
-    mandatory_params = ['name']
     error = {}
-    for param in mandatory_params:
-        param_val = runner_utils.get_param_for_module(block_id, block_dict, param, chain_args)
-        if not param_val:
-            error[param] = 'Mandatory parameter: %s not found for id: %s' % (param, block_id)
+    name_param_chained = runner_utils.get_chained_param(chain_args)
+    name_param = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+    if not name_param_chained and not name_param:
+        error['name'] = 'Mandatory parameter: name not found for id: %s' % (block_id)
 
     if error:
         raise HubbleCheckValidationError(error)
@@ -98,7 +96,9 @@ def execute(block_id, block_dict, chain_args=None):
     log.debug('Executing pkg module for id: {0}'.format(block_id))
 
     # fetch required param
-    name = runner_utils.get_param_for_module(block_id, block_dict, 'name', chain_args)
+    name = runner_utils.get_chained_param(chain_args)
+    if not name:
+        name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
 
     installed_pkgs_dict = __salt__['pkg.list_pkgs']()
     filtered_pkgs_list = fnmatch.filter(installed_pkgs_dict, name)
@@ -124,6 +124,8 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
     # fetch required param
-    name = runner_utils.get_param_for_module(block_id, block_dict, 'name', chain_args)
+    name = runner_utils.get_chained_param(chain_args)
+    if not name:
+        name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
 
     return {'name': name}

@@ -7,8 +7,15 @@ import logging
 
 log = logging.getLogger(__name__)
 
+def get_chained_param(chain_args):
+    """
+    Get the chained param, if present
+    """
+    if chain_args and 'result' in chain_args:
+        return chain_args['result']
+    return None
 
-def get_param_for_module(block_id, block_dict, param_name, chain_args=None):
+def get_param_for_module(block_id, block_dict, param_name):
     """
     To get the parameter for a module.
 
@@ -18,29 +25,9 @@ def get_param_for_module(block_id, block_dict, param_name, chain_args=None):
         The dictionary for yaml block
     :param param_name:
         The name of param name to fetch from chaining or from dictionary
-    :param chain_args:
-        Chaining argument dictionary. 
-        Example: {'result': "/some/path/file.txt", 'status': True}
-    
-    A parameter for a module can come from two sources:
-    1. Profile defined in yaml
-    2. From chaining
-
-    When a module runs, and defines its output goes to another module. 
-    This output will be received by this function in chain_args variable.
-
-    So, chaining argument will have higher priority over yaml block.
-
-    Example: Stat module works on a file.
-    For Audit, 'path' param is mandatory.
-    For FDG, 'path' can come from either yaml or chaining. Chaining will have higher priority
     """
 
     log.debug('Getting value for param name: {0}, for id: {1}'.format(param_name, block_id))
-    # First try to look in chaining, if it exists
-    if chain_args and 'result' in chain_args:
-        return chain_args['result']
-
     if 'args' not in block_dict:
         return None
 
@@ -48,7 +35,6 @@ def get_param_for_module(block_id, block_dict, param_name, chain_args=None):
         return block_dict['args'][param_name]
 
     return None
-
 
 def prepare_negative_result_for_module(block_id, error_string):
     """

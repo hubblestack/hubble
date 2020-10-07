@@ -126,6 +126,7 @@ from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
 log = logging.getLogger(__name__)
 
+
 def match(audit_id, result_to_compare, args):
     """
     Match dictionary elements dynamically. All elements must match
@@ -136,14 +137,15 @@ def match(audit_id, result_to_compare, args):
         Comparator dictionary as mentioned in the check.
     """
     log.debug('Running dict::match for audit_id: {0}'.format(audit_id))
-    
+
     errors = []
     _compare_dictionary(audit_id, result_to_compare, args['match'], errors)
-    
+
     if errors:
         error_message = 'dict::match failed, errors={0}'.format(str(errors))
         return False, error_message
     return True, "Dictionary comparison passed"
+
 
 def match_any(audit_id, result_to_compare, args):
     """
@@ -157,16 +159,17 @@ def match_any(audit_id, result_to_compare, args):
         Comparator dictionary as mentioned in the check.
     """
     log.debug('Running dict::match_any for audit_id: {0}'.format(audit_id))
-    
+
     for to_match_dict in args['match_any']:
         errors = []
         _compare_dictionary(audit_id, result_to_compare, to_match_dict, errors)
         if not errors:
-            #found a match
+            # found a match
             return True, "Dictionary comparison passed"
-    
+
     error_message = 'dict::match_any failed, errors={0}'.format(str(errors))
     return False, error_message
+
 
 def match_any_if_key_matches(audit_id, result_to_compare, args):
     """
@@ -202,7 +205,7 @@ def match_any_if_key_matches(audit_id, result_to_compare, args):
         Comparator dictionary as mentioned in the check.
     """
     log.debug('Running dict::match_any_if_key_matches for audit_id: {0}'.format(audit_id))
-    
+
     key_name = args['match_any_if_key_matches']['match_key']
     key_found_once = False
     for to_match_dict in args['match_any_if_key_matches']['args']:
@@ -210,15 +213,16 @@ def match_any_if_key_matches(audit_id, result_to_compare, args):
         if result_to_compare[key_name] == to_match_dict[key_name]:
             key_found_once = True
             _compare_dictionary(audit_id, result_to_compare, to_match_dict, errors)
-            
+
             if not errors:
-                #found a match
+                # found a match
                 return True, "Dictionary comparison passed"
-    
+
     if key_found_once:
         error_message = 'dict::match_any_if_key_matches failed, errors={0}'.format(str(errors))
         return False, error_message
     return True, "pass_as_key_not_found"
+
 
 def match_key_any(audit_id, result_to_compare, args):
     """
@@ -230,12 +234,13 @@ def match_key_any(audit_id, result_to_compare, args):
         Comparator dictionary as mentioned in the check.
     """
     log.debug('Running dict::match_key_any for audit_id: {0}'.format(audit_id))
-    
+
     for key_to_match in args['match_key_any']:
         if key_to_match in result_to_compare:
-            return True, 'dict::match_key_any passed for key: {0}'.format(key_to_match)        
+            return True, 'dict::match_key_any passed for key: {0}'.format(key_to_match)
 
     return False, 'dict::match_key_any failed'
+
 
 def match_key_all(audit_id, result_to_compare, args):
     """
@@ -247,7 +252,7 @@ def match_key_all(audit_id, result_to_compare, args):
         Comparator dictionary as mentioned in the check.
     """
     log.debug('Running dict::match_key_all for audit_id: {0}'.format(audit_id))
-    
+
     errors = []
     for key_to_match in args['match_key_all']:
         if key_to_match not in result_to_compare:
@@ -257,6 +262,7 @@ def match_key_all(audit_id, result_to_compare, args):
         error_message = 'dict::match_key_all failed, errors={0}'.format(str(errors))
         return False, error_message
     return True, "dict::match_key_all passed"
+
 
 def _compare_dictionary(audit_id, input_dictionary, expected_dictionary, errors):
     for key, value in expected_dictionary.items():
@@ -274,7 +280,7 @@ def _compare_dictionary(audit_id, input_dictionary, expected_dictionary, errors)
             else:
                 # got nested dictionary to compare
                 _compare_dictionary(audit_id, input_dictionary[key], expected_dictionary[key], errors)
-                
+
         else:
             if input_dictionary[key] != value:
                 errors.append('Expected={0}, Got={1}'.format(input_dictionary[key], value))

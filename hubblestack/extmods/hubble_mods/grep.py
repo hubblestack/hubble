@@ -14,7 +14,7 @@ check_unique_id:
       module: grep
       items:
         - args:
-            file: /etc/ssh/ssh_config
+            path: /etc/ssh/ssh_config
             pattern: '"^host"'
             flags: '-E'
           comparator:
@@ -74,9 +74,9 @@ def validate_params(block_id, block_dict, chain_args=None):
 
     # fetch required param
     file_content = runner_utils.get_chained_param(chain_args)
-    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'file')
+    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
     if not file_content and not filepath:
-        error['file'] = 'Mandatory parameter: file not found for id: %s' % (block_id)
+        error['path'] = 'Mandatory parameter: path not found for id: %s' % (block_id)
 
     pattern_val = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
     if not pattern_val:
@@ -117,7 +117,7 @@ def execute(block_id, block_dict, chain_args=None):
 
     # fetch required param
     if file_mode:
-        filepath = runner_utils.get_param_for_module(block_id, block_dict, 'file')
+        filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
     pattern = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
     flags = runner_utils.get_param_for_module(block_id, block_dict, 'flags')
     if flags is None:
@@ -133,7 +133,10 @@ def execute(block_id, block_dict, chain_args=None):
     ret_code = grep_result.get('retcode')
     result = grep_result.get('stdout')
     if ret_code != 0:
-        return runner_utils.prepare_negative_result_for_module(block_id, "non_zero_return_code")
+        if ret_code == 1:
+            return runner_utils.prepare_negative_result_for_module(block_id, "pattern_not_found")
+        else:
+            return runner_utils.prepare_negative_result_for_module(block_id, "non_zero_return_code")
 
     return runner_utils.prepare_positive_result_for_module(block_id, result)
 
@@ -153,10 +156,10 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
     # fetch required param
-    file = runner_utils.get_param_for_module(block_id, block_dict, 'file')
+    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
     pattern = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
 
-    return {'file': file,
+    return {'path': filepath,
             'pattern': pattern}
 
 

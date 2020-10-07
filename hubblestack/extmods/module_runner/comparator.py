@@ -7,7 +7,9 @@ Also, if a specific comparator is mentioned in other comparator. This will be in
 
 import logging
 from hubblestack.utils.hubble_error import HubbleCheckFailedError
+
 log = logging.getLogger(__name__)
+
 
 def run(audit_id, args, module_result, module_status=True):
     """
@@ -17,7 +19,8 @@ def run(audit_id, args, module_result, module_status=True):
     # First check if module failed, and is failed with whitelisted errors
     if 'success_on_error' in args and not module_status:
         if module_result['error'] in args['success_on_error']:
-            success_msg = 'success_on_error is on and module failed with the configured error. Passing this check {0}'.format(audit_id)
+            success_msg = 'success_on_error is on and module failed with the configured error. Passing this check {0}'.format(
+                audit_id)
             return True, success_msg
         error_msg = 'success_on_error is on, but the check: {0} is failed with error: {1}. \
             Not proceeding with comparator'.format(audit_id, module_result['error'])
@@ -38,17 +41,12 @@ def run(audit_id, args, module_result, module_status=True):
 
     if isinstance(module_result, int):
         result_val = module_result
-    else:    
+    else:
         result_val = module_result['result'] if 'result' in module_result else module_result
     comparator_result = __comparator__[comparator_command_method_name](audit_id, result_val, args)
 
-    # handle invert_result
-    invert_result = args.get('invert_result', False)
-    if invert_result:
-        log.info('Inverting result for check: {0} from comparator: {1}'.format(audit_id, comparator_command_method_name))
-        return (not comparator_result[0], 'Inverting result. Old_result={0}'.format(comparator_result[1]))
-
     return comparator_result
+
 
 def _find_comparator_command(args):
     """

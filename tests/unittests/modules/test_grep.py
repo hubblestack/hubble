@@ -18,7 +18,7 @@ class TestGrep(TestCase):
         block_id = "test-1"
         block_dict = {'args':
             {
-                'file': 'dummy file',
+                'path': 'dummy file',
                 'pattern': 'test pattern'
             }
         }
@@ -26,7 +26,7 @@ class TestGrep(TestCase):
 
     def testValidateParams2(self):
         """
-        Mandatory param file not passed. Test should raise HubbleCheckValidationError
+        Mandatory param path not passed. Test should raise HubbleCheckValidationError
         """
         block_id = "test-2"
         block_dict = {'args':
@@ -38,7 +38,7 @@ class TestGrep(TestCase):
         with pytest.raises(HubbleCheckValidationError) as exception:
             grep.validate_params(block_id, block_dict)
             pytest.fail('Should not have passed')
-        self.assertTrue('Mandatory parameter: file not found' in str(exception.value))
+        self.assertTrue('Mandatory parameter: path not found' in str(exception.value))
 
     def testFilteredLogs1(self):
         """
@@ -47,12 +47,12 @@ class TestGrep(TestCase):
         block_id = "test-3"
         block_dict = {'args':
             {
-                'file': 'test-file',
+                'path': 'test-file',
                 'pattern': 'test pattern',
                 'grep_args': '-E'
             }
         }
-        expected_dict = {'file': 'test-file',
+        expected_dict = {'path': 'test-file',
                          'pattern': 'test pattern'}
         result = grep.get_filtered_params_to_log(block_id, block_dict)
         self.assertDictEqual(expected_dict, result)
@@ -66,7 +66,7 @@ class TestGrep(TestCase):
         block_id = "test-4"
         block_dict = {'args':
             {
-                'file': 'test-file',
+                'path': 'test-file',
                 'pattern': 'test pattern'
             }
         }
@@ -87,7 +87,7 @@ class TestGrep(TestCase):
         block_id = "test-5"
         block_dict = {'args':
             {
-                'file': 'test-file',
+                'path': 'test-file',
                 'pattern': 'test'
             }
         }

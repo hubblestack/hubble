@@ -96,31 +96,3 @@ class TestComparatorMatch(TestCase):
         with pytest.raises(HubbleCheckFailedError) as exception:
             status, result = comparator.run('test', args, module_result, module_status)
             pytest.fail('Should not have come here')
-        
-    def test_match6(self):
-        """
-        Module passed. invert_result=true
-        """
-        def test_func(a, b, c):
-            return True, ''
-        comparator_dict = {
-            "dict.match": test_func
-        }
-        comparator.__comparator__ = comparator_dict
-
-        args = {
-            "type": "dict",
-            "invert_result": "true",
-            "match": {
-                "uid": 0,
-                "gid": 0
-            }
-        }
-        module_result = {
-            "uid": 0,
-            "gid": 0,
-        }
-        module_status = True
-        status, result = comparator.run('test', args, module_result, module_status)
-        self.assertFalse(status)
-    

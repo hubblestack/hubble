@@ -102,10 +102,7 @@ class Runner(ABC):
                                         .format(profile_id))
 
         validate_param_method = '{0}.validate_params'.format(module_name)
-        if extra_args:
-            __hmods__[validate_param_method](profile_id, module_args, extra_args)
-        else:
-            __hmods__[validate_param_method](profile_id, module_args)
+        __hmods__[validate_param_method](profile_id, module_args, extra_args)
 
         # Comparators must exist in Audit
         if self._caller == Caller.AUDIT:

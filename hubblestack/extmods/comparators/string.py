@@ -28,6 +28,7 @@ from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
 log = logging.getLogger(__name__)
 
+
 def match(audit_id, result_to_compare, args):
     """
     Match String
@@ -43,6 +44,7 @@ def match(audit_id, result_to_compare, args):
         return True, "Check Passed"
     return False, "string::match failure. Expected={0} Got={1}".format(result_to_compare, str(args['match']))
 
+
 def match_any(audit_id, result_to_compare, args):
     """
     Match list of strings
@@ -53,13 +55,15 @@ def match_any(audit_id, result_to_compare, args):
         Comparator dictionary as mentioned in the check.
     """
     log.debug('Running string::match_any for check: {0}'.format(audit_id))
-    
+
     for option_to_match in args['match_any']:
         if _compare(result_to_compare, option_to_match, args):
             return True, "Check passed"
 
     # did not match
-    return False, "string::match_any failure. Could not find {0} in list: {1}".format(result_to_compare, str(args['match_any']))
+    return False, "string::match_any failure. Could not find {0} in list: {1}".format(result_to_compare,
+                                                                                      str(args['match_any']))
+
 
 def _compare(result_to_compare, expected_string, args):
     """

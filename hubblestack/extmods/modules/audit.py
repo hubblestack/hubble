@@ -184,9 +184,11 @@ def run(audit_files=None,
             combined_dict[audit_file] = ret
 
         _evaluate_results(result_dict, combined_dict, show_compliance, verbose)
-        return result_dict
     except Exception as e:
-        log.exception("Error while running audit run method: %s" % e)
+        log.error("Error while running audit run method: %s" % e)
+
+    return result_dict
+
 
 def _get_audit_files(audit_files):
     """Get audit files list, if valid
@@ -278,6 +280,13 @@ def top(topfile='top.audit',
         then tests which have all those labels are executed.
     :return:
     """
+    if verbose is None:
+        verbose = __salt__['config.get']('hubblestack:nova:verbose', False)
+    if show_compliance is None:
+        show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
+
+    if type(show_compliance) is str and show_compliance.lower().strip() in ['true', 'false']:
+        show_compliance = show_compliance.lower().strip() == 'true'
     results = {}
     # Will be a combination of strings and single-item dicts. The strings
     # have no tag filters, so we'll treat them as tag filter '*'. If we sort

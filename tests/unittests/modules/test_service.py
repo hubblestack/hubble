@@ -1,5 +1,4 @@
 from unittest import TestCase
-from unittest.mock import patch
 import pytest
 
 from hubblestack.extmods.hubble_mods import service
@@ -19,7 +18,7 @@ class TestService(TestCase):
         check_id = "test-1"
 
         with pytest.raises(HubbleCheckValidationError) as exception:
-            service.validate_params(check_id, block_dict)
+            service.validate_params(check_id, block_dict, {})
             pytest.fail("Check should not have passed")
 
     def test_valid_params1(self):
@@ -29,7 +28,7 @@ class TestService(TestCase):
         block_dict={"args": {"name": "test"}}
         check_id = "test-1"
 
-        service.validate_params(check_id, block_dict)
+        service.validate_params(check_id, block_dict, {})
 
     def test_filtered_logs1(self):
         """
@@ -38,7 +37,7 @@ class TestService(TestCase):
         block_dict={"args": {"name": "test234"}}
         check_id = "test-1"
 
-        res = service.get_filtered_params_to_log(check_id, block_dict)
+        res = service.get_filtered_params_to_log(check_id, block_dict, {})
         self.assertEqual(res, {"name": "test234"})
 
     def test_execute1(self):
@@ -63,7 +62,7 @@ class TestService(TestCase):
         block_dict={"args": {"name": "service1"}}
         check_id = "test-1"
 
-        status, res = service.execute(check_id, block_dict)
+        status, res = service.execute(check_id, block_dict, {})
         self.assertEqual(res, {"result": [{"name": "service1", "running": True, "enabled": True}]})
 
     def test_execute2(self):
@@ -88,7 +87,7 @@ class TestService(TestCase):
         block_dict={"args": {"name": "service2"}}
         check_id = "test-1"
 
-        status, res = service.execute(check_id, block_dict)
+        status, res = service.execute(check_id, block_dict, {})
         self.assertEqual(res, {"result": [{"name": "service2", "running": False, "enabled": True}]})
 
     def test_execute3(self):
@@ -113,7 +112,7 @@ class TestService(TestCase):
         block_dict={"args": {"name": "s*"}}
         check_id = "test-1"
 
-        status, res = service.execute(check_id, block_dict)
+        status, res = service.execute(check_id, block_dict, {})
         self.assertEqual(res, {"result": [
             {"name": "service1", "running": True, "enabled": True},
             {"name": "service2", "running": False, "enabled": True}

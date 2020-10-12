@@ -53,7 +53,7 @@ from hubblestack.utils.hubble_error import HubbleCheckValidationError
 log = logging.getLogger(__name__)
 
 
-def validate_params(block_id, block_dict, chain_args=None):
+def validate_params(block_id, block_dict, extra_args=None):
     """
     Validate all mandatory params required for this module
 
@@ -61,9 +61,10 @@ def validate_params(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': "/some/path/file.txt", 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
 
     Raises:
         AuditCheckValidationError: For any validation error
@@ -71,6 +72,7 @@ def validate_params(block_id, block_dict, chain_args=None):
     log.debug('Module: pkg Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
+    chain_args = extra_args.get('chaining_args')
     name_param_chained = runner_utils.get_chained_param(chain_args)
     name_param = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     if not name_param_chained and not name_param:
@@ -82,7 +84,7 @@ def validate_params(block_id, block_dict, chain_args=None):
     log.debug('Validation success for check-id: {0}'.format(block_id))
 
 
-def execute(block_id, block_dict, chain_args=None):
+def execute(block_id, block_dict, extra_args=None):
     """
     For getting params to log, in non-verbose logging
 
@@ -90,15 +92,16 @@ def execute(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': {'test-package': '1.2.3'}, 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
 
     returns:
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing pkg module for id: {0}'.format(block_id))
-
+    chain_args = extra_args.get('chaining_args')
     # fetch required param
     name = runner_utils.get_chained_param(chain_args)
     if not name:
@@ -113,7 +116,7 @@ def execute(block_id, block_dict, chain_args=None):
     return runner_utils.prepare_positive_result_for_module(block_id, result_dict)
 
 
-def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
+def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     For getting params to log, in non-verbose logging
 
@@ -121,12 +124,13 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': {'test-package': '1.2.3'}, 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
-
+    chain_args = extra_args.get('chaining_args')
     # fetch required param
     name = runner_utils.get_chained_param(chain_args)
     if not name:

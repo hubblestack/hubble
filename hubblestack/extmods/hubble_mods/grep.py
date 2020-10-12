@@ -53,7 +53,7 @@ from salt.exceptions import CommandExecutionError
 log = logging.getLogger(__name__)
 
 
-def validate_params(block_id, block_dict, chain_args=None):
+def validate_params(block_id, block_dict, extra_args=None):
     """
     Validate all mandatory params required for this module
 
@@ -61,17 +61,18 @@ def validate_params(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': "/some/path/file.txt", 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
 
     Raises:
-        AuditCheckValidationError: For any validation error
+        HubbleCheckValidationError: For any validation error
     """
     log.debug('Module: grep Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
-
+    chain_args = extra_args.get('chaining_args')
     # fetch required param
     file_content = runner_utils.get_chained_param(chain_args)
     filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
@@ -88,7 +89,7 @@ def validate_params(block_id, block_dict, chain_args=None):
     log.debug('Validation success for check-id: {0}'.format(block_id))
 
 
-def execute(block_id, block_dict, chain_args=None):
+def execute(block_id, block_dict, extra_args=None):
     """
     For getting params to log, in non-verbose logging
 
@@ -96,15 +97,16 @@ def execute(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': "/some/path/file.txt", 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
 
     returns:
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing grep module for id: {0}'.format(block_id))
-
+    chain_args = extra_args.get('chaining_args')
     # default mode=file, search in file.
     # In chaining, this will search in chained content
     file_mode = True
@@ -114,7 +116,10 @@ def execute(block_id, block_dict, chain_args=None):
     file_content = runner_utils.get_chained_param(chain_args)
     if file_content:
         file_mode = False
-
+        format_chained = runner_utils.get_param_for_module(block_id, block_dict, 'format_chained', True)
+        starting_string = runner_utils.get_param_for_module(block_id, block_dict, 'starting_string', False)
+        if format_chained and starting_string:
+            file_content = starting_string.format(file_content)
     # fetch required param
     if file_mode:
         filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
@@ -141,7 +146,7 @@ def execute(block_id, block_dict, chain_args=None):
     return runner_utils.prepare_positive_result_for_module(block_id, result)
 
 
-def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
+def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     For getting params to log, in non-verbose logging
 
@@ -149,9 +154,10 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': "/some/path/file.txt", 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 

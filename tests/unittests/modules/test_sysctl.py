@@ -5,9 +5,9 @@ from hubblestack.extmods.hubble_mods import sysctl
 from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
 
-class TestService(TestCase):
+class TestSysctl(TestCase):
     """
-    Unit tests for service module
+    Unit tests for sysctl module
     """
     def test_invalid_params1(self):
         """
@@ -18,7 +18,7 @@ class TestService(TestCase):
         check_id = "test-1"
 
         with pytest.raises(HubbleCheckValidationError) as exception:
-            sysctl.validate_params(check_id, block_dict)
+            sysctl.validate_params(check_id, block_dict, {})
             pytest.fail("Check should not have passed")
 
     def test_valid_params1(self):
@@ -28,7 +28,7 @@ class TestService(TestCase):
         block_dict={"args": {"name": "vm.zone_reclaim_mode"}}
         check_id = "test-2"
 
-        sysctl.validate_params(check_id, block_dict)
+        sysctl.validate_params(check_id, block_dict, {})
 
     def test_filtered_logs1(self):
         """
@@ -37,7 +37,7 @@ class TestService(TestCase):
         block_dict={"args": {"name": "vm.zone_reclaim_mode"}}
         check_id = "test-3"
 
-        res = sysctl.get_filtered_params_to_log(check_id, block_dict)
+        res = sysctl.get_filtered_params_to_log(check_id, block_dict, {})
         self.assertEqual(res, {"name": "vm.zone_reclaim_mode"})
 
     def test_execute1(self):
@@ -52,7 +52,7 @@ class TestService(TestCase):
         block_dict={"args": {"name": "vm.zone_reclaim_mode"}}
         check_id = "test-4"
 
-        status, res = sysctl.execute(check_id, block_dict)
+        status, res = sysctl.execute(check_id, block_dict, {})
         self.assertTrue(status)
         self.assertEqual(res, {"result": {"vm.zone_reclaim_mode": "0"}})
 
@@ -70,7 +70,7 @@ class TestService(TestCase):
         block_dict={"args": {"name": "vm.zone_reclaim_mode"}}
         check_id = "test-5"
 
-        status, res = sysctl.execute(check_id, block_dict)
+        status, res = sysctl.execute(check_id, block_dict, {})
         self.assertFalse(status)
         self.assertEqual(res, {"error": "Could not find attribute vm.zone_reclaim_mode in the kernel"})
 
@@ -90,6 +90,6 @@ class TestService(TestCase):
         block_dict={"args": {"name": "vm.zone_reclaim_mode"}}
         check_id = "test-6"
 
-        status, res = sysctl.execute(check_id, block_dict)
+        status, res = sysctl.execute(check_id, block_dict, {})
         self.assertFalse(status)
         self.assertEqual(res, {"error": "An error occurred while reading the value of kernel attribute vm.zone_reclaim_mode"})

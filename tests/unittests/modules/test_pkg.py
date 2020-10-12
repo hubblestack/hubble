@@ -20,7 +20,7 @@ class TestPkg(TestCase):
                 'name': 'perl'
             }
         }
-        pkg.validate_params(block_id, block_dict)
+        pkg.validate_params(block_id, block_dict, {})
 
     def testValidateParams2(self):
         """
@@ -33,7 +33,7 @@ class TestPkg(TestCase):
         }
 
         with pytest.raises(HubbleCheckValidationError) as exception:
-            pkg.validate_params(block_id, block_dict)
+            pkg.validate_params(block_id, block_dict, {})
             pytest.fail('Should not have passed')
         self.assertTrue('Mandatory parameter: name not found' in str(exception.value))
 
@@ -48,7 +48,7 @@ class TestPkg(TestCase):
             }
         }
         expected_dict = {'name': 'perl'}
-        result = pkg.get_filtered_params_to_log(block_id, block_dict)
+        result = pkg.get_filtered_params_to_log(block_id, block_dict, {})
         self.assertDictEqual(expected_dict, result)
 
     def testExecute1(self):
@@ -75,7 +75,7 @@ class TestPkg(TestCase):
             "test-package": "1.0.4"
         }
         }
-        status, result_dict = pkg.execute(block_id, block_dict)
+        status, result_dict = pkg.execute(block_id, block_dict, {})
         self.assertTrue(status)
         self.assertDictEqual(expected_dict, result_dict)
 
@@ -99,7 +99,7 @@ class TestPkg(TestCase):
             }
         }
         expected_dict = {"result": {}}
-        status, result_dict = pkg.execute(block_id, block_dict)
+        status, result_dict = pkg.execute(block_id, block_dict, {})
         self.assertTrue(status)
         self.assertDictEqual(expected_dict, result_dict)
 
@@ -128,7 +128,7 @@ class TestPkg(TestCase):
             "perl": "2.1.2",
             "perl-libs": "1.2.3"
         }}
-        status, result_dict = pkg.execute(block_id, block_dict)
+        status, result_dict = pkg.execute(block_id, block_dict, {})
         self.assertTrue(status)
         self.assertDictEqual(expected_dict, result_dict)
 
@@ -154,6 +154,6 @@ class TestPkg(TestCase):
             }
         }
         expected_dict = {"result": test_dict}
-        status, result_dict = pkg.execute(block_id, block_dict)
+        status, result_dict = pkg.execute(block_id, block_dict, {})
         self.assertTrue(status)
         self.assertDictEqual(expected_dict, result_dict)

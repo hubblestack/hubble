@@ -16,9 +16,8 @@ class TestFdg(TestCase):
         """
         block_dict={}
         check_id = "test-1"
-
         with pytest.raises(HubbleCheckValidationError) as exception:
-            fdg.validate_params(check_id, block_dict)
+            fdg.validate_params(check_id, block_dict, {})
             pytest.fail("Check should not have passed")
 
     def test_valid_params(self):
@@ -27,8 +26,7 @@ class TestFdg(TestCase):
         """
         block_dict={"args": {"fdg_file": "salt://abc/test.yaml"}}
         check_id = "test-1"
-
-        fdg.validate_params(check_id, block_dict)
+        fdg.validate_params(check_id, block_dict, {})
 
     def test_filtered_params(self):
         """
@@ -37,7 +35,7 @@ class TestFdg(TestCase):
         block_dict={"args": {"fdg_file": "salt://abc/test.yaml"}}
         check_id = "test-1"
 
-        ret = fdg.get_filtered_params_to_log(check_id, block_dict)
+        ret = fdg.get_filtered_params_to_log(check_id, block_dict,{})
         self.assertEqual(ret, {"fdg_file": "salt://abc/test.yaml"})
 
     def test_execute1(self):
@@ -51,7 +49,7 @@ class TestFdg(TestCase):
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), ("result", True))
 
-            status, res = fdg.execute(check_id, block_dict)
+            status, res = fdg.execute(check_id, block_dict, {})
             self.assertEqual(status, True)
 
     def test_execute2(self):
@@ -65,7 +63,7 @@ class TestFdg(TestCase):
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), ("", False))
 
-            status, res = fdg.execute(check_id, block_dict)
+            status, res = fdg.execute(check_id, block_dict, {})
             self.assertEqual(status, False)
 
     def test_execute3(self):
@@ -83,7 +81,7 @@ class TestFdg(TestCase):
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), ("test", False))
 
-            status, res = fdg.execute(check_id, block_dict)
+            status, res = fdg.execute(check_id, block_dict, {})
             self.assertEqual(status, True)
 
     def test_execute4(self):
@@ -101,7 +99,7 @@ class TestFdg(TestCase):
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), [("test", False)])
 
-            status, res = fdg.execute(check_id, block_dict)
+            status, res = fdg.execute(check_id, block_dict, {})
             self.assertEqual(status, False)
 
     def test_execute5(self):
@@ -120,7 +118,7 @@ class TestFdg(TestCase):
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), [[("test", False)]])
 
-            status, res = fdg.execute(check_id, block_dict)
+            status, res = fdg.execute(check_id, block_dict, {})
             self.assertEqual(status, False)
 
     def test_execute6(self):
@@ -139,5 +137,5 @@ class TestFdg(TestCase):
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), {"test": False})
 
-            status, res = fdg.execute(check_id, block_dict)
+            status, res = fdg.execute(check_id, block_dict, {})
             self.assertEqual(status, False)

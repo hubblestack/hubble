@@ -43,11 +43,11 @@ class FdgRunner(Runner):
         # preparing chained param
         chained_param = {"result": chained, "status": chained_status} if chained else None
 
-        self._validate_module_params(block['module'], block_id, block, chained_param)
+        self._validate_module_params(block['module'], block_id, block, chaining_args=chained_param)
 
         # Status is used for the conditional chaining keywords
         status, ret = self._execute_module(
-            block['module'], block_id, block, chained_param)
+            block['module'], block_id, block, chaining_args=chained_param)
 
         log.debug('fdg execution "%s" returned %s', block_id, (status, ret))
 

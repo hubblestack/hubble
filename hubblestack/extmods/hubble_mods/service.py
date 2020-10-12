@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-Module for running stat command. Same can be used in both Audit/FDG
+Module for running service command. Same can be used in both Audit/FDG
 
 Audit Example:
 ---------------
@@ -51,7 +51,8 @@ from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
 log = logging.getLogger(__name__)
 
-def validate_params(block_id, block_dict, chain_args=None):
+
+def validate_params(block_id, block_dict, extra_args=None):
     """
     Validate all mandatory params required for this module
 
@@ -59,28 +60,31 @@ def validate_params(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': "/some/path/file.txt", 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
 
     Raises:
         AuditCheckValidationError: For any validation error
     """
     log.debug('Module: service Start validating params for check-id: {0}'.format(block_id))
 
-    #fetch required param
+    # fetch required param
     error = {}
+    chain_args = extra_args.get('chaining_args')
     name_param_chained = runner_utils.get_chained_param(chain_args)
     name_param = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     if not name_param_chained and not name_param:
         error['name'] = 'Mandatory parameter: name not found for id: %s' % (block_id)
-    
+
     if error:
         raise HubbleCheckValidationError(error)
 
     log.debug('Validation success for check-id: {0}'.format(block_id))
 
-def execute(block_id, block_dict, chain_args=None):
+
+def execute(block_id, block_dict, extra_args=None):
     """
     Execute the module
 
@@ -88,16 +92,17 @@ def execute(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': "/some/path/file.txt", 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
 
     returns:
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing stat module for id: {0}'.format(block_id))
-
-    #fetch required param
+    chain_args = extra_args.get('chaining_args')
+    # fetch required param
     name = runner_utils.get_chained_param(chain_args)
     if not name:
         name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
@@ -115,7 +120,8 @@ def execute(block_id, block_dict, chain_args=None):
 
     return runner_utils.prepare_positive_result_for_module(block_id, result)
 
-def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
+
+def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     For getting params to log, in non-verbose logging
 
@@ -123,13 +129,14 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': "/some/path/file.txt", 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
-
-    #fetch required param
+    chain_args = extra_args.get('chaining_args')
+    # fetch required param
     name = runner_utils.get_chained_param(chain_args)
     if not name:
         name = runner_utils.get_param_for_module(block_id, block_dict, 'name')

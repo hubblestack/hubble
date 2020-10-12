@@ -11,11 +11,9 @@ Boolean comparator exposes various commands:
         boolean_cast: False # Optional param
 """
 import logging
-import re
-
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
 log = logging.getLogger(__name__)
+
 
 def match(audit_id, result_to_compare, args):
     """
@@ -35,7 +33,7 @@ def match(audit_id, result_to_compare, args):
     value_to_compare = result_to_compare
     if boolean_cast:
         value_to_compare = bool(value_to_compare)
-    
+
     if value_to_compare == args['match']:
         return True, "Check Passed"
     return False, "boolean::match failure. Expected={0} Got={1}".format(str(args['match']), result_to_compare)

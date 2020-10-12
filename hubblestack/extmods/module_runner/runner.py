@@ -19,17 +19,20 @@ log = logging.getLogger(__name__)
 __hmods__ = {}
 __comparator__ = {}
 
+
 class Caller:
     """
     caller identification constant
     """
     AUDIT = 'AUDIT'
     FDG = 'FDG'
-    
+
+
 class Runner(ABC):
     """
     Runner class for Audit/FDG modules
     """
+
     def __init__(self, caller):
         super().__init__()
         # dictionary that will load modules
@@ -47,7 +50,7 @@ class Runner(ABC):
     def _execute(self, audit_data_dict, profile_file, args):
         pass
 
-    def execute(self, file, args = {}):
+    def execute(self, file, args={}):
         """
         Starting method for execution of a profile file
         """
@@ -59,7 +62,7 @@ class Runner(ABC):
         cached_file = self._make_file_available(file)
         if not cached_file:
             raise CommandExecutionError('There was a problem caching the file: {0}'
-                                    .format(file))
+                                        .format(file))
 
         # load yaml and validate
         yaml_data_dict = self._load_yaml(cached_file, file)
@@ -74,26 +77,25 @@ class Runner(ABC):
         log.info('Initializing loader for hubble modules')
         global __hmods__
         __hmods__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'hubble_mods'),
-                                    __opts__,
-                                    tag='hubble_mods',
-                                    pack={'__salt__': __salt__,
-                                        '__grains__': __grains__})
+                                           __opts__,
+                                           tag='hubble_mods',
+                                           pack={'__salt__': __salt__,
+                                                 '__grains__': __grains__})
 
         # Comparator can be needed in both Audit/FDG
         global __comparator__
         __comparator__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'comparators'),
-                                    __opts__,
-                                    tag='comparators',
-                                    pack={'__salt__': __salt__,
-                                        '__grains__': __grains__})
+                                                __opts__,
+                                                tag='comparators',
+                                                pack={'__salt__': __salt__,
+                                                      '__grains__': __grains__})
         hubblestack.extmods.module_runner.comparator.__comparator__ = __comparator__
-
 
     ######################################################
     ################# Non-Public methods #################
     ######################################################
 
-    def _validate_module_params(self, module_name, profile_id, module_args, extra_args=None):
+    def _validate_module_params(self, module_name, profile_id, module_args, chaining_args=None):
         """
         A helper method to invoke module's validate_params method
         """
@@ -102,7 +104,8 @@ class Runner(ABC):
                                         .format(profile_id))
 
         validate_param_method = '{0}.validate_params'.format(module_name)
-        __hmods__[validate_param_method](profile_id, module_args, extra_args)
+        __hmods__[validate_param_method](profile_id, module_args, {'chaining_args': chaining_args,
+                                                                   'caller': self._caller})
 
         # Comparators must exist in Audit
         if self._caller == Caller.AUDIT:
@@ -111,7 +114,7 @@ class Runner(ABC):
         elif self._caller == Caller.FDG:
             if 'module' not in module_args:
                 raise CommandExecutionError('Could not execute block \'{0}\': no \'module\' found.'
-                                        .format(block_id))
+                                            .format(profile_id))
             acceptable_block_args = {
                 'return', 'module', 'args', 'comparator',
                 'xpipe_on_true', 'xpipe_on_false', 'xpipe', 'pipe',
@@ -124,25 +127,26 @@ class Runner(ABC):
                                                 .format(profile_id, key))
             if 'args' not in module_args and 'comparator' not in module_args:
                 raise CommandExecutionError('Could not execute block \'{0}\': '
-                                                '\'{1}\' is not a valid block key'
-                                                .format(profile_id, key))
+                                            '\'{1}\' is not a valid block key'
+                                            .format(profile_id, key))
 
-
-    def _execute_module(self, module_name, profile_id, module_args, extra_args=None):
+    def _execute_module(self, module_name, profile_id, module_args, extra_args=None, chaining_args=None):
         """
         Helper method to execute a Module's execute() method.
         """
         execute_method = '{0}.execute'.format(module_name)
-        if extra_args:
-            return __hmods__[execute_method](profile_id, module_args, extra_args)
-        return __hmods__[execute_method](profile_id, module_args)
+        return __hmods__[execute_method](profile_id, module_args, {'chaining_args': chaining_args,
+                                                                   'extra_args': extra_args,
+                                                                   'caller': self._caller})
 
-    def _get_filtered_params_to_log(self, module_name, profile_id, module_args):
+    def _get_filtered_params_to_log(self, module_name, profile_id, module_args, extra_args=None, chaining_args=None):
         """
         Helper method to execute a Module's get_filtered_params_to_log() method.
         """
         filtered_log_method = '{0}.get_filtered_params_to_log'.format(module_name)
-        return __hmods__[filtered_log_method](profile_id, module_args)
+        return __hmods__[filtered_log_method](profile_id, module_args, {'chaining_args': chaining_args,
+                                                                   'extra_args': extra_args,
+                                                                   'caller': self._caller})
 
     def _make_file_available(self, file):
         """
@@ -178,7 +182,7 @@ class Runner(ABC):
 
         if not yaml_data or not isinstance(yaml_data, dict):
             raise CommandExecutionError('yaml data could not be loaded as dictionary: {0}'.format(filepath))
-            
+
         return yaml_data
 
     def _is_hubble_version_compatible(self, profile_id, yaml_dictionary_data):
@@ -214,7 +218,8 @@ class Runner(ABC):
             log.debug("No hubble version provided for check id: %s Thus returning true for this check" % (profile_id))
             return True
         if '*' in version_str:
-            log.error("Invalid syntax in version condition. No regex is supported. check_id: %s hubble_version: %s" % (profile_id, version_str))
+            log.error("Invalid syntax in version condition. No regex is supported. check_id: %s hubble_version: %s" % (
+            profile_id, version_str))
             return False
         version_str = version_str.upper()
         version_list = [[x.strip() for x in item.split("AND")] for item in version_str.split("OR")]
@@ -248,7 +253,8 @@ class Runner(ABC):
                             "Invalid syntax in version condition, check_id: %s condition: %s" % (profile_id, condition))
                 else:
                     log.error(
-                        "Invalid syntax in hubble version. No operator provided for check_id: %s condition: %s" % (profile_id, condition))
+                        "Invalid syntax in hubble version. No operator provided for check_id: %s condition: %s" % (
+                        profile_id, condition))
                 condition_match = condition_match and result
                 if not condition_match:
                     # Found a false condition. No need to evaluate further for AND conditions

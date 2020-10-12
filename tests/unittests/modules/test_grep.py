@@ -22,7 +22,7 @@ class TestGrep(TestCase):
                 'pattern': 'test pattern'
             }
         }
-        grep.validate_params(block_id, block_dict)
+        grep.validate_params(block_id, block_dict, {})
 
     def testValidateParams2(self):
         """
@@ -36,7 +36,7 @@ class TestGrep(TestCase):
         }
 
         with pytest.raises(HubbleCheckValidationError) as exception:
-            grep.validate_params(block_id, block_dict)
+            grep.validate_params(block_id, block_dict, {})
             pytest.fail('Should not have passed')
         self.assertTrue('Mandatory parameter: path not found' in str(exception.value))
 
@@ -72,7 +72,7 @@ class TestGrep(TestCase):
         }
         expected_dict = {'error': 'file_not_found'}
         mockOS.return_value = False
-        status, result_dict = grep.execute(block_id, block_dict)
+        status, result_dict = grep.execute(block_id, block_dict, {})
         self.assertFalse(status)
         self.assertDictEqual(expected_dict, result_dict)
 
@@ -95,7 +95,7 @@ class TestGrep(TestCase):
         mockOS.return_value = True
 
         expected_dict={'result': text}
-        status, result_dict = grep.execute(block_id, block_dict)
+        status, result_dict = grep.execute(block_id, block_dict, {})
         self.assertTrue(status)
         self.assertDictEqual(expected_dict, result_dict)
 

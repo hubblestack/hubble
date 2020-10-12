@@ -19,7 +19,7 @@ class TestStat(TestCase):
         check_id = "test-1"
 
         with pytest.raises(HubbleCheckValidationError) as exception:
-            stat.validate_params(check_id, block_dict)
+            stat.validate_params(check_id, block_dict, {})
             pytest.fail("Check should not have passed")
 
     def test_valid_params1(self):
@@ -29,7 +29,7 @@ class TestStat(TestCase):
         block_dict={"args": {"path": "test"}}
         check_id = "test-1"
 
-        stat.validate_params(check_id, block_dict)
+        stat.validate_params(check_id, block_dict, {})
 
     def test_filtered_logs1(self):
         """
@@ -38,7 +38,7 @@ class TestStat(TestCase):
         block_dict={"args": {"path": "test234"}}
         check_id = "test-1"
 
-        res = stat.get_filtered_params_to_log(check_id, block_dict)
+        res = stat.get_filtered_params_to_log(check_id, block_dict, {})
         self.assertEqual(res, {"path": "test234"})
 
     @patch("os.path.isfile")
@@ -56,7 +56,7 @@ class TestStat(TestCase):
         block_dict={"args": {"path": "randompath"}}
         check_id = "test-1"
 
-        status, res = stat.execute(check_id, block_dict)
+        status, res = stat.execute(check_id, block_dict, {})
         self.assertEqual(res, {"result": {"uid": 1, "gid": 2}})
 
     @patch("os.path.isfile")
@@ -74,6 +74,6 @@ class TestStat(TestCase):
         block_dict={"args": {"path": "randompath"}}
         check_id = "test-1"
 
-        status, res = stat.execute(check_id, block_dict)
+        status, res = stat.execute(check_id, block_dict, {})
         self.assertFalse(status)
         self.assertEqual(res, {"error": "file_not_found"})

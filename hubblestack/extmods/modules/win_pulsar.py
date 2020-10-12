@@ -414,7 +414,7 @@ def get_file_hash(usn_file, checksum):
     Simple function to grab the hash for each file that has been flagged
     """
     try:
-        hashy = __salt__['file.get_hash']('{0}'.format(usn_file), form=checksum)
+        hashy = __mods__['file.get_hash']('{0}'.format(usn_file), form=checksum)
         return hashy
     except Exception:
         return ''
@@ -431,7 +431,7 @@ def canary(change_file=None):
     if change_file is None:
         conf_dir = os.path.dirname(__opts__['conf_file'])
         change_file = os.path.join(conf_dir, 'fim_canary.tmp')
-    __salt__['file.touch'](change_file)
+    __mods__['file.touch'](change_file)
     os.remove(change_file)
 
 

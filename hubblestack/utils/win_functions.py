@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Various functions to be used by windows during start up and to monkey patch
 missing functions in other modules
-'''
+"""
 import re
-from hubblestack.utils.exceptions import CommandExecutionError
 
 # Import 3rd Party Libs
 try:
@@ -19,13 +18,15 @@ try:
 except ImportError:
     HAS_WIN32 = False
 
+from hubblestack.utils.exceptions import CommandExecutionError
+
 
 # Although utils are often directly imported, it is also possible to use the
 # loader.
 def __virtual__():
-    '''
+    """
     Only load if Win32 Libraries are installed
-    '''
+    """
     if not HAS_WIN32:
         return False, 'This utility requires pywin32'
 
@@ -33,7 +34,7 @@ def __virtual__():
 
 
 def escape_argument(arg, escape=True):
-    '''
+    """
     Escape the argument for the cmd.exe shell.
     See http://blogs.msdn.com/b/twistylittlepassagesallalike/archive/2011/04/23/everyone-quotes-arguments-the-wrong-way.aspx
 
@@ -50,7 +51,7 @@ def escape_argument(arg, escape=True):
 
     Returns:
         str: an escaped string suitable to be passed as a program argument to the cmd.exe shell
-    '''
+    """
     if not arg or re.search(r'(["\s])', arg):
         arg = '"' + arg.replace('"', r'\"') + '"'
 
@@ -60,7 +61,7 @@ def escape_argument(arg, escape=True):
 
 
 def escape_for_cmd_exe(arg):
-    '''
+    """
     Escape an argument string to be suitable to be passed to
     cmd.exe on Windows
 
@@ -77,7 +78,7 @@ def escape_for_cmd_exe(arg):
 
     Returns:
         str: an escaped string suitable to be passed as a program argument to cmd.exe
-    '''
+    """
     meta_chars = '()%!^"<>&|'
     meta_re = re.compile('(' + '|'.join(re.escape(char) for char in list(meta_chars)) + ')')
     meta_map = {char: "^{0}".format(char) for char in meta_chars}
@@ -90,7 +91,7 @@ def escape_for_cmd_exe(arg):
 
 
 def guid_to_squid(guid):
-    '''
+    """
     Converts a GUID   to a compressed guid (SQUID)
 
     Each Guid has 5 parts separated by '-'. For the first three each one will be
@@ -110,7 +111,7 @@ def guid_to_squid(guid):
 
     Returns:
         str: A valid compressed GUID (SQUID)
-    '''
+    """
     guid_pattern = re.compile(r'^\{(\w{8})-(\w{4})-(\w{4})-(\w\w)(\w\w)-(\w\w)(\w\w)(\w\w)(\w\w)(\w\w)(\w\w)\}$')
     guid_match = guid_pattern.match(guid)
     squid = ''
@@ -121,7 +122,7 @@ def guid_to_squid(guid):
 
 
 def get_sid_from_name(name):
-    '''
+    """
     This is a tool for getting a sid from a name. The name can be any object.
     Usually a user or a group
 
@@ -130,15 +131,48 @@ def get_sid_from_name(name):
 
     Returns:
         str: The corresponding SID
-    '''
+    """
     # If None is passed, use the Universal Well-known SID "Null SID"
     if name is None:
-        name = 'NULL SID'
+        name = "NULL SID"
 
     try:
         sid = win32security.LookupAccountName(None, name)[0]
     except pywintypes.error as exc:
-        raise CommandExecutionError(
-            'User {0} not found: {1}'.format(name, exc))
+        raise CommandExecutionError("User {0} not found: {1}".format(name, exc))
 
     return win32security.ConvertSidToStringSid(sid)
+
+
+def get_current_user(with_domain=True):
+    """
+    Gets the user executing the process
+
+    Args:
+
+        with_domain (bool):
+            ``True`` will prepend the user name with the machine name or domain
+            separated by a backslash
+
+    Returns:
+        str: The user name
+    """
+    try:
+        user_name = win32api.GetUserNameEx(win32api.NameSamCompatible)
+        if user_name[-1] == "$":
+            # Make the system account easier to identify.
+            # Fetch sid so as to handle other language than english
+            test_user = win32api.GetUserName()
+            if test_user == "SYSTEM":
+                user_name = "SYSTEM"
+            elif get_sid_from_name(test_user) == "S-1-5-18":
+                user_name = "SYSTEM"
+        elif not with_domain:
+            user_name = win32api.GetUserName()
+    except pywintypes.error as exc:
+        raise CommandExecutionError("Failed to get current user: {0}".format(exc))
+
+    if not user_name:
+        return False
+
+    return user_name

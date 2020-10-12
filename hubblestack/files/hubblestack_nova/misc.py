@@ -387,7 +387,7 @@ def restrict_permissions(path, permission):
     """
     Ensure that the file permissions on path are equal or more strict than the  pemissions given in argument
     """
-    path_details = __salt__['file.stats'](path)
+    path_details = __mods__['file.stats'](path)
     given_permission = path_details.get('mode')
     given_permission = given_permission[-3:]
     max_permission = str(permission)
@@ -686,7 +686,7 @@ def check_users_dot_files(reason=''):
             dot_files = dot_files.split('\n') if dot_files != "" else []
             for dot_file in dot_files:
                 if os.path.isfile(dot_file):
-                    path_details = __salt__['file.stats'](dot_file)
+                    path_details = __mods__['file.stats'](dot_file)
                     given_permission = path_details.get('mode')
                     file_permission = given_permission[-3:]
                     if file_permission[1] in ["2", "3", "6", "7"]:

@@ -2,16 +2,15 @@
 """
 A collection of hashing and encoding utils.
 """
-from __future__ import absolute_import, unicode_literals, print_function
-
 # Import python libs
 import hashlib
 
 import hubblestack.utils.files
 import hubblestack.utils.stringutils
 
-def get_hash(path, form='sha256', chunk_size=65536):
-    '''
+
+def get_hash(path, form="sha256", chunk_size=65536):
+    """
     Get the hash sum of a file
 
     This is better than ``get_sum`` for the following reasons:
@@ -19,7 +18,7 @@ def get_hash(path, form='sha256', chunk_size=65536):
         - It does not return a string on error. The returned value of
             ``get_sum`` cannot really be trusted since it is vulnerable to
             collisions: ``get_sum(..., 'xyz') == 'Hash xyz not supported'``
-    '''
+    """
     hash_type = hasattr(hashlib, form) and getattr(hashlib, form) or None
     if hash_type is None:
         raise ValueError('Invalid hash type: {0}'.format(form))
@@ -33,9 +32,9 @@ def get_hash(path, form='sha256', chunk_size=65536):
 
 
 def sha256_digest(instr):
-    '''
+    """
     Generate a sha256 hash of a given string.
-    '''
+    """
     return hubblestack.utils.stringutils.to_unicode(
         hashlib.sha256(hubblestack.utils.stringutils.to_bytes(instr)).hexdigest()
     )

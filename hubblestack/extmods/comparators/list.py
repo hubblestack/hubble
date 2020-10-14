@@ -39,7 +39,6 @@ List comparator exposes various commands:
               running: false
             - name: xyz
               running: true
-
 - "match_any_if_key_matches" command
   This is a special case when user want to match only when desired key is found.
   Example: If name=rsync found, then match other attributes.
@@ -60,7 +59,7 @@ List comparator exposes various commands:
                 - name: xyz
                   running: true
 
-- "filter_compare" command 
+- "filter_compare" command
     example (Filter a list, compare it with any other command of list comparator)
 
     comparator:
@@ -299,7 +298,7 @@ def filter_compare(audit_id, result_to_compare, args):
     A two-step comparator.
     First, filter the list
     Second, compare results
-    
+
     :param result_to_compare:
         The value to compare.
     :param args:
@@ -311,7 +310,7 @@ def filter_compare(audit_id, result_to_compare, args):
     filtered_list = []
     for r_compare in result_to_compare:
         ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
-            audit_id, 
+            audit_id,
             {"type": "dict", "match": filter_dict_args},
             r_compare)
         if ret_status:

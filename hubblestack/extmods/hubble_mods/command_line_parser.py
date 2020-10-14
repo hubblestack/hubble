@@ -2,12 +2,33 @@
 """
 This module is used to find the value of a command line parameter.
 
-Currently, this module is only usable in chaining.
-Since chaining is in FDG, so it can not be used in Audit module for now.
+Audit Example:
+---------------
+check_unique_id:
+  description: 'cmd check'
+  tag: 'ADOBE-01'
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-7'
+      hubble_version: '>3 AND <7 AND <8'
+      module: command_line_parser
+      items:
+        - args:
+            cmdline: 'app --config-file=abc test'
+            key_aliases: ['config-file']
+            delimiter: '='
+          comparator:
+            type: "string"
+            match: abc
 
 FDG Example:
 ------------
 main:
+  ...
+  ...
+  pipe: cmd_parser
+
+cmd_parser:
   description: 'cmd parser check'
   module: command_line_parser
   args:
@@ -20,7 +41,6 @@ Sample input from chaining:
 Mandatory Params:
     - cmdline
       The command line in which to search for keys.
-      (from chaining parameter)
     - key_aliases
       array of aliases whose value is to be fetched
     - delimiter
@@ -90,7 +110,7 @@ open_bracket_list = ["[","{","("]
 close_bracket_list = ["]","}",")"]
 log = logging.getLogger(__name__)
 
-def validate_params(block_id, block_dict, chain_args=None):
+def validate_params(block_id, block_dict, extra_args=None):
     """
     Validate all mandatory params required for this module
 
@@ -98,18 +118,27 @@ def validate_params(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': {'cmdline': 'app --config=abc --volume=xyz test'}, 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': {'cmdline': 'app --config-file=test test'}, 'status': True},
+                  'caller': 'Audit'}
 
     Raises:
-        AuditCheckValidationError: For any validation error
+        HubbleCheckValidationError: For any validation error
     """
     log.debug('Module: command_line_parser Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
+    command_line = None
+    chain_args = None if not extra_args else extra_args.get('chaining_args')
     chained_param = runner_utils.get_chained_param(chain_args)
-    if not chained_param or chained_param.get('cmdline') is None:
+    if chained_param:
+        command_line = chained_param.get('cmdline')
+    if not command_line:
+        # get it from args
+        command_line = runner_utils.get_param_for_module(block_id, block_dict, 'cmdline')
+
+    if not command_line:
         error['cmdline'] = 'No cmdline provided in chained params'
 
     key_aliases = runner_utils.get_param_for_module(block_id, block_dict, 'key_aliases')
@@ -125,7 +154,7 @@ def validate_params(block_id, block_dict, chain_args=None):
 
     log.debug('Validation success for check-id: {0}'.format(block_id))
 
-def execute(block_id, block_dict, chain_args=None):
+def execute(block_id, block_dict, extra_args=None):
     """
     Execute the module
 
@@ -133,9 +162,10 @@ def execute(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': "/some/path/file.txt", 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': {'cmdline': 'app --config-file=test test'}, 'status': True},
+                  'caller': 'Audit'}
 
     returns:
         tuple of result(value) and status(boolean)
@@ -143,8 +173,15 @@ def execute(block_id, block_dict, chain_args=None):
     log.debug('Executing command_line_parser module for id: {0}'.format(block_id))
 
     try:
+        command_line = None
+        
+        chain_args = None if not extra_args else extra_args.get('chaining_args')
         chained_param = runner_utils.get_chained_param(chain_args)
-        command_line = chained_param.get('cmdline')
+        if chained_param:
+            command_line = chained_param.get('cmdline')
+        if not command_line:
+            # get it from args
+            command_line = runner_utils.get_param_for_module(block_id, block_dict, 'cmdline')
 
         key_aliases = runner_utils.get_param_for_module(block_id, block_dict, 'key_aliases')
         delimiter = runner_utils.get_param_for_module(block_id, block_dict, 'delimiter')
@@ -246,7 +283,7 @@ def _fetch_bracketed_value(value):
 
     return None
 
-def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
+def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     For getting params to log, in non-verbose logging
 
@@ -254,14 +291,21 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
-        Chained argument dictionary, (If any)
-        Example: {'result': {'test-package': '1.2.3'}, 'status': True}
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': {'cmdline': 'app --config-file=test test'}, 'status': True},
+                  'caller': 'Audit'}
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
+    chain_args = None if not extra_args else extra_args.get('chaining_args')
     chained_param = runner_utils.get_chained_param(chain_args)
-    command_line = chained_param.get('cmdline')
+    command_line = None
+    if chained_param:
+        command_line = chained_param.get('cmdline')
+    if not command_line:
+        # get it from args
+        command_line = runner_utils.get_param_for_module(block_id, block_dict, 'cmdline')
 
     key_aliases = runner_utils.get_param_for_module(block_id, block_dict, 'key_aliases')
     delimiter = runner_utils.get_param_for_module(block_id, block_dict, 'delimiter')

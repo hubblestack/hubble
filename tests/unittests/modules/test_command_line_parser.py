@@ -22,7 +22,8 @@ class TestCommandLineParser(TestCase):
         chain_args = {'result': {
             'cmdline': 'app --config-file=abc test'
         }}
-        command_line_parser.validate_params(block_id, block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        command_line_parser.validate_params(block_id, block_dict, extra_args)
 
     def testValidateParams2(self):
         """
@@ -50,12 +51,13 @@ class TestCommandLineParser(TestCase):
         chain_args = {'result': {
             'cmdline': 'app --config-file=abc test'
         }}
+        extra_args = {'chaining_args': chain_args}
         expected_dict = {
             'command_line': 'app --config-file=abc test',
             'key_aliases': ['config-file'],
             'delimiter': ' '
         }
-        result = command_line_parser.get_filtered_params_to_log(block_id, block_dict, chain_args)
+        result = command_line_parser.get_filtered_params_to_log(block_id, block_dict, extra_args)
         self.assertDictEqual(expected_dict, result)
 
     def testExecute1(self):
@@ -70,7 +72,23 @@ class TestCommandLineParser(TestCase):
         chain_args = {'result': {
             'cmdline': 'app --config-file=abc test'
         }}
-        status, result_dict = command_line_parser.execute(block_id, block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, result_dict = command_line_parser.execute(block_id, block_dict, extra_args)
+        self.assertTrue(status)
+        self.assertEqual(result_dict['result'], ['abc'])
+
+    def testExecute2(self):
+        """
+        Passing cmdline from args
+        should pass
+        """
+        block_id = "test-1"
+        block_dict = {'args':{
+            'cmdline': 'app --config-file=abc test',
+            'key_aliases': ['config-file'],
+            'delimiter': '='
+        }}
+        status, result_dict = command_line_parser.execute(block_id, block_dict)
         self.assertTrue(status)
         self.assertEqual(result_dict['result'], ['abc'])
 
@@ -87,7 +105,8 @@ class TestCommandLineParser(TestCase):
             'delimiter': '='
         }}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute(block_id, block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute(block_id, block_dict, extra_args)
 
         expected_value = ["/etc/docker/daemon.json"]
         assert val['result'] == expected_value
@@ -105,7 +124,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["debug"]
         assert val['result'] == expected_value
 
@@ -122,7 +142,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = []
         assert val['result'] == expected_value
 
@@ -139,7 +160,8 @@ class TestCommandLineParser(TestCase):
                 }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["a:b", "d:e"]
         assert val['result'] == expected_value
 
@@ -157,7 +179,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["a:b", "d:e"]
         assert val['result'] == expected_value
 
@@ -175,7 +198,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["a:b", "d:e"]
         assert val['result'][0] == expected_value[0]
         assert val['result'][1] == expected_value[1]
@@ -194,7 +218,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["a:b", "d:e"]
         assert val['result'] == expected_value
 
@@ -212,7 +237,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = []
         assert val['result'] == expected_value
 
@@ -230,7 +256,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = []
         assert val['result'] == expected_value
 
@@ -248,7 +275,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["username=yourusername&password=yourpassword"]
         assert val['result'] == expected_value
 
@@ -266,7 +294,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["username=yourusername&password=yourpassword"]
         assert val['result'] == expected_value
 
@@ -284,7 +313,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["username=your'susername&password=yourpassword"]
         assert val['result'] == expected_value
 
@@ -302,7 +332,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["X-Header: value"]
         assert val['result'] == expected_value
 
@@ -320,7 +351,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["9f9408b2d29e"]
         assert val['result'] == expected_value
 
@@ -338,7 +370,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["/tmp/docker_test.cid"]
         assert val['result'] == expected_value
 
@@ -356,7 +389,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["size=120G"]
         assert val['result'] == expected_value
 
@@ -374,7 +408,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["[\"value1\", \"value2\"]"]
         assert val['result'] == expected_value
 
@@ -392,7 +427,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["/var/run/nlserver6.pid"]
         assert val['result'] == expected_value
 
@@ -411,7 +447,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["10"]
         assert val['result'] == expected_value
 
@@ -429,7 +466,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["128m"]
         assert val['result'] == expected_value
 
@@ -447,7 +485,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["/apps/api-etms/usage-tracking-services-launchpad.jar"]
         assert val['result'] == expected_value
 
@@ -482,7 +521,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["2048"]
         assert val['result'] == expected_value
 
@@ -500,7 +540,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["/run:rw,noexec,nosuid,size=65536k"]
         assert val['result'] == expected_value
 
@@ -518,7 +559,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["value1"]
         assert val['result'] == expected_value
 
@@ -536,7 +578,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ["http://localhost:9090/-/reload"]
         assert val['result'] == expected_value
 
@@ -554,7 +597,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ['{"labels":[{"key":"DCOS_PACKAGE_IS_FRAMEWORK","value":"false"}]}']
         assert val['result'] == expected_value
 
@@ -572,7 +616,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ['^(dm-\d+|ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+$']
         assert val['result'] == expected_value
 
@@ -590,7 +635,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = ['^/proc|^/sys|^/dev|^/mnt|^/export|^/var/lib/mysql|^/volr']
         assert val['result'] == expected_value
 
@@ -616,7 +662,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         assert val['result'] == []
 
     def test_extra_spaces(self):
@@ -632,7 +679,8 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = [('a:b')]
         assert val['result'] == expected_value
 
@@ -650,6 +698,7 @@ class TestCommandLineParser(TestCase):
         }
         block_dict = {'args':params}
         chain_args = {'result': command_line}
-        status, val = command_line_parser.execute("test-1", block_dict, chain_args)
+        extra_args = {'chaining_args': chain_args}
+        status, val = command_line_parser.execute("test-1", block_dict, extra_args)
         expected_value = [('a:b')]
         assert val['result'] == expected_value

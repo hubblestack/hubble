@@ -8,16 +8,33 @@ List comparator exposes various commands:
     comparator:
         type: "list"
         size: ">= 10" 
-    # Suported operators >, >=, <, <=, ==, != 
+    # Supported operators >, >=, <, <=, ==, !=
     # it can also be written as (without any operator)
     # size: 10
+- "match" command
+    True when the given list matches exactly with the expected list
 
-- "match_any" command 
-    example (True when any dictionary mentioned in list match)
+    comparator:
+        type: "list"
+        match:
+            - name: abc
+              running: false
+- "match_any" command
+    True when any dictionary mentioned in list match
 
     comparator:
         type: "list"
         match_any:
+            - name: abc
+              running: false
+            - name: xyz
+              running: true
+- "match_all" command
+   True when all dictionaries mentioned in list matches with input
+
+    comparator:
+        type: "list"
+        match_all:
             - name: abc
               running: false
             - name: xyz
@@ -31,7 +48,7 @@ List comparator exposes various commands:
     - if specified key not found.
     - key found and attributes also matched
   Result will be False
-    - Key found and attribuets did not match
+    - Key found and attributes did not match
   
     comparator:
         type: "list"
@@ -43,7 +60,23 @@ List comparator exposes various commands:
                 - name: xyz
                   running: true
 
+- "filter_compare" command 
+    example (Filter a list, compare it with any other command of list comparator)
+
+    comparator:
+        type: "list"
+        filter_compare:
+            filter:
+                name: abc
+                offset:
+                    type: number
+                    match: <= 15
+            compare:
+                size: >= 4
+
+
 Complete Example
+------------------
 
 check_id:
   description: 'sample description'
@@ -65,11 +98,10 @@ check_id:
 """
 
 import logging
-import re
 import hubblestack.extmods.module_runner.comparator
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
 log = logging.getLogger(__name__)
+
 
 def size(audit_id, result_to_compare, args):
     """
@@ -84,13 +116,42 @@ def size(audit_id, result_to_compare, args):
 
     # Use Number comparator to do this comparison
     ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
-                    audit_id, 
-                    {"type": "number", "match": args['size']},
-                    len(result_to_compare))
+        audit_id,
+        {"type": "number", "match": args['size']},
+        len(result_to_compare))
 
     if ret_status:
         return True, "Check Passed"
     return False, "list::size failure. Expected={0} Got={1}".format(len(result_to_compare), str(args['size']))
+
+
+def match(audit_id, result_to_compare, args):
+    """
+    Exact match the given list with result
+    True only if lists are exactly equal
+    :param audit_id:
+        check id
+    :param result_to_compare:
+        The value to compare
+    :param args:
+        Comparator dict mentioned in check
+    :return:
+    """
+    log.debug('Running list::match for check: {0}'.format(audit_id))
+    expected_list = args.get('match')
+    if isinstance(result_to_compare[0], dict):
+        # If list to compare has dict, it uses first key of dict to sort list
+        sort_key = list(result_to_compare[0].keys())[0]
+        result_to_compare.sort(key=lambda i: i[sort_key])
+        expected_list.sort(key=lambda i: i[sort_key])
+    else:
+        # Other data types. Simply sort the list
+        result_to_compare.sort()
+        expected_list.sort()
+    if result_to_compare == expected_list:
+        return True, "Check Passed"
+    return False, "list::match failure. Got={0}".format(result_to_compare)
+
 
 def match_any(audit_id, result_to_compare, args):
     """
@@ -108,9 +169,9 @@ def match_any(audit_id, result_to_compare, args):
         if isinstance(r_compare, dict):
             # using dict::match_any
             ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
-                            audit_id, 
-                            {"type": "dict", "match_any": args['match_any']},
-                            r_compare)
+                audit_id,
+                {"type": "dict", "match_any": args['match_any']},
+                r_compare)
             if ret_status:
                 return True, "Check Passed"
         else:
@@ -131,14 +192,16 @@ def match_any(audit_id, result_to_compare, args):
                     # primitive datatype comparison
                     if to_compare == r_compare:
                         return True, "Check Passed"
-        
+
     return False, "list::match_any failure. Got={0}".format(result_to_compare)
+
 
 def match_all(audit_id, result_to_compare, args):
     """
     Match all of dictionary mentioned. Match only mentioned attributes
     True if found all entry
     
+    :param audit_id:
     :param result_to_compare:
         The value to compare.
     :param args:
@@ -154,7 +217,7 @@ def match_all(audit_id, result_to_compare, args):
             if isinstance(r_compare, dict):
                 # using dict::match
                 ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
-                    audit_id, 
+                    audit_id,
                     {"type": "dict", "match": to_compare},
                     r_compare)
             elif isinstance(to_compare, dict):
@@ -168,13 +231,14 @@ def match_all(audit_id, result_to_compare, args):
             else:
                 # simple comparison between primitive data types
                 ret_status = r_compare == to_compare
-            
+
             if ret_status:
                 found_match = True
                 break
         if not found_match:
             return False, "Check failed, got={0}".format(result_to_compare)
     return True, "Check Passed"
+
 
 def match_any_if_key_matches(audit_id, result_to_compare, args):
     """
@@ -218,14 +282,45 @@ def match_any_if_key_matches(audit_id, result_to_compare, args):
     failed_once = False
     for r_compare in result_to_compare:
         ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
-                        audit_id, 
-                        {"type": "dict", "match_any_if_key_matches": args['match_any_if_key_matches']},
-                        r_compare)
+            audit_id,
+            {"type": "dict", "match_any_if_key_matches": args['match_any_if_key_matches']},
+            r_compare)
         if ret_status and ret_val != "pass_as_key_not_found":
             return True, "Check Passed"
         if not ret_status:
             failed_once = True
-    
+
     if failed_once:
         return False, "list::match_any_if_key_matches failure. Got={0}".format(result_to_compare)
     return True, "Check Passed"
+
+def filter_compare(audit_id, result_to_compare, args):
+    """
+    A two-step comparator.
+    First, filter the list
+    Second, compare results
+    
+    :param result_to_compare:
+        The value to compare.
+    :param args:
+        Comparator dictionary as mentioned in the check.
+    """
+    log.debug('Running list::filter_compare for check: {0}'.format(audit_id))
+
+    filter_dict_args = args['filter_compare']['filter']
+    filtered_list = []
+    for r_compare in result_to_compare:
+        ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
+            audit_id, 
+            {"type": "dict", "match": filter_dict_args},
+            r_compare)
+        if ret_status:
+            filtered_list.append(r_compare)
+
+    # Lets hand-over this new specific comparison to comparator orchestrator
+    filter_comparator_args = {"type": "list"}
+    filter_comparator_args.update(args['filter_compare']['compare'])
+    return hubblestack.extmods.module_runner.comparator.run(
+        audit_id,
+        filter_comparator_args,
+        filtered_list)

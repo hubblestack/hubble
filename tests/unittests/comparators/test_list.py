@@ -1,14 +1,14 @@
 from unittest import TestCase
 from unittest.mock import patch
-import pytest
 
 from hubblestack.extmods.comparators import list as list_comparator
-# from hubblestack.utils.hubble_error import AuditCheckValidationError
+
 
 class TestListSize(TestCase):
     """
     Unit tests for list::size comparator
     """
+
     def test_size1(self):
         """
         Check size of list. Should pass
@@ -37,10 +37,146 @@ class TestListSize(TestCase):
             status, result = list_comparator.size("test-1", result_to_compare, args)
             self.assertFalse(status)
 
+
+class TestListMatch(TestCase):
+    """
+    Unit tests for list::match comparator
+    """
+
+    def test_match1(self):
+        """
+        Positive case. String
+        :return:
+        """
+        result_to_compare = [
+            "test-str1",
+            "test-str2"
+        ]
+        args = {
+            "type": "list",
+            "match": [
+                "test-str1",
+                "test-str2"
+            ]
+        }
+        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+            comparator_mock.run.return_value = (True, "Pass")
+            status, result = list_comparator.match("test-1", result_to_compare, args)
+            self.assertTrue(status)
+            self.assertEqual(result, "Check Passed")
+
+    def test_match2(self):
+        """
+        Positive case. Dict
+        :return:
+        """
+        result_to_compare = [
+            {"name": "abcd", "status": True, "disabled": False}
+        ]
+        args = {
+            "type": "list",
+            "match": [
+                {"name": "abcd", "status": True, "disabled": False}
+            ]
+        }
+        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+            comparator_mock.run.return_value = (True, "Pass")
+            status, result = list_comparator.match("test-1", result_to_compare, args)
+            self.assertTrue(status)
+            self.assertEqual(result, "Check Passed")
+
+    def test_match3(self):
+        """
+        Positive case. With different order of string in lists
+        :return:
+        """
+        result_to_compare = [
+            "test-str1",
+            "test-str2"
+        ]
+        args = {
+            "type": "list",
+            "match": [
+                "test-str2",
+                "test-str1"
+            ]
+        }
+        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+            comparator_mock.run.return_value = (True, "Pass")
+            status, result = list_comparator.match("test-1", result_to_compare, args)
+            self.assertTrue(status)
+            self.assertEqual(result, "Check Passed")
+
+    def test_match4(self):
+        """
+        Positive case. With different order of dicts in lists
+        :return:
+        """
+        result_to_compare = [
+            {"name": "abcd", "status": True, "disabled": False},
+            {"name": "mno", "status": True, "disabled": False}
+        ]
+        args = {
+            "type": "list",
+            "match": [
+                {"name": "mno", "status": True, "disabled": False},
+                {"name": "abcd", "disabled": False, "status": True}
+            ]
+        }
+        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+            comparator_mock.run.return_value = (True, "Pass")
+            status, result = list_comparator.match("test-1", result_to_compare, args)
+            self.assertTrue(status)
+            self.assertEqual(result, "Check Passed")
+
+    def test_match5(self):
+        """
+        Negative case. Dict
+        :return:
+        """
+        result_to_compare = [
+            {"name": "abcd", "status": True, "disabled": False},
+            {"name": "mno", "status": True, "disabled": False}
+        ]
+        args = {
+            "type": "list",
+            "match": [
+                {"name": "abcd", "status": True, "disabled": False},
+                {"name": "mnop", "status": True, "disabled": False}
+            ]
+        }
+        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+            comparator_mock.run.return_value = (True, "Pass")
+            status, result = list_comparator.match("test-1", result_to_compare, args)
+            self.assertFalse(status)
+
+    def test_match6(self):
+        """
+        Negative case. String
+        :return:
+        """
+        result_to_compare = [
+            "test-str1",
+            "test-str2"
+        ]
+        args = {
+            "type": "list",
+            "match": [
+                "test-str",
+                "test-str2"
+            ]
+        }
+        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+            comparator_mock.run.return_value = (True, "Pass")
+            status, result = list_comparator.match("test-1", result_to_compare, args)
+            self.assertFalse(status)
+
+
 class TestListMatchAny(TestCase):
     """
     Unit tests for list::match_any comparator
     """
+
     def test_match_any1(self):
         """
         Positive test
@@ -88,14 +224,14 @@ class TestListMatchAny(TestCase):
         args = {
             "type": "list",
             "match_any": [
-                "abc", 
+                "abc",
                 {"def": {
                     "type": "string",
                     "match": "rsh"
                 }}
             ]
         }
-        
+
         with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match_any("test-1", result_to_compare, args)
@@ -111,11 +247,11 @@ class TestListMatchAny(TestCase):
         args = {
             "type": "list",
             "match_any": [
-                "abc", 
+                "abc",
                 "rsh"
             ]
         }
-        
+
         with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match_any("test-1", result_to_compare, args)
@@ -141,10 +277,12 @@ class TestListMatchAny(TestCase):
             status, result = list_comparator.match_any("test-1", result_to_compare, args)
             self.assertFalse(status)
 
+
 class TestListMatchAnyIfKeyMatches(TestCase):
     """
     Unit tests for list::match_any_if_key_matches comparator
     """
+
     def test_match1(self):
         """
         Positive test
@@ -217,10 +355,12 @@ class TestListMatchAnyIfKeyMatches(TestCase):
             status, result = list_comparator.match_any_if_key_matches("test-1", result_to_compare, args)
             self.assertTrue(status)
 
+
 class TestListMatchAll(TestCase):
     """
     Unit tests for list::match_all comparator
     """
+
     def test_match_all1(self):
         """
         Positive test
@@ -281,4 +421,67 @@ class TestListMatchAll(TestCase):
         with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match_all("test-1", result_to_compare, args)
+            self.assertFalse(status)
+
+class TestListFilterCompare(TestCase):
+    """
+    Unit tests for list::filter_compare comparator
+    """
+    def test_filter_compare1(self):
+        """
+        Positive test
+        """
+        result_to_compare = [
+            {"name": "abc", "status": True, "offset": 0.02},
+            {"name": "abc", "status": True, "offset": 2},
+            {"name": "abc", "status": True, "offset": 0.5},
+        ]
+        args = {
+            "type": "list",
+            "filter_compare": {
+                "filter": {
+                    "status": True,
+                    "offset": {
+                        "type": "number",
+                        "match": "<= 5"
+                    }
+                },
+                "compare": {
+                    "size": ">= 2"
+                }
+            }
+        }
+        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+            comparator_mock.run.return_value = (True, "Pass")
+            status, result = list_comparator.filter_compare("test-1", result_to_compare, args)
+            self.assertTrue(status)
+
+    def test_filter_compare2(self):
+        """
+        A negative test
+        Result set filered having size=1. Expected >= 2
+        """
+        result_to_compare = [
+            {"name": "abc", "status": True, "offset": 0.02},
+            {"name": "abc", "status": False, "offset": 2},
+            {"name": "abc", "status": False, "offset": 0.5},
+        ]
+        args = {
+            "type": "list",
+            "filter_compare": {
+                "filter": {
+                    "status": True,
+                    "offset": {
+                        "type": "number",
+                        "match": "<= 5"
+                    }
+                },
+                "compare": {
+                    "size": ">= 2"
+                }
+            }
+        }
+        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+            comparator_mock.run.return_value = (False, "Pass")
+            status, result = list_comparator.filter_compare("test-1", result_to_compare, args)
             self.assertFalse(status)

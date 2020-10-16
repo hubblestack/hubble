@@ -75,7 +75,6 @@ Mandatory Params:
     This module requires ntp_servers. That come either from args, or from chaining, or both
 '''
 
-
 import logging
 
 import hubblestack.extmods.module_runner.runner_utils as runner_utils
@@ -86,6 +85,7 @@ import salt.utils.platform
 if not salt.utils.platform.is_windows():
     import ntplib
 log = logging.getLogger(__name__)
+
 
 def validate_params(block_id, block_dict, extra_args=None):
     """
@@ -113,6 +113,7 @@ def validate_params(block_id, block_dict, extra_args=None):
 
     log.debug('Validation success for check-id: {0}'.format(block_id))
 
+
 def execute(block_id, block_dict, extra_args=None):
     """
     Function that queries a list of NTP servers and checks if the
@@ -135,7 +136,7 @@ def execute(block_id, block_dict, extra_args=None):
 
     chain_args = None if not extra_args else extra_args.get('chaining_args')
     ntp_servers = _get_ntp_servers(block_id, block_dict, chain_args)
-    
+
     time_sync_result = []
 
     for ntp_server in ntp_servers:
@@ -155,6 +156,7 @@ def execute(block_id, block_dict, extra_args=None):
 
     return runner_utils.prepare_positive_result_for_module(block_id, time_sync_result)
 
+
 def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     For getting params to log, in non-verbose logging
@@ -170,10 +172,11 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
-    #fetch required param
+    # fetch required param
     chain_args = None if not extra_args else extra_args.get('chaining_args')
     ntp_servers = _get_ntp_servers(block_id, block_dict, chain_args)
     return {'ntp_servers': ntp_servers}
+
 
 def _get_ntp_servers(block_id, block_dict, chain_args):
     ntp_servers = runner_utils.get_param_for_module(block_id, block_dict, 'ntp_servers')
@@ -188,6 +191,7 @@ def _get_ntp_servers(block_id, block_dict, chain_args):
             ntp_servers = ntp_servers_chained
 
     return ntp_servers
+
 
 def _query_ntp_server(ntp_server):
     """

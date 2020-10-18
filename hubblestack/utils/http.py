@@ -32,7 +32,7 @@ except ImportError:
             HAS_MATCHHOSTNAME = False
 
 # Import salt libs
-import salt.config
+import hubblestack.config
 import hubblestack.loader
 import hubblestack.syspaths
 import hubblestack.utils.args
@@ -145,11 +145,11 @@ def query(url,
 
     if opts is None:
         if node == 'master':
-            opts = salt.config.master_config(
+            opts = hubblestack.config.master_config(
                 os.path.join(hubblestack.syspaths.CONFIG_DIR, 'master')
             )
         elif node == 'minion':
-            opts = salt.config.minion_config(
+            opts = hubblestack.config.get_config(
                 os.path.join(hubblestack.syspaths.CONFIG_DIR, 'minion')
             )
         else:
@@ -452,9 +452,9 @@ def query(url,
         if verify_ssl:
             req_kwargs['ca_certs'] = ca_bundle
 
-        max_body = opts.get('http_max_body', salt.config.DEFAULT_MINION_OPTS['http_max_body'])
-        connect_timeout = opts.get('http_connect_timeout', salt.config.DEFAULT_MINION_OPTS['http_connect_timeout'])
-        timeout = opts.get('http_request_timeout', salt.config.DEFAULT_MINION_OPTS['http_request_timeout'])
+        max_body = opts.get('http_max_body', hubblestack.config.DEFAULT_OPTS['http_max_body'])
+        connect_timeout = opts.get('http_connect_timeout', hubblestack.config.DEFAULT_OPTS['http_connect_timeout'])
+        timeout = opts.get('http_request_timeout', hubblestack.config.DEFAULT_OPTS['http_request_timeout'])
 
         client_argspec = None
 

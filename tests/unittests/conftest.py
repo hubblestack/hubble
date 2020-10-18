@@ -5,7 +5,7 @@ import sys
 import logging
 import pytest
 import collections
-import salt.config
+import hubblestack.config
 import pstats
 import subprocess
 import yaml

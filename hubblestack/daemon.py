@@ -462,7 +462,7 @@ def load_config(args=None):
         this_file = __file__
     _load_salt_config(parsed_args)
     global __opts__
-    __opts__ = salt.config.minion_config(parsed_args.get('configfile'))
+    __opts__ = hubblestack.config.get_config(parsed_args.get('configfile'))
     __opts__.update(parsed_args)
     __opts__['conf_file'] = parsed_args.get('configfile')
     __opts__['install_dir'] = hubblestack.syspaths.INSTALL_DIR
@@ -586,49 +586,49 @@ def _setup_cached_uuid():
 
 
 def _load_salt_config(parsed_args):
-    """ load the configs for salt.DEFAULT_MINION_OPTS """
+    """ load the configs for hubblestack.config.DEFAULT_OPTS """
     # Load unique data for Windows or Linux
     if hubblestack.utils.platform.is_windows():
         if parsed_args.get('configfile') is None:
             parsed_args['configfile'] = 'C:\\Program Files (x86)\\Hubble\\etc\\hubble\\hubble.conf'
-        salt.config.DEFAULT_MINION_OPTS['cachedir'] = 'C:\\Program Files (x86)\\hubble\\var\\cache'
-        salt.config.DEFAULT_MINION_OPTS[
+        hubblestack.config.DEFAULT_OPTS['cachedir'] = 'C:\\Program Files (x86)\\hubble\\var\\cache'
+        hubblestack.config.DEFAULT_OPTS[
             'pidfile'] = 'C:\\Program Files (x86)\\hubble\\var\\run\\hubble.pid'
-        salt.config.DEFAULT_MINION_OPTS[
+        hubblestack.config.DEFAULT_OPTS[
             'log_file'] = 'C:\\Program Files (x86)\\hubble\\var\\log\\hubble.log'
-        salt.config.DEFAULT_MINION_OPTS[
+        hubblestack.config.DEFAULT_OPTS[
             'osquery_dbpath'] = 'C:\\Program Files (x86)\\hubble\\var\\hubble_osquery_db'
-        salt.config.DEFAULT_MINION_OPTS[
+        hubblestack.config.DEFAULT_OPTS[
             'osquerylogpath'] = 'C:\\Program Files (x86)\\hubble\\var\\log\\hubble_osquery'
-        salt.config.DEFAULT_MINION_OPTS['osquerylog_backupdir'] = \
+        hubblestack.config.DEFAULT_OPTS['osquerylog_backupdir'] = \
             'C:\\Program Files (x86)\\hubble\\var\\log\\hubble_osquery\\backuplogs'
 
     else:
         if parsed_args.get('configfile') is None:
             parsed_args['configfile'] = '/etc/hubble/hubble'
-        salt.config.DEFAULT_MINION_OPTS['cachedir'] = '/var/cache/hubble'
-        salt.config.DEFAULT_MINION_OPTS['pidfile'] = '/var/run/hubble.pid'
-        salt.config.DEFAULT_MINION_OPTS['log_file'] = '/var/log/hubble'
-        salt.config.DEFAULT_MINION_OPTS['osquery_dbpath'] = '/var/cache/hubble/osquery'
-        salt.config.DEFAULT_MINION_OPTS['osquerylogpath'] = '/var/log/hubble_osquery'
-        salt.config.DEFAULT_MINION_OPTS[
+        hubblestack.config.DEFAULT_OPTS['cachedir'] = '/var/cache/hubble'
+        hubblestack.config.DEFAULT_OPTS['pidfile'] = '/var/run/hubble.pid'
+        hubblestack.config.DEFAULT_OPTS['log_file'] = '/var/log/hubble'
+        hubblestack.config.DEFAULT_OPTS['osquery_dbpath'] = '/var/cache/hubble/osquery'
+        hubblestack.config.DEFAULT_OPTS['osquerylogpath'] = '/var/log/hubble_osquery'
+        hubblestack.config.DEFAULT_OPTS[
             'osquerylog_backupdir'] = '/var/log/hubble_osquery/backuplogs'
 
-    salt.config.DEFAULT_MINION_OPTS['file_roots'] = {'base': []}
-    salt.config.DEFAULT_MINION_OPTS['log_level'] = 'error'
-    salt.config.DEFAULT_MINION_OPTS['file_client'] = 'local'
-    salt.config.DEFAULT_MINION_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
-    salt.config.DEFAULT_MINION_OPTS['grains_refresh_frequency'] = 3600  # 1 hour
-    salt.config.DEFAULT_MINION_OPTS['scheduler_sleep_frequency'] = 0.5
-    salt.config.DEFAULT_MINION_OPTS['default_include'] = 'hubble.d/*.conf'
-    salt.config.DEFAULT_MINION_OPTS['logfile_maxbytes'] = 100000000  # 100MB
-    salt.config.DEFAULT_MINION_OPTS['logfile_backups'] = 1  # maximum rotated logs
-    salt.config.DEFAULT_MINION_OPTS['delete_inaccessible_azure_containers'] = False
+    hubblestack.config.DEFAULT_OPTS['file_roots'] = {'base': []}
+    hubblestack.config.DEFAULT_OPTS['log_level'] = 'error'
+    hubblestack.config.DEFAULT_OPTS['file_client'] = 'local'
+    hubblestack.config.DEFAULT_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
+    hubblestack.config.DEFAULT_OPTS['grains_refresh_frequency'] = 3600  # 1 hour
+    hubblestack.config.DEFAULT_OPTS['scheduler_sleep_frequency'] = 0.5
+    hubblestack.config.DEFAULT_OPTS['default_include'] = 'hubble.d/*.conf'
+    hubblestack.config.DEFAULT_OPTS['logfile_maxbytes'] = 100000000  # 100MB
+    hubblestack.config.DEFAULT_OPTS['logfile_backups'] = 1  # maximum rotated logs
+    hubblestack.config.DEFAULT_OPTS['delete_inaccessible_azure_containers'] = False
     # Globbing will not be supported in nebula masking
-    salt.config.DEFAULT_MINION_OPTS['enable_globbing_in_nebula_masking'] = False
-    salt.config.DEFAULT_MINION_OPTS['osquery_logfile_maxbytes'] = 50000000  # 50MB
-    salt.config.DEFAULT_MINION_OPTS['osquery_logfile_maxbytes_toparse'] = 100000000  # 100MB
-    salt.config.DEFAULT_MINION_OPTS['osquery_backuplogs_count'] = 2
+    hubblestack.config.DEFAULT_OPTS['enable_globbing_in_nebula_masking'] = False
+    hubblestack.config.DEFAULT_OPTS['osquery_logfile_maxbytes'] = 50000000  # 50MB
+    hubblestack.config.DEFAULT_OPTS['osquery_logfile_maxbytes_toparse'] = 100000000  # 100MB
+    hubblestack.config.DEFAULT_OPTS['osquery_backuplogs_count'] = 2
 
 
 def _setup_logging(parsed_args):

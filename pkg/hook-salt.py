@@ -90,7 +90,7 @@ datas = DATAS
 binaries = BINARIES
 
 def _patch_salt_grains_core_server_id():
-    import salt.config # must import before salt.grains.core
+    import hubblestack.config # must import before salt.grains.core
     import salt.grains.core
     import sys
     import patch

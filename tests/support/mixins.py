@@ -30,7 +30,7 @@ from tests.support.runtests import RUNTIME_VARS
 from tests.support.paths import CODE_DIR
 
 # Import salt libs
-import salt.config
+import hubblestack.config
 import salt.utils.event
 import hubblestack.utils.files
 import salt.utils.functools
@@ -97,9 +97,9 @@ class AdaptedConfigurationTestCaseMixin(object):
         cdict = AdaptedConfigurationTestCaseMixin.get_config(config_for, from_scratch=True)
 
         if config_for in ('master', 'client_config'):
-            rdict = salt.config.apply_master_config(config_overrides, cdict)
+            rdict = hubblestack.config.apply_master_config(config_overrides, cdict)
         if config_for == 'minion':
-            rdict = salt.config.apply_minion_config(config_overrides, cdict)
+            rdict = hubblestack.config.apply_minion_config(config_overrides, cdict)
 
         verify_env([os.path.join(rdict['pki_dir'], 'minions'),
                     os.path.join(rdict['pki_dir'], 'minions_pre'),
@@ -130,46 +130,46 @@ class AdaptedConfigurationTestCaseMixin(object):
     def get_config(config_for, from_scratch=False):
         if from_scratch:
             if config_for in ('master', 'syndic_master', 'mm_master', 'mm_sub_master'):
-                return salt.config.master_config(
+                return hubblestack.config.master_config(
                     AdaptedConfigurationTestCaseMixin.get_config_file_path(config_for)
                 )
             elif config_for in ('minion', 'sub_minion'):
-                return salt.config.minion_config(
+                return hubblestack.config.get_config(
                     AdaptedConfigurationTestCaseMixin.get_config_file_path(config_for)
                 )
             elif config_for in ('syndic',):
-                return salt.config.syndic_config(
+                return hubblestack.config.syndic_config(
                     AdaptedConfigurationTestCaseMixin.get_config_file_path(config_for),
                     AdaptedConfigurationTestCaseMixin.get_config_file_path('minion')
                 )
             elif config_for == 'client_config':
-                return salt.config.client_config(
+                return hubblestack.config.client_config(
                     AdaptedConfigurationTestCaseMixin.get_config_file_path('master')
                 )
 
         if config_for not in RUNTIME_VARS.RUNTIME_CONFIGS:
             if config_for in ('master', 'syndic_master', 'mm_master', 'mm_sub_master'):
                 RUNTIME_VARS.RUNTIME_CONFIGS[config_for] = freeze(
-                    salt.config.master_config(
+                    hubblestack.config.master_config(
                         AdaptedConfigurationTestCaseMixin.get_config_file_path(config_for)
                     )
                 )
             elif config_for in ('minion', 'sub_minion'):
                 RUNTIME_VARS.RUNTIME_CONFIGS[config_for] = freeze(
-                    salt.config.minion_config(
+                    hubblestack.config.get_config(
                         AdaptedConfigurationTestCaseMixin.get_config_file_path(config_for)
                     )
                 )
             elif config_for in ('syndic',):
                 RUNTIME_VARS.RUNTIME_CONFIGS[config_for] = freeze(
-                    salt.config.syndic_config(
+                    hubblestack.config.syndic_config(
                         AdaptedConfigurationTestCaseMixin.get_config_file_path(config_for),
                         AdaptedConfigurationTestCaseMixin.get_config_file_path('minion')
                     )
                 )
             elif config_for == 'client_config':
                 RUNTIME_VARS.RUNTIME_CONFIGS[config_for] = freeze(
-                    salt.config.client_config(
+                    hubblestack.config.client_config(
                         AdaptedConfigurationTestCaseMixin.get_config_file_path('master')
                     )
                 )

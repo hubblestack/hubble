@@ -16,12 +16,17 @@ import hubblestack.syspaths
 
 log = logging.getLogger(__name__)
 Loaders = collections.namedtuple("Loaders", 'opts mods grains utils'.split())
+TestPaths = collections.namedtuple("TestPaths", 'tests sources hubble output ext'.split())
 
 tests_dir = os.path.dirname(os.path.realpath(__file__))
 sources_dir = os.path.dirname(os.path.dirname(tests_dir))
 hubble_dir = os.path.join(sources_dir, 'hubblestack')
 output_dir = os.path.join(tests_dir, 'output')
 ext_dir = os.path.join(hubble_dir, 'extmods')
+
+@pytest.fixture
+def test_paths():
+    return TestPaths(tests_dir, sources_dir, hubble_dir, output_dir, ext_dir)
 
 if sources_dir not in sys.path:
     sys.path.insert(0, sources_dir)

@@ -5,12 +5,14 @@ import copy
 import json
 import pytest
 
-def intentionally_changed_value_filter(key_name, value):
+def intentionally_changed_value_filter(key_name, value, test_paths):
     if isinstance(value, list):
-        return [ intentionally_changed_value_filter(key_name, v) for v in value ]
+        return [ intentionally_changed_value_filter(key_name, v, test_paths) for v in value ]
     if isinstance(value, dict):
-        return { k: intentionally_changed_value_filter(k, v) for k,v in value.items() }
+        return { k: intentionally_changed_value_filter(k, v, test_paths) for k,v in value.items() }
     if isinstance(value, str):
+        if test_paths is not None:
+            value = value.replace('/hubble/hubblestack', test_paths.hubble)
         value = value.replace('/etc/salt/', '/etc/hubble/')
         value = value.replace('/var/cache/salt/', '/var/cache/hubble/')
         value = value.replace('/srv/salt/', '/srv/hubble/')
@@ -115,7 +117,7 @@ def modified_hs_config_opts(__opts__, salt_config_opts):
     return opts
 
 def test_new_hs_config_same_as_old_salt_config(modified_hs_config_opts,
-        salt_config_opts, intentionally_removed_opts):
+        salt_config_opts, intentionally_removed_opts, test_paths):
 
     all_keys = set(modified_hs_config_opts).union(set(salt_config_opts))
     for key in all_keys:
@@ -126,5 +128,5 @@ def test_new_hs_config_same_as_old_salt_config(modified_hs_config_opts,
         # construct mini dictionaries so if the comparison fails, one can
         # actually figure out where the failure occured.
         modified = { key: modified_hs_config_opts[key] }
-        saltorig = { key: intentionally_changed_value_filter(key, salt_config_opts[key]) }
+        saltorig = { key: intentionally_changed_value_filter(key, salt_config_opts[key], test_paths) }
         assert modified == saltorig

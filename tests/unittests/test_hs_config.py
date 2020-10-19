@@ -1,22 +1,64 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import json
 import copy
+import json
 import pytest
 
 
 @pytest.fixture
 def intentionally_removed_opts():
     return {
-    'transport',
+    # Deprecated in 2019.2.0. Use 'random_master' instead.
+    # Do not remove! Keep as an alias for usability.
+    "master_shuffle",
+    # The directory containing unix sockets for things like the event bus
+    "sock_dir",
+    # If set, the master will sign all publications before they are sent out
+    "sign_pub_messages",
+    # The size of key that should be generated when creating new keys
+    "keysize",
+    # The transport system for this daemon. (i.e. zeromq, raet, etc)
+    "transport",
     # The number of seconds to wait when the client is requesting information about running jobs
-    'auth_tries',
+    "gather_job_timeout",
+    # The number of seconds to wait before timing out an authentication request
+    "auth_timeout",
+    # The number of attempts to authenticate to a master before giving up
+    "auth_tries",
     # The number of attempts to connect to a master before giving up.
     # Set this to -1 for unlimited attempts. This allows for a master to have
     # downtime and the minion to reconnect to it later when it comes back up.
     # In 'failover' mode, it is the number of attempts for each set of masters.
     # In this mode, it will cycle through the list of masters for each attempt.
+    "master_tries",
+    # Never give up when trying to authenticate to a master
+    "auth_safemode",
+    # Selects a random master when starting a minion up in multi-master mode or
+    # when starting a minion with salt-call. ``master`` must be a list.
+    "random_master",
+    # An upper bound for the amount of time for a minion to sleep before attempting to
+    # reauth after a restart.
+    "random_reauth_delay",
+    # The number of seconds for a syndic to poll for new messages that need to be forwarded
+    "syndic_event_forward_timeout",
+    # The length that the syndic event queue must hit before events are popped off and forwarded
+    "syndic_jid_forward_cache_hwm",
+    # Salt SSH configuration
+    "ssh_passwd",
+    "ssh_sudo",
+    "ssh_sudo_user",
+    "ssh_timeout",
+    "ssh_user",
+    "ssh_scan_ports",
+    "ssh_scan_timeout",
+    "ssh_identities_only",
+    "ssh_log_file",
+    "ssh_config_file",
+    "ssh_merge_pillar",
+    "cluster_mode",
+    "cluster_masters",
+    "sqlite_queue_dir",
     }
 
 @pytest.fixture
@@ -54,7 +96,7 @@ def salt_config_opts(intentionally_removed_opts):
 
 @pytest.fixture
 def modified_hs_config_opts(__opts__, salt_config_opts):
-    opts = copy.deepcopy(__opts__)
+    opts = copy.deepcopy(__opts__) ## __opts__ is already a deepcopy, but for clarity, we'll leave this
     for k,v in salt_config_opts.items():
         if v == '!NO COMPARE!' and k in opts:
             opts[k] = v
@@ -68,4 +110,9 @@ def test_new_hs_config_same_as_old_salt_config(modified_hs_config_opts,
         assert key not in intentionally_removed_opts
         assert key in modified_hs_config_opts
         assert key in salt_config_opts
-        assert modified_hs_config_opts[key] == salt_config_opts[key]
+
+        # construct mini dictionaries so if the comparison fails, one can
+        # actually figure out where the failure occured.
+        modified = { key: modified_hs_config_opts[key] }
+        saltorig = { key: salt_config_opts[key] }
+        assert modified == saltorig

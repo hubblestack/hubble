@@ -15,8 +15,6 @@ import logging
 import types
 from copy import deepcopy
 
-import salt.exceptions
-
 import hubblestack.utils.data
 import hubblestack.utils.dictupdate
 import hubblestack.utils.files
@@ -29,7 +27,9 @@ import hubblestack.utils.validate.path
 import hubblestack.utils.yaml
 import hubblestack.syspaths
 import hubblestack.defaults.exitcodes
+import hubblestack.utils.builtin_hacking
 
+from hubblestack.utils.exceptions import HubbleConfigurationError
 from hubblestack.utils.url import urlparse
 
 try:
@@ -1543,7 +1543,7 @@ def _read_conf_file(path):
         except hubblestack.utils.yaml.YAMLError as err:
             message = "Error parsing configuration file: {0} - {1}".format(path, err)
             log.error(message)
-            raise salt.exceptions.SaltConfigurationError(message)
+            raise HubbleConfigurationError(message)
 
         # only interpret documents as a valid conf, not things like strings,
         # which might have been caused by invalid yaml syntax
@@ -1553,7 +1553,7 @@ def _read_conf_file(path):
                 "should be a document, not {1}.".format(path, type(conf_opts))
             )
             log.error(message)
-            raise salt.exceptions.SaltConfigurationError(message)
+            raise HubbleConfigurationError(message)
 
         # allow using numeric ids: convert int to string
         if "id" in conf_opts:
@@ -1641,7 +1641,7 @@ def load_config(path, env_var, default_path=None, exit_on_config_errors=True):
         try:
             opts = _read_conf_file(path)
             opts["conf_file"] = path
-        except salt.exceptions.SaltConfigurationError as error:
+        except HubbleConfigurationError as error:
             log.error(error)
             if exit_on_config_errors:
                 sys.exit(salt.defaults.exitcodes.EX_GENERIC)
@@ -1690,7 +1690,7 @@ def include_config(include, orig_path, verbose, exit_on_config_errors=False):
             log.debug("Including configuration from '%s'", fn_)
             try:
                 opts = _read_conf_file(fn_)
-            except salt.exceptions.SaltConfigurationError as error:
+            except HubbleConfigurationError as error:
                 log.error(error)
                 if exit_on_config_errors:
                     sys.exit(salt.defaults.exitcodes.EX_GENERIC)
@@ -1991,5 +1991,5 @@ def _update_ssl_config(opts):
             message = 'SSL option \'{0}\' must be set to one of the following values: \'{1}\'.' \
                     .format(key, '\', \''.join([val for val in dir(ssl) if val.startswith(prefix)]))
             log.error(message)
-            raise salt.exceptions.SaltConfigurationError(message)
+            raise HubbleConfigurationError(message)
         opts['ssl'][key] = getattr(ssl, val)

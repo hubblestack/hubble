@@ -138,6 +138,10 @@ class MinionError(HubbleException):
     Minion problems reading uris such as salt:// or http://
     '''
 
+class HubbleConfigurationError(HubbleException):
+    """
+    Configuration Error
+    """
 
 class FileserverConfigError(HubbleException):
     '''

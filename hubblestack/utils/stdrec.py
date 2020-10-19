@@ -33,26 +33,6 @@ def get_fqdn():
     Do lots of error checking and get as close to a useable fqdn as possible
     """
     minion_id = __opts__['id']
-    local_fqdn = __grains__.get('local_fqdn', __grains__['fqdn'])
-
-    ret = {
-        'minion_id': minion_id,
-        'dest_host': get_fqdn(),
-        'dest_ip': get_fqdn_ip4(),
-        'dest_fqdn': local_fqdn,
-        'system_uuid': __grains__.get('system_uuid')
-    }
-
-    ret.update(__grains__.get('cloud_details', {}))
-
-    return ret
-
-
-def get_fqdn():
-    """
-    Do lots of error checking and get as close to a useable fqdn as possible
-    """
-    minion_id = __opts__['id']
     fqdn = __grains__['fqdn']
     fqdn = fqdn if fqdn else minion_id
 

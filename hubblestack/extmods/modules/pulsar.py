@@ -802,7 +802,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
                         if not isinstance(sum_type, str):
                             sum_type = 'sha256'
                         old_checksum = __context__['pulsar_checksums'].get(pathname)
-                        new_checksum = __salt__['file.get_hash'](pathname, sum_type)
+                        new_checksum = __mods__['file.get_hash'](pathname, sum_type)
                         __context__['pulsar_checksums'][pathname] = new_checksum
                         sub['checksum'] = __context__['pulsar_checksums'][pathname]
                         sub['checksum_type'] = sum_type
@@ -822,7 +822,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
 
                 if cm.config.get('stats', False):
                     if os.path.exists(pathname):
-                        sub['stats'] = __salt__['file.stats'](pathname)
+                        sub['stats'] = __mods__['file.stats'](pathname)
                     else:
                         sub['stats'] = {}
                     if os.path.isfile(pathname):
@@ -958,8 +958,8 @@ def canary(change_file=None):
     if change_file is None:
         conf_dir = os.path.dirname(__opts__['conf_file'])
         change_file = os.path.join(conf_dir, 'fim_canary.tmp')
-    __salt__['file.touch'](change_file)
-    __salt__['file.remove'](change_file)
+    __mods__['file.touch'](change_file)
+    __mods__['file.remove'](change_file)
 
 
 def _dict_update(dest, upd, recursive_update=True, merge_lists=False):

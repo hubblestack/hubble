@@ -335,7 +335,8 @@ def rm_rf(path):
             os.chmod(path, stat.S_IWUSR)
             func(path)
         else:
-            raise  # pylint: disable=E0704
+            raise Exception  # pylint: disable=E0704
+
     if os.path.islink(path) or not os.path.isdir(path):
         os.remove(path)
     else:
@@ -345,3 +346,21 @@ def rm_rf(path):
             except TypeError:
                 pass
         shutil.rmtree(path, onerror=_onerror)
+
+
+def normalize_mode(mode):
+    """
+    Return a mode value, normalized to a string and containing a leading zero
+    if it does not have one.
+
+    Allow "keep" as a valid mode (used by file state/module to preserve mode
+    from the Salt fileserver in file states).
+    """
+    if mode is None:
+        return None
+    if not isinstance(mode, str):
+        mode = str(mode)
+    mode = mode.replace("0o", "0")
+    # Strip any quotes any initial zeroes, then though zero-pad it up to 4.
+    # This ensures that somethign like '00644' is normalized to '0644'
+    return mode.strip('"').strip("'").lstrip("0").zfill(4)

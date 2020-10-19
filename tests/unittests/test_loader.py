@@ -47,6 +47,6 @@ def test_can_find_uniquely_saltstack_module(module_dirs):
     assert found
 
 # XXX: this should get removed for the same reason as above
-def test_can_load_salt_and_hubblestack_mods(hubblestack_loaders):
-    assert 'pulsar.process' in hubblestack_loaders.mods
-    assert 'cp.cache_file' in hubblestack_loaders.mods
+def test_can_load_salt_and_hubblestack_mods(__mods__):
+    assert 'pulsar.process' in __mods__
+    assert 'saltutil.sync_all' in __mods__

@@ -22,7 +22,6 @@ import types
 from zipimport import zipimporter
 
 # Import salt libs
-# XXX: all these should be hubble.config, hubble.defaults.x, hubble.utils.x, etc
 import hubblestack.config
 import hubblestack.syspaths
 import hubblestack.utils.args
@@ -52,7 +51,13 @@ except ImportError:
 
 log = logging.getLogger(__name__)
 
-SALT_BASE_PATH = os.path.abspath(hubblestack.syspaths.INSTALL_DIR)
+# XXX: we only need this while we're still loading salt modules
+def __salt_basepath():
+    import salt.syspaths
+    return os.path.abspath(salt.syspaths.INSTALL_DIR)
+# XXX: we only need this while we're still loading salt modules
+SALT_BASE_PATH = __salt_basepath()
+
 HUBBLE_BASE_PATH = os.path.abspath(hubblestack.syspaths.INSTALL_DIR)
 LOADED_BASE_NAME = 'hubble.loaded'
 

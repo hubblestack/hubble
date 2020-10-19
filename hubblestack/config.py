@@ -123,9 +123,6 @@ VALID_OPTS = {
     # The fingerprint of the master key may be specified to increase security. Generate
     # a master fingerprint with `salt-key -F master`
     "master_finger": str,
-    # Deprecated in 2019.2.0. Use 'random_master' instead.
-    # Do not remove! Keep as an alias for usability.
-    "master_shuffle": bool,
     # When in multi-master mode, temporarily remove a master from the list if a conenction
     # is interrupted and try another master in the list.
     "master_alive_interval": int,
@@ -192,8 +189,6 @@ VALID_OPTS = {
     "cache_jobs": bool,
     # The path to the salt configuration file
     "conf_file": str,
-    # The directory containing unix sockets for things like the event bus
-    "sock_dir": str,
     # The pool size of unix sockets, it is necessary to avoid blocking waiting for zeromq and tcp communications.
     "sock_pool_size": int,
     # Specifies how the file server should backup files, if enabled. The backups
@@ -676,14 +671,6 @@ VALID_OPTS = {
     # A compound target definition.
     # See: http://docs.saltstack.com/en/latest/topics/targeting/nodegroups.html
     "nodegroups": (dict, list),
-    # List-only nodegroups for salt-ssh. Each group must be formed as either a
-    # comma-separated list, or a YAML list.
-    "ssh_list_nodegroups": dict,
-    # By default, salt-ssh uses its own specially-generated RSA key to auth
-    # against minions. If this is set to True, salt-ssh will look in
-    # for a key at ~/.ssh/id_rsa, and fall back to using its own specially-
-    # generated RSA key if that file doesn't exist.
-    "ssh_use_home_key": bool,
     # The logfile location for salt-key
     "key_logfile": str,
     # The upper bound for the random number of seconds that a minion should
@@ -735,52 +722,6 @@ VALID_OPTS = {
     "minion_id_caching": bool,
     # Always generate minion id in lowercase.
     "minion_id_lowercase": bool,
-    # If set, the master will sign all publications before they are sent out
-    "sign_pub_messages": bool,
-    # The size of key that should be generated when creating new keys
-    "keysize": int,
-    # The transport system for this daemon. (i.e. zeromq, raet, etc)
-    "transport": str,
-    # The number of seconds to wait when the client is requesting information about running jobs
-    "gather_job_timeout": int,
-    # The number of seconds to wait before timing out an authentication request
-    "auth_timeout": int,
-    # The number of attempts to authenticate to a master before giving up
-    "auth_tries": int,
-    # The number of attempts to connect to a master before giving up.
-    # Set this to -1 for unlimited attempts. This allows for a master to have
-    # downtime and the minion to reconnect to it later when it comes back up.
-    # In 'failover' mode, it is the number of attempts for each set of masters.
-    # In this mode, it will cycle through the list of masters for each attempt.
-    "master_tries": int,
-    # Never give up when trying to authenticate to a master
-    "auth_safemode": bool,
-    # Selects a random master when starting a minion up in multi-master mode or
-    # when starting a minion with salt-call. ``master`` must be a list.
-    "random_master": bool,
-    # An upper bound for the amount of time for a minion to sleep before attempting to
-    # reauth after a restart.
-    "random_reauth_delay": int,
-    # The number of seconds for a syndic to poll for new messages that need to be forwarded
-    "syndic_event_forward_timeout": float,
-    # The length that the syndic event queue must hit before events are popped off and forwarded
-    "syndic_jid_forward_cache_hwm": int,
-    # Salt SSH configuration
-    "ssh_passwd": str,
-    "ssh_port": str,
-    "ssh_sudo": bool,
-    "ssh_sudo_user": str,
-    "ssh_timeout": float,
-    "ssh_user": str,
-    "ssh_scan_ports": str,
-    "ssh_scan_timeout": float,
-    "ssh_identities_only": bool,
-    "ssh_log_file": str,
-    "ssh_config_file": str,
-    "ssh_merge_pillar": bool,
-    "cluster_mode": bool,
-    "cluster_masters": list,
-    "sqlite_queue_dir": str,
     "queue_dirs": list,
     # Instructs the minion to ping its master(s) every n number of minutes. Used
     # primarily as a mitigation technique against minion disconnects.
@@ -935,12 +876,10 @@ DEFAULT_OPTS = {
     "source_publish_port": 0,
     "master_port": 4506,
     "master_finger": "",
-    "master_shuffle": False,
     "master_alive_interval": 0,
     "master_failback": False,
     "master_failback_interval": 0,
     "verify_master_pubkey_sign": False,
-    "sign_pub_messages": False,
     "always_verify_signature": False,
     "master_sign_key_name": "master_sign",
     "syndic_finger": "",
@@ -956,7 +895,6 @@ DEFAULT_OPTS = {
     "grains_cache_expiration": 300,
     "grains_deep_merge": False,
     "conf_file": os.path.join(salt.syspaths.CONFIG_DIR, "minion"),
-    "sock_dir": os.path.join(salt.syspaths.SOCK_DIR, "minion"),
     "sock_pool_size": 1,
     "backup_mode": "",
     "renderer": "jinja|yaml",
@@ -1133,7 +1071,6 @@ DEFAULT_OPTS = {
     "recon_randomize": True,
     "return_retry_timer": 5,
     "return_retry_timer_max": 10,
-    "random_reauth_delay": 10,
     "winrepo_source_dir": "salt://win/repo-ng/",
     "winrepo_dir": os.path.join(salt.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo"),
     "winrepo_dir_ng": os.path.join(salt.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo-ng"),
@@ -1165,16 +1102,7 @@ DEFAULT_OPTS = {
     "grains_refresh_every": 0,
     "minion_id_caching": True,
     "minion_id_lowercase": False,
-    "keysize": 2048,
-    "transport": "zeromq",
-    "auth_timeout": 5,
-    "auth_tries": 7,
-    "master_tries": _MASTER_TRIES,
     "master_tops_first": False,
-    "auth_safemode": False,
-    "random_master": False,
-    "cluster_mode": False,
-    "cluster_masters": [],
     "restart_on_error": False,
     "ping_interval": 0,
     "username": None,
@@ -1210,7 +1138,6 @@ DEFAULT_OPTS = {
     },
     "discovery": False,
     "schedule": {},
-    "ssh_merge_pillar": True,
 }
 
 DEFAULT_MASTER_OPTS = {
@@ -1221,7 +1148,6 @@ DEFAULT_MASTER_OPTS = {
     "auth_mode": 1,
     "user": _MASTER_USER,
     "worker_threads": 5,
-    "sock_dir": os.path.join(salt.syspaths.SOCK_DIR, "master"),
     "sock_pool_size": 1,
     "ret_port": 4506,
     "timeout": 5,
@@ -1439,8 +1365,6 @@ DEFAULT_MASTER_OPTS = {
     "search": "",
     "loop_interval": 60,
     "nodegroups": {},
-    "ssh_list_nodegroups": {},
-    "ssh_use_home_key": False,
     "cython_enable": False,
     "enable_gpu_grains": False,
     # XXX: Remove 'key_logfile' support in 2014.1.0
@@ -1473,29 +1397,10 @@ DEFAULT_MASTER_OPTS = {
     "tcp_keepalive_idle": 300,
     "tcp_keepalive_cnt": -1,
     "tcp_keepalive_intvl": -1,
-    "sign_pub_messages": True,
-    "keysize": 2048,
-    "transport": "zeromq",
     "gather_job_timeout": 10,
     "syndic_event_forward_timeout": 0.5,
     "syndic_jid_forward_cache_hwm": 100,
     "regen_thin": False,
-    "ssh_passwd": "",
-    "ssh_priv_passwd": "",
-    "ssh_port": "22",
-    "ssh_sudo": False,
-    "ssh_sudo_user": "",
-    "ssh_timeout": 60,
-    "ssh_user": "root",
-    "ssh_scan_ports": "22",
-    "ssh_scan_timeout": 0.01,
-    "ssh_identities_only": False,
-    "ssh_log_file": os.path.join(salt.syspaths.LOGS_DIR, "ssh"),
-    "ssh_config_file": os.path.join(salt.syspaths.HOME_DIR, ".ssh", "config"),
-    "cluster_mode": False,
-    "cluster_masters": [],
-    "sqlite_queue_dir": os.path.join(salt.syspaths.CACHE_DIR, "master", "queues"),
-    "queue_dirs": [],
     "cli_summary": False,
     "max_minions": 0,
     "master_sign_key_name": "master_sign",
@@ -1567,16 +1472,13 @@ DEFAULT_PROXY_MINION_OPTS = {
     "proxy_keep_alive_interval": 1,  # frequency of the proxy keepalive in minutes
     "pki_dir": os.path.join(salt.syspaths.CONFIG_DIR, "pki", "proxy"),
     "cachedir": os.path.join(salt.syspaths.CACHE_DIR, "proxy"),
-    "sock_dir": os.path.join(salt.syspaths.SOCK_DIR, "proxy"),
 }
 # ----- Salt Cloud Configuration Defaults ----------------------------------->
 DEFAULT_CLOUD_OPTS = {
     "verify_env": True,
     "default_include": "cloud.conf.d/*.conf",
     # Global defaults
-    "ssh_auth": "",
     "cachedir": os.path.join(salt.syspaths.CACHE_DIR, "cloud"),
-    "keysize": 4096,
     "os": "",
     "script": "bootstrap-salt",
     "start_action": None,
@@ -1781,18 +1683,6 @@ def _validate_opts(opts):
     # Convert list to comma-delimited string for 'return' config option
     if isinstance(opts.get("return"), list):
         opts["return"] = ",".join(opts["return"])
-
-    # RAET on Windows uses 'win32file.CreateMailslot()' for IPC. Due to this,
-    # sock_dirs must start with '\\.\mailslot\' and not contain any colons.
-    # We don't expect the user to know this, so we will fix up their path for
-    # them if it isn't compliant.
-    if (
-        salt.utils.platform.is_windows()
-        and opts.get("transport") == "raet"
-        and "sock_dir" in opts
-        and not opts["sock_dir"].startswith("\\\\.\\mailslot\\")
-    ):
-        opts["sock_dir"] = "\\\\.\\mailslot\\" + opts["sock_dir"].replace(":", "")
 
     for error in errors:
         log.warning(error)
@@ -2184,9 +2074,6 @@ def apply_config(overrides=None, defaults=None, cache_minion_id=False, minion_id
             newpath_list[0], "salt", opts["id"], newpath_list[1]
         )
 
-    if len(opts["sock_dir"]) > len(opts["cachedir"]) + 10:
-        opts["sock_dir"] = os.path.join(opts["cachedir"], ".salt-unix")
-
     # Enabling open mode requires that the value be set to True, and
     # nothing else!
     opts["open_mode"] = opts["open_mode"] is True
@@ -2208,7 +2095,6 @@ def apply_config(overrides=None, defaults=None, cache_minion_id=False, minion_id
     prepend_root_dirs = [
         "pki_dir",
         "cachedir",
-        "sock_dir",
         "extension_modules",
         "pidfile",
     ]

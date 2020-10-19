@@ -455,3 +455,79 @@ class DataTestCase(TestCase):
             hubblestack.utils.data.stringify(['one', 'two', str('three'), 4, 5]),  # future lint: disable=blacklisted-function
             ['one', 'two', 'three', '4', '5']
         )
+
+    def test_subdict_match(self):
+        test_two_level_dict = {"foo": {"bar": "baz"}}
+        test_two_level_comb_dict = {"foo": {"bar": "baz:woz"}}
+        test_two_level_dict_and_list = {
+            "abc": ["def", "ghi", {"lorem": {"ipsum": [{"dolor": "sit"}]}}],
+        }
+        test_three_level_dict = {"a": {"b": {"c": "v"}}}
+
+        self.assertTrue(
+            hubblestack.utils.data.subdict_match(test_two_level_dict, "foo:bar:baz")
+        )
+        # In test_two_level_comb_dict, 'foo:bar' corresponds to 'baz:woz', not
+        # 'baz'. This match should return False.
+        self.assertFalse(
+            hubblestack.utils.data.subdict_match(test_two_level_comb_dict, "foo:bar:baz")
+        )
+        # This tests matching with the delimiter in the value part (in other
+        # words, that the path 'foo:bar' corresponds to the string 'baz:woz').
+        self.assertTrue(
+            hubblestack.utils.data.subdict_match(test_two_level_comb_dict, "foo:bar:baz:woz")
+        )
+        # This would match if test_two_level_comb_dict['foo']['bar'] was equal
+        # to 'baz:woz:wiz', or if there was more deep nesting. But it does not,
+        # so this should return False.
+        self.assertFalse(
+            hubblestack.utils.data.subdict_match(
+                test_two_level_comb_dict, "foo:bar:baz:woz:wiz"
+            )
+        )
+        # This tests for cases when a key path corresponds to a list. The
+        # value part 'ghi' should be successfully matched as it is a member of
+        # the list corresponding to key path 'abc'. It is somewhat a
+        # duplication of a test within test_traverse_dict_and_list, but
+        # hubblestack.utils.data.subdict_match() does more than just invoke
+        # salt.utils.traverse_list_and_dict() so this particular assertion is a
+        # sanity check.
+        self.assertTrue(
+            hubblestack.utils.data.subdict_match(test_two_level_dict_and_list, "abc:ghi")
+        )
+        # This tests the use case of a dict embedded in a list, embedded in a
+        # list, embedded in a dict. This is a rather absurd case, but it
+        # confirms that match recursion works properly.
+        self.assertTrue(
+            hubblestack.utils.data.subdict_match(
+                test_two_level_dict_and_list, "abc:lorem:ipsum:dolor:sit"
+            )
+        )
+        # Test four level dict match for reference
+        self.assertTrue(hubblestack.utils.data.subdict_match(test_three_level_dict, "a:b:c:v"))
+        # Test regression in 2015.8 where 'a:c:v' would match 'a:b:c:v'
+        self.assertFalse(hubblestack.utils.data.subdict_match(test_three_level_dict, "a:c:v"))
+        # Test wildcard match
+        self.assertTrue(hubblestack.utils.data.subdict_match(test_three_level_dict, "a:*:c:v"))
+
+    def test_subdict_match_with_wildcards(self):
+        """
+        Tests subdict matching when wildcards are used in the expression
+        """
+        data = {"a": {"b": {"ç": "d", "é": ["eff", "gee", "8ch"], "ĩ": {"j": "k"}}}}
+        assert hubblestack.utils.data.subdict_match(data, "*:*:*:*")
+        assert hubblestack.utils.data.subdict_match(data, "a:*:*:*")
+        assert hubblestack.utils.data.subdict_match(data, "a:b:*:*")
+        assert hubblestack.utils.data.subdict_match(data, "a:b:ç:*")
+        assert hubblestack.utils.data.subdict_match(data, "a:b:*:d")
+        assert hubblestack.utils.data.subdict_match(data, "a:*:ç:d")
+        assert hubblestack.utils.data.subdict_match(data, "*:b:ç:d")
+        assert hubblestack.utils.data.subdict_match(data, "*:*:ç:d")
+        assert hubblestack.utils.data.subdict_match(data, "*:*:*:d")
+        assert hubblestack.utils.data.subdict_match(data, "a:*:*:d")
+        assert hubblestack.utils.data.subdict_match(data, "a:b:*:ef*")
+        assert hubblestack.utils.data.subdict_match(data, "a:b:*:g*")
+        assert hubblestack.utils.data.subdict_match(data, "a:b:*:j:*")
+        assert hubblestack.utils.data.subdict_match(data, "a:b:*:j:k")
+        assert hubblestack.utils.data.subdict_match(data, "a:b:*:*:k")
+        assert hubblestack.utils.data.subdict_match(data, "a:b:*:*:*")

@@ -100,9 +100,8 @@ class TestPulsar(object):
             ''' pretend match.compound '''
             return value
 
-        __mods__ = {'cp.cache_file': cp_cache_file}
-        __salt__ = {'match.compound': match_compound}
-        pulsar.__salt__ = __salt__
+        __mods__ = {'cp.cache_file': cp_cache_file, 'match.compound': match_compound}
+        pulsar.__salt__ = __mods__
         pulsar.__mods__ = __mods__
         get_top_data_config = pulsar.get_top_data(topfile)
         configs = ['salt://hubblestack_pulsar/' + config.replace('.', '/') + '.yaml'
@@ -120,9 +119,8 @@ class TestPulsar(object):
             ''' pretend match.compound '''
             return value
 
-        __mods__ = {'cp.cache_file': cp_cache_file}
-        __salt__ = {'match.compound': match_compound}
-        pulsar.__salt__ = __salt__
+        __mods__ = {'cp.cache_file': cp_cache_file, 'match.compound': match_compound}
+        pulsar.__salt__ = __mods__
         pulsar.__mods__ = __mods__
         result = pulsar.get_top_data(topfile)
         pulsar.__salt__ = {}
@@ -140,12 +138,11 @@ class TestPulsar(object):
             ''' pretend match.compound '''
             return value
 
-        __mods__ = {'cp.cache_file': cp_cache_file}
-        __salt__ = {'match.compound': match_compound}
-        pulsar.__salt__ = __salt__
+        __mods__ = {'cp.cache_file': cp_cache_file, 'match.compound': match_compound}
+        pulsar.__salt__ = __mods__
         pulsar.__mods__ = __mods__
         try:
-            result = pulsar.get_top_data(topfile)
+            _result = pulsar.get_top_data(topfile)
             pulsar.__salt__ = {}
         except CommandExecutionError:
             pass

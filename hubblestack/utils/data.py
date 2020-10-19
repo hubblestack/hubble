@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Functions for manipulating, inspecting, or otherwise working with data types
 and data structures.
-'''
+"""
 
+import fnmatch
 import logging
+import re
 
 try:
     from collections.abc import Mapping, MutableMapping, Sequence
@@ -12,6 +14,9 @@ except ImportError:
     from collections import Mapping, MutableMapping, Sequence
 
 import hubblestack.utils.stringutils
+from hubblestack.defaults import (  # pylint: disable=3rd-party-module-not-gated
+    DEFAULT_TARGET_DELIM,
+)
 
 import hubblestack.utils.yaml
 from hubblestack.utils.odict import OrderedDict
@@ -20,16 +25,16 @@ log = logging.getLogger(__name__)
 
 
 class CaseInsensitiveDict(MutableMapping):
-    '''
+    """
     Inspired by requests' case-insensitive dict implementation, but works with
     non-string keys as well.
-    '''
+    """
 
     def __init__(self, init=None, **kwargs):
-        '''
+        """
         Force internal dict to be ordered to ensure a consistent iteration
         order, irrespective of case.
-        '''
+        """
         self._data = OrderedDict()
         self.update(init or {}, **kwargs)
 
@@ -59,23 +64,23 @@ class CaseInsensitiveDict(MutableMapping):
         return repr(dict(iter(self.items())))
 
     def items_lower(self):
-        '''
+        """
         Returns a generator iterating over keys and values, with the keys all
         being lowercase.
-        '''
+        """
         return ((key, val[1]) for key, val in iter(self._data.items()))
 
     def copy(self):
-        '''
+        """
         Returns a copy of the object
-        '''
+        """
         return CaseInsensitiveDict(iter(self._data.items()))
 
 
 def decode(data, encoding=None, errors='strict', keep=False,
            normalize=False, preserve_dict_class=False, preserve_tuples=False,
            to_str=False):
-    '''
+    """
     Generic function which will decode whichever type is passed, if necessary.
     Optionally use to_str=True to ensure strings are str types and not unicode
     on Python 2.
@@ -101,7 +106,7 @@ def decode(data, encoding=None, errors='strict', keep=False,
     two strings above, in which "й" is represented as two code points (i.e. one
     for the base character, and one for the breve mark). Normalizing allows for
     a more reliable test case.
-    '''
+    """
     _decode_func = hubblestack.utils.stringutils.to_unicode \
         if not to_str \
         else hubblestack.utils.stringutils.to_str
@@ -133,7 +138,7 @@ def decode(data, encoding=None, errors='strict', keep=False,
 
 def encode(data, encoding=None, errors='strict', keep=False,
            preserve_dict_class=False, preserve_tuples=False):
-    '''
+    """
     Generic function which will encode whichever type is passed, if necessary
 
     If `strict` is True, and `keep` is False, and we fail to encode, a
@@ -141,7 +146,7 @@ def encode(data, encoding=None, errors='strict', keep=False,
     original value to silently be returned in cases where encoding fails. This
     can be useful for cases where the data passed to this function is likely to
     contain binary blobs.
-    '''
+    """
     if isinstance(data, Mapping):
         return encode_dict(data, encoding, errors, keep,
                            preserve_dict_class, preserve_tuples)
@@ -169,9 +174,9 @@ def encode(data, encoding=None, errors='strict', keep=False,
 
 def encode_dict(data, encoding=None, errors='strict', keep=False,
                 preserve_dict_class=False, preserve_tuples=False):
-    '''
+    """
     Encode all string values to bytes
-    '''
+    """
     rv = data.__class__() if preserve_dict_class else {}
     for key, value in iter(data.items()):
         if isinstance(key, tuple):
@@ -220,9 +225,9 @@ def encode_dict(data, encoding=None, errors='strict', keep=False,
 
 def encode_list(data, encoding=None, errors='strict', keep=False,
                 preserve_dict_class=False, preserve_tuples=False):
-    '''
+    """
     Encode all string values to bytes
-    '''
+    """
     ret_val = []
     for item in data:
         if isinstance(item, list):
@@ -254,9 +259,9 @@ def encode_list(data, encoding=None, errors='strict', keep=False,
 
 def encode_tuple(data, encoding=None, errors='strict', keep=False,
                  preserve_dict_class=False):
-    '''
+    """
     Encode all string values to Unicode
-    '''
+    """
     return tuple(
         encode_list(data, encoding, errors, keep, preserve_dict_class, True))
 
@@ -264,10 +269,10 @@ def encode_tuple(data, encoding=None, errors='strict', keep=False,
 def decode_dict(data, encoding=None, errors='strict', keep=False,
                 normalize=False, preserve_dict_class=False,
                 preserve_tuples=False, to_str=False):
-    '''
+    """
     Decode all string values to Unicode. Optionally use to_str=True to ensure
     strings are str types and not unicode on Python 2.
-    '''
+    """
     _decode_func = hubblestack.utils.stringutils.to_unicode \
         if not to_str \
         else hubblestack.utils.stringutils.to_str
@@ -323,10 +328,10 @@ def decode_dict(data, encoding=None, errors='strict', keep=False,
 def decode_list(data, encoding=None, errors='strict', keep=False,
                 normalize=False, preserve_dict_class=False,
                 preserve_tuples=False, to_str=False):
-    '''
+    """
     Decode all string values to Unicode. Optionally use to_str=True to ensure
     strings are str types and not unicode on Python 2.
-    '''
+    """
     _decode_func = hubblestack.utils.stringutils.to_unicode \
         if not to_str \
         else hubblestack.utils.stringutils.to_str
@@ -362,10 +367,10 @@ def decode_list(data, encoding=None, errors='strict', keep=False,
 
 def decode_tuple(data, encoding=None, errors='strict', keep=False,
                  normalize=False, preserve_dict_class=False, to_str=False):
-    '''
+    """
     Decode all string values to Unicode. Optionally use to_str=True to ensure
     strings are str types and not unicode on Python 2.
-    '''
+    """
     return tuple(
         decode_list(data, encoding, errors, keep, normalize,
                     preserve_dict_class, True, to_str)
@@ -377,10 +382,10 @@ def repack_dictlist(data,
                     recurse=False,
                     key_cb=None,
                     val_cb=None):
-    '''
+    """
     Takes a list of one-element dicts (as found in many SLS schemas) and
     repacks into a single dictionary.
-    '''
+    """
     if isinstance(data, str):
         try:
             data = hubblestack.utils.yaml.safe_load(data)
@@ -443,10 +448,10 @@ def repack_dictlist(data,
 
 
 def is_dictlist(data):
-    '''
+    """
     Returns True if data is a list of one-element dicts (as found in many SLS
     schemas), otherwise returns False
-    '''
+    """
     if isinstance(data, list):
         for element in data:
             if isinstance(element, dict):
@@ -459,10 +464,10 @@ def is_dictlist(data):
 
 
 def compare_dicts(old=None, new=None):
-    '''
+    """
     Compare before and after results from various salt functions, returning a
     dict describing the changes that were made.
-    '''
+    """
     ret = {}
     for key in set((new or {})).union((old or {})):
         if key not in old:
@@ -481,7 +486,7 @@ def compare_dicts(old=None, new=None):
 
 
 def traverse_dict_and_list(data, key, default=None, delimiter=':'):
-    '''
+    """
     Traverse a dict or list using a colon-delimited (or otherwise delimited,
     using the 'delimiter' param) target string. The target 'foo:bar:0' will
     return data['foo']['bar'][0] if this value exists, and will otherwise
@@ -490,7 +495,7 @@ def traverse_dict_and_list(data, key, default=None, delimiter=':'):
     The target 'foo:bar:0' will return data['foo']['bar'][0] if data like
     {'foo':{'bar':['baz']}} , if data like {'foo':{'bar':{'0':'baz'}}}
     then return data['foo']['bar']['0']
-    '''
+    """
     ptr = data
     for each in key.split(delimiter):
         if isinstance(ptr, list):
@@ -523,10 +528,10 @@ def traverse_dict_and_list(data, key, default=None, delimiter=':'):
 
 
 def stringify(data):
-    '''
+    """
     Given an iterable, returns its items as a list, with any non-string items
     converted to unicode strings.
-    '''
+    """
     ret = []
     for item in data:
         if not isinstance(item, str):
@@ -539,14 +544,14 @@ def stringify(data):
 
 
 def is_true(value=None):
-    '''
+    """
     Returns a boolean value representing the "truth" of the value passed. The
     rules for what is a "True" value are:
 
         1. Integer/float values greater than 0
         2. The string values "True" and "true"
         3. Any object for which bool(obj) returns True
-    '''
+    """
     # First, try int/float conversion
     try:
         value = int(value)
@@ -592,7 +597,144 @@ def to_lowercase(data, preserve_dict_class=False):
 
 
 def is_list(value):
-    '''
+    """
     Check if a variable is a list.
-    '''
+    """
     return isinstance(value, list)
+
+
+def subdict_match(
+        data, expr, delimiter=DEFAULT_TARGET_DELIM, regex_match=False, exact_match=False
+):
+    """
+    Check for a match in a dictionary using a delimiter character to denote
+    levels of subdicts, and also allowing the delimiter character to be
+    matched. Thus, 'foo:bar:baz' will match data['foo'] == 'bar:baz' and
+    data['foo']['bar'] == 'baz'. The latter would take priority over the
+    former, as more deeply-nested matches are tried first.
+    """
+
+    def _match(target, pattern, regex_match=False, exact_match=False):
+        # The reason for using six.text_type first and _then_ using
+        # to_unicode as a fallback is because we want to eventually have
+        # unicode types for comparison below. If either value is numeric then
+        # six.text_type will turn it into a unicode string. However, if the
+        # value is a PY2 str type with non-ascii chars, then the result will be
+        # a UnicodeDecodeError. In those cases, we simply use to_unicode to
+        # decode it to unicode. The reason we can't simply use to_unicode to
+        # begin with is that (by design) to_unicode will raise a TypeError if a
+        # non-string/bytestring/bytearray value is passed.
+        try:
+            target = str(target).lower()
+        except UnicodeDecodeError:
+            target = hubblestack.utils.stringutils.to_unicode(target).lower()
+        try:
+            pattern = str(pattern).lower()
+        except UnicodeDecodeError:
+            pattern = hubblestack.utils.stringutils.to_unicode(pattern).lower()
+        if regex_match:
+            try:
+                return re.match(pattern, target)
+            except Exception:  # pylint: disable=broad-except
+                log.error("Invalid regex '%s' in match", pattern)
+                return False
+        else:
+            return (
+                target == pattern if exact_match else fnmatch.fnmatch(target, pattern)
+            )
+
+    def _dict_match(target, pattern, regex_match=False, exact_match=False):
+        ret = False
+        wildcard = pattern.startswith("*:")
+        if wildcard:
+            pattern = pattern[2:]
+
+        if pattern == "*":
+            # We are just checking that the key exists
+            ret = True
+        if not ret and pattern in target:
+            # We might want to search for a key
+            ret = True
+        if not ret and subdict_match(
+                target, pattern, regex_match=regex_match, exact_match=exact_match
+        ):
+            ret = True
+        if not ret and wildcard:
+            for key in target:
+                if isinstance(target[key], dict):
+                    if _dict_match(
+                            target[key],
+                            pattern,
+                            regex_match=regex_match,
+                            exact_match=exact_match,
+                    ):
+                        return True
+                elif isinstance(target[key], list):
+                    for item in target[key]:
+                        if _match(
+                                item,
+                                pattern,
+                                regex_match=regex_match,
+                                exact_match=exact_match,
+                        ):
+                            return True
+                elif _match(
+                        target[key],
+                        pattern,
+                        regex_match=regex_match,
+                        exact_match=exact_match,
+                ):
+                    return True
+        return ret
+
+    splits = expr.split(delimiter)
+    num_splits = len(splits)
+    if num_splits == 1:
+        # Delimiter not present, this can't possibly be a match
+        return False
+
+    # If we have 4 splits, then we have three delimiters. Thus, the indexes we
+    # want to use are 3, 2, and 1, in that order.
+    for idx in range(num_splits - 1, 0, -1):
+        key = delimiter.join(splits[:idx])
+        if key == "*":
+            # We are matching on everything under the top level, so we need to
+            # treat the match as the entire data being passed in
+            matchstr = expr
+            match = data
+        else:
+            matchstr = delimiter.join(splits[idx:])
+            match = traverse_dict_and_list(data, key, {}, delimiter=delimiter)
+        log.debug(
+            "Attempting to match '%s' in '%s' using delimiter '%s'",
+            matchstr,
+            key,
+            delimiter,
+        )
+        if match == {}:
+            continue
+        if isinstance(match, dict):
+            if _dict_match(
+                    match, matchstr, regex_match=regex_match, exact_match=exact_match
+            ):
+                return True
+            continue
+        if isinstance(match, (list, tuple)):
+            # We are matching a single component to a single list member
+            for member in match:
+                if isinstance(member, dict):
+                    if _dict_match(
+                            member,
+                            matchstr,
+                            regex_match=regex_match,
+                            exact_match=exact_match,
+                    ):
+                        return True
+                if _match(
+                        member, matchstr, regex_match=regex_match, exact_match=exact_match
+                ):
+                    return True
+            continue
+        if _match(match, matchstr, regex_match=regex_match, exact_match=exact_match):
+            return True
+    return False

@@ -15,22 +15,20 @@ import logging
 import types
 from copy import deepcopy
 
-# Import salt libs
-import salt.utils.data
-import salt.utils.dictupdate
-import salt.utils.files
-import salt.utils.network
-import salt.utils.path
-import salt.utils.platform
-import salt.utils.stringutils
-import salt.utils.user
-import salt.utils.validate.path
-import salt.utils.xdg
-import salt.utils.yaml
-import salt.utils.zeromq
-import salt.syspaths
 import salt.exceptions
-import salt.defaults.exitcodes
+
+import hubblestack.utils.data
+import hubblestack.utils.dictupdate
+import hubblestack.utils.files
+import hubblestack.utils.network
+import hubblestack.utils.path
+import hubblestack.utils.platform
+import hubblestack.utils.stringutils
+import hubblestack.utils.user
+import hubblestack.utils.validate.path
+import hubblestack.utils.yaml
+import hubblestack.syspaths
+import hubblestack.defaults.exitcodes
 
 from hubblestack.utils.url import urlparse
 
@@ -53,7 +51,7 @@ _DFLT_LOG_FMT_JID = "[JID: %(jid)s]"
 _DFLT_REFSPECS = ["+refs/heads/*:refs/remotes/origin/*", "+refs/tags/*:refs/tags/*"]
 DEFAULT_INTERVAL = 60
 
-if salt.utils.platform.is_windows():
+if hubblestack.utils.platform.is_windows():
     # Since an 'ipc_mode' of 'ipc' will never work on Windows due to lack of
     # support in ZeroMQ, we want the default to be something that has a
     # chance of working.
@@ -65,7 +63,7 @@ if salt.utils.platform.is_windows():
 else:
     _DFLT_IPC_MODE = "ipc"
     _MASTER_TRIES = 1
-    _MASTER_USER = salt.utils.user.get_user()
+    _MASTER_USER = hubblestack.utils.user.get_user()
 
 
 def _gather_buffer_space():
@@ -152,9 +150,6 @@ VALID_OPTS = {
     # what commands the master is processing and what the rates are of the executions
     "master_stats": bool,
     "master_stats_event_iter": int,
-    # The key fingerprint of the higher-level master for the syndic to verify it is talking to the
-    # intended master
-    "syndic_finger": str,
     # The caching mechanism to use for the PKI key store. Can substantially decrease master publish
     # times. Available types:
     # 'maint': Runs on a schedule as a part of the maintanence process.
@@ -232,18 +227,6 @@ VALID_OPTS = {
     "use_master_when_local": bool,
     # A map of saltenvs and fileserver backend locations
     "file_roots": dict,
-    # A map of saltenvs and fileserver backend locations
-    "pillar_roots": dict,
-    # The external pillars permitted to be used on-demand using pillar.ext
-    "on_demand_ext_pillar": list,
-    # A map of glob paths to be used
-    "decrypt_pillar": list,
-    # Delimiter to use in path expressions for decrypt_pillar
-    "decrypt_pillar_delimiter": str,
-    # Default renderer for decrypt_pillar
-    "decrypt_pillar_default": str,
-    # List of renderers available for decrypt_pillar
-    "decrypt_pillar_renderers": list,
     # The type of hashing algorithm to use when doing file comparisons
     "hash_type": str,
     # Order of preference for optimized .pyc files (PY3 only)
@@ -460,8 +443,6 @@ VALID_OPTS = {
     # If the returner supports `clean_old_jobs`, then at cleanup time,
     # archive the job data before deleting it.
     "archive_jobs": bool,
-    # A master-only copy of the file_roots dictionary, used by the state compiler
-    "master_roots": dict,
     # Add the proxymodule LazyLoader object to opts.  This breaks many things
     # but this was the default pre 2015.8.2.  This should default to
     # False in 2016.3.0
@@ -588,12 +569,6 @@ VALID_OPTS = {
     "ping_on_rotate": bool,
     "peer": dict,
     "preserve_minion_cache": bool,
-    "syndic_master": (str, list),
-    # The behaviour of the multimaster syndic when connection to a master of masters failed. Can
-    # specify 'random' (default) or 'ordered'. If set to 'random' masters will be iterated in random
-    # order if 'ordered' the configured order will be used.
-    "syndic_failover": str,
-    "syndic_forward_all_events": bool,
     "runner_dirs": list,
     "client_acl_verify": bool,
     "publisher_acl": dict,
@@ -706,9 +681,6 @@ VALID_OPTS = {
     "grains_refresh_every": int,
     # Use lspci to gather system data for grains on a minion
     "enable_lspci": bool,
-    # The number of seconds for the salt client to wait for additional syndics to
-    # check in with their lists of expected minions before giving up
-    "syndic_wait": int,
     # Override Jinja environment option defaults for all templates except sls templates
     "jinja_env": dict,
     # Set Jinja environment options for sls templates
@@ -853,13 +825,6 @@ VALID_OPTS = {
     "auth_events": bool,
     # Whether to fire Minion data cache refresh events
     "minion_data_cache_events": bool,
-    # Enable calling ssh minions from the salt master
-    "enable_ssh_minions": bool,
-    # Thorium saltenv
-    "thoriumenv": (type(None), str),
-    # Thorium top file location
-    "thorium_top": str,
-    # Allow raw_shell option when using the ssh
     # client via the Salt API
     "netapi_allow_raw_shell": bool,
 }
@@ -882,19 +847,18 @@ DEFAULT_OPTS = {
     "verify_master_pubkey_sign": False,
     "always_verify_signature": False,
     "master_sign_key_name": "master_sign",
-    "syndic_finger": "",
-    "user": salt.utils.user.get_user(),
-    "root_dir": salt.syspaths.ROOT_DIR,
-    "pki_dir": os.path.join(salt.syspaths.CONFIG_DIR, "pki", "minion"),
+    "user": hubblestack.utils.user.get_user(),
+    "root_dir": hubblestack.syspaths.ROOT_DIR,
+    "pki_dir": os.path.join(hubblestack.syspaths.CONFIG_DIR, "pki", "minion"),
     "id": "",
     "id_function": {},
-    "cachedir": os.path.join(salt.syspaths.CACHE_DIR, "minion"),
+    "cachedir": os.path.join(hubblestack.syspaths.CACHE_DIR, "minion"),
     "append_minionid_config_dirs": [],
     "cache_jobs": False,
     "grains_cache": False,
     "grains_cache_expiration": 300,
     "grains_deep_merge": False,
-    "conf_file": os.path.join(salt.syspaths.CONFIG_DIR, "minion"),
+    "conf_file": os.path.join(hubblestack.syspaths.CONFIG_DIR, "minion"),
     "sock_pool_size": 1,
     "backup_mode": "",
     "renderer": "jinja|yaml",
@@ -916,23 +880,17 @@ DEFAULT_OPTS = {
     "pillar_cache": False,
     "pillar_cache_ttl": 3600,
     "pillar_cache_backend": "disk",
-    "extension_modules": os.path.join(salt.syspaths.CACHE_DIR, "minion", "extmods"),
+    "extension_modules": os.path.join(hubblestack.syspaths.CACHE_DIR, "minion", "extmods"),
     "state_top": "top.sls",
     "state_top_saltenv": None,
     "startup_states": "",
     "sls_list": [],
     "top_file": "",
-    "thoriumenv": None,
-    "thorium_top": "top.sls",
-    "thorium_interval": 0.5,
-    "thorium_roots": {
-        "base": [salt.syspaths.BASE_THORIUM_ROOTS_DIR],
-    },
     "file_client": "remote",
     "local": False,
     "use_master_when_local": False,
     "file_roots": {
-        "base": [salt.syspaths.BASE_FILE_ROOTS_DIR, salt.syspaths.SPM_FORMULA_PATH]
+        "base": [hubblestack.syspaths.BASE_FILE_ROOTS_DIR]
     },
     "top_file_merging_strategy": "merge",
     "env_order": [],
@@ -945,14 +903,7 @@ DEFAULT_OPTS = {
     "fileserver_backend": ["roots"],
     "fileserver_followsymlinks": True,
     "fileserver_ignoresymlinks": False,
-    "pillar_roots": {
-        "base": [salt.syspaths.BASE_PILLAR_ROOTS_DIR, salt.syspaths.SPM_PILLAR_PATH]
-    },
     "on_demand_ext_pillar": ["libvirt", "virtkey"],
-    "decrypt_pillar": [],
-    "decrypt_pillar_delimiter": ":",
-    "decrypt_pillar_default": "gpg",
-    "decrypt_pillar_renderers": ["gpg"],
     # Update intervals
     "roots_update_interval": DEFAULT_INTERVAL,
     "azurefs_update_interval": DEFAULT_INTERVAL,
@@ -1027,7 +978,7 @@ DEFAULT_OPTS = {
     "tcp_pub_port": 4510,
     "tcp_pull_port": 4511,
     "tcp_authentication_retries": 5,
-    "log_file": os.path.join(salt.syspaths.LOGS_DIR, "minion"),
+    "log_file": os.path.join(hubblestack.syspaths.LOGS_DIR, "minion"),
     "log_level": "warning",
     "log_level_logfile": None,
     "log_datefmt": _DFLT_LOG_DATEFMT,
@@ -1072,8 +1023,8 @@ DEFAULT_OPTS = {
     "return_retry_timer": 5,
     "return_retry_timer_max": 10,
     "winrepo_source_dir": "salt://win/repo-ng/",
-    "winrepo_dir": os.path.join(salt.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo"),
-    "winrepo_dir_ng": os.path.join(salt.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo-ng"),
+    "winrepo_dir": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo"),
+    "winrepo_dir_ng": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo-ng"),
     "winrepo_cachefile": "winrepo.p",
     "winrepo_cache_expire_max": 21600,
     "winrepo_cache_expire_min": 1800,
@@ -1088,7 +1039,7 @@ DEFAULT_OPTS = {
     "winrepo_pubkey": "",
     "winrepo_passphrase": "",
     "winrepo_refspecs": _DFLT_REFSPECS,
-    "pidfile": os.path.join(salt.syspaths.PIDFILE_DIR, "salt-minion.pid"),
+    "pidfile": os.path.join(hubblestack.syspaths.PIDFILE_DIR, "salt-minion.pid"),
     "range_server": "range:80",
     "reactor_refresh_interval": 60,
     "reactor_worker_threads": 10,
@@ -1153,30 +1104,14 @@ DEFAULT_MASTER_OPTS = {
     "timeout": 5,
     "keep_jobs": 24,
     "archive_jobs": False,
-    "root_dir": salt.syspaths.ROOT_DIR,
-    "pki_dir": os.path.join(salt.syspaths.CONFIG_DIR, "pki", "master"),
+    "root_dir": hubblestack.syspaths.ROOT_DIR,
+    "pki_dir": os.path.join(hubblestack.syspaths.CONFIG_DIR, "pki", "master"),
     "key_cache": "",
-    "cachedir": os.path.join(salt.syspaths.CACHE_DIR, "master"),
+    "cachedir": os.path.join(hubblestack.syspaths.CACHE_DIR, "master"),
     "file_roots": {
-        "base": [salt.syspaths.BASE_FILE_ROOTS_DIR, salt.syspaths.SPM_FORMULA_PATH]
-    },
-    "master_roots": {
-        "base": [salt.syspaths.BASE_MASTER_ROOTS_DIR],
-    },
-    "pillar_roots": {
-        "base": [salt.syspaths.BASE_PILLAR_ROOTS_DIR, salt.syspaths.SPM_PILLAR_PATH]
+        "base": [hubblestack.syspaths.BASE_FILE_ROOTS_DIR]
     },
     "on_demand_ext_pillar": ["libvirt", "virtkey"],
-    "decrypt_pillar": [],
-    "decrypt_pillar_delimiter": ":",
-    "decrypt_pillar_default": "gpg",
-    "decrypt_pillar_renderers": ["gpg"],
-    "thoriumenv": None,
-    "thorium_top": "top.sls",
-    "thorium_interval": 0.5,
-    "thorium_roots": {
-        "base": [salt.syspaths.BASE_THORIUM_ROOTS_DIR],
-    },
     "top_file_merging_strategy": "merge",
     "env_order": [],
     "saltenv": None,
@@ -1270,11 +1205,6 @@ DEFAULT_MASTER_OPTS = {
     "ping_on_rotate": False,
     "peer": {},
     "preserve_minion_cache": False,
-    "syndic_master": "masterofmasters",
-    "syndic_failover": "random",
-    "syndic_forward_all_events": False,
-    "syndic_log_file": os.path.join(salt.syspaths.LOGS_DIR, "syndic"),
-    "syndic_pidfile": os.path.join(salt.syspaths.PIDFILE_DIR, "salt-syndic.pid"),
     "outputter_dirs": [],
     "runner_dirs": [],
     "utils_dirs": [],
@@ -1289,7 +1219,7 @@ DEFAULT_MASTER_OPTS = {
     "keep_acl_in_token": False,
     "eauth_acl_module": "",
     "eauth_tokens": "localfs",
-    "extension_modules": os.path.join(salt.syspaths.CACHE_DIR, "master", "extmods"),
+    "extension_modules": os.path.join(hubblestack.syspaths.CACHE_DIR, "master", "extmods"),
     "module_dirs": [],
     "file_recv": False,
     "file_recv_max_size": 100,
@@ -1304,7 +1234,7 @@ DEFAULT_MASTER_OPTS = {
     "max_open_files": 100000,
     "hash_type": "sha256",
     "optimization_order": [0, 1, 2],
-    "conf_file": os.path.join(salt.syspaths.CONFIG_DIR, "master"),
+    "conf_file": os.path.join(hubblestack.syspaths.CONFIG_DIR, "master"),
     "open_mode": False,
     "auto_accept": False,
     "renderer": "jinja|yaml",
@@ -1329,7 +1259,7 @@ DEFAULT_MASTER_OPTS = {
     "tcp_master_pull_port": 4513,
     "tcp_master_publish_pull": 4514,
     "tcp_master_workers": 4515,
-    "log_file": os.path.join(salt.syspaths.LOGS_DIR, "master"),
+    "log_file": os.path.join(hubblestack.syspaths.LOGS_DIR, "master"),
     "log_level": "warning",
     "log_level_logfile": None,
     "log_datefmt": _DFLT_LOG_DATEFMT,
@@ -1340,7 +1270,7 @@ DEFAULT_MASTER_OPTS = {
     "log_granular_levels": {},
     "log_rotate_max_bytes": 0,
     "log_rotate_backup_count": 0,
-    "pidfile": os.path.join(salt.syspaths.PIDFILE_DIR, "salt-master.pid"),
+    "pidfile": os.path.join(hubblestack.syspaths.PIDFILE_DIR, "salt-master.pid"),
     "publish_session": 86400,
     "range_server": "range:80",
     "reactor": [],
@@ -1368,14 +1298,14 @@ DEFAULT_MASTER_OPTS = {
     "cython_enable": False,
     "enable_gpu_grains": False,
     # XXX: Remove 'key_logfile' support in 2014.1.0
-    "key_logfile": os.path.join(salt.syspaths.LOGS_DIR, "key"),
+    "key_logfile": os.path.join(hubblestack.syspaths.LOGS_DIR, "key"),
     "verify_env": True,
     "permissive_pki_access": False,
     "key_pass": None,
     "signing_key_pass": None,
     "default_include": "master.d/*.conf",
-    "winrepo_dir": os.path.join(salt.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo"),
-    "winrepo_dir_ng": os.path.join(salt.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo-ng"),
+    "winrepo_dir": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo"),
+    "winrepo_dir_ng": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo-ng"),
     "winrepo_cachefile": "winrepo.p",
     "winrepo_remotes": ["https://github.com/saltstack/salt-winrepo.git"],
     "winrepo_remotes_ng": ["https://github.com/saltstack/salt-winrepo-ng.git"],
@@ -1388,7 +1318,6 @@ DEFAULT_MASTER_OPTS = {
     "winrepo_pubkey": "",
     "winrepo_passphrase": "",
     "winrepo_refspecs": _DFLT_REFSPECS,
-    "syndic_wait": 5,
     "jinja_env": {},
     "jinja_sls_env": {},
     "jinja_lstrip_blocks": False,
@@ -1398,8 +1327,6 @@ DEFAULT_MASTER_OPTS = {
     "tcp_keepalive_cnt": -1,
     "tcp_keepalive_intvl": -1,
     "gather_job_timeout": 10,
-    "syndic_event_forward_timeout": 0.5,
-    "syndic_jid_forward_cache_hwm": 100,
     "regen_thin": False,
     "cli_summary": False,
     "max_minions": 0,
@@ -1444,105 +1371,6 @@ DEFAULT_MASTER_OPTS = {
 }
 
 
-# ----- Salt Proxy Minion Configuration Defaults ----------------------------------->
-# These are merged with DEFAULT_OPTS since many of them also apply here.
-DEFAULT_PROXY_MINION_OPTS = {
-    "conf_file": os.path.join(salt.syspaths.CONFIG_DIR, "proxy"),
-    "log_file": os.path.join(salt.syspaths.LOGS_DIR, "proxy"),
-    "add_proxymodule_to_opts": False,
-    "proxy_merge_grains_in_module": True,
-    "extension_modules": os.path.join(salt.syspaths.CACHE_DIR, "proxy", "extmods"),
-    "append_minionid_config_dirs": [
-        "cachedir",
-        "pidfile",
-        "default_include",
-        "extension_modules",
-    ],
-    "default_include": "proxy.d/*.conf",
-    "proxy_merge_pillar_in_opts": False,
-    "proxy_deep_merge_pillar_in_opts": False,
-    "proxy_merge_pillar_in_opts_strategy": "smart",
-    "proxy_mines_pillar": True,
-    # By default, proxies will preserve the connection.
-    # If this option is set to False,
-    # the connection with the remote dumb device
-    # is closed after each command request.
-    "proxy_always_alive": True,
-    "proxy_keep_alive": True,  # by default will try to keep alive the connection
-    "proxy_keep_alive_interval": 1,  # frequency of the proxy keepalive in minutes
-    "pki_dir": os.path.join(salt.syspaths.CONFIG_DIR, "pki", "proxy"),
-    "cachedir": os.path.join(salt.syspaths.CACHE_DIR, "proxy"),
-}
-# ----- Salt Cloud Configuration Defaults ----------------------------------->
-DEFAULT_CLOUD_OPTS = {
-    "verify_env": True,
-    "default_include": "cloud.conf.d/*.conf",
-    # Global defaults
-    "cachedir": os.path.join(salt.syspaths.CACHE_DIR, "cloud"),
-    "os": "",
-    "script": "bootstrap-salt",
-    "start_action": None,
-    "enable_hard_maps": False,
-    "delete_sshkeys": False,
-    # Custom deploy scripts
-    "deploy_scripts_search_path": "cloud.deploy.d",
-    # Logging defaults
-    "log_file": os.path.join(salt.syspaths.LOGS_DIR, "cloud"),
-    "log_level": "warning",
-    "log_level_logfile": None,
-    "log_datefmt": _DFLT_LOG_DATEFMT,
-    "log_datefmt_logfile": _DFLT_LOG_DATEFMT_LOGFILE,
-    "log_fmt_console": _DFLT_LOG_FMT_CONSOLE,
-    "log_fmt_logfile": _DFLT_LOG_FMT_LOGFILE,
-    "log_fmt_jid": _DFLT_LOG_FMT_JID,
-    "log_granular_levels": {},
-    "log_rotate_max_bytes": 0,
-    "log_rotate_backup_count": 0,
-    "bootstrap_delay": None,
-    "cache": "localfs",
-}
-
-DEFAULT_API_OPTS = {
-    # ----- Salt master settings overridden by Salt-API --------------------->
-    "api_pidfile": os.path.join(salt.syspaths.PIDFILE_DIR, "salt-api.pid"),
-    "api_logfile": os.path.join(salt.syspaths.LOGS_DIR, "api"),
-    "rest_timeout": 300,
-    # <---- Salt master settings overridden by Salt-API ----------------------
-}
-
-DEFAULT_SPM_OPTS = {
-    # ----- Salt master settings overridden by SPM --------------------->
-    "spm_conf_file": os.path.join(salt.syspaths.CONFIG_DIR, "spm"),
-    "formula_path": salt.syspaths.SPM_FORMULA_PATH,
-    "pillar_path": salt.syspaths.SPM_PILLAR_PATH,
-    "reactor_path": salt.syspaths.SPM_REACTOR_PATH,
-    "spm_logfile": os.path.join(salt.syspaths.LOGS_DIR, "spm"),
-    "spm_default_include": "spm.d/*.conf",
-    # spm_repos_config also includes a .d/ directory
-    "spm_repos_config": "/etc/salt/spm.repos",
-    "spm_cache_dir": os.path.join(salt.syspaths.CACHE_DIR, "spm"),
-    "spm_build_dir": os.path.join(salt.syspaths.SRV_ROOT_DIR, "spm_build"),
-    "spm_build_exclude": ["CVS", ".hg", ".git", ".svn"],
-    "spm_db": os.path.join(salt.syspaths.CACHE_DIR, "spm", "packages.db"),
-    "cache": "localfs",
-    "spm_repo_dups": "ignore",
-    # If set, spm_node_type will be either master or minion, but they should
-    # NOT be a default
-    "spm_node_type": "",
-    "spm_share_dir": os.path.join(salt.syspaths.SHARE_DIR, "spm"),
-    # <---- Salt master settings overridden by SPM ----------------------
-}
-
-VM_CONFIG_DEFAULTS = {
-    "default_include": "cloud.profiles.d/*.conf",
-}
-
-PROVIDER_CONFIG_DEFAULTS = {
-    "default_include": "cloud.providers.d/*.conf",
-}
-# <---- Salt Cloud Configuration Defaults ------------------------------------
-
-
 def _normalize_roots(file_roots):
     """
     Normalize file or pillar roots.
@@ -1568,7 +1396,7 @@ def _validate_file_roots(file_roots):
         log.warning(
             "The file_roots parameter is not properly formatted," " using defaults"
         )
-        return {"base": _expand_glob_path([salt.syspaths.BASE_FILE_ROOTS_DIR])}
+        return {"base": _expand_glob_path([hubblestack.syspaths.BASE_FILE_ROOTS_DIR])}
     return _normalize_roots(file_roots)
 
 
@@ -1709,10 +1537,10 @@ def _read_conf_file(path):
     Read in a config file from a given path and process it into a dictionary
     """
     log.debug("Reading configuration from %s", path)
-    with salt.utils.files.fopen(path, "r") as conf_file:
+    with hubblestack.utils.files.fopen(path, "r") as conf_file:
         try:
-            conf_opts = salt.utils.yaml.safe_load(conf_file) or {}
-        except salt.utils.yaml.YAMLError as err:
+            conf_opts = hubblestack.utils.yaml.safe_load(conf_file) or {}
+        except hubblestack.utils.yaml.YAMLError as err:
             message = "Error parsing configuration file: {0} - {1}".format(path, err)
             log.error(message)
             raise salt.exceptions.SaltConfigurationError(message)
@@ -1732,7 +1560,7 @@ def _read_conf_file(path):
             if not isinstance(conf_opts["id"], str):
                 conf_opts["id"] = str(conf_opts["id"])
             else:
-                conf_opts["id"] = salt.utils.data.decode(conf_opts["id"])
+                conf_opts["id"] = hubblestack.utils.data.decode(conf_opts["id"])
         return conf_opts
 
 
@@ -1802,14 +1630,14 @@ def load_config(path, env_var, default_path=None, exit_on_config_errors=True):
         template = "{0}.template".format(path)
         if os.path.isfile(template):
             log.debug("Writing %s based on %s", path, template)
-            with salt.utils.files.fopen(path, "w") as out:
-                with salt.utils.files.fopen(template, "r") as ifile:
+            with hubblestack.utils.files.fopen(path, "w") as out:
+                with hubblestack.utils.files.fopen(template, "r") as ifile:
                     ifile.readline()  # skip first line
                     out.write(ifile.read())
 
     opts = {}
 
-    if salt.utils.validate.path.is_readable(path):
+    if hubblestack.utils.validate.path.is_readable(path):
         try:
             opts = _read_conf_file(path)
             opts["conf_file"] = path
@@ -1876,7 +1704,7 @@ def include_config(include, orig_path, verbose, exit_on_config_errors=False):
             if include:
                 opts.update(include_config(include, fn_, verbose))
 
-            salt.utils.dictupdate.update(configuration, opts, True, True)
+            hubblestack.utils.dictupdate.update(configuration, opts, True, True)
 
     return configuration
 
@@ -1887,13 +1715,13 @@ def prepend_root_dir(opts, path_options):
     'root_dir' option.
     """
     root_dir = os.path.abspath(opts["root_dir"])
-    def_root_dir = salt.syspaths.ROOT_DIR.rstrip(os.sep)
+    def_root_dir = hubblestack.syspaths.ROOT_DIR.rstrip(os.sep)
     for path_option in path_options:
         if path_option in opts:
             path = opts[path_option]
             tmp_path_def_root_dir = None
             tmp_path_root_dir = None
-            # When running testsuite, salt.syspaths.ROOT_DIR is often empty
+            # When running testsuite, hubblestack.syspaths.ROOT_DIR is often empty
             if path == def_root_dir or path.startswith(def_root_dir + os.sep):
                 # Remove the default root dir prefix
                 tmp_path_def_root_dir = path[len(def_root_dir) :]
@@ -1915,7 +1743,7 @@ def prepend_root_dir(opts, path_options):
                     path = tmp_path_root_dir
                 else:
                     path = tmp_path_def_root_dir
-            elif salt.utils.platform.is_windows() and not os.path.splitdrive(path)[0]:
+            elif hubblestack.utils.platform.is_windows() and not os.path.splitdrive(path)[0]:
                 # In windows, os.path.isabs resolves '/' to 'C:\\' or whatever
                 # the root drive is.  This elif prevents the next from being
                 # hit, so that the root_dir is prefixed in cases where the
@@ -1926,7 +1754,7 @@ def prepend_root_dir(opts, path_options):
                 # No prepending required
                 continue
             # Prepending the root dir
-            opts[path_option] = salt.utils.path.join(root_dir, path)
+            opts[path_option] = hubblestack.utils.path.join(root_dir, path)
 
 
 def insert_system_path(opts, paths):
@@ -2041,7 +1869,7 @@ def apply_config(overrides=None, defaults=None, cache_minion_id=False, minion_id
             )
             opts["fileserver_backend"][idx] = new_val
 
-    opts["__cli"] = salt.utils.stringutils.to_unicode(os.path.basename(sys.argv[0]))
+    opts["__cli"] = hubblestack.utils.stringutils.to_unicode(os.path.basename(sys.argv[0]))
 
     # No ID provided. Will getfqdn save us?
     using_ip_for_id = False

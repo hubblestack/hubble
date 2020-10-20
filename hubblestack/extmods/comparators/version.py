@@ -45,10 +45,8 @@ Complete Example
 import logging
 from packaging import version
 
-import hubblestack.extmods.module_runner.comparator
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
-
 log = logging.getLogger(__name__)
+
 
 def match(audit_id, result_to_compare, args):
     """
@@ -60,10 +58,11 @@ def match(audit_id, result_to_compare, args):
         Comparator dictionary as mentioned in the check.
     """
     log.debug('Running version::match for audit_id: {0}'.format(audit_id))
-    
+
     if _match(result_to_compare, args['match']):
         return True, "Check Passed"
     return False, "version::match failure. Got={0} Expected={1}".format(result_to_compare, str(args['match']))
+
 
 def match_any(audit_id, result_to_compare, args):
     """
@@ -75,19 +74,21 @@ def match_any(audit_id, result_to_compare, args):
         Comparator dictionary as mentioned in the check.
     """
     log.debug('Running version::match_any for check: {0}'.format(audit_id))
-    
+
     for option_to_match in args['match_any']:
         if _match(result_to_compare, option_to_match):
             return True, "Check passed"
 
     # did not match
-    return False, "version::match_any failure. Could not find {0} in list: {1}".format(result_to_compare, str(args['match_any']))
+    return False, "version::match_any failure. Could not find {0} in list: {1}".format(result_to_compare,
+                                                                                       str(args['match_any']))
+
 
 def _match(result_to_compare, expected_result):
     """
     compare versions
     """
-    #got string having some comparison operators
+    # got string having some comparison operators
     expected_result_value = expected_result.strip()
     result_version_to_compare = version.parse(result_to_compare)
 

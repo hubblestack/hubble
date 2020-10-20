@@ -1,13 +1,13 @@
 from unittest import TestCase
-from unittest.mock import patch
-import pytest
 
 import hubblestack.extmods.comparators.file_permission as fp_comparator
+
 
 class TestFilePermissionMatch(TestCase):
     """
     Unit tests for file_permission::match comparator
     """
+
     def test_match1(self):
         """
         Positive test

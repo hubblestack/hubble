@@ -122,7 +122,6 @@ check_id:
 import logging
 
 import hubblestack.extmods.module_runner.comparator
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
 log = logging.getLogger(__name__)
 

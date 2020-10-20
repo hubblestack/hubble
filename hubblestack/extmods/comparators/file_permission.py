@@ -17,10 +17,8 @@ default value of allow_more_strict is False
 """
 import logging
 
-import hubblestack.extmods.module_runner.comparator
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
-
 log = logging.getLogger(__name__)
+
 
 def match(audit_id, result_to_compare, args):
     """
@@ -32,7 +30,7 @@ def match(audit_id, result_to_compare, args):
         Comparator dictionary as mentioned in the check.
     """
     log.debug('Running file_permission::match for audit_id: {0}'.format(audit_id))
-    
+
     errors = []
     allow_more_strict = args['match'].get('allow_more_strict', False)
     given_permission = str(result_to_compare)
@@ -47,6 +45,7 @@ def match(audit_id, result_to_compare, args):
     error_msg = 'File permission check failed. allow_more_strict={0}, Expected={1}, Got={2}'.format(
         allow_more_strict, args['match']['required_value'], given_permission)
     return False, error_msg
+
 
 def _check_mode(max_permission, given_permission, allow_more_strict):
     """

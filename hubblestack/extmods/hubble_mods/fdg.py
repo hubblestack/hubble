@@ -74,7 +74,7 @@ def validate_params(block_id, block_dict, extra_args=None):
         Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
                   'caller': 'Audit'}
     Raises:
-        AuditCheckValidationError: For any validation error
+        HubbleCheckValidationError: For any validation error
     """
     log.debug('Module: FDG Connector Start validating params for check-id: {0}'.format(block_id))
 
@@ -94,7 +94,7 @@ def validate_params(block_id, block_dict, extra_args=None):
 
 def execute(block_id, block_dict, extra_args=None):
     """
-    For getting params to log, in non-verbose logging
+    Execute the module
 
     :param block_id:
         id of the block

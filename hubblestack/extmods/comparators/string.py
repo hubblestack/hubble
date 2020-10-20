@@ -24,8 +24,6 @@ String comparator exposes various commands:
 import logging
 import re
 
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
-
 log = logging.getLogger(__name__)
 
 

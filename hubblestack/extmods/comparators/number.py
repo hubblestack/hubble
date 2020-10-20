@@ -36,7 +36,6 @@ Complete Example
 """
 
 import logging
-import re
 
 from hubblestack.utils.hubble_error import HubbleCheckValidationError
 

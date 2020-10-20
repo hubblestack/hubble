@@ -423,10 +423,12 @@ class TestListMatchAll(TestCase):
             status, result = list_comparator.match_all("test-1", result_to_compare, args)
             self.assertFalse(status)
 
+
 class TestListFilterCompare(TestCase):
     """
     Unit tests for list::filter_compare comparator
     """
+
     def test_filter_compare1(self):
         """
         Positive test

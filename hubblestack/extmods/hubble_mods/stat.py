@@ -88,7 +88,7 @@ def validate_params(block_id, block_dict, extra_args=None):
                   'caller': 'Audit'}
 
     Raises:
-        AuditCheckValidationError: For any validation error
+        HubbleCheckValidationError: For any validation error
     """
     log.debug('Module: stat Start validating params for check-id: {0}'.format(block_id))
     chain_args = extra_args.get('chaining_args')

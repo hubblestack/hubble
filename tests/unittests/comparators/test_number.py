@@ -1,14 +1,15 @@
 from unittest import TestCase
-from unittest.mock import patch
 import pytest
 
 from hubblestack.extmods.comparators import number as number_comparator
 from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
+
 class TestNumberMatch(TestCase):
     """
     Unit tests for number::match comparator
     """
+
     def test_match1(self):
         """
         Match simple number. Positive test
@@ -69,10 +70,12 @@ class TestNumberMatch(TestCase):
             status, result = number_comparator.match("test-1", result_to_compare, args)
             pytest.fail("Check should not have passed")
 
+
 class TestNumberMatchAny(TestCase):
     """
     Unit tests for number::match_any comparator
     """
+
     def test_match1(self):
         """
         Match simple number. Positive test
@@ -90,16 +93,16 @@ class TestNumberMatchAny(TestCase):
         Test with operators in list
         """
         result_to_compare = 10
-        args = {"type": "number","match_any": [10, 20, 30]}
+        args = {"type": "number", "match_any": [10, 20, 30]}
         status, result = number_comparator.match_any("test-1", result_to_compare, args)
         self.assertTrue(status)
 
         result_to_compare = 10
-        args = {"type": "number","match_any": [20, ">= 10", 30]}
+        args = {"type": "number", "match_any": [20, ">= 10", 30]}
         status, result = number_comparator.match_any("test-1", result_to_compare, args)
         self.assertTrue(status)
 
         result_to_compare = 10
-        args = {"type": "number","match_any": ["<1", 20, 30]}
+        args = {"type": "number", "match_any": ["<1", 20, 30]}
         status, result = number_comparator.match_any("test-1", result_to_compare, args)
         self.assertFalse(status)

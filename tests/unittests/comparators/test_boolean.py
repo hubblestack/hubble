@@ -4,10 +4,12 @@ import pytest
 
 from hubblestack.extmods.comparators import boolean as boolean_comparator
 
+
 class TestBooleanMatch(TestCase):
     """
     Unit tests for Boolean::match comparator
     """
+
     def test_match1(self):
         """
         Match True. Positive test

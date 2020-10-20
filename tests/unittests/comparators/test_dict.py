@@ -1,13 +1,14 @@
 from unittest import TestCase
 from unittest.mock import patch
-import pytest
 
 import hubblestack.extmods.comparators.dict as dict_comparator
+
 
 class TestDictMatch(TestCase):
     """
     Unit tests for dict::match comparator
     """
+
     def test_match1(self):
         """
         Positive test
@@ -54,23 +55,23 @@ class TestDictMatch(TestCase):
         """
         result_to_compare = {
             '/abc': {
-                    'device': '/dev/sda3',
-                    'test': {
+                'device': '/dev/sda3',
+                'test': {
+                    "k1": "v1",
+                    "k2": "v2",
+                    "k3": {
                         "k1": "v1",
-                        "k2": "v2",
-                        "k3": {
-                            "k1": "v1",
-                            "k2": "v2"
-                        }
-                    },
-                    'fstype': 'xfs',
-                    'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
+                        "k2": "v2"
+                    }
                 },
+                'fstype': 'xfs',
+                'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
+            },
             '/sys': {
-                    'device': '/dev/sda1',
-                    'fstype': 'xfs3',
-                    'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
-                },
+                'device': '/dev/sda1',
+                'fstype': 'xfs3',
+                'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
+            },
         }
         args = {
             "type": "dict",
@@ -95,23 +96,23 @@ class TestDictMatch(TestCase):
         """
         result_to_compare = {
             '/abc': {
-                    'device': '/dev/sda3',
-                    'test': {
+                'device': '/dev/sda3',
+                'test': {
+                    "k1": "v1",
+                    "k2": "v2",
+                    "k3": {
                         "k1": "v1",
-                        "k2": "v2",
-                        "k3": {
-                            "k1": "v1",
-                            "k2": "v2"
-                        }
-                    },
-                    'fstype': 'xfs',
-                    'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
+                        "k2": "v2"
+                    }
                 },
+                'fstype': 'xfs',
+                'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
+            },
             '/sys': {
-                    'device': '/dev/sda1',
-                    'fstype': 'xfs3',
-                    'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
-                },
+                'device': '/dev/sda1',
+                'fstype': 'xfs3',
+                'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
+            },
         }
         args = {
             "type": "dict",
@@ -166,23 +167,23 @@ class TestDictMatch(TestCase):
         """
         result_to_compare = {
             '/abc': {
-                    'device': '/dev/sda3',
-                    'test': {
+                'device': '/dev/sda3',
+                'test': {
+                    "k1": "v1",
+                    "k2": "v2",
+                    "k3": {
                         "k1": "v1",
-                        "k2": "v2",
-                        "k3": {
-                            "k1": "v1",
-                            "k2": "v2"
-                        }
-                    },
-                    'fstype': 'xfs',
-                    'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
+                        "k2": "v2"
+                    }
                 },
+                'fstype': 'xfs',
+                'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
+            },
             '/sys': {
-                    'device': '/dev/sda1',
-                    'fstype': 'xfs3',
-                    'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
-                },
+                'device': '/dev/sda1',
+                'fstype': 'xfs3',
+                'opts': ['rw', 'seclabel', 'relatime', 'attr2', 'inode64', 'noquota']
+            },
         }
         args = {
             "type": "dict",
@@ -211,10 +212,12 @@ class TestDictMatch(TestCase):
             status, result = dict_comparator.match("test-1", result_to_compare, args)
             self.assertFalse(status)
 
+
 class TestDictMatchKeyAny(TestCase):
     """
     Unit tests for dict::match_key_any comparator
     """
+
     def test_match1(self):
         """
         Positive test
@@ -251,10 +254,12 @@ class TestDictMatchKeyAny(TestCase):
         status, result = dict_comparator.match_key_any("test-1", result_to_compare, args)
         self.assertFalse(status)
 
+
 class TestDictMatchKeyAll(TestCase):
     """
     Unit tests for dict::match_key_all comparator
     """
+
     def test_match1(self):
         """
         Positive test
@@ -291,10 +296,12 @@ class TestDictMatchKeyAll(TestCase):
         status, result = dict_comparator.match_key_all("test-1", result_to_compare, args)
         self.assertFalse(status)
 
+
 class TestDictMatchAny(TestCase):
     """
     Unit tests for dict::match_any comparator
     """
+
     def test_match_any1(self):
         """
         Positive test
@@ -325,10 +332,12 @@ class TestDictMatchAny(TestCase):
         status, result = dict_comparator.match_any("test-1", result_to_compare, args)
         self.assertFalse(status)
 
+
 class TestDictMatchAnyIfKeyMatches(TestCase):
     """
     Unit tests for dict::match_any_if_key_matches comparator
     """
+
     def test_match1(self):
         """
         Positive test

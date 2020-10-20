@@ -293,6 +293,7 @@ def match_any_if_key_matches(audit_id, result_to_compare, args):
         return False, "list::match_any_if_key_matches failure. Got={0}".format(result_to_compare)
     return True, "Check Passed"
 
+
 def filter_compare(audit_id, result_to_compare, args):
     """
     A two-step comparator.

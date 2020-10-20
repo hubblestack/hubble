@@ -1,15 +1,13 @@
 from unittest import TestCase
-from unittest.mock import patch
-import pytest
 
 from hubblestack.extmods.comparators import string as string_comparator
-# from hubblestack.utils.hubble_error import AuditCheckValidationError
 
 
 class TestStringMatch(TestCase):
     """
     Unit tests for String::match comparator
     """
+
     def test_match1(self):
         """
         Match simple string. Positive test
@@ -86,10 +84,12 @@ class TestStringMatch(TestCase):
         status, result = string_comparator.match("test-2", result_to_compare, args)
         self.assertFalse(status)
 
+
 class TestStringMatchAny(TestCase):
     """
     Unit tests for String::match_any comparator
     """
+
     def test_match_any1(self):
         """
         Match list of strings. Positive test

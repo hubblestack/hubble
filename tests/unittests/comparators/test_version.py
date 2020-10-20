@@ -1,9 +1,7 @@
 from unittest import TestCase
-from unittest.mock import patch
-import pytest
 
 from hubblestack.extmods.comparators import version as version_comparator
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+
 
 class TestVersionMatch(TestCase):
     """

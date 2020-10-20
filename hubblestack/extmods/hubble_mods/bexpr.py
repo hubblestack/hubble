@@ -124,7 +124,7 @@ def validate_params(block_id, block_dict, extra_args=None):
 
 def execute(block_id, block_dict, extra_args=None):
     """
-    For getting params to log, in non-verbose logging
+    Execute the module
 
     :param block_id:
         id of the block

@@ -16,7 +16,7 @@ ENV OSQUERY_SRC_VERSION=4.3.0
 ENV OSQUERY_TOOLCHAIN_SRC_URL=https://github.com/osquery/osquery-toolchain/releases/download/1.1.0/osquery-toolchain-1.1.0-x86_64.tar.xz
 ENV OSQUERY_TOOLCHAIN_SRC_SHA256=9cc3980383e0626276d3762af60035f36ada5886389a1292774e89db013a2353
 ENV CMAKE_SRC_URL=https://github.com/Kitware/CMake/releases/download/v3.14.6/cmake-3.14.6-Linux-x86_64.tar.gz
-ENV CMAKE_SRC_SHA256=82e08e50ba921035efa82b859c74c5fbe27d3e49a4003020e3c77618a4e912cd
+ENV CMAKE_SRC_SHA256=82e08e50ba921035efa82b859c74c5fbe27d3e49a4.0.1-rc220e3c77618a4e912cd
 #prepare the requirements for building
 RUN apt-get -y update && apt-get -y upgrade \
  && apt-get -y install --no-install-recommends wget ca-certificates xz-utils git python3 bison flex make \

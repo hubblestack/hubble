@@ -407,7 +407,7 @@
   "update_restart_services": [],
   "update_url": false,
   "use_master_when_local": false,
-  "user": "root",
+  "user": "!NO COMPARE!",
   "username": null,
   "utils_dirs": [
     "/var/cache/salt/minion/extmods/utils",

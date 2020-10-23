@@ -16,7 +16,7 @@ def intentionally_changed_value_filter(key_name, value, test_paths):
             # the jenkins workspace often contains '/hubble_PR-944/'
             # we have to be careful to not replace the beginning of that with
             # test_paths.sources
-            value = re.sub(r'/hubble(?:/|$)', test_paths.sources, value)
+            value = re.sub(r'/hubble\b', test_paths.sources, value)
         value = value.replace('/etc/salt/', '/etc/hubble/')
         value = value.replace('/var/cache/salt/', '/var/cache/hubble/')
         value = value.replace('/srv/salt/', '/srv/hubble/')

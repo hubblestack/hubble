@@ -49,4 +49,6 @@ def test_can_find_uniquely_saltstack_module(module_dirs):
 # XXX: this should get removed for the same reason as above
 def test_can_load_salt_and_hubblestack_mods(__mods__):
     assert 'pulsar.process' in __mods__
+    import salt.modules.saltutil as smsu
+    assert hasattr(smsu, 'sync_all')
     assert 'saltutil.sync_all' in __mods__

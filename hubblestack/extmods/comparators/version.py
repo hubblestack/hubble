@@ -43,7 +43,7 @@ Complete Example
 """
 
 import logging
-from packaging import version
+from distutils.version import LooseVersion
 
 log = logging.getLogger(__name__)
 
@@ -90,20 +90,20 @@ def _match(result_to_compare, expected_result):
     """
     # got string having some comparison operators
     expected_result_value = expected_result.strip()
-    result_version_to_compare = version.parse(result_to_compare)
+    result_version_to_compare = LooseVersion(result_to_compare)
 
     if expected_result_value.startswith('<='):
-        return result_version_to_compare <= version.parse(expected_result_value[2:].strip())
+        return result_version_to_compare <= LooseVersion(expected_result_value[2:].strip())
     elif expected_result_value.startswith('>='):
-        return result_version_to_compare >= version.parse(expected_result_value[2:].strip())
+        return result_version_to_compare >= LooseVersion(expected_result_value[2:].strip())
     elif expected_result_value.startswith('<'):
-        return result_version_to_compare < version.parse(expected_result_value[1:].strip())
+        return result_version_to_compare < LooseVersion(expected_result_value[1:].strip())
     elif expected_result_value.startswith('>'):
-        return result_version_to_compare > version.parse(expected_result_value[1:].strip())
+        return result_version_to_compare > LooseVersion(expected_result_value[1:].strip())
     elif expected_result_value.startswith('=='):
-        return result_version_to_compare == version.parse(expected_result_value[2:].strip())
+        return result_version_to_compare == LooseVersion(expected_result_value[2:].strip())
     elif expected_result_value.startswith('!='):
-        return result_version_to_compare != version.parse(expected_result_value[2:].strip())
+        return result_version_to_compare != LooseVersion(expected_result_value[2:].strip())
     else:
         # direct comparison
-        return result_version_to_compare == version.parse(expected_result_value.strip())
+        return result_version_to_compare == LooseVersion(expected_result_value.strip())

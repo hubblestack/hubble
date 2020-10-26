@@ -122,7 +122,8 @@ class Runner(ABC):
             }
             for key in module_args:
                 if key not in acceptable_block_args:
-                    raise CommandExecutionError('Could not execute block \'{0}\': '
+                    # Just doing error logging for unsupported tags
+                    log.error('Could not execute block \'{0}\': '
                                                 '\'{1}\' is not a valid block key'
                                                 .format(profile_id, key))
             if 'args' not in module_args and 'comparator' not in module_args:

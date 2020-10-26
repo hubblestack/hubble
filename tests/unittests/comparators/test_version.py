@@ -61,6 +61,42 @@ class TestVersionMatch(TestCase):
         status, result = version_comparator.match("test-1", result_to_compare, args)
         self.assertTrue(status)
 
+    def test_match3(self):
+        """
+        Match simple version with operator
+        """
+        args = {"match": '== 8.0.3-a6754d8441bf'}
+        status, result = version_comparator.match('id', '8.0.3-a6754d8441bf', args)
+        self.assertTrue(status)
+
+        args = {"match": '<= 8.0.3-a6754d8441bg'}
+        status, result = version_comparator.match('id', '8.0.3-a6754d8441bf', args)
+        self.assertTrue(status)
+
+        args = {"match": '<= 8.0.3-a6754d8441cf'}
+        status, result = version_comparator.match('id', '8.0.3-a6754d8441bf', args)
+        self.assertTrue(status)
+
+        args = {"match": '> 8.0.3'}
+        status, result = version_comparator.match('id', '8.0.3-a6754d8441bf', args)
+        self.assertTrue(status)
+
+        args = {"match": '> 8.0.3'}
+        status, result = version_comparator.match('id', '8.0.3-a', args)
+        self.assertTrue(status)
+
+        args = {"match": '> 8.0.1'}
+        status, result = version_comparator.match('id', '8.0.3-a', args)
+        self.assertTrue(status)
+
+        args = {"match": '< 8.0.3'}
+        status, result = version_comparator.match('id', '8.0', args)
+        self.assertTrue(status)
+
+        args = {"match": '> 7.0'}
+        status, result = version_comparator.match('id', '8.0', args)
+        self.assertTrue(status)
+
 class TestVersionMatchAny(TestCase):
     """
     Unit tests for version::match_any comparator

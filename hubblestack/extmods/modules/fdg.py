@@ -131,7 +131,7 @@ __returners__ = None
 RETURNER_ID_BLOCK = None
 
 
-def fdg(fdg_file, starting_chained=None):
+def run(fdg_file, starting_chained=None):
     """
     Given an fdg file (usually a salt:// file, but can also be the absolute
     path to a file on the system), execute that fdg file, starting with the

@@ -236,13 +236,13 @@ def _handle_config_file(block_id, block_dict, extra_args=None):
 
 
 def _handle_config_helper(block_id,
-           path,
-           pattern=None,
-           ignore_pattern=None,
-           dictsep=None,
-           valsep=None,
-           subsep=None,
-           chained_param=None):
+                          path,
+                          pattern=None,
+                          ignore_pattern=None,
+                          dictsep=None,
+                          valsep=None,
+                          subsep=None,
+                          chained_param=None):
     """
     This is a fairly specialized function designed to pull data from a file
     with formatting similar to this::
@@ -498,6 +498,7 @@ def _readfile_string(block_id, path, encode_b64=False, chained_param=None):
 
     return status, ret
 
+
 def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     For getting params to log, in non-verbose logging
@@ -513,6 +514,6 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
-    #fetch required param
+    # fetch required param
     filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
     return {'path': filepath}

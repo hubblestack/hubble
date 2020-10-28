@@ -106,9 +106,10 @@ import re
 import hubblestack.extmods.module_runner.runner_utils as runner_utils
 from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
-open_bracket_list = ["[","{","("]
-close_bracket_list = ["]","}",")"]
+open_bracket_list = ["[", "{", "("]
+close_bracket_list = ["]", "}", ")"]
 log = logging.getLogger(__name__)
+
 
 def validate_params(block_id, block_dict, extra_args=None):
     """
@@ -153,6 +154,7 @@ def validate_params(block_id, block_dict, extra_args=None):
 
     log.debug('Validation success for check-id: {0}'.format(block_id))
 
+
 def execute(block_id, block_dict, extra_args=None):
     """
     Execute the module
@@ -173,7 +175,7 @@ def execute(block_id, block_dict, extra_args=None):
 
     try:
         command_line = None
-        
+
         chained_param = runner_utils.get_chained_param(extra_args)
         if chained_param:
             command_line = chained_param.get('cmdline')
@@ -198,7 +200,7 @@ def execute(block_id, block_dict, extra_args=None):
             regex_base = "".join(["(?<=(\s|{))-{0,2}\"{0,1}\'{0,1}", key_alias, "\"{0,1}\'{0,1}\s*", delimiter])
             regex_list = []
             regex_pattern = "".join([regex_base, "\s*openingbracket.*closingbracket(?=(\s|$))"])
-            braces_list = [('\[','\]'), ('\{','\}'), ('\(','\)')]
+            braces_list = [('\[', '\]'), ('\{', '\}'), ('\(', '\)')]
             for item in braces_list:
                 regex = re.sub("openingbracket", item[0], regex_pattern)
                 regex = re.sub("closingbracket", item[1], regex)
@@ -276,10 +278,11 @@ def _fetch_bracketed_value(value):
                     (open_bracket_list[pos] == stack[len(stack) - 1])):
                 stack.pop()
         if stacked_once and len(stack) == 0:
-            return value[:char_pos+1]
+            return value[:char_pos + 1]
         char_pos += 1
 
     return None
+
 
 def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """

@@ -160,7 +160,9 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
     # fetch required param
-    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
+    filepath = runner_utils.get_chained_param(extra_args)
+    if not filepath:
+        filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
     pattern = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
 
     return {'path': filepath,

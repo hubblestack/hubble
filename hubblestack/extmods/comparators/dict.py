@@ -44,7 +44,7 @@ Dictionary comparator exposes various commands:
     - if specified key not found.
     - key found and attributes also matched
   Result will be False
-    - Key found and attribuets did not match
+    - Key found and attributes did not match
   
     comparator:
         type: "dict"

@@ -102,9 +102,9 @@ def validate_params(block_id, block_dict, extra_args=None):
     function_name = runner_utils.get_param_for_module(block_id, block_dict, 'function')
     if not function_name:
         function_name = 'GET'
-    
+
     url = runner_utils.get_param_for_module(block_id, block_dict, 'url')
-    
+
     error = {}
     if function_name not in ('GET', 'PUT', 'POST'):
         error['function'] = 'Invalid request type: {0}'.format(function_name)
@@ -116,6 +116,7 @@ def validate_params(block_id, block_dict, extra_args=None):
         raise HubbleCheckValidationError(error)
 
     log.debug('Validation success for check-id: {0}'.format(block_id))
+
 
 def execute(block_id, block_dict, extra_args=None):
     """
@@ -185,6 +186,7 @@ def execute(block_id, block_dict, extra_args=None):
     except requests.exceptions.HTTPError:
         return runner_utils.prepare_negative_result_for_module(block_id, ret)
 
+
 def _make_request(function, url, **kwargs):
     """
     Helper function that makes the HTTP request
@@ -217,6 +219,7 @@ def _parse_response(response, decode_json):
         ret['response'] = response.text
 
     return ret
+
 
 def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """

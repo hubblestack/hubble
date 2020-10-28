@@ -21,7 +21,7 @@ class TestWinSecedit(TestCase):
                             }
                      }
 
-        result = win_secedit.get_filtered_params_to_log(block_id, block_dict, chain_args=None)
+        result = win_secedit.get_filtered_params_to_log(block_id, block_dict, extra_args=None)
         self.assertEquals(result.get("name"), sec_name)
 
     def test_validate_params_positive(self):
@@ -51,9 +51,6 @@ class TestWinSecedit(TestCase):
                     "name": sec_name
                 }
         }
-
-        win_secedit.runner_utils.get_chained_param = mock.Mock(return_value=None)
-        win_secedit.runner_utils.get_param_for_module = mock.Mock(return_value=sec_name)
 
         with pytest.raises(HubbleCheckValidationError) as exception:
             win_secedit.validate_params(block_id, block_dict, {})
@@ -117,7 +114,7 @@ class TestWinSecedit(TestCase):
                 }
         }
         win_secedit._secedit_export = mock.Mock(return_value=__secdata__)
-        result = win_secedit.execute(block_id, block_dict, chain_args=None)
+        result = win_secedit.execute(block_id, block_dict, extra_args=None)
         self.assertTrue(result[0])
         self.assertTrue(isinstance(result[1], dict))
         self.assertTrue(isinstance(result[1].get('result').get('sec_value'), list))
@@ -140,7 +137,7 @@ class TestWinSecedit(TestCase):
                 }
         }
         win_secedit._secedit_export = mock.Mock(return_value=__secdata__)
-        result = win_secedit.execute(block_id, block_dict, chain_args=None)
+        result = win_secedit.execute(block_id, block_dict, extra_args=None)
         self.assertTrue(result[0])
         self.assertTrue(isinstance(result[1], dict))
         self.assertTrue(isinstance(result[1].get('result').get('sec_value'), list))
@@ -165,7 +162,7 @@ class TestWinSecedit(TestCase):
         }
         win_secedit._secedit_export = mock.Mock(return_value=__secdata__)
         win_secedit._get_account_name = mock.Mock(return_value=["administrator"])
-        result = win_secedit.execute(block_id, block_dict, chain_args=None)
+        result = win_secedit.execute(block_id, block_dict, extra_args=None)
         self.assertTrue(result[0])
         self.assertTrue(isinstance(result[1], dict))
         self.assertTrue(isinstance(result[1].get('result').get('sec_value'), list))
@@ -190,8 +187,7 @@ class TestWinSecedit(TestCase):
 
         win_secedit._secedit_export = mock.Mock(return_value=__secdata__)
         win_secedit._reg_value_reverse_translator = mock.Mock(return_value=['Enabled', 'accept if provided by client'])
-        result = win_secedit.execute(block_id, block_dict, chain_args=None)
-        print(result)
+        result = win_secedit.execute(block_id, block_dict, extra_args=None)
         self.assertTrue(result[0])
         self.assertTrue(isinstance(result[1], dict))
         self.assertTrue(isinstance(result[1].get('result').get('sec_value'), list))

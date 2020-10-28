@@ -72,8 +72,7 @@ def validate_params(block_id, block_dict, extra_args=None):
     log.debug('Module: pkg Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
-    chain_args = extra_args.get('chaining_args')
-    name_param_chained = runner_utils.get_chained_param(chain_args)
+    name_param_chained = runner_utils.get_chained_param(extra_args)
     name_param = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     if not name_param_chained and not name_param:
         error['name'] = 'Mandatory parameter: name not found for id: %s' % (block_id)
@@ -101,9 +100,8 @@ def execute(block_id, block_dict, extra_args=None):
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing pkg module for id: {0}'.format(block_id))
-    chain_args = extra_args.get('chaining_args')
     # fetch required param
-    name = runner_utils.get_chained_param(chain_args)
+    name = runner_utils.get_chained_param(extra_args)
     if not name:
         name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
 
@@ -130,9 +128,8 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
                   'caller': 'Audit'}
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
-    chain_args = extra_args.get('chaining_args')
     # fetch required param
-    name = runner_utils.get_chained_param(chain_args)
+    name = runner_utils.get_chained_param(extra_args)
     if not name:
         name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
 

@@ -91,6 +91,7 @@ from hubblestack.utils.hubble_error import HubbleCheckValidationError
 
 log = logging.getLogger(__name__)
 
+
 def validate_params(block_id, block_dict, extra_args=None):
     """
     Validate all mandatory params required for this module
@@ -123,6 +124,7 @@ def validate_params(block_id, block_dict, extra_args=None):
 
     log.debug('Validation success for check-id: {0}'.format(block_id))
 
+
 def execute(block_id, block_dict, extra_args=None):
     """
     Execute the module
@@ -141,24 +143,25 @@ def execute(block_id, block_dict, extra_args=None):
     """
     log.debug('Executing readfile module for id: {0}'.format(block_id))
 
-    chain_args = None if not extra_args else extra_args.get('chaining_args')
     file_format = runner_utils.get_param_for_module(block_id, block_dict, 'format')
     if file_format in ['json', 'yaml']:
-        return _handle_file(file_format, block_id, block_dict, chain_args)
+        return _handle_file(file_format, block_id, block_dict, extra_args)
     elif file_format == 'config':
-        return _handle_config_file(block_id, block_dict, chain_args)
+        return _handle_config_file(block_id, block_dict, extra_args)
     elif file_format == 'string':
-        return _handle_string_file(block_id, block_dict, chain_args)
+        return _handle_string_file(block_id, block_dict, extra_args)
     else:
         return runner_utils.prepare_negative_result_for_module(block_id, 'Unknown file format')
 
-def _handle_file(file_format, block_id, block_dict, chain_args=None):
+
+def _handle_file(file_format, block_id, block_dict, extra_args=None):
     path = runner_utils.get_param_for_module(block_id, block_dict, 'path')
-    chained_param = runner_utils.get_chained_param(chain_args)
+    chained_param = runner_utils.get_chained_param(extra_args)
     subkey = runner_utils.get_param_for_module(block_id, block_dict, 'subkey')
     sep = runner_utils.get_param_for_module(block_id, block_dict, 'sep')
 
     return _handle_file_helper(file_format, block_id, path, subkey, sep, chained_param)
+
 
 def _handle_file_helper(file_format, block_id, path, subkey=None, sep=None, chained_param=None):
     """
@@ -218,9 +221,10 @@ def _handle_file_helper(file_format, block_id, path, subkey=None, sep=None, chai
 
     return runner_utils.prepare_positive_result_for_module(block_id, ret)
 
-def _handle_config_file(block_id, block_dict, chain_args=None):
+
+def _handle_config_file(block_id, block_dict, extra_args=None):
     path = runner_utils.get_param_for_module(block_id, block_dict, 'path')
-    chained_param = runner_utils.get_chained_param(chain_args)
+    chained_param = runner_utils.get_chained_param(extra_args)
     pattern = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
     ignore_pattern = runner_utils.get_param_for_module(block_id, block_dict, 'ignore_pattern')
     dictsep = runner_utils.get_param_for_module(block_id, block_dict, 'dictsep')
@@ -229,6 +233,7 @@ def _handle_config_file(block_id, block_dict, chain_args=None):
 
     return _handle_config_helper(
         block_id, path, pattern, ignore_pattern, dictsep, valsep, subsep, chained_param)
+
 
 def _handle_config_helper(block_id,
            path,
@@ -336,6 +341,7 @@ def _handle_config_helper(block_id,
         return runner_utils.prepare_positive_result_for_module(block_id, ret)
 
     return runner_utils.prepare_negative_result_for_module(block_id, ret)
+
 
 def _lines_as_list(path, pattern, ignore_pattern):
     """
@@ -453,13 +459,15 @@ def _process_line(line, dictsep, valsep, subsep):
 
     return key, val
 
-def _handle_string_file(block_id, block_dict, chain_args=None):
+
+def _handle_string_file(block_id, block_dict, extra_args=None):
     path = runner_utils.get_param_for_module(block_id, block_dict, 'path')
-    chained_param = runner_utils.get_chained_param(chain_args)
+    chained_param = runner_utils.get_chained_param(extra_args)
     encode_b64 = runner_utils.get_param_for_module(block_id, block_dict, 'encode_b64')
 
     return _readfile_string(
         block_id, path, encode_b64, chained_param)
+
 
 def _readfile_string(block_id, path, encode_b64=False, chained_param=None):
     """

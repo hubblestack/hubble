@@ -106,8 +106,7 @@ def execute(block_id, block_dict, extra_args=None):
     """
     log.debug('Executing osquery module for id: {0}'.format(block_id))
 
-    chain_args = extra_args.get('chaining_args')
-    chained_param = runner_utils.get_chained_param(chain_args)
+    chained_param = runner_utils.get_chained_param(extra_args)
     # fetch required param
     query = runner_utils.get_param_for_module(block_id, block_dict, 'query')
 
@@ -140,9 +139,8 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
-    chain_args = extra_args.get('chaining_args')
     # fetch required param
-    chained_param = runner_utils.get_chained_param(chain_args)
+    chained_param = runner_utils.get_chained_param(extra_args)
     query = runner_utils.get_param_for_module(block_id, block_dict, 'query')
     format_chained = runner_utils.get_param_for_module(block_id, block_dict, 'format_chained', True)
     if format_chained and chained_param:

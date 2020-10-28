@@ -82,7 +82,7 @@ def __virtual__():
     return True
 
 
-def execute(block_id, block_dict, chain_args=None):
+def execute(block_id, block_dict, extra_args=None):
     """
     Execute the module
 
@@ -90,17 +90,19 @@ def execute(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
+    :param extra_args:
         Chained argument dictionary, (If any)
-        Example: {'result': "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize", 'status': True}
+        Example: {'chaining_args': {'result': "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize", 'status': True},
+                  'caller': 'Audit'}
 
     returns:
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing win_reg module for id: {0}'.format(block_id))
 
-    if runner_utils.get_chained_param(chain_args):
-        reg_name = runner_utils.get_chained_param(chain_args)
+    chained_result = runner_utils.get_chained_param(extra_args)
+    if chained_result:
+        reg_name = chained_result
     else:
         reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     reg_dict = _reg_path_splitter(reg_name)
@@ -117,7 +119,7 @@ def execute(block_id, block_dict, chain_args=None):
     return runner_utils.prepare_positive_result_for_module(block_id, result)
 
 
-def validate_params(block_id, block_dict, chain_args=None):
+def validate_params(block_id, block_dict, extra_args=None):
     """
         Validate all mandatory params required for this module
 
@@ -125,9 +127,10 @@ def validate_params(block_id, block_dict, chain_args=None):
             id of the block
         :param block_dict:
             parameter for this module
-        :param chain_args:
+        :param extra_args:
             Chained argument dictionary, (If any)
-            Example: {'result': "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize", 'status': True}
+            Example: {'chaining_args': {'result': "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize", 'status': True},
+            'caller': 'Audit'}
 
         Raises:
             HubbleCheckValidationError: For any validation error
@@ -137,9 +140,12 @@ def validate_params(block_id, block_dict, chain_args=None):
     error = {}
 
     # fetch required param
-    chained_reg_name = runner_utils.get_chained_param(chain_args)
+    chained_pkg_name = None
+    chained_result = runner_utils.get_chained_param(extra_args)
+    if chained_result:
+        chained_pkg_name = chained_result
     reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
-    if not chained_reg_name and not reg_name:
+    if not chained_pkg_name and not reg_name:
         error['name'] = 'Mandatory parameter: name not found for id: %s' % block_id
     if error:
         raise HubbleCheckValidationError(error)
@@ -147,7 +153,7 @@ def validate_params(block_id, block_dict, chain_args=None):
     log.debug('Validation success for check-id: {0}'.format(block_id))
 
 
-def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
+def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     """
     For getting params to log, in non-verbose logging
 
@@ -155,14 +161,19 @@ def get_filtered_params_to_log(block_id, block_dict, chain_args=None):
         id of the block
     :param block_dict:
         parameter for this module
-    :param chain_args:
+    :param extra_args:
         Chained argument dictionary, (If any)
-        Example: {'result': "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize", 'status': True}
+        Example: {'chaining_args': {'result': "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize", 'status': True},
+                  'caller': 'Audit'}
     """
-    log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
+    log.debug('get_filtered_params_to_log for win_reg and id: {0}'.format(block_id))
 
     # fetch required param
-    reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+    chained_result = runner_utils.get_chained_param(extra_args)
+    if chained_result:
+        reg_name = chained_result
+    else:
+        reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
 
     return {'name': reg_name}
 

@@ -91,9 +91,8 @@ def validate_params(block_id, block_dict, extra_args=None):
         HubbleCheckValidationError: For any validation error
     """
     log.debug('Module: stat Start validating params for check-id: {0}'.format(block_id))
-    chain_args = extra_args.get('chaining_args')
     # fetch required param
-    filepath = runner_utils.get_chained_param(chain_args)
+    filepath = runner_utils.get_chained_param(extra_args)
     if not filepath:
         filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
 
@@ -120,9 +119,8 @@ def execute(block_id, block_dict, extra_args=None):
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing stat module for id: {0}'.format(block_id))
-    chain_args = extra_args.get('chaining_args')
     # fetch required param
-    filepath = runner_utils.get_chained_param(chain_args)
+    filepath = runner_utils.get_chained_param(extra_args)
     if not filepath:
         filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
 
@@ -148,9 +146,8 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
                   'caller': 'Audit'}
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
-    chain_args = extra_args.get('chaining_args')
     # fetch required param
-    filepath = runner_utils.get_chained_param(chain_args)
+    filepath = runner_utils.get_chained_param(extra_args)
     if not filepath:
         filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
     return {'path': filepath}

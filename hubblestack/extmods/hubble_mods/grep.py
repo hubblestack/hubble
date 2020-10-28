@@ -72,9 +72,8 @@ def validate_params(block_id, block_dict, extra_args=None):
     log.debug('Module: grep Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
-    chain_args = extra_args.get('chaining_args')
     # fetch required param
-    file_content = runner_utils.get_chained_param(chain_args)
+    file_content = runner_utils.get_chained_param(extra_args)
     filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
     if not file_content and not filepath:
         error['path'] = 'Mandatory parameter: path not found for id: %s' % (block_id)
@@ -106,14 +105,13 @@ def execute(block_id, block_dict, extra_args=None):
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing grep module for id: {0}'.format(block_id))
-    chain_args = extra_args.get('chaining_args')
     # default mode=file, search in file.
     # In chaining, this will search in chained content
     file_mode = True
     filepath = None
 
     # check if chained content is available
-    file_content = runner_utils.get_chained_param(chain_args)
+    file_content = runner_utils.get_chained_param(extra_args)
     if file_content:
         file_mode = False
         format_chained = runner_utils.get_param_for_module(block_id, block_dict, 'format_chained', True)

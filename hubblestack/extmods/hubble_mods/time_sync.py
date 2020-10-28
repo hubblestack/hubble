@@ -105,8 +105,7 @@ def validate_params(block_id, block_dict, extra_args=None):
     """
     log.debug('Module: time_sync Start validating params for check-id: {0}'.format(block_id))
 
-    chain_args = None if not extra_args else extra_args.get('chaining_args')
-    ntp_servers = _get_ntp_servers(block_id, block_dict, chain_args)
+    ntp_servers = _get_ntp_servers(block_id, block_dict, extra_args)
 
     if not ntp_servers:
         raise HubbleCheckValidationError('No ntp_servers provided')
@@ -134,8 +133,7 @@ def execute(block_id, block_dict, extra_args=None):
     """
     log.debug('Executing stat module for id: {0}'.format(block_id))
 
-    chain_args = None if not extra_args else extra_args.get('chaining_args')
-    ntp_servers = _get_ntp_servers(block_id, block_dict, chain_args)
+    ntp_servers = _get_ntp_servers(block_id, block_dict, extra_args)
 
     time_sync_result = []
 
@@ -173,14 +171,13 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
 
     # fetch required param
-    chain_args = None if not extra_args else extra_args.get('chaining_args')
-    ntp_servers = _get_ntp_servers(block_id, block_dict, chain_args)
+    ntp_servers = _get_ntp_servers(block_id, block_dict, extra_args)
     return {'ntp_servers': ntp_servers}
 
 
-def _get_ntp_servers(block_id, block_dict, chain_args):
+def _get_ntp_servers(block_id, block_dict, extra_args):
     ntp_servers = runner_utils.get_param_for_module(block_id, block_dict, 'ntp_servers')
-    ntp_servers_chained = runner_utils.get_chained_param(chain_args)
+    ntp_servers_chained = runner_utils.get_chained_param(extra_args)
 
     extend_chained = runner_utils.get_param_for_module(block_id, block_dict, 'extend_chained', True)
     if extend_chained:

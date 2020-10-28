@@ -79,9 +79,8 @@ def validate_params(block_id, block_dict, extra_args=None):
     log.debug('Module: FDG Connector Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
-    chain_args = extra_args.get('chaining_args')
     # fetch required param
-    fdg_file_chained = runner_utils.get_chained_param(chain_args)
+    fdg_file_chained = runner_utils.get_chained_param(extra_args)
     fdg_file = runner_utils.get_param_for_module(block_id, block_dict, 'fdg_file')
     if not fdg_file_chained and not fdg_file:
         error['fdg_file'] = 'Mandatory parameter: fdg_file not found for id: %s' % (block_id)
@@ -109,9 +108,8 @@ def execute(block_id, block_dict, extra_args=None):
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing FDG Connector module for id: {0}'.format(block_id))
-    chain_args = extra_args.get('chaining_args')
 
-    fdg_file = runner_utils.get_chained_param(chain_args)
+    fdg_file = runner_utils.get_chained_param(extra_args)
     if not fdg_file:
         fdg_file = runner_utils.get_param_for_module(block_id, block_dict, 'fdg_file')
 
@@ -165,9 +163,8 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
                   'caller': 'Audit'}
     """
     log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
-    chain_args = extra_args.get('chaining_args')
     # fetch required param
-    fdg_file = runner_utils.get_chained_param(chain_args)
+    fdg_file = runner_utils.get_chained_param(extra_args)
     if not fdg_file:
         fdg_file = runner_utils.get_param_for_module(block_id, block_dict, 'fdg_file')
 

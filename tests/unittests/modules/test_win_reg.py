@@ -21,7 +21,7 @@ class TestWinReg(TestCase):
                             }
                      }
         win_reg.runner_utils.get_param_for_module = mock.Mock(return_value=reg_name)
-        result = win_reg.get_filtered_params_to_log(block_id, block_dict, chain_args=None)
+        result = win_reg.get_filtered_params_to_log(block_id, block_dict, extra_args=None)
         self.assertEquals(result.get("name"), reg_name)
 
     def test_reg_path_splitter(self):

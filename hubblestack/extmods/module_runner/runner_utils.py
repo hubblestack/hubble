@@ -12,8 +12,8 @@ def get_chained_param(chain_args):
     """
     Get the chained param, if present
     """
-    if chain_args and 'result' in chain_args:
-        return chain_args['result']
+    if chain_args and 'chaining_args' in chain_args and 'result' in chain_args.get('chaining_args'):
+        return chain_args.get('chaining_args').get('result')
     return None
 
 

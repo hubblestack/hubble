@@ -133,8 +133,8 @@ def execute(block_id, block_dict, extra_args=None):
     """
     log.debug('Executing Curl module for id: {0}'.format(block_id))
 
-    chain_args = None if not extra_args else extra_args.get('chaining_args')
-    if chain_args:
+    chained_param = runner_utils.get_chained_param(extra_args)
+    if chained_param:
         log.warn('Chained value detected in curl.request module. Chained '
                  'values are unsupported in the curl module.')
 

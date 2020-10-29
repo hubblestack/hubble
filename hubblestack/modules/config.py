@@ -12,25 +12,24 @@ import logging
 
 # Import salt libs
 import hubblestack.config
-import salt.utils.data
-import salt.utils.dictupdate
-import salt.utils.files
-import salt.utils.platform
+import hubblestack.utils.data
+import hubblestack.utils.dictupdate
+import hubblestack.utils.files
+import hubblestack.utils.platform
 try:
-    # Gated for salt-ssh (salt.utils.cloud imports msgpack)
-    import salt.utils.cloud
+    # Gated for salt-ssh (hubblestack.utils.cloud imports msgpack)
+    import hubblestack.utils.cloud
     HAS_CLOUD = True
 except ImportError:
     HAS_CLOUD = False
 
-import salt._compat
-import salt.syspaths as syspaths
-import salt.utils.sdb as sdb
+import hubblestack._compat
+import hubblestack.syspaths as syspaths
 
 # Import 3rd-party libs
-from salt.ext import six
+from hubblestack.ext import six
 
-if salt.utils.platform.is_windows():
+if hubblestack.utils.platform.is_windows():
     _HOSTS_FILE = os.path.join(
         os.environ['SystemRoot'], 'System32', 'drivers', 'etc', 'hosts')
 else:
@@ -108,7 +107,7 @@ def manage_mode(mode):
     # config.manage_mode should no longer be invoked from the __salt__ dunder
     # in Salt code, this function is only being left here for backwards
     # compatibility.
-    return salt.utils.files.normalize_mode(mode)
+    return hubblestack.utils.files.normalize_mode(mode)
 
 
 def valid_fileproto(uri):
@@ -290,30 +289,24 @@ def get(key, default='', delimiter=':', omit_opts=False, omit_grains=False):
     '''
 
     if not omit_opts:
-        ret = salt.utils.data.traverse_dict_and_list(
+        ret = hubblestack.utils.data.traverse_dict_and_list(
             __opts__,
             key,
             '_|-',
             delimiter=delimiter)
-    if ret != '_|-':
-        return sdb.sdb_get(ret, __opts__)
 
     if not omit_grains:
-        ret = salt.utils.data.traverse_dict_and_list(
+        ret = hubblestack.utils.data.traverse_dict_and_list(
             __grains__,
             key,
             '_|-',
             delimiter)
-        if ret != '_|-':
-            return sdb.sdb_get(ret, __opts__)
 
-    ret = salt.utils.data.traverse_dict_and_list(
+    ret = hubblestack.utils.data.traverse_dict_and_list(
         DEFAULTS,
         key,
         '_|-',
         delimiter=delimiter)
-    if ret != '_|-':
-        return sdb.sdb_get(ret, __opts__)
 
     return default
 
@@ -337,26 +330,6 @@ def dot_vals(value):
         if key.startswith('{0}.'.format(value)):
             ret[key] = val
     return ret
-
-
-def gather_bootstrap_script(bootstrap=None):
-    '''
-    Download the salt-bootstrap script, and return its location
-
-    bootstrap
-        URL of alternate bootstrap script
-
-    CLI Example:
-
-    .. code-block:: bash
-
-        salt '*' config.gather_bootstrap_script
-    '''
-    if not HAS_CLOUD:
-        return False, 'config.gather_bootstrap_script is unavailable'
-    ret = salt.utils.cloud.update_bootstrap(__opts__, url=bootstrap)
-    if 'Success' in ret and len(ret['Success']['Files updated']) > 0:
-        return ret['Success']['Files updated'][0]
 
 
 def items():

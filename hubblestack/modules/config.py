@@ -26,9 +26,6 @@ except ImportError:
 import hubblestack._compat
 import hubblestack.syspaths as syspaths
 
-# Import 3rd-party libs
-from hubblestack.ext import six
-
 if hubblestack.utils.platform.is_windows():
     _HOSTS_FILE = os.path.join(
         os.environ['SystemRoot'], 'System32', 'drivers', 'etc', 'hosts')
@@ -177,14 +174,14 @@ def merge(value,
     if not omit_opts:
         if value in __opts__:
             ret = __opts__[value]
-            if isinstance(ret, six.string_types):
+            if isinstance(ret, str):
                 return ret
     if not omit_master:
         if value in __pillar__.get('master', {}):
             tmp = __pillar__['master'][value]
             if ret is None:
                 ret = tmp
-                if isinstance(ret, six.string_types):
+                if isinstance(ret, str):
                     return ret
             elif isinstance(ret, dict) and isinstance(tmp, dict):
                 tmp.update(ret)
@@ -197,7 +194,7 @@ def merge(value,
             tmp = __pillar__[value]
             if ret is None:
                 ret = tmp
-                if isinstance(ret, six.string_types):
+                if isinstance(ret, str):
                     return ret
             elif isinstance(ret, dict) and isinstance(tmp, dict):
                 tmp.update(ret)
@@ -323,10 +320,10 @@ def dot_vals(value):
         salt '*' config.dot_vals host
     '''
     ret = {}
-    for key, val in six.iteritems(__pillar__.get('master', {})):
+    for key, val in __pillar__.get('master', {}).items():
         if key.startswith('{0}.'.format(value)):
             ret[key] = val
-    for key, val in six.iteritems(__opts__):
+    for key, val in __opts__.items():
         if key.startswith('{0}.'.format(value)):
             ret[key] = val
     return ret

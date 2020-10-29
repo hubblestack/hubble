@@ -4,7 +4,6 @@ All Hubble configuration loading and defaults should be in this module
 """
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals, generators
 import os
 import re
 import sys
@@ -1696,7 +1695,7 @@ def _update_ssl_config(opts):
         val = opts['ssl'].get(key)
         if val is None:
             continue
-        if not isinstance(val, six.string_types) or not val.startswith(prefix) or not hasattr(ssl, val):
+        if not isinstance(val, str) or not val.startswith(prefix) or not hasattr(ssl, val):
             message = 'SSL option \'{0}\' must be set to one of the following values: \'{1}\'.' \
                     .format(key, '\', \''.join([val for val in dir(ssl) if val.startswith(prefix)]))
             log.error(message)

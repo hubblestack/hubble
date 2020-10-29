@@ -813,7 +813,7 @@ VALID_OPTS = {
     # part of the extra_minion_data param
     # Subconfig entries can be specified by using the ':' notation (e.g. key:subkey)
     "pass_to_ext_pillars": (str, list),
-    # Used by salt.modules.dockermod.compare_container_networks to specify which keys are compared
+    # Used by hubblestack.modules.dockermod.compare_container_networks to specify which keys are compared
     "docker.compare_container_networks": dict,
     # SSDP discovery publisher description.
     # Contains publisher configuration and minion mapping.
@@ -1605,7 +1605,7 @@ def load_config(path, env_var, default_path=None, exit_on_config_errors=True):
         previous_frame = inspect.getframeinfo(inspect.currentframe().f_back)
         log.warning(
             "The function '%s()' defined in '%s' is not yet using the "
-            "new 'default_path' argument to `salt.config.load_config()`. "
+            "new 'default_path' argument to `hubblestack.config.load_config()`. "
             "As such, the '%s' environment variable will be ignored",
             previous_frame.function,
             previous_frame.filename,
@@ -1644,7 +1644,7 @@ def load_config(path, env_var, default_path=None, exit_on_config_errors=True):
         except HubbleConfigurationError as error:
             log.error(error)
             if exit_on_config_errors:
-                sys.exit(salt.defaults.exitcodes.EX_GENERIC)
+                sys.exit(hubblestack.defaults.exitcodes.EX_GENERIC)
     else:
         log.debug("Missing configuration file: %s", path)
 
@@ -1693,7 +1693,7 @@ def include_config(include, orig_path, verbose, exit_on_config_errors=False):
             except HubbleConfigurationError as error:
                 log.error(error)
                 if exit_on_config_errors:
-                    sys.exit(salt.defaults.exitcodes.EX_GENERIC)
+                    sys.exit(hubblestack.defaults.exitcodes.EX_GENERIC)
                 else:
                     # Initialize default config if we wish to skip config errors
                     opts = {}
@@ -1782,13 +1782,13 @@ def get_config(
     Reads in the minion configuration file and sets up special options
 
     This is useful for Minion-side operations, such as the
-    :py:class:`~salt.client.Caller` class, and manually running the loader
+    :py:class:`~hubblestack.client.Caller` class, and manually running the loader
     interface.
 
     .. code-block:: python
 
-        import salt.config
-        minion_opts = salt.config.get_config('/etc/salt/minion')
+        import hubblestack.config
+        minion_opts = hubblestack.config.get_config('/etc/salt/minion')
     """
     if defaults is None:
         defaults = DEFAULT_OPTS.copy()

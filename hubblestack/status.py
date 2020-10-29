@@ -603,5 +603,5 @@ def _setup_for_testing():
     __opts__ = hubblestack.config.get_config(config_file)
     __opts__['conf_file'] = config_file
     __opts__.update(parsed_args)
-    import salt.loader
-    __grains__ = salt.loader.grains(__opts__)
+    import hubblestack.loader
+    __grains__ = hubblestack.loader.grains(__opts__)

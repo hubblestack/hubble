@@ -5,7 +5,6 @@ Test the fim (pulsar) internals for various correctness
 import os
 import shutil
 import logging
-import six
 
 from hubblestack.utils.exceptions import CommandExecutionError
 import hubblestack.extmods.modules.pulsar as pulsar

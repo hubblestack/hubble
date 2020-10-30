@@ -196,3 +196,13 @@ class HubbleDeserializationError(HubbleException):
     '''
     Thrown when hubble cannot deserialize data.
     '''
+
+class HubbleReqTimeoutError(HubbleException):
+    """
+    Thrown when a request fails to return within the timeout
+    """
+
+class HubbleDeserializationError(HubbleException):
+    '''
+    Thrown when hubble cannot deserialize data.
+    '''

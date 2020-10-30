@@ -23,8 +23,8 @@ from hubblestack.utils.exceptions import (
     CommandExecutionError, MinionError
 )
 import hubblestack.loader
-import salt.payload
-import hubblestack.extmods.fileserver
+import hubblestack.payload
+import hubblestack.fileserver
 import hubblestack.utils.data
 import hubblestack.utils.files
 import hubblestack.utils.gzip_util
@@ -82,7 +82,7 @@ class Client(object):
     def __init__(self, opts):
         self.opts = opts
         self.utils = hubblestack.loader.utils(self.opts)
-        self.serial = salt.payload.Serial(self.opts)
+        self.serial = hubblestack.payload.Serial(self.opts)
 
     # Add __setstate__ and __getstate__ so that the object may be
     # deep copied. It normally can't be deep copied because its
@@ -1113,7 +1113,7 @@ class FSClient(RemoteClient):
     def __init__(self, opts):  # pylint: disable=W0231
         Client.__init__(self, opts)  # pylint: disable=W0233
         self._closing = False
-        self.channel = hubblestack.extmods.fileserver.FSChan(opts)
+        self.channel = hubblestack.fileserver.FSChan(opts)
         self.auth = DumbAuth()
 
 

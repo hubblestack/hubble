@@ -21,13 +21,13 @@ import time
 import uuid
 from datetime import datetime
 
-import salt.fileserver
-import salt.fileserver.gitfs
+import hubblestack.fileserver
+import hubblestack.fileserver.gitfs
 import hubblestack.modules.cmdmod
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
-import salt.utils.jid
-import salt.utils.gitfs
+import hubblestack.utils.jid
+import hubblestack.utils.gitfs
 import hubblestack.utils.path
 from croniter import croniter
 
@@ -78,15 +78,15 @@ def _clear_gitfs_locks():
     # Clear old locks
     if 'gitfs' in __opts__['fileserver_backend'] or 'git' in __opts__['fileserver_backend']:
         git_objects = [
-            salt.utils.gitfs.GitFS(
+            hubblestack.utils.gitfs.GitFS(
                 __opts__,
                 __opts__['gitfs_remotes'],
-                per_remote_overrides=salt.fileserver.gitfs.PER_REMOTE_OVERRIDES,
-                per_remote_only=salt.fileserver.gitfs.PER_REMOTE_ONLY)]
+                per_remote_overrides=hubblestack.fileserver.gitfs.PER_REMOTE_OVERRIDES,
+                per_remote_only=hubblestack.fileserver.gitfs.PER_REMOTE_ONLY)]
         ret = {}
         for obj in git_objects:
             lock_type = 'update'
-            cleared, errors = salt.fileserver.clear_lock(obj.clear_lock, 'gitfs', remote=None,
+            cleared, errors = hubblestack.fileserver.clear_lock(obj.clear_lock, 'gitfs', remote=None,
                                                          lock_type=lock_type)
             if cleared:
                 ret.setdefault('cleared', []).extend(cleared)
@@ -140,7 +140,7 @@ def main():
     count = 0
     while True:
         try:
-            file_client = salt.fileclient.get_file_client(__opts__)
+            file_client = hubblestack.fileclient.get_file_client(__opts__)
             file_client.channel.fs.update()
             last_fc_update = time.time()
             break
@@ -359,7 +359,7 @@ def _execute_function(jobdata, func, returners, args, kwargs):
             continue
         log.debug('Returning job data to %s', returner)
         returner_ret = {'id': __grains__['id'],
-                        'jid': salt.utils.jid.gen_jid(__opts__),
+                        'jid': hubblestack.utils.jid.gen_jid(__opts__),
                         'fun': func,
                         'fun_args': args + ([kwargs] if kwargs else []),
                         'return': ret}
@@ -426,7 +426,7 @@ def run_function():
         else:
             log.info('Returning job data to %s', returner)
             returner_ret = {'id': __grains__['id'],
-                            'jid': salt.utils.jid.gen_jid(__opts__),
+                            'jid': hubblestack.utils.jid.gen_jid(__opts__),
                             'fun': __opts__['function'],
                             'fun_args': args + ([kwargs] if kwargs else []),
                             'return': ret}
@@ -480,7 +480,7 @@ def load_config(args=None):
         # them a signal 15 (otherwise refuse to run)
         if not __opts__.get('ignore_running', False):
             check_pidfile(kill_other=True, scan_proc=scan_proc)
-        salt.utils.daemonize()
+        hubblestack.utils.daemonize()
         create_pidfile()
     elif not __opts__['function'] and not __opts__['version'] and not __opts__['buildinfo']:
         # check the pidfile and possibly refuse to run (assuming this isn't a single function call)

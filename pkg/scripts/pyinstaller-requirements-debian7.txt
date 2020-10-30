@@ -7,7 +7,6 @@ logging
 daemon
 boto3
 botocore
-salt-ssh
 gitpython
 pyinotify
 cffi

@@ -61,7 +61,7 @@ import hubblestack.utils.pkg
 import hubblestack.utils.platform
 import hubblestack.utils.win_functions
 import hubblestack.template
-import salt.payload
+import hubblestack.payload
 
 log = logging.getLogger(__name__)
 
@@ -378,7 +378,7 @@ def get_repo_data(saltenv='base'):
         log.trace('get_repo_data called reading from disk')
 
     try:
-        serial = salt.payload.Serial(__opts__)
+        serial = hubblestack.payload.Serial(__opts__)
         with hubblestack.utils.files.fopen(repo_details.winrepo_file, 'rb') as repofile:
             try:
                 repodata = hubblestack.utils.data.decode(serial.loads(repofile.read()) or {})
@@ -526,7 +526,7 @@ def genrepo(**kwargs):
                     ret,
                     successful_verbose
                     )
-    serial = salt.payload.Serial(__opts__)
+    serial = hubblestack.payload.Serial(__opts__)
 
     with hubblestack.utils.files.fopen(repo_details.winrepo_file, 'wb') as repo_cache:
         repo_cache.write(serial.dumps(ret))

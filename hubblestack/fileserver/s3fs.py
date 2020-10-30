@@ -87,7 +87,7 @@ import pickle
 import logging
 
 # Import salt libs
-import hubblestack.extmods.fileserver as fs
+import hubblestack.fileserver as fs
 import hubblestack.utils.files
 import hubblestack.utils.gzip_util
 import hubblestack.utils.hashutils

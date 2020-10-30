@@ -36,8 +36,8 @@ import hubblestack.utils.stringutils
 import hubblestack.utils.url
 import hubblestack.utils.user
 import hubblestack.utils.versions
-import hubblestack.extmods.fileserver
-from hubblestack.config import DEFAULT_MASTER_OPTS as _DEFAULT_MASTER_OPTS
+import hubblestack.fileserver
+from hubblestack.config import DEFAULT_OPTS
 from hubblestack.utils.odict import OrderedDict
 from hubblestack.utils.process import os_is_running as pid_exists
 from hubblestack.utils.exceptions import (
@@ -48,7 +48,7 @@ from hubblestack.utils.exceptions import (
 from hubblestack.utils.versions import LooseVersion as _LooseVersion
 
 
-VALID_REF_TYPES = _DEFAULT_MASTER_OPTS['gitfs_ref_types']
+VALID_REF_TYPES = DEFAULT_OPTS['gitfs_ref_types']
 
 # Optional per-remote params that can only be used on a per-remote basis, and
 # thus do not have defaults in salt/config.py.
@@ -373,7 +373,7 @@ class GitProvider(object):
             # are able to fetch.
             key = '{0}_refspecs'.format(self.role)
             try:
-                default_refspecs = _DEFAULT_MASTER_OPTS[key]
+                default_refspecs = DEFAULT_OPTS[key]
             except KeyError:
                 log.critical(
                     'The \'%s\' option has no default value in '
@@ -2088,7 +2088,7 @@ class GitBase(object):
         .. code-block:: Python
 
             import salt.utils.gitfs
-            from hubblestack.extmods.fileserver.gitfs import PER_REMOTE_OVERRIDES, PER_REMOTE_ONLY
+            from hubblestack.fileserver.gitfs import PER_REMOTE_OVERRIDES, PER_REMOTE_ONLY
 
             class CustomPygit2(salt.utils.gitfs.Pygit2):
                 def fetch_remotes(self):
@@ -2421,13 +2421,13 @@ class GitBase(object):
 
         if refresh_env_cache:
             new_envs = self.envs(ignore_cache=True)
-            serial = salt.payload.Serial(self.opts)
+            serial = hubblestack.payload.Serial(self.opts)
             with hubblestack.utils.files.fopen(self.env_cache, 'wb+') as fp_:
                 fp_.write(serial.dumps(new_envs))
                 log.trace('Wrote env cache data to %s', self.env_cache)
 
         try:
-            hubblestack.extmods.fileserver.reap_fileserver_cache_dir(
+            hubblestack.fileserver.reap_fileserver_cache_dir(
                 self.hash_cachedir,
                 self.find_file
             )
@@ -2713,7 +2713,7 @@ class GitFS(GitBase):
         Return a list of refs that can be used as environments
         '''
         if not ignore_cache:
-            cache_match = hubblestack.extmods.fileserver.check_env_cache(
+            cache_match = hubblestack.fileserver.check_env_cache(
                 self.opts,
                 self.env_cache
             )
@@ -2791,7 +2791,7 @@ class GitFS(GitBase):
                     fnd['stat'] = [mode]
                 return fnd
 
-            hubblestack.extmods.fileserver.wait_lock(lk_fn, dest)
+            hubblestack.fileserver.wait_lock(lk_fn, dest)
             try:
                 with hubblestack.utils.files.fopen(blobshadest, 'r') as fp_:
                     sha = hubblestack.utils.stringutils.to_unicode(fp_.read())
@@ -2919,7 +2919,7 @@ class GitFS(GitBase):
             '.{0}.w'.format(load['saltenv'].replace(os.path.sep, '_|-'))
         )
         cache_match, refresh_cache, save_cache = \
-            hubblestack.extmods.fileserver.check_file_list_cache(
+            hubblestack.fileserver.check_file_list_cache(
                 self.opts, form, list_cache, w_lock
             )
         if cache_match is not None:
@@ -2937,7 +2937,7 @@ class GitFS(GitBase):
             ret['dirs'] = sorted(ret['dirs'])
 
             if save_cache:
-                hubblestack.extmods.fileserver.write_file_list_cache(
+                hubblestack.fileserver.write_file_list_cache(
                     self.opts, ret, list_cache, w_lock
                 )
             # NOTE: symlinks are organized in a dict instead of a list, however

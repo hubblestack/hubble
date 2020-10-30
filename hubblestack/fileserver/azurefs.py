@@ -55,7 +55,7 @@ import os
 import os.path
 import shutil
 
-import hubblestack.extmods.fileserver
+import hubblestack.fileserver
 import hubblestack.utils.files
 import hubblestack.utils.gzip_util
 import hubblestack.utils.hashutils
@@ -103,7 +103,7 @@ def find_file(path, saltenv='base', **kwargs):
         if container.get('saltenv', 'base') != saltenv:
             continue
         full = os.path.join(_get_container_path(container), path)
-        if os.path.isfile(full) and not hubblestack.extmods.fileserver.is_file_ignored(
+        if os.path.isfile(full) and not hubblestack.fileserver.is_file_ignored(
                                                                 __opts__, path):
             fnd['path'] = full
             fnd['rel'] = path
@@ -234,7 +234,7 @@ def update():
                 fname = os.path.join(root, f)
                 relpath = os.path.relpath(fname, path)
                 if relpath not in blob_set:
-                    hubblestack.extmods.fileserver.wait_lock(fname + '.lk', fname)
+                    hubblestack.fileserver.wait_lock(fname + '.lk', fname)
                     try:
                         os.unlink(fname)
                     except Exception:
@@ -260,7 +260,7 @@ def update():
                     os.makedirs(os.path.dirname(fname))
                 # Lock writes
                 lk_fn = fname + '.lk'
-                hubblestack.extmods.fileserver.wait_lock(lk_fn, fname)
+                hubblestack.fileserver.wait_lock(lk_fn, fname)
                 with hubblestack.utils.files.fopen(lk_fn, 'w+') as fp_:
                     fp_.write('')
 
@@ -298,7 +298,7 @@ def update():
         # Write out file list
         container_list = path + '.list'
         lk_fn = container_list + '.lk'
-        hubblestack.extmods.fileserver.wait_lock(lk_fn, container_list)
+        hubblestack.fileserver.wait_lock(lk_fn, container_list)
         with hubblestack.utils.files.fopen(lk_fn, 'w+') as fp_:
             fp_.write('')
         with hubblestack.utils.files.fopen(container_list, 'w') as fp_:
@@ -354,7 +354,7 @@ def file_list(load):
                 continue
             container_list = _get_container_path(container) + '.list'
             lk = container_list + '.lk'
-            hubblestack.extmods.fileserver.wait_lock(lk, container_list, 5)
+            hubblestack.fileserver.wait_lock(lk, container_list, 5)
             if not os.path.exists(container_list):
                 continue
             with hubblestack.utils.files.fopen(container_list, 'r') as fp_:

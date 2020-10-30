@@ -446,8 +446,6 @@ def load_config(args=None):
     Load the config from configfile and load into imported salt modules
     """
 
-    # XXX: eventually, all the below should be done in a single pass in hubblestack.config
-
     # Parse arguments
     parsed_args = parse_args(args=args)
 

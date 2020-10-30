@@ -3,7 +3,7 @@
     :codeauthor: Pedro Algarvio (pedro@algarvio.me)
 
 
-    salt.utils.odict
+    hubblestack.utils.odict
     ~~~~~~~~~~~~~~~~
 
     This is a compatibility/"importability" layer for an ordered dictionary.

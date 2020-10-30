@@ -33,7 +33,7 @@ import hubblestack.utils.pkg.rpm
 import hubblestack.utils.stringutils
 import hubblestack.utils.environment
 import hubblestack.utils.args
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

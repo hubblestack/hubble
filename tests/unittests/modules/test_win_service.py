@@ -32,7 +32,7 @@ except ImportError:
 @skipIf(NO_MOCK, NO_MOCK_REASON)
 class WinServiceTestCase(TestCase, LoaderModuleMockMixin):
     '''
-        Test cases for salt.modules.win_service
+        Test cases for hubblestack.modules.win_service
     '''
     def setup_loader_modules(self):
         return {win_service: {}}

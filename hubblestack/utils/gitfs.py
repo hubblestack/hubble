@@ -40,7 +40,7 @@ import hubblestack.fileserver
 from hubblestack.config import DEFAULT_OPTS
 from hubblestack.utils.odict import OrderedDict
 from hubblestack.utils.process import os_is_running as pid_exists
-from hubblestack.utils.exceptions import (
+from hubblestack.exceptions import (
     FileserverConfigError,
     GitLockError,
     get_error_message
@@ -2080,17 +2080,17 @@ class GitBase(object):
         As of the 2018.3 release cycle, the classes used to interface with
         Pygit2 and GitPython can be overridden by passing the git_providers
         argument when spawning a class instance. This allows for one to write
-        classes which inherit from salt.utils.gitfs.Pygit2 or
-        salt.utils.gitfs.GitPython, and then direct one of the GitBase
+        classes which inherit from hubblestack.utils.gitfs.Pygit2 or
+        hubblestack.utils.gitfs.GitPython, and then direct one of the GitBase
         subclasses (GitFS, GitPillar, WinRepo) to use the custom class. For
         example:
 
         .. code-block:: Python
 
-            import salt.utils.gitfs
+            import hubblestack.utils.gitfs
             from hubblestack.fileserver.gitfs import PER_REMOTE_OVERRIDES, PER_REMOTE_ONLY
 
-            class CustomPygit2(salt.utils.gitfs.Pygit2):
+            class CustomPygit2(hubblestack.utils.gitfs.Pygit2):
                 def fetch_remotes(self):
                     ...
                     Alternate fetch behavior here
@@ -2098,10 +2098,10 @@ class GitBase(object):
 
             git_providers = {
                 'pygit2': CustomPygit2,
-                'gitpython': salt.utils.gitfs.GitPython,
+                'gitpython': hubblestack.utils.gitfs.GitPython,
             }
 
-            gitfs = salt.utils.gitfs.GitFS(
+            gitfs = hubblestack.utils.gitfs.GitFS(
                 __opts__,
                 __opts__['gitfs_remotes'],
                 per_remote_overrides=PER_REMOTE_OVERRIDES,

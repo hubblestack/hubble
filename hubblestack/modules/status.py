@@ -15,7 +15,7 @@ import time
 import hubblestack.utils.files
 import hubblestack.utils.path
 import hubblestack.utils.platform
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__file__)
 

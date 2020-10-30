@@ -21,7 +21,7 @@ import os
 import re
 import yaml
 import time
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 import hubblestack.loader
 import hubblestack.utils.platform

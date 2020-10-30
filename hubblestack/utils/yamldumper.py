@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-    salt.utils.yamldumper
+    hubblestack.utils.yamldumper
     ~~~~~~~~~~~~~~~~~~~~~
 """
 # pylint: disable=W0232

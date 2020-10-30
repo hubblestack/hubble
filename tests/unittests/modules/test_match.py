@@ -28,7 +28,7 @@ MINION_ID = "bar03"
 @patch("hubblestack.loader.matchers", MagicMock(return_value=MATCHERS_DICT))
 class MatchTestCase(TestCase, LoaderModuleMockMixin):
     """
-    This class contains a set of functions that test salt.modules.match.
+    This class contains a set of functions that test hubblestack.modules.match.
     """
 
     def setup_loader_modules(self):

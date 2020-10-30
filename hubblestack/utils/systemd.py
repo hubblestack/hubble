@@ -9,7 +9,7 @@ import os
 import re
 import subprocess
 
-from hubblestack.utils.exceptions import HubbleInvocationError
+from hubblestack.exceptions import HubbleInvocationError
 import hubblestack.utils.stringutils
 
 log = logging.getLogger(__name__)

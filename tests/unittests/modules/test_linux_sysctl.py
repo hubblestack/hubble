@@ -9,7 +9,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 # Import Salt Libs
 import hubblestack.modules.linux_sysctl as linux_sysctl
 import hubblestack.modules.systemd_service as systemd
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
@@ -19,7 +19,7 @@ from tests.support.unit import TestCase
 
 class LinuxSysctlTestCase(TestCase, LoaderModuleMockMixin):
     """
-    TestCase for salt.modules.linux_sysctl module
+    TestCase for hubblestack.modules.linux_sysctl module
     """
 
     def setup_loader_modules(self):

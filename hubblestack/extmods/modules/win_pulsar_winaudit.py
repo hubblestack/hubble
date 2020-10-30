@@ -14,10 +14,9 @@ import os
 import re
 import yaml
 
-import salt.loader
 import hubblestack.utils.platform
 
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 DEFAULT_MASK = ['ExecuteFile', 'Write', 'Delete', 'DeleteSubdirectoriesAndFiles',

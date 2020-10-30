@@ -10,7 +10,7 @@ import os
 import re
 
 import hubblestack.utils.systemd
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 import hubblestack.utils.data
 import hubblestack.utils.files
 import hubblestack.utils.stringutils
@@ -148,7 +148,7 @@ def persist(name, value, config=None):
     """
     Assign and persist a simple sysctl parameter for this minion. If ``config``
     is not specified, a sensible default will be chosen using
-    :mod:`sysctl.default_config <salt.modules.linux_sysctl.default_config>`.
+    :mod:`sysctl.default_config <hubblestack.modules.linux_sysctl.default_config>`.
     CLI Example:
     .. code-block:: bash
         salt '*' sysctl.persist net.ipv4.ip_forward 1

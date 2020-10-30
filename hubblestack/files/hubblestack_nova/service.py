@@ -54,7 +54,7 @@ service:
 import logging
 
 import fnmatch
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 
 from distutils.version import LooseVersion

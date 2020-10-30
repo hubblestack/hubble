@@ -68,7 +68,7 @@ import logging
 
 import fnmatch
 import re
-import salt.utils
+import hubblestack.utils
 
 log = logging.getLogger(__name__)
 

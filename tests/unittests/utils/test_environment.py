@@ -19,7 +19,7 @@ class UtilsTestCase(TestCase):
     '''
     def test_get_module_environment_empty(self):
         '''
-        Test for salt.utils.get_module_environment
+        Test for hubblestack.utils.get_module_environment
         Test if empty globals returns to an empty environment
         with the correct type.
         :return:
@@ -30,7 +30,7 @@ class UtilsTestCase(TestCase):
 
     def test_get_module_environment_opts(self):
         '''
-        Test for salt.utils.get_module_environment
+        Test for hubblestack.utils.get_module_environment
         Test if __opts__ are visible.
         :return:
         '''
@@ -51,7 +51,7 @@ class UtilsTestCase(TestCase):
 
     def test_get_module_environment_pillars(self):
         '''
-        Test for salt.utils.get_module_environment
+        Test for hubblestack.utils.get_module_environment
         Test if __pillar__ is visible.
         :return:
         '''
@@ -72,7 +72,7 @@ class UtilsTestCase(TestCase):
 
     def test_get_module_environment_pillar_override(self):
         '''
-        Test for salt.utils.get_module_environment
+        Test for hubblestack.utils.get_module_environment
         Test if __pillar__ is overriding __opts__.
         :return:
         '''
@@ -102,7 +102,7 @@ class UtilsTestCase(TestCase):
 
     def test_get_module_environment_sname_found(self):
         '''
-        Test for salt.utils.get_module_environment
+        Test for hubblestack.utils.get_module_environment
         Section name and module name are found.
         :return:
         '''
@@ -126,7 +126,7 @@ class UtilsTestCase(TestCase):
 
     def test_get_module_environment_mname_found(self):
         '''
-        Test for salt.utils.get_module_environment
+        Test for hubblestack.utils.get_module_environment
         Module name is found.
 
         :return:
@@ -151,7 +151,7 @@ class UtilsTestCase(TestCase):
 
     def test_get_module_environment_vname_found(self):
         '''
-        Test for salt.utils.get_module_environment
+        Test for hubblestack.utils.get_module_environment
         Virtual name is found.
 
         :return:
@@ -174,7 +174,7 @@ class UtilsTestCase(TestCase):
 
     def test_get_module_environment_vname_overridden(self):
         '''
-        Test for salt.utils.get_module_environment
+        Test for hubblestack.utils.get_module_environment
         Virtual namespace overridden.
 
         :return:

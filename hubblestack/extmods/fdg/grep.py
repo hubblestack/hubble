@@ -9,7 +9,7 @@ This fdg module allows for grepping against files and strings
 import logging
 import os.path
 
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

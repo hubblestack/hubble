@@ -56,7 +56,7 @@ EXPECTED = {
 
 class MinionsTestCase(TestCase):
     """
-    TestCase for salt.utils.minions module functions
+    TestCase for hubblestack.utils.minions module functions
     """
 
     def test_nodegroup_comp(self):
@@ -148,7 +148,7 @@ class TargetParseTestCase(TestCase):
 class NodegroupCompTest(TestCase):
     """
     Test nodegroup comparisons found in
-    salt.utils.minions.nodgroup_comp()
+    hubblestack.utils.minions.nodgroup_comp()
     """
 
     def test_simple_nodegroup(self):

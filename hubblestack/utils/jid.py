@@ -18,9 +18,9 @@ def gen_jid(opts=None):
     Generate a jid
     '''
     if opts is None:
-        salt.utils.versions.warn_until(
+        hubblestack.utils.versions.warn_until(
             'Sodium',
-            'The `opts` argument was not passed into salt.utils.jid.gen_jid(). '
+            'The `opts` argument was not passed into hubblestack.utils.jid.gen_jid(). '
             'This will be required starting in {version}.'
         )
         opts = {}

@@ -40,6 +40,7 @@ import hubblestack.utils.stdrec
 from hubblestack import __version__
 from hubblestack.hangtime import hangtime_wrapper
 import hubblestack.status
+import hubblestack.fileclient
 import hubblestack.saltoverrides
 
 log = logging.getLogger(__name__)

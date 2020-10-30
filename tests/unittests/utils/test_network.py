@@ -19,7 +19,7 @@ from tests.support.mock import (
 
 # Import salt libs
 import hubblestack.utils.network as network
-import hubblestack.utils.exceptions
+import hubblestack.exceptions
 from hubblestack.utils._compat import ipaddress
 
 log = logging.getLogger(__name__)

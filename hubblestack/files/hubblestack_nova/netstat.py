@@ -20,7 +20,7 @@ import copy
 import fnmatch
 import logging
 
-import salt.utils
+import hubblestack.utils
 
 log = logging.getLogger(__name__)
 

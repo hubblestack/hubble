@@ -44,8 +44,8 @@ import logging
 import fnmatch
 import os
 import re
-import salt.utils
-from hubblestack.utils.exceptions import CommandExecutionError
+import hubblestack.utils
+from hubblestack.exceptions import CommandExecutionError
 from collections import Counter
 
 log = logging.getLogger(__name__)

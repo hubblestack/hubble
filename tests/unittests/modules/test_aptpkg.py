@@ -15,7 +15,7 @@ from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import Mock, MagicMock, patch, NO_MOCK, NO_MOCK_REASON
 
-from hubblestack.utils.exceptions import CommandExecutionError, HubbleInvocationError
+from hubblestack.exceptions import CommandExecutionError, HubbleInvocationError
 import hubblestack.modules.aptpkg as aptpkg
 
 try:

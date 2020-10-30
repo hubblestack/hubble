@@ -178,7 +178,7 @@ def _query(function,
     if method != 'POST':
         header_dict['Accept'] = 'application/json'
 
-    result = salt.utils.http.query(
+    result = hubblestack.utils.http.query(
         url,
         method,
         params=query_params,

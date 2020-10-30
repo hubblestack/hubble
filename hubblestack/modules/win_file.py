@@ -34,7 +34,7 @@ import hubblestack.utils.files
 import hubblestack.utils.path
 import hubblestack.utils.platform
 from hubblestack.utils.functools import namespaced_function as _namespaced_function
-from hubblestack.utils.exceptions import CommandExecutionError, HubbleInvocationError
+from hubblestack.exceptions import CommandExecutionError, HubbleInvocationError
 
 from hubblestack.modules.file import (
     get_hash,

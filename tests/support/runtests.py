@@ -53,7 +53,7 @@ import shutil
 import logging
 import multiprocessing
 
-import salt.utils.json
+import hubblestack.utils.json
 
 # Import tests support libs
 import tests.support.paths as paths
@@ -78,7 +78,7 @@ try:
         coverage_object.save()
 
     def multiprocessing_start(obj):
-        coverage_options = salt.utils.json.loads(os.environ.get('SALT_RUNTESTS_COVERAGE_OPTIONS', '{}'))
+        coverage_options = hubblestack.utils.json.loads(os.environ.get('SALT_RUNTESTS_COVERAGE_OPTIONS', '{}'))
         if not coverage_options:
             return
 
@@ -158,7 +158,7 @@ class RuntimeVars(object):
 
     def lock(self):
         # Late import
-        from salt.utils.immutabletypes import freeze
+        from hubblestack.utils.immutabletypes import freeze
         frozen_vars = freeze(self._vars.copy())
         self._vars = frozen_vars
         self._locked = True

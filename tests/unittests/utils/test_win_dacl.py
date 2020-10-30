@@ -9,7 +9,7 @@ import tempfile
 import hubblestack.utils.platform
 import hubblestack.utils.win_dacl as win_dacl
 import hubblestack.utils.win_reg as win_reg
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Import Salt Testing Libs
 from tests.support.helpers import TstSuiteLoggingHandler, destructiveTest, random_string
@@ -32,7 +32,7 @@ FAKE_KEY = "SOFTWARE\\{0}".format(random_string("SaltTesting-", lowercase=False)
 @skipIf(not hubblestack.utils.platform.is_windows(), "System is not Windows")
 class WinDaclTestCase(TestCase):
     """
-    Test cases for salt.utils.win_dacl in the registry
+    Test cases for hubblestack.utils.win_dacl in the registry
     """
 
     def test_get_sid_string(self):
@@ -123,7 +123,7 @@ class WinDaclRegTestCase(TestCase, LoaderModuleMockMixin):
     obj_name = "HKLM\\" + FAKE_KEY
     obj_type = "registry"
     """
-    Test cases for salt.utils.win_dacl in the registry
+    Test cases for hubblestack.utils.win_dacl in the registry
     """
 
     def setup_loader_modules(self):
@@ -520,7 +520,7 @@ class WinDaclFileTestCase(TestCase, LoaderModuleMockMixin):
     obj_name = ""
     obj_type = "file"
     """
-    Test cases for salt.utils.win_dacl in the file system
+    Test cases for hubblestack.utils.win_dacl in the file system
     """
 
     def setup_loader_modules(self):

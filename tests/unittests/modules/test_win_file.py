@@ -12,7 +12,7 @@ import hubblestack.modules.win_file as win_file
 import hubblestack.utils.platform
 import hubblestack.utils.win_functions
 import hubblestack.utils.win_dacl as win_dacl
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
@@ -41,7 +41,7 @@ class DummyStat(object):
 
 class WinFileTestCase(TestCase, LoaderModuleMockMixin):
     """
-        Test cases for salt.modules.win_file
+        Test cases for hubblestack.modules.win_file
     """
 
     FAKE_RET = {"fake": "ret data"}
@@ -94,7 +94,7 @@ class WinFileTestCase(TestCase, LoaderModuleMockMixin):
 @skipIf(not hubblestack.utils.platform.is_windows(), "Skip on Non-Windows systems")
 class WinFileCheckPermsTestCase(TestCase, LoaderModuleMockMixin):
     """
-    Test cases for the check_perms function in salt.modules.win_file
+    Test cases for the check_perms function in hubblestack.modules.win_file
     """
 
     temp_file = ""
@@ -349,14 +349,14 @@ class WinFileCheckPermsTestCase(TestCase, LoaderModuleMockMixin):
 
     def test_stat(self):
         with patch("os.path.exists", MagicMock(return_value=True)), patch(
-                "salt.modules.win_file._resolve_symlink",
+                "hubblestack.modules.win_file._resolve_symlink",
                 MagicMock(side_effect=lambda path: path),
-        ), patch("salt.modules.win_file.get_uid", MagicMock(return_value=1)), patch(
-            "salt.modules.win_file.uid_to_user", MagicMock(return_value="dummy")
+        ), patch("hubblestack.modules.win_file.get_uid", MagicMock(return_value=1)), patch(
+            "hubblestack.modules.win_file.uid_to_user", MagicMock(return_value="dummy")
         ), patch(
-            "salt.modules.win_file.get_pgid", MagicMock(return_value=1)
+            "hubblestack.modules.win_file.get_pgid", MagicMock(return_value=1)
         ), patch(
-            "salt.modules.win_file.gid_to_group", MagicMock(return_value="dummy")
+            "hubblestack.modules.win_file.gid_to_group", MagicMock(return_value="dummy")
         ), patch(
             "os.stat", MagicMock(return_value=DummyStat())
         ):

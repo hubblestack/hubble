@@ -67,7 +67,7 @@ AUTH_PARAMS = ('user', 'password', 'pubkey', 'privkey', 'passphrase',
 
 from hubblestack.utils.signing import find_wrapf
 from hubblestack.utils.gitfs import GitFS
-from hubblestack.utils.exceptions import FileserverConfigError
+from hubblestack.exceptions import FileserverConfigError
 
 log = logging.getLogger(__name__)
 

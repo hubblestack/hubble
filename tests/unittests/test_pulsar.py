@@ -6,7 +6,7 @@ import os
 import shutil
 import logging
 
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 import hubblestack.extmods.modules.pulsar as pulsar
 
 log = logging.getLogger(__name__)

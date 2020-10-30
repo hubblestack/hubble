@@ -38,11 +38,11 @@ import yaml
 import zlib
 import traceback
 
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.files
 import hubblestack.utils.platform
 
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 from hubblestack import __version__
 import hubblestack.log
 
@@ -1640,7 +1640,7 @@ def extensions(extensions_topfile=None, extensions_loadfile=None):
               user: root                 # optional, default shown
               group: root                # optional, default shown
     """
-    if salt.utils.is_windows():
+    if hubblestack.utils.is_windows():
         log.error('Windows is not supported for nebula.extensions')
         return False
 

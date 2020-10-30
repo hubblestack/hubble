@@ -14,7 +14,7 @@ import builtins
 import hubblestack.utils.files
 import hubblestack.utils.platform
 import hubblestack.modules.cmdmod as cmdmod
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 from hubblestack.log import LOG_LEVELS
 
 # Import Salt Testing Libs
@@ -316,7 +316,7 @@ class CMDMODTestCase(TestCase, LoaderModuleMockMixin):
     def test_run_cwd_doesnt_exist_issue_7154(self):
         '''
         cmd.run should fail and raise
-        hubblestack.utils.exceptions.CommandExecutionError if the cwd dir does not
+        hubblestack.exceptions.CommandExecutionError if the cwd dir does not
         exist
         '''
         cmd = 'echo OHAI'

@@ -6,7 +6,7 @@
 import copy
 import fnmatch
 import logging
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 
 

@@ -19,7 +19,7 @@ import logging
 import traceback
 import yaml
 
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 from hubblestack import __version__
 from hubblestack.status import HubbleStatus
 from hubblestack.loader import nova as NovaLazyLoader

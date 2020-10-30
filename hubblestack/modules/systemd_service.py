@@ -25,7 +25,7 @@ import hubblestack.utils.files
 import hubblestack.utils.itertools
 import hubblestack.utils.stringutils
 import hubblestack.utils.systemd
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

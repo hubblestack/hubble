@@ -27,7 +27,7 @@ except ImportError:
     HAS_RPMUTILS = False
 
 # pylint: enable=import-error,redefined-builtin
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

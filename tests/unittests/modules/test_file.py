@@ -12,8 +12,8 @@ import hubblestack.modules.selinux
 import hubblestack.utils.files
 import hubblestack.utils.platform
 import hubblestack.utils.stringutils
-import salt.modules.config as configmod
-from hubblestack.utils.exceptions import HubbleInvocationError
+import hubblestack.modules.config as configmod
+from hubblestack.exceptions import HubbleInvocationError
 
 # Import Salt libs
 from tests.support.mixins import LoaderModuleMockMixin
@@ -516,7 +516,7 @@ class FileSelinuxTestCase(TestCase, LoaderModuleMockMixin):
         )
 
         # Disable lsattr calls
-        with patch("salt.utils.path.which") as m_which:
+        with patch("hubblestack.utils.path.which") as m_which:
             m_which.return_value = None
             result = filemod.check_perms(
                 self.tfile3.name,

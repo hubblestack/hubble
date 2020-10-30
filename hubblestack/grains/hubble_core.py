@@ -52,7 +52,7 @@ try:
 except ImportError:
     from distro import linux_distribution
 
-import hubblestack.utils.exceptions
+import hubblestack.exceptions
 import hubblestack.log
 import hubblestack.utils.dns
 import hubblestack.utils.files
@@ -719,7 +719,7 @@ def _virtual(osdata):
             if virtinfo:
                 try:
                     ret = __salt__['cmd.run_all']('{0} -a'.format(virtinfo))
-                except hubblestack.utils.exceptions.CommandExecutionError:
+                except hubblestack.exceptions.CommandExecutionError:
                     if hubblestack.log.is_logging_configured():
                         failed_commands.add(virtinfo)
                 else:
@@ -749,7 +749,7 @@ def _virtual(osdata):
                         continue
                     failed_commands.add(command)
                 continue
-        except hubblestack.utils.exceptions.CommandExecutionError:
+        except hubblestack.exceptions.CommandExecutionError:
             if hubblestack.log.is_logging_configured():
                 if hubblestack.utils.platform.is_windows():
                     continue
@@ -1515,14 +1515,14 @@ def _linux_bin_exists(binary):
             return __salt__['cmd.retcode'](
                 '{0} {1}'.format(search_cmd, binary)
             ) == 0
-        except hubblestack.utils.exceptions.CommandExecutionError:
+        except hubblestack.exceptions.CommandExecutionError:
             pass
 
     try:
         return len(__salt__['cmd.run_all'](
             'whereis -b {0}'.format(binary)
         )['stdout'].split()) > 1
-    except hubblestack.utils.exceptions.CommandExecutionError:
+    except hubblestack.exceptions.CommandExecutionError:
         return False
 
 
@@ -2037,7 +2037,7 @@ def os_data():
     if grains['kernel'] == 'FreeBSD':
         try:
             grains['osrelease'] = __salt__['cmd.run']('freebsd-version -u').split('-')[0]
-        except hubblestack.utils.exceptions.CommandExecutionError:
+        except hubblestack.exceptions.CommandExecutionError:
             # freebsd-version was introduced in 10.0.
             # derive osrelease from kernelversion prior to that
             grains['osrelease'] = grains['kernelrelease'].split('-')[0]

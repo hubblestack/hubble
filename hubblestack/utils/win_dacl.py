@@ -133,7 +133,7 @@ import logging
 
 import hubblestack.utils.platform
 import hubblestack.utils.win_functions
-from hubblestack.utils.exceptions import CommandExecutionError, HubbleInvocationError
+from hubblestack.exceptions import CommandExecutionError, HubbleInvocationError
 
 HAS_WIN32 = False
 try:
@@ -1397,10 +1397,10 @@ def rm_permissions(obj_name, principal, ace_type="all", obj_type="file"):
     .. code-block:: python
 
         # Remove jsnuffy's grant ACE from C:\Temp
-        salt.utils.win_dacl.rm_permissions('C:\\Temp', 'jsnuffy', 'grant')
+        hubblestack.utils.win_dacl.rm_permissions('C:\\Temp', 'jsnuffy', 'grant')
 
         # Remove all ACEs for jsnuffy from C:\Temp
-        salt.utils.win_dacl.rm_permissions('C:\\Temp', 'jsnuffy')
+        hubblestack.utils.win_dacl.rm_permissions('C:\\Temp', 'jsnuffy')
     """
     obj_dacl = dacl(obj_name, obj_type)
 
@@ -1434,7 +1434,7 @@ def get_permissions(obj_name, principal=None, obj_type="file"):
 
     .. code-block:: python
 
-        salt.utils.win_dacl.get_permissions('C:\\Temp')
+        hubblestack.utils.win_dacl.get_permissions('C:\\Temp')
     """
     obj_dacl = dacl(obj_name, obj_type)
 
@@ -1472,7 +1472,7 @@ def set_owner(obj_name, principal, obj_type="file"):
 
     .. code-block:: python
 
-        salt.utils.win_dacl.set_owner('C:\\MyDirectory', 'jsnuffy', 'file')
+        hubblestack.utils.win_dacl.set_owner('C:\\MyDirectory', 'jsnuffy', 'file')
     """
     sid = get_sid(principal)
 
@@ -1584,7 +1584,7 @@ def set_permissions(
 
     .. code-block:: python
 
-        salt.utils.win_dacl.set_permissions(
+        hubblestack.utils.win_dacl.set_permissions(
             'C:\\Temp', 'jsnuffy', 'full_control', 'grant')
     """
     # Set up applies_to defaults used by registry and file types
@@ -1651,11 +1651,11 @@ def has_permission(
     .. code-block:: python
 
         # Does Joe have read permissions to C:\Temp
-        salt.utils.win_dacl.has_permission(
+        hubblestack.utils.win_dacl.has_permission(
             'C:\\Temp', 'joe', 'read', 'grant', False)
 
         # Does Joe have Full Control of C:\Temp
-        salt.utils.win_dacl.has_permission(
+        hubblestack.utils.win_dacl.has_permission(
             'C:\\Temp', 'joe', 'full_control', 'grant')
     """
     # Validate access_mode
@@ -2176,7 +2176,7 @@ def set_inheritance(obj_name, enabled, obj_type="file", clear=False):
 
     .. code-block:: python
 
-        salt.utils.win_dacl.set_inheritance('C:\\Temp', False)
+        hubblestack.utils.win_dacl.set_inheritance('C:\\Temp', False)
     """
     if obj_type not in ["file", "registry", "registry32"]:
         raise HubbleInvocationError(
@@ -2221,7 +2221,7 @@ def get_inheritance(obj_name, obj_type="file"):
 
     .. code-block:: python
 
-        salt.utils.win_dacl.get_inheritance('HKLM\\SOFTWARE\\salt', 'registry')
+        hubblestack.utils.win_dacl.get_inheritance('HKLM\\SOFTWARE\\salt', 'registry')
     """
     obj_dacl = dacl(obj_name=obj_name, obj_type=obj_type)
     inherited = win32security.INHERITED_ACE
@@ -2331,7 +2331,7 @@ def set_perms(
                 {'user': {'perms': ['read_attributes', 'read_ea'], 'applies_to': 'this_folder'}}
 
             To see a list of available attributes and applies to settings see
-            the documentation for salt.utils.win_dacl.
+            the documentation for hubblestack.utils.win_dacl.
 
             A value of ``None`` will make no changes to the ``grant`` portion of
             the DACL. Default is ``None``.
@@ -2366,10 +2366,10 @@ def set_perms(
 
     .. code-block:: bash
 
-        import salt.utils.win_dacl
+        import hubblestack.utils.win_dacl
 
         # To grant the 'Users' group 'read & execute' permissions.
-        salt.utils.win_dacl.set_perms(obj_name='C:\\Temp',
+        hubblestack.utils.win_dacl.set_perms(obj_name='C:\\Temp',
                                       obj_type='file',
                                       grant_perms={
                                           'Users': {
@@ -2378,7 +2378,7 @@ def set_perms(
                                       })
 
         # Specify advanced attributes with a list
-        salt.utils.win_dacl.set_perms(obj_name='C:\\Temp',
+        hubblestack.utils.win_dacl.set_perms(obj_name='C:\\Temp',
                                       obj_type='file',
                                       grant_perms={
                                           'jsnuffy': {

@@ -490,7 +490,7 @@ class DataTestCase(TestCase):
         # the list corresponding to key path 'abc'. It is somewhat a
         # duplication of a test within test_traverse_dict_and_list, but
         # hubblestack.utils.data.subdict_match() does more than just invoke
-        # salt.utils.traverse_list_and_dict() so this particular assertion is a
+        # hubblestack.utils.traverse_list_and_dict() so this particular assertion is a
         # sanity check.
         self.assertTrue(
             hubblestack.utils.data.subdict_match(test_two_level_dict_and_list, "abc:ghi")

@@ -8,7 +8,7 @@ import copy
 import csv
 import fnmatch
 import logging
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 
 

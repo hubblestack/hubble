@@ -19,7 +19,7 @@ from http.server import BaseHTTPRequestHandler
 import hubblestack.utils.atomicfile
 
 # Import salt libs
-from hubblestack.utils.exceptions import (
+from hubblestack.exceptions import (
     CommandExecutionError, MinionError
 )
 import hubblestack.loader
@@ -34,7 +34,6 @@ import hubblestack.utils.path
 import hubblestack.utils.platform
 import hubblestack.utils.stringutils
 import hubblestack.utils.url
-from hubblestack.utils.openstack.swift import SaltSwift
 
 # pylint: disable=no-name-in-module,import-error
 # pylint: enable=no-name-in-module,import-error
@@ -88,7 +87,7 @@ class Client(object):
     # deep copied. It normally can't be deep copied because its
     # constructor requires an 'opts' parameter.
     # The TCP transport needs to be able to deep copy this class
-    # due to 'salt.utils.context.ContextDict.clone'.
+    # due to 'hubblestack.utils.context.ContextDict.clone'.
     def __setstate__(self, state):
         # This will polymorphically call __init__
         # in the derived class.
@@ -537,31 +536,6 @@ class Client(object):
                 return dest
             except Exception as exc:
                 raise MinionError('Could not retrieve {0} from FTP server. Exception: {1}'.format(url, exc))
-
-        if url_data.scheme == 'swift':
-            try:
-                def swift_opt(key, default):
-                    '''
-                    Get value of <key> from Minion config or from Pillar
-                    '''
-                    if key in self.opts:
-                        return self.opts[key]
-                    try:
-                        return self.opts['pillar'][key]
-                    except (KeyError, TypeError):
-                        return default
-
-                swift_conn = SaltSwift(swift_opt('keystone.user', None),
-                                       swift_opt('keystone.tenant', None),
-                                       swift_opt('keystone.auth_url', None),
-                                       swift_opt('keystone.password', None))
-
-                swift_conn.get_object(url_data.netloc,
-                                      url_data.path[1:],
-                                      dest)
-                return dest
-            except Exception:
-                raise MinionError('Could not fetch from {0}'.format(url))
 
         get_kwargs = {}
         if url_data.username is not None \

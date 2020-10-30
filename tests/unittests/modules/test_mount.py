@@ -9,7 +9,7 @@ import hubblestack.modules.mount as mount
 # Import Hubble Libs
 import hubblestack.utils.files
 import hubblestack.utils.path
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Import Hubble Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin

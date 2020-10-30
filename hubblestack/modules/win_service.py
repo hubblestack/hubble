@@ -13,7 +13,7 @@ import re
 
 # Import Salt libs
 import hubblestack.utils.platform
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Import 3rd party libs
 try:

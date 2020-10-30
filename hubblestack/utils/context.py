@@ -4,14 +4,12 @@
     :codeauthor: Thomas Jackson (jacksontj.89@gmail.com)
 
 
-    salt.utils.context
+    hubblestack.utils.context
     ~~~~~~~~~~~~~~~~~~
 
     Context managers used throughout Salt's source code.
 '''
-from __future__ import absolute_import, print_function, unicode_literals
 
-# Import python libs
 import copy
 import threading
 try:

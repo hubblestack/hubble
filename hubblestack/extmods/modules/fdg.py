@@ -119,9 +119,9 @@ import logging
 import os
 import yaml
 
-import salt.loader
-import salt.utils
-from hubblestack.utils.exceptions import CommandExecutionError
+import hubblestack.loader
+import hubblestack.utils
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 __fdg__ = None
@@ -166,7 +166,7 @@ def fdg(fdg_file, starting_chained=None):
 
     # Instantiate fdg modules
     global __fdg__
-    __fdg__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'fdg'),
+    __fdg__ = hubblestack.loader.LazyLoader(hubblestack.loader._module_dirs(__opts__, 'fdg'),
                                      __opts__,
                                      tag='fdg',
                                      pack={'__salt__': __salt__,
@@ -311,7 +311,7 @@ def _return(data, returner):
     # JIT load the returners, since most returns will be handled by the daemon
     global __returners__
     if not __returners__:
-        __returners__ = salt.loader.returners(__opts__, __salt__)
+        __returners__ = hubblestack.loader.returners(__opts__, __salt__)
 
     returner += '.returner'
     if returner not in __returners__:
@@ -319,7 +319,7 @@ def _return(data, returner):
         return False
     log.debug('Returning job data to %s', returner)
     returner_ret = {'id': __grains__['id'],
-                    'jid': salt.utils.jid.gen_jid(__opts__),
+                    'jid': hubblestack.utils.jid.gen_jid(__opts__),
                     'fun': 'fdg.fdg',
                     'fun_args': [],
                     'return': data[0],

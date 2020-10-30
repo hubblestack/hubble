@@ -68,10 +68,6 @@ def test_bucket_len():
     B = 5
 
     with HubbleStatusContext('test1', bucket_len=B) as hubble_status:
-        # XXX: There's currently a bug in the status system where if we don't mark
-        # something in the current time bucket, all the dicts returned from short()
-        # may be empty … In the interests of getting this test working, just mark
-        # something then circle back to this afterwards.
         hubble_status.mark('test1')
 
         # issue test1 mark N times, pretending one mark per second

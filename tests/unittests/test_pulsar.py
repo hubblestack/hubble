@@ -547,4 +547,4 @@ class TestPulsar2(object):
         levents4 = len(self.events)
 
         assert set4 == set([self.atfile])
-        assert levents4 == 3 # XXX: 4? CREATE? CREATE_MODIFY? CREATE+MODIFY??
+        assert levents4 == 3

@@ -79,7 +79,7 @@ def update_config(config_file):
 
 @pytest.fixture(scope='session')
 def config_file():
-    return os.path.join(tests_dir, 'hubble.config')
+    return os.path.join(tests_dir, 'resources', 'test.config')
 
 @pytest.fixture(scope='session')
 def HSL(config_file):

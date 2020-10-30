@@ -581,6 +581,9 @@ def _setup_cached_uuid():
 
 def _load_salt_config(parsed_args):
     """ load the configs for hubblestack.config.DEFAULT_OPTS """
+
+    # XXX: this needs to move to hubblestack.config
+
     # Load unique data for Windows or Linux
     if hubblestack.utils.platform.is_windows():
         if parsed_args.get('configfile') is None:

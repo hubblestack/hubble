@@ -805,22 +805,22 @@ def refresh_grains(initial=False):
 
     hubblestack.hec.opt.__grains__ = __grains__
     hubblestack.hec.opt.__mods__ = __mods__
-    hubblestack.hec.opt.__salt__ = __mods__
+    hubblestack.hec.opt.__mods__ = __mods__
     hubblestack.hec.opt.__opts__ = __opts__
 
     hubblestack.log.splunk.__grains__ = __grains__
     hubblestack.log.splunk.__mods__ = __mods__
-    hubblestack.log.splunk.__salt__ = __mods__
+    hubblestack.log.splunk.__mods__ = __mods__
     hubblestack.log.splunk.__opts__ = __opts__
 
     hubblestack.status.__opts__ = __opts__
     hubblestack.status.__mods__ = __mods__
-    hubblestack.status.__salt__ = __mods__
+    hubblestack.status.__mods__ = __mods__
     HSS.start_sigusr1_signal_handler()
 
     hubblestack.utils.signing.__opts__ = __opts__
     hubblestack.utils.signing.__mods__ = __mods__
-    hubblestack.utils.signing.__salt__ = __mods__
+    hubblestack.utils.signing.__mods__ = __mods__
 
     clear_selective_context()
 

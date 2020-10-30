@@ -46,7 +46,7 @@ class FileModuleTestCase(TestCase, LoaderModuleMockMixin):
     def setup_loader_modules(self):
         return {
             filemod: {
-                "__salt__": {
+                "__mods__": {
                     "config.manage_mode": configmod.manage_mode,
                     "cmd.run": cmdmod.run,
                     "cmd.run_all": cmdmod.run_all,
@@ -94,7 +94,7 @@ class FileBasicsTestCase(TestCase, LoaderModuleMockMixin):
     def setup_loader_modules(self):
         return {
             filemod: {
-                "__salt__": {
+                "__mods__": {
                     "config.manage_mode": configmod.manage_mode,
                     "cmd.run": cmdmod.run,
                     "cmd.run_all": cmdmod.run_all,
@@ -129,7 +129,7 @@ class FileBasicsTestCase(TestCase, LoaderModuleMockMixin):
 class LsattrTests(TestCase, LoaderModuleMockMixin):
     def setup_loader_modules(self):
         return {
-            filemod: {"__salt__": {"cmd.run": cmdmod.run}},
+            filemod: {"__mods__": {"cmd.run": cmdmod.run}},
         }
 
     def run(self, result=None):
@@ -174,7 +174,7 @@ class LsattrTests(TestCase, LoaderModuleMockMixin):
             "hubblestack.modules.file._chattr_has_extended_attrs", Mock(return_value=False),
         )
         patch_run = patch.dict(
-            filemod.__salt__, {"cmd.run": Mock(return_value=with_extended)},
+            filemod.__mods__, {"cmd.run": Mock(return_value=with_extended)},
         )
         with patch_has_ext, patch_run:
             actual = set(filemod.lsattr(fname)[fname])
@@ -201,7 +201,7 @@ class LsattrTests(TestCase, LoaderModuleMockMixin):
             "hubblestack.modules.file._chattr_has_extended_attrs", Mock(return_value=True),
         )
         patch_run = patch.dict(
-            filemod.__salt__, {"cmd.run": Mock(return_value=with_extended)},
+            filemod.__mods__, {"cmd.run": Mock(return_value=with_extended)},
         )
         with patch_has_ext, patch_run:
             actual = set(filemod.lsattr(fname)[fname])
@@ -228,7 +228,7 @@ class LsattrTests(TestCase, LoaderModuleMockMixin):
             "hubblestack.modules.file._chattr_has_extended_attrs", Mock(return_value=True),
         )
         patch_run = patch.dict(
-            filemod.__salt__, {"cmd.run": Mock(return_value=with_extended)},
+            filemod.__mods__, {"cmd.run": Mock(return_value=with_extended)},
         )
         with patch_has_ext, patch_run:
             actual = set(filemod.lsattr(fname)[fname])
@@ -243,7 +243,7 @@ class ChattrTests(TestCase, LoaderModuleMockMixin):
     def setup_loader_modules(self):
         return {
             filemod: {
-                "__salt__": {"cmd.run": cmdmod.run},
+                "__mods__": {"cmd.run": cmdmod.run},
                 "__opts__": {"test": False},
             },
         }
@@ -265,7 +265,7 @@ class ChattrTests(TestCase, LoaderModuleMockMixin):
         patch_which = patch("hubblestack.utils.path.which", Mock(return_value="fnord"),)
         patch_aix = patch("hubblestack.utils.platform.is_aix", Mock(return_value=True),)
         mock_run = MagicMock(return_value="fnord")
-        patch_run = patch.dict(filemod.__salt__, {"cmd.run": mock_run})
+        patch_run = patch.dict(filemod.__mods__, {"cmd.run": mock_run})
         with patch_which, patch_aix, patch_run:
             actual = filemod._chattr_version()
             self.assertIsNone(actual)
@@ -288,7 +288,7 @@ class ChattrTests(TestCase, LoaderModuleMockMixin):
         )
         patch_which = patch("hubblestack.utils.path.which", Mock(return_value="fnord"),)
         patch_run = patch.dict(
-            filemod.__salt__, {"cmd.run": MagicMock(return_value=sample_output)},
+            filemod.__mods__, {"cmd.run": MagicMock(return_value=sample_output)},
         )
         with patch_which, patch_run:
             actual = filemod._chattr_version()
@@ -297,7 +297,7 @@ class ChattrTests(TestCase, LoaderModuleMockMixin):
     def test_if_tune2fs_has_no_version_version_should_be_None(self):
         patch_which = patch("hubblestack.utils.path.which", Mock(return_value="fnord"),)
         patch_run = patch.dict(
-            filemod.__salt__, {"cmd.run": MagicMock(return_value="fnord")},
+            filemod.__mods__, {"cmd.run": MagicMock(return_value="fnord")},
         )
         with patch_which, patch_run:
             actual = filemod._chattr_version()
@@ -362,7 +362,7 @@ class ChattrTests(TestCase, LoaderModuleMockMixin):
             Mock(return_value={"user": "foo", "group": "bar", "mode": "123"}),
         )
         patch_run = patch.dict(
-            filemod.__salt__,
+            filemod.__mods__,
             {"cmd.run": MagicMock(return_value="--------- " + filename)},
         )
         with patch_chattr, patch_exists, patch_stats, patch_run:
@@ -421,7 +421,7 @@ class ChattrTests(TestCase, LoaderModuleMockMixin):
                 assert False, "not sure how to handle {}".format(cmd)
 
         patch_run = patch.dict(
-            filemod.__salt__, {"cmd.run": MagicMock(side_effect=fake_cmd)},
+            filemod.__mods__, {"cmd.run": MagicMock(side_effect=fake_cmd)},
         )
         patch_ver = patch(
             "hubblestack.modules.file._chattr_has_extended_attrs",
@@ -445,7 +445,7 @@ class FileSelinuxTestCase(TestCase, LoaderModuleMockMixin):
     def setup_loader_modules(self):
         return {
             filemod: {
-                "__salt__": {
+                "__mods__": {
                     "cmd.run": cmdmod.run,
                     "cmd.run_all": cmdmod.run_all,
                     "cmd.retcode": cmdmod.retcode,

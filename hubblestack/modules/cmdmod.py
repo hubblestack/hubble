@@ -336,14 +336,14 @@ def _check_avail(cmd):
                         for x in cmd])
     bret = True
     wret = False
-    if __salt__['config.get']('cmd_blacklist_glob'):
-        blist = __salt__['config.get']('cmd_blacklist_glob', [])
+    if __mods__['config.get']('cmd_blacklist_glob'):
+        blist = __mods__['config.get']('cmd_blacklist_glob', [])
         for comp in blist:
             if fnmatch.fnmatch(cmd, comp):
                 # BAD! you are blacklisted
                 bret = False
-    if __salt__['config.get']('cmd_whitelist_glob', []):
-        blist = __salt__['config.get']('cmd_whitelist_glob', [])
+    if __mods__['config.get']('cmd_whitelist_glob', []):
+        blist = __mods__['config.get']('cmd_whitelist_glob', [])
         for comp in blist:
             if fnmatch.fnmatch(cmd, comp):
                 # GOOD! You are whitelisted
@@ -936,7 +936,7 @@ def _run_all_quiet(cmd,
     output_loglevel argument is ignored. This is here for when we alias
     cmd.run_all directly to _run_all_quiet in certain chicken-and-egg
     situations where modules need to work both before and after
-    the __salt__ dictionary is populated (cf dracr.py)
+    the __mods__ dictionary is populated (cf dracr.py)
     '''
     return _run(cmd,
                 runas=runas,

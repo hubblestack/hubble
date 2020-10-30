@@ -46,7 +46,7 @@ def attr_call():
 
         salt '*' test.attr_call
     '''
-    return __salt__.grains.items()
+    return __mods__.grains.items()
 
 
 def module_report():
@@ -67,18 +67,18 @@ def module_report():
            'module_attrs': [],
            'missing_attrs': [],
            'missing_subs': []}
-    for ref in __salt__:
+    for ref in __mods__:
         if '.' in ref:
             ret['functions'].append(ref)
         else:
             ret['modules'].append(ref)
-            if hasattr(__salt__, ref):
+            if hasattr(__mods__, ref):
                 ret['module_attrs'].append(ref)
-            for func in __salt__[ref]:
+            for func in __mods__[ref]:
                 full = '{0}.{1}'.format(ref, func)
-                if hasattr(getattr(__salt__, ref), func):
+                if hasattr(getattr(__mods__, ref), func):
                     ret['function_attrs'].append(full)
-                if func in __salt__[ref]:
+                if func in __mods__[ref]:
                     ret['function_subs'].append(full)
     for func in ret['functions']:
         if func not in ret['function_attrs']:
@@ -179,7 +179,7 @@ def conf_test():
 
         salt '*' test.conf_test
     '''
-    return __salt__['config.option']('test.foo')
+    return __mods__['config.option']('test.foo')
 
 
 def get_opts():
@@ -197,9 +197,9 @@ def get_opts():
 
 def cross_test(func, args=None):
     '''
-    Execute a minion function via the __salt__ object in the test
+    Execute a minion function via the __mods__ object in the test
     module, used to verify that the minion functions can be called
-    via the __salt__ module.
+    via the __mods__ module.
 
     CLI Example:
 
@@ -209,7 +209,7 @@ def cross_test(func, args=None):
     '''
     if args is None:
         args = []
-    return __salt__[func](*args)
+    return __mods__[func](*args)
 
 
 def kwarg(**kwargs):
@@ -387,14 +387,14 @@ def provider(module):
         salt '*' test.provider service
     '''
     func = ''
-    for key in __salt__:
+    for key in __mods__:
         if not key.startswith('{0}.'.format(module)):
             continue
         func = key
         break
     if not func:
         return ''
-    pfn = sys.modules[__salt__[func].__module__].__file__
+    pfn = sys.modules[__mods__[func].__module__].__file__
     pfn = os.path.basename(pfn)
     return pfn[:pfn.rindex('.')]
 
@@ -410,7 +410,7 @@ def providers():
         salt '*' test.providers
     '''
     ret = {}
-    for funcname in __salt__:
+    for funcname in __mods__:
         modname = funcname.split('.')[0]
         if modname not in ret:
             ret[provider(modname)] = modname
@@ -551,7 +551,7 @@ def try_(module, return_try_exception=False, **kwargs):
         </pre>
     '''
     try:
-        return __salt__[module](**kwargs)
+        return __mods__[module](**kwargs)
     except Exception as e:
         if return_try_exception:
             return e

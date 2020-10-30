@@ -68,9 +68,9 @@ def _get_options():
     """
     Function that aggregates the configs for sumo and returns them as a list of dicts.
     """
-    if __salt__['config.get']('hubblestack:returner:sumo'):
+    if __mods__['config.get']('hubblestack:returner:sumo'):
         sumo_opts = []
-        returner_opts = __salt__['config.get']('hubblestack:returner:sumo')
+        returner_opts = __mods__['config.get']('hubblestack:returner:sumo')
         if not isinstance(returner_opts, list):
             returner_opts = [returner_opts]
         for opt in returner_opts:
@@ -80,13 +80,13 @@ def _get_options():
             sumo_opts.append(processed)
         return sumo_opts
     try:
-        sumo_nebula_return = __salt__['config.get']('hubblestack:returner:sumo:sumo_nebula_return')
+        sumo_nebula_return = __mods__['config.get']('hubblestack:returner:sumo:sumo_nebula_return')
     except Exception:
         return None
 
     sumo_opts = {'sumo_nebula_return': sumo_nebula_return,
-                 'proxy': __salt__['config.get']('hubblestack:nebula:returner:sumo:proxy', {}),
-                 'timeout': __salt__['config.get']('hubblestack:nebula:returner:sumo:timeout',
+                 'proxy': __mods__['config.get']('hubblestack:nebula:returner:sumo:proxy', {}),
+                 'timeout': __mods__['config.get']('hubblestack:nebula:returner:sumo:timeout',
                                                    9.05)}
 
     return [sumo_opts]

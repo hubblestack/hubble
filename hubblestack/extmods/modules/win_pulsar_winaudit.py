@@ -94,7 +94,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         Exclude directories or files from triggering events in the watched directory.
         Note that directory excludes should *not* have a trailing slash.
     """
-    config = __salt__['config.get']('hubblestack_pulsar', {})
+    config = __mods__['config.get']('hubblestack_pulsar', {})
     if isinstance(configfile, list):
         config['paths'] = configfile
     else:
@@ -130,11 +130,11 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         log.debug('Pulsar beacon config (compiled from config list):\n%s', config)
 
     # Validate Global Auditing with Auditpol
-    global_check = __salt__['cmd.run']('auditpol /get /category:"Object Access" /r | '
+    global_check = __mods__['cmd.run']('auditpol /get /category:"Object Access" /r | '
                                        'findstr /C:"File System"', python_shell=True)
     if global_check:
         if not 'Success and Failure' in global_check:
-            __salt__['cmd.run']('auditpol /set /subcategory:"file system"'
+            __mods__['cmd.run']('auditpol /set /subcategory:"file system"'
                                 ' /success:enable /failure:enable', python_shell=True)
             sys_check = 1
 
@@ -147,7 +147,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         log.error('The ACLs were not setup correctly, or global auditing is not enabled.'
                   ' This could have been remedied, but GP might need to be changed')
 
-    if __salt__['config.get']('hubblestack:pulsar:maintenance', False):
+    if __mods__['config.get']('hubblestack:pulsar:maintenance', False):
         # We're in maintenance mode, throw away findings
         ret = []
 
@@ -292,7 +292,7 @@ def _check_acl(path, mask, wtype, recurse):
         wtype = [wtype]
 
     path = "'" + path + "'"
-    audit_acl = __salt__['cmd.run']('(Get-Acl {0} -Audit).Audit | fl'.format(path),
+    audit_acl = __mods__['cmd.run']('(Get-Acl {0} -Audit).Audit | fl'.format(path),
                                     shell='powershell', python_shell=True)
     if not audit_acl:
         return False
@@ -440,7 +440,7 @@ def _add_acl(path, mask, wtype, recurse):
     access_mask = _get_ace_translation(audit_rules)
     flags = _get_ace_translation(inherit_type, audit_type)
 
-    __salt__['cmd.run'](
+    __mods__['cmd.run'](
         '$SD = ([WMIClass] "Win32_SecurityDescriptor").CreateInstance();'
         '$Trustee = ([WMIClass] "Win32_Trustee").CreateInstance();'
         '$ace = ([WMIClass] "Win32_ace").CreateInstance();'
@@ -473,7 +473,7 @@ def _remove_acl(path):
     """
     if os.path.exists(path):
         path = path.replace('\\', '\\\\')
-        __salt__['cmd.run']('$SD = ([WMIClass] "Win32_SecurityDescriptor").CreateInstance();'
+        __mods__['cmd.run']('$SD = ([WMIClass] "Win32_SecurityDescriptor").CreateInstance();'
                             '$SD.ControlFlags=16;'
                             '$wPrivilege = Get-WmiObject Win32_LogicalFileSecuritySetting '
                             '-filter "path=\'{0}\'" -EnableAllPrivileges;'
@@ -486,7 +486,7 @@ def _pull_events(time_frame):
     command = 'mode con:cols=1000 lines=1000; Get-WinEvent ' \
               '-FilterHashTable @{{''LogName = "security"; ' \
               'StartTime = [datetime]::Now.AddSeconds(-' + str(time_frame) + ');''Id = 4663}} | fl'
-    events_output = __salt__['cmd.run_stdout'](command.format(time_frame),
+    events_output = __mods__['cmd.run_stdout'](command.format(time_frame),
                                                shell='powershell', python_shell=True)
     events = events_output.split('\r\n\r\n')
     for event in events:

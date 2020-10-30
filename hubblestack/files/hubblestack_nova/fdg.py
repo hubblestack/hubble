@@ -91,7 +91,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 true_for_success = tag_data.get('true_for_success', True)
                 use_status = tag_data.get('use_status', False)
 
-                _, fdg_run = __salt__['fdg.fdg'](fdg_file, starting_chained=starting_chained)
+                _, fdg_run = __mods__['fdg.fdg'](fdg_file, starting_chained=starting_chained)
                 fdg_result, fdg_status = fdg_run
 
                 tag_data['fdg_result'] = fdg_result

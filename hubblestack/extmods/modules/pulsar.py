@@ -921,7 +921,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_config.yaml
         wm.prune()
         dt.fin()
 
-    if __salt__['config.get']('hubblestack:pulsar:maintenance', False):
+    if __mods__['config.get']('hubblestack:pulsar:maintenance', False):
         # We're in maintenance mode, throw away findings
         ret = []
 

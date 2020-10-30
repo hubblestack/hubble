@@ -194,10 +194,8 @@ def modules(
     )
 
     ret.pack['__mods__'] = ret
-    ret.pack['__salt__'] = ret # XXX: to remove at a later date
 
     return ret
-minion_mods = modules # XXX: remove eventually
 
 
 def returners(opts, functions, whitelist=None, context=None, proxy=None):
@@ -209,7 +207,7 @@ def returners(opts, functions, whitelist=None, context=None, proxy=None):
         opts,
         tag='returner',
         whitelist=whitelist,
-        pack={'__salt__': functions, '__context__': context, '__proxy__': proxy or {}},
+        pack={'__mods__': functions, '__context__': context, '__proxy__': proxy or {}},
     )
 
 
@@ -267,7 +265,7 @@ def grains(opts, force_refresh=False, proxy=None):
     grains.
 
     Since grains are computed early in the startup process, grains functions
-    do not have __salt__ or __proxy__ available.  At proxy-minion startup,
+    do not have __mods__ or __proxy__ available.  At proxy-minion startup,
     this function is called with the proxymodule LazyLoader object so grains
     functions can communicate with their controlled device.
 
@@ -400,7 +398,7 @@ def render(opts, functions):
     '''
     Returns the render modules
     '''
-    pack = {'__salt__': functions,
+    pack = {'__mods__': functions,
             '__grains__': opts.get('grains', {})}
     ret = LazyLoader(
         _module_dirs(
@@ -1415,9 +1413,7 @@ def nova(hubble_dir, opts, modules, context=None):
         funcname_filter=_nova_funcname_filter,
         xlate_modnames=_nova_xlate_modnames,
         xlate_funcnames=_nova_xlate_funcnames,
-        pack={ '__context__': context, '__mods__': modules,
-            '__salt__': modules # XXX to remove eventually
-            }
+        pack={ '__context__': context, '__mods__': modules }
     )
 
     loader.__data__ = d = dict()

@@ -108,7 +108,7 @@ def version_cmp(ver1, ver2, ignore_epoch=False):
 
                 ver1 = _ensure_epoch(ver1)
                 ver2 = _ensure_epoch(ver2)
-                result = __salt__['cmd.run_all'](
+                result = __mods__['cmd.run_all'](
                     ['rpmdev-vercmp', ver1, ver2],
                     python_shell=False,
                     redirect_stderr=True,

@@ -83,7 +83,7 @@ def _query_ntp_server(ntp_server):
     """
     # use w32tm instead of ntplib
     if hubblestack.utils.platform.is_windows():
-        ret = __salt__['cmd.run']('w32tm /stripchart /computer:{0} /dataonly /samples:1'.format(
+        ret = __mods__['cmd.run']('w32tm /stripchart /computer:{0} /dataonly /samples:1'.format(
             ntp_server))
         try:
             return float(ret.split('\n')[-1].split()[1][:-1])

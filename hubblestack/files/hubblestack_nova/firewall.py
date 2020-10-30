@@ -159,13 +159,13 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 args.update(tag_data['rule'])
 
                 # building the rule using iptables.build_rule
-                rule = __salt__['iptables.build_rule'](**args)
+                rule = __mods__['iptables.build_rule'](**args)
 
                 # replacing all the elements of the rule with the actual rule (for verbose mode)
                 tag_data['rule'] = rule
 
                 # checking the existence of the rule
-                salt_ret = __salt__['iptables.check'](table=table, chain=chain, rule=rule, family=family)
+                salt_ret = __mods__['iptables.check'](table=table, chain=chain, rule=rule, family=family)
 
                 if salt_ret not in (True, False):
                     log.error(salt_ret)

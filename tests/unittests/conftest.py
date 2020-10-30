@@ -97,10 +97,6 @@ def __mods__(HSL):
     return HSL.mods
 
 @pytest.fixture(scope='function')
-def __salt__(__mods__): # XXX remove eventually
-    return __mods__
-
-@pytest.fixture(scope='function')
 def __utils__(HSL):
     return HSL.utils
 

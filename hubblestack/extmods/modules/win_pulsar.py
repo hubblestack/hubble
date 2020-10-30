@@ -111,7 +111,7 @@ def process(configfile='salt://hubblestack_pulsar/hubblestack_pulsar_win_config.
         Exclude directories or files from triggering events in the watched directory.
          **Note that the directory excludes should not have a trailing slash**
     """
-    config = __salt__['config.get']('hubblestack_pulsar', {})
+    config = __mods__['config.get']('hubblestack_pulsar', {})
     if isinstance(configfile, list):
         config['paths'] = configfile
     else:
@@ -230,7 +230,7 @@ def queryjournal(drive):
       Maximum record version supported
       Write range tracking (enabled or disabled)
     """
-    qjournal = (__salt__['cmd.run']('fsutil usn queryjournal {0}'.format(drive))).split('\r\n')
+    qjournal = (__mods__['cmd.run']('fsutil usn queryjournal {0}'.format(drive))).split('\r\n')
     qj_dict = {}
     # format into dictionary
     if qjournal:
@@ -265,7 +265,7 @@ def readjournal(drive, next_usn=0):
         Minor version
         Record length
     """
-    jdata = (__salt__['cmd.run']('fsutil usn readjournal {0} startusn={1}'.format(
+    jdata = (__mods__['cmd.run']('fsutil usn readjournal {0} startusn={1}'.format(
         drive, next_usn))).split('\r\n\r\n')
     jd_list = []
     pattern = '%m/%d/%Y %H:%M:%S'
@@ -322,7 +322,7 @@ def getfilepath(pfid, fname, drive):
         retpath = __context__['win_pulsar_file_map'][pfid] + '\\' + fname
         return retpath
     try:
-        jfullpath = (__salt__['cmd.run'](
+        jfullpath = (__mods__['cmd.run'](
             'fsutil file queryfilenamebyid {0} 0x{1}'.format(drive, pfid),
             ignore_retcode=True)).replace('?\\', '\r\n')
         if 'Error:' in jfullpath:

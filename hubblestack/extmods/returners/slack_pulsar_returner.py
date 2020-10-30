@@ -118,7 +118,7 @@ def _get_options(ret=None):
                                                    attrs,
                                                    profile_attr=profile_attr,
                                                    profile_attrs=profile_attrs,
-                                                   __salt__=__salt__,
+                                                   __mods__=__mods__,
                                                    __opts__=__opts__,
                                                    defaults=defaults)
     return _options
@@ -155,7 +155,7 @@ def _query(function,
 
     if not api_key:
         try:
-            options = __salt__['config.option']('slack')
+            options = __mods__['config.option']('slack')
             if not api_key:
                 api_key = options.get('api_key')
         except (NameError, KeyError, AttributeError):

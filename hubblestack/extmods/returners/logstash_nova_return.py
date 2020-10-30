@@ -68,24 +68,24 @@ def _get_options():
     """
     Function that aggregates the configs for logstash and returns them as a list of dicts.
     """
-    if __salt__['config.get']('hubblestack:returner:logstash'):
-        returner_opts = __salt__['config.get']('hubblestack:returner:logstash')
+    if __mods__['config.get']('hubblestack:returner:logstash'):
+        returner_opts = __mods__['config.get']('hubblestack:returner:logstash')
         if not isinstance(returner_opts, list):
             returner_opts = [returner_opts]
         return [_process_opt(opt) for opt in returner_opts]
     try:
         logstash_opts = {
-            'password': __salt__['config.get']('hubblestack:returner:logstash:password'),
-            'indexer': __salt__['config.get']('hubblestack:returner:logstash:indexer'),
-            'sourcetype': __salt__['config.get']('hubblestack:returner:logstash:sourcetype'),
-            'user': __salt__['config.get']('hubblestack:returner:logstash:user'),
-            'port': __salt__['config.get']('hubblestack:returner:logstash:port'),
-            'custom_fields': __salt__['config.get'](
+            'password': __mods__['config.get']('hubblestack:returner:logstash:password'),
+            'indexer': __mods__['config.get']('hubblestack:returner:logstash:indexer'),
+            'sourcetype': __mods__['config.get']('hubblestack:returner:logstash:sourcetype'),
+            'user': __mods__['config.get']('hubblestack:returner:logstash:user'),
+            'port': __mods__['config.get']('hubblestack:returner:logstash:port'),
+            'custom_fields': __mods__['config.get'](
                 'hubblestack:returner:logstash:custom_fields', []),
-            'http_input_server_ssl': __salt__['config.get'](
+            'http_input_server_ssl': __mods__['config.get'](
                 'hubblestack:nova:returner:logstash:indexer_ssl', True),
-            'proxy': __salt__['config.get']('hubblestack:nova:returner:logstash:proxy', {}),
-            'timeout': __salt__['config.get']('hubblestack:nova:returner:logstash:timeout',
+            'proxy': __mods__['config.get']('hubblestack:nova:returner:logstash:proxy', {}),
+            'timeout': __mods__['config.get']('hubblestack:nova:returner:logstash:timeout',
                                               9.05)}
     except Exception:
         return None
@@ -156,7 +156,7 @@ def _generate_event(args, cloud_details, custom_fields, compliance=False, data=N
 
     for custom_field in custom_fields:
         custom_field_name = 'custom_' + custom_field
-        custom_field_value = __salt__['config.get'](custom_field, '')
+        custom_field_value = __mods__['config.get'](custom_field, '')
         if isinstance(custom_field_value, list):
             custom_field_value = ','.join(custom_field_value)
         if isinstance(custom_field_value, str):

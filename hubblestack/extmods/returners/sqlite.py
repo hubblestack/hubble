@@ -48,7 +48,7 @@ def _get_options(ret=None):
     _options = salt.returners.get_returner_options(__virtualname__,
                                                    ret,
                                                    attrs,
-                                                   __salt__=__salt__,
+                                                   __mods__=__mods__,
                                                    __opts__=__opts__,
                                                    defaults=defaults)
     log.debug("_options: %s", _options)

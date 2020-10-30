@@ -52,7 +52,7 @@ def show(config_file=False):
     )
     cmd = "sysctl -ae"
     ret = {}
-    out = __salt__["cmd.run"](cmd, output_loglevel="trace")
+    out = __mods__["cmd.run"](cmd, output_loglevel="trace")
     comps = [""]
     for line in out.splitlines():
         if any([line.startswith("{0}.".format(root)) for root in roots]):
@@ -73,7 +73,7 @@ def get(name):
         salt '*' sysctl.get hw.physmem
     """
     cmd = "sysctl -n {0}".format(name)
-    out = __salt__["cmd.run"](cmd, python_shell=False)
+    out = __mods__["cmd.run"](cmd, python_shell=False)
     return out
 
 
@@ -86,7 +86,7 @@ def assign(name, value):
     """
     ret = {}
     cmd = 'sysctl -w {0}="{1}"'.format(name, value)
-    data = __salt__["cmd.run_all"](cmd, python_shell=False)
+    data = __mods__["cmd.run_all"](cmd, python_shell=False)
 
     if data["retcode"] != 0:
         raise CommandExecutionError("sysctl failed: {0}".format(data["stderr"]))

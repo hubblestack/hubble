@@ -63,7 +63,7 @@ def version(*names, **kwargs):
         hubblestack.utils.data.is_true(kwargs.pop('versions_as_list', False))
     pkg_glob = False
     if len(names) != 0:
-        pkgs = __salt__['pkg.list_pkgs'](versions_as_list=True, **kwargs)
+        pkgs = __mods__['pkg.list_pkgs'](versions_as_list=True, **kwargs)
         for name in names:
             if '*' in name:
                 pkg_glob = True
@@ -72,7 +72,7 @@ def version(*names, **kwargs):
             else:
                 ret[name] = pkgs.get(name, [])
     if not versions_as_list:
-        __salt__['pkg_resource.stringify'](ret)
+        __mods__['pkg_resource.stringify'](ret)
     # Return a string if no globbing is used, and there is one item in the
     # return dict
     if len(ret) == 1 and not pkg_glob:

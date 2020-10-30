@@ -70,23 +70,23 @@ def _get_options():
     """
     Function that aggregates the configs for graylog and returns them as a list of dicts.
     """
-    if __salt__['config.get']('hubblestack:returner:graylog'):
-        returner_opts = __salt__['config.get']('hubblestack:returner:graylog')
+    if __mods__['config.get']('hubblestack:returner:graylog'):
+        returner_opts = __mods__['config.get']('hubblestack:returner:graylog')
         if not isinstance(returner_opts, list):
             returner_opts = [returner_opts]
         return [_process_opt(opt) for opt in returner_opts]
     try:
         graylog_opts = {
-            'gelfhttp': __salt__['config.get']('hubblestack:returner:graylog:gelfhttp'),
-            'sourcetype': __salt__['config.get']('hubblestack:returner:graylog:sourcetype'),
-            'custom_fields': __salt__['config.get']('hubblestack:returner:graylog:custom_fields',
+            'gelfhttp': __mods__['config.get']('hubblestack:returner:graylog:gelfhttp'),
+            'sourcetype': __mods__['config.get']('hubblestack:returner:graylog:sourcetype'),
+            'custom_fields': __mods__['config.get']('hubblestack:returner:graylog:custom_fields',
                                                     []),
-            'port': __salt__['config.get']('hubblestack:returner:graylog:port'),
-            'user': __salt__['config.get']('hubblestack:returner:graylog:user'),
-            'http_input_server_ssl': __salt__['config.get'](
+            'port': __mods__['config.get']('hubblestack:returner:graylog:port'),
+            'user': __mods__['config.get']('hubblestack:returner:graylog:user'),
+            'http_input_server_ssl': __mods__['config.get'](
                 'hubblestack:nova:returner:graylog:gelfhttp_ssl', True),
-            'proxy': __salt__['config.get']('hubblestack:nova:returner:graylog:proxy', {}),
-            'timeout': __salt__['config.get']('hubblestack:nova:returner:graylog:timeout', 9.05)}
+            'proxy': __mods__['config.get']('hubblestack:nova:returner:graylog:proxy', {}),
+            'timeout': __mods__['config.get']('hubblestack:nova:returner:graylog:timeout', 9.05)}
 
     except Exception:
         return None
@@ -131,7 +131,7 @@ def _generate_event(args, cloud_details, custom_fields, compliance=False, data=N
 
     for custom_field in custom_fields:
         custom_field_name = 'custom_' + custom_field
-        custom_field_value = __salt__['config.get'](custom_field, '')
+        custom_field_value = __mods__['config.get'](custom_field, '')
         if isinstance(custom_field_value, list):
             custom_field_value = ','.join(custom_field_value)
         if isinstance(custom_field_value, str):

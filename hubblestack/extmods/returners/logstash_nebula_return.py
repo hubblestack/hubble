@@ -77,25 +77,25 @@ def returner(ret):
 
 
 def _get_options():
-    if __salt__['config.get']('hubblestack:returner:logstash'):
-        returner_opts = __salt__['config.get']('hubblestack:returner:logstash')
+    if __mods__['config.get']('hubblestack:returner:logstash'):
+        returner_opts = __mods__['config.get']('hubblestack:returner:logstash')
         if not isinstance(returner_opts, list):
             returner_opts = [returner_opts]
         return [_process_opt(opt) for opt in returner_opts]
     try:
         logstash_opts = {
-            'password': __salt__['config.get']('hubblestack:returner:logstash:password'),
-            'indexer': __salt__['config.get']('hubblestack:returner:logstash:indexer'),
-            'sourcetype': __salt__['config.get'](
+            'password': __mods__['config.get']('hubblestack:returner:logstash:password'),
+            'indexer': __mods__['config.get']('hubblestack:returner:logstash:indexer'),
+            'sourcetype': __mods__['config.get'](
                 'hubblestack:nebula:returner:logstash:sourcetype'),
-            'custom_fields': __salt__['config.get'](
+            'custom_fields': __mods__['config.get'](
                 'hubblestack:nebula:returner:logstash:custom_fields', []),
-            'port': __salt__['config.get']('hubblestack:returner:logstash:port'),
-            'user': __salt__['config.get']('hubblestack:returner:logstash:user'),
-            'http_input_server_ssl': __salt__['config.get'](
+            'port': __mods__['config.get']('hubblestack:returner:logstash:port'),
+            'user': __mods__['config.get']('hubblestack:returner:logstash:user'),
+            'http_input_server_ssl': __mods__['config.get'](
                 'hubblestack:nebula:returner:logstash:indexer_ssl', True),
-            'proxy': __salt__['config.get']('hubblestack:nebula:returner:logstash:proxy', {}),
-            'timeout': __salt__['config.get']('hubblestack:nebula:returner:logstash:timeout',
+            'proxy': __mods__['config.get']('hubblestack:nebula:returner:logstash:proxy', {}),
+            'timeout': __mods__['config.get']('hubblestack:nebula:returner:logstash:timeout',
                                               9.05)}
     except Exception:
         return None
@@ -130,7 +130,7 @@ def _generate_event(custom_fields, args, cloud_details, query_result):
 
     for custom_field in custom_fields:
         custom_field_name = 'custom_' + custom_field
-        custom_field_value = __salt__['config.get'](custom_field, '')
+        custom_field_value = __mods__['config.get'](custom_field, '')
         if isinstance(custom_field_value, str):
             event.update({custom_field_name: custom_field_value})
         elif isinstance(custom_field_value, list):

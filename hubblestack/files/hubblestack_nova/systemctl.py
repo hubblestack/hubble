@@ -89,7 +89,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 name = tag_data['name']
                 audittype = tag_data['type']
 
-                enabled = __salt__['service.enabled'](name)
+                enabled = __mods__['service.enabled'](name)
                 # Blacklisted service (must not be running or not found)
                 if audittype == 'blacklist':
                     if not enabled:

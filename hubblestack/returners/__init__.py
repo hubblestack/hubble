@@ -23,20 +23,20 @@ def get_returner_options(virtualname=None, ret=None, attrs=None, **kwargs):
             value.virtualname.option
     :param attrs: options the returner wants to read
     :param __opts__: Optional dict-like object that contains a fallback config
-        in case the param `__salt__` is not supplied.
+        in case the param `__mods__` is not supplied.
         Defaults to empty dict.
-    :param __salt__: Optional dict-like object that exposes the salt API.
+    :param __mods__: Optional dict-like object that exposes the salt API.
         Defaults to empty dict.
-        a) if __salt__ contains a 'config.option' configuration options,
+        a) if __mods__ contains a 'config.option' configuration options,
             we infer the returner is being called from a state or module run ->
             config is a copy of the `config.option` function
-        b) if __salt__ was not available, we infer that the returner is being
+        b) if __mods__ was not available, we infer that the returner is being
         called from the Salt scheduler, so we look for the
         configuration options in the param `__opts__`
         -> cfg is a copy for the __opts__ dictionary
     :param str profile_attr: Optional.
         If supplied, an overriding config profile is read from
-        the corresponding key of `__salt__`.
+        the corresponding key of `__mods__`.
     :param dict profile_attrs: Optional
         .. fixme:: only keys are read
         For each key in profile_attr, a value is read in the are
@@ -50,11 +50,11 @@ def get_returner_options(virtualname=None, ret=None, attrs=None, **kwargs):
     profile_attr = kwargs.get("profile_attr", None)
     profile_attrs = kwargs.get("profile_attrs", None)
     defaults = kwargs.get("defaults", None)
-    __salt__ = kwargs.get("__salt__", {})
+    __mods__ = kwargs.get("__mods__", {})
     __opts__ = kwargs.get("__opts__", {})
 
     # select the config source
-    cfg = __salt__.get("config.option", __opts__)
+    cfg = __mods__.get("config.option", __opts__)
 
     # browse the config for relevant options, store them in a dict
     _options = dict(_options_browser(cfg, ret_config, defaults, virtualname, attrs,))
@@ -62,7 +62,7 @@ def get_returner_options(virtualname=None, ret=None, attrs=None, **kwargs):
     # override some values with relevant profile options
     _options.update(
         _fetch_profile_opts(
-            cfg, virtualname, __salt__, _options, profile_attr, profile_attrs
+            cfg, virtualname, __mods__, _options, profile_attr, profile_attrs
         )
     )
 
@@ -151,7 +151,7 @@ def _options_browser(cfg, ret_config, defaults, virtualname, options):
 
 
 def _fetch_profile_opts(
-    cfg, virtualname, __salt__, _options, profile_attr, profile_attrs
+    cfg, virtualname, __mods__, _options, profile_attr, profile_attrs
 ):
     """
     Fetches profile specific options if applicable
@@ -169,7 +169,7 @@ def _fetch_profile_opts(
     if profile:
         log.info("Using profile %s", profile)
 
-        if "config.option" in __salt__:
+        if "config.option" in __mods__:
             creds = cfg(profile)
         else:
             creds = cfg.get(profile)

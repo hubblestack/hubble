@@ -77,14 +77,14 @@ class RhServiceTestCase(TestCase, LoaderModuleMockMixin):
         with patch.object(rh_service, '_runlevel', MagicMock(return_value=3)):
             mock_run = MagicMock(return_value={'retcode': 0,
                                                'stdout': chkconfig_out})
-            with patch.dict(rh_service.__salt__, {'cmd.run_all': mock_run}):
+            with patch.dict(rh_service.__mods__, {'cmd.run_all': mock_run}):
                 self.assertTrue(rh_service._chkconfig_is_enabled(name))
                 self.assertFalse(rh_service._chkconfig_is_enabled(name, 2))
                 self.assertTrue(rh_service._chkconfig_is_enabled(name, 3))
 
             mock_run = MagicMock(return_value={'retcode': 0,
                                                'stdout': xinetd_out})
-            with patch.dict(rh_service.__salt__, {'cmd.run_all': mock_run}):
+            with patch.dict(rh_service.__mods__, {'cmd.run_all': mock_run}):
                 self.assertTrue(rh_service._chkconfig_is_enabled(name))
                 self.assertTrue(rh_service._chkconfig_is_enabled(name, 2))
                 self.assertTrue(rh_service._chkconfig_is_enabled(name, 3))
@@ -124,17 +124,17 @@ class RhServiceTestCase(TestCase, LoaderModuleMockMixin):
         '''
         with patch.object(rh_service, '_service_is_upstart', self._m_bool()):
             mock_run = MagicMock(return_value='start/running')
-            with patch.dict(rh_service.__salt__, {'cmd.run': mock_run}):
+            with patch.dict(rh_service.__mods__, {'cmd.run': mock_run}):
                 self.assertTrue(rh_service.status('salt-api'))
 
         with patch.object(rh_service, '_service_is_upstart',
                           self._m_bool(False)):
-            with patch.dict(rh_service.__salt__, {'status.pid':
+            with patch.dict(rh_service.__mods__, {'status.pid':
                                                   self._m_bool()}):
                 self.assertTrue(rh_service.status('salt-api', sig=True))
 
             mock_ret = MagicMock(return_value=0)
-            with patch.dict(rh_service.__salt__, {'cmd.retcode': mock_ret}):
+            with patch.dict(rh_service.__mods__, {'cmd.retcode': mock_ret}):
                 self.assertTrue(rh_service.status('salt-api'))
 
     def test_enabled(self):

@@ -152,7 +152,7 @@ class AptPkgTestCase(TestCase, LoaderModuleMockMixin):
         '''
         version = LOWPKG_INFO['wget']['version']
         mock = MagicMock(return_value=version)
-        with patch.dict(aptpkg.__salt__, {'pkg_resource.version': mock}):
+        with patch.dict(aptpkg.__mods__, {'pkg_resource.version': mock}):
             self.assertEqual(aptpkg.version(*['wget']), version)
 
     def test_refresh_db(self):
@@ -171,7 +171,7 @@ class AptPkgTestCase(TestCase, LoaderModuleMockMixin):
             'stdout': APT_Q_UPDATE
         })
         with patch('hubblestack.utils.pkg.clear_rtag', MagicMock()):
-            with patch.dict(aptpkg.__salt__, {'cmd.run_all': mock, 'config.get': MagicMock(return_value=False)}):
+            with patch.dict(aptpkg.__mods__, {'cmd.run_all': mock, 'config.get': MagicMock(return_value=False)}):
                 self.assertEqual(aptpkg.refresh_db(), refresh_db)
 
     def test_refresh_db_failed(self):
@@ -184,7 +184,7 @@ class AptPkgTestCase(TestCase, LoaderModuleMockMixin):
             'stdout': APT_Q_UPDATE_ERROR
         })
         with patch('hubblestack.utils.pkg.clear_rtag', MagicMock()):
-            with patch.dict(aptpkg.__salt__, {'cmd.run_all': mock, 'config.get': MagicMock(return_value=False)}):
+            with patch.dict(aptpkg.__mods__, {'cmd.run_all': mock, 'config.get': MagicMock(return_value=False)}):
                 self.assertRaises(CommandExecutionError, aptpkg.refresh_db, **kwargs)
 
 @skipIf(pytest is None, 'PyTest is missing')
@@ -200,9 +200,9 @@ class AptUtilsTestCase(TestCase, LoaderModuleMockMixin):
         Call default apt.
         :return:
         '''
-        with patch.dict(aptpkg.__salt__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=False)}):
+        with patch.dict(aptpkg.__mods__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=False)}):
             aptpkg._call_apt(['apt-get', 'install', 'emacs'])  # pylint: disable=W0106
-            aptpkg.__salt__['cmd.run_all'].assert_called_once_with(
+            aptpkg.__mods__['cmd.run_all'].assert_called_once_with(
                 ['apt-get', 'install', 'emacs'], env={},
                 output_loglevel='trace', python_shell=False)
 
@@ -212,9 +212,9 @@ class AptUtilsTestCase(TestCase, LoaderModuleMockMixin):
         Call apt within the scope.
         :return:
         '''
-        with patch.dict(aptpkg.__salt__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=True)}):
+        with patch.dict(aptpkg.__mods__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=True)}):
             aptpkg._call_apt(['apt-get', 'purge', 'vim'])  # pylint: disable=W0106
-            aptpkg.__salt__['cmd.run_all'].assert_called_once_with(
+            aptpkg.__mods__['cmd.run_all'].assert_called_once_with(
                 ['systemd-run', '--scope', 'apt-get', 'purge', 'vim'], env={},
                 output_loglevel='trace', python_shell=False)
 
@@ -223,10 +223,10 @@ class AptUtilsTestCase(TestCase, LoaderModuleMockMixin):
         Call apt with the optinal keyword arguments.
         :return:
         '''
-        with patch.dict(aptpkg.__salt__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=False)}):
+        with patch.dict(aptpkg.__mods__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=False)}):
             aptpkg._call_apt(['dpkg', '-l', 'python'],
                              python_shell=True, output_loglevel='quiet', ignore_retcode=False,
                              username='Darth Vader')  # pylint: disable=W0106
-            aptpkg.__salt__['cmd.run_all'].assert_called_once_with(
+            aptpkg.__mods__['cmd.run_all'].assert_called_once_with(
                 ['dpkg', '-l', 'python'], env={}, ignore_retcode=False,
                 output_loglevel='quiet', python_shell=True, username='Darth Vader')

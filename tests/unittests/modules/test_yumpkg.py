@@ -103,10 +103,10 @@ class YumTestCase(TestCase, LoaderModuleMockMixin):
             'virt-what_|-(none)_|-1.13_|-8.el7_|-x86_64_|-(none)_|-1487838486',
         ]
         with patch.dict(yumpkg.__grains__, {'osarch': 'x86_64'}), \
-             patch.dict(yumpkg.__salt__, {'cmd.run': MagicMock(return_value=os.linesep.join(rpm_out))}), \
-             patch.dict(yumpkg.__salt__, {'pkg_resource.add_pkg': _add_data}), \
-             patch.dict(yumpkg.__salt__, {'pkg_resource.format_pkg_list': pkg_resource.format_pkg_list}), \
-             patch.dict(yumpkg.__salt__, {'pkg_resource.stringify': MagicMock()}):
+             patch.dict(yumpkg.__mods__, {'cmd.run': MagicMock(return_value=os.linesep.join(rpm_out))}), \
+             patch.dict(yumpkg.__mods__, {'pkg_resource.add_pkg': _add_data}), \
+             patch.dict(yumpkg.__mods__, {'pkg_resource.format_pkg_list': pkg_resource.format_pkg_list}), \
+             patch.dict(yumpkg.__mods__, {'pkg_resource.stringify': MagicMock()}):
             pkgs = yumpkg.list_pkgs(attr=['epoch', 'release', 'arch', 'install_date_time_t'])
             for pkg_name, pkg_attr in {
                 'python-urlgrabber': {
@@ -223,9 +223,9 @@ class YumUtilsTestCase(TestCase, LoaderModuleMockMixin):
         Call default Yum/Dnf.
         :return:
         '''
-        with patch.dict(yumpkg.__salt__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=False)}):
+        with patch.dict(yumpkg.__mods__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=False)}):
             yumpkg._call_yum(['-y', '--do-something'])  # pylint: disable=W0106
-            yumpkg.__salt__['cmd.run_all'].assert_called_once_with(
+            yumpkg.__mods__['cmd.run_all'].assert_called_once_with(
                 ['fake-yum', '-y', '--do-something'], env={},
                 output_loglevel='trace', python_shell=False)
 
@@ -235,9 +235,9 @@ class YumUtilsTestCase(TestCase, LoaderModuleMockMixin):
         Call Yum/Dnf within the scope.
         :return:
         '''
-        with patch.dict(yumpkg.__salt__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=True)}):
+        with patch.dict(yumpkg.__mods__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=True)}):
             yumpkg._call_yum(['-y', '--do-something'])  # pylint: disable=W0106
-            yumpkg.__salt__['cmd.run_all'].assert_called_once_with(
+            yumpkg.__mods__['cmd.run_all'].assert_called_once_with(
                 ['systemd-run', '--scope', 'fake-yum', '-y', '--do-something'], env={},
                 output_loglevel='trace', python_shell=False)
 
@@ -246,10 +246,10 @@ class YumUtilsTestCase(TestCase, LoaderModuleMockMixin):
         Call Yum/Dnf with the optinal keyword arguments.
         :return:
         '''
-        with patch.dict(yumpkg.__salt__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=False)}):
+        with patch.dict(yumpkg.__mods__, {'cmd.run_all': MagicMock(), 'config.get': MagicMock(return_value=False)}):
             yumpkg._call_yum(['-y', '--do-something'],
                              python_shell=True, output_loglevel='quiet', ignore_retcode=False,
                              username='Darth Vader')  # pylint: disable=W0106
-            yumpkg.__salt__['cmd.run_all'].assert_called_once_with(
+            yumpkg.__mods__['cmd.run_all'].assert_called_once_with(
                 ['fake-yum', '-y', '--do-something'], env={}, ignore_retcode=False,
                 output_loglevel='quiet', python_shell=True, username='Darth Vader')

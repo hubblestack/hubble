@@ -310,7 +310,7 @@ def _update_event(custom_fields, host_args, cloud_details, event):
     event.update(cloud_details)
     for custom_field in custom_fields:
         custom_field_name = 'custom_' + custom_field
-        custom_field_value = __salt__['config.get'](custom_field, '')
+        custom_field_value = __mods__['config.get'](custom_field, '')
         if isinstance(custom_field_value, list):
             custom_field_value = ','.join(custom_field_value)
         if isinstance(custom_field_value, str):

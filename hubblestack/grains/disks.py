@@ -18,7 +18,7 @@ import hubblestack.utils.platform
 # of the modules are loaded and are generally available for any usage.
 import hubblestack.modules.cmdmod
 
-__salt__ = {
+__mods__ = {
     'cmd.run': hubblestack.modules.cmdmod._run_quiet,
     'cmd.run_all': hubblestack.modules.cmdmod._run_all_quiet
 }
@@ -95,7 +95,7 @@ def _freebsd_geom():
     geom = hubblestack.utils.path.which('geom')
     ret = {'disks': {}, 'SSDs': []}
 
-    devices = __salt__['cmd.run']('{0} disk list'.format(geom))
+    devices = __mods__['cmd.run']('{0} disk list'.format(geom))
     devices = devices.split('\n\n')
 
     def parse_geom_attribs(device):
@@ -161,7 +161,7 @@ def _windows_disks():
 
     ret = {'disks': [], 'SSDs': []}
 
-    cmdret = __salt__['cmd.run_all'](
+    cmdret = __mods__['cmd.run_all'](
         '{0} /namespace:{1} path {2} get {3} /format:table'.format(
             wmic, namespace, path, get))
 

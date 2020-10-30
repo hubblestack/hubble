@@ -86,7 +86,7 @@ def status(name, sig=None):
         salt '*' service.status <service name> [service signature]
     '''
     if sig:
-        return __salt__['status.pid'](sig)
+        return __mods__['status.pid'](sig)
 
     contains_globbing = bool(re.search(r'\*|\?|\[.+\]', name))
     if contains_globbing:
@@ -95,7 +95,7 @@ def status(name, sig=None):
         services = [name]
     results = {}
     for service in services:
-        results[service] = __salt__['status.pid'](service)
+        results[service] = __mods__['status.pid'](service)
     if contains_globbing:
         return results
     return results[name]

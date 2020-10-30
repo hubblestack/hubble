@@ -25,7 +25,7 @@ import hubblestack.modules.config
 hubblestack.modules.config.__pillar__ = {}
 hubblestack.modules.config.__grains__ = {}
 
-__salt__ = {'config.get': hubblestack.modules.config.get}
+__mods__ = {'config.get': hubblestack.modules.config.get}
 
 
 def configgrains():
@@ -41,10 +41,10 @@ def configgrains():
     grains = {}
     hubblestack.modules.config.__opts__ = __opts__
 
-    grains_to_make = __salt__['config.get']('config_to_grains', default=[])
+    grains_to_make = __mods__['config.get']('config_to_grains', default=[])
     for grain in grains_to_make:
         for grain_key, grain_value in grain.items():
-            grain_value = __salt__['config.get'](grain_value, default=None)
+            grain_value = __mods__['config.get'](grain_value, default=None)
             if grain_value:
                 grains[grain_key] = grain_value
     return grains

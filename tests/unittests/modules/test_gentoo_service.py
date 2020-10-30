@@ -33,7 +33,7 @@ class GentooServicesTestCase(TestCase, LoaderModuleMockMixin):
         '''
         # no services is enabled
         mock = MagicMock(return_value='')
-        with patch.dict(gentoo_service.__salt__, {'cmd.run': mock}):
+        with patch.dict(gentoo_service.__mods__, {'cmd.run': mock}):
             self.assertFalse(gentoo_service.get_enabled())
         mock.assert_called_once_with('rc-update -v show')
 
@@ -44,7 +44,7 @@ class GentooServicesTestCase(TestCase, LoaderModuleMockMixin):
         service_name = 'name'
         runlevels = ['default']
         mock = MagicMock(return_value=self.__services({service_name: runlevels}))
-        with patch.dict(gentoo_service.__salt__, {'cmd.run': mock}):
+        with patch.dict(gentoo_service.__mods__, {'cmd.run': mock}):
             enabled_services = gentoo_service.get_enabled()
             self.assertTrue(service_name in enabled_services)
             self.assertEqual(enabled_services[service_name], runlevels)
@@ -59,7 +59,7 @@ class GentooServicesTestCase(TestCase, LoaderModuleMockMixin):
         service_list = self.__services({service_name: runlevels, disabled_service: []})
 
         mock = MagicMock(return_value=service_list)
-        with patch.dict(gentoo_service.__salt__, {'cmd.run': mock}):
+        with patch.dict(gentoo_service.__mods__, {'cmd.run': mock}):
             enabled_services = gentoo_service.get_enabled()
             self.assertEqual(len(enabled_services), 1)
             self.assertTrue(service_name in enabled_services)
@@ -72,7 +72,7 @@ class GentooServicesTestCase(TestCase, LoaderModuleMockMixin):
         service_name = 'name'
         runlevels = ['non-default', 'default']
         mock = MagicMock(return_value=self.__services({service_name: runlevels}))
-        with patch.dict(gentoo_service.__salt__, {'cmd.run': mock}):
+        with patch.dict(gentoo_service.__mods__, {'cmd.run': mock}):
             enabled_services = gentoo_service.get_enabled()
             self.assertTrue(service_name in enabled_services)
             self.assertEqual(enabled_services[service_name][0], runlevels[1])
@@ -94,7 +94,7 @@ class GentooServicesTestCase(TestCase, LoaderModuleMockMixin):
                                         multilevel_service: ['default', 'shutdown'],
                                         shutdown_service: ['shutdown']})
         mock = MagicMock(return_value=service_list)
-        with patch.dict(gentoo_service.__salt__, {'cmd.run': mock}):
+        with patch.dict(gentoo_service.__mods__, {'cmd.run': mock}):
             self.assertTrue(gentoo_service.available(enabled_service))
             self.assertTrue(gentoo_service.available(multilevel_service))
             self.assertTrue(gentoo_service.available(disabled_service))
@@ -110,7 +110,7 @@ class GentooServicesTestCase(TestCase, LoaderModuleMockMixin):
         service_list = self.__services({disabled_service: [],
                                         enabled_service: ['default']})
         mock = MagicMock(return_value=service_list)
-        with patch.dict(gentoo_service.__salt__, {'cmd.run': mock}):
+        with patch.dict(gentoo_service.__mods__, {'cmd.run': mock}):
             all_services = gentoo_service.get_all()
             self.assertEqual(len(all_services), 2)
             self.assertTrue(disabled_service in all_services)
@@ -121,12 +121,12 @@ class GentooServicesTestCase(TestCase, LoaderModuleMockMixin):
         Test for Return the status for a service
         '''
         mock = MagicMock(return_value=True)
-        with patch.dict(gentoo_service.__salt__, {'status.pid': mock}):
+        with patch.dict(gentoo_service.__mods__, {'status.pid': mock}):
             self.assertTrue(gentoo_service.status('name', 1))
 
         # service is running
         mock = MagicMock(return_value=0)
-        with patch.dict(gentoo_service.__salt__, {'cmd.retcode': mock}):
+        with patch.dict(gentoo_service.__mods__, {'cmd.retcode': mock}):
             self.assertTrue(gentoo_service.status('name'))
         mock.assert_called_once_with('/etc/init.d/name status',
                                      ignore_retcode=True,
@@ -134,7 +134,7 @@ class GentooServicesTestCase(TestCase, LoaderModuleMockMixin):
 
         # service is not running
         mock = MagicMock(return_value=1)
-        with patch.dict(gentoo_service.__salt__, {'cmd.retcode': mock}):
+        with patch.dict(gentoo_service.__mods__, {'cmd.retcode': mock}):
             self.assertFalse(gentoo_service.status('name'))
         mock.assert_called_once_with('/etc/init.d/name status',
                                      ignore_retcode=True,
@@ -142,7 +142,7 @@ class GentooServicesTestCase(TestCase, LoaderModuleMockMixin):
 
         # service is stopped
         mock = MagicMock(return_value=3)
-        with patch.dict(gentoo_service.__salt__, {'cmd.retcode': mock}):
+        with patch.dict(gentoo_service.__mods__, {'cmd.retcode': mock}):
             self.assertFalse(gentoo_service.status('name'))
         mock.assert_called_once_with('/etc/init.d/name status',
                                      ignore_retcode=True,
@@ -150,7 +150,7 @@ class GentooServicesTestCase(TestCase, LoaderModuleMockMixin):
 
         # service has crashed
         mock = MagicMock(return_value=32)
-        with patch.dict(gentoo_service.__salt__, {'cmd.retcode': mock}):
+        with patch.dict(gentoo_service.__mods__, {'cmd.retcode': mock}):
             self.assertFalse(gentoo_service.status('name'))
         mock.assert_called_once_with('/etc/init.d/name status',
                                      ignore_retcode=True,

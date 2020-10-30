@@ -169,7 +169,7 @@ def fdg(fdg_file, starting_chained=None):
     __fdg__ = hubblestack.loader.LazyLoader(hubblestack.loader._module_dirs(__opts__, 'fdg'),
                                      __opts__,
                                      tag='fdg',
-                                     pack={'__salt__': __salt__,
+                                     pack={'__mods__': __mods__,
                                            '__grains__': __grains__})
 
     # RETURNER_ID_BLOCK is used for intermediate returns. We use a global
@@ -311,7 +311,7 @@ def _return(data, returner):
     # JIT load the returners, since most returns will be handled by the daemon
     global __returners__
     if not __returners__:
-        __returners__ = hubblestack.loader.returners(__opts__, __salt__)
+        __returners__ = hubblestack.loader.returners(__opts__, __mods__)
 
     returner += '.returner'
     if returner not in __returners__:

@@ -93,7 +93,7 @@ def status(name, sig=None):  # pylint: disable=unused-argument
     results = {}
     for service in services:
         _check_for_unit_changes(service)
-        results[service] = __salt__['cmd.retcode'](_systemctl_cmd('is-active', service),
+        results[service] = __mods__['cmd.retcode'](_systemctl_cmd('is-active', service),
                                                    python_shell=False,
                                                    ignore_retcode=True) == 0
     if contains_globbing:
@@ -131,7 +131,7 @@ def enabled(name, **kwargs):  # pylint: disable=unused-argument
     # Try 'systemctl is-enabled' first, then look for a symlink created by
     # systemctl (older systemd releases did not support using is-enabled to
     # check templated services), and lastly check for a sysvinit service.
-    if __salt__['cmd.retcode'](_systemctl_cmd('is-enabled', name),
+    if __mods__['cmd.retcode'](_systemctl_cmd('is-enabled', name),
                                python_shell=False,
                                ignore_retcode=True) == 0:
         return True
@@ -143,7 +143,7 @@ def enabled(name, **kwargs):  # pylint: disable=unused-argument
                '-type', 'l', '-print', '-quit']
         # If the find command returns any matches, there will be output and the
         # string will be non-empty.
-        if bool(__salt__['cmd.run'](cmd, python_shell=False)):
+        if bool(__mods__['cmd.run'](cmd, python_shell=False)):
             return True
     elif name in _get_sysv_services():
         return _sysv_enabled(name)
@@ -294,7 +294,7 @@ def _systemctl_status(name):
     contextkey = 'systemd._systemctl_status.%s' % name
     if contextkey in __context__:
         return __context__[contextkey]
-    __context__[contextkey] = __salt__['cmd.run_all'](
+    __context__[contextkey] = __mods__['cmd.run_all'](
         _systemctl_cmd('status', name),
         python_shell=False,
         redirect_stderr=True,
@@ -310,7 +310,7 @@ def _systemctl_cmd(action, name=None, systemd_scope=False, no_block=False):
     ret = []
     if systemd_scope \
             and hubblestack.utils.systemd.has_scope(__context__) \
-            and __salt__['config.get']('systemd.scope', True):
+            and __mods__['config.get']('systemd.scope', True):
         ret.extend(['systemd-run', '--scope'])
     ret.append('systemctl')
     if no_block:
@@ -343,7 +343,7 @@ def systemctl_reload():
 
         salt '*' service.systemctl_reload
     '''
-    out = __salt__['cmd.run_all'](
+    out = __mods__['cmd.run_all'](
         _systemctl_cmd('--system daemon-reload'),
         python_shell=False,
         redirect_stderr=True
@@ -387,7 +387,7 @@ def _runlevel():
     contextkey = 'systemd._runlevel'
     if contextkey in __context__:
         return __context__[contextkey]
-    out = __salt__['cmd.run']('runlevel', python_shell=False, ignore_retcode=True)
+    out = __mods__['cmd.run']('runlevel', python_shell=False, ignore_retcode=True)
     try:
         ret = out.split()[1]
     except IndexError:

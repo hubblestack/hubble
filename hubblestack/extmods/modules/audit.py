@@ -165,8 +165,7 @@ def audit(audit_files=None,
         hubblestack.loader._module_dirs(__opts__, 'audit'),
         __opts__,
         tag='audit',
-        pack={'__salt__': __salt__,
-        '__grains__': __grains__}
+        pack={'__mods__': __mods__, '__grains__': __grains__}
     )
 
     for audit_file in audit_files:

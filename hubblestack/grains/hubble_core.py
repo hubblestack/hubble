@@ -70,7 +70,7 @@ if hubblestack.utils.platform.is_windows():
 import hubblestack.modules.cmdmod
 import hubblestack.modules.smbios
 
-__salt__ = {
+__mods__ = {
     'cmd.run': hubblestack.modules.cmdmod._run_quiet,
     'cmd.retcode': hubblestack.modules.cmdmod._retcode_quiet,
     'cmd.run_all': hubblestack.modules.cmdmod._run_all_quiet,
@@ -204,7 +204,7 @@ def _linux_gpu_data():
 
     devs = []
     try:
-        lspci_out = __salt__['cmd.run']('{0} -vmm'.format(lspci))
+        lspci_out = __mods__['cmd.run']('{0} -vmm'.format(lspci))
 
         cur_dev = {}
         error = False
@@ -264,7 +264,7 @@ def _netbsd_gpu_data():
 
     gpus = []
     try:
-        pcictl_out = __salt__['cmd.run']('pcictl pci0 list')
+        pcictl_out = __mods__['cmd.run']('pcictl pci0 list')
 
         for line in pcictl_out.splitlines():
             for vendor in known_vendors:
@@ -294,7 +294,7 @@ def _osx_gpudata():
 
     gpus = []
     try:
-        pcictl_out = __salt__['cmd.run']('system_profiler SPDisplaysDataType')
+        pcictl_out = __mods__['cmd.run']('system_profiler SPDisplaysDataType')
 
         for line in pcictl_out.splitlines():
             fieldname, _, fieldval = line.partition(': ')
@@ -339,14 +339,14 @@ def _bsd_cpudata(osdata):
         cmds['cpu_model'] = '{0} -n machdep.cpu.brand_string'.format(sysctl)
         cmds['cpu_flags'] = '{0} -n machdep.cpu.features'.format(sysctl)
 
-    grains = dict([(k, __salt__['cmd.run'](v)) for k, v in iter(cmds.items())])
+    grains = dict([(k, __mods__['cmd.run'](v)) for k, v in iter(cmds.items())])
 
     if 'cpu_flags' in grains and isinstance(grains['cpu_flags'], str):
         grains['cpu_flags'] = grains['cpu_flags'].split(' ')
 
     if osdata['kernel'] == 'NetBSD':
         grains['cpu_flags'] = []
-        for line in __salt__['cmd.run']('cpuctl identify 0').splitlines():
+        for line in __mods__['cmd.run']('cpuctl identify 0').splitlines():
             cpu_match = re.match(r'cpu[0-9]:\ features[0-9]?\ .+<(.+)>', line)
             if cpu_match:
                 flag = cpu_match.group(1).split(',')
@@ -390,16 +390,16 @@ def _sunos_cpudata():
     grains = {}
     grains['cpu_flags'] = []
 
-    grains['cpuarch'] = __salt__['cmd.run']('isainfo -k')
+    grains['cpuarch'] = __mods__['cmd.run']('isainfo -k')
     psrinfo = '/usr/sbin/psrinfo 2>/dev/null'
-    grains['num_cpus'] = len(__salt__['cmd.run'](psrinfo, python_shell=True).splitlines())
+    grains['num_cpus'] = len(__mods__['cmd.run'](psrinfo, python_shell=True).splitlines())
     kstat_info = 'kstat -p cpu_info:*:*:brand'
-    for line in __salt__['cmd.run'](kstat_info).splitlines():
+    for line in __mods__['cmd.run'](kstat_info).splitlines():
         match = re.match(r'(\w+:\d+:\w+\d+:\w+)\s+(.+)', line)
         if match:
             grains['cpu_model'] = match.group(2)
     isainfo = 'isainfo -n -v'
-    for line in __salt__['cmd.run'](isainfo).splitlines():
+    for line in __mods__['cmd.run'](isainfo).splitlines():
         match = re.match(r'^\s+(.+)', line)
         if match:
             cpu_flags = match.group(1).split()
@@ -420,7 +420,7 @@ def _aix_cpudata():
     grains = {}
     cmd = hubblestack.utils.path.which('prtconf')
     if cmd:
-        data = __salt__['cmd.run']('{0}'.format(cmd)) + os.linesep
+        data = __mods__['cmd.run']('{0}'.format(cmd)) + os.linesep
         for dest, regstring in (('cpuarch', r'(?im)^\s*Processor\s+Type:\s+(\S+)'),
                                 ('cpu_flags', r'(?im)^\s*Processor\s+Version:\s+(\S+)'),
                                 ('cpu_model', r'(?im)^\s*Processor\s+Implementation\s+Mode:\s+(.*)'),
@@ -464,8 +464,8 @@ def _osx_memdata():
 
     sysctl = hubblestack.utils.path.which('sysctl')
     if sysctl:
-        mem = __salt__['cmd.run']('{0} -n hw.memsize'.format(sysctl))
-        swap_total = __salt__['cmd.run']('{0} -n vm.swapusage'.format(sysctl)).split()[2].replace(',', '.')
+        mem = __mods__['cmd.run']('{0} -n hw.memsize'.format(sysctl))
+        swap_total = __mods__['cmd.run']('{0} -n vm.swapusage'.format(sysctl)).split()[2].replace(',', '.')
         if swap_total.endswith('K'):
             _power = 2**10
         elif swap_total.endswith('M'):
@@ -487,20 +487,20 @@ def _bsd_memdata(osdata):
 
     sysctl = hubblestack.utils.path.which('sysctl')
     if sysctl:
-        mem = __salt__['cmd.run']('{0} -n hw.physmem'.format(sysctl))
+        mem = __mods__['cmd.run']('{0} -n hw.physmem'.format(sysctl))
         if osdata['kernel'] == 'NetBSD' and mem.startswith('-'):
-            mem = __salt__['cmd.run']('{0} -n hw.physmem64'.format(sysctl))
+            mem = __mods__['cmd.run']('{0} -n hw.physmem64'.format(sysctl))
         grains['mem_total'] = int(mem) // 1024 // 1024
 
         if osdata['kernel'] in ['OpenBSD', 'NetBSD']:
             swapctl = hubblestack.utils.path.which('swapctl')
-            swap_data = __salt__['cmd.run']('{0} -sk'.format(swapctl))
+            swap_data = __mods__['cmd.run']('{0} -sk'.format(swapctl))
             if swap_data == 'no swap devices configured':
                 swap_total = 0
             else:
                 swap_total = swap_data.split(' ')[1]
         else:
-            swap_total = __salt__['cmd.run']('{0} -n vm.swap_total'.format(sysctl))
+            swap_total = __mods__['cmd.run']('{0} -n vm.swap_total'.format(sysctl))
         grains['swap_total'] = int(swap_total) // 1024 // 1024
     return grains
 
@@ -512,13 +512,13 @@ def _sunos_memdata():
     grains = {'mem_total': 0, 'swap_total': 0}
 
     prtconf = '/usr/sbin/prtconf 2>/dev/null'
-    for line in __salt__['cmd.run'](prtconf, python_shell=True).splitlines():
+    for line in __mods__['cmd.run'](prtconf, python_shell=True).splitlines():
         comps = line.split(' ')
         if comps[0].strip() == 'Memory' and comps[1].strip() == 'size:':
             grains['mem_total'] = int(comps[2].strip())
 
     swap_cmd = hubblestack.utils.path.which('swap')
-    swap_data = __salt__['cmd.run']('{0} -s'.format(swap_cmd)).split()
+    swap_data = __mods__['cmd.run']('{0} -s'.format(swap_cmd)).split()
     try:
         swap_avail = int(swap_data[-2][:-1])
         swap_used = int(swap_data[-4][:-1])
@@ -536,7 +536,7 @@ def _aix_memdata():
     grains = {'mem_total': 0, 'swap_total': 0}
     prtconf = hubblestack.utils.path.which('prtconf')
     if prtconf:
-        for line in __salt__['cmd.run'](prtconf, python_shell=True).splitlines():
+        for line in __mods__['cmd.run'](prtconf, python_shell=True).splitlines():
             comps = [x for x in line.strip().split(' ') if x]
             if len(comps) > 2 and 'Memory' in comps[0] and 'Size' in comps[1]:
                 grains['mem_total'] = int(comps[2])
@@ -546,7 +546,7 @@ def _aix_memdata():
 
     swap_cmd = hubblestack.utils.path.which('swap')
     if swap_cmd:
-        swap_data = __salt__['cmd.run']('{0} -s'.format(swap_cmd)).split()
+        swap_data = __mods__['cmd.run']('{0} -s'.format(swap_cmd)).split()
         try:
             swap_total = (int(swap_data[-2]) + int(swap_data[-6])) * 4
         except ValueError:
@@ -599,7 +599,7 @@ def _aix_get_machine_id():
     grains = {}
     cmd = hubblestack.utils.path.which('lsattr')
     if cmd:
-        data = __salt__['cmd.run']('{0} -El sys0'.format(cmd)) + os.linesep
+        data = __mods__['cmd.run']('{0} -El sys0'.format(cmd)) + os.linesep
         uuid_regexes = [re.compile(r'(?im)^\s*os_uuid\s+(\S+)\s+(.*)')]
         for regex in uuid_regexes:
             res = regex.search(data)
@@ -718,7 +718,7 @@ def _virtual(osdata):
             virtinfo = hubblestack.utils.path.which('virtinfo')
             if virtinfo:
                 try:
-                    ret = __salt__['cmd.run_all']('{0} -a'.format(virtinfo))
+                    ret = __mods__['cmd.run_all']('{0} -a'.format(virtinfo))
                 except hubblestack.exceptions.CommandExecutionError:
                     if hubblestack.log.is_logging_configured():
                         failed_commands.add(virtinfo)
@@ -738,7 +738,7 @@ def _virtual(osdata):
         cmd = '{0} {1}'.format(cmd, ' '.join(args))
 
         try:
-            ret = __salt__['cmd.run_all'](cmd)
+            ret = __mods__['cmd.run_all'](cmd)
 
             if ret['retcode'] > 0:
                 if hubblestack.log.is_logging_configured():
@@ -928,7 +928,7 @@ def _virtual(osdata):
                 # Tested on Fedora 10 / 2.6.27.30-170.2.82 with xen
                 # Tested on Fedora 15 / 2.6.41.4-1 without running xen
                 elif isdir('/sys/bus/xen'):
-                    if 'xen:' in __salt__['cmd.run']('dmesg').lower():
+                    if 'xen:' in __mods__['cmd.run']('dmesg').lower():
                         grains['virtual_subtype'] = 'Xen PV DomU'
                     elif os.path.isfile('/sys/bus/xen/drivers/xenconsole'):
                         # An actual DomU will have the xenconsole driver
@@ -979,10 +979,10 @@ def _virtual(osdata):
     elif osdata['kernel'] == 'FreeBSD':
         kenv = hubblestack.utils.path.which('kenv')
         if kenv:
-            product = __salt__['cmd.run'](
+            product = __mods__['cmd.run'](
                 '{0} smbios.system.product'.format(kenv)
             )
-            maker = __salt__['cmd.run'](
+            maker = __mods__['cmd.run'](
                 '{0} smbios.system.maker'.format(kenv)
             )
             if product.startswith('VMware'):
@@ -999,9 +999,9 @@ def _virtual(osdata):
             if maker.startswith('Bochs'):
                 grains['virtual'] = 'kvm'
         if sysctl:
-            hv_vendor = __salt__['cmd.run']('{0} hw.hv_vendor'.format(sysctl))
-            model = __salt__['cmd.run']('{0} hw.model'.format(sysctl))
-            jail = __salt__['cmd.run'](
+            hv_vendor = __mods__['cmd.run']('{0} hw.hv_vendor'.format(sysctl))
+            model = __mods__['cmd.run']('{0} hw.model'.format(sysctl))
+            jail = __mods__['cmd.run'](
                 '{0} -n security.jail.jailed'.format(sysctl)
             )
             if 'bhyve' in hv_vendor:
@@ -1021,7 +1021,7 @@ def _virtual(osdata):
             roles = []
             for role in ('control', 'io', 'root', 'service'):
                 subtype_cmd = '{0} -c current get -H -o value {1}-role'.format(cmd, role)
-                ret = __salt__['cmd.run_all']('{0}'.format(subtype_cmd))
+                ret = __mods__['cmd.run_all']('{0}'.format(subtype_cmd))
                 if ret['stdout'] == 'true':
                     roles.append(role)
             if roles:
@@ -1030,7 +1030,7 @@ def _virtual(osdata):
             # Check if it's a "regular" zone. (i.e. Solaris 10/11 zone)
             zonename = hubblestack.utils.path.which('zonename')
             if zonename:
-                zone = __salt__['cmd.run']('{0}'.format(zonename))
+                zone = __mods__['cmd.run']('{0}'.format(zonename))
                 if zone != 'global':
                     grains['virtual'] = 'zone'
             # Check if it's a branded zone (i.e. Solaris 8/9 zone)
@@ -1038,17 +1038,17 @@ def _virtual(osdata):
                 grains['virtual'] = 'zone'
     elif osdata['kernel'] == 'NetBSD':
         if sysctl:
-            if 'QEMU Virtual CPU' in __salt__['cmd.run'](
+            if 'QEMU Virtual CPU' in __mods__['cmd.run'](
                     '{0} -n machdep.cpu_brand'.format(sysctl)):
                 grains['virtual'] = 'kvm'
-            elif 'invalid' not in __salt__['cmd.run'](
+            elif 'invalid' not in __mods__['cmd.run'](
                     '{0} -n machdep.xen.suspend'.format(sysctl)):
                 grains['virtual'] = 'Xen PV DomU'
-            elif 'VMware' in __salt__['cmd.run'](
+            elif 'VMware' in __mods__['cmd.run'](
                     '{0} -n machdep.dmi.system-vendor'.format(sysctl)):
                 grains['virtual'] = 'VMware'
             # NetBSD has Xen dom0 support
-            elif __salt__['cmd.run'](
+            elif __mods__['cmd.run'](
                     '{0} -n machdep.idle-mechanism'.format(sysctl)) == 'xen':
                 if os.path.isfile('/var/run/xenconsoled.pid'):
                     grains['virtual_subtype'] = 'Xen Dom0'
@@ -1355,7 +1355,7 @@ def _osx_platform_data():
         - system_serialnumber
     '''
     cmd = 'system_profiler SPHardwareDataType'
-    hardware = __salt__['cmd.run'](cmd)
+    hardware = __mods__['cmd.run'](cmd)
 
     grains = {}
     for line in hardware.splitlines():
@@ -1512,14 +1512,14 @@ def _linux_bin_exists(binary):
     '''
     for search_cmd in ('which', 'type -ap'):
         try:
-            return __salt__['cmd.retcode'](
+            return __mods__['cmd.retcode'](
                 '{0} {1}'.format(search_cmd, binary)
             ) == 0
         except hubblestack.exceptions.CommandExecutionError:
             pass
 
     try:
-        return len(__salt__['cmd.run_all'](
+        return len(__mods__['cmd.run_all'](
             'whereis -b {0}'.format(binary)
         )['stdout'].split()) > 1
     except hubblestack.exceptions.CommandExecutionError:
@@ -1680,11 +1680,11 @@ def os_data():
         if _linux_bin_exists('selinuxenabled'):
             log.trace('Adding selinux grains')
             grains['selinux'] = {}
-            grains['selinux']['enabled'] = __salt__['cmd.retcode'](
+            grains['selinux']['enabled'] = __mods__['cmd.retcode'](
                 'selinuxenabled'
             ) == 0
             if _linux_bin_exists('getenforce'):
-                grains['selinux']['enforced'] = __salt__['cmd.run'](
+                grains['selinux']['enforced'] = __mods__['cmd.run'](
                     'getenforce'
                 ).strip()
 
@@ -1692,7 +1692,7 @@ def os_data():
         if _linux_bin_exists('systemctl') and _linux_bin_exists('localectl'):
             log.trace('Adding systemd grains')
             grains['systemd'] = {}
-            systemd_info = __salt__['cmd.run'](
+            systemd_info = __mods__['cmd.run'](
                 'systemctl --version'
             ).splitlines()
             grains['systemd']['version'] = systemd_info[0].split()[1]
@@ -2011,9 +2011,9 @@ def os_data():
     elif grains['kernel'] == 'VMkernel':
         grains['os'] = 'ESXi'
     elif grains['kernel'] == 'Darwin':
-        osrelease = __salt__['cmd.run']('sw_vers -productVersion')
-        osname = __salt__['cmd.run']('sw_vers -productName')
-        osbuild = __salt__['cmd.run']('sw_vers -buildVersion')
+        osrelease = __mods__['cmd.run']('sw_vers -productVersion')
+        osname = __mods__['cmd.run']('sw_vers -productName')
+        osbuild = __mods__['cmd.run']('sw_vers -buildVersion')
         grains['os'] = 'MacOS'
         grains['os_family'] = 'MacOS'
         grains['osfullname'] = "{0} {1}".format(osname, osrelease)
@@ -2024,9 +2024,9 @@ def os_data():
         grains.update(_osx_gpudata())
         grains.update(_osx_platform_data())
     elif grains['kernel'] == 'AIX':
-        osrelease = __salt__['cmd.run']('oslevel')
-        osrelease_techlevel = __salt__['cmd.run']('oslevel -r')
-        osname = __salt__['cmd.run']('uname')
+        osrelease = __mods__['cmd.run']('oslevel')
+        osrelease_techlevel = __mods__['cmd.run']('oslevel -r')
+        osname = __mods__['cmd.run']('uname')
         grains['os'] = 'AIX'
         grains['osfullname'] = osname
         grains['osrelease'] = osrelease
@@ -2036,7 +2036,7 @@ def os_data():
         grains['os'] = grains['kernel']
     if grains['kernel'] == 'FreeBSD':
         try:
-            grains['osrelease'] = __salt__['cmd.run']('freebsd-version -u').split('-')[0]
+            grains['osrelease'] = __mods__['cmd.run']('freebsd-version -u').split('-')[0]
         except hubblestack.exceptions.CommandExecutionError:
             # freebsd-version was introduced in 10.0.
             # derive osrelease from kernelversion prior to that
@@ -2060,12 +2060,12 @@ def os_data():
     # considerations such as package management. Fall back to the CPU
     # architecture.
     if grains.get('os_family') == 'Debian':
-        osarch = __salt__['cmd.run']('dpkg --print-architecture').strip()
+        osarch = __mods__['cmd.run']('dpkg --print-architecture').strip()
     elif grains.get('os_family') in ['RedHat', 'Suse']:
         osarch = hubblestack.utils.pkg.rpm.get_osarch()
     elif grains.get('os_family') in ('NILinuxRT', 'Poky'):
         archinfo = {}
-        for line in __salt__['cmd.run']('opkg print-architecture').splitlines():
+        for line in __mods__['cmd.run']('opkg print-architecture').splitlines():
             if line.startswith('arch'):
                 _, arch, priority = line.split()
                 archinfo[arch.strip()] = int(priority.strip())
@@ -2511,18 +2511,18 @@ def _hw_data(osdata):
         # On SmartOS (possibly SunOS also) smbios only works in the global zone
         # smbios is also not compatible with linux's smbios (smbios -s = print summarized)
         grains = {
-            'biosversion': __salt__['smbios.get']('bios-version'),
-            'productname': __salt__['smbios.get']('system-product-name'),
-            'manufacturer': __salt__['smbios.get']('system-manufacturer'),
-            'biosreleasedate': __salt__['smbios.get']('bios-release-date'),
-            'uuid': __salt__['smbios.get']('system-uuid')
+            'biosversion': __mods__['smbios.get']('bios-version'),
+            'productname': __mods__['smbios.get']('system-product-name'),
+            'manufacturer': __mods__['smbios.get']('system-manufacturer'),
+            'biosreleasedate': __mods__['smbios.get']('bios-release-date'),
+            'uuid': __mods__['smbios.get']('system-uuid')
         }
         grains = dict([(key, val) for key, val in grains.items() if val is not None])
-        uuid = __salt__['smbios.get']('system-uuid')
+        uuid = __mods__['smbios.get']('system-uuid')
         if uuid is not None:
             grains['uuid'] = uuid.lower()
         for serial in ('system-serial-number', 'chassis-serial-number', 'baseboard-serial-number'):
-            serial = __salt__['smbios.get'](serial)
+            serial = __mods__['smbios.get'](serial)
             if serial is not None:
                 grains['serialnumber'] = serial
                 break
@@ -2534,7 +2534,7 @@ def _hw_data(osdata):
             'productname': 'DeviceDesc',
         }
         for grain_name, cmd_key in iter(hwdata.items()):
-            result = __salt__['cmd.run_all']('fw_printenv {0}'.format(cmd_key))
+            result = __mods__['cmd.run_all']('fw_printenv {0}'.format(cmd_key))
             if result['retcode'] == 0:
                 uboot_keyval = result['stdout'].split('=')
                 grains[grain_name] = _clean_value(grain_name, uboot_keyval[1])
@@ -2553,7 +2553,7 @@ def _hw_data(osdata):
                 'uuid': 'smbios.system.uuid',
             }
             for key, val in iter(fbsd_hwdata.items()):
-                value = __salt__['cmd.run']('{0} {1}'.format(kenv, val))
+                value = __mods__['cmd.run']('{0} {1}'.format(kenv, val))
                 grains[key] = _clean_value(key, value)
     elif osdata['kernel'] == 'OpenBSD':
         sysctl = hubblestack.utils.path.which('sysctl')
@@ -2563,7 +2563,7 @@ def _hw_data(osdata):
                   'serialnumber': 'hw.serialno',
                   'uuid': 'hw.uuid'}
         for key, oid in hwdata.items():
-            value = __salt__['cmd.run']('{0} -n {1}'.format(sysctl, oid))
+            value = __mods__['cmd.run']('{0} -n {1}'.format(sysctl, oid))
             if not value.endswith(' value is not available'):
                 grains[key] = _clean_value(key, value)
     elif osdata['kernel'] == 'NetBSD':
@@ -2577,7 +2577,7 @@ def _hw_data(osdata):
             'uuid': 'machdep.dmi.system-uuid',
         }
         for key, oid in iter(nbsd_hwdata.items()):
-            result = __salt__['cmd.run_all']('{0} -n {1}'.format(sysctl, oid))
+            result = __mods__['cmd.run_all']('{0} -n {1}'.format(sysctl, oid))
             if result['retcode'] == 0:
                 grains[key] = _clean_value(key, result['stdout'])
     elif osdata['kernel'] == 'Darwin':
@@ -2585,7 +2585,7 @@ def _hw_data(osdata):
         sysctl = hubblestack.utils.path.which('sysctl')
         hwdata = {'productname': 'hw.model'}
         for key, oid in hwdata.items():
-            value = __salt__['cmd.run']('{0} -b {1}'.format(sysctl, oid))
+            value = __mods__['cmd.run']('{0} -b {1}'.format(sysctl, oid))
             if not value.endswith(' is invalid'):
                 grains[key] = _clean_value(key, value)
     elif osdata['kernel'] == 'SunOS' and osdata['cpuarch'].startswith('sparc'):
@@ -2595,7 +2595,7 @@ def _hw_data(osdata):
         data = ""
         for (cmd, args) in (('/usr/sbin/prtdiag', '-v'), ('/usr/sbin/prtconf', '-vp'), ('/usr/sbin/virtinfo', '-a')):
             if hubblestack.utils.path.which(cmd):  # Also verifies that cmd is executable
-                data += __salt__['cmd.run']('{0} {1}'.format(cmd, args))
+                data += __mods__['cmd.run']('{0} {1}'.format(cmd, args))
                 data += '\n'
 
         sn_regexes = [
@@ -2710,7 +2710,7 @@ def _hw_data(osdata):
     elif osdata['kernel'] == 'AIX':
         cmd = hubblestack.utils.path.which('prtconf')
         if cmd:
-            data = __salt__['cmd.run']('{0}'.format(cmd)) + os.linesep
+            data = __mods__['cmd.run']('{0}'.format(cmd)) + os.linesep
             for dest, regstring in (('serialnumber', r'(?im)^\s*Machine\s+Serial\s+Number:\s+(\S+)'),
                                     ('systemfirmware', r'(?im)^\s*Firmware\s+Version:\s+(.*)')):
                 for regex in [re.compile(r) for r in [regstring]]:
@@ -2730,7 +2730,7 @@ def _hw_data(osdata):
     elif osdata['kernel'] == 'AIX':
         cmd = hubblestack.utils.path.which('prtconf')
         if data:
-            data = __salt__['cmd.run']('{0}'.format(cmd)) + os.linesep
+            data = __mods__['cmd.run']('{0}'.format(cmd)) + os.linesep
             for dest, regstring in (('serialnumber', r'(?im)^\s*Machine\s+Serial\s+Number:\s+(\S+)'),
                                     ('systemfirmware', r'(?im)^\s*Firmware\s+Version:\s+(.*)')):
                 for regex in [re.compile(r) for r in [regstring]]:
@@ -2807,7 +2807,7 @@ def default_gateway():
     grains['ip6_gw'] = False
     for ip_version in ('4', '6'):
         try:
-            out = __salt__['cmd.run']([ip_bin, '-' + ip_version, 'route', 'show'])
+            out = __mods__['cmd.run']([ip_bin, '-' + ip_version, 'route', 'show'])
             for line in out.splitlines():
                 if line.startswith('default'):
                     grains['ip_gw'] = True

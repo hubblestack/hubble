@@ -223,7 +223,7 @@ def _secedit_export():
     only be called once."""
     dump = r"C:\ProgramData\{}.inf".format(uuid.uuid4())
     try:
-        ret = __salt__['cmd.run']('secedit /export /cfg {0}'.format(dump))
+        ret = __mods__['cmd.run']('secedit /export /cfg {0}'.format(dump))
         if ret:
             secedit_ret = _secedit_import(dump)
             ret = __mods__['file.remove'](dump)
@@ -253,11 +253,11 @@ def _secedit_import(inf_file):
 def _get_account_sid():
     """This helper function will get all the users and groups on the computer
     and return a dictionary"""
-    win32 = __salt__['cmd.run']('Get-WmiObject win32_useraccount -Filter "localaccount=\'True\'"'
+    win32 = __mods__['cmd.run']('Get-WmiObject win32_useraccount -Filter "localaccount=\'True\'"'
                                 ' | Format-List -Property Name, SID', shell='powershell',
                                 python_shell=True)
     win32 += '\n'
-    win32 += __salt__['cmd.run']('Get-WmiObject win32_group -Filter "localaccount=\'True\'" | '
+    win32 += __mods__['cmd.run']('Get-WmiObject win32_group -Filter "localaccount=\'True\'" | '
                                  'Format-List -Property Name, SID', shell='powershell',
                                  python_shell=True)
     if win32:
@@ -488,7 +488,7 @@ def _reg_value_translator(input_string):
 
 
 def _is_domain_controller():
-    ret = __salt__['reg.read_value'](hive="HKLM",
+    ret = __mods__['reg.read_value'](hive="HKLM",
                                      key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
                                      vname="ProductType")
     if ret['vdata'] == "LanmanNT":

@@ -130,7 +130,7 @@ def status(name, sig=None):
         salt '*' service.status <service name> [service signature]
     '''
     if sig:
-        return bool(__salt__['status.pid'](sig))
+        return bool(__mods__['status.pid'](sig))
 
     contains_globbing = bool(re.search(r'\*|\?|\[.+\]', name))
     if contains_globbing:
@@ -141,10 +141,10 @@ def status(name, sig=None):
     for service in services:
         if _service_is_upstart(service):
             cmd = 'status {0}'.format(service)
-            results[service] = 'start/running' in __salt__['cmd.run'](cmd, python_shell=False)
+            results[service] = 'start/running' in __mods__['cmd.run'](cmd, python_shell=False)
         else:
             cmd = '/sbin/service {0} status'.format(service)
-            results[service] = __salt__['cmd.retcode'](cmd, python_shell=False, ignore_retcode=True) == 0
+            results[service] = __mods__['cmd.retcode'](cmd, python_shell=False, ignore_retcode=True) == 0
     if contains_globbing:
         return results
     return results[name]
@@ -207,7 +207,7 @@ def _service_is_chkconfig(name):
     Return True if the service is managed by chkconfig.
     '''
     cmdline = '/sbin/chkconfig --list {0}'.format(name)
-    return __salt__['cmd.retcode'](cmdline, python_shell=False, ignore_retcode=True) == 0
+    return __mods__['cmd.retcode'](cmdline, python_shell=False, ignore_retcode=True) == 0
 
 def _sysv_is_enabled(name, runlevel=None):
     '''
@@ -232,7 +232,7 @@ def _chkconfig_is_enabled(name, runlevel=None):
     runlevel.
     '''
     cmdline = '/sbin/chkconfig --list {0}'.format(name)
-    result = __salt__['cmd.run_all'](cmdline, python_shell=False)
+    result = __mods__['cmd.run_all'](cmdline, python_shell=False)
 
     if runlevel is None:
         runlevel = _runlevel()
@@ -249,7 +249,7 @@ def _runlevel():
     '''
     Return the current runlevel
     '''
-    out = __salt__['cmd.run']('/sbin/runlevel')
+    out = __mods__['cmd.run']('/sbin/runlevel')
     # unknown will be returned while inside a kickstart environment, since
     # this is usually a server deployment it should be safe to assume runlevel
     # 3.  If not all service related states will throw an out of range
@@ -295,7 +295,7 @@ def _sysv_services():
     Return list of sysv services.
     '''
     _services = []
-    output = __salt__['cmd.run'](['chkconfig', '--list'], python_shell=False)
+    output = __mods__['cmd.run'](['chkconfig', '--list'], python_shell=False)
     for line in output.splitlines():
         comps = line.split()
         try:

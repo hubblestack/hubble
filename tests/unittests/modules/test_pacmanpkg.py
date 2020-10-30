@@ -36,7 +36,7 @@ class PacmanTestCase(TestCase, LoaderModuleMockMixin):
         sortmock = MagicMock()
         stringifymock = MagicMock()
         mock_ret = {'A': ['1.0'], 'B': ['2.0']}
-        with patch.dict(pacman.__salt__, {
+        with patch.dict(pacman.__mods__, {
                 'cmd.run': cmdmock,
                 'pkg_resource.add_pkg': lambda pkgs, name, version: pkgs.setdefault(name, []).append(version),
                 'pkg_resource.sort_pkglist': sortmock,
@@ -55,7 +55,7 @@ class PacmanTestCase(TestCase, LoaderModuleMockMixin):
         sortmock = MagicMock()
         stringifymock = MagicMock()
         mock_ret = {'A': ['1.0'], 'B': ['2.0']}
-        with patch.dict(pacman.__salt__, {
+        with patch.dict(pacman.__mods__, {
                 'cmd.run': cmdmock,
                 'pkg_resource.add_pkg': lambda pkgs, name, version: pkgs.setdefault(name, []).append(version),
                 'pkg_resource.sort_pkglist': sortmock,

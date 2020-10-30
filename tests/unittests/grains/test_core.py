@@ -210,7 +210,7 @@ class CoreGrainsTestCase(TestCase, LoaderModuleMockMixin):
                 patch.object(core, '_hw_data', empty_mock), \
                 patch.object(core, '_virtual', empty_mock), \
                 patch.object(core, '_ps', empty_mock), \
-                patch.dict(core.__salt__, {'cmd.run': cmd_run_mock}):
+                patch.dict(core.__mods__, {'cmd.run': cmd_run_mock}):
             os_grains = core.os_data()
 
         self.assertEqual(os_grains.get('os_family'), 'Debian')
@@ -272,7 +272,7 @@ class CoreGrainsTestCase(TestCase, LoaderModuleMockMixin):
                 patch.object(core, '_hw_data', empty_mock), \
                 patch.object(core, '_linux_cpudata', empty_mock), \
                 patch.object(core, '_virtual', empty_mock), \
-                patch.dict(core.__salt__, {'cmd.run': osarch_mock}):
+                patch.dict(core.__mods__, {'cmd.run': osarch_mock}):
             os_grains = core.os_data()
 
         self.assertEqual(os_grains.get('os_family'), 'Suse')
@@ -324,7 +324,7 @@ class CoreGrainsTestCase(TestCase, LoaderModuleMockMixin):
                 patch.object(core, '_linux_gpu_data', empty_mock), \
                 patch.object(core, '_linux_cpudata', empty_mock), \
                 patch.object(core, '_virtual', empty_mock), \
-                patch.dict(core.__salt__, {'cmd.run': osarch_mock}):
+                patch.dict(core.__mods__, {'cmd.run': osarch_mock}):
             os_grains = core.os_data()
 
         grains = {k: v for k, v in os_grains.items()
@@ -797,7 +797,7 @@ class CoreGrainsTestCase(TestCase, LoaderModuleMockMixin):
                                                     empty_mock):
                                                 # Mock the osarch
                                                 with patch.dict(
-                                                        core.__salt__,
+                                                        core.__mods__,
                                                         {'cmd.run': cmd_run_mock}):
                                                     os_grains = core.os_data()
 
@@ -820,7 +820,7 @@ class CoreGrainsTestCase(TestCase, LoaderModuleMockMixin):
                     log.debug(
                         'Testing Docker cgroup substring \'%s\'', cgroup_substr)
                     with patch('hubblestack.utils.files.fopen', mock_open(read_data=cgroup_data)):
-                        with patch.dict(core.__salt__, {'cmd.run_all': MagicMock()}):
+                        with patch.dict(core.__mods__, {'cmd.run_all': MagicMock()}):
                             self.assertEqual(
                                 core._virtual({'kernel': 'Linux'}).get('virtual_subtype'),
                                 'Docker'
@@ -832,7 +832,7 @@ class CoreGrainsTestCase(TestCase, LoaderModuleMockMixin):
         Test if OS grains are parsed correctly in Ubuntu Xenial Xerus
         '''
         with patch.object(os.path, 'isfile', MagicMock(return_value=False)):
-            with patch.dict(core.__salt__, {'cmd.run': MagicMock(return_value='')}), \
+            with patch.dict(core.__mods__, {'cmd.run': MagicMock(return_value='')}), \
                 patch.object(os.path,
                              'isfile',
                              MagicMock(side_effect=lambda x: True if x == '/sys/bus/xen/drivers/xenconsole' else False)):
@@ -994,7 +994,7 @@ class CoreGrainsTestCase(TestCase, LoaderModuleMockMixin):
                           MagicMock(return_value=False)):
             with patch.object(hubblestack.utils.path, 'which',
                               MagicMock(return_value=True)):
-                with patch.dict(core.__salt__, {'cmd.run_all':
+                with patch.dict(core.__mods__, {'cmd.run_all':
                                                 MagicMock(return_value={'pid': 78,
                                                                         'retcode': 0,
                                                                         'stderr': '',
@@ -1021,7 +1021,7 @@ class CoreGrainsTestCase(TestCase, LoaderModuleMockMixin):
                           MagicMock(return_value=False)):
             with patch.object(hubblestack.utils.path, 'which',
                               MagicMock(return_value=True)):
-                with patch.dict(core.__salt__, {'cmd.run_all':
+                with patch.dict(core.__mods__, {'cmd.run_all':
                                                 MagicMock(return_value={'pid': 78,
                                                                         'retcode': 0,
                                                                         'stderr': '',
@@ -1042,7 +1042,7 @@ class CoreGrainsTestCase(TestCase, LoaderModuleMockMixin):
                 return '4294967296'
             elif 'vm.swapusage' in cmd:
                 return 'total = 1024,00M  used = 160,75M  free = 863,25M  (encrypted)'
-        with patch.dict(core.__salt__, {'cmd.run': MagicMock(side_effect=_cmd_side_effect)}):
+        with patch.dict(core.__mods__, {'cmd.run': MagicMock(side_effect=_cmd_side_effect)}):
             ret = core._osx_memdata()
             assert ret['swap_total'] == 1024
             assert ret['mem_total'] == 4096
@@ -1057,7 +1057,7 @@ class CoreGrainsTestCase(TestCase, LoaderModuleMockMixin):
                 return '4294967296'
             elif 'vm.swapusage' in cmd:
                 return 'total = 0.00M  used = 0.00M  free = 0.00M  (encrypted)'
-        with patch.dict(core.__salt__, {'cmd.run': MagicMock(side_effect=_cmd_side_effect)}):
+        with patch.dict(core.__mods__, {'cmd.run': MagicMock(side_effect=_cmd_side_effect)}):
             ret = core._osx_memdata()
             assert ret['swap_total'] == 0
             assert ret['mem_total'] == 4096

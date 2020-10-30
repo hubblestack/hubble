@@ -46,7 +46,7 @@ class WinNetworkTestCase(TestCase, LoaderModuleMockMixin):
                '  TCP    127.0.0.1:1434    0.0.0.0:0    LISTENING    1728\n'
                '  UDP    127.0.0.1:1900    *:*        4240')
         mock = MagicMock(return_value=ret)
-        with patch.dict(win_network.__salt__, {'cmd.run': mock}):
+        with patch.dict(win_network.__mods__, {'cmd.run': mock}):
             self.assertListEqual(win_network.netstat(),
                                  [{'local-address': '127.0.0.1:1434',
                                    'program': '1728', 'proto': 'TCP',

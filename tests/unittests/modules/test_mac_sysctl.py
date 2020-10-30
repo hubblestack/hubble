@@ -29,7 +29,7 @@ class DarwinSysctlTestCase(TestCase, LoaderModuleMockMixin):
         Tests the return of get function
         """
         mock_cmd = MagicMock(return_value="foo")
-        with patch.dict(mac_sysctl.__salt__, {"cmd.run": mock_cmd}):
+        with patch.dict(mac_sysctl.__mods__, {"cmd.run": mock_cmd}):
             self.assertEqual(mac_sysctl.get("kern.ostype"), "foo")
 
     def test_assign_cmd_failed(self):
@@ -43,7 +43,7 @@ class DarwinSysctlTestCase(TestCase, LoaderModuleMockMixin):
             "stdout": "net.inet.icmp.icmplim: 250 -> 50",
         }
         mock_cmd = MagicMock(return_value=cmd)
-        with patch.dict(mac_sysctl.__salt__, {"cmd.run_all": mock_cmd}):
+        with patch.dict(mac_sysctl.__mods__, {"cmd.run_all": mock_cmd}):
             self.assertRaises(
                 CommandExecutionError, mac_sysctl.assign, "net.inet.icmp.icmplim", 50
             )
@@ -60,7 +60,7 @@ class DarwinSysctlTestCase(TestCase, LoaderModuleMockMixin):
         }
         ret = {"net.inet.icmp.icmplim": "50"}
         mock_cmd = MagicMock(return_value=cmd)
-        with patch.dict(mac_sysctl.__salt__, {"cmd.run_all": mock_cmd}):
+        with patch.dict(mac_sysctl.__mods__, {"cmd.run_all": mock_cmd}):
             self.assertEqual(mac_sysctl.assign("net.inet.icmp.icmplim", 50), ret)
 
     def test_persist_no_conf_failure(self):

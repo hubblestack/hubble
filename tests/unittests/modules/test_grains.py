@@ -25,7 +25,7 @@ class GrainsModuleTestCase(TestCase, LoaderModuleMockMixin):
         return {
             grainsmod: {
                 "__opts__": {"conf_file": conf_file, "cachedir": cachedir},
-                "__salt__": {"saltutil.refresh_grains": MagicMock()},
+                "__mods__": {"saltutil.refresh_grains": MagicMock()},
             }
         }
 

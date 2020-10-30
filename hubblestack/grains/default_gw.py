@@ -22,7 +22,7 @@ import logging
 import hubblestack.utils.path
 import hubblestack.modules.cmdmod
 
-__salt__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet}
+__mods__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet}
 log = logging.getLogger(__name__)
 
 
@@ -48,20 +48,20 @@ def default_gateway():
     grains['ip_gw'] = False
     grains['ip4_gw'] = False
     grains['ip6_gw'] = False
-    if __salt__['cmd.run']('ip -4 route show | grep "^default"', python_shell=True):
+    if __mods__['cmd.run']('ip -4 route show | grep "^default"', python_shell=True):
         grains['ip_gw'] = True
         grains['ip4_gw'] = True
         try:
-            gateway_ip = __salt__['cmd.run']('ip -4 route show | grep "^default via"',
+            gateway_ip = __mods__['cmd.run']('ip -4 route show | grep "^default via"',
                                              python_shell=True).split(' ')[2].strip()
             grains['ip4_gw'] = gateway_ip if gateway_ip else True
         except Exception:
             pass
-    if __salt__['cmd.run']('ip -6 route show | grep "^default"', python_shell=True):
+    if __mods__['cmd.run']('ip -6 route show | grep "^default"', python_shell=True):
         grains['ip_gw'] = True
         grains['ip6_gw'] = True
         try:
-            gateway_ip = __salt__['cmd.run']('ip -6 route show | grep "^default via"',
+            gateway_ip = __mods__['cmd.run']('ip -6 route show | grep "^default via"',
                                              python_shell=True).split(' ')[2].strip()
             grains['ip6_gw'] = gateway_ip if gateway_ip else True
         except Exception:

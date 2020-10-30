@@ -123,7 +123,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
                 # Blacklisted packages (must not be installed)
                 if audittype == 'blacklist':
-                    if __salt__['pkg.version'](name):
+                    if __mods__['pkg.version'](name):
                         tag_data['failure_reason'] = "Found blacklisted package '{0}'" \
                                                      " installed on the system" \
                                                      .format(name)
@@ -140,7 +140,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                             mod = ''
 
                         if mod == '<':
-                            if (LooseVersion(__salt__['pkg.version'](name)) <=
+                            if (LooseVersion(__mods__['pkg.version'](name)) <=
                                     LooseVersion(version)):
                                 ret['Success'].append(tag_data)
                             else:
@@ -151,7 +151,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                                 ret['Failure'].append(tag_data)
 
                         elif mod == '>':
-                            if (LooseVersion(__salt__['pkg.version'](name)) >=
+                            if (LooseVersion(__mods__['pkg.version'](name)) >=
                                     LooseVersion(version)):
                                 ret['Success'].append(tag_data)
                             else:
@@ -163,7 +163,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
                         elif not mod:
                             # Just peg to the version, no > or <
-                            if __salt__['pkg.version'](name) == version:
+                            if __mods__['pkg.version'](name) == version:
                                 ret['Success'].append(tag_data)
                             else:
                                 tag_data['failure_reason'] = "Could not find the version '{0}' of requisite" \
@@ -184,7 +184,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                             ret['Failure'].append(tag_data)
 
                     else:  # No version checking
-                        if __salt__['pkg.version'](name):
+                        if __mods__['pkg.version'](name):
                             ret['Success'].append(tag_data)
                         else:
                             tag_data['failure_reason'] = "Could not find requisite package '{0}' installed" \

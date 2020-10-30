@@ -7,7 +7,7 @@ import os
 import hubblestack.utils.path
 import hubblestack.modules.cmdmod
 
-__salt__ = {'cmd.run_stdout': hubblestack.modules.cmdmod.run_stdout}
+__mods__ = {'cmd.run_stdout': hubblestack.modules.cmdmod.run_stdout}
 log = logging.getLogger(__name__)
 
 
@@ -83,11 +83,11 @@ def _get_uuid_from_system():
     osqueryipaths = ('/opt/osquery/osqueryi', 'osqueryi', '/usr/bin/osqueryi')
     for path in osqueryipaths:
         if hubblestack.utils.path.which(path):
-            first_run = __salt__['cmd.run_stdout']('{0} {1}'.format(path, query),
+            first_run = __mods__['cmd.run_stdout']('{0} {1}'.format(path, query),
                                                    output_loglevel='quiet')
             first_run = str(first_run).upper()
 
-            second_run = __salt__['cmd.run_stdout']('{0} {1}'.format(path, query),
+            second_run = __mods__['cmd.run_stdout']('{0} {1}'.format(path, query),
                                                     output_loglevel='quiet')
             second_run = str(second_run).upper()
 

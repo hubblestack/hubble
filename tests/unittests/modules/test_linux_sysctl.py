@@ -30,7 +30,7 @@ class LinuxSysctlTestCase(TestCase, LoaderModuleMockMixin):
         Tests the return of get function
         """
         mock_cmd = MagicMock(return_value=1)
-        with patch.dict(linux_sysctl.__salt__, {"cmd.run": mock_cmd}):
+        with patch.dict(linux_sysctl.__mods__, {"cmd.run": mock_cmd}):
             self.assertEqual(linux_sysctl.get("net.ipv4.ip_forward"), 1)
 
     def test_assign_proc_sys_failed(self):
@@ -45,7 +45,7 @@ class LinuxSysctlTestCase(TestCase, LoaderModuleMockMixin):
                 "stdout": "net.ipv4.ip_forward = 1",
             }
             mock_cmd = MagicMock(return_value=cmd)
-            with patch.dict(linux_sysctl.__salt__, {"cmd.run_all": mock_cmd}):
+            with patch.dict(linux_sysctl.__mods__, {"cmd.run_all": mock_cmd}):
                 self.assertRaises(
                     CommandExecutionError, linux_sysctl.assign, "net.ipv4.ip_forward", 1
                 )
@@ -62,7 +62,7 @@ class LinuxSysctlTestCase(TestCase, LoaderModuleMockMixin):
                 "stdout": "net.ipv4.ip_forward = backward",
             }
             mock_cmd = MagicMock(return_value=cmd)
-            with patch.dict(linux_sysctl.__salt__, {"cmd.run_all": mock_cmd}):
+            with patch.dict(linux_sysctl.__mods__, {"cmd.run_all": mock_cmd}):
                 self.assertRaises(
                     CommandExecutionError,
                     linux_sysctl.assign,
@@ -83,7 +83,7 @@ class LinuxSysctlTestCase(TestCase, LoaderModuleMockMixin):
             }
             ret = {"net.ipv4.ip_forward": "1"}
             mock_cmd = MagicMock(return_value=cmd)
-            with patch.dict(linux_sysctl.__salt__, {"cmd.run_all": mock_cmd}):
+            with patch.dict(linux_sysctl.__mods__, {"cmd.run_all": mock_cmd}):
                 self.assertEqual(linux_sysctl.assign("net.ipv4.ip_forward", 1), ret)
 
     def test_persist_no_conf_failure(self):
@@ -101,7 +101,7 @@ class LinuxSysctlTestCase(TestCase, LoaderModuleMockMixin):
         mock_cmd = MagicMock(return_value=cmd)
         mock_run = MagicMock(return_value='sysctl')
         with patch.dict(
-            linux_sysctl.__salt__,
+            linux_sysctl.__mods__,
             {"cmd.run_stdout": mock_cmd, "cmd.run_all": mock_asn_cmd, "cmd.run": mock_run},
         ):
             with patch("hubblestack.utils.files.fopen", mock_open()) as m_open:
@@ -135,7 +135,7 @@ class LinuxSysctlTestCase(TestCase, LoaderModuleMockMixin):
             with patch("hubblestack.utils.files.fopen", mock_open()) as m_open, patch.dict(
                 linux_sysctl.__context__, {"hubblestack.utils.systemd.version": 232}
             ), patch.dict(
-                linux_sysctl.__salt__,
+                linux_sysctl.__mods__,
                 {"cmd.run_stdout": mock_sys_cmd, "cmd.run_all": mock_asn_cmd},
             ), patch.dict(
                 systemd.__context__,
@@ -168,7 +168,7 @@ class LinuxSysctlTestCase(TestCase, LoaderModuleMockMixin):
                     linux_sysctl.__context__, {"hubblestack.utils.systemd.version": 232}
                 ):
                     with patch.dict(
-                        linux_sysctl.__salt__,
+                        linux_sysctl.__mods__,
                         {"cmd.run_stdout": mock_sys_cmd, "cmd.run_all": mock_asn_cmd},
                     ):
                         with patch.dict(

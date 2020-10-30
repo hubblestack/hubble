@@ -30,7 +30,7 @@ class ServiceTestCase(TestCase, LoaderModuleMockMixin):
         string if the service is running or not, pass a signature to use to
         find the service via ps
         '''
-        with patch.dict(service.__salt__,
+        with patch.dict(service.__mods__,
                         {'status.pid': MagicMock(return_value=True)}):
             self.assertTrue(service.status('name'))
 

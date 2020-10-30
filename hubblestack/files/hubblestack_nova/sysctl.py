@@ -90,7 +90,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 name = tag_data['name']
                 match_output = tag_data['match_output']
 
-                salt_ret = __salt__['sysctl.get'](name)
+                salt_ret = __mods__['sysctl.get'](name)
                 if not salt_ret:
                     passed = False
                     tag_data['failure_reason'] = "Could not find attribute '{0}' in" \

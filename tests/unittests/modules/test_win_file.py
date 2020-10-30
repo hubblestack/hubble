@@ -54,7 +54,7 @@ class WinFileTestCase(TestCase, LoaderModuleMockMixin):
         return {
             win_file: {
                 "__utils__": {"dacl.set_perms": win_dacl.set_perms},
-                "__salt__": {"cmd.run_stdout": cmdmod.run_stdout},
+                "__mods__": {"cmd.run_stdout": cmdmod.run_stdout},
             }
         }
 

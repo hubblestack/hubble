@@ -61,7 +61,7 @@ def _run_query(query_sql):
     query_sql
         The query to be executed
     """
-    res = __salt__['nebula.query'](query_sql)
+    res = __mods__['nebula.query'](query_sql)
     try:
         if not res['result']:
             log.error("Error executing the osquery query: %s", res['error'])

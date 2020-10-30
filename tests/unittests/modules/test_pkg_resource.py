@@ -38,14 +38,14 @@ class PkgresTestCase(TestCase, LoaderModuleMockMixin):
         '''
         with patch.object(hubblestack.utils.data, 'is_true', return_value=True):
             mock = MagicMock(return_value={'A': 'B'})
-            with patch.dict(pkg_resource.__salt__,
+            with patch.dict(pkg_resource.__mods__,
                             {'pkg.list_pkgs': mock}):
                 self.assertEqual(pkg_resource.version('A'), 'B')
 
                 self.assertDictEqual(pkg_resource.version(), {})
 
             mock = MagicMock(return_value={})
-            with patch.dict(pkg_resource.__salt__, {'pkg.list_pkgs': mock}):
+            with patch.dict(pkg_resource.__mods__, {'pkg.list_pkgs': mock}):
                 with patch('builtins.next') as mock_next:
                     mock_next.side_effect = StopIteration()
                     self.assertEqual(pkg_resource.version('A'), '')

@@ -86,7 +86,7 @@ def _osquery(query_sql, osquery_path=None, args=None):
         cmd.extend(args)
 
     # Run the command
-    res = __salt__['cmd.run_all'](cmd, timeout=10000, python_shell=False)
+    res = __mods__['cmd.run_all'](cmd, timeout=10000, python_shell=False)
 
     if res['retcode'] == 0:
         ret = json.loads(res['stdout'])

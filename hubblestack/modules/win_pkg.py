@@ -139,15 +139,15 @@ def list_pkgs(versions_as_list=False,
                     for pkg_ver in pkg_info.keys():
                         if pkg_info[pkg_ver]['full_name'] == pkg_name:
                             val = pkg_ver
-                __salt__['pkg_resource.add_pkg'](ret, key, val)
+                __mods__['pkg_resource.add_pkg'](ret, key, val)
         else:
             key = pkg_name
             for val in val_list:
-                __salt__['pkg_resource.add_pkg'](ret, key, val)
+                __mods__['pkg_resource.add_pkg'](ret, key, val)
 
-    __salt__['pkg_resource.sort_pkglist'](ret)
+    __mods__['pkg_resource.sort_pkglist'](ret)
     if not versions_as_list:
-        __salt__['pkg_resource.stringify'](ret)
+        __mods__['pkg_resource.stringify'](ret)
     return ret
 
 def _refresh_db_conditional(saltenv, **kwargs):
@@ -565,7 +565,7 @@ def genrepo(**kwargs):
         return results
 
 def _repo_process_pkg_sls(filename, short_path_name, ret, successful_verbose):
-    renderers = hubblestack.loader.render(__opts__, __salt__)
+    renderers = hubblestack.loader.render(__opts__, __mods__)
 
     def _failed_compile(prefix_msg, error_msg):
         log.error('{0} \'{1}\': {2} '.format(prefix_msg, short_path_name, error_msg))

@@ -4,7 +4,7 @@
 import hubblestack.utils.path
 import hubblestack.modules.cmdmod
 
-__salt__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet}
+__mods__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet}
 
 
 def osquerygrain():
@@ -21,7 +21,7 @@ def osquerygrain():
     osqueryipaths = ('/opt/osquery/osqueryi', 'osqueryi', '/usr/bin/osqueryi')
     for path in osqueryipaths:
         if hubblestack.utils.path.which(path):
-            for item in __salt__['cmd.run']('{0} {1}'.format(path, option)).split():
+            for item in __mods__['cmd.run']('{0} {1}'.format(path, option)).split():
                 if item[:1].isdigit():
                     grains['osqueryversion'] = item
                     grains['osquerybinpath'] = hubblestack.utils.path.which(path)

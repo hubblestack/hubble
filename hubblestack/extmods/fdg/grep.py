@@ -131,7 +131,7 @@ def _grep(pattern, path=None, string=None, args=None):
         cmd += [path]
 
     try:
-        ret = __salt__['cmd.run_stdout'](cmd, python_shell=False, ignore_retcode=True, stdin=string)
+        ret = __mods__['cmd.run_stdout'](cmd, python_shell=False, ignore_retcode=True, stdin=string)
     except (IOError, OSError) as exc:
         raise CommandExecutionError(exc.strerror)
 

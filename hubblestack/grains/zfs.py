@@ -25,7 +25,7 @@ import hubblestack.modules.cmdmod
 import hubblestack.utils.zfs
 
 __virtualname__ = 'zfs'
-__salt__ = {
+__mods__ = {
     'cmd.run': hubblestack.modules.cmdmod.run,
 }
 __utils__ = {
@@ -62,7 +62,7 @@ def _zfs_pool_data():
         flags=['-H'],
         opts={'-o': 'name,size'},
     )
-    for zpool in __salt__['cmd.run'](zpool_list_cmd, ignore_retcode=True).splitlines():
+    for zpool in __mods__['cmd.run'](zpool_list_cmd, ignore_retcode=True).splitlines():
         if 'zpool' not in grains:
             grains['zpool'] = {}
         zpool = zpool.split()

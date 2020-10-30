@@ -70,9 +70,9 @@ def run(command, args=None, override_file=None, timeout=30):
 
     # Run the command with the final args
     if not args:
-        ret = __salt__['cmd.run'](command, python_shell=False, timeout=timeout)
+        ret = __mods__['cmd.run'](command, python_shell=False, timeout=timeout)
     else:
-        ret = __salt__['cmd.run']('{0} {1}'.format(command, args),
+        ret = __mods__['cmd.run']('{0} {1}'.format(command, args),
                                   python_shell=False, timeout=timeout)
 
     return ret

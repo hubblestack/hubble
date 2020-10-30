@@ -62,13 +62,13 @@ class DebianServicesTestCase(TestCase, LoaderModuleMockMixin):
         Test for Return the status for a service
         '''
         mock = MagicMock(return_value=True)
-        with patch.dict(debian_service.__salt__, {'status.pid': mock}):
+        with patch.dict(debian_service.__mods__, {'status.pid': mock}):
             self.assertTrue(debian_service.status('name', 1))
 
         mock = MagicMock(return_value='A')
         with patch.object(debian_service, '_service_cmd', mock):
             mock = MagicMock(return_value=True)
-            with patch.dict(debian_service.__salt__, {'cmd.retcode': mock}):
+            with patch.dict(debian_service.__mods__, {'cmd.retcode': mock}):
                 self.assertFalse(debian_service.status('name'))
 
     def test_enabled(self):

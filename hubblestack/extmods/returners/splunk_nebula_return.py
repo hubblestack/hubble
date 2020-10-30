@@ -157,7 +157,7 @@ def _generate_event(host_args, query_result, query_name, custom_fields, cloud_de
 
     for custom_field in custom_fields:
         custom_field_name = 'custom_' + custom_field
-        custom_field_value = __salt__['config.get'](custom_field, '')
+        custom_field_value = __mods__['config.get'](custom_field, '')
         if isinstance(custom_field_value, str):
             event.update({custom_field_name: custom_field_value})
         elif isinstance(custom_field_value, list):

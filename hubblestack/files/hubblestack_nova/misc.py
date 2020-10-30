@@ -313,7 +313,7 @@ def system_account_non_login(non_login_shell='/sbin/nologin', max_system_uid='50
         if user.strip() != "":
             users_list.append(user.strip())
     result = []
-    cmd = __salt__["cmd.run_all"]('egrep -v "^\+" /etc/passwd ')
+    cmd = __salt__["cmd.run_all"]('egrep -v "^\\+" /etc/passwd')
     for line in cmd['stdout'].split('\n'):
         tokens = line.split(':')
         if tokens[0] not in users_list and int(tokens[2]) < int(max_system_uid) and tokens[6] not in ( non_login_shell , "/bin/false" ):
@@ -326,7 +326,7 @@ def sticky_bit_on_world_writable_dirs(reason=''):
     Ensure sticky bit is set on all world-writable directories
     """
     raise CommandExecutionError('Module disabled due to performance concerns')
-    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null', python_shell=True)
+    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type d \\( -perm -0002 -a ! -perm -1000 \\) 2>/dev/null', python_shell=True)
     return True if result == '' else "There are failures"
 
 
@@ -622,7 +622,7 @@ def check_users_home_directory_permissions(max_allowed_permission='750', except_
             users_list.append(user.strip())
 
     users_dirs = []
-    cmd = __salt__["cmd.run_all"]('egrep -v "^\+" /etc/passwd ')
+    cmd = __salt__["cmd.run_all"]('egrep -v "^\\+" /etc/passwd ')
     for line in cmd['stdout'].split('\n'):
         tokens = line.split(':')
         if tokens[0] not in users_list and 'nologin' not in tokens[6] and 'false' not in tokens[6]:
@@ -763,7 +763,7 @@ def ensure_reverse_path_filtering(reason=''):
     output = _execute_shell_command(command, python_shell=True)
     if output.strip() == '':
         error_list.append("net.ipv4.conf.all.rp_filter not found")
-    search_results = re.findall("rp_filter = (\d+)", output)
+    search_results = re.findall(r"rp_filter = (\d+)", output)
     result = int(search_results[0])
     if result < 1:
         error_list.append("net.ipv4.conf.all.rp_filter  value set to " + str(result))
@@ -771,7 +771,7 @@ def ensure_reverse_path_filtering(reason=''):
     output = _execute_shell_command(command, python_shell=True)
     if output.strip() == '':
         error_list.append("net.ipv4.conf.default.rp_filter not found")
-    search_results = re.findall("rp_filter = (\d+)", output)
+    search_results = re.findall(r"rp_filter = (\d+)", output)
     result = int(search_results[0])
     if result < 1:
         error_list.append("net.ipv4.conf.default.rp_filter  value set to " + str(result))
@@ -997,7 +997,7 @@ def ensure_max_password_expiration(allow_max_days, except_for_users=''):
 
     #fetch all users with passwords
     grep_args.append('-E')
-    all_users = _grep('/etc/shadow', '^[^:]+:[^\!*]', *grep_args).get('stdout')
+    all_users = _grep('/etc/shadow', r'^[^:]+:[^\!*]', *grep_args).get('stdout')
 
     except_for_users_list=[]
     for user in except_for_users.split(","):
@@ -1027,7 +1027,7 @@ def check_sshd_parameters(*args, **kwargs):
     return check_sshd_paramters(*args, **kwargs)
 
 def check_sshd_paramters(pattern, values=None, comparetype='regex'):
-    """
+    r"""
     This function will check if any pattern passed is present in ssh service
     User can also check for the values for that pattern
     To check for values in any order, then use comparetype as 'only'

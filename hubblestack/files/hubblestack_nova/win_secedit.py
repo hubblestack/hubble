@@ -221,7 +221,7 @@ def _secedit_export():
     specify the location of the file and the file will persist, or let the
     function create it and the file will be deleted on completion.  Should
     only be called once."""
-    dump = "C:\ProgramData\{}.inf".format(uuid.uuid4())
+    dump = r"C:\ProgramData\{}.inf".format(uuid.uuid4())
     try:
         ret = __salt__['cmd.run']('secedit /export /cfg {0}'.format(dump))
         if ret:

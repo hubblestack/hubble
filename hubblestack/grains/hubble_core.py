@@ -11,7 +11,6 @@ as those returned here
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import os
 import socket
 import sys
@@ -24,6 +23,7 @@ from errno import EACCES, EPERM
 import datetime
 import warnings
 import time
+import hashlib
 
 # pylint: disable=import-error
 try:
@@ -2749,7 +2749,6 @@ def _hw_data(osdata):
 
     return grains
 
-
 def get_server_id():
     '''
     Provides an integer based on the FQDN of a machine.
@@ -2761,27 +2760,11 @@ def get_server_id():
 
     if hubblestack.utils.platform.is_proxy():
         return {}
+
     id_ = __opts__.get('id', '')
-    id_hash = None
-    py_ver = sys.version_info[:2]
-    if py_ver >= (3, 3):
-        # Python 3.3 enabled hash randomization, so we need to shell out to get
-        # a reliable hash.
-        id_hash = __salt__['cmd.run'](
-            [sys.executable, '-c', 'print(hash("{0}"))'.format(id_)],
-            env={'PYTHONHASHSEED': '0'}
-        )
-        try:
-            id_hash = int(id_hash)
-        except (TypeError, ValueError):
-            log.debug(
-                'Failed to hash the ID to get the server_id grain. Result of '
-                'hash command: %s', id_hash
-            )
-            id_hash = None
-    if id_hash is None:
-        # Python < 3.3 or error encountered above
-        id_hash = hash(id_)
+    md5 = hashlib.md5()
+    md5.update( str(id_).encode() )
+    id_hash = int( md5.hexdigest(), 16 )
 
     return {'server_id': abs(id_hash % (2 ** 31))}
 

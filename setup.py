@@ -22,7 +22,6 @@ build_dependencies = [
     'requests>=2.13.0',
     'daemon',
     'pygit2<0.27.0',
-    'salt-ssh==2019.2.3',
     'gitpython',
     'pyinotify',
     'cffi',

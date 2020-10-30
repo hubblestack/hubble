@@ -6,7 +6,7 @@ import fnmatch
 import errno
 
 import hubblestack.loader
-import salt.payload
+import hubblestack.payload
 import hubblestack.utils.path
 import hubblestack.utils.files
 import hubblestack.utils.data
@@ -130,7 +130,7 @@ def check_env_cache(opts, env_cache):
     try:
         with hubblestack.utils.files.fopen(env_cache, 'rb') as fp_:
             log.trace('Returning env cache data from %s', env_cache)
-            serial = salt.payload.Serial(opts)
+            serial = hubblestack.payload.Serial(opts)
             return hubblestack.utils.data.decode(serial.load(fp_))
     except (IOError, OSError):
         pass
@@ -227,7 +227,7 @@ def check_file_list_cache(opts, form, list_cache, w_lock):
     """
     refresh_cache = False
     save_cache = True
-    serial = salt.payload.Serial(opts)
+    serial = hubblestack.payload.Serial(opts)
     wait_lock(w_lock, list_cache, 5 * 60)
     if not os.path.isfile(list_cache) and _lock_cache(w_lock):
         refresh_cache = True
@@ -289,7 +289,7 @@ def write_file_list_cache(opts, data, list_cache, w_lock):
     returns the match (if found, along with booleans used by the fileserver
     backend to determine if the cache needs to be refreshed/written).
     '''
-    serial = salt.payload.Serial(opts)
+    serial = hubblestack.payload.Serial(opts)
     with hubblestack.utils.files.fopen(list_cache, 'w+b') as fp_:
         fp_.write(serial.dumps(data))
         _unlock_cache(w_lock)

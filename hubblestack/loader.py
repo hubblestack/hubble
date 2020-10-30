@@ -50,13 +50,6 @@ except ImportError:
 
 log = logging.getLogger(__name__)
 
-# XXX: we only need this while we're still loading salt modules
-def __salt_basepath():
-    import salt.syspaths
-    return os.path.abspath(salt.syspaths.INSTALL_DIR)
-
-# XXX: we only need this while we're still loading salt modules
-SALT_BASE_PATH = __salt_basepath()
 HUBBLE_BASE_PATH = os.path.abspath(hubblestack.syspaths.INSTALL_DIR)
 LOADED_BASE_NAME = 'hubble.loaded'
 
@@ -107,9 +100,6 @@ def _module_dirs(
     hubblestack_type = 'hubblestack_' + (int_type or ext_type)
     files_base_types = os.path.join(base_path or HUBBLE_BASE_PATH, 'files', hubblestack_type)
 
-    # XXX should be removed eventually:
-    salt_base_types = os.path.join(SALT_BASE_PATH, int_type or ext_type)
-
     ext_type_types = []
     if ext_dirs:
         if tag is not None and ext_type_dirs is None:
@@ -139,8 +129,8 @@ def _module_dirs(
             cli_module_dirs.insert(0, maybe_dir)
 
     if explain:
-        return (cli_module_dirs, ext_type_types, [files_base_types, salt_base_types, ext_types, sys_types])
-    return cli_module_dirs + ext_type_types + [files_base_types, salt_base_types, ext_types, sys_types]
+        return (cli_module_dirs, ext_type_types, [files_base_types, ext_types, sys_types])
+    return cli_module_dirs + ext_type_types + [files_base_types, ext_types, sys_types]
 
 
 def modules(
@@ -301,7 +291,7 @@ def grains(opts, force_refresh=False, proxy=None):
     if 'conf_file' in opts:
         pre_opts = {}
         pre_opts.update(hubblestack.config.load_config(
-            opts['conf_file'], 'SALT_MINION_CONFIG',
+            opts['conf_file'], 'HUBBLE_CONFIG',
             hubblestack.config.DEFAULT_OPTS['conf_file']
         ))
         default_include = pre_opts.get(
@@ -444,10 +434,8 @@ def _generate_module(name):
 def _mod_type(module_path):
     if module_path.startswith(HUBBLE_BASE_PATH):
         if 'extmods' in module_path:
-            return 'e_int' # XXX: we should remove this when we nolonger have internal extmods
+            return 'e_int'
         return 'int'
-    if module_path.startswith(SALT_BASE_PATH):
-        return 'salt' # XXX: we should remove this after we nolonger depend on salt
     return 'ext'
 
 

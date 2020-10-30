@@ -22,7 +22,7 @@ import os
 import errno
 import logging
 
-import hubblestack.extmods.fileserver
+import hubblestack.fileserver
 import hubblestack.utils.files
 import hubblestack.utils.gzip_util
 import hubblestack.utils.hashutils
@@ -86,14 +86,14 @@ def find_file(path, saltenv='base', **kwargs):
             # An invalid index option was passed
             return fnd
         full = os.path.join(root, path)
-        if os.path.isfile(full) and not hubblestack.extmods.fileserver.is_file_ignored(__opts__, full):
+        if os.path.isfile(full) and not hubblestack.fileserver.is_file_ignored(__opts__, full):
             fnd['path'] = full
             fnd['rel'] = path
             return _add_file_stat(fnd)
         return fnd
     for root in __opts__['file_roots'][saltenv]:
         full = os.path.join(root, path)
-        if os.path.isfile(full) and not hubblestack.extmods.fileserver.is_file_ignored(__opts__, full):
+        if os.path.isfile(full) and not hubblestack.fileserver.is_file_ignored(__opts__, full):
             fnd['path'] = full
             fnd['rel'] = path
             return _add_file_stat(fnd)
@@ -139,7 +139,7 @@ def update():
     When we are asked to update (regular interval) lets reap the cache
     """
     try:
-        hubblestack.extmods.fileserver.reap_fileserver_cache_dir(
+        hubblestack.fileserver.reap_fileserver_cache_dir(
             os.path.join(__opts__['cachedir'], 'roots', 'hash'),
             find_file
         )
@@ -154,7 +154,7 @@ def update():
             'backend': 'roots'}
 
     # generate the new map
-    new_mtime_map = hubblestack.extmods.fileserver.generate_mtime_map(__opts__, __opts__['file_roots'])
+    new_mtime_map = hubblestack.fileserver.generate_mtime_map(__opts__, __opts__['file_roots'])
 
     old_mtime_map = {}
     # if you have an old map, load that
@@ -175,7 +175,7 @@ def update():
                     )
 
     # compare the maps, set changed to the return value
-    data['changed'] = hubblestack.extmods.fileserver.diff_mtime_map(old_mtime_map, new_mtime_map)
+    data['changed'] = hubblestack.fileserver.diff_mtime_map(old_mtime_map, new_mtime_map)
 
     # compute files that were removed and added
     old_files = set(old_mtime_map.keys())
@@ -293,7 +293,7 @@ def _file_lists(load, form):
     list_cache = os.path.join(list_cachedir, '{0}.p'.format(load['saltenv']))
     w_lock = os.path.join(list_cachedir, '.{0}.w'.format(load['saltenv']))
     cache_match, refresh_cache, save_cache = \
-        hubblestack.extmods.fileserver.check_file_list_cache(
+        hubblestack.fileserver.check_file_list_cache(
             __opts__, form, list_cache, w_lock
         )
     if cache_match is not None:
@@ -328,7 +328,7 @@ def _file_lists(load, form):
                     continue
                 rel_path = _translate_sep(os.path.relpath(abs_path, fs_root))
                 log.trace('roots: %s relative path is %s', abs_path, rel_path)
-                if hubblestack.extmods.fileserver.is_file_ignored(__opts__, rel_path):
+                if hubblestack.fileserver.is_file_ignored(__opts__, rel_path):
                     continue
                 tgt.add(rel_path)
                 try:
@@ -390,7 +390,7 @@ def _file_lists(load, form):
 
         if save_cache:
             try:
-                hubblestack.extmods.fileserver.write_file_list_cache(
+                hubblestack.fileserver.write_file_list_cache(
                     __opts__, ret, list_cache, w_lock
                 )
             except NameError:

@@ -9,7 +9,6 @@ gitdb2
 gitpython
 gprof2dot
 idna
-jinja2
 markupsafe
 mock
 msgpack
@@ -24,11 +23,9 @@ pytest-pythonpath
 python-dateutil
 pyyaml
 requests
-salt-ssh==2019.2.3
 pylint
 saltpylint
 singledispatch
-six
 smmap2
 tornado
 urllib3

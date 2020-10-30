@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import hubblestack.extmods.fileserver.s3fs as hs_s3fs
+import hubblestack.fileserver.s3fs as hs_s3fs
 
 def test_s3fs_opts(__opts__):
     hs_s3fs.__opts__ = __opts__

@@ -47,7 +47,6 @@ class FileModuleTestCase(TestCase, LoaderModuleMockMixin):
         return {
             filemod: {
                 "__mods__": {
-                    "config.manage_mode": configmod.manage_mode,
                     "cmd.run": cmdmod.run,
                     "cmd.run_all": cmdmod.run_all,
                 },
@@ -95,7 +94,6 @@ class FileBasicsTestCase(TestCase, LoaderModuleMockMixin):
         return {
             filemod: {
                 "__mods__": {
-                    "config.manage_mode": configmod.manage_mode,
                     "cmd.run": cmdmod.run,
                     "cmd.run_all": cmdmod.run_all,
                 },

@@ -3,7 +3,7 @@
     :codeauthor: Pedro Algarvio (pedro@algarvio.me)
 
 
-    salt.syspaths
+    hubblestack.syspaths
     ~~~~~~~~~~~~~
 
     Salt's defaults system paths
@@ -17,8 +17,6 @@
     paths that are set in the master/minion config files.
 '''
 
-# Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import sys
 import os.path
 
@@ -34,37 +32,31 @@ else:
 INSTALL_DIR = os.path.dirname(os.path.realpath(__THIS_FILE))
 
 if __PLATFORM.startswith('win'):
-    ROOT_DIR = r'c:\salt'
+    ROOT_DIR = os.path.join('c:\\', 'Program Files (x86)', 'Hubble')
 else:
     ROOT_DIR = '/'
 
+CACHE_DIR = os.path.join(ROOT_DIR, 'var', 'cache', 'hubble')
+
 if __PLATFORM.startswith('win'):
-    CONFIG_DIR = os.path.join(ROOT_DIR, 'conf')
+    CONFIG_DIR = os.path.join(ROOT_DIR, 'etc', 'hubble')
+    SHARE_DIR = os.path.join(ROOT_DIR, 'share')
+    CACHE_DIR = os.path.join(ROOT_DIR, 'var', 'cache')
 elif 'freebsd' in __PLATFORM:
     CONFIG_DIR = os.path.join(ROOT_DIR, 'usr', 'local', 'etc', 'hubble')
-elif 'netbsd' in __PLATFORM:
-    CONFIG_DIR = os.path.join(ROOT_DIR, 'usr', 'pkg', 'etc', 'hubble')
-elif 'sunos5' in __PLATFORM:
-    CONFIG_DIR = os.path.join(ROOT_DIR, 'opt', 'local', 'etc', 'hubble')
-else:
-    CONFIG_DIR = os.path.join(ROOT_DIR, 'etc', 'hubble')
-
-if __PLATFORM.startswith('win'):
-    SHARE_DIR = os.path.join(ROOT_DIR, 'share')
-elif 'freebsd' in __PLATFORM:
     SHARE_DIR = os.path.join(ROOT_DIR, 'usr', 'local', 'share', 'hubble')
 elif 'netbsd' in __PLATFORM:
+    CONFIG_DIR = os.path.join(ROOT_DIR, 'usr', 'pkg', 'etc', 'hubble')
     SHARE_DIR = os.path.join(ROOT_DIR, 'usr', 'share', 'hubble')
 elif 'sunos5' in __PLATFORM:
+    CONFIG_DIR = os.path.join(ROOT_DIR, 'opt', 'local', 'etc', 'hubble')
     SHARE_DIR = os.path.join(ROOT_DIR, 'usr', 'share', 'hubble')
 else:
+    CONFIG_DIR = os.path.join(ROOT_DIR, 'etc', 'hubble')
     SHARE_DIR = os.path.join(ROOT_DIR, 'usr', 'share', 'hubble')
 
-CACHE_DIR = os.path.join(ROOT_DIR, 'var', 'cache', 'hubble')
+LOGS_DIR = os.path.join(ROOT_DIR, 'var', 'log')
 SOCK_DIR = os.path.join(ROOT_DIR, 'var', 'run', 'hubble')
-SRV_ROOT_DIR = os.path.join(ROOT_DIR, 'srv')
-BASE_FILE_ROOTS_DIR = os.path.join(SRV_ROOT_DIR, 'hubble')
-LOGS_DIR = os.path.join(ROOT_DIR, 'var', 'log', 'hubble')
 PIDFILE_DIR = os.path.join(ROOT_DIR, 'var', 'run')
 HOME_DIR = os.path.expanduser('~')
 
@@ -74,8 +66,6 @@ __all__ = [
     'CONFIG_DIR',
     'CACHE_DIR',
     'SOCK_DIR',
-    'SRV_ROOT_DIR',
-    'BASE_FILE_ROOTS_DIR',
     'LOGS_DIR',
     'PIDFILE_DIR',
     'INSTALL_DIR',

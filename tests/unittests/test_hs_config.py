@@ -1,10 +1,17 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import os
+import sys
 import re
 import copy
 import json
+import mock
+import importlib
 import pytest
+import hubblestack.syspaths
+import hubblestack.config
+import hubblestack.daemon
 
 def intentionally_changed_value_filter(key_name, value, test_paths):
     if isinstance(value, list):
@@ -20,6 +27,9 @@ def intentionally_changed_value_filter(key_name, value, test_paths):
         value = value.replace('/etc/salt/', '/etc/hubble/')
         value = value.replace('/var/cache/salt/', '/var/cache/hubble/')
         value = value.replace('/srv/salt/', '/srv/hubble/')
+        value = value.replace('/hubble/minion/', '/hubble/')
+        value = value.replace('/unittests/hubble.config', '/unittests/resources/test.config')
+        value = value.replace('hubble/pki/minion', 'hubble/pki')
     return value
 
 @pytest.fixture
@@ -77,6 +87,23 @@ def intentionally_removed_opts():
     'thorium_roots',
     'thorium_top',
     'thoriumenv',
+    "winrepo_branch",
+    "winrepo_cache_expire_max",
+    "winrepo_cache_expire_min",
+    "winrepo_cachefile",
+    "winrepo_dir",
+    "winrepo_dir_ng",
+    "winrepo_insecure_auth",
+    "winrepo_passphrase",
+    "winrepo_password",
+    "winrepo_privkey",
+    "winrepo_pubkey",
+    "winrepo_refspecs",
+    "winrepo_remotes",
+    "winrepo_remotes_ng",
+    "winrepo_source_dir",
+    "winrepo_ssl_verify",
+    "winrepo_user",
     }
 
 @pytest.fixture
@@ -134,3 +161,91 @@ def test_new_hs_config_same_as_old_salt_config(modified_hs_config_opts,
         modified = { key: modified_hs_config_opts[key] }
         saltorig = { key: intentionally_changed_value_filter(key, salt_config_opts[key], test_paths) }
         assert modified == saltorig
+
+CONF_DIR = os.path.join(os.path.dirname(__file__), 'resources')
+
+# convince me this works:
+@mock.patch('sys.platform', 'not linux')
+def test_mock_platform():
+    assert sys.platform == 'not linux'
+
+def test_nomock_platform():
+    assert sys.platform != 'not linux'
+
+def _reload_hs_libs():
+    importlib.reload(hubblestack.syspaths)
+    importlib.reload(hubblestack.config)
+    return hubblestack.config.DEFAULT_OPTS
+
+@pytest.fixture(scope='function', autouse=True)
+def cleanup(request, HSL):
+    def inner_cleanup():
+        _reload_hs_libs()
+        # fix the HSL fixture (and all the __opts__/__mods__ it placed into the
+        # various hubble modules)
+        hubblestack.daemon.load_config(['-c', HSL.opts['conf_file']])
+    request.addfinalizer(inner_cleanup)
+
+def _both_platforms(opts, for_real=False):
+    assert opts['log_level'] == 'error'
+    assert opts['file_client'] == 'local'
+    assert opts['fileserver_update_frequency'] == 43200  # 12 hours
+    assert opts['grains_refresh_frequency'] == 3600  # 1 hour
+    assert opts['scheduler_sleep_frequency'] == 0.5
+    assert opts['default_include'] == 'hubble.d/*.conf'
+    assert opts['logfile_maxbytes'] == 100000000  # 100MB
+    assert opts['logfile_backups'] == 1  # maximum rotated logs
+    assert opts['delete_inaccessible_azure_containers'] == False
+    assert opts['enable_globbing_in_nebula_masking'] == False
+    assert opts['osquery_logfile_maxbytes'] == 50000000  # 50MB
+    assert opts['osquery_logfile_maxbytes_toparse'] == 100000000  # 100MB
+    assert opts['osquery_backuplogs_count'] == 2
+
+    if for_real:
+        import hubblestack.daemon
+        daemon_dir = os.path.dirname(hubblestack.daemon.__file__)
+        daemon_forced_root = os.path.join(daemon_dir, 'files')
+        opts['file_roots'] == {'base': daemon_forced_root}
+    else:
+        assert opts['file_roots'] == {'base': []}
+
+@mock.patch('hubblestack.utils.platform.is_windows', lambda: False)
+@mock.patch('sys.platform', 'linux')
+def test_linux_paths():
+    opts = _reload_hs_libs()
+    assert opts['cachedir'] == '/var/cache/hubble'
+    assert opts['pidfile'] == '/var/run/hubble.pid'
+    assert opts['log_file'] == '/var/log/hubble'
+    assert opts['osquery_dbpath'] == '/var/cache/hubble/osquery'
+    assert opts['osquerylogpath'] == '/var/log/hubble_osquery'
+    assert opts['osquerylog_backupdir'] == '/var/log/hubble_osquery/backuplogs'
+
+    _both_platforms(opts)
+
+@mock.patch('os.path._get_sep', lambda path: '\\')
+@mock.patch('hubblestack.utils.platform.is_windows', lambda: True)
+@mock.patch('sys.platform', 'WindersAmazingTechnology')
+def test_winders_paths():
+    opts = _reload_hs_libs()
+
+    assert opts['cachedir'].lower() == r'c:\program files (x86)\hubble\var\cache'
+    assert opts['pidfile'].lower() == r'c:\program files (x86)\hubble\var\run\hubble.pid'
+    assert opts['log_file'].lower() == r'c:\program files (x86)\hubble\var\log\hubble.log'
+    assert opts['osquery_dbpath'].lower() == r'c:\program files (x86)\hubble\var\hubble_osquery_db'
+    assert opts['osquerylogpath'].lower() == r'c:\program files (x86)\hubble\var\log\hubble_osquery'
+    assert opts['osquerylog_backupdir'].lower() == r'c:\program files (x86)\hubble\var\log\hubble_osquery\backuplogs'
+
+    _both_platforms(opts)
+
+@pytest.mark.skipif(sys.platform != 'linux', reason="")
+def test_linux_for_real_kindof():
+    opts = hubblestack.daemon.load_config(['-c', 'tests/unittests/resources/empty.config'])
+
+    assert opts['cachedir'] == '/var/cache/hubble'
+    assert opts['pidfile'] == '/var/run/hubble.pid'
+    assert opts['log_file'] == '/var/log/hubble'
+    assert opts['osquery_dbpath'] == '/var/cache/hubble/osquery'
+    assert opts['osquerylogpath'] == '/var/log/hubble_osquery'
+    assert opts['osquerylog_backupdir'] == '/var/log/hubble_osquery/backuplogs'
+
+    _both_platforms(opts, for_real=True)

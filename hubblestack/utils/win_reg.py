@@ -45,7 +45,7 @@ except ImportError:
 
 import hubblestack.utils.platform
 import hubblestack.utils.stringutils
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

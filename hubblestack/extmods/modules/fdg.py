@@ -122,6 +122,9 @@ import yaml
 from hubblestack.exceptions import CommandExecutionError
 
 import hubblestack.extmods.module_runner.runner_factory as runner_factory
+import hubblestack.loader
+import hubblestack.utils
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 __fdg__ = None

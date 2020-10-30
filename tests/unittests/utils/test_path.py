@@ -18,7 +18,7 @@ from tests.support.mock import patch, NO_MOCK, NO_MOCK_REASON
 import importlib
 import hubblestack.utils.path
 import hubblestack.utils.platform
-from hubblestack.utils.exceptions import CommandNotFoundError
+from hubblestack.exceptions import CommandNotFoundError
 
 
 class PathJoinTestCase(TestCase):

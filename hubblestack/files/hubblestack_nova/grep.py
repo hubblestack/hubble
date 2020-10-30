@@ -57,12 +57,12 @@ import logging
 import fnmatch
 import os
 import copy
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 import re
 
 from distutils.version import LooseVersion
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

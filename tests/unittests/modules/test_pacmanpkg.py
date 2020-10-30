@@ -23,7 +23,7 @@ import hubblestack.modules.pacmanpkg as pacman
 @skipIf(NO_MOCK, NO_MOCK_REASON)
 class PacmanTestCase(TestCase, LoaderModuleMockMixin):
     '''
-    Test cases for salt.modules.pacman
+    Test cases for hubblestack.modules.pacman
     '''
     def setup_loader_modules(self):
         return {pacman: {}}

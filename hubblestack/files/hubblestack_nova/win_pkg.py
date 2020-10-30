@@ -7,9 +7,9 @@ Windows package audit module
 import copy
 import fnmatch
 import logging
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 from distutils.version import LooseVersion
 
 

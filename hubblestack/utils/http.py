@@ -44,7 +44,7 @@ import hubblestack.utils.platform
 import hubblestack.utils.stringio
 import hubblestack.utils.stringutils
 import hubblestack.utils.yaml
-import salt.version
+import hubblestack.version
 import hubblestack.utils.xmlutil as xml
 from hubblestack.utils._compat import ElementTree as ET
 from hubblestack.template import compile_template
@@ -89,7 +89,7 @@ except ImportError:
     HAS_CERTIFI = False
 
 log = logging.getLogger(__name__)
-USERAGENT = 'Salt/{0}'.format(salt.version.__version__)
+USERAGENT = 'Salt/{0}'.format(hubblestack.version.__version__)
 
 
 def query(url,

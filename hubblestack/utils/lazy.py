@@ -6,7 +6,7 @@ Lazily-evaluated data structures, primarily used by Hubble's loader
 # Import Python Libs
 from __future__ import absolute_import, unicode_literals
 import logging
-import hubblestack.utils.exceptions as exceptions
+import hubblestack.exceptions as exceptions
 
 try:
     from collections.abc import MutableMapping

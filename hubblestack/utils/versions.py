@@ -4,7 +4,7 @@
     :license: Apache 2.0, see LICENSE for more details.
 
 
-    salt.utils.versions
+    hubblestack.utils.versions
     ~~~~~~~~~~~~~~~~~~~
 
     Version parsing based on distutils.version which works under python 3

@@ -23,7 +23,7 @@ import hubblestack.utils.stringutils
 import hubblestack.utils.user
 import hubblestack.utils.versions
 
-from hubblestack.utils.exceptions import CommandExecutionError, HubbleInvocationError
+from hubblestack.exceptions import CommandExecutionError, HubbleInvocationError
 
 # pylint: enable=import-error,no-name-in-module,redefined-builtin
 try:

@@ -94,9 +94,9 @@ class Depends(object):
         full_name = '{0}.{1}'.format(mod_name, func_name)
         log.trace('Running \'%s\' for \'%s\'', dependency, full_name)
         if IS_WINDOWS:
-            args = salt.utils.args.shlex_split(dependency, posix=False)
+            args = hubblestack.utils.args.shlex_split(dependency, posix=False)
         else:
-            args = salt.utils.args.shlex_split(dependency)
+            args = hubblestack.utils.args.shlex_split(dependency)
         log.trace('Command after shlex_split: %s', args)
         proc = subprocess.Popen(args,
                                 shell=False,

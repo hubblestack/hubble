@@ -11,7 +11,7 @@ the data outputted by a module to serve it to another module.
 import logging
 import re
 
-from hubblestack.utils.exceptions import ArgumentValueError
+from hubblestack.exceptions import ArgumentValueError
 from hubblestack.utils.encoding import encode_base64 as utils_encode_base64
 
 log = logging.getLogger(__name__)

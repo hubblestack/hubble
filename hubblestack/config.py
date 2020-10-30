@@ -28,7 +28,7 @@ import hubblestack.syspaths
 import hubblestack.defaults.exitcodes
 import hubblestack.utils.builtin_hacking
 
-from hubblestack.utils.exceptions import HubbleConfigurationError
+from hubblestack.exceptions import HubbleConfigurationError
 from hubblestack.utils.url import urlparse
 
 try:
@@ -1536,6 +1536,69 @@ def get_config(
     _validate_opts(opts)
     return opts
 
+def get_id(opts, cache_minion_id=False):
+    '''
+    Guess the id of the minion.
+
+    If CONFIG_DIR/minion_id exists, use the cached minion ID from that file.
+    If no minion id is configured, use multiple sources to find a FQDN.
+    If no FQDN is found you may get an ip address.
+
+    Returns two values: the detected ID, and a boolean value noting whether or
+    not an IP address is being used for the ID.
+    '''
+    if opts['root_dir'] is None:
+        root_dir = hubblestack.syspaths.ROOT_DIR
+    else:
+        root_dir = opts['root_dir']
+
+    config_dir = hubblestack.syspaths.CONFIG_DIR
+    if config_dir.startswith(hubblestack.syspaths.ROOT_DIR):
+        config_dir = config_dir.split(hubblestack.syspaths.ROOT_DIR, 1)[-1]
+
+    # Check for cached minion ID
+    id_cache = os.path.join(root_dir,
+                            config_dir.lstrip(os.path.sep),
+                            'minion_id')
+
+    if opts.get('minion_id_caching', True):
+        try:
+            with hubblestack.utils.files.fopen(id_cache) as idf:
+                name = hubblestack.utils.stringutils.to_unicode(idf.readline().strip())
+                bname = hubblestack.utils.stringutils.to_bytes(name)
+                if bname.startswith(codecs.BOM):  # Remove BOM if exists
+                    name = hubblestack.utils.stringutils.to_str(bname.replace(codecs.BOM, '', 1))
+            if name and name != 'localhost':
+                log.debug('Using cached minion ID from %s: %s', id_cache, name)
+                return name, False
+        except (IOError, OSError):
+            pass
+    if '__role' in opts and opts.get('__role') == 'minion':
+        log.debug(
+            'Guessing ID. The id can be explicitly set in %s',
+            os.path.join(hubblestack.syspaths.CONFIG_DIR, 'minion')
+        )
+
+    if opts.get('id_function'):
+        newid = call_id_function(opts)
+    else:
+        newid = hubblestack.utils.network.generate_minion_id()
+
+    if opts.get('minion_id_lowercase'):
+        newid = newid.lower()
+        log.debug('Changed minion id %s to lowercase.', newid)
+    if '__role' in opts and opts.get('__role') == 'minion':
+        if opts.get('id_function'):
+            log.debug(
+                'Found minion id from external function %s: %s',
+                opts['id_function'], newid
+            )
+        else:
+            log.debug('Found minion id from generate_minion_id(): %s', newid)
+    if cache_minion_id and opts.get('minion_id_caching', True):
+        _cache_id(newid, id_cache)
+    is_ipv4 = hubblestack.utils.network.is_ipv4(newid)
+    return newid, is_ipv4
 
 def apply_config(overrides=None, defaults=None, cache_minion_id=False, minion_id=None):
     """

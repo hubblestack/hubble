@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Tests for salt.utils.json
+Tests for hubblestack.utils.json
 """
 # Import Python libs
 

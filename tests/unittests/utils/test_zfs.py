@@ -25,7 +25,6 @@ from tests.support.mock import (
 # Import Execution module to test
 import hubblestack.utils.zfs as zfs
 
-import salt.loader
 from hubblestack.utils.odict import OrderedDict
 
 # property_map mocks

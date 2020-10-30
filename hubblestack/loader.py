@@ -32,7 +32,7 @@ import hubblestack.utils.lazy
 import hubblestack.utils.odict
 import hubblestack.utils.platform
 import hubblestack.utils.versions
-from hubblestack.utils.exceptions import LoaderError
+from hubblestack.exceptions import LoaderError
 from hubblestack.template import check_render_pipe_str
 from hubblestack.utils.decorators import Depends
 
@@ -128,8 +128,10 @@ def _module_dirs(
         if os.path.isdir(maybe_dir):
             cli_module_dirs.insert(0, maybe_dir)
 
+    as_tuple = (cli_module_dirs, ext_type_types, [files_base_types, ext_types, sys_types])
+    log.debug('_module_dirs() => %s', as_tuple)
     if explain:
-        return (cli_module_dirs, ext_type_types, [files_base_types, ext_types, sys_types])
+        return as_tuple
     return cli_module_dirs + ext_type_types + [files_base_types, ext_types, sys_types]
 
 

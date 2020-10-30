@@ -18,7 +18,7 @@ try:
 except ImportError:
     HAS_WIN32 = False
 
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 
 # Although utils are often directly imported, it is also possible to use the

@@ -70,9 +70,9 @@ Jump arguments
 
 Check the following links for more details:
   - iptables.build_rule SaltStack documentation
-  (https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.iptables.html#salt.modules.iptables.build_rule)
+  (https://docs.saltstack.com/en/latest/ref/modules/all/hubblestack.modules.iptables.html#hubblestack.modules.iptables.build_rule)
   - iptables salt execution module source code (search for the build_rule function inside):
-  (https://github.com/saltstack/salt/blob/develop/salt/modules/iptables.py)
+  (https://github.com/saltstack/salt/blob/develop/hubblestack/modules/iptables.py)
 """
 
 
@@ -80,7 +80,7 @@ import logging
 
 import fnmatch
 import copy
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 import hubblestack.utils.path
 

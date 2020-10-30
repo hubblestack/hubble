@@ -39,7 +39,7 @@ if hubblestack.utils.path.which('initctl'):
         from hubblestack.modules.upstart_service import _upstart_enable, _upstart_disable, _upstart_is_enabled
     except Exception as exc:
         log.error('Unable to import helper functions from '
-                  'salt.modules.upstart: %s', exc)
+                  'hubblestack.modules.upstart: %s', exc)
     else:
         HAS_UPSTART = True
 

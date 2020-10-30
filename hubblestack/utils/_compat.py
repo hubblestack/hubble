@@ -4,7 +4,7 @@ import io
 import logging
 import binascii
 
-from hubblestack.utils.exceptions import HubbleException
+from hubblestack.exceptions import HubbleException
 
 log = logging.getLogger(__name__)
 

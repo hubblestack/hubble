@@ -23,7 +23,7 @@ import hubblestack.utils.data
 import hubblestack.utils.pkg
 import hubblestack.utils.systemd
 import hubblestack.utils.environment
-from hubblestack.utils.exceptions import (
+from hubblestack.exceptions import (
     CommandExecutionError
 )
 

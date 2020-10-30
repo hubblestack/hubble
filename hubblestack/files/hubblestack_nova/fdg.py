@@ -51,7 +51,7 @@ import logging
 import fnmatch
 import copy
 
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 default_consolidation_operator = "and"

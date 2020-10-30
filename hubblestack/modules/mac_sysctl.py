@@ -10,7 +10,7 @@ import os
 # Import salt libs
 import hubblestack.utils.files
 import hubblestack.utils.stringutils
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Define the module's virtual name
 __virtualname__ = "sysctl"

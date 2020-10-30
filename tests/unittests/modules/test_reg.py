@@ -4,7 +4,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import hubblestack.modules.reg as reg
 import hubblestack.utils.win_reg
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 from tests.support.helpers import random_string
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.mock import MagicMock, patch

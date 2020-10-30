@@ -31,7 +31,7 @@ import hubblestack.utils.timed_subprocess
 import hubblestack.grains.extra
 import hubblestack.utils.user
 import hubblestack.grains.extra
-from hubblestack.utils.exceptions import CommandExecutionError, TimedProcTimeoutError, \
+from hubblestack.exceptions import CommandExecutionError, TimedProcTimeoutError, \
     HubbleInvocationError
 from hubblestack.log import LOG_LEVELS
 
@@ -168,7 +168,7 @@ def run_stdout(cmd,
 
             To see the encoding Salt has detected from the system locale, check
             the `locale` line in the output of :py:func:`test.versions_report
-            <salt.modules.test.versions_report>`.
+            <hubblestack.modules.test.versions_report>`.
 
         .. versionadded:: 2018.3.0
 
@@ -1062,7 +1062,7 @@ def run_all(cmd,
 
             To see the encoding Salt has detected from the system locale, check
             the `locale` line in the output of :py:func:`test.versions_report
-            <salt.modules.test.versions_report>`.
+            <hubblestack.modules.test.versions_report>`.
 
         .. versionadded:: 2018.3.0
 
@@ -1313,7 +1313,7 @@ def retcode(cmd,
 
             To see the encoding Salt has detected from the system locale, check
             the `locale` line in the output of :py:func:`test.versions_report
-            <salt.modules.test.versions_report>`.
+            <hubblestack.modules.test.versions_report>`.
 
         .. versionadded:: 2018.3.0
 
@@ -1500,7 +1500,7 @@ def run(cmd,
 
             To see the encoding Salt has detected from the system locale, check
             the `locale` line in the output of :py:func:`test.versions_report
-            <salt.modules.test.versions_report>`.
+            <hubblestack.modules.test.versions_report>`.
 
         .. versionadded:: 2018.3.0
 

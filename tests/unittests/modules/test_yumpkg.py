@@ -15,7 +15,7 @@ from tests.support.mock import (
 )
 
 # Import Salt libs
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 import hubblestack.modules.rpm_lowpkg as rpm
 import hubblestack.modules.yumpkg as yumpkg
 import hubblestack.modules.pkg_resource as pkg_resource

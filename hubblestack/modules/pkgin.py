@@ -21,7 +21,7 @@ import hubblestack.utils.data
 import hubblestack.utils.path
 import hubblestack.utils.pkg
 from hubblestack.utils.decorators.memoize import memoize
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

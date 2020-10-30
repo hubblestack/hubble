@@ -14,7 +14,7 @@ import tempfile
 
 import hubblestack.utils.stringutils
 import hubblestack.utils.platform
-import hubblestack.utils.exceptions
+import hubblestack.exceptions
 
 try:
     import fcntl
@@ -179,7 +179,7 @@ def rename(src, dst):
             os.remove(dst)
         except OSError as exc:
             if exc.errno != errno.ENOENT:
-                raise hubblestack.utils.exceptions.HubbleError(
+                raise hubblestack.exceptions.HubbleError(
                     'Error: Unable to remove {0}: {1}'.format(
                         dst,
                         exc.strerror

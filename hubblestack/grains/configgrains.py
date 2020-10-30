@@ -20,12 +20,12 @@ config_to_grains:
   - splunkindex: "hubblestack:returner:splunk:0:index"
 """
 
-import salt.modules.config
+import hubblestack.modules.config
 
-salt.modules.config.__pillar__ = {}
-salt.modules.config.__grains__ = {}
+hubblestack.modules.config.__pillar__ = {}
+hubblestack.modules.config.__grains__ = {}
 
-__salt__ = {'config.get': salt.modules.config.get}
+__salt__ = {'config.get': hubblestack.modules.config.get}
 
 
 def configgrains():
@@ -39,7 +39,7 @@ def configgrains():
       - splunkindex: "hubblestack:returner:splunk:0:index"
     """
     grains = {}
-    salt.modules.config.__opts__ = __opts__
+    hubblestack.modules.config.__opts__ = __opts__
 
     grains_to_make = __salt__['config.get']('config_to_grains', default=[])
     for grain in grains_to_make:

@@ -13,7 +13,7 @@ import datetime
 import hubblestack.log
 import hubblestack.utils.immutabletypes as immutabletypes
 import hubblestack.utils.stringutils
-from hubblestack.utils.exceptions import HubbleReqTimeoutError, HubbleDeserializationError
+from hubblestack.exceptions import HubbleReqTimeoutError, HubbleDeserializationError
 from hubblestack.utils.data import CaseInsensitiveDict
 
 log = logging.getLogger(__name__)
@@ -123,7 +123,7 @@ class Serial(object):
         try:
             def ext_type_decoder(code, data):
                 if code == 78:
-                    data = salt.utils.stringutils.to_unicode(data)
+                    data = hubblestack.utils.stringutils.to_unicode(data)
                     return datetime.datetime.strptime(data, '%Y%m%dT%H:%M:%S.%f')
                 return data
 
@@ -196,7 +196,7 @@ class Serial(object):
                 # msgpack doesn't support datetime.datetime and datetime.date datatypes.
                 # So here we have converted these types to custom datatype
                 # This is msgpack Extended types numbered 78
-                return msgpack.ExtType(78, salt.utils.stringutils.to_bytes(
+                return msgpack.ExtType(78, hubblestack.utils.stringutils.to_bytes(
                     obj.strftime('%Y%m%dT%H:%M:%S.%f')))
             # The same for immutable types
             elif isinstance(obj, immutabletypes.ImmutableDict):

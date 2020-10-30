@@ -20,7 +20,7 @@ from tests.support.mock import (
 # Import Salt Libs
 import hubblestack.modules.systemd_service as systemd
 import hubblestack.utils.systemd
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 _SYSTEMCTL_STATUS = {
     'sshd.service': {

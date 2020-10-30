@@ -24,7 +24,7 @@ import hubblestack.utils.xmlutil as xml
 import time
 from urllib.parse import quote as _quote
 from hubblestack.utils._compat import ElementTree as ET
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

@@ -8,7 +8,7 @@ from __future__ import absolute_import
 
 # Import Salt Libs
 import hubblestack.modules.openbsd_sysctl as openbsd_sysctl
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
@@ -18,7 +18,7 @@ from tests.support.unit import TestCase
 
 class OpenBSDSysctlTestCase(TestCase, LoaderModuleMockMixin):
     """
-    TestCase for salt.modules.openbsd_sysctl module
+    TestCase for hubblestack.modules.openbsd_sysctl module
     """
 
     def setup_loader_modules(self):

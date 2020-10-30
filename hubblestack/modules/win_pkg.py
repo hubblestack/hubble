@@ -52,7 +52,7 @@ from functools import cmp_to_key
 import urllib
 
 # Import salt libs
-from hubblestack.utils.exceptions import (CommandExecutionError,
+from hubblestack.exceptions import (CommandExecutionError,
                              HubbleRenderError)
 import hubblestack.utils.data
 import hubblestack.utils.files

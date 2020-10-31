@@ -13,8 +13,13 @@ import hubblestack.syspaths
 import hubblestack.config
 import hubblestack.daemon
 
+import logging
+log = logging.getLogger(__name__)
+
 def intentionally_changed_value_filter(key_name, value, test_paths):
-    if isinstance(value, list):
+    if isinstance(value, (list,tuple)):
+        if key_name.endswith('_dirs'):
+            value = [ v for v in value if '/extmods/' not in v ]
         return [ intentionally_changed_value_filter(key_name, v, test_paths) for v in value ]
     if isinstance(value, dict):
         return { k: intentionally_changed_value_filter(k, v, test_paths) for k,v in value.items() }
@@ -35,6 +40,9 @@ def intentionally_changed_value_filter(key_name, value, test_paths):
 @pytest.fixture
 def intentionally_removed_opts():
     return {
+    "states_dirs",
+    "render_dirs",
+    "outputter_dirs",
     "auth_safemode",
     "auth_timeout",
     "auth_tries",

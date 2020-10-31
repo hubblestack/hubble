@@ -639,33 +639,6 @@ def _setup_dirs():
 
     this_dir = os.path.dirname(__file__)
 
-    # XXX: remove any section that nolonger needs an 'extmods' dir
-    module_dirs = __opts__.get('module_dirs', [])
-    module_dirs.append(os.path.join(this_dir, 'extmods', 'modules'))
-    __opts__['module_dirs'] = module_dirs
-
-    returner_dirs = __opts__.get('returner_dirs', [])
-    returner_dirs.append(os.path.join(this_dir, 'extmods', 'returners'))
-    __opts__['returner_dirs'] = returner_dirs
-
-    fileserver_dirs = __opts__.get('fileserver_dirs', [])
-    fileserver_dirs.append(os.path.join(this_dir, 'extmods', 'fileserver'))
-    __opts__['fileserver_dirs'] = fileserver_dirs
-
-    utils_dirs = __opts__.get('utils_dirs', [])
-    utils_dirs.append(os.path.join(this_dir, 'extmods', 'utils'))
-    __opts__['utils_dirs'] = utils_dirs
-
-    fdg_dirs = __opts__.get('fdg_dirs', [])
-    fdg_dirs.append(os.path.join(this_dir, 'extmods', 'fdg'))
-    __opts__['fdg_dirs'] = fdg_dirs
-
-    audit_dirs = __opts__.get('audit_dirs', [])
-    audit_dirs.append(os.path.join(this_dir, 'extmods', 'audit'))
-    __opts__['audit_dirs'] = audit_dirs
-
-    # /XXX
-
     # we have to uber-override and make sure our files dir is in root
     # and that root file systems are enabled
 

@@ -247,16 +247,14 @@ VALID_OPTS = {
     # A list of additional directories to search for salt returners in
     "returner_dirs": list,
     # A list of additional directories to search for salt states in
-    "states_dirs": list,
-    # A list of additional directories to search for salt grains in
     "grains_dirs": list,
     # A list of additional directories to search for salt renderers in
-    "render_dirs": list,
-    # A list of additional directories to search for salt outputters in
-    "outputter_dirs": list,
-    # A list of additional directories to search for salt utilities in. (Used by the loader
-    # to populate __utils__)
     "utils_dirs": list,
+    # some hubble additions
+    'fdg_dirs': list,
+    'audit_dirs': list,
+    # this is a hubble addition, but it may have already been in use
+    'fileserver_dirs': list,
     # salt cloud providers
     "providers": dict,
     # First remove all modules during any sync operation
@@ -983,10 +981,10 @@ DEFAULT_OPTS = {
     "module_dirs": [],
     "returner_dirs": [],
     "grains_dirs": [],
-    "states_dirs": [],
-    "render_dirs": [],
-    "outputter_dirs": [],
     "utils_dirs": [],
+    'fdg_dirs': [],
+    'audit_dirs': [],
+    'fileserver_dirs': [],
     "publisher_acl": {},
     "publisher_acl_blacklist": {},
     "providers": {},
@@ -1698,15 +1696,16 @@ def apply_config(overrides=None, defaults=None, cache_minion_id=False, minion_id
     # nothing else!
     opts["open_mode"] = opts["open_mode"] is True
     opts["file_roots"] = _validate_file_roots(opts["file_roots"])
+
     # Make sure ext_mods gets set if it is an untrue value
     # (here to catch older bad configs)
-    opts["extension_modules"] = opts.get("extension_modules") or os.path.join(
-        opts["cachedir"], "extmods"
-    )
+
+    # Intentionally disabled loading extension modules from profile dirs
+    #  (but only by not adding the extmods dirs in the cache locations...
+    #   one could still allow this by explicitly setting such a thing in configs)
+    # opts["extension_modules"] = opts.get("extension_modules") or os.path.join( opts["cachedir"], "extmods")
     # Set up the utils_dirs location from the extension_modules location
-    opts["utils_dirs"] = opts.get("utils_dirs") or [
-        os.path.join(opts["extension_modules"], "utils")
-    ]
+    # opts["utils_dirs"] = opts.get("utils_dirs") or [ os.path.join(opts["extension_modules"], "utils") ]
 
     # Insert all 'utils_dirs' directories to the system path
     insert_system_path(opts, opts["utils_dirs"])

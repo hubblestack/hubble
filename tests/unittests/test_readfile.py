@@ -5,7 +5,7 @@ import os
 import yaml
 import pytest
 
-import hubblestack.extmods.fdg.readfile
+import hubblestack.fdg.readfile
 
 
 class TestReadfile():
@@ -41,7 +41,7 @@ class TestReadfile():
         and None value
         """
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.json('/invalid/path')
+        status, ret = hubblestack.fdg.readfile.json('/invalid/path')
         assert expected_status == status
         assert expected_ret == ret
 
@@ -50,7 +50,7 @@ class TestReadfile():
         Test that given a single subkey argument, the function extracts the correct value
         """
         expected_status, expected_ret = True, "file"
-        status, ret = hubblestack.extmods.fdg.readfile.json(json_file, subkey='id')
+        status, ret = hubblestack.fdg.readfile.json(json_file, subkey='id')
         assert expected_status == status
         assert expected_ret == ret
 
@@ -60,7 +60,7 @@ class TestReadfile():
         the function returns False status and None value
         """
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.json(json_file, subkey='invalid_key')
+        status, ret = hubblestack.fdg.readfile.json(json_file, subkey='invalid_key')
         assert expected_status == status
         assert expected_ret == ret
 
@@ -70,7 +70,7 @@ class TestReadfile():
         the function returns the correct value
         """
         expected_status, expected_ret = True, "value2"
-        status, ret = hubblestack.extmods.fdg.readfile.json(
+        status, ret = hubblestack.fdg.readfile.json(
             json_file, subkey='value,key2,key3', sep=',')
         assert expected_status == status
         assert expected_ret == ret
@@ -81,7 +81,7 @@ class TestReadfile():
         the function returns False status and None value
         """
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.json(
+        status, ret = hubblestack.fdg.readfile.json(
             json_file, subkey='value,key2,key3', sep='/')
         assert expected_status == status
         assert expected_ret == ret
@@ -91,7 +91,7 @@ class TestReadfile():
         Test that given an index as subkey, the function returns the correct value
         """
         expected_status, expected_ret = True, "item2"
-        status, ret = hubblestack.extmods.fdg.readfile.json(
+        status, ret = hubblestack.fdg.readfile.json(
             json_file, subkey='menuitem,1', sep=',')
         assert expected_status == status
         assert expected_ret == ret
@@ -102,7 +102,7 @@ class TestReadfile():
         the function returns False status and None value
         """
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.json(
+        status, ret = hubblestack.fdg.readfile.json(
             json_file, subkey='menuitem,15', sep=',')
         assert expected_status == status
         assert expected_ret == ret
@@ -114,7 +114,7 @@ class TestReadfile():
         with open(json_file, 'r+') as invalid_file:
             invalid_file.truncate(0)
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.json(json_file, subkey='id')
+        status, ret = hubblestack.fdg.readfile.json(json_file, subkey='id')
         assert expected_status == status
         assert expected_ret == ret
 
@@ -126,7 +126,7 @@ class TestReadfile():
         with open(json_file, 'w+') as invalid_file:
             invalid_file.write("InvalidJson")
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.json(json_file, subkey='id')
+        status, ret = hubblestack.fdg.readfile.json(json_file, subkey='id')
         assert expected_status == status
         assert expected_ret == ret
 
@@ -148,7 +148,7 @@ class TestReadfile():
         and an empty return value
         """
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.yaml('/invalid/path')
+        status, ret = hubblestack.fdg.readfile.yaml('/invalid/path')
         assert expected_status == status
         assert expected_ret == ret
 
@@ -157,7 +157,7 @@ class TestReadfile():
         Test that given a single subkey argument, the function extracts the appropriated value
         """
         expected_status, expected_ret = True, "file"
-        status, ret = hubblestack.extmods.fdg.readfile.yaml(yaml_file, subkey='id')
+        status, ret = hubblestack.fdg.readfile.yaml(yaml_file, subkey='id')
         assert expected_status == status
         assert expected_ret == ret
 
@@ -167,7 +167,7 @@ class TestReadfile():
         the function returns False status and empty value
         """
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.yaml(yaml_file, subkey='invalid_key')
+        status, ret = hubblestack.fdg.readfile.yaml(yaml_file, subkey='invalid_key')
         assert expected_status == status
         assert expected_ret == ret
 
@@ -177,7 +177,7 @@ class TestReadfile():
         the function returns the appropriate value
         """
         expected_status, expected_ret = True, "value2"
-        status, ret = hubblestack.extmods.fdg.readfile.yaml(
+        status, ret = hubblestack.fdg.readfile.yaml(
             yaml_file, subkey='value,key2,key3', sep=',')
         assert expected_status == status
         assert expected_ret == ret
@@ -188,7 +188,7 @@ class TestReadfile():
         the function returns a False status and None value
         """
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.yaml(
+        status, ret = hubblestack.fdg.readfile.yaml(
             yaml_file, subkey='value,key2,key3', sep='/')
         assert expected_status == status
         assert expected_ret == ret
@@ -198,7 +198,7 @@ class TestReadfile():
         Test that given an index as subkey, the function returns the appropriate value
         """
         expected_status, expected_ret = True, "item2"
-        status, ret = hubblestack.extmods.fdg.readfile.yaml(
+        status, ret = hubblestack.fdg.readfile.yaml(
             yaml_file, subkey='menuitem,1', sep=',')
         assert expected_status == status
         assert expected_ret == ret
@@ -209,7 +209,7 @@ class TestReadfile():
         the function returns False status and None value
         """
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.yaml(
+        status, ret = hubblestack.fdg.readfile.yaml(
             yaml_file, subkey='menuitem,15', sep=',')
         assert expected_status == status
         assert expected_ret == ret
@@ -221,7 +221,7 @@ class TestReadfile():
         with open(yaml_file, 'r+') as invalid_file:
             invalid_file.truncate(0)
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.yaml(yaml_file, subkey='id')
+        status, ret = hubblestack.fdg.readfile.yaml(yaml_file, subkey='id')
         assert expected_status == status
         assert expected_ret == ret
 
@@ -232,7 +232,7 @@ class TestReadfile():
         with open(yaml_file, 'w+') as invalid_file:
             invalid_file.write("invalidyaml")
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.yaml(yaml_file, subkey='id')
+        status, ret = hubblestack.fdg.readfile.yaml(yaml_file, subkey='id')
         assert expected_status == status
         assert expected_ret == ret
 
@@ -241,7 +241,7 @@ class TestReadfile():
         Test that given an empty ``pattern`` and empty ``ignore_pattern``, the function returns True
         """
         expected_ret = True
-        ret = hubblestack.extmods.fdg.readfile._check_pattern('Sample text', None, None)
+        ret = hubblestack.fdg.readfile._check_pattern('Sample text', None, None)
         assert expected_ret == ret
 
     def test_checkPattern_EmptyPatternValidIgnore_ReturnFalse(self):
@@ -250,7 +250,7 @@ class TestReadfile():
         the function returns False
         """
         expected_ret = False
-        ret = hubblestack.extmods.fdg.readfile._check_pattern('invalid text', None, 'invalid.*')
+        ret = hubblestack.fdg.readfile._check_pattern('invalid text', None, 'invalid.*')
         assert expected_ret == ret
 
     def test_checkPattern_EmptyPatternInvalidIgnore_ReturnTrue(self):
@@ -259,7 +259,7 @@ class TestReadfile():
         the function returns True
         """
         expected_ret = True
-        ret = hubblestack.extmods.fdg.readfile._check_pattern('Sample text', None, 'invalid')
+        ret = hubblestack.fdg.readfile._check_pattern('Sample text', None, 'invalid')
         assert expected_ret == ret
 
     def test_checkPattern_ValidPatternValidIgnore_ReturnFalse(self):
@@ -269,7 +269,7 @@ class TestReadfile():
         """
         expected_ret = False
         line = 'valid and invalid text'
-        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'valid.*', '.*invalid.*')
+        ret = hubblestack.fdg.readfile._check_pattern(line, 'valid.*', '.*invalid.*')
         assert expected_ret == ret
 
     def test_checkPattern_ValidPatternInvalidIgnore_ReturnTrue(self):
@@ -279,7 +279,7 @@ class TestReadfile():
         """
         expected_ret = True
         line = 'valid text'
-        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'valid', 'invalid')
+        ret = hubblestack.fdg.readfile._check_pattern(line, 'valid', 'invalid')
         assert expected_ret == ret
 
     def test_checkPattern_ValidPatternEmptyIgnore_ReturnTrue(self):
@@ -289,7 +289,7 @@ class TestReadfile():
         """
         expected_ret = True
         line = 'valid text'
-        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'valid', None)
+        ret = hubblestack.fdg.readfile._check_pattern(line, 'valid', None)
         assert expected_ret == ret
 
     def test_checkPattern_InvalidPatternInvalidIgnore_ReturnFalse(self):
@@ -299,7 +299,7 @@ class TestReadfile():
         """
         expected_ret = False
         line = 'Line with invalid text'
-        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'bad pattern', 'bad ignore')
+        ret = hubblestack.fdg.readfile._check_pattern(line, 'bad pattern', 'bad ignore')
         assert expected_ret == ret
 
     def test_checkPattern_InvalidPatternValidIgnore_ReturnFalse(self):
@@ -309,7 +309,7 @@ class TestReadfile():
         """
         expected_ret = False
         line = 'Line with invalid text'
-        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'bad pattern', '.*invalid.*')
+        ret = hubblestack.fdg.readfile._check_pattern(line, 'bad pattern', '.*invalid.*')
         assert expected_ret == ret
 
     def test_checkPattern_InvalidPatternEmptyIgnore_ReturnFalse(self):
@@ -319,7 +319,7 @@ class TestReadfile():
         """
         expected_ret = False
         line = 'Line with invalid text'
-        ret = hubblestack.extmods.fdg.readfile._check_pattern(line, 'bad pattern', None)
+        ret = hubblestack.fdg.readfile._check_pattern(line, 'bad pattern', None)
         assert expected_ret == ret
 
     def test_processLine_ValidArguments_ReturnDict(self):
@@ -330,7 +330,7 @@ class TestReadfile():
                                                         'provider': 'aws',
                                                         'zone': '3'}
         line = "APP_ATTRIBUTES=cluster_role:controol;zone:3;provider:aws"
-        key, val = hubblestack.extmods.fdg.readfile._process_line(
+        key, val = hubblestack.fdg.readfile._process_line(
             line, dictsep='=', valsep=';', subsep=':')
         assert expected_key == key
         assert expected_val == val
@@ -344,7 +344,7 @@ class TestReadfile():
                                                         'provider': 'aws',
                                                         'zone': '3'}
         line = "APP_ATTRIBUTES=cluster_role:controol;zone:6;provider:aws;zone:3"
-        key, val = hubblestack.extmods.fdg.readfile._process_line(
+        key, val = hubblestack.fdg.readfile._process_line(
             line, dictsep='=', valsep=';', subsep=':')
         assert expected_key == key
         assert expected_val == val
@@ -354,7 +354,7 @@ class TestReadfile():
         Test that given empty arguments, the line is returned
         """
         line = "line of text"
-        ret, none = hubblestack.extmods.fdg.readfile._process_line(line, None, None, None)
+        ret, none = hubblestack.fdg.readfile._process_line(line, None, None, None)
         assert ret == line
         assert none is None
 
@@ -365,7 +365,7 @@ class TestReadfile():
         """
         expected_key, expected_val = 'key0', ['key1', 'key2', 'val']
         line = "key0:key1;key2;val"
-        key, val = hubblestack.extmods.fdg.readfile._process_line(line, ':', ';', None)
+        key, val = hubblestack.fdg.readfile._process_line(line, ':', ';', None)
         assert expected_key == key
         assert expected_val == val
 
@@ -375,7 +375,7 @@ class TestReadfile():
         """
         expected_key, expected_val = 'key0', ['key1;key2;val']
         line = "key0:key1;key2;val"
-        key, val = hubblestack.extmods.fdg.readfile._process_line(line, ':', '-', None)
+        key, val = hubblestack.fdg.readfile._process_line(line, ':', '-', None)
         assert expected_key == key
         assert expected_val == val
 
@@ -388,7 +388,7 @@ class TestReadfile():
                                                         'provider:aws': None,
                                                         'zone:3': None}
         line = "APP_ATTRIBUTES=cluster_role:controol;zone:3;provider:aws"
-        key, val = hubblestack.extmods.fdg.readfile._process_line(line, '=', ';', '-')
+        key, val = hubblestack.fdg.readfile._process_line(line, '=', ';', '-')
         assert expected_key == key
         assert expected_val == val
 
@@ -399,7 +399,7 @@ class TestReadfile():
         """
         expected_key, expected_val = 'key0', {'key1;val': 'val2'}
         line = "key0:key1;val-val2"
-        key, val = hubblestack.extmods.fdg.readfile._process_line(line, ':', '.', '-')
+        key, val = hubblestack.fdg.readfile._process_line(line, ':', '.', '-')
         assert expected_key == key
         assert expected_val == val
 
@@ -409,7 +409,7 @@ class TestReadfile():
         a dict is returned
         """
         line = "key0:key1;val-val2"
-        ret, none = hubblestack.extmods.fdg.readfile._process_line(line, '?', '.', '-')
+        ret, none = hubblestack.fdg.readfile._process_line(line, '?', '.', '-')
         assert ret == line
         assert none is None
 
@@ -437,7 +437,7 @@ class TestReadfile():
         Test that given empty arguemtsn, the function returns a list with lines as elements
         """
         expected_status, expected_ret = True, self.generate_config_data()
-        status, ret = hubblestack.extmods.fdg.readfile.config(config_file)
+        status, ret = hubblestack.fdg.readfile.config(config_file)
         assert expected_status == status
         assert expected_ret == ret
 
@@ -446,7 +446,7 @@ class TestReadfile():
         Test that given an invalid ``path``, the function returns ``None``
         """
         expected_status, expected_ret = False, None
-        status, ret = hubblestack.extmods.fdg.readfile.config('/invalid/path')
+        status, ret = hubblestack.fdg.readfile.config('/invalid/path')
         assert expected_status == status
         assert expected_ret == ret
 
@@ -458,7 +458,7 @@ class TestReadfile():
         sample_data = self.generate_config_data()
         expected_status, expected_ret = True, {"APP_ATTRIBUTES": [x.split("=")[1]
                                                                   for x in sample_data]}
-        status, ret = hubblestack.extmods.fdg.readfile.config(config_file, dictsep="=")
+        status, ret = hubblestack.fdg.readfile.config(config_file, dictsep="=")
         assert expected_status == status
         assert expected_ret == ret
 
@@ -467,7 +467,7 @@ class TestReadfile():
         Test that given the same ``pattern`` and ``ignore_pattern``
         """
         expected_status, expected_ret = True, {}
-        status, ret = hubblestack.extmods.fdg.readfile.config(
+        status, ret = hubblestack.fdg.readfile.config(
             config_file, pattern="APP_ATTRIBUTES", ignore_pattern="APP_ATTRIBUTES", dictsep="=")
         assert expected_status == status
         assert expected_ret == ret
@@ -480,7 +480,7 @@ class TestReadfile():
         sample_data = self.generate_config_data()
         expected_status, expected_ret = True, {x: None for x in sample_data
                                                if "master" not in x}
-        status, ret = hubblestack.extmods.fdg.readfile.config(
+        status, ret = hubblestack.fdg.readfile.config(
             config_file, ignore_pattern=".*master.*", dictsep="?", valsep=';', subsep=':')
         assert expected_status == status
         assert expected_ret == ret
@@ -491,7 +491,7 @@ class TestReadfile():
         """
         expected_status, expected_ret = True, {"APP_ATTRIBUTES": {
             "cluster_role": "worker", "zone": "1", "provider":"aws"}}
-        status, ret = hubblestack.extmods.fdg.readfile.config(
+        status, ret = hubblestack.fdg.readfile.config(
             config_file, pattern=".*(3|1).*", ignore_pattern=".*3.*",
             dictsep="=", valsep=';', subsep=':')
         assert expected_status == status
@@ -504,7 +504,7 @@ class TestReadfile():
         """
         expected_status, expected_ret = True, {"APP_ATTRIBUTES": {
             "cluster_role": "control;zone:3;provider:aws"}}
-        status, ret = hubblestack.extmods.fdg.readfile.config(
+        status, ret = hubblestack.fdg.readfile.config(
             config_file, pattern=".*control.*", dictsep="=", subsep=':')
         assert expected_status == status
         assert expected_ret == ret
@@ -517,7 +517,7 @@ class TestReadfile():
         expected_status, expected_ret = True, {"APP_ATTRIBUTES": ["cluster_role:control",
                                                                   "zone:3",
                                                                   "provider:aws"]}
-        status, ret = hubblestack.extmods.fdg.readfile.config(
+        status, ret = hubblestack.fdg.readfile.config(
             config_file, ignore_pattern=".*(worker|master).*", dictsep="=", valsep=';')
         assert expected_status == status
         assert expected_ret == ret
@@ -528,7 +528,7 @@ class TestReadfile():
         Test that given invalid arguments, the function returns False and None.
         """
         expected_status, expected_ret = False, None
-        status, ret= hubblestack.extmods.fdg.readfile.readfile_string('/invalid/path')
+        status, ret= hubblestack.fdg.readfile.readfile_string('/invalid/path')
         assert status == expected_status
         assert ret == expected_ret
 
@@ -539,7 +539,7 @@ class TestReadfile():
         """
         with open(json_file, 'w') as jfile:
             jfile.writelines(["First line", "Second line", "Foo bar line"])
-        status, ret = hubblestack.extmods.fdg.readfile.readfile_string(json_file)
+        status, ret = hubblestack.fdg.readfile.readfile_string(json_file)
         assert status == True
         assert ret == "First lineSecond lineFoo bar line"
 
@@ -550,7 +550,7 @@ class TestReadfile():
         """
         with open(json_file, 'w') as jfile:
             jfile.writelines(["Foo", "bar"])
-        status, ret = hubblestack.extmods.fdg.readfile.readfile_string(json_file, encode_b64=True)
+        status, ret = hubblestack.fdg.readfile.readfile_string(json_file, encode_b64=True)
         assert status == True
         # encoded Foobar
         assert ret == 'Rm9vYmFy'

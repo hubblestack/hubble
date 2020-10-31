@@ -42,9 +42,9 @@ from hubblestack.hangtime import hangtime_wrapper
 import hubblestack.status
 import hubblestack.fileclient
 import hubblestack.saltoverrides
-import hubblestack.extmods.module_runner.runner
-import hubblestack.extmods.module_runner.audit_runner
-import hubblestack.extmods.module_runner.fdg_runner
+import hubblestack.module_runner.runner
+import hubblestack.module_runner.audit_runner
+import hubblestack.module_runner.fdg_runner
 
 log = logging.getLogger(__name__)
 HSS = hubblestack.status.HubbleStatus(__name__, 'schedule', 'refresh_grains')
@@ -503,7 +503,7 @@ def load_config(args=None):
     if __mods__['config.get']('splunklogging', False):
         hubblestack.log.setup_splunk_logger()
         hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
-        __salt__['conf_publisher.publish']()
+        __mods__['conf_publisher.publish']()
 
     return __opts__ # this is also a global, but the return is handy in tests/unittests
 
@@ -641,44 +641,7 @@ def _setup_dirs():
     Setup module/grain/returner dirs
     """
 
-    # XXX: eventually we'll move these back a dir and elimninate the below
     this_dir = os.path.dirname(__file__)
-
-    hubble_mods_dirs = __opts__.get('hubble_mods_dirs', [])
-    hubble_mods_dirs.append(os.path.join(this_dir, 'extmods', 'hubble_mods'))
-    __opts__['hubble_mods_dirs'] = hubble_mods_dirs
-    comparators_dirs = __opts__.get('comparators_dirs', [])
-    comparators_dirs.append(os.path.join(this_dir, 'extmods', 'comparators'))
-    __opts__['comparators_dirs'] = comparators_dirs
-
-    module_dirs = __opts__.get('module_dirs', [])
-    module_dirs.append(os.path.join(this_dir, 'extmods', 'modules'))
-    __opts__['module_dirs'] = module_dirs
-
-    grains_dirs = __opts__.get('grains_dirs', [])
-    grains_dirs.append(os.path.join(os.path.dirname(__file__), 'grains'))
-    __opts__['grains_dirs'] = grains_dirs
-
-    returner_dirs = __opts__.get('returner_dirs', [])
-    returner_dirs.append(os.path.join(this_dir, 'extmods', 'returners'))
-    __opts__['returner_dirs'] = returner_dirs
-
-    fileserver_dirs = __opts__.get('fileserver_dirs', [])
-    fileserver_dirs.append(os.path.join(this_dir, 'extmods', 'fileserver'))
-    __opts__['fileserver_dirs'] = fileserver_dirs
-
-    utils_dirs = __opts__.get('utils_dirs', [])
-    utils_dirs.append(os.path.join(this_dir, 'extmods', 'utils'))
-    __opts__['utils_dirs'] = utils_dirs
-
-    fdg_dirs = __opts__.get('fdg_dirs', [])
-    fdg_dirs.append(os.path.join(this_dir, 'extmods', 'fdg'))
-    __opts__['fdg_dirs'] = fdg_dirs
-
-    audit_dirs = __opts__.get('audit_dirs', [])
-    audit_dirs.append(os.path.join(this_dir, 'extmods', 'audit'))
-    __opts__['audit_dirs'] = audit_dirs
-    # /XXX
 
     # we have to uber-override and make sure our files dir is in root
     # and that root file systems are enabled
@@ -780,44 +743,35 @@ def refresh_grains(initial=False):
 
     hubblestack.hec.opt.__grains__ = __grains__
     hubblestack.hec.opt.__mods__ = __mods__
-    hubblestack.hec.opt.__mods__ = __mods__
     hubblestack.hec.opt.__opts__ = __opts__
 
     hubblestack.log.splunk.__grains__ = __grains__
-    hubblestack.log.splunk.__mods__ = __mods__
     hubblestack.log.splunk.__mods__ = __mods__
     hubblestack.log.splunk.__opts__ = __opts__
 
     hubblestack.status.__opts__ = __opts__
     hubblestack.status.__mods__ = __mods__
-    hubblestack.status.__mods__ = __mods__
-    HSS.start_sigusr1_signal_handler()
 
     hubblestack.utils.signing.__opts__ = __opts__
-    hubblestack.utils.signing.__salt__ = __mods__
-    hubblestack.utils.signing.__salt__ = __mods__
+    hubblestack.utils.signing.__mods__ = __mods__
 
-    hubblestack.extmods.module_runner.runner.__salt__ = __mods__
-    hubblestack.extmods.module_runner.runner.__salt__ = __mods__
-    hubblestack.extmods.module_runner.runner.__grains__ = __grains__
-    hubblestack.extmods.module_runner.runner.__opts__ = __opts__
+    hubblestack.module_runner.runner.__mods__ = __mods__
+    hubblestack.module_runner.runner.__grains__ = __grains__
+    hubblestack.module_runner.runner.__opts__ = __opts__
 
-    hubblestack.extmods.module_runner.audit_runner.__salt__ = __mods__
-    hubblestack.extmods.module_runner.audit_runner.__salt__ = __mods__
-    hubblestack.extmods.module_runner.audit_runner.__grains__ = __grains__
-    hubblestack.extmods.module_runner.audit_runner.__opts__ = __opts__
+    hubblestack.module_runner.audit_runner.__mods__ = __mods__
+    hubblestack.module_runner.audit_runner.__grains__ = __grains__
+    hubblestack.module_runner.audit_runner.__opts__ = __opts__
 
-    hubblestack.extmods.module_runner.fdg_runner.__salt__ = __mods__
-    hubblestack.extmods.module_runner.fdg_runner.__salt__ = __mods__
-    hubblestack.extmods.module_runner.fdg_runner.__grains__ = __grains__
-    hubblestack.extmods.module_runner.fdg_runner.__opts__ = __opts__
-    hubblestack.extmods.module_runner.fdg_runner.__returners__ = __returners__
+    hubblestack.module_runner.fdg_runner.__mods__ = __mods__
+    hubblestack.module_runner.fdg_runner.__grains__ = __grains__
+    hubblestack.module_runner.fdg_runner.__opts__ = __opts__
+    hubblestack.module_runner.fdg_runner.__returners__ = __returners__
 
+    hubblestack.utils.signing.__mods__ = __mods__
+
+    HSS.start_sigusr1_signal_handler()
     hubblestack.log.refresh_handler_std_info()
-
-    hubblestack.utils.signing.__mods__ = __mods__
-    hubblestack.utils.signing.__mods__ = __mods__
-
     clear_selective_context()
 
     if not initial and __mods__['config.get']('splunklogging', False):

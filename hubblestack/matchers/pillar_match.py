@@ -6,7 +6,7 @@ This is the default pillar matcher function.
 import logging
 
 import hubblestack.utils.data  # pylint: disable=3rd-party-module-not-gated
-from salt.defaults import (  # pylint: disable=3rd-party-module-not-gated
+from hubblestack.defaults import (  # pylint: disable=3rd-party-module-not-gated
     DEFAULT_TARGET_DELIM,
 )
 

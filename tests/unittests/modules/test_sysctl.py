@@ -1,8 +1,8 @@
 from unittest import TestCase
 import pytest
 
-from hubblestack.extmods.hubble_mods import sysctl
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import sysctl
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestSysctl(TestCase):
@@ -46,7 +46,7 @@ class TestSysctl(TestCase):
         """
         def _get(name):
             return "0"
-        sysctl.__salt__ = {
+        sysctl.__mods__ = {
             "sysctl.get": _get
         }
         block_dict={"args": {"name": "vm.zone_reclaim_mode"}}
@@ -64,7 +64,7 @@ class TestSysctl(TestCase):
         """
         def _get(name):
             return None
-        sysctl.__salt__ = {
+        sysctl.__mods__ = {
             "sysctl.get": _get
         }
         block_dict={"args": {"name": "vm.zone_reclaim_mode"}}
@@ -84,7 +84,7 @@ class TestSysctl(TestCase):
         def _get(name):
             return "Error: invalid value"
 
-        sysctl.__salt__ = {
+        sysctl.__mods__ = {
             "sysctl.get": _get
         }
         block_dict={"args": {"name": "vm.zone_reclaim_mode"}}

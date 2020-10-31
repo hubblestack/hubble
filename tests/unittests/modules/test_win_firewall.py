@@ -2,8 +2,8 @@ from unittest import TestCase
 import pytest
 import mock
 
-from hubblestack.extmods.hubble_mods import win_firewall
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import win_firewall
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestWinFirewall(TestCase):

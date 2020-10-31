@@ -285,7 +285,7 @@ def mkstemp(*args, **kwargs):
     Salt's code.
     """
     if "prefix" not in kwargs:
-        kwargs["prefix"] = "__salt.tmp."
+        kwargs["prefix"] = "__hubble.tmp."
     close_fd = kwargs.pop("close_fd", True)
     fd_, f_path = tempfile.mkstemp(*args, **kwargs)
     if close_fd is False:

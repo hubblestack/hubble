@@ -6,8 +6,8 @@ import pytest
 from unittest import TestCase
 from unittest.mock import patch
 
-from hubblestack.extmods.hubble_mods import readfile
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import readfile
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestReadFile():

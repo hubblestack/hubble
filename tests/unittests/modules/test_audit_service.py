@@ -1,8 +1,8 @@
 from unittest import TestCase
 import pytest
 
-from hubblestack.extmods.hubble_mods import service
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import service
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestService(TestCase):
@@ -54,7 +54,7 @@ class TestService(TestCase):
             return True
         def _enabled(name):
             return True
-        service.__salt__ = {
+        service.__mods__ = {
             "service.get_all": _get_all,
             "service.status": _status,
             "service.enabled": _enabled
@@ -79,7 +79,7 @@ class TestService(TestCase):
             return True
         def _enabled(name):
             return True
-        service.__salt__ = {
+        service.__mods__ = {
             "service.get_all": _get_all,
             "service.status": _status,
             "service.enabled": _enabled
@@ -104,7 +104,7 @@ class TestService(TestCase):
             return True
         def _enabled(name):
             return True
-        service.__salt__ = {
+        service.__mods__ = {
             "service.get_all": _get_all,
             "service.status": _status,
             "service.enabled": _enabled

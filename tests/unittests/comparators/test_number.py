@@ -2,7 +2,7 @@ from unittest import TestCase
 import pytest
 
 from hubblestack.extmods.comparators import number as number_comparator
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestNumberMatch(TestCase):

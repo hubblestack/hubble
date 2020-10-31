@@ -13,6 +13,8 @@ except ImportError:
 import copy
 import logging
 
+from hubblestack.serializers.yamlex import merge_recursive as _yamlex_merge_recursive
+
 log = logging.getLogger(__name__)
 
 
@@ -89,8 +91,6 @@ def merge_recurse(obj_a, obj_b, merge_lists=False):
 
 
 def merge_aggregate(obj_a, obj_b):
-    from salt.serializers.yamlex import merge_recursive as _yamlex_merge_recursive
-
     return _yamlex_merge_recursive(obj_a, obj_b, level=1)
 
 

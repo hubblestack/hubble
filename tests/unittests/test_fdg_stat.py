@@ -277,7 +277,7 @@ def test_get_stats_positive():
     :expected: Success, file stats
     """
     log.info('Executing test_get_stats_positive')
-    __salt__ = {}
+    __mods__ = {}
     params = {"filepath" : "/Users/muagarwa/hubble/tests/unittests/test_fdg_stat.py"}
 
     expected_file_stats = {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0,
@@ -287,8 +287,8 @@ def test_get_stats_positive():
     def file_stats(name):
         return expected_file_stats
 
-    __salt__['file.stats'] = file_stats
-    hubblestack.extmods.fdg.stat.__salt__ = __salt__
+    __mods__['file.stats'] = file_stats
+    hubblestack.extmods.fdg.stat.__mods__ = __mods__
     val = hubblestack.extmods.fdg.stat.get_stats(params=params)
     log.debug("return value is %s", val)
     assert val[0]
@@ -301,7 +301,7 @@ def test_get_stats_negative_file_not_exists():
     :expected: Failure, file stats
     """
     log.info('Executing test_get_stats_negative_file_not_exists')
-    __salt__ = {}
+    __mods__ = {}
     params = {"filepath" : "/Users/muagarwa/hubble/tests/unittests/file_not_exists"}
 
     def file_stats(name):
@@ -309,8 +309,8 @@ def test_get_stats_negative_file_not_exists():
                 'target': '/Users/muagarwa/hubble/tests/unittests/test_fdg_stat.py', 'user': 'root',
                 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322, 'ctime': 1491870657.914388}
 
-    __salt__['file.stats'] = file_stats
-    hubblestack.extmods.fdg.stat.__salt__ = __salt__
+    __mods__['file.stats'] = file_stats
+    hubblestack.extmods.fdg.stat.__mods__ = __mods__
     val = hubblestack.extmods.fdg.stat.get_stats(params=params)
     log.debug("return value is %s", val)
     assert not val[0]
@@ -324,7 +324,7 @@ def test_get_stats_positive_filepath_is_chained_dict():
     :expected: Failure, file stats
     """
     log.info('Executing test_get_stats_positive_filepath_is_chained')
-    __salt__ = {}
+    __mods__ = {}
     params = {"filepath" : "/Users/muagarwa/hubble/tests/unittests/test_fdg_stat.py"}
 
     expected_file_stats = {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0,
@@ -333,8 +333,8 @@ def test_get_stats_positive_filepath_is_chained_dict():
     def file_stats(name):
         return expected_file_stats
 
-    __salt__['file.stats'] = file_stats
-    hubblestack.extmods.fdg.stat.__salt__ = __salt__
+    __mods__['file.stats'] = file_stats
+    hubblestack.extmods.fdg.stat.__mods__ = __mods__
     val = hubblestack.extmods.fdg.stat.get_stats(chained=params)
     log.debug("return value is %s", val)
     assert val[0]
@@ -348,7 +348,7 @@ def test_get_stats_positive_filepath_is_chained_value():
     :expected: Failure, file stats
     """
     log.info('Executing test_get_stats_positive_filepath_is_chained')
-    __salt__ = {}
+    __mods__ = {}
     params = "/Users/muagarwa/hubble/tests/unittests/test_fdg_stat.py"
 
     expected_file_stats = {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0,
@@ -357,8 +357,8 @@ def test_get_stats_positive_filepath_is_chained_value():
     def file_stats(name):
         return expected_file_stats
 
-    __salt__['file.stats'] = file_stats
-    hubblestack.extmods.fdg.stat.__salt__ = __salt__
+    __mods__['file.stats'] = file_stats
+    hubblestack.extmods.fdg.stat.__mods__ = __mods__
     val = hubblestack.extmods.fdg.stat.get_stats(chained=params)
     log.debug("return value is %s", val)
     assert val[0]
@@ -371,7 +371,7 @@ def test_get_stats_negative_incorrect_format_of_chained():
     :expected: Failure, failure_reason_dict
     """
     log.info('Executing test_get_stats_negative_incorrect_format_of_chained')
-    __salt__ = {}
+    __mods__ = {}
     params = [["/Users/muagarwa/hubble/tests/unittests/test_fdg_stat.py"]]
 
     expected_file_stats = {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0,
@@ -380,8 +380,8 @@ def test_get_stats_negative_incorrect_format_of_chained():
     def file_stats(name):
         return expected_file_stats
 
-    __salt__['file.stats'] = file_stats
-    hubblestack.extmods.fdg.stat.__salt__ = __salt__
+    __mods__['file.stats'] = file_stats
+    hubblestack.extmods.fdg.stat.__mods__ = __mods__
     val = hubblestack.extmods.fdg.stat.get_stats(chained=params)
     log.debug("return value is %s", val)
     assert not val[0]

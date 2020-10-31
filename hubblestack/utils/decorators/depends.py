@@ -77,7 +77,7 @@ class Depends(object):
             # http://bugs.python.org/issue17735
             frame = inspect.stack()[1][0]
             # due to missing *.py files under esky we cannot use inspect.getmodule
-            # module name is something like salt.loaded.int.modules.test
+            # module name is something like hubblestack.loaded.int.modules.test
             _, kind, mod_name = frame.f_globals['__name__'].rsplit('.', 2)
             fun_name = function.__name__
             for dep in self.dependencies:

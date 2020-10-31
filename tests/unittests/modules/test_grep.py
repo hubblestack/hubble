@@ -2,8 +2,8 @@ from unittest import TestCase
 from unittest.mock import patch
 import pytest
 
-from hubblestack.extmods.hubble_mods import grep
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import grep
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestGrep(TestCase):
@@ -77,7 +77,7 @@ class TestGrep(TestCase):
         self.assertDictEqual(expected_dict, result_dict)
 
     @patch('os.path.isfile')
-    @patch('hubblestack.extmods.hubble_mods.grep._grep')
+    @patch('hubblestack.audit.grep._grep')
     def testExecute2(self, mockGrep, mockOS):
         """
         Check execute when file provided is present
@@ -111,10 +111,10 @@ class TestGrep(TestCase):
         def mock_grep(cmd, python_shell, ignore_retcode, stdin):
             return {"stdout": text}
         mockOS.return_value = path
-        __salt__ = {}
-        __salt__['cmd.run_all'] = mock_grep
+        __mods__ = {}
+        __mods__['cmd.run_all'] = mock_grep
 
-        grep.__salt__ = __salt__
+        grep.__mods__ = __mods__
         expected_dict = {'stdout': text}
         result = grep._grep(path, None, pattern)
         self.assertDictEqual(expected_dict, result)

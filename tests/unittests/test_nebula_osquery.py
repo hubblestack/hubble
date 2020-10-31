@@ -15,8 +15,8 @@ def dump_var_file(var, name='var', dumpster='tests/unittests/output'):
 @pytest.mark.usefixtures('osqueryd') # starts osqueryd in the background
 class TestNebula():
     def test___virtual__(self):
-        import hubblestack.extmods.modules.nebula_osquery
-        var = hubblestack.extmods.modules.nebula_osquery.__virtual__()
+        import hubblestack.modules.nebula_osquery
+        var = hubblestack.modules.nebula_osquery.__virtual__()
         assert var == 'nebula'
 
     def test_loader(self, __mods__):

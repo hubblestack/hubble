@@ -3,13 +3,13 @@ from unittest.mock import patch
 import pytest
 import mock
 
-from hubblestack.extmods.hubble_mods import win_reg
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import win_reg
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestWinReg(TestCase):
 
-    @patch('hubblestack.extmods.module_runner.runner_utils.get_param_for_module')
+    @patch('hubblestack.module_runner.runner_utils.get_param_for_module')
     def test_get_filtered_params_to_log(self, get_param_for_module_mock):
         """
         Check filtered logs output
@@ -36,7 +36,7 @@ class TestWinReg(TestCase):
         self.assertEqual(result.get("hive"), "HKEY_LOCAL_MACHINE")
         self.assertEqual(result.get("key"), "Software\\Policies\\Microsoft\\Windows\\EventLog\\Application")
 
-    @patch('hubblestack.extmods.module_runner.runner_utils.get_param_for_module')
+    @patch('hubblestack.module_runner.runner_utils.get_param_for_module')
     def test_validate_params_positive(self, get_param_for_module_mock):
         """
         test validate params for positive result
@@ -54,7 +54,7 @@ class TestWinReg(TestCase):
         get_param_for_module_mock.return_value = reg_name
         win_reg.validate_params(block_id, block_dict)
 
-    @patch('hubblestack.extmods.module_runner.runner_utils.get_param_for_module')
+    @patch('hubblestack.module_runner.runner_utils.get_param_for_module')
     def test_validate_params_negative(self, get_param_for_module_mock):
         """
         Test whether invalid input params will raise an exception or not.
@@ -80,16 +80,16 @@ class TestWinReg(TestCase):
         """
         Check if the registry has an actual value set
         """
-        __salt__ = {}
+        __mods__ = {}
         mocked_object = {"success": "True", "vdata": 0}
 
         def read_value(hive="HKLM",
                        key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
                        vname="ProductType"):
             return mocked_object
-        __salt__['reg.read_value'] = read_value
+        __mods__['reg.read_value'] = read_value
 
-        win_reg.__salt__ = __salt__
+        win_reg.__mods__ = __mods__
 
         reg_value = "MaxSize"
         reg_hive = "HKEY_LOCAL_MACHINE"
@@ -101,7 +101,7 @@ class TestWinReg(TestCase):
         """
         Check if the registry has '(value not set)'
         """
-        __salt__ = {}
+        __mods__ = {}
         mocked_object = {"success": "True", "vdata": '(value not set)'}
 
         def read_value(hive="HKLM",
@@ -109,9 +109,9 @@ class TestWinReg(TestCase):
                        vname="ProductType"):
             return mocked_object
 
-        __salt__['reg.read_value'] = read_value
+        __mods__['reg.read_value'] = read_value
 
-        win_reg.__salt__ = __salt__
+        win_reg.__mods__ = __mods__
 
         reg_value = "MaxSize"
         reg_hive = "HKEY_LOCAL_MACHINE"
@@ -123,7 +123,7 @@ class TestWinReg(TestCase):
         """
         success not returned when fetching value from registry
         """
-        __salt__ = {}
+        __mods__ = {}
         mocked_object = {}
 
         def read_value(hive="HKLM",
@@ -131,9 +131,9 @@ class TestWinReg(TestCase):
                        vname="ProductType"):
             return mocked_object
 
-        __salt__['reg.read_value'] = read_value
+        __mods__['reg.read_value'] = read_value
 
-        win_reg.__salt__ = __salt__
+        win_reg.__mods__ = __mods__
 
         reg_value = "MaxSize"
         reg_hive = "HKEY_LOCAL_MACHINE"
@@ -145,7 +145,7 @@ class TestWinReg(TestCase):
         """
         Check if the registry has an actual value set when hive is hku
         """
-        __salt__ = {}
+        __mods__ = {}
         mocked_result = 0
 
         registry_list = "HKEY_USERS\\S-1-5-21-1645406227-2048958880-3100449314-1008"
@@ -153,9 +153,9 @@ class TestWinReg(TestCase):
         def cmd_run(cmd):
             return registry_list
 
-        __salt__['cmd.run'] = cmd_run
+        __mods__['cmd.run'] = cmd_run
         win_reg._read_reg_value = mock.Mock(return_value=mocked_result)
-        win_reg.__salt__ = __salt__
+        win_reg.__mods__ = __mods__
 
         reg_value = "MaxSize"
         reg_hive = "hku"
@@ -167,7 +167,7 @@ class TestWinReg(TestCase):
         """
         Check if the function returns empty dict when _Classes is present in reg name
         """
-        __salt__ = {}
+        __mods__ = {}
         mocked_result = 0
 
         registry_list = "HKEY_USERS\\S-1-5-21-1645406227-2048958880-3100449314-1008_Classes"
@@ -175,9 +175,9 @@ class TestWinReg(TestCase):
         def cmd_run(cmd):
             return registry_list
 
-        __salt__['cmd.run'] = cmd_run
+        __mods__['cmd.run'] = cmd_run
         win_reg._read_reg_value = mock.Mock(return_value=mocked_result)
-        win_reg.__salt__ = __salt__
+        win_reg.__mods__ = __mods__
 
         reg_value = "MaxSize"
         reg_hive = "hku"
@@ -185,9 +185,9 @@ class TestWinReg(TestCase):
         result = win_reg._find_option_value_in_reg(reg_hive, reg_key, reg_value)
         self.assertEqual(result, {})
 
-    @patch('hubblestack.extmods.hubble_mods.win_reg._reg_path_splitter')
-    @patch('hubblestack.extmods.hubble_mods.win_reg._find_option_value_in_reg')
-    @patch('hubblestack.extmods.module_runner.runner_utils.get_param_for_module')
+    @patch('hubblestack.audit.win_reg._reg_path_splitter')
+    @patch('hubblestack.audit.win_reg._find_option_value_in_reg')
+    @patch('hubblestack.module_runner.runner_utils.get_param_for_module')
     def test_execute_positive(self, get_param_for_module_mock, _find_option_value_in_reg_mock, _reg_path_splitter_mock):
         """
         test the execute function with positive result
@@ -215,9 +215,9 @@ class TestWinReg(TestCase):
         self.assertTrue('result' in result_dict)
         self.assertEqual(result_dict.get("result").get(reg_name), '0')
 
-    @patch('hubblestack.extmods.hubble_mods.win_reg._reg_path_splitter')
-    @patch('hubblestack.extmods.hubble_mods.win_reg._find_option_value_in_reg')
-    @patch('hubblestack.extmods.module_runner.runner_utils.get_param_for_module')
+    @patch('hubblestack.audit.win_reg._reg_path_splitter')
+    @patch('hubblestack.audit.win_reg._find_option_value_in_reg')
+    @patch('hubblestack.module_runner.runner_utils.get_param_for_module')
     def test_execute_negative(self, get_param_for_module_mock, _find_option_value_in_reg_mock, _reg_path_splitter_mock):
         """
         test the execute function with positive result

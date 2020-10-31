@@ -2,8 +2,8 @@ from unittest import TestCase
 from unittest.mock import patch
 import pytest
 
-from hubblestack.extmods.hubble_mods import win_auditpol
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import win_auditpol
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestWinAuditpol(TestCase):
@@ -42,7 +42,7 @@ class TestWinAuditpol(TestCase):
         res = win_auditpol.get_filtered_params_to_log(check_id, block_dict, {})
         self.assertEqual(res, {"name": "test234"})
 
-    @patch('hubblestack.extmods.hubble_mods.win_auditpol._auditpol_import')
+    @patch('hubblestack.audit.win_auditpol._auditpol_import')
     def test_execute1(self, mockWinAuditpol):
         """
         Positive case. Policy name exists in auditpol output
@@ -56,7 +56,7 @@ class TestWinAuditpol(TestCase):
         self.assertTrue(status)
         self.assertEqual(res, {"result": {"test1": "sample value"}})
 
-    @patch('hubblestack.extmods.hubble_mods.win_auditpol._auditpol_import')
+    @patch('hubblestack.audit.win_auditpol._auditpol_import')
     def test_execute2(self, mockWinAuditpol):
         """
         Positive case. Policy name does not exist in auditpol output

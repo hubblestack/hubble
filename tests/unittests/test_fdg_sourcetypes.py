@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import hubblestack.extmods.returners.splunk_fdg_return as sfr
+import hubblestack.returners.splunk_fdg_return as sfr
 
 def test01():
     """

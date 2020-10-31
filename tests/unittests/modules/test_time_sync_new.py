@@ -2,8 +2,8 @@ from unittest import TestCase
 from unittest.mock import patch
 import pytest
 
-from hubblestack.extmods.hubble_mods import time_sync
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import time_sync
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestTimeSync(TestCase):
@@ -60,7 +60,7 @@ class TestTimeSync(TestCase):
         check_id = "test-1"
         test_obj = TestClass()
 
-        with patch('hubblestack.extmods.hubble_mods.time_sync.ntplib.NTPClient') as ntplib_mock:
+        with patch('hubblestack.audit.time_sync.ntplib.NTPClient') as ntplib_mock:
             ntplib_mock.return_value.request.return_value = test_obj
 
             status, res = time_sync.execute(check_id, block_dict)
@@ -82,7 +82,7 @@ class TestTimeSync(TestCase):
         check_id = "test-1"
         test_obj = TestClass()
 
-        with patch('hubblestack.extmods.hubble_mods.time_sync.ntplib.NTPClient') as ntplib_mock:
+        with patch('hubblestack.audit.time_sync.ntplib.NTPClient') as ntplib_mock:
             ntplib_mock.return_value.request.return_value = test_obj
 
             status, res = time_sync.execute(check_id, block_dict)

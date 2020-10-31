@@ -6,9 +6,7 @@ This is the default pillar PCRE matcher.
 import logging
 
 import hubblestack.utils.data  # pylint: disable=3rd-party-module-not-gated
-from salt.defaults import (  # pylint: disable=3rd-party-module-not-gated
-    DEFAULT_TARGET_DELIM,
-)
+from hubblestack.defaults import DEFAULT_TARGET_DELIM
 
 log = logging.getLogger(__name__)
 

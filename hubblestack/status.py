@@ -195,7 +195,7 @@ class HubbleStatus(object):
             self.ema_dt = None
             self.dur = None
             self.ema_dur = None
-            # reported is used exclusively by extmods/modules/hstatus
+            # reported is used exclusively by modules/hstatus
             # cleared on every mark()
             self.reported = list()
 

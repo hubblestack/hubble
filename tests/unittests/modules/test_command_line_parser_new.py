@@ -1,8 +1,8 @@
 from unittest import TestCase
 import pytest
 
-from hubblestack.extmods.hubble_mods import command_line_parser
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import command_line_parser
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestCommandLineParser(TestCase):

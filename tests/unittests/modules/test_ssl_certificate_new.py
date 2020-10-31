@@ -2,8 +2,8 @@ from unittest import TestCase
 from unittest.mock import patch
 import pytest
 
-from hubblestack.extmods.hubble_mods import ssl_certificate
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import ssl_certificate
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestSSL(TestCase):
@@ -130,7 +130,7 @@ class TestSSL(TestCase):
         result = ssl_certificate.get_filtered_params_to_log(block_id, block_dict)
         self.assertDictEqual(expected_dict, result)
 
-    @patch('hubblestack.extmods.hubble_mods.ssl_certificate._get_cert')
+    @patch('hubblestack.audit.ssl_certificate._get_cert')
     def testExecute1(self, get_cert_mock):
         """
         Run execute for a common test case - google
@@ -189,7 +189,7 @@ class TestSSL(TestCase):
         self.assertTrue(status)
         self.assertTrue(expected_dict.get('result').items() <= res.get('result').items())
 
-    @patch('hubblestack.extmods.hubble_mods.ssl_certificate._get_cert')
+    @patch('hubblestack.audit.ssl_certificate._get_cert')
     def testExecute2(self, get_cert_mock):
         """
         Run execute for a negative case

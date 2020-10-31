@@ -1,11 +1,10 @@
 from unittest import TestCase
 import pytest
 
-from hubblestack.extmods.hubble_mods import util
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import util
 
 from collections import defaultdict
-from salt.exceptions import ArgumentValueError
+from hubblestack.exceptions import ArgumentValueError, HubbleCheckValidationError
 
 class TestProcess():
     """

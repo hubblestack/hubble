@@ -109,3 +109,12 @@ def sort_pkglist(pkgs):
     except AttributeError as exc:
         log.exception(exc)
 
+
+def format_version(epoch, version, release):
+    '''
+    Formats a version string for list_pkgs.
+    '''
+    full_version = '{0}:{1}'.format(epoch, version) if epoch else version
+    if release:
+        full_version += '-{0}'.format(release)
+    return full_version

@@ -89,6 +89,16 @@ pipeline {
                     pip install --cache-dir .pip-cache -U pip
                     echo no | ./mk-requires.sh
                     pip install --cache-dir .pip-cache -U -r requirements.txt
+                    pip uninstall -y salt-ssh
+                    python -c "
+import sys
+try:
+    import salt
+    print('ERROR, SALT IS FOUND, ERROR')
+    sys.exit(1)
+except:
+    pass
+"
                     '''
             }
         }

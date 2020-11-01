@@ -4,7 +4,6 @@ Functions for daemonizing and otherwise modifying running processes
 '''
 
 # Import python libs
-from __future__ import absolute_import, with_statement, print_function, unicode_literals
 import os
 import time
 import signal

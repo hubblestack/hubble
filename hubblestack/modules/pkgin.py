@@ -10,7 +10,6 @@ Package support for pkgin based systems, inspired from freebsdpkg module
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import copy
 import logging
 import os

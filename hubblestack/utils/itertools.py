@@ -4,7 +4,6 @@ Helpful generators and other tools
 '''
 
 # Import python libs
-from __future__ import absolute_import, unicode_literals
 import fnmatch
 import re
 

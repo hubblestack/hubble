@@ -8,7 +8,6 @@ Service support for RHEL-based systems, including support for both upstart and s
     *'service.start' is not available*), see :ref:`here
     <module-provider-override>`.
 '''
-from __future__ import absolute_import, unicode_literals, print_function
 
 # Import python libs
 import glob

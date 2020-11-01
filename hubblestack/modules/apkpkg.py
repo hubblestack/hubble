@@ -11,7 +11,6 @@ Support for apk
 .. versionadded: 2017.7.0
 
 '''
-from __future__ import absolute_import, print_function, unicode_literals
 
 # Import python libs
 import copy

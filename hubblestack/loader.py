@@ -5,8 +5,6 @@ directories for python loadable code and organizes the code into the
 plugin interfaces used by Salt.
 '''
 
-# Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import os
 import re
 import sys
@@ -19,6 +17,7 @@ import functools
 import threading
 import traceback
 import types
+
 from zipimport import zipimporter
 
 import hubblestack.config
@@ -32,6 +31,7 @@ import hubblestack.utils.lazy
 import hubblestack.utils.odict
 import hubblestack.utils.platform
 import hubblestack.utils.versions
+
 from hubblestack.exceptions import LoaderError
 from hubblestack.template import check_render_pipe_str
 from hubblestack.utils.decorators import Depends
@@ -433,8 +433,6 @@ def _generate_module(name):
 
 def _mod_type(module_path):
     if module_path.startswith(HUBBLE_BASE_PATH):
-        if 'extmods' in module_path:
-            return 'e_int'
         return 'int'
     return 'ext'
 

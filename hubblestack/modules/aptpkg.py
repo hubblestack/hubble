@@ -10,7 +10,6 @@ Support for APT (Advanced Packaging Tool)
 
     For repository management, the ``python-apt`` package must be installed.
 '''
-from __future__ import absolute_import, print_function, unicode_literals
 
 # Import python libs
 import copy

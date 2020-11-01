@@ -4,7 +4,6 @@ Module for viewing and modifying sysctl parameters
 """
 
 # Import Python libs
-from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import os

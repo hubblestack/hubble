@@ -66,7 +66,6 @@ Value:
 :depends:   - hubblestack.utils.win_reg
 """
 # When production windows installer is using Python 3, Python 2 code can be removed
-from __future__ import absolute_import, print_function, unicode_literals
 
 # Import python libs
 import logging

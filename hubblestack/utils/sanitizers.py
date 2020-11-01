@@ -15,7 +15,6 @@
 # limitations under the License.
 
 # Import Python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import re
 import os.path
 import fnmatch

@@ -13,7 +13,6 @@ Package support for openSUSE via the zypper package manager
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import fnmatch
 import logging
 import re

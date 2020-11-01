@@ -10,7 +10,6 @@ dns.srv_data('my1.example.com', 389, prio=10, weight=100)
 dns.srv_name('ldap/tcp', 'example.com')
 
 '''
-from __future__ import absolute_import, print_function, unicode_literals
 
 # Import Python libs
 import base64

@@ -44,7 +44,6 @@ about this, at least.
     used, as it supports the hybrid upstart/sysvinit system used in
     RHEL/CentOS 6.
 '''
-from __future__ import absolute_import, unicode_literals, print_function
 
 # Import python libs
 import glob

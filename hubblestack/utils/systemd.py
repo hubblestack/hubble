@@ -3,7 +3,6 @@
 Contains systemd related help files
 '''
 # import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import logging
 import os
 import re

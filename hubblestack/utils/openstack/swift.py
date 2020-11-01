@@ -4,7 +4,6 @@ Swift utility class
 ===================
 Author: Anthony Stanton <anthony.stanton@gmail.com>
 '''
-from __future__ import absolute_import, unicode_literals, print_function
 
 # Import python libs
 import logging

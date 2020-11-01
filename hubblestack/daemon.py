@@ -621,15 +621,15 @@ def _setup_logging(parsed_args):
 
     # Setup logging
     hubblestack.log.setup_console_logger(**console_logging_opts)
-    hubblestack.log.setup_file_logger(**file_logging_opts)
+    if not parsed_args['skip_file_logger']:
+        hubblestack.log.setup_file_logger(**file_logging_opts)
+        with open(__opts__['log_file'], 'a') as _logfile:
+            pass  # ensure the file exists before we set perms on it
+        os.chmod(__opts__['log_file'], 0o600)
 
-    with open(__opts__['log_file'], 'a') as _logfile:
-        pass  # ensure the file exists before we set perms on it
-    # 384 is 0o600 permissions, written without octal for python 2/3 compat
-    os.chmod(__opts__['log_file'], 384)
     configfile = parsed_args.get('configfile')
     if configfile and os.path.isfile(configfile):
-        os.chmod(configfile, 384)
+        os.chmod(configfile, 0o600)
 
 
 def _setup_dirs():
@@ -808,6 +808,9 @@ def parse_args(args=None):
         help='Pass in an alternative configuration file. Default: /etc/hubble/hubble')
     parser.add_argument('-p', '--no-pprint', help='Turn off pprint for single-function output',
                         action='store_true')
+    parser.add_argument('--skip-file-logger',
+        help="Prevent logger from writing to /var/log/hubble.log",
+        action='store_true')
     parser.add_argument('-v', '--verbose', action='count',
                         help=('Verbosity level. Use -v or -vv or -vvv for '
                               'varying levels of verbosity. Note that -vv '

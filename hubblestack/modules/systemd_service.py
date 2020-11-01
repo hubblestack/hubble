@@ -11,7 +11,6 @@ Provides the service module for systemd
     <module-provider-override>`.
 '''
 # Import Python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import errno
 import glob
 import logging

@@ -9,7 +9,6 @@ ZFS grain provider
 .. versionadded:: 2018.3.0
 
 '''
-from __future__ import absolute_import, print_function, unicode_literals
 
 # Import python libs
 import logging

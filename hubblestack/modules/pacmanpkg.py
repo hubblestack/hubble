@@ -11,7 +11,6 @@ A module to wrap pacman calls, since Arch is the best
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import copy
 import fnmatch
 import logging

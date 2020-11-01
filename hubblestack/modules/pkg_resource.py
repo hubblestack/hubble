@@ -4,7 +4,6 @@ Resources needed by pkg providers
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import copy
 import fnmatch
 import logging

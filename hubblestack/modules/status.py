@@ -5,7 +5,6 @@ These data can be useful for compiling into stats later.
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import datetime
 import logging
 import os

@@ -7,7 +7,6 @@ and the like, but also useful for basic HTTP testing.
 '''
 
 # Import python libs
-from __future__ import absolute_import, unicode_literals, print_function
 import cgi
 import logging
 import os

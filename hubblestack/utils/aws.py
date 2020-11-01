@@ -8,7 +8,6 @@ This is a base library used by a number of AWS services.
 
 :depends: requests
 '''
-from __future__ import absolute_import, print_function, unicode_literals
 
 # Import Python libs
 import time

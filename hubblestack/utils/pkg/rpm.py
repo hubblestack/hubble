@@ -4,7 +4,6 @@ Common functions for working with RPM packages
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import collections
 import datetime
 import logging

@@ -12,7 +12,7 @@ class TestWinReg(TestCase):
         """
         Check filtered logs output
         """
-        reg_name = "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize"
+        reg_name = "HKEY_LOCAL_MACHINE\\Software\\Policies\\Microsoft\\Windows\\EventLog\\Application\\MaxSize"
         block_id = "test_get_filtered_params_to_log"
         block_dict = {
                         "args" :
@@ -28,7 +28,7 @@ class TestWinReg(TestCase):
         """
         Check reg_path_splitter function
         """
-        reg_name = "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize"
+        reg_name = "HKEY_LOCAL_MACHINE\\Software\\Policies\\Microsoft\\Windows\\EventLog\\Application\\MaxSize"
         result = win_reg._reg_path_splitter(reg_name)
         self.assertEquals(result.get("value"), "MaxSize")
         self.assertEquals(result.get("hive"), "HKEY_LOCAL_MACHINE")
@@ -38,7 +38,7 @@ class TestWinReg(TestCase):
         """
         test validate params for positive result
         """
-        reg_name = "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize"
+        reg_name = "HKEY_LOCAL_MACHINE\\Software\\Policies\\Microsoft\\Windows\\EventLog\\Application\\MaxSize"
         block_id = "test_validate_params_positive"
         block_dict = {
                         "args" :
@@ -144,7 +144,7 @@ class TestWinReg(TestCase):
         __salt__ = {}
         mocked_result = 0
 
-        registry_list = "HKEY_USERS\S-1-5-21-1645406227-2048958880-3100449314-1008"
+        registry_list = "HKEY_USERS\\S-1-5-21-1645406227-2048958880-3100449314-1008"
 
         def cmd_run(cmd):
             return registry_list
@@ -166,7 +166,7 @@ class TestWinReg(TestCase):
         __salt__ = {}
         mocked_result = 0
 
-        registry_list = "HKEY_USERS\S-1-5-21-1645406227-2048958880-3100449314-1008_Classes"
+        registry_list = "HKEY_USERS\\S-1-5-21-1645406227-2048958880-3100449314-1008_Classes"
 
         def cmd_run(cmd):
             return registry_list
@@ -192,9 +192,9 @@ class TestWinRegWithMocks(TestCase):
         """
         test the execute function with positive result
         """
-        reg_name = "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize"
+        reg_name = "HKEY_LOCAL_MACHINE\\Software\\Policies\\Microsoft\\Windows\\EventLog\\Application\\MaxSize"
         reg_hive = "HKEY_LOCAL_MACHINE"
-        reg_key = "Software\Policies\Microsoft\Windows\EventLog\Application"
+        reg_key = "Software\\Policies\\Microsoft\\Windows\\EventLog\\Application"
         reg_value = "MaxSize"
         reg_dict = {"hive": reg_hive, "key" : reg_key, "value": reg_value}
         block_id = "test_execute"
@@ -220,7 +220,7 @@ class TestWinRegWithMocks(TestCase):
         """
         reg_name = "invalidRegistryName"
         reg_hive = "HKEY_LOCAL_MACHINE"
-        reg_key = "Software\Policies\Microsoft\Windows\EventLog\Application"
+        reg_key = "Software\\Policies\\Microsoft\\Windows\\EventLog\\Application"
         reg_value = "MaxSize"
         reg_dict = {"hive": reg_hive, "key" : reg_key, "value": reg_value}
         block_id = "test_execute"

@@ -20,7 +20,7 @@ fdg_check:   # unique ID
         - args:
             fdg_file: 'salt://fdg/my_fdg_file.fdg'  # filename for fdg routine
             starting_chained: 'value'  # value for fdg `starting_chained` (optional)
-            true_for_success: True  # Whether a "truthy" value constitues success
+            true_for_success: True  # Whether a "truth" value constitutes success
             use_status: False  # Use the status result of the fdg run.
             consolidation_operator: and/or
           comparator:
@@ -56,7 +56,6 @@ import logging
 import hubblestack.extmods.module_runner.runner_factory as runner_factory
 import hubblestack.extmods.module_runner.runner_utils as runner_utils
 from hubblestack.utils.hubble_error import HubbleCheckValidationError
-from salt.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 
@@ -115,18 +114,9 @@ def execute(block_id, block_dict, extra_args=None):
 
     # read other params for fdg connector module
     starting_chained = runner_utils.get_param_for_module(block_id, block_dict, 'starting_chained')
-    true_for_success = runner_utils.get_param_for_module(block_id, block_dict, 'true_for_success')
-    if not true_for_success:
-        # setting default values
-        true_for_success = True
-    use_status = runner_utils.get_param_for_module(block_id, block_dict, 'use_status')
-    if not use_status:
-        # setting default values
-        use_status = False
-    consolidation_operator = runner_utils.get_param_for_module(block_id, block_dict, 'consolidation_operator')
-    if not consolidation_operator:
-        # setting default values
-        consolidation_operator = "and"
+    true_for_success = runner_utils.get_param_for_module(block_id, block_dict, 'true_for_success', True)
+    use_status = runner_utils.get_param_for_module(block_id, block_dict, 'use_status', False)
+    consolidation_operator = runner_utils.get_param_for_module(block_id, block_dict, 'consolidation_operator', 'and')
 
     # fdg runner class
     fdg_runner = runner_factory.get_fdg_runner()
@@ -145,8 +135,8 @@ def execute(block_id, block_dict, extra_args=None):
     check_value = fdg_status if use_status else bool(fdg_result)
 
     if true_for_success == check_value:
-        return runner_utils.prepare_positive_result_for_module(block_id, "True result from FDG file")
-    return runner_utils.prepare_negative_result_for_module(block_id, "False result from FDG file")
+        return runner_utils.prepare_positive_result_for_module(block_id, True)
+    return runner_utils.prepare_negative_result_for_module(block_id, False)
 
 
 def get_filtered_params_to_log(block_id, block_dict, extra_args=None):

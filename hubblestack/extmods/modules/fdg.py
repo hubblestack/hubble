@@ -117,21 +117,20 @@ call chain.
 
 import logging
 import os
+
 import yaml
+from salt.exceptions import CommandExecutionError
 
 import hubblestack.extmods.module_runner.runner_factory as runner_factory
-
-import salt.loader
-import salt.utils
-from salt.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 __fdg__ = None
 __returners__ = None
 RETURNER_ID_BLOCK = None
+BASE_DIR_FDG_PROFILES = 'fdg'
 
 
-def run(fdg_file, starting_chained=None):
+def run(fdg_file=None, starting_chained=None):
     """
     Given an fdg file (usually a salt:// file, but can also be the absolute
     path to a file on the system), execute that fdg file, starting with the
@@ -147,8 +146,14 @@ def run(fdg_file, starting_chained=None):
         Allows you to pass in a starting argument, which will be treated as
         the ``chained`` argument for the ``main`` block. Optional.
     """
+    if fdg_file is None:
+        return top()
+    fdg_file = _get_fdg_file(fdg_file)
+    if not fdg_file:
+        log.warning('fdg.run called without any fdg file')
+        return
     fdg_runner = runner_factory.get_fdg_runner()
-    
+
     # initialize loader
     fdg_runner.init_loader()
 
@@ -158,7 +163,8 @@ def run(fdg_file, starting_chained=None):
         'starting_chained': starting_chained
     })
 
-def top(fdg_topfile='salt://fdg/top.fdg'):
+
+def top(fdg_topfile='top.fdg'):
     """
     fdg has topfile support, similar to audit, osquery, and fim support for
     topfiles.
@@ -192,24 +198,20 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
     for fdg_file in fdg_routines:
         if isinstance(fdg_file, dict):
             for key, val in fdg_file.items():
-                retkey, retval = fdg(_fdg_saltify(key), val)
+                retkey, retval = run(key, val)
                 ret[retkey] = retval
         else:
-            retkey, retval = fdg(_fdg_saltify(fdg_file))
+            retkey, retval = run(fdg_file)
             ret[retkey] = retval
     return ret
 
 
-def _fdg_saltify(path):
-    """
-    Take a path as it would be formatted in the fdg topfile and convert
-    it to a salt://fdg path.
-    """
-    os.path.sep.join(path.split('.'))
-    return 'salt://fdg/{0}.fdg'.format(path)
-
 def _get_top_data(topfile):
-
+    """
+        Helper method to retrieve and parse the FDG topfile
+        """
+    if not topfile.startswith('salt://'):
+        topfile = 'salt://' + BASE_DIR_FDG_PROFILES + os.sep + topfile
     cached_topfile = __salt__['cp.cache_file'](topfile)
 
     if not cached_topfile:
@@ -236,3 +238,17 @@ def _get_top_data(topfile):
             ret.extend(data)
 
     return ret
+
+
+def _get_fdg_file(fdg_file):
+    """
+    Get FDG file path
+    :param fdg_file: Name of fdg file
+    :return: Proper path of fdg file
+    """
+    if not fdg_file:
+        log.warning('fdg.run called without any fdg_file')
+        return None
+    if fdg_file.startswith('salt://'):
+        return fdg_file
+    return 'salt://' + BASE_DIR_FDG_PROFILES + os.sep + fdg_file.replace('.', os.sep) + '.fdg'

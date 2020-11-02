@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
+r"""
 Module for fetching registry values from windows registry
 
 Audit Example 1:

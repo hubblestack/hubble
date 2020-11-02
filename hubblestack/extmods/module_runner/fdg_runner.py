@@ -10,19 +10,20 @@ import salt.loader
 log = logging.getLogger(__name__)
 RETURNER_ID_BLOCK = None
 
+
 class FdgRunner(Runner):
     """
     FDG runner
     """
+
     def __init__(self):
         super().__init__(Caller.FDG)
-
 
     def _validate_yaml_dictionary(self, yaml_dict):
         if 'main' not in yaml_dict:
             raise CommandExecutionError('FDG block must start with main block name : {0}'.format(yaml_dict))
 
-    #overridden method
+    # overridden method
     def _execute(self, yaml_data_dict, fdg_file, args):
         starting_chained = args.get('starting_chained', None)
 
@@ -55,7 +56,7 @@ class FdgRunner(Runner):
         if 'comparator' in block:
             # override module status with comparator status
             status, ret = hubblestack.extmods.module_runner.comparator.run(
-                    block_id, block['comparator'], ret, status)
+                block_id, block['comparator'], ret, status)
 
         if 'return' in block:
             returner = block['return']
@@ -112,7 +113,6 @@ class FdgRunner(Runner):
         if returner:
             self._return(ret, returner)
         return ret
-
 
     def _return(self, data, returner):
         """

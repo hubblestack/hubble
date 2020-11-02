@@ -88,17 +88,12 @@ The output of this module is dict containing result of execution of checks. It c
 There are additional features as verbose logging, compliance and debug which can be passed as flags.
 """
 
-import fnmatch
 import logging
 import os
+
 import yaml
 
 import hubblestack.extmods.module_runner.runner_factory as runner_factory
-
-from distutils.version import StrictVersion
-import salt.loader
-import salt.utils
-from salt.exceptions import CommandExecutionError
 from hubblestack.status import HubbleStatus
 
 log = logging.getLogger(__name__)
@@ -357,7 +352,7 @@ def _get_top_data(topfile):
     """
     Helper method to retrieve and parse the Audit topfile
     """
-    topfile = 'salt://' + BASE_DIR_AUDIT_PROFILES + os.sep + topfile;
+    topfile = 'salt://' + BASE_DIR_AUDIT_PROFILES + os.sep + topfile
     log.debug('caching top file...')
     topfile_cache_path = __salt__['cp.cache_file'](topfile)
     if not topfile_cache_path:

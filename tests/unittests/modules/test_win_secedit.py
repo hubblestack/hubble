@@ -62,7 +62,7 @@ class TestWinSecedit(TestCase):
         Check whether the _secedit_export function return proper dict.
         """
         __secdata__ = {
-                       'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\SealSecureChannel': '4,1',
+                       'MACHINE\\System\\CurrentControlSet\\Services\\Netlogon\\Parameters\\SealSecureChannel': '4,1',
                        'SeTakeOwnershipPrivilege': '*S-1-5-32-544'
                        }
         __salt__ = {}
@@ -103,7 +103,7 @@ class TestWinSecedit(TestCase):
         """
         sec_name = "SeTakeOwnershipPrivilege"
         __secdata__ = {
-                       'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\SealSecureChannel': '4,1',
+                       'MACHINE\\System\\CurrentControlSet\\Services\\Netlogon\\Parameters\\SealSecureChannel': '4,1',
                        'SeTakeOwnershipPrivilege': '*S-1-5-32-544'
                        }
         block_id = "test_execute1"
@@ -126,7 +126,7 @@ class TestWinSecedit(TestCase):
         """
         sec_name = "SeBackupPrivilege"
         __secdata__ = {
-                       'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\SealSecureChannel': '4,1',
+                       'MACHINE\\System\\CurrentControlSet\\Services\\Netlogon\\Parameters\\SealSecureChannel': '4,1',
                        'SeTakeOwnershipPrivilege': '*S-1-5-32-544'
                        }
         block_id = "test_execute2"
@@ -149,7 +149,7 @@ class TestWinSecedit(TestCase):
         """
         sec_name = "SeTakeOwnershipPrivilege"
         __secdata__ = {
-                       'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\SealSecureChannel': '4,1',
+                       'MACHINE\\System\\CurrentControlSet\\Services\\Netlogon\\Parameters\\SealSecureChannel': '4,1',
                        'SeTakeOwnershipPrivilege': '*S-1-5-32-544'
                        }
         block_id = "test_execute3"
@@ -172,9 +172,9 @@ class TestWinSecedit(TestCase):
         """
         workflow when sec_name contains the string 'MACHINE'
         """
-        sec_name = "MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\SealSecureChannel"
+        sec_name = "MACHINE\\System\\CurrentControlSet\\Services\\Netlogon\\Parameters\\SealSecureChannel"
         __secdata__ = {
-                       'MACHINE\System\CurrentControlSet\Services\Netlogon\Parameters\SealSecureChannel': '4,1',
+                       'MACHINE\\System\\CurrentControlSet\\Services\\Netlogon\\Parameters\\SealSecureChannel': '4,1',
                        'SeTakeOwnershipPrivilege': '*S-1-5-32-544'
                        }
         block_id = "test_execute4"

@@ -1,6 +1,24 @@
+# -*- coding: utf-8 -*-
+'''
+    :codeauthor: Pedro Algarvio (pedro@algarvio.me)
+    :codeauthor: Thomas Jackson (jacksontj.89@gmail.com)
+
+
+    salt.utils.context
+    ~~~~~~~~~~~~~~~~~~
+
+    Context managers used throughout Salt's source code.
+'''
+from __future__ import absolute_import, print_function, unicode_literals
+
+# Import python libs
 import copy
 import threading
-from collections.abc import MutableMapping
+try:
+    from collections.abc import MutableMapping
+except ImportError:
+    from collections import MutableMapping
+
 from contextlib import contextmanager
 
 

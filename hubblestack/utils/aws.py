@@ -16,7 +16,7 @@ from datetime import datetime
 import hashlib
 import hmac
 import logging
-import salt.config
+import hubblestack.config
 import re
 
 import hubblestack.utils.hashutils
@@ -92,7 +92,7 @@ def assumed_creds(prov_dict, role_arn, location=None):
         return c["AccessKeyId"], c["SecretAccessKey"], c["SessionToken"]
 
     version = "2011-06-15"
-    session_name = valid_session_name_re.sub('', salt.config.get_id({"root_dir": None})[0])[0:63]
+    session_name = valid_session_name_re.sub('', hubblestack.config.get_id({"root_dir": None})[0])[0:63]
 
     headers, requesturl = sig4(
         'GET',

@@ -2,10 +2,11 @@
 
 import os
 import sys
+import copy
 import logging
 import pytest
 import collections
-import salt.config
+import hubblestack.config
 import pstats
 import subprocess
 import yaml
@@ -15,12 +16,17 @@ import hubblestack.syspaths
 
 log = logging.getLogger(__name__)
 Loaders = collections.namedtuple("Loaders", 'opts mods grains utils'.split())
+TestPaths = collections.namedtuple("TestPaths", 'tests sources hubble output ext'.split())
 
 tests_dir = os.path.dirname(os.path.realpath(__file__))
 sources_dir = os.path.dirname(os.path.dirname(tests_dir))
 hubble_dir = os.path.join(sources_dir, 'hubblestack')
 output_dir = os.path.join(tests_dir, 'output')
 ext_dir = os.path.join(hubble_dir, 'extmods')
+
+@pytest.fixture
+def test_paths():
+    return TestPaths(tests_dir, sources_dir, hubble_dir, output_dir, ext_dir)
 
 if sources_dir not in sys.path:
     sys.path.insert(0, sources_dir)
@@ -72,41 +78,39 @@ def update_config(config_file):
 
 
 @pytest.fixture(scope='session')
-def HSL(hubblestack_loaders):
-    return hubblestack_loaders
-
-@pytest.fixture(scope='session')
 def config_file():
     return os.path.join(tests_dir, 'hubble.config')
 
 @pytest.fixture(scope='session')
-def hubblestack_loaders(config_file):
+def HSL(config_file):
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
     quiet_salt()
     update_config(config_file)
     hubblestack.daemon.load_config(['-c', config_file])
-
     hsl = Loaders(hubblestack.daemon.__opts__, hubblestack.daemon.__mods__,
         hubblestack.daemon.__grains__, hubblestack.daemon.__utils__)
-
     yield hsl
 
-@pytest.fixture(scope='session')
-def __mods__(hubblestack_loaders):
-    return hubblestack_loaders.mods
+@pytest.fixture(scope='function')
+def __mods__(HSL):
+    return HSL.mods
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def __salt__(__mods__): # XXX remove eventually
     return __mods__
 
-@pytest.fixture(scope='session')
-def __grains__(hubblestack_loaders):
-    return hubblestack_loaders.grains
+@pytest.fixture(scope='function')
+def __utils__(HSL):
+    return HSL.utils
 
-@pytest.fixture(scope='session')
-def __opts__(hubblestack_loaders):
-    return hubblestack_loaders.opts
+@pytest.fixture(scope='function')
+def __grains__(HSL):
+    return copy.deepcopy(HSL.grains)
+
+@pytest.fixture(scope='function')
+def __opts__(HSL):
+    return copy.deepcopy(HSL.opts)
 
 ##### profiling
 prof_filenames = set()

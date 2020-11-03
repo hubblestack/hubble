@@ -22,21 +22,20 @@ import types
 from zipimport import zipimporter
 
 # Import salt libs
-# XXX: all these should be hubble.config, hubble.defaults.x, hubble.utils.x, etc
-import salt.config
-import salt.syspaths
-import salt.utils.args
-import salt.utils.context
-import salt.utils.data
-import salt.utils.dictupdate
-import salt.utils.files
-import salt.utils.lazy
-import salt.utils.odict
-import salt.utils.platform
-import salt.utils.versions
-from salt.exceptions import LoaderError
-from salt.template import check_render_pipe_str
-from salt.utils.decorators import Depends
+import hubblestack.config
+import hubblestack.syspaths
+import hubblestack.utils.args
+import hubblestack.utils.context
+import hubblestack.utils.data
+import hubblestack.utils.dictupdate
+import hubblestack.utils.files
+import hubblestack.utils.lazy
+import hubblestack.utils.odict
+import hubblestack.utils.platform
+import hubblestack.utils.versions
+from hubblestack.utils.exceptions import LoaderError
+from hubblestack.template import check_render_pipe_str
+from hubblestack.utils.decorators import Depends
 
 import hubblestack.syspaths
 
@@ -52,7 +51,13 @@ except ImportError:
 
 log = logging.getLogger(__name__)
 
-SALT_BASE_PATH = os.path.abspath(salt.syspaths.INSTALL_DIR)
+# XXX: we only need this while we're still loading salt modules
+def __salt_basepath():
+    import salt.syspaths
+    return os.path.abspath(salt.syspaths.INSTALL_DIR)
+# XXX: we only need this while we're still loading salt modules
+SALT_BASE_PATH = __salt_basepath()
+
 HUBBLE_BASE_PATH = os.path.abspath(hubblestack.syspaths.INSTALL_DIR)
 LOADED_BASE_NAME = 'hubble.loaded'
 
@@ -162,7 +167,7 @@ def modules(
 
     :param dict utils: Utility functions which should be made available to
                             Salt modules in __utils__. See `utils_dirs` in
-                            salt.config for additional information about
+                            hubblestack.config for additional information about
                             configuration.
 
     :param list whitelist: A list of modules which should be whitelisted.
@@ -173,14 +178,14 @@ def modules(
 
     .. code-block:: python
 
-        import salt.config
-        import salt.loader
+        import hubblestack.config
+        import hubblestack.loader
 
-        __opts__ = salt.config.minion_config('/etc/salt/minion')
-        __grains__ = salt.loader.grains(__opts__)
+        __opts__ = hubblestack.config.get_config('/etc/salt/minion')
+        __grains__ = hubblestack.loader.grains(__opts__)
         __opts__['grains'] = __grains__
-        __utils__ = salt.loader.utils(__opts__)
-        __mods__ = salt.loader.modules(__opts__, utils=__utils__)
+        __utils__ = hubblestack.loader.utils(__opts__)
+        __mods__ = hubblestack.loader.modules(__opts__, utils=__utils__)
         __mods__['test.ping']()
     '''
     # TODO Publish documentation for module whitelisting
@@ -246,11 +251,11 @@ def grain_funcs(opts, proxy=None):
 
       .. code-block:: python
 
-          import salt.config
-          import salt.loader
+          import hubblestack.config
+          import hubblestack.loader
 
-          __opts__ = salt.config.minion_config('/etc/salt/minion')
-          grainfuncs = salt.loader.grain_funcs(__opts__)
+          __opts__ = hubblestack.config.get_config('/etc/salt/minion')
+          grainfuncs = hubblestack.loader.grain_funcs(__opts__)
     '''
     return LazyLoader(
         _module_dirs(
@@ -276,15 +281,15 @@ def grains(opts, force_refresh=False, proxy=None):
 
     .. code-block:: python
 
-        import salt.config
-        import salt.loader
+        import hubblestack.config
+        import hubblestack.loader
 
-        __opts__ = salt.config.minion_config('/etc/salt/minion')
-        __grains__ = salt.loader.grains(__opts__)
+        __opts__ = hubblestack.config.get_config('/etc/salt/minion')
+        __grains__ = hubblestack.loader.grains(__opts__)
         print __grains__['id']
     '''
-    # Need to re-import salt.config, somehow it got lost when a minion is starting
-    import salt.config
+    # Need to re-import hubblestack.config, somehow it got lost when a minion is starting
+    import hubblestack.config
     # if we have no grains, lets try loading from disk (TODO: move to decorator?)
     cfn = os.path.join(
         opts['cachedir'],
@@ -296,18 +301,18 @@ def grains(opts, force_refresh=False, proxy=None):
     grains_deep_merge = opts.get('grains_deep_merge', False) is True
     if 'conf_file' in opts:
         pre_opts = {}
-        pre_opts.update(salt.config.load_config(
+        pre_opts.update(hubblestack.config.load_config(
             opts['conf_file'], 'SALT_MINION_CONFIG',
-            salt.config.DEFAULT_MINION_OPTS['conf_file']
+            hubblestack.config.DEFAULT_OPTS['conf_file']
         ))
         default_include = pre_opts.get(
             'default_include', opts['default_include']
         )
         include = pre_opts.get('include', [])
-        pre_opts.update(salt.config.include_config(
+        pre_opts.update(hubblestack.config.include_config(
             default_include, opts['conf_file'], verbose=False
         ))
-        pre_opts.update(salt.config.include_config(
+        pre_opts.update(hubblestack.config.include_config(
             include, opts['conf_file'], verbose=True
         ))
         if 'grains' in pre_opts:
@@ -330,7 +335,7 @@ def grains(opts, force_refresh=False, proxy=None):
         if not isinstance(ret, dict):
             continue
         if grains_deep_merge:
-            salt.utils.dictupdate.update(grains_data, ret)
+            hubblestack.utils.dictupdate.update(grains_data, ret)
         else:
             grains_data.update(ret)
 
@@ -346,7 +351,7 @@ def grains(opts, force_refresh=False, proxy=None):
             # proxymodule for retrieving information from the connected
             # device.
             log.trace('Loading %s grain', key)
-            parameters = salt.utils.args.get_function_argspec(funcs[key]).args
+            parameters = hubblestack.utils.args.get_function_argspec(funcs[key]).args
             kwargs = {}
             if 'proxy' in parameters:
                 kwargs['proxy'] = proxy
@@ -363,23 +368,23 @@ def grains(opts, force_refresh=False, proxy=None):
         if not isinstance(ret, dict):
             continue
         if grains_deep_merge:
-            salt.utils.dictupdate.update(grains_data, ret)
+            hubblestack.utils.dictupdate.update(grains_data, ret)
         else:
             grains_data.update(ret)
 
     grains_data.update(opts['grains'])
     # Write cache if enabled
     if opts.get('grains_cache', False):
-        with salt.utils.files.set_umask(0o077):
+        with hubblestack.utils.files.set_umask(0o077):
             try:
-                if salt.utils.platform.is_windows():
+                if hubblestack.utils.platform.is_windows():
                     # Late import
-                    import salt.modules.cmdmod
+                    import hubblestack.modules.cmdmod
                     # Make sure cache file isn't read-only
-                    salt.modules.cmdmod._run_quiet('attrib -R "{0}"'.format(cfn))
-                with salt.utils.files.fopen(cfn, 'w+b') as fp_:
+                    hubblestack.modules.cmdmod._run_quiet('attrib -R "{0}"'.format(cfn))
+                with hubblestack.utils.files.fopen(cfn, 'w+b') as fp_:
                     try:
-                        serial = salt.payload.Serial(opts)
+                        serial = hubblestack.payload.Serial(opts)
                         serial.dump(grains_data, fp_)
                     except TypeError as e:
                         log.error('Failed to serialize grains cache: %s', e)
@@ -394,10 +399,10 @@ def grains(opts, force_refresh=False, proxy=None):
                     os.unlink(cfn)
 
     if grains_deep_merge:
-        salt.utils.dictupdate.update(grains_data, opts['grains'])
+        hubblestack.utils.dictupdate.update(grains_data, opts['grains'])
     else:
         grains_data.update(opts['grains'])
-    return salt.utils.data.decode(grains_data, preserve_tuples=True)
+    return hubblestack.utils.data.decode(grains_data, preserve_tuples=True)
 
 def render(opts, functions):
     '''
@@ -447,7 +452,7 @@ def _mod_type(module_path):
     return 'ext'
 
 
-class LazyLoader(salt.utils.lazy.LazyDict):
+class LazyLoader(hubblestack.utils.lazy.LazyDict):
     '''
     A pseduo-dictionary which has a set of keys which are the
     name of the module and function, delimited by a dot. When
@@ -474,7 +479,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         - singletons (per tag)
     '''
 
-    mod_dict_class = salt.utils.odict.OrderedDict
+    mod_dict_class = hubblestack.utils.odict.OrderedDict
 
     def __init__(self,
                  module_dirs,
@@ -505,7 +510,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         if opts is None:
             opts = {}
         threadsafety = not opts.get('multiprocessing')
-        self.context_dict = salt.utils.context.ContextDict(threadsafe=threadsafety)
+        self.context_dict = hubblestack.utils.context.ContextDict(threadsafe=threadsafety)
         self.opts = self.__prep_mod_opts(opts)
 
         self.module_dirs = module_dirs
@@ -519,7 +524,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         for k, v in self.pack.items():
             if v is None:  # if the value of a pack is None, lets make an empty dict
                 self.context_dict.setdefault(k, {})
-                self.pack[k] = salt.utils.context.NamespacedDictWrapper(self.context_dict, k)
+                self.pack[k] = hubblestack.utils.context.NamespacedDictWrapper(self.context_dict, k)
 
         self.whitelist = whitelist
         self.virtual_enable = virtual_enable
@@ -574,7 +579,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
     def __getattr__(self, mod_name):
         '''
         Allow for "direct" attribute access-- this allows jinja templates to
-        access things like `salt.test.ping()`
+        access things like `hubblestack.test.ping()`
         '''
         if mod_name in ('__getstate__', '__setstate__'):
             return object.__getattribute__(self, mod_name)
@@ -641,7 +646,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
 
         # create mapping of filename (without suffix) to (path, suffix)
         # The files are added in order of priority, so order *must* be retained.
-        self.file_mapping = salt.utils.odict.OrderedDict()
+        self.file_mapping = hubblestack.utils.odict.OrderedDict()
 
         opt_match = []
 
@@ -785,11 +790,11 @@ class LazyLoader(salt.utils.lazy.LazyDict):
         '''
         if '__grains__' not in self.pack:
             self.context_dict['grains'] = opts.get('grains', {})
-            self.pack['__grains__'] = salt.utils.context.NamespacedDictWrapper(self.context_dict, 'grains')
+            self.pack['__grains__'] = hubblestack.utils.context.NamespacedDictWrapper(self.context_dict, 'grains')
 
         if '__pillar__' not in self.pack:
             self.context_dict['pillar'] = opts.get('pillar', {})
-            self.pack['__pillar__'] = salt.utils.context.NamespacedDictWrapper(self.context_dict, 'pillar')
+            self.pack['__pillar__'] = hubblestack.utils.context.NamespacedDictWrapper(self.context_dict, 'pillar')
 
         mod_opts = {}
         for key, val in list(opts.items()):
@@ -1227,7 +1232,7 @@ class LazyLoader(salt.utils.lazy.LazyDict):
                     log.trace('Loaded %s as virtual %s', module_name, virtual)
 
                     if not hasattr(mod, '__virtualname__'):
-                        salt.utils.versions.warn_until(
+                        hubblestack.utils.versions.warn_until(
                             'Hydrogen',
                             'The \'{0}\' module is renaming itself in its '
                             '__virtual__() function ({1} => {2}). Please '

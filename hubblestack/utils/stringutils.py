@@ -10,6 +10,7 @@ import logging
 import re
 import unicodedata
 
+import hubblestack.utils.builtin_hacking
 
 log = logging.getLogger(__name__)
 

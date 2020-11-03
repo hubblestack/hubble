@@ -2,8 +2,7 @@
 
 import os
 
-def test_unders(HSL):
-    __opts__, __mods__, __grains__, __utils__ = HSL
+def test_unders(__opts__, __mods__, __grains__, __utils__):
     assert __grains__['id'] == 'test-minion'
 
     config = __opts__['conf_file']

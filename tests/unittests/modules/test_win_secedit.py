@@ -1,6 +1,6 @@
 from unittest import TestCase
+from unittest.mock import patch
 import pytest
-import mock
 
 from hubblestack.extmods.hubble_mods import win_secedit
 from hubblestack.utils.hubble_error import HubbleCheckValidationError
@@ -22,7 +22,7 @@ class TestWinSecedit(TestCase):
                      }
 
         result = win_secedit.get_filtered_params_to_log(block_id, block_dict, extra_args=None)
-        self.assertEquals(result.get("name"), sec_name)
+        self.assertEqual(result, {"name": sec_name})
 
     def test_validate_params_positive(self):
         """
@@ -57,7 +57,8 @@ class TestWinSecedit(TestCase):
             pytest.fail('Should not have passed')
         self.assertTrue('Mandatory parameter: name not found' in str(exception.value))
 
-    def test_secedit_export(self):
+    @patch('hubblestack.extmods.hubble_mods.win_secedit._secedit_import')
+    def test_secedit_export(self, _secedit_import_mock):
         """
         Check whether the _secedit_export function return proper dict.
         """
@@ -76,9 +77,9 @@ class TestWinSecedit(TestCase):
         __salt__['cmd.run'] = cmd_run
         __salt__['file.remove'] = file_remove
         win_secedit.__salt__ = __salt__
-        win_secedit._secedit_import = mock.Mock(return_value=__secdata__)
+        _secedit_import_mock.return_value = __secdata__
         result = win_secedit._secedit_export()
-        self.assertEquals(result, __secdata__)
+        self.assertEqual(result, __secdata__)
 
     def test_get_account_sid(self):
         """
@@ -95,9 +96,10 @@ class TestWinSecedit(TestCase):
         win_secedit.__salt__ = __salt__
         result = win_secedit._get_account_sid()
         self.assertTrue(isinstance(result, dict))
-        self.assertEquals(result.get("Access Control Assistance Operators"), "S-1-5-32-579")
+        self.assertEqual(result.get("Access Control Assistance Operators"), "S-1-5-32-579")
 
-    def test_execute_positive1(self):
+    @patch('hubblestack.extmods.hubble_mods.win_secedit._secedit_export')
+    def test_execute_positive1(self, _secedit_export_mock):
         """
         sec_name present in __secdata__. Status is True, sec_value is equal to value in __secdata__
         """
@@ -113,14 +115,15 @@ class TestWinSecedit(TestCase):
                     "name": sec_name
                 }
         }
-        win_secedit._secedit_export = mock.Mock(return_value=__secdata__)
+        _secedit_export_mock.return_value = __secdata__
         result = win_secedit.execute(block_id, block_dict, extra_args=None)
         self.assertTrue(result[0])
         self.assertTrue(isinstance(result[1], dict))
         self.assertTrue(isinstance(result[1].get('result').get('sec_value'), list))
-        self.assertEquals(['*S-1-5-32-544'], result[1].get('result').get('sec_value'))
+        self.assertEqual(['*S-1-5-32-544'], result[1].get('result').get('sec_value'))
 
-    def test_execute_positive2(self):
+    @patch('hubblestack.extmods.hubble_mods.win_secedit._secedit_export')
+    def test_execute_positive2(self, _secedit_export_mock):
         """
         sec_name not present in __secdata__. Status is True, sec_value is 'No One'
         """
@@ -136,14 +139,16 @@ class TestWinSecedit(TestCase):
                     "name": sec_name
                 }
         }
-        win_secedit._secedit_export = mock.Mock(return_value=__secdata__)
+        _secedit_export_mock.return_value = __secdata__
         result = win_secedit.execute(block_id, block_dict, extra_args=None)
         self.assertTrue(result[0])
         self.assertTrue(isinstance(result[1], dict))
         self.assertTrue(isinstance(result[1].get('result').get('sec_value'), list))
-        self.assertEquals(['No One'], result[1].get('result').get('sec_value'))
+        self.assertEqual(['No One'], result[1].get('result').get('sec_value'))
 
-    def test_execute_positive3(self):
+    @patch('hubblestack.extmods.hubble_mods.win_secedit._secedit_export')
+    @patch('hubblestack.extmods.hubble_mods.win_secedit._get_account_name')
+    def test_execute_positive3(self, _get_account_name_mock, _secedit_export_mock):
         """
         workflow when value_type is 'account'
         """
@@ -160,15 +165,17 @@ class TestWinSecedit(TestCase):
                     "value_type": "account"
                 }
         }
-        win_secedit._secedit_export = mock.Mock(return_value=__secdata__)
-        win_secedit._get_account_name = mock.Mock(return_value=["administrator"])
+        _secedit_export_mock.return_value = __secdata__
+        _get_account_name_mock.return_value = ["administrator"]
         result = win_secedit.execute(block_id, block_dict, extra_args=None)
         self.assertTrue(result[0])
         self.assertTrue(isinstance(result[1], dict))
         self.assertTrue(isinstance(result[1].get('result').get('sec_value'), list))
-        self.assertEquals(result[1].get('result').get('sec_value'), ["administrator"])
+        self.assertEqual(result[1].get('result').get('sec_value'), ["administrator"])
 
-    def test_execute_positive4(self):
+    @patch('hubblestack.extmods.hubble_mods.win_secedit._secedit_export')
+    @patch('hubblestack.extmods.hubble_mods.win_secedit._reg_value_reverse_translator')
+    def test_execute_positive4(self, _reg_value_reverse_translator_mock, _secedit_export_mock):
         """
         workflow when sec_name contains the string 'MACHINE'
         """
@@ -185,8 +192,8 @@ class TestWinSecedit(TestCase):
                 }
         }
 
-        win_secedit._secedit_export = mock.Mock(return_value=__secdata__)
-        win_secedit._reg_value_reverse_translator = mock.Mock(return_value=['Enabled', 'accept if provided by client'])
+        _secedit_export_mock.return_value = __secdata__
+        _reg_value_reverse_translator_mock.return_value = ['Enabled', 'accept if provided by client']
         result = win_secedit.execute(block_id, block_dict, extra_args=None)
         self.assertTrue(result[0])
         self.assertTrue(isinstance(result[1], dict))

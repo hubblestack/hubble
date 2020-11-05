@@ -297,8 +297,7 @@ def _filter_seq(block_id, block_dict, extra_args):
         Example: {'chaining_args': {'result': "Output", 'status': True},
                   'caller': 'Audit'}
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     starting_seq = runner_utils.get_param_for_module(block_id, block_dict, 'starting_seq')
     extend_chained = runner_utils.get_param_for_module(block_id, block_dict, 'extend_chained', True)
@@ -375,8 +374,7 @@ def _filter_dict(block_id, block_dict, extra_args=None):
         Example: {'chaining_args': {'result': "Output", 'status': True},
                   'caller': 'Audit'}
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     starting_dict = runner_utils.get_param_for_module(block_id, block_dict, 'starting_dict')
     update_chained = runner_utils.get_param_for_module(block_id, block_dict, 'update_chained', True)
@@ -385,7 +383,7 @@ def _filter_dict(block_id, block_dict, extra_args=None):
 
     try:
         if update_chained and starting_dict:
-                chained.update(starting_dict)
+            chained.update(starting_dict)
     except (AttributeError, TypeError, ValueError):
         log.error('Invalid argument type - dict required', exc_info=True)
         return runner_utils.prepare_negative_result_for_module(block_id, 'invalid_format')
@@ -475,8 +473,7 @@ def _get_index(block_id, block_dict, extra_args):
     False othewise. The second argument will be the requested list element.
 
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     index = runner_utils.get_param_for_module(block_id, block_dict, 'index', 0)
     starting_list = runner_utils.get_param_for_module(block_id, block_dict, 'starting_list')
@@ -528,8 +525,7 @@ def _get_key(block_id, block_dict, extra_args):
     False othewise. The second argument will be the value found by the key or
     None if the key is not present in the dictionary.
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     key = runner_utils.get_param_for_module(block_id, block_dict, 'key')
     starting_dict = runner_utils.get_param_for_module(block_id, block_dict, 'starting_dict')
@@ -584,8 +580,7 @@ def _join(block_id, block_dict, extra_args):
     ``extend_chained`` is set to True when ``chained`` should be extended with ``words``.
     If set to False, ``words`` is ignored.
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     extend_chained = runner_utils.get_param_for_module(block_id, block_dict, 'extend_chained', True)
     sep = runner_utils.get_param_for_module(block_id, block_dict, 'sep', '')
@@ -637,8 +632,7 @@ def _sort(block_id, block_dict, extra_args):
     The first return value (status) will be True if the sort is successful, and
     False othewise. The second argument will be the sorted sequence.
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     extend_chained = runner_utils.get_param_for_module(block_id, block_dict, 'extend_chained', True)
     lexico = runner_utils.get_param_for_module(block_id, block_dict, 'lexico', False)
@@ -720,8 +714,7 @@ def _split(block_id, block_dict, extra_args):
     the splitting is successful, and False othewise. The second argument will be
     the output of the ``split`` command.
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     format_chained = runner_utils.get_param_for_module(block_id, block_dict, 'format_chained', True)
     phrase = runner_utils.get_param_for_module(block_id, block_dict, 'phrase')
@@ -791,8 +784,7 @@ def _dict_to_list(block_id, block_dict, extra_args):
     The first return value (status) will be True if the conversion is successful,
     and False othewise. The second argument will be the list of tuples.
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     update_chained = runner_utils.get_param_for_module(block_id, block_dict, 'update_chained', True)
     starting_dict = runner_utils.get_param_for_module(block_id, block_dict, 'starting_dict')
@@ -835,8 +827,7 @@ def _dict_convert_none(block_id, block_dict, extra_args):
     The first return value (status) will be True if the replacing is successful, and
     False othewise. The second argument will be the updated sequence.
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     extend_chained = runner_utils.get_param_for_module(block_id, block_dict, 'extend_chained', True)
     starting_seq = runner_utils.get_param_for_module(block_id, block_dict, 'starting_seq')
@@ -935,8 +926,7 @@ def _print_string(block_id, block_dict, extra_args):
 
     The first return value (status) will be False only if an error will occur.
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     format_chained = runner_utils.get_param_for_module(block_id, block_dict, 'format_chained', True)
     starting_string = runner_utils.get_param_for_module(block_id, block_dict, 'starting_string')
@@ -979,8 +969,7 @@ def _dict_remove_none(block_id, block_dict, extra_args):
     and False otherwise.
     The second argument will be the sterilized sequence.
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     extend_chained = runner_utils.get_param_for_module(block_id, block_dict, 'extend_chained', True)
     starting_seq = runner_utils.get_param_for_module(block_id, block_dict, 'starting_seq')
@@ -1061,8 +1050,7 @@ def _nop(block_id, block_dict, extra_args):
     False values -- you can pipe_on_true to process.nop, and stick a
     returner on the nop operation to just return the True values.
     """
-    chain_args = extra_args.get('chaining_args')
-    return runner_utils.get_chained_param(chain_args)
+    return runner_utils.get_chained_param(extra_args)
 
 def _encode_base64(block_id, block_dict, extra_args):
     """
@@ -1087,8 +1075,7 @@ def _encode_base64(block_id, block_dict, extra_args):
 
     The first return value (status) will be False only if an error will occur.
     """
-    chain_args = extra_args.get('chaining_args')
-    chained = runner_utils.get_chained_param(chain_args)
+    chained = runner_utils.get_chained_param(extra_args)
 
     format_chained = runner_utils.get_param_for_module(block_id, block_dict, 'format_chained', True)
     starting_string = runner_utils.get_param_for_module(block_id, block_dict, 'starting_string')

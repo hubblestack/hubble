@@ -130,7 +130,8 @@ class TestSSL(TestCase):
         result = ssl_certificate.get_filtered_params_to_log(block_id, block_dict)
         self.assertDictEqual(expected_dict, result)
 
-    def testExecute1(self):
+    @patch('hubblestack.extmods.hubble_mods.ssl_certificate._get_cert')
+    def testExecute1(self, get_cert_mock):
         """
         Run execute for a common test case - google
         Match the expected output
@@ -142,6 +143,27 @@ class TestSSL(TestCase):
                 'host_port': 443
             }
         }
+        get_cert_mock.return_value = "-----BEGIN CERTIFICATE-----\n" \
+                                     "MIIDfDCCAmSgAwIBAgIJAJB2iRjpM5OgMA0GCSqGSIb3DQEBCwUAME4xMTAvBgNV\n" \
+                                     "BAsMKE5vIFNOSSBwcm92aWRlZDsgcGxlYXNlIGZpeCB5b3VyIGNsaWVudC4xGTAX\n" \
+                                     "BgNVBAMTEGludmFsaWQyLmludmFsaWQwHhcNMTUwMTAxMDAwMDAwWhcNMzAwMTAx\n" \
+                                     "MDAwMDAwWjBOMTEwLwYDVQQLDChObyBTTkkgcHJvdmlkZWQ7IHBsZWFzZSBmaXgg\n" \
+                                     "eW91ciBjbGllbnQuMRkwFwYDVQQDExBpbnZhbGlkMi5pbnZhbGlkMIIBIjANBgkq\n" \
+                                     "hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzWJP5cMThJgMBeTvRKKl7N6ZcZAbKDVA\n" \
+                                     "tNBNnRhIgSitXxCzKtt9rp2RHkLn76oZjdNO25EPp+QgMiWU/rkkB00Y18Oahw5f\n" \
+                                     "i8s+K9dRv6i+gSOiv2jlIeW/S0hOswUUDH0JXFkEPKILzpl5ML7wdp5kt93vHxa7\n" \
+                                     "HswOtAxEz2WtxMdezm/3CgO3sls20wl3W03iI+kCt7HyvhGy2aRPLhJfeABpQr0U\n" \
+                                     "ku3q6mtomy2cgFawekN/X/aH8KknX799MPcuWutM2q88mtUEBsuZmy2nsjK9J7/y\n" \
+                                     "hhCRDzOV/yY8c5+l/u/rWuwwkZ2lgzGp4xBBfhXdr6+m9kmwWCUm9QIDAQABo10w\n" \
+                                     "WzAOBgNVHQ8BAf8EBAMCAqQwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMC\n" \
+                                     "MA8GA1UdEwEB/wQFMAMBAf8wGQYDVR0OBBIEELsPOJZvPr5PK0bQQWrUrLUwDQYJ\n" \
+                                     "KoZIhvcNAQELBQADggEBALnZ4lRc9WHtafO4Y+0DWp4qgSdaGygzS/wtcRP+S2V+\n" \
+                                     "HFOCeYDmeZ9qs0WpNlrtyeBKzBH8hOt9y8aUbZBw2M1F2Mi23Q+dhAEUfQCOKbIT\n" \
+                                     "tunBuVfDTTbAHUuNl/eyr78v8Egi133z7zVgydVG1KA0AOSCB+B65glbpx+xMCpg\n" \
+                                     "ZLux9THydwg3tPo/LfYbRCof+Mb8I3ZCY9O6FfZGjuxJn+0ux3SDora3NX/FmJ+i\n" \
+                                     "kTCTsMtIFWhH3hoyYAamOOuITpPZHD7yP0lfbuncGDEqAQu2YWbYxRixfq2VSxgv\n" \
+                                     "gWbFcmkgBLYpE8iDWT3Kdluo1+6PHaDaLg2SacOY6Go=\n" \
+                                     "-----END CERTIFICATE-----"
         result_list = []
         extra_args = {
             'extra_args': result_list

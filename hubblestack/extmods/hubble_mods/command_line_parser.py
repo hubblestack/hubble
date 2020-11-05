@@ -54,7 +54,7 @@ Inputs:
 Output: (True, ["/etc/docker/daemon.json"])
 
 UNIT TESTS:
-Check the unit test case file 'test_command_line_parser.py' to understand more examples on how this module works.
+Check the unit test case file 'test_command_line_parser_new.py' to understand more examples on how this module works.
 
 NOTES:
 

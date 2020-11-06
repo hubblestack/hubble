@@ -1,450 +1,391 @@
 # -*- encoding: utf-8 -*-
 """
-Audit
+Audit module
+This module is used to run audit checks in Hubble
 
-This module provides access to an easy format for writing audit checks in
-Hubble.
+Checks use a specific audit sub module like 'grep' or 'fdg'
+A sample check is defined in yaml as follows:
 
-Audit checks target a specific audit module, such as ``grep`` or ``fdg``. They
-are formed via YAML files in your hubblestack_data source:
+check_id:
+  description: 'dummy test'
+  tag: 'ADOBE-1'
+  labels:
+    - 'sample label 1'
+    - 'sample label 2'
+  sub_check: true
 
-.. code-block:: yaml
+  failure_reason: 'fail reason'
 
-    CIS-6.2.4:
-      grep.grep:
-        args:
-          - /etc/group
-        kwargs:
-          pattern: '^+:'
-          fail_on_match: True
-        description: Ensure no legacy "+" entries exist in /etc/group
+  invert_result: true
 
-All audit checks have a few things in common. They have an ``id``, a ``tag``, a
-``description``, and a ``module.function`` (usually with arguments). The ``id`` will be used as the
-tag if a tag is not explicitly provided.
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-8'
 
-.. code-block:: yaml
+      hubble_version: '>=4.5'
 
-    <id>
-      <module.function>:
-        args:
-          - arg1
-          - arg2
-        kwargs:
-          foo: bar
-        description: <description>
-        version: <version>
-        tag: <tag>  # Uses <id> if not defined
-        target: <target>
-        labels:
-          - <label>
+      return_no_exec: true
 
-You may have noticed there are a few more features shown in the example above.
-Here's how they work:
+      module: stat
 
-target:
-    Allows you to use a Salt-style compound match to target this check to
-    specific hosts. If a host doesn't match the target, it won't execute the
-    check.
+      check_eval_logic: and
+
+      checks:
+        - path: /etc/ssh/sshd_config.1
+          gid: 0
+          group: root
+          mode: 644
+          uid: 0
+          user: root
+          allow_more_strict: true
+
+The various fields common to checks are defined below:
+
+check_id:
+    Unique identifier for a check. Mandatory
+
+description:
+    The description of check
+
+tag:
+    The tag associated with a check. It can be used to target a check based on tag. Optional
 
 labels:
-    Allows labels to be applied to a check. Labels will be reported in the
-    results, and can also be targeted by audit runs so only checks with a given
-    label will be executed.
+    The labels associated with a check. We can filter out checks based on labels. Optional
 
-version:
-    Allows checks to be limited to certain versions of hubble. Version
-    requirements can be of the following forms:
+sub_check:
+    Flag to execute a check but not report its output in final outcome. Default - false
 
-    <3.0.0
-    <=3.0.0
-    >3.0.0
-    >=3.0.0
+failure_reason:
+    Custom reason to be published in final output if check result is failure. Optional
 
-    Multiple version requirements can be used, separated by commas and
-    semicolons. Commas will be processed first, and will result in AND logic.
-    Semicolons will then be processed, using OR logic to combine any existing
-    results. So, to have a check only run on version 3.0 and 3.2 and later
-    (but not run on 3.1) you might do something like this:
+invert_result:
+    Flag to invert the result of check from success to failure or vice versa. Default - false
 
-    version: '>=3.0.0,<3.1.0;>=3.2.0'
+grains:
+    Salt grains to specify on which particular OS/Kernel this check is intended to run. Default - *
 
-    Note that all checks use distutils.StrictVersion, so this will not work with
-    non-standard hubble releases.
+hubble_version:
+    String to specify version of hubble on which this check is intended to run. Default - *
 
-    Checks skipped by version checks will be returned in a separate 'Skipped'
-    key, so that you can track when hosts are skipping targeted checks because
-    they haven't updated Hubble
+return_no_exec:
+    Flag to specify if a check is not to be executed. The final output is Success in case other flags are not used. Default - false
 
-Like many pieces of Hubble, you can utilize topfiles to target files with one
-or more audit check to specific sets of hosts. Targeting is done via Salt-style
-compound matching:
+module:
+    Name of audit module that is called for check. Mandatory
 
-.. code-block:: yaml
+check_eval_logic:
+    In case there are multiple checks to be run on audit module, the final result is based on the 'check_eval_logic'. Default - and
 
-    audit:
-      '*':
-        - cis.linux
-        - adobebaseline
-      'G@os:CoreOS':
-        - coreos_additional_checks
+checks:
+    List of params to be passed to each audit sub module. The list of params can be found in the indvidual module documentation. Mandatory
 
-Audit modules take arbitrary args and kwargs and return a tuple
-``(success, data_dict)`` where ``success`` is a boolean True/False on whether
-it was a success or a failure, and ``data_dict`` is a dictionary of any
-information that should be added to the check's data dictionary in the return.
+The output of this module is dict containing result of execution of checks. It can be one of following results:
+1. Error - An error in execution of a check
+2. Skipped - A check is skipped due to check params
+3. Success - A check is executed and results in a success
+4. Failure - A check is executed and results in failure
+There are additional features as verbose logging, compliance and debug which can be passed as flags.
 """
 
-
-import fnmatch
 import logging
 import os
+
 import yaml
 
-from distutils.version import StrictVersion
-import salt.loader
-import salt.utils
-from salt.exceptions import CommandExecutionError
+import hubblestack.extmods.module_runner.runner_factory as runner_factory
 from hubblestack.status import HubbleStatus
 
 log = logging.getLogger(__name__)
 
-hubble_status = HubbleStatus(__name__, 'top', 'audit')
+hubble_status = HubbleStatus(__name__, 'top', 'run')
+BASE_DIR_AUDIT_PROFILES = 'hubblestack_audit_profiles'
 
-__audit__ = None
+CHECK_STATUS = {
+    'Success': 'Success',
+    'Failure': 'Failure',
+    'Skipped': 'Skipped',
+    'Error': 'Error'
+}
 
 
 @hubble_status.watch
-def audit(audit_files=None,
-          tags='*',
-          labels=None,
-          verbose=True,
-          show_success=True):
+def run(audit_files=None,
+        tags='*',
+        labels=None,
+        verbose=None,
+        show_compliance=None):
     """
-    Execute one or more audit files, and return the cumulative results.
-
     :param audit_files:
-        Which audit files to execute. Can contain multiple files (list or
-        comma-separated).
+        Profile to execute. Can have one or more files 
+        (python list or comma separated) (default: {None})
     :param tags:
         Can be used to target a subset of tags via glob targeting.
     :param labels:
-        Only run the checks with the given label(s). Can contain multiple
-        labels (comma-separated). If multiple labels are provided, a check
-        with any label in the list will be run.
-    :param verbose:
+        Tests with matching labels are executed. If multiple labels are passed, 
+        then tests which have all those labels are executed.
+    :param verbose: 
         True by default. If set to False, results will be trimmed to just tags
         and descriptions.
-    :param show_success:
-        Whether to show successes/skipped or just failures. Defaults to True
+    :param show_compliance:
+        Whether to show compliance with results or not
     :return:
         Returns dictionary with Success, Skipped, and Failure keys and the
         results of the checks
     """
-    ret = {'Success': [],
-           'Failure': [],
-           'Skipped': []}
+    try:
+        if audit_files is None:
+            return top(verbose=verbose,
+                       show_compliance=show_compliance,
+                       labels=labels)
 
+        audit_runner = runner_factory.get_audit_runner()
+
+        # categories of results
+        result_dict = {
+            'Success': [],
+            'Failure': [],
+            'Error': [],
+            'Skipped': [],
+        }
+        combined_dict = {}
+
+        if verbose is None:
+            verbose = __salt__['config.get']('hubblestack:nova:verbose', False)
+        if show_compliance is None:
+            show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
+
+        if type(show_compliance) is str and show_compliance.lower().strip() in ['true', 'false']:
+            show_compliance = show_compliance.lower().strip() == 'true'
+        if type(verbose) is str and verbose.lower().strip() in ['true', 'false']:
+            verbose = verbose.lower().strip() == 'true'
+        if labels:
+            if not isinstance(labels, list):
+                labels = labels.split(',')
+        # validate and get list of filepaths
+        audit_files = _get_audit_files(audit_files)
+        if not audit_files:
+            return result_dict
+
+        # initialize loader
+        audit_runner.init_loader()
+
+        for audit_file in audit_files:
+            ret = audit_runner.execute(audit_file, {
+                'tags': tags,
+                'labels': labels,
+                'verbose': verbose
+            })
+            combined_dict[audit_file] = ret
+
+        _evaluate_results(result_dict, combined_dict, show_compliance, verbose)
+    except Exception as e:
+        log.error("Error while running audit run method: %s" % e)
+
+    return result_dict
+
+
+def _get_audit_files(audit_files):
+    """Get audit files list, if valid
+
+    Arguments:
+        audit_files {str or list} -- File lists either in comma-separated or python-list
+
+    Returns:
+        list -- List of audit files
+    """
     if not audit_files:
-        log.warning('audit.audit called without any audit_files')
-        return ret
+        log.warning('audit.run called without any audit_files')
+        return None
 
     if not isinstance(audit_files, list):
         audit_files = audit_files.split(',')
 
-    audit_files = ['salt://hubblestack_audit/' + audit_file.replace('.', '/') + '.yaml'
-                   for audit_file in audit_files]
-
-    if labels is None:
-        labels = []
-    if not isinstance(labels, list):
-        labels = labels.split(',')
-
-    # Load audit modules
-    global __audit__
-    __audit__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'audit'),
-                                       __opts__,
-                                       tag='audit',
-                                       pack={'__salt__': __salt__,
-                                             '__grains__': __grains__})
-
-    for audit_file in audit_files:
-        # Cache audit file
-        path = __salt__['cp.cache_file'](audit_file)
-
-        # Fileserver will return False if the file is not found
-        if not path:
-            log.error('Could not find audit file %s', audit_file)
-            continue
-
-        # Load current audit file
-        status, audit_data = _load_audit_file(audit_file, path)
-        if not status:
-            continue
-
-        ret = _run_audit(ret, audit_data, tags, labels, audit_file)
-
-    # If verbose=False, reduce each check to a dictionary with {tag: description}
-    if not verbose or verbose == 'False':
-        succinct_ret = {'Success': [],
-                        'Failure': [],
-                        'Skipped': []}
-        for success_type, checks in ret.items():
-            for check in checks:
-                succinct_ret[success_type].append(
-                    {check['tag']: check.get('description', '<no description>')})
-
-        ret = succinct_ret
-
-    # Remove successes/skipped if show_success is False
-    if not show_success or show_success == 'False':
-        ret.pop('Success')
-        ret.pop('Skipped')
-    elif not ret['Skipped']:
-        ret.pop('Skipped')
-
-    return ret
+    # prepare paths
+    return ['salt://' + BASE_DIR_AUDIT_PROFILES + os.sep + audit_file.replace('.', os.sep) + '.yaml'
+            for audit_file in audit_files]
 
 
-def _load_audit_file(audit_file, path):
-    """ Load the current audit file"""
-    audit_data = None
-    if os.path.isfile(path):
-        try:
-            with open(path, 'r') as audit_file_handler:
-                audit_data = yaml.safe_load(audit_file_handler)
-        except Exception as exc:
-            log.exception('Error loading audit file %s: %s', audit_file, exc)
-            return False, audit_data
-    if not audit_data or not isinstance(audit_data, dict):
-        log.error('audit data from %s was not formed as a dict', audit_file)
-        return False, audit_data
-    return True, audit_data
+def _evaluate_results(result_dict, combined_dict, show_compliance, verbose):
+    """
+    Evaluate the result dictionary to be returned by the audit module
+    :param result_dict: Final dictionary to be returned
+    :param combined_dict: Initial dictionary with results for all profiles
+    :param show_compliance: Param to show compliance percentage
+    :param verbose: Create output in verbose manner or not
+    :return:
+    """
+    for audit_file in combined_dict:
+        result_list = combined_dict[audit_file]
+        for result in result_list:
+            sub_check = result.get('sub_check', False)
+            if not sub_check:
+                dict = {}
+                if verbose:
+                    dict[result['tag']] = result
+                else:
+                    dict[result['tag']] = result['description']
+                if result['check_result'] == CHECK_STATUS['Success']:
+                    result_dict[CHECK_STATUS['Success']].append(dict)
+                elif result['check_result'] == CHECK_STATUS['Failure']:
+                    result_dict[CHECK_STATUS['Failure']].append(dict)
+                elif result['check_result'] == CHECK_STATUS['Error']:
+                    result_dict[CHECK_STATUS['Error']].append(dict)
+                elif result['check_result'] == CHECK_STATUS['Skipped']:
+                    result_dict[CHECK_STATUS['Skipped']].append(dict)
+    if show_compliance:
+        compliance = _calculate_compliance(result_dict)
+        result_dict['Compliance'] = compliance
+
+
+def _calculate_compliance(result_dict):
+    """
+    Calculates the compliance number from the given result dictionary
+    :param result_dict:
+    :return:
+    """
+    success = len(result_dict[CHECK_STATUS['Success']])
+    failure = len(result_dict[CHECK_STATUS['Failure']])
+    error = len(result_dict[CHECK_STATUS['Error']])
+    # skipped = len(result_dict[CHECK_STATUS['Skipped']])
+    total_checks = success + failure + error
+    if total_checks > 0:
+        compliance = float(success) / total_checks
+        compliance = int(compliance * 100)
+        compliance = '{0}%'.format(compliance)
+        return compliance
+    return None
 
 
 @hubble_status.watch
-def top(topfile='salt://hubblestack_audit/top.audit',
-        tags='*',
-        labels=None,
-        verbose=True,
-        show_success=True):
+def top(topfile='top.audit',
+        verbose=None,
+        show_compliance=None,
+        labels=None):
     """
-    Given a topfile with a series of compound targets, compile a list of audit
-    files for this host and execute and return the results of those audit files.
-
-    .. code-block:: yaml
-
-        audit:
-          '*':
-            - cis.linux
-            - adobebaseline
-          'G@os:CoreOS':
-            - coreos_additional_checks
-
+    Top function that is called from hubble config file
     :param topfile:
-        Topfile to process for targeted audit files to execute.
-    :param tags:
-        See audit()
-    :param labels:
-        See audit()
+        Path of top file
     :param verbose:
-        See audit()
-    :param show_success:
-        See audit()
+        Verbose flag
+    :param show_compliance:
+        Whether to show compliance or not
+    :param labels:
+        Tests with matching labels are executed. If multiple labels are passed, 
+        then tests which have all those labels are executed.
     :return:
-        Returns dictionary with Success and Failure keys and the results of the
-        checks
     """
-    audit_files = _get_top_data(topfile)
+    if verbose is None:
+        verbose = __salt__['config.get']('hubblestack:nova:verbose', False)
+    if show_compliance is None:
+        show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
 
-    return audit(audit_files,
-                 tags=tags,
-                 labels=labels,
-                 verbose=verbose,
-                 show_success=show_success,
-                )
+    if type(show_compliance) is str and show_compliance.lower().strip() in ['true', 'false']:
+        show_compliance = show_compliance.lower().strip() == 'true'
+    results = {}
+    # Will be a combination of strings and single-item dicts. The strings
+    # have no tag filters, so we'll treat them as tag filter '*'. If we sort
+    # all the data by tag filter we can batch where possible under the same
+    # tag.
+    data_by_tag = _build_data_by_tag(topfile, results)
+
+    if not data_by_tag:
+        return results
+
+    # Run the audits
+    for tag, data in data_by_tag.items():
+        ret = run(audit_files=data,
+                  tags=tag,
+                  verbose=verbose,
+                  show_compliance=False,
+                  labels=labels)
+
+        # Merge in the results
+        for key, val in ret.items():
+            if key not in results:
+                results[key] = []
+            results[key].extend(val)
+
+    if show_compliance:
+        compliance = _calculate_compliance(results)
+        if compliance:
+            results['Compliance'] = compliance
+
+    _clean_up_results(results)
+    return results
+
+
+def _build_data_by_tag(topfile, results):
+    """
+    Helper function that goes over data in top_data and
+    aggregate it by tag
+    """
+    data_by_tag = {}
+
+    # Get a list of yaml to run
+    top_data = _get_top_data(topfile)
+
+    if top_data:
+        for data in top_data:
+            if isinstance(data, str):
+                if '*' not in data_by_tag:
+                    data_by_tag['*'] = []
+                data_by_tag['*'].append(data)
+            elif isinstance(data, dict):
+                for key, tag in data.items():
+                    if tag not in data_by_tag:
+                        data_by_tag[tag] = []
+                    data_by_tag[tag].append(key)
+            else:
+                if 'Errors' not in results:
+                    results['Errors'] = {}
+                error_log = 'topfile malformed, list entries must be strings or ' \
+                            'dicts: {0} | {1}'.format(data, type(data))
+                results['Errors'][topfile] = {'error': error_log}
+                log.error(error_log)
+                continue
+
+    return data_by_tag
 
 
 def _get_top_data(topfile):
-    topfile = __salt__['cp.cache_file'](topfile)
-
-    if not topfile:
-        raise CommandExecutionError('Topfile not found.')
-
+    """
+    Helper method to retrieve and parse the Audit topfile
+    """
+    topfile = 'salt://' + BASE_DIR_AUDIT_PROFILES + os.sep + topfile
+    log.debug('caching top file...')
+    topfile_cache_path = __salt__['cp.cache_file'](topfile)
+    if not topfile_cache_path:
+        log.error('Could not find top file %s', topfile)
+        return None
     try:
-        with open(topfile) as handle:
+        with open(topfile_cache_path) as handle:
             topdata = yaml.safe_load(handle)
     except Exception as exc:
-        raise CommandExecutionError('Could not load topfile: {0}'.format(exc))
+        log.exception('Could not load topfile: {0}'.format(exc))
+        return None
 
     if not isinstance(topdata, dict) or 'audit' not in topdata or \
-            not isinstance(topdata['audit'], dict):
-        raise CommandExecutionError('Audit topfile not formatted correctly.')
-
+            (not isinstance(topdata['audit'], dict)):
+        log.exception('Audit topfile not formatted correctly')
+        return None
     topdata = topdata['audit']
-
     ret = []
-
     for match, data in topdata.items():
         if __salt__['match.compound'](match):
             ret.extend(data)
-
     return ret
 
 
-def _version_cmp(version):
+def _clean_up_results(results):
     """
-    Handle version comparison for audit checks
-
-    :param version:
-        Version comparison string. See module-level documentation for more
-        details.
-    :return:
-        Boolean as to whether the versions match
+    Helper function that cleans up the results by
+    removing the keys with empty values, adding an error message if
+    results is empty
     """
-    # '>=3.0.0,<3.1.0;>=3.2.0'
-    versions = version.split(';')
-    # ['>=3.0.0,<3.1.0', '>=3.2.0']
-    versions = [item.split(',') for item in versions]
-    # [['>=3.0.0', '<3.1.0'], ['>=3.2.0']]
-    processed_versions = []
-    for item in versions:
-        # Inner matches (comma separator) are AND
-        overall_match = True
-        for comparison in item:
-            if not comparison:
-                match = False
-            elif comparison.startswith('<='):
-                comparison = comparison[2:]
-                match = StrictVersion(__grains__['hubble_version']) <= StrictVersion(comparison)
-            elif comparison.startswith('<'):
-                comparison = comparison[1:]
-                match = StrictVersion(__grains__['hubble_version']) < StrictVersion(comparison)
-            elif comparison.startswith('>='):
-                comparison = comparison[2:]
-                match = StrictVersion(__grains__['hubble_version']) >= StrictVersion(comparison)
-            elif comparison.startswith('>'):
-                comparison = comparison[1:]
-                match = StrictVersion(__grains__['hubble_version']) > StrictVersion(comparison)
-            else:  # Equals, by default
-                match = StrictVersion(__grains__['hubble_version']) == StrictVersion(comparison)
-            # If we ever get a False, this whole AND block will be marked as False
-            overall_match = overall_match and match
-        processed_versions.append(overall_match)
+    for key in list(results.keys()):
+        if not results[key]:
+            results.pop(key)
 
-    # Outer matches (semicolon separator) are OR
-    version_match = False
-    for item in processed_versions:
-        if item:
-            version_match = True
-
-    return version_match
-
-
-def _run_audit(ret, audit_data, tags, labels, audit_file):
-    """
-
-    :param ret:
-        The dictionary of return data from audit()
-    :param audit_data:
-        The audit checks to be run
-    :param tags:
-        See audit()
-    :param labels:
-        See audit()
-    :return:
-        Returns the updated ``ret`` object
-    """
-    for audit_id, data in audit_data.items():
-        log.debug('Executing audit id %s in audit file %s', audit_id, audit_file)
-        try:
-            module = list(data.keys())[0]
-            data = data[module]
-            if not isinstance(data, dict):
-                log.error('Audit data with id %s from file %s not formatted correctly',
-                          audit_id, audit_file)
-                continue
-        except (IndexError, NameError):
-            log.exception('Audit data with id %s from file %s not formatted correctly',
-                          audit_id, audit_file)
-            continue
-
-        data['tag'] = data.get('tag', audit_id)
-        data['id'] = audit_id
-        data['file'] = audit_file
-        version = data.get('version')
-
-        if not _process_data(data, tags, labels, data.get('labels', [])):
-            continue
-
-        # Process any version targeting
-        if version and 'hubble_version' not in __grains__:
-            log.error('Audit %s calls for version checking %s but cannot '
-                      'find `hubble_version` in __grains__. Skipping.', audit_id, version)
-            ret['Skipped'].append({audit_id: data})
-            continue
-        elif version:
-            version_match = _version_cmp(version)
-            if not version_match:
-                log.debug(
-                    'Skipping audit %s due to version %s not matching version requirements %s',
-                    audit_id, __grains__['hubble_version'], version)
-                ret['Skipped'].append({audit_id: data})
-                continue
-
-        args = data.get('args', [])
-        kwargs = data.get('kwargs', {})
-
-        # Run the audit
-        try:
-            success, data_dict = __audit__[module](*args, **kwargs)
-        except Exception as exc:
-            log.error('Audit %s from file %s failed with exception %s',
-                      audit_id, audit_file, exc)
-            data['reason'] = 'exception'
-            data['exception'] = str(exc)
-            ret['Failure'].append({audit_id: data})
-            continue
-
-        if data_dict and isinstance(data_dict, dict):
-            data_dict.update(data)
-        else:
-            data_dict = data
-
-        if success:
-            ret['Success'].append({audit_id: data_dict})
-        else:
-            ret['Failure'].append({audit_id: data_dict})
-
-    return ret
-
-
-def _process_data(data, tags, labels, label_list):
-    """ Validate data, log if necessary, return False to skip the audit, True to continue """
-    audit_id = data['audit_id']
-    tag = data.get('tag', audit_id)
-
-    # Process tags via globbing
-    if not fnmatch.fnmatch(tag, tags):
-        log.debug('Skipping audit %s due to tag %s not matching tags %s', audit_id, tag, tags)
-        return False
-
-    # Process labels
-    matching_label = False
-    if not labels:
-        matching_label = True
-    for label in labels:
-        if label in label_list:
-            matching_label = True
-    if not matching_label:
-        log.debug('Skipping audit %s due to no matching labels %s in label list %s',
-                  audit_id, labels, label_list)
-        return False
-
-    # Process target
-    target = data.get('target', '*')
-    if not __salt__['match.compound'](target):
-        log.debug('Skipping audit %s due to target mismatch: %s', audit_id, target)
-        return False
-
-    return True
+    if not results:
+        results['Messages'] = 'No audits matched this host in the specified profiles.'

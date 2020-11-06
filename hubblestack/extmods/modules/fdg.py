@@ -117,19 +117,20 @@ call chain.
 
 import logging
 import os
-import yaml
 
-import salt.loader
-import salt.utils
+import yaml
 from salt.exceptions import CommandExecutionError
+
+import hubblestack.extmods.module_runner.runner_factory as runner_factory
 
 log = logging.getLogger(__name__)
 __fdg__ = None
 __returners__ = None
 RETURNER_ID_BLOCK = None
+BASE_DIR_FDG_PROFILES = 'fdg'
 
 
-def fdg(fdg_file, starting_chained=None):
+def run(fdg_file=None, starting_chained=None):
     """
     Given an fdg file (usually a salt:// file, but can also be the absolute
     path to a file on the system), execute that fdg file, starting with the
@@ -145,43 +146,25 @@ def fdg(fdg_file, starting_chained=None):
         Allows you to pass in a starting argument, which will be treated as
         the ``chained`` argument for the ``main`` block. Optional.
     """
-    if fdg_file and fdg_file.startswith('salt://'):
-        cached = __salt__['cp.cache_file'](fdg_file)
-    else:
-        cached = fdg_file
-    if not cached:
-        raise CommandExecutionError('There was a problem caching the fdg_file: {0}'
-                                    .format(fdg_file))
+    if fdg_file is None:
+        return top()
+    fdg_file = _get_fdg_file(fdg_file)
+    if not fdg_file:
+        log.warning('fdg.run called without any fdg file')
+        return
+    fdg_runner = runner_factory.get_fdg_runner()
 
-    try:
-        with open(cached) as handle:
-            block_data = yaml.safe_load(handle)
-    except Exception as exc:
-        raise CommandExecutionError('Could not load fdg_file: {0}'.format(exc))
+    # initialize loader
+    fdg_runner.init_loader()
 
-    if not isinstance(block_data, dict):
-        raise CommandExecutionError('fdg block_data not formed as a dict: {0}'.format(block_data))
-    elif 'main' not in block_data:
-        raise CommandExecutionError('fdg block_data : {0}'.format(block_data))
-
-    # Instantiate fdg modules
-    global __fdg__
-    __fdg__ = salt.loader.LazyLoader(salt.loader._module_dirs(__opts__, 'fdg'),
-                                     __opts__,
-                                     tag='fdg',
-                                     pack={'__salt__': __salt__,
-                                           '__grains__': __grains__})
-
-    # RETURNER_ID_BLOCK is used for intermediate returns. We use a global
-    # so that we don't have to pass new arguments everywhere
-    global RETURNER_ID_BLOCK
-    RETURNER_ID_BLOCK = (fdg_file, str(starting_chained))
     # Recursive execution of the blocks
-    ret = _fdg_execute('main', block_data, chained=starting_chained)
-    return RETURNER_ID_BLOCK, ret
+    # Handover to fdg_runner
+    return fdg_runner.execute(fdg_file, {
+        'starting_chained': starting_chained
+    })
 
 
-def top(fdg_topfile='salt://fdg/top.fdg'):
+def top(fdg_topfile='top.fdg'):
     """
     fdg has topfile support, similar to audit, osquery, and fim support for
     topfiles.
@@ -215,151 +198,20 @@ def top(fdg_topfile='salt://fdg/top.fdg'):
     for fdg_file in fdg_routines:
         if isinstance(fdg_file, dict):
             for key, val in fdg_file.items():
-                retkey, retval = fdg(_fdg_saltify(key), val)
+                retkey, retval = run(key, val)
                 ret[retkey] = retval
         else:
-            retkey, retval = fdg(_fdg_saltify(fdg_file))
+            retkey, retval = run(fdg_file)
             ret[retkey] = retval
     return ret
 
 
-def _fdg_saltify(path):
-    """
-    Take a path as it would be formatted in the fdg topfile and convert
-    it to a salt://fdg path.
-    """
-    os.path.sep.join(path.split('.'))
-    return 'salt://fdg/{0}.fdg'.format(path)
-
-
-def _fdg_execute(block_id, block_data, chained=None, chained_status=None):
-    """
-    Recursive function which executes a block and any blocks chained by that
-    block (by calling itself).
-    """
-    log.debug('Executing fdg block with id %s and chained value %s', block_id, chained)
-    block = block_data.get(block_id)
-
-    _check_block(block, block_id)
-
-    # Status is used for the conditional chaining keywords
-    status, ret = __fdg__[block['module']](*block.get('args', []), chained=chained,
-                                           chained_status=chained_status, **block.get('kwargs', {}))
-
-    log.debug('fdg execution "%s" returned %s', block_id, (status, ret))
-
-    if 'return' in block:
-        returner = block['return']
-    else:
-        returner = None
-
-    if 'xpipe_on_true' in block and status:
-        log.debug('Piping via chaining keyword xpipe_on_true.')
-        return _xpipe(ret, status, block_data, block['xpipe_on_true'], returner)
-    elif 'xpipe_on_false' in block and not status:
-        log.debug('Piping via chaining keyword xpipe_on_false.')
-        return _xpipe(ret, status, block_data, block['xpipe_on_false'], returner)
-    elif 'pipe_on_true' in block and status:
-        log.debug('Piping via chaining keyword pipe_on_true.')
-        return _pipe(ret, status, block_data, block['pipe_on_true'], returner)
-    elif 'pipe_on_false' in block and not status:
-        log.debug('Piping via chaining keyword pipe_on_false.')
-        return _pipe(ret, status, block_data, block['pipe_on_false'], returner)
-    elif 'xpipe' in block:
-        log.debug('Piping via chaining keyword xpipe.')
-        return _xpipe(ret, status, block_data, block['xpipe'], returner)
-    elif 'pipe' in block:
-        log.debug('Piping via chaining keyword pipe.')
-        return _pipe(ret, status, block_data, block['pipe'], returner)
-    else:
-        log.debug('No valid chaining keyword matched. Returning.')
-        if returner:
-            _return((ret, status), returner)
-        return ret, status
-
-
-def _xpipe(chained, chained_status, block_data, block_id, returner=None):
-    """
-    Iterate over the given value and for each iteration, call the given fdg
-    block by id with the iteration value as the passthrough.
-
-    The results will be returned as a list.
-    """
-    ret = []
-    for value in chained:
-        ret.append(_fdg_execute(block_id, block_data, value, chained_status))
-    if returner:
-        _return(ret, returner)
-    return ret
-
-
-def _pipe(chained, chained_status, block_data, block_id, returner=None):
-    """
-    Call the given fdg block by id with the given value as the passthrough and
-    return the result
-    """
-    ret = _fdg_execute(block_id, block_data, chained, chained_status)
-    if returner:
-        _return(ret, returner)
-    return ret
-
-
-def _return(data, returner):
-    """
-    Return data using the returner system
-    """
-    # JIT load the returners, since most returns will be handled by the daemon
-    global __returners__
-    if not __returners__:
-        __returners__ = salt.loader.returners(__opts__, __salt__)
-
-    returner += '.returner'
-    if returner not in __returners__:
-        log.error('Could not find %s returner.', returner)
-        return False
-    log.debug('Returning job data to %s', returner)
-    returner_ret = {'id': __grains__['id'],
-                    'jid': salt.utils.jid.gen_jid(__opts__),
-                    'fun': 'fdg.fdg',
-                    'fun_args': [],
-                    'return': data[0],
-                    'return_status': data[1]}
-    __returners__[returner](returner_ret)
-    return True
-
-
-def _check_block(block, block_id):
-    """
-    Check if a block is valid
-    """
-    if not block:
-        raise CommandExecutionError('Could not execute block \'{0}\', as it is not found.'
-                                    .format(block_id))
-    if 'module' not in block:
-        raise CommandExecutionError('Could not execute block \'{0}\': no \'module\' found.'
-                                    .format(block_id))
-    acceptable_block_args = {
-        'return',
-        'module',
-        'xpipe_on_true',
-        'xpipe_on_false',
-        'xpipe',
-        'pipe',
-        'pipe_on_true',
-        'pipe_on_false',
-        'args',
-        'kwargs',
-    }
-    for key in block:
-        if key not in acceptable_block_args:
-            raise CommandExecutionError('Could not execute block \'{0}\': '
-                                        '\'{1}\' is not a valid block key'
-                                        .format(block_id, key))
-    return True
-
-
 def _get_top_data(topfile):
-
+    """
+        Helper method to retrieve and parse the FDG topfile
+        """
+    if not topfile.startswith('salt://'):
+        topfile = 'salt://' + BASE_DIR_FDG_PROFILES + os.sep + topfile
     cached_topfile = __salt__['cp.cache_file'](topfile)
 
     if not cached_topfile:
@@ -386,3 +238,17 @@ def _get_top_data(topfile):
             ret.extend(data)
 
     return ret
+
+
+def _get_fdg_file(fdg_file):
+    """
+    Get FDG file path
+    :param fdg_file: Name of fdg file
+    :return: Proper path of fdg file
+    """
+    if not fdg_file:
+        log.warning('fdg.run called without any fdg_file')
+        return None
+    if fdg_file.startswith('salt://'):
+        return fdg_file
+    return 'salt://' + BASE_DIR_FDG_PROFILES + os.sep + fdg_file.replace('.', os.sep) + '.fdg'

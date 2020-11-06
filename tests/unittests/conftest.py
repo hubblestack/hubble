@@ -188,7 +188,7 @@ def __opts__(salt_loaders):
 prof = None
 
 @pytest.hookimpl(hookwrapper=True)
-def pytest_pyfunc_call(pyfuncitem):
+def pytest_runtest_call(item):
     if prof:
         prof.enable()
 

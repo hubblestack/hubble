@@ -1,12 +1,101 @@
 # -*- encoding: utf-8 -*-
 """
 Module having utility methods for data processing
-=================================================
 
 This module primarily processes and properly format
 the data outputted by a module to serve it to another module.
 
 All functions in this module are meant to be used in chaining.
+
+Note: Now each module just returns its output (As Data gathering)
+      For Audit checks, comparison logic is now moved to comparators. 
+      See below sections for more understanding
+
+Usable in Modules
+-----------------
+- FDG (Only)
+
+Common Schema
+-------------
+- check_unique_id
+    Its a unique string within a yaml file.
+    It is present on top of a yaml block
+
+- description
+    Description of the check
+
+- tag
+    Check tag value
+
+- sub_check (Optional, default: false)
+    If true, its individual result will not be counted in compliance
+    It might be referred in some boolean expression
+
+- failure_reason (Optional)
+    By default, module will generate failure reason string at runtime
+    If this is passed, this will override module's actual failure reason
+
+- invert_result (Optional, default: false)
+    This is used to flip the boolean output from a check
+
+- implementations
+    Its an array of implementations, usually for multiple operating systems.
+    You can specify multiple implementations here for respective operating system.
+    Either one or none will be executed.
+
+- grains (under filter)
+    Any grains with and/or/not supported. This is used to filter whether 
+    this check can run on the current OS or not.
+    To run this check on all OS, put a '*'
+
+    Example:
+    G@docker_details:installed:True and G@docker_details:running:True and not G@osfinger:*Flatcar* and not G@osfinger:*CoreOS*
+
+- hubble_version (Optional)
+    It acts as a second level filter where you can specify for which Hubble version,
+    this check is compatible with. You can specify a boolean expression as well
+
+    Example:
+    '>3.0 AND <5.0'
+
+- module
+    The name of Hubble module.
+
+- return_no_exec (Optional, Default: false)
+    (Applicable only for Audit)
+    It takes a boolean (true/false) value.
+    If its true, the implementation will not be executed. And true is returned
+    
+    This can be useful in cases where you don't have any implementation for some OS,
+    and you want a result from the block. Else, your meta-check(bexpr) will be failed.
+
+- items
+    An array of multiple module implementations. At least one block is necessary.
+    Each item in array will result into a boolean value.
+    If multiple module implementations exists, final result will be evaluated as 
+    boolean AND (default, see parameter: check_eval_logic)
+
+- check_eval_logic (Optional, default: and)
+    If there are multiple module implementations in "items" (above parameter), this parameter
+    helps in evaluating their result. Default value is "and"
+    It accepts only values: and/or
+
+- args
+    Arguments specific to a module.
+
+- comparator
+    For the purpose of comparing output of module with expected values.
+    Parameters depends upon the comparator used.
+    For detailed documentation on comparators, 
+    read comparator's implementations at (/hubblestack/extmods/comparators/)
+
+Module Arguments
+----------------
+- function
+    Function name to be executed. 
+    See below for list of functions and their arguments
+- Function arguments
+    See below list for available functions and their arguments
 
 Functions supported:
 --------------------
@@ -144,26 +233,31 @@ Functions supported:
                         substitute the chained value.) If you want to avoid having to escape curly braces,
                         set ``format_chained=False``.
 
-------------------------------------------------
+Module Output
+-------------
+Output is function dependent
+Output: (True, <function output>)
+
+Note: Module returns a tuple
+    First value being the status of module
+    Second value is the actual output from module
+
 FDG Profile Example for one utility method:
 
+FDG Example
+-----------
 main:
-    module: stat
-    args:
-        path: /abc
-    pipe: check
-
-check:
   module: util
     args:
         function: filter_dict
+        starting_dict:
+            12: 1
+            91: 2
+            42: 3
         filter_rules:
             gt: 1
-            ne: 3
-            le: 4
 
-If chained value is: [1, 2]
-Output: [2, 4]
+Output: [2, 3]
 """
 
 import logging

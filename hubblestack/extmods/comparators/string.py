@@ -2,8 +2,13 @@
 """
 String type comparator used to match Strings
 
+Comparators are used by Audit module to compare module output 
+with the expected result
+In FDG-connector, comparators might also be used with FDG
+
 String comparator exposes various commands:
-- "match" command example:
+
+- "match"
   
     comparator:
         type: string
@@ -11,7 +16,7 @@ String comparator exposes various commands:
         is_regex: true # Optional, default False
         is_multiline: true # Optional, default=True. Works only when is_regex=True
 
-- "match_any" command example:
+- "match_any"
   
     comparator:
         type: string

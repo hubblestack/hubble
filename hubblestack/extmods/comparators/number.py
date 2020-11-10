@@ -2,15 +2,20 @@
 """
 Number type comparator used to match numbers
 
+Comparators are used by Audit module to compare module output 
+with the expected result
+In FDG-connector, comparators might also be used with FDG
+
 Number comparator exposes various commands:
-- "match" command example:
-  
+
+- "match"
+    
     comparator:
         type: number
         match: >= 10
         # < <= > >= !=
 
-- "match_any" command example:
+- "match_any"
   
     comparator:
         type: number

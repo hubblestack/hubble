@@ -2,8 +2,13 @@
 """
 Version type comparator used to match versions
 
+Comparators are used by Audit module to compare module output 
+with the expected result
+In FDG-connector, comparators might also be used with FDG
+
 Version comparator exposes various commands:
-- "match" command example:
+
+- "match"
   
     comparator:
         type: version
@@ -15,7 +20,7 @@ Version comparator exposes various commands:
         match: 3.28.0-1.el7
         # < <= > >= !=
 
-- "match_any" command example:
+- "match_any"
   
     comparator:
         type: version

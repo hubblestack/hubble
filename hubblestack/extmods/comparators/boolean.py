@@ -2,9 +2,19 @@
 """
 Boolean type comparator used to match Boolean
 
+Comparators are used by Audit module to compare module output 
+with the expected result
+In FDG-connector, comparators might also be used with FDG
+
 Boolean comparator exposes various commands:
-- "match" command example:
-  
+- "match" 
+    Use Cases:
+        - To check a boolean value against boolean true/false
+        - To check whether we got anything (boolean_typecast)
+          i.e. True for anything, False for None or empty string
+    
+    example:
+    
     comparator:
         type: boolean
         match: True

@@ -2,7 +2,14 @@
 """
 Certificate comparator used to match SSL certificate fields
 
-"match" command example:
+Comparators are used by Audit module to compare module output 
+with the expected result
+In FDG-connector, comparators might also be used with FDG
+
+Certificate comparator exposes various commands:
+
+- "match"
+    To compare with certificate attribute in specialized manner
 
     comparator:
         type: certificate
@@ -21,6 +28,7 @@ Certificate comparator used to match SSL certificate fields
             ssl_subject_organisation_unit: 'IT' (Optional)
 
 Note: Optional parameters are matched exactly. Currently there is no support for regex match for these params.
+
 """
 import logging
 from datetime import datetime

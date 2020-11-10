@@ -2,32 +2,45 @@
 """
 Dictionary type comparator used to match a dictionary input with expected output
 
+Comparators are used by Audit module to compare module output 
+with the expected result
+In FDG-connector, comparators might also be used with FDG
+
 Dictionary comparator exposes various commands:
 
-- "match" command example: (dictionary can be nested to any level)
+- "match" 
+    To match module output against a dictionary
+    (dictionary can be nested to any level)
   
     comparator:
         type: "dict"
         match:
             gid: 0
             uid: 0 
-            user: root
+            attr2:
+                key1: val1
 
-- "match_key_any" command example (True for any key found from the list)
+- "match_key_any" 
+    True for any key found from the list
+
     comparator:
         type: "dict"
         match_key_any:
             - /sys
             - /abc
 
-- "match_key_all" command example (True when all keys found from the list)
+- "match_key_all"
+    True when all keys found from the list
+    
     comparator:
         type: "dict"
         match_key_all:
             - /sys
             - /abc
 
-- "match_any" command example (True when any dictionary mentioned in list match)
+- "match_any"
+    True when any dictionary mentioned in list match
+    
     comparator:
         type: "dict"
         match_any:
@@ -36,7 +49,7 @@ Dictionary comparator exposes various commands:
             - name: xyz
               running: true
 
-- "match_any_if_key_matches" command
+- "match_any_if_key_matches"
   This is a special case when user want to match only when desired key is found.
   Example: If name=rsync found, then match other attributes.
   
@@ -56,18 +69,8 @@ Dictionary comparator exposes various commands:
                 - name: xyz
                   running: true
 
-If we need other specific comparison with any field, we specify it like below:
-    comparator:
-        type: "dict"
-        match: 
-            gid: 0
-            uid: 0
-            mode:
-                type: file_permission
-                match:
-                    required_value: 644
-                    allow_more_strict: true
-In above example, we are invoking another comparator: "file_permission" for "mode" field.
+In above example, we are invoking another comparator: "file_permission" 
+for "mode" field.
 
 Example with nested dictionary
 ---------------------------------

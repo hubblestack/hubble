@@ -2,6 +2,177 @@
 """
 Module to fetch ssl certificate data. Can be used by both Audit/FDG
 
+Note: Now each module just returns its output (As Data gathering)
+      For Audit checks, comparison logic is now moved to comparators. 
+      See below sections for more understanding
+
+Note:
+    This module can be used in conjunction with osquery as the first module
+    in the chain. Given that osquery fetches information about the open
+    ports on a system and provides a 'host, port' tuple (or a list of host, port tuples)
+    to this module, this module will connect to the host and port and fetch
+    certificate details if a certificate is attached on the port. As an example,
+    osquery needs to provide the value in the following format.
+    +-------------------------------+-----------+
+    | host_ip                       | host_port |
+    +-------------------------------+-----------+
+    | 127.0.0.1                     | 80        |
+    | 2001:db8:85a3::8a2e:370:7334  | 80        |
+    | 127.0.0.1                     | 443       |
+    | 2001:db8:85a3::8a2e:370:7334  | 443       |
+    +-------------------------------+-----------+
+
+Usable in Modules
+-----------------
+- Audit
+- FDG
+
+Common Schema
+-------------
+- check_unique_id
+    Its a unique string within a yaml file.
+    It is present on top of a yaml block
+
+- description 
+    Description of the check
+
+- tag 
+    (Applicable only for Audit)
+    Check tag value
+
+- sub_check (Optional, default: false) 
+    (Applicable only for Audit)
+    If true, its individual result will not be counted in compliance
+    It might be referred in some boolean expression
+
+- failure_reason (Optional) 
+    (Applicable only for Audit)
+    By default, module will generate failure reason string at runtime
+    If this is passed, this will override module's actual failure reason
+
+- invert_result (Optional, default: false) 
+    (Applicable only for Audit)
+    This is used to flip the boolean output from a check
+
+- implementations
+    (Applicable only for Audit)
+    Its an array of implementations, usually for multiple operating systems.
+    You can specify multiple implementations here for respective operating system.
+    Either one or none will be executed.
+
+- grains (under filter)
+    (Applicable only for Audit)
+    Any grains with and/or/not supported. This is used to filter whether 
+    this check can run on the current OS or not.
+    To run this check on all OS, put a '*'
+
+    Example:
+    G@docker_details:installed:True and G@docker_details:running:True and not G@osfinger:*Flatcar* and not G@osfinger:*CoreOS*
+
+- hubble_version (Optional)
+    (Applicable only for Audit)
+    It acts as a second level filter where you can specify for which Hubble version,
+    this check is compatible with. You can specify a boolean expression as well
+
+    Example:
+    '>3.0 AND <5.0'
+
+- module
+    The name of Hubble module.
+
+- return_no_exec (Optional, Default: false)
+    (Applicable only for Audit)
+    It takes a boolean (true/false) value.
+    If its true, the implementation will not be executed. And true is returned
+    
+    This can be useful in cases where you don't have any implementation for some OS,
+    and you want a result from the block. Else, your meta-check(bexpr) will be failed.
+
+- items
+    (Applicable only for Audit)
+    An array of multiple module implementations. At least one block is necessary.
+    Each item in array will result into a boolean value.
+    If multiple module implementations exists, final result will be evaluated as 
+    boolean AND (default, see parameter: check_eval_logic)
+
+- check_eval_logic (Optional, default: and)
+    (Applicable only for Audit)
+    If there are multiple module implementations in "items" (above parameter), this parameter
+    helps in evaluating their result. Default value is "and"
+    It accepts only values: and/or
+
+- args
+    Arguments specific to a module.
+
+- comparator
+    For the purpose of comparing output of module with expected values.
+    Parameters depends upon the comparator used.
+    For detailed documentation on comparators, 
+    read comparator's implementations at (/hubblestack/extmods/comparators/)
+
+FDG Schema
+----------
+FDG schema is kept simple. Only following keywords allowed:
+- Unique id
+    Unique string id
+- description (Optional)
+    Some description
+- module
+    Name of the module
+- args
+    Module arguments
+- comparator (Only in case of Audit-FDG connector)
+
+FDG Chaining
+------------
+In normal execution, this module expects a host_ip and host_port param 
+In case of chaining, it expects both host_ip and host_port param 
+
+Module Arguments
+----------------
+- host_ip
+- host_port
+    A hostname (SSL endpoint to check) along with port is required if no file path is given
+- path
+    Path of pem file containing SSL certificate. 
+    Only required if no endpoint (host, port) is provided
+- ssl_timeout (Optional, Default value - 3 seconds)
+    timeout value in seconds to be honoured only if host_ip, host_port is given
+    
+Module Output
+-------------
+{
+ "execution_time": 0.006193876266479492,
+ "ssl_cert_pem": "-----BEGIN CERTIFICATE-----
+                  abcdxyz
+                  -----END CERTIFICATE-----\n",
+ "ssl_cert_version": "2",
+ "ssl_end_time": "2021-10-19 09:27:57",
+ "ssl_has_expired": false,
+ "ssl_issuer_common_name": "DigiCert SHA2 Secure Server CA",
+ "ssl_serial_number": "1",
+ "ssl_signature_algorithm": "sha256WithRSAEncryption",
+ "ssl_src_host": "127.0.0.1",
+ "ssl_src_port": "9100",
+ "ssl_start_time": "2020-10-19 09:27:57",
+ "ssl_subject_alternative_names": ["DNS:"],
+ "ssl_subject_country": "US",
+ "ssl_subject_organisation": "XYZ",
+ "ssl_subject_organisation_unit": "IT"
+ }
+
+Output: (True, <Above output>)
+Note: Module returns a tuple
+    First value being the status of module
+    Second value is the actual output from module
+
+Compatible Comparators
+----------------------
+- certificate
+
+For detailed documentation on comparators,
+read comparator's implementations at (/hubblestack/extmods/comparators/)
+
 Audit Example:
 ---------------
 ssl_cert_check:
@@ -38,52 +209,6 @@ main:
     host_port: 443
     ssl_timeout: 10 #seconds only honoured in case of ip and port
     path: /path/to/pem/file #Optional in place of host_ip, host_port
-
-parameters:
-
-    host_ip, host_port - A hostname (SSL endpoint to check) along with port is required if no file path is given
-
-    path - Path of pem file containing SSL certificate. Only required if no endpoint (host, port) is provided
-
-    ssl_timeout -  timeout value in seconds to be honoured only if host_ip, host_port is given - Default value - 3 seconds
-Note:
-    This module can be used in conjunction with osquery as the first module
-    in the chain. Given that osquery fetches information about the open
-    ports on a system and provides a 'host, port' tuple (or a list of host, port tuples)
-    to this module, this module will connect to the host and port and fetch
-    certificate details if a certificate is attached on the port. As an example,
-    osquery needs to provide the value in the following format.
-    +-------------------------------+-----------+
-    | host_ip                       | host_port |
-    +-------------------------------+-----------+
-    | 127.0.0.1                     | 80        |
-    | 2001:db8:85a3::8a2e:370:7334  | 80        |
-    | 127.0.0.1                     | 443       |
-    | 2001:db8:85a3::8a2e:370:7334  | 443       |
-    +-------------------------------+-----------+
-
-Comparator compatible with this module: certificate
-
-Sample Output:
-{
- "execution_time": 0.006193876266479492,
- "ssl_cert_pem": "-----BEGIN CERTIFICATE-----
-                  abcdxyz
-                  -----END CERTIFICATE-----\n",
- "ssl_cert_version": "2",
- "ssl_end_time": "2021-10-19 09:27:57",
- "ssl_has_expired": false,
- "ssl_issuer_common_name": "DigiCert SHA2 Secure Server CA",
- "ssl_serial_number": "1",
- "ssl_signature_algorithm": "sha256WithRSAEncryption",
- "ssl_src_host": "127.0.0.1",
- "ssl_src_port": "9100",
- "ssl_start_time": "2020-10-19 09:27:57",
- "ssl_subject_alternative_names": ["DNS:"],
- "ssl_subject_country": "US",
- "ssl_subject_organisation": "Adobe Systems Incorporated",
- "ssl_subject_organisation_unit": "IT"
- }
 """
 import logging
 import OpenSSL

@@ -1,29 +1,167 @@
 '''
-Flexible Data Gathering: osquery
+OSquery module for running osquery queries
 
-This module allows for running osquery queries
+Note: Now each module just returns its output (As Data gathering)
+      For Audit checks, comparison logic is now moved to comparators. 
+      See below sections for more understanding
+      
+Usable in Modules
+-----------------
+- Audit
+- FDG
 
-Mandatory param:
-    query -  The query which needs to be run
+Common Schema
+-------------
+- check_unique_id
+    Its a unique string within a yaml file.
+    It is present on top of a yaml block
 
-Optional param:
-    cast_to_string - Default (False) - Specifies if the command output (ex. list of dictionaries)  needs to be type cast to string
+- description 
+    Description of the check
 
-    flags - string of osquery args to pass to osquery. Note that the ``--read_max`` and ``--json`` args are already included.
+- tag 
+    (Applicable only for Audit)
+    Check tag value
 
-    osquery_path - specific path to the osquery binary
+- sub_check (Optional, default: false) 
+    (Applicable only for Audit)
+    If true, its individual result will not be counted in compliance
+    It might be referred in some boolean expression
 
-    format_chained - Default (True) - Whether to call ``.format(chained)`` on the query. Set to False if you want to avoid having to escape curly braces.
+- failure_reason (Optional) 
+    (Applicable only for Audit)
+    By default, module will generate failure reason string at runtime
+    If this is passed, this will override module's actual failure reason
+
+- invert_result (Optional, default: false) 
+    (Applicable only for Audit)
+    This is used to flip the boolean output from a check
+
+- implementations
+    (Applicable only for Audit)
+    Its an array of implementations, usually for multiple operating systems.
+    You can specify multiple implementations here for respective operating system.
+    Either one or none will be executed.
+
+- grains (under filter)
+    (Applicable only for Audit)
+    Any grains with and/or/not supported. This is used to filter whether 
+    this check can run on the current OS or not.
+    To run this check on all OS, put a '*'
+
+    Example:
+    G@docker_details:installed:True and G@docker_details:running:True and not G@osfinger:*Flatcar* and not G@osfinger:*CoreOS*
+
+- hubble_version (Optional)
+    (Applicable only for Audit)
+    It acts as a second level filter where you can specify for which Hubble version,
+    this check is compatible with. You can specify a boolean expression as well
+
+    Example:
+    '>3.0 AND <5.0'
+
+- module
+    The name of Hubble module.
+
+- return_no_exec (Optional, Default: false)
+    (Applicable only for Audit)
+    It takes a boolean (true/false) value.
+    If its true, the implementation will not be executed. And true is returned
+    
+    This can be useful in cases where you don't have any implementation for some OS,
+    and you want a result from the block. Else, your meta-check(bexpr) will be failed.
+
+- items
+    (Applicable only for Audit)
+    An array of multiple module implementations. At least one block is necessary.
+    Each item in array will result into a boolean value.
+    If multiple module implementations exists, final result will be evaluated as 
+    boolean AND (default, see parameter: check_eval_logic)
+
+- check_eval_logic (Optional, default: and)
+    (Applicable only for Audit)
+    If there are multiple module implementations in "items" (above parameter), this parameter
+    helps in evaluating their result. Default value is "and"
+    It accepts only values: and/or
+
+- args
+    Arguments specific to a module.
+
+- comparator
+    For the purpose of comparing output of module with expected values.
+    Parameters depends upon the comparator used.
+    For detailed documentation on comparators, 
+    read comparator's implementations at (/hubblestack/extmods/comparators/)
+
+FDG Schema
+----------
+FDG schema is kept simple. Only following keywords allowed:
+- Unique id
+    Unique string id
+- description (Optional)
+    Some description
+- module
+    Name of the module
+- args
+    Module arguments
+- comparator (Only in case of Audit-FDG connector)
+
+FDG Chaining
+------------
+If "format_chained" is true and chained parameter is present, 
+.format() will be called on query with chained parameter
+    (query).format(chained_param)
+
+Module Arguments
+----------------
+- query
+    The query which needs to be run
+- cast_to_string (Optional, Default: False)
+    Specifies if the command output (ex. list of dictionaries)  needs to be type cast to string
+- flags (Optional)
+    string of osquery args to pass to osquery. 
+    Note that the ``--read_max`` and ``--json`` args are already included.
+- osquery_path (Optional)
+    specific path to the osquery binary
+- format_chained (Optional, Default: True)
+    Whether to call ``.format(chained)`` on the query. 
+    Set to False if you want to avoid having to escape curly braces.
+
+Module Output
+-------------
+The output will always be array of dictionaries. 
+Where column name are keys, and column data will be values.
+Example: [{"name": "osqueryi", "attr1": "val1"}, {"name": "osqueryd", "attr1": "val2"}]
+
+Output: (True, 
+    [{"name": "osqueryi", "attr1": "val1"}, {"name": "osqueryd", "attr1": "val2"}])
+Note: Module returns a tuple
+    First value being the status of module
+    Second value is the actual output from module
+
+Compatible Comparators
+----------------------
+- list
+- dictionary
+
+For detailed documentation on comparators,
+read comparator's implementations at (/hubblestack/extmods/comparators/)
+
 
 Audit Example:
 ---------------
 check_unique_id:
   description: 'osquery check'
   tag: 'ADOBE-01'
+  sub_check: false (Optional, default: false)
+  failure_reason: 'a sample failure reason' (Optional)
+  invert_result: false (Optional, default: false)
   implementations:
     - filter:
         grains: 'G@osfinger:CentOS*Linux-7'
       hubble_version: '>3 AND <7 AND <8'
+      # return_no_exec: true (Optional, default: false)
+      check_eval_logic: and (Optional, default: and)
       module: osquery
       items:
         - args:
@@ -42,14 +180,6 @@ main:
   module: osquery
     args:
       query: 'SELECT t.unix_time AS query_time, os.* FROM os_version AS os LEFT JOIN time AS t;'
-
-Mandatory Params:
-    This module requires query. That come either from args, or from chaining, or both
-
-
-Output:
-The return value will be  a tuple (True, Result) if the osquery return code is 0 otherwise (False, Result).
-The second argument will be the result of the ``osquery`` command.
 '''
 
 import json

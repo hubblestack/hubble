@@ -2,8 +2,14 @@
 """
 File-Permission type comparator used to match File permissions
 
+Comparators are used by Audit module to compare module output 
+with the expected result
+In FDG-connector, comparators might also be used with FDG
+
 File-Permission comparator exposes various commands:
-- "match" command example:
+
+- "match"
+    To match file permission values
   
     comparator:
         type: file_permission

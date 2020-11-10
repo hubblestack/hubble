@@ -1,22 +1,152 @@
 # -*- encoding: utf-8 -*-
 """
-Module to evaluate boolean expressions. It can be used only in Audit
+Boolean Expression module to evaluate boolean expressions.
+This is a complex check-type where you would want to combine multiple 
+check results and evaluate through a boolean expression
 
-Audit Example:
+Since this type of check involves multiple checks to evaluate boolean expression.
+All those checks must be from the same file. You can only refer check-id from the same file.
+
+Note: Now each module just returns its output (As Data gathering)
+      For Audit checks, comparison logic is now moved to comparators. 
+      See below sections for more understanding
+
+Usable in Modules
+-----------------
+- Audit (Only)
+
+Common Schema
+-------------
+- check_unique_id
+    Its a unique string within a yaml file.
+    It is present on top of a yaml block
+
+- description
+    Description of the check
+
+- tag
+    Check tag value
+
+- sub_check (Optional, default: false)
+    If true, its individual result will not be counted in compliance
+    It might be referred in some boolean expression
+
+- failure_reason (Optional)
+    By default, module will generate failure reason string at runtime
+    If this is passed, this will override module's actual failure reason
+
+- invert_result (Optional, default: false)
+    This is used to flip the boolean output from a check
+
+- implementations
+    Its an array of implementations, usually for multiple operating systems.
+    You can specify multiple implementations here for respective operating system.
+    Either one or none will be executed.
+
+- grains (under filter)
+    Any grains with and/or/not supported. This is used to filter whether 
+    this check can run on the current OS or not.
+    To run this check on all OS, put a '*'
+
+    Example:
+    G@docker_details:installed:True and G@docker_details:running:True and not G@osfinger:*Flatcar* and not G@osfinger:*CoreOS*
+
+- hubble_version (Optional)
+    It acts as a second level filter where you can specify for which Hubble version,
+    this check is compatible with. You can specify a boolean expression as well
+
+    Example:
+    '>3.0 AND <5.0'
+
+- module
+    The name of Hubble module.
+
+- return_no_exec (Optional, Default: false)
+    (Applicable only for Audit)
+    It takes a boolean (true/false) value.
+    If its true, the implementation will not be executed. And true is returned
+    
+    This can be useful in cases where you don't have any implementation for some OS,
+    and you want a result from the block. Else, your meta-check(bexpr) will be failed.
+
+- items
+    An array of multiple module implementations. At least one block is necessary.
+    Each item in array will result into a boolean value.
+    If multiple module implementations exists, final result will be evaluated as 
+    boolean AND (default, see parameter: check_eval_logic)
+
+- check_eval_logic (Optional, default: and)
+    If there are multiple module implementations in "items" (above parameter), this parameter
+    helps in evaluating their result. Default value is "and"
+    It accepts only values: and/or
+
+- args
+    Arguments specific to a module.
+
+- comparator
+    For the purpose of comparing output of module with expected values.
+    Parameters depends upon the comparator used.
+    For detailed documentation on comparators, 
+    read comparator's implementations at (/hubblestack/extmods/comparators/)
+
+Module Arguments
+----------------
+- expr
+    A boolean expression where operands are the check-id from the same file.
+    You can specify AND, OR and NOT along with parenthesis '(', ')' to group the results
+    Example:
+        check_unique_id_1 AND check_unique_id_2
+
+Module Output
+-------------
+It will always be a boolean value (true/false)
+
+Output: (True, True)
+Note: Module returns a tuple
+    First value being the status of module
+    Second value is the actual output from module
+
+Compatible Comparators
+----------------------
+- boolean
+
+
+Audit Example
 ---------------
-check_unique_id_1:
-  description: 'sample check 1'
-  tag: 'ADOBE-01'
+boolean_expression_check:
+  description: 'bexpr check'
+  tag: 'ADOBE-03'
+  sub_check: false (Optional, default: false)
+  failure_reason: 'a sample failure reason' (Optional)
+  invert_result: false (Optional, default: false)
   implementations:
     - filter:
         grains: 'G@osfinger:CentOS*Linux-7'
       hubble_version: '>3 AND <7 AND <8'
+      # return_no_exec: true (Optional, default: false)
+      check_eval_logic: and (Optional, default: and)
+      module: bexpr
+      items:
+        - args:
+            expr: check_unique_id_1 AND check_unique_id_2
+          comparator:
+            type: boolean
+            match: True
+
+check_unique_id_1:
+  description: 'sample check 1'
+  tag: 'ADOBE-01'
+  sub_check: true
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-7'
       module: grep
       items:
         - args:
             path: /etc/ssh/ssh_config
             pattern: '"^host"'
-            flags: '-E'
+            flags: 
+                - '-E'
           comparator:
             type: "string"
             match: "host*"
@@ -28,7 +158,6 @@ check_unique_id_2:
   implementations:
     - filter:
         grains: 'G@osfinger:CentOS*Linux-7'
-      hubble_version: '>3 AND <7 AND <8'
       module: stat
       items:
         - args:
@@ -37,47 +166,7 @@ check_unique_id_2:
             type: "dict"
             match:
               gid: 0
-              group: "shadow"
               uid: 0
-              user: "root"
-              mode:
-                type: "file_permission"
-                match:
-                  required_value:  "644"
-                  allow_more_strict: true
-
-check_unique_id:
-  description: 'bexpr check'
-  tag: 'ADOBE-03'
-  implementations:
-    - filter:
-        grains: 'G@osfinger:CentOS*Linux-7'
-      hubble_version: '>3 AND <7 AND <8'
-      module: bexpr
-      items:
-        - args:
-            expr: check_unique_id_1 AND check_unique_id_2
-          comparator:
-            type: boolean
-            match: True
-
-Mandatory parameters:
-    expr - A boolean expression referring other checks in a profile
-Multiple expressions can be provided in a single implementation under attribute: "items"
-
-Comparator compatible with this module - boolean
-
-Note: A boolean expression is evaluated in the end after all other checks have been evaluated.
-While evaluating boolean expression the result of checks referred is taken into account and no check is actually run.
-An expression is a string having following keywords:
-    AND, OR and NOT along with parenthesis '(', ')' to group the results
-
-Output of boolean expressions is same as other checks and it is classified in following categories:
-1. True - The logical expression of referenced checks evaluated to True
-2. False - The logical expression of referenced checks evaluated to False
-
-Sample Output:
-'True/False'
 """
 import logging
 

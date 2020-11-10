@@ -2,15 +2,156 @@
 """
 Module for fetching security configuration values using secedit command
 
+Note: Now each module just returns its output (As Data gathering)
+      For Audit checks, comparison logic is now moved to comparators. 
+      See below sections for more understanding
+
+Usable in Modules
+-----------------
+- Audit
+- FDG
+
+Common Schema
+-------------
+- check_unique_id
+    Its a unique string within a yaml file.
+    It is present on top of a yaml block
+
+- description 
+    Description of the check
+
+- tag 
+    (Applicable only for Audit)
+    Check tag value
+
+- sub_check (Optional, default: false) 
+    (Applicable only for Audit)
+    If true, its individual result will not be counted in compliance
+    It might be referred in some boolean expression
+
+- failure_reason (Optional) 
+    (Applicable only for Audit)
+    By default, module will generate failure reason string at runtime
+    If this is passed, this will override module's actual failure reason
+
+- invert_result (Optional, default: false) 
+    (Applicable only for Audit)
+    This is used to flip the boolean output from a check
+
+- implementations
+    (Applicable only for Audit)
+    Its an array of implementations, usually for multiple operating systems.
+    You can specify multiple implementations here for respective operating system.
+    Either one or none will be executed.
+
+- grains (under filter)
+    (Applicable only for Audit)
+    Any grains with and/or/not supported. This is used to filter whether 
+    this check can run on the current OS or not.
+    To run this check on all OS, put a '*'
+
+    Example:
+    G@docker_details:installed:True and G@docker_details:running:True and not G@osfinger:*Flatcar* and not G@osfinger:*CoreOS*
+
+- hubble_version (Optional)
+    (Applicable only for Audit)
+    It acts as a second level filter where you can specify for which Hubble version,
+    this check is compatible with. You can specify a boolean expression as well
+
+    Example:
+    '>3.0 AND <5.0'
+
+- module
+    The name of Hubble module.
+
+- return_no_exec (Optional, Default: false)
+    (Applicable only for Audit)
+    It takes a boolean (true/false) value.
+    If its true, the implementation will not be executed. And true is returned
+    
+    This can be useful in cases where you don't have any implementation for some OS,
+    and you want a result from the block. Else, your meta-check(bexpr) will be failed.
+
+- items
+    (Applicable only for Audit)
+    An array of multiple module implementations. At least one block is necessary.
+    Each item in array will result into a boolean value.
+    If multiple module implementations exists, final result will be evaluated as 
+    boolean AND (default, see parameter: check_eval_logic)
+
+- check_eval_logic (Optional, default: and)
+    (Applicable only for Audit)
+    If there are multiple module implementations in "items" (above parameter), this parameter
+    helps in evaluating their result. Default value is "and"
+    It accepts only values: and/or
+
+- args
+    Arguments specific to a module.
+
+- comparator
+    For the purpose of comparing output of module with expected values.
+    Parameters depends upon the comparator used.
+    For detailed documentation on comparators, 
+    read comparator's implementations at (/hubblestack/extmods/comparators/)
+
+FDG Schema
+----------
+FDG schema is kept simple. Only following keywords allowed:
+- Unique id
+    Unique string id
+- description (Optional)
+    Some description
+- module
+    Name of the module
+- args
+    Module arguments
+- comparator (Only in case of Audit-FDG connector)
+
+FDG Chaining
+------------
+In normal execution, this module expects security configuration name
+In case of chaining, it expects security configuration name from the chained parameter
+
+Module Arguments
+----------------
+- name
+    the name of the security configuration
+
+Module Output
+-------------
+Sample Output:
+1. dictionary with matchable value in 'sec_value'
+    {'sec_value': ['24'], 'sec_name': 'PasswordHistorySize', 'coded_sec_value': '24'}
+2. dictionary with matchable value in 'sec_value'
+    {'sec_value': ['1', 'Adobe Systems'], 'sec_name': 'MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\LegalNoticeCaption', 'coded_sec_value': '1,"Adobe Systems"'}
+
+Output: (True, <above dict>)
+
+Note: Module returns a tuple
+    First value being the status of module
+    Second value is the actual output from module
+
+Compatible Comparators
+----------------------
+- list
+
+For detailed documentation on comparators,
+read comparator's implementations at (/hubblestack/extmods/comparators/)
+
 Audit Example 1:
 ---------------
 check_unique_id:
   description: 'win_secedit check'
   tag: 'ADOBE-01'
+  sub_check: false (Optional, default: false)
+  failure_reason: 'a sample failure reason' (Optional)
+  invert_result: false (Optional, default: false)
   implementations:
     - filter:
-        grains: 'G@osfinger:Microsoft Windows Server 2016*'
+        grains: 'G@osfinger:CentOS*Linux-7'
       hubble_version: '>3 AND <7 AND <8'
+      # return_no_exec: true (Optional, default: false)
+      check_eval_logic: and (Optional, default: and)
       module: win_secedit
       items:
         - args:
@@ -54,20 +195,6 @@ main:
   module: win_secedit
   args:
     name: SeRemoteInteractiveLogonRight
-Mandatory parameters:
-    name - the name of the security configuration
-
-Note: Comparison logic is moved to comparators. Module will just invoke the win_secedit command.
-Comparator compatible with this module - dict, list
-
-Sample Output:
-1. dictionary with matchable value in 'sec_value'
-    {'sec_value': ['24'], 'sec_name': 'PasswordHistorySize', 'coded_sec_value': '24'}
-2. dictionary with matchable value in 'sec_value'
-    {'sec_value': ['1', 'Adobe Systems'], 'sec_name': 'MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System\\LegalNoticeCaption', 'coded_sec_value': '1,"Adobe Systems"'}
-
-Note: In normal execution, this module expects a security configuration name.
-In case of chaining, it expects a string(security configuration name) from chaining
 """
 import os
 import logging

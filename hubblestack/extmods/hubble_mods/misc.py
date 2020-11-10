@@ -5,8 +5,102 @@ run more complex Audit audits without allowing arbitrary command execution
 from within the yaml profiles.
 
 Note: This module is only available through Audit
-
 This module is having different functions for its dedicated purpose.
+
+Usable in Modules
+-----------------
+- Audit (Only)
+
+Common Schema
+-------------
+- check_unique_id
+    Its a unique string within a yaml file.
+    It is present on top of a yaml block
+
+- description 
+    Description of the check
+
+- tag 
+    (Applicable only for Audit)
+    Check tag value
+
+- sub_check (Optional, default: false) 
+    (Applicable only for Audit)
+    If true, its individual result will not be counted in compliance
+    It might be referred in some boolean expression
+
+- failure_reason (Optional) 
+    (Applicable only for Audit)
+    By default, module will generate failure reason string at runtime
+    If this is passed, this will override module's actual failure reason
+
+- invert_result (Optional, default: false) 
+    (Applicable only for Audit)
+    This is used to flip the boolean output from a check
+
+- implementations
+    (Applicable only for Audit)
+    Its an array of implementations, usually for multiple operating systems.
+    You can specify multiple implementations here for respective operating system.
+    Either one or none will be executed.
+
+- grains (under filter)
+    (Applicable only for Audit)
+    Any grains with and/or/not supported. This is used to filter whether 
+    this check can run on the current OS or not.
+    To run this check on all OS, put a '*'
+
+    Example:
+    G@docker_details:installed:True and G@docker_details:running:True and not G@osfinger:*Flatcar* and not G@osfinger:*CoreOS*
+
+- hubble_version (Optional)
+    (Applicable only for Audit)
+    It acts as a second level filter where you can specify for which Hubble version,
+    this check is compatible with. You can specify a boolean expression as well
+
+    Example:
+    '>3.0 AND <5.0'
+
+- module
+    The name of Hubble module.
+
+- return_no_exec (Optional, Default: false)
+    (Applicable only for Audit)
+    It takes a boolean (true/false) value.
+    If its true, the implementation will not be executed. And true is returned
+    
+    This can be useful in cases where you don't have any implementation for some OS,
+    and you want a result from the block. Else, your meta-check(bexpr) will be failed.
+
+- items
+    (Applicable only for Audit)
+    An array of multiple module implementations. At least one block is necessary.
+    Each item in array will result into a boolean value.
+    If multiple module implementations exists, final result will be evaluated as 
+    boolean AND (default, see parameter: check_eval_logic)
+
+- check_eval_logic (Optional, default: and)
+    (Applicable only for Audit)
+    If there are multiple module implementations in "items" (above parameter), this parameter
+    helps in evaluating their result. Default value is "and"
+    It accepts only values: and/or
+
+- args
+    Arguments specific to a module.
+
+- comparator
+    For the purpose of comparing output of module with expected values.
+    Parameters depends upon the comparator used.
+    For detailed documentation on comparators, 
+    read comparator's implementations at (/hubblestack/extmods/comparators/)
+
+Module Arguments
+----------------
+- function
+    Function name to execute
+- Arguments for functions
+    There are different arguments for the function used
+    See below documentation for each function
 
 Functions supported:
 --------------------
@@ -107,7 +201,25 @@ Functions supported:
         values (Mandatory)
         comparetype (Default 'regex')
 
-------------------------------------------------
+Module Output
+-------------
+It always return None for success and error message for failure
+
+Output: (True, None)
+Note: Module returns a tuple
+    First value being the status of module
+    Second value is the actual output from module
+
+Compatible Comparators
+----------------------
+- boolean
+
+For detailed documentation on comparators,
+read comparator's implementations at (/hubblestack/extmods/comparators/)
+
+
+Audit Example:
+---------------
 Sample Audit Profile Example for one method:
 
 ensure_ntp_configured:

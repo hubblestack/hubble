@@ -2,16 +2,23 @@
 """
 List type comparator used to match a list input with expected output
 
+Comparators are used by Audit module to compare module output 
+with the expected result
+In FDG-connector, comparators might also be used with FDG
+
 List comparator exposes various commands:
 
-- "size" command - To check the size of list
+- "size"
+    To check the size of list
+
     comparator:
         type: "list"
         size: ">= 10" 
     # Supported operators >, >=, <, <=, ==, !=
     # it can also be written as (without any operator)
     # size: 10
-- "match" command
+
+- "match"
     True when the given list matches exactly with the expected list
 
     comparator:
@@ -19,7 +26,8 @@ List comparator exposes various commands:
         match:
             - name: abc
               running: false
-- "match_any" command
+
+- "match_any"
     True when any dictionary mentioned in list match
 
     comparator:
@@ -29,8 +37,9 @@ List comparator exposes various commands:
               running: false
             - name: xyz
               running: true
-- "match_all" command
-   True when all dictionaries mentioned in list matches with input
+
+- "match_all"
+    True when all dictionaries mentioned in list matches with input
 
     comparator:
         type: "list"
@@ -39,9 +48,10 @@ List comparator exposes various commands:
               running: false
             - name: xyz
               running: true
-- "match_any_if_key_matches" command
-  This is a special case when user want to match only when desired key is found.
-  Example: If name=rsync found, then match other attributes.
+
+- "match_any_if_key_matches"
+    This is a special case when user want to match only when desired key is found.
+    Example: If name=rsync found, then match other attributes.
   
   Result will be True 
     - if specified key not found.
@@ -59,7 +69,7 @@ List comparator exposes various commands:
                 - name: xyz
                   running: true
 
-- "filter_compare" command
+- "filter_compare"
     example (Filter a list, compare it with any other command of list comparator)
 
     comparator:

@@ -1,9 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-Module curl
-=============================
-
-This module allows for querying against URLs
+Curl module for for querying against URLs
 
 Note that this module doesn't actually shell out to curl. Instead, it uses
 the requests library, primarily for performance concerns.
@@ -12,6 +9,160 @@ Also note that this module doesn't support chaining from other modules.
 This is due to security concerns -- because Hubble can collect arbitrary data from
 a system, we don't want an attacker to be able to send that data to arbitrary
 endpoints.
+
+Note: Now each module just returns its output (As Data gathering)
+      For Audit checks, comparison logic is now moved to comparators. 
+      See below sections for more understanding
+
+Usable in Modules
+-----------------
+- Audit
+- FDG
+
+Common Schema
+-------------
+- check_unique_id
+    Its a unique string within a yaml file.
+    It is present on top of a yaml block
+
+- description 
+    Description of the check
+
+- tag 
+    (Applicable only for Audit)
+    Check tag value
+
+- sub_check (Optional, default: false) 
+    (Applicable only for Audit)
+    If true, its individual result will not be counted in compliance
+    It might be referred in some boolean expression
+
+- failure_reason (Optional) 
+    (Applicable only for Audit)
+    By default, module will generate failure reason string at runtime
+    If this is passed, this will override module's actual failure reason
+
+- invert_result (Optional, default: false) 
+    (Applicable only for Audit)
+    This is used to flip the boolean output from a check
+
+- implementations
+    (Applicable only for Audit)
+    Its an array of implementations, usually for multiple operating systems.
+    You can specify multiple implementations here for respective operating system.
+    Either one or none will be executed.
+
+- grains (under filter)
+    (Applicable only for Audit)
+    Any grains with and/or/not supported. This is used to filter whether 
+    this check can run on the current OS or not.
+    To run this check on all OS, put a '*'
+
+    Example:
+    G@docker_details:installed:True and G@docker_details:running:True and not G@osfinger:*Flatcar* and not G@osfinger:*CoreOS*
+
+- hubble_version (Optional)
+    (Applicable only for Audit)
+    It acts as a second level filter where you can specify for which Hubble version,
+    this check is compatible with. You can specify a boolean expression as well
+
+    Example:
+    '>3.0 AND <5.0'
+
+- module
+    The name of Hubble module.
+
+- return_no_exec (Optional, Default: false)
+    (Applicable only for Audit)
+    It takes a boolean (true/false) value.
+    If its true, the implementation will not be executed. And true is returned
+    
+    This can be useful in cases where you don't have any implementation for some OS,
+    and you want a result from the block. Else, your meta-check(bexpr) will be failed.
+
+- items
+    (Applicable only for Audit)
+    An array of multiple module implementations. At least one block is necessary.
+    Each item in array will result into a boolean value.
+    If multiple module implementations exists, final result will be evaluated as 
+    boolean AND (default, see parameter: check_eval_logic)
+
+- check_eval_logic (Optional, default: and)
+    (Applicable only for Audit)
+    If there are multiple module implementations in "items" (above parameter), this parameter
+    helps in evaluating their result. Default value is "and"
+    It accepts only values: and/or
+
+- args
+    Arguments specific to a module.
+
+- comparator
+    For the purpose of comparing output of module with expected values.
+    Parameters depends upon the comparator used.
+    For detailed documentation on comparators, 
+    read comparator's implementations at (/hubblestack/extmods/comparators/)
+
+FDG Schema
+----------
+FDG schema is kept simple. Only following keywords allowed:
+- Unique id
+    Unique string id
+- description (Optional)
+    Some description
+- module
+    Name of the module
+- args
+    Module arguments
+- comparator (Only in case of Audit-FDG connector)
+
+FDG Chaining
+------------
+This module does not accept value from chaining parameter due to security concerns.
+Although you can use this in chaining, but no value will be passed through chaining.
+
+Module Arguments
+----------------
+- url
+    URL to query. Example: "https://adobe.com/someurl"
+- function (Default: GET)
+    Http method, Only allowed values (GET, PUT, POST)
+- params (Optional)
+    Query parameters to pass (as dictionary)
+- data (Optional)
+    payload for post/put
+- headers (Optional)
+    Http headers (as dictionary)
+- username (Optional)
+    Username to pass as part of authentication scheme
+- password (Optional)
+    Password to pass as part of authentication scheme
+- timeout (Default: 9)
+    Timeout value for http request
+- decode_json (Default: true)
+    Whether to decode http respose as json or not
+
+Module Output
+-------------
+Output is pretty much depend upon the URL you are using. It can be a string/dictionary/json etc.
+Example: [{"id": 1, "name": "John"}, {"id": 2, "name": "Maria"}]
+
+Output: (True, [{"id": 1, "name": "John"}, {"id": 2, "name": "Maria"}])
+Note: Module returns a tuple
+    First value being the status of module
+    Second value is the actual output from module
+
+Compatible Comparators
+----------------------
+Since output is pretty dynamic. Following comparators can be used:
+- string
+- boolean
+- list
+- dict
+- number
+
+For detailed documentation on comparators,
+read comparator's implementations at (/hubblestack/extmods/comparators/)
+
 
 Audit Example:
 ---------------

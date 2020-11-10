@@ -3,11 +3,8 @@
     :codeauthor: Jayesh Kariya <jayeshk@saltstack.com>
 '''
 
-# Import Python Libs
-from __future__ import absolute_import, unicode_literals, print_function
 import textwrap
 
-# Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import (
@@ -17,7 +14,6 @@ from tests.support.mock import (
     NO_MOCK_REASON
 )
 
-# Import Salt Libs
 import hubblestack.modules.rh_service as rh_service
 
 RET = ['hostname', 'mountall', 'network-interface', 'network-manager',

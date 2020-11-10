@@ -4,9 +4,6 @@
     unit.utils.decorators_test
 '''
 
-# Import Python libs
-from __future__ import absolute_import, print_function, unicode_literals
-
 from hubblestack.utils.decorators.memoize import memoize
 from unittest import skipIf, TestCase, mock
 

@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 
-# Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 from collections import namedtuple
 import logging
 
 import hubblestack.utils.args
 
-# Import Salt Testing Libs
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import (
     DEFAULT,

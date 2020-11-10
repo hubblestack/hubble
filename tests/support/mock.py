@@ -14,7 +14,6 @@
 '''
 # pylint: disable=unused-import,function-redefined,blacklisted-module,blacklisted-external-module
 
-from __future__ import absolute_import
 import collections
 import copy
 import errno

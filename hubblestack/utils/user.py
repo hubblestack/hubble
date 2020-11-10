@@ -4,7 +4,6 @@ Functions for querying and modifying a user account and the groups to which it
 belongs.
 """
 
-# Import Python libs
 import getpass
 import logging
 import os

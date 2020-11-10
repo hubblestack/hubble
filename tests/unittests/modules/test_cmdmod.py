@@ -3,21 +3,17 @@
     :codeauthor: Nicole Thomas <nicole@saltstack.com>
 '''
 
-# Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import os
 import sys
 import tempfile
 import builtins
 
-# Import Salt Libs
 import hubblestack.utils.files
 import hubblestack.utils.platform
 import hubblestack.modules.cmdmod as cmdmod
 from hubblestack.exceptions import CommandExecutionError
 from hubblestack.log import LOG_LEVELS
 
-# Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.unit import TestCase, skipIf
 from tests.support.paths import FILES

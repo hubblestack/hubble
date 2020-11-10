@@ -3,7 +3,6 @@
 Various user validation utilities
 '''
 
-# Import python libs
 import re
 import logging
 

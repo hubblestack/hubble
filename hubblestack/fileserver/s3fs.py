@@ -78,21 +78,17 @@ structure::
     https://docs.aws.amazon.com/AmazonS3/latest/API/RESTCommonResponseHeaders.html
 """
 
-# Import python libs
-
 import datetime
 import os
 import time
 import pickle
 import logging
 
-# Import salt libs
 import hubblestack.fileserver as fs
 import hubblestack.utils.files
 import hubblestack.utils.gzip_util
 import hubblestack.utils.hashutils
 
-# Import 3rd-party libs
 # pylint: disable=import-error,no-name-in-module,redefined-builtin
 from urllib.parse import quote as _quote
 # pylint: enable=import-error,no-name-in-module,redefined-builtin

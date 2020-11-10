@@ -3,11 +3,8 @@
     :codeauthor: Rahul Handay <rahulha@saltstack.com>
 '''
 
-# Import Python libs
-from __future__ import absolute_import, unicode_literals, print_function
 import os
 
-# Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import (
@@ -17,7 +14,6 @@ from tests.support.mock import (
     NO_MOCK_REASON
 )
 
-# Import Salt Libs
 import hubblestack.modules.systemd_service as systemd
 import hubblestack.utils.systemd
 from hubblestack.exceptions import CommandExecutionError

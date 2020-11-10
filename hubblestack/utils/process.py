@@ -3,7 +3,6 @@
 Functions for daemonizing and otherwise modifying running processes
 '''
 
-# Import python libs
 import os
 import time
 import signal

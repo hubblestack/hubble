@@ -11,8 +11,6 @@
 '''
 # pylint: disable=repr-flag-used-in-string,wrong-import-order
 
-# Import Python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import base64
 import errno
 import functools

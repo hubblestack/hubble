@@ -3,8 +3,6 @@
     Unit tests for hubblestack.utils.yamlloader
 '''
 
-# Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import collections
 import textwrap 
 
@@ -12,7 +10,6 @@ from yaml.constructor import ConstructorError
 from hubblestack.utils.yamlloader import SaltYamlSafeLoader
 import hubblestack.utils.files
 
-# Import Testing Libs
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import patch, NO_MOCK, NO_MOCK_REASON, mock_open
 

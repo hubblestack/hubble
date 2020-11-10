@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# Import Python Libs
-from __future__ import absolute_import, unicode_literals, print_function
 import os
 
 from tests.support.mixins import LoaderModuleMockMixin
@@ -14,7 +12,6 @@ from tests.support.mock import (
     NO_MOCK_REASON
 )
 
-# Import Salt libs
 from hubblestack.exceptions import CommandExecutionError
 import hubblestack.modules.rpm_lowpkg as rpm
 import hubblestack.modules.yumpkg as yumpkg

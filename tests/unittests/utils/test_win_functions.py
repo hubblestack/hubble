@@ -1,16 +1,11 @@
 # -*- coding: utf-8 -*-
 
-# Import Python Libs
-from __future__ import absolute_import, unicode_literals, print_function
-
-# Import Salt Testing Libs
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import (
     NO_MOCK,
     NO_MOCK_REASON
 )
 
-# Import Salt Libs
 import hubblestack.utils.platform
 import hubblestack.utils.win_functions as win_functions
 

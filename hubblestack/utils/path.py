@@ -4,7 +4,6 @@ Platform independent versions of some os/os.path functions. Gets around PY2's
 lack of support for reading NTFS links.
 '''
 
-# Import python libs
 import logging
 import collections
 import os

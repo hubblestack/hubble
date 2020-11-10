@@ -6,10 +6,8 @@ Connection library for Amazon S3
 """
 
 
-# Import Python libs
 import logging
 
-# Import 3rd-party libs
 try:
     import requests
     HAS_REQUESTS = True  # pylint: disable=W0612

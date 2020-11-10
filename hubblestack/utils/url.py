@@ -3,10 +3,8 @@
 URL utils
 '''
 
-# Import python libs
 import re
 
-# Import salt libs
 from urllib.parse import urlparse, urlunparse  # pylint: disable=import-error,no-name-in-module
 import hubblestack.utils.path
 import hubblestack.utils.platform

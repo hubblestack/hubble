@@ -2,11 +2,9 @@
 '''
 :codeauthor: Shane Lee <slee@saltstack.com>
 '''
-# Import Python Libs
-from __future__ import absolute_import, unicode_literals, print_function
+
 import sys
 
-# Import Salt Testing Libs
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import (
     NO_MOCK,

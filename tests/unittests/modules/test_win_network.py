@@ -3,10 +3,6 @@
     :codeauthor: Jayesh Kariya <jayeshk@saltstack.com>
 '''
 
-# Import Python Libs
-from __future__ import absolute_import, unicode_literals, print_function
-
-# Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import (

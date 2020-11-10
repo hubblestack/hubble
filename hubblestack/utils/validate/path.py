@@ -9,9 +9,7 @@
     Several path related validators
 '''
 
-# Import python libs
 import os
-
 
 def is_writeable(path, check_parent=False):
     '''

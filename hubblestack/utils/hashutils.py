@@ -2,7 +2,7 @@
 """
 A collection of hashing and encoding utils.
 """
-# Import python libs
+
 import hashlib
 
 import hubblestack.utils.files

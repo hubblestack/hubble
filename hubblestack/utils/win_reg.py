@@ -117,7 +117,6 @@ class Registry(object):  # pylint: disable=R0903
             'REG_OPTION_NON_VOLATILE': 0,
             'REG_OPTION_VOLATILE':     1
         }
-        # Return Unicode due to from __future__ import unicode_literals
         self.vtype_reverse = {
             win32con.REG_BINARY:    'REG_BINARY',
             win32con.REG_DWORD:     'REG_DWORD',

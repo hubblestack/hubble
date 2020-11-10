@@ -46,8 +46,6 @@ permissions. Proxy can also be provided in the configuration.
     Do not include the leading ? for sas_token if generated from the web
 """
 
-# Import python libs
-
 import base64
 import json
 import logging

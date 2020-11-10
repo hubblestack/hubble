@@ -4,7 +4,6 @@ A module written originally by Armin Ronacher to manage file transfers in an
 atomic way
 '''
 
-# Import python libs
 import os
 import tempfile
 import sys

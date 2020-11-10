@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
-# Import Python libs
-from __future__ import absolute_import, unicode_literals, print_function
+
 import logging
 import socket
 import textwrap
 
-# Import Salt Testing libs
 from tests.support.unit import skipIf
 from tests.support.unit import TestCase
 from tests.support.mock import (

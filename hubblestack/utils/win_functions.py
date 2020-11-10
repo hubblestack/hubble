@@ -5,7 +5,6 @@ missing functions in other modules
 """
 import re
 
-# Import 3rd Party Libs
 try:
     import psutil
     import pywintypes

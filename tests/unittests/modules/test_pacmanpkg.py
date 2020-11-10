@@ -3,10 +3,6 @@
     :codeauthor: Eric Vz <eric@base10.org>
 '''
 
-# Import Python Libs
-from __future__ import absolute_import
-
-# Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import (
@@ -16,7 +12,6 @@ from tests.support.mock import (
     NO_MOCK_REASON
 )
 
-# Import Salt Libs
 import hubblestack.modules.pacmanpkg as pacman
 
 

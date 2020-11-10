@@ -21,8 +21,6 @@
 '''
 # pylint: disable=unused-import,blacklisted-module,deprecated-method
 
-# Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import os
 import sys
 import logging

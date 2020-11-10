@@ -3,15 +3,10 @@
     :codeauthor: jmoney <justin@saltstack.com>
 """
 
-# Import Python libs
-from __future__ import absolute_import, print_function, unicode_literals
-
-# Import Salt Libs
 import hubblestack.modules.linux_sysctl as linux_sysctl
 import hubblestack.modules.systemd_service as systemd
 from hubblestack.exceptions import CommandExecutionError
 
-# Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.mock import MagicMock, mock_open, patch
 from tests.support.unit import TestCase

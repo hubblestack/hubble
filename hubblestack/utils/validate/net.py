@@ -3,11 +3,9 @@
 Various network validation utilities
 '''
 
-# Import Python libs
 import re
 import socket
 
-# Import Salt libs
 import hubblestack.utils.platform
 
 if hubblestack.utils.platform.is_windows():

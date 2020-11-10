@@ -10,10 +10,6 @@ Tests for the zfs utils library
 .. versionadded:: 2018.3.1
 '''
 
-# Import Python libs
-from __future__ import absolute_import, unicode_literals, print_function
-
-# Import Testing libs
 from tests.support.unit import skipIf, TestCase
 from tests.support.mock import (
     MagicMock,

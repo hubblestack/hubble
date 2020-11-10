@@ -9,9 +9,6 @@
     Test hubblestack.utils.immutabletypes
 '''
 
-# Import Python libs
-from __future__ import absolute_import, unicode_literals
-
 from tests.support.unit import TestCase
 
 import hubblestack.utils.immutabletypes as immutabletypes

@@ -3,14 +3,11 @@
 Unit Tests for functions located in salt/utils/files.py
 '''
 
-# Import python libs
-from __future__ import absolute_import, unicode_literals, print_function
 import copy
 import os
 
 import hubblestack.utils.files
 
-# Import Testing libs
 from tests.support.helpers import with_tempdir
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import (

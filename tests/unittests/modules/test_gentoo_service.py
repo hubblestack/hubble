@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# Import Python libs
-from __future__ import absolute_import, print_function, unicode_literals
-
-# Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import (
@@ -14,7 +10,6 @@ from tests.support.mock import (
     call
 )
 
-# Import Salt Libs
 import hubblestack.modules.gentoo_service as gentoo_service
 
 

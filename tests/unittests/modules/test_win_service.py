@@ -3,10 +3,6 @@
     :codeauthor: Rahul Handay <rahulha@saltstack.com>
 '''
 
-# Import Python Libs
-from __future__ import absolute_import, unicode_literals, print_function
-
-# Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import (
@@ -16,11 +12,9 @@ from tests.support.mock import (
     NO_MOCK_REASON
 )
 
-# Import Salt Libs
 import hubblestack.modules.win_service as win_service
 import hubblestack.utils.path
 
-# Import 3rd Party Libs
 try:
     WINAPI = True
     import win32serviceutil

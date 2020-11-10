@@ -2,8 +2,7 @@
 '''
     :codeauthor: :email:`Shane Lee <slee@saltstack.com>`
 '''
-# Import Python libs
-from __future__ import absolute_import, print_function, unicode_literals
+
 import textwrap
 
 from tests.support.mixins import LoaderModuleMockMixin

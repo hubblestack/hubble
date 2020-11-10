@@ -3,11 +3,8 @@
     :codeauthor: Rahul Handay <rahulha@saltstack.com>
 '''
 
-# Import Python Libs
-from __future__ import absolute_import, print_function, unicode_literals
 import yaml
 
-# Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.unit import TestCase, skipIf
 from tests.support.mock import (
@@ -17,7 +14,6 @@ from tests.support.mock import (
     NO_MOCK_REASON
 )
 
-# Import Salt Libs
 import hubblestack.utils.data
 import hubblestack.utils.yaml
 import hubblestack.modules.pkg_resource as pkg_resource

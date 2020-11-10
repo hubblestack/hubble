@@ -48,7 +48,6 @@ Walkthrough <tutorial-gitfs>`.
 .. _GitPython: https://github.com/gitpython-developers/GitPython
 """
 
-# Import python libs
 import logging
 
 PER_REMOTE_OVERRIDES = (

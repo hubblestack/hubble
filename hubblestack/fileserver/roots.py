@@ -16,7 +16,6 @@ Fileserver environments are defined using the :conf_master:`file_roots`
 configuration option.
 """
 
-# Import python libs
 import os
 import errno
 import logging

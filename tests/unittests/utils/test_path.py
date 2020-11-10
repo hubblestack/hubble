@@ -3,8 +3,6 @@
 Tests for hubblestack.utils.path
 '''
 
-# Import Python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import os
 import sys
 import posixpath

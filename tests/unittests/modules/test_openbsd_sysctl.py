@@ -3,14 +3,9 @@
     :codeauthor: :email:`Jasper Lievisse Adriaanse <j@jasper.la>`
 """
 
-# Import Python libs
-from __future__ import absolute_import
-
-# Import Salt Libs
 import hubblestack.modules.openbsd_sysctl as openbsd_sysctl
 from hubblestack.exceptions import CommandExecutionError
 
-# Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
 from tests.support.mock import MagicMock, patch
 from tests.support.unit import TestCase

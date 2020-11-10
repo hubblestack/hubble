@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from __future__ import absolute_import, print_function, unicode_literals
-
 import hubblestack.modules.reg as reg
 import hubblestack.utils.win_reg
 from hubblestack.exceptions import CommandExecutionError

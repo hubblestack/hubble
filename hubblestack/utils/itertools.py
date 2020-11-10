@@ -3,7 +3,6 @@
 Helpful generators and other tools
 '''
 
-# Import python libs
 import fnmatch
 import re
 

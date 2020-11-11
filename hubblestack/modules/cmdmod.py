@@ -844,7 +844,7 @@ def _run(cmd,
         ret['retcode'] = 0
     ret['stdout'] = out
     ret['stderr'] = err
-    
+
     try:
         if ignore_retcode:
             __context__['retcode'] = 0

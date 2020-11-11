@@ -2,25 +2,25 @@
 """
 Dictionary type comparator used to match a dictionary input with expected output
 
-Comparators are used by Audit module to compare module output 
+Comparators are used by Audit module to compare module output
 with the expected result
 In FDG-connector, comparators might also be used with FDG
 
 Dictionary comparator exposes various commands:
 
-- "match" 
+- "match"
     To match module output against a dictionary
     (dictionary can be nested to any level)
-  
+
     comparator:
         type: "dict"
         match:
             gid: 0
-            uid: 0 
+            uid: 0
             attr2:
                 key1: val1
 
-- "match_key_any" 
+- "match_key_any"
     True for any key found from the list
 
     comparator:
@@ -31,7 +31,7 @@ Dictionary comparator exposes various commands:
 
 - "match_key_all"
     True when all keys found from the list
-    
+
     comparator:
         type: "dict"
         match_key_all:
@@ -40,7 +40,7 @@ Dictionary comparator exposes various commands:
 
 - "match_any"
     True when any dictionary mentioned in list match
-    
+
     comparator:
         type: "dict"
         match_any:
@@ -52,13 +52,13 @@ Dictionary comparator exposes various commands:
 - "match_any_if_key_matches"
   This is a special case when user want to match only when desired key is found.
   Example: If name=rsync found, then match other attributes.
-  
-  Result will be True 
+
+  Result will be True
     - if specified key not found.
     - key found and attributes also matched
   Result will be False
     - Key found and attributes did not match
-  
+
     comparator:
         type: "dict"
         match_any_if_key_matches:
@@ -69,14 +69,14 @@ Dictionary comparator exposes various commands:
                 - name: xyz
                   running: true
 
-In above example, we are invoking another comparator: "file_permission" 
+In above example, we are invoking another comparator: "file_permission"
 for "mode" field.
 
 Example with nested dictionary
 ---------------------------------
     comparator:
         type: "dict"
-        match: 
+        match:
             key1:
                 nkey1: nkey2
                 key:
@@ -110,7 +110,7 @@ check_id:
             type: "dict"
             success_on_error:
               - "file_not_found"
-            match: 
+            match:
               gid: 0
               uid: 0
               group: root
@@ -151,7 +151,7 @@ def match(audit_id, result_to_compare, args):
 
 def match_any(audit_id, result_to_compare, args):
     """
-    Match dictionary elements dynamically. 
+    Match dictionary elements dynamically.
     Match from a list of available dictionaries
     True for any match found
 

@@ -118,14 +118,14 @@ def run(audit_files=None,
         show_compliance=None):
     """
     :param audit_files:
-        Profile to execute. Can have one or more files 
+        Profile to execute. Can have one or more files
         (python list or comma separated) (default: {None})
     :param tags:
         Can be used to target a subset of tags via glob targeting.
     :param labels:
-        Tests with matching labels are executed. If multiple labels are passed, 
+        Tests with matching labels are executed. If multiple labels are passed,
         then tests which have all those labels are executed.
-    :param verbose: 
+    :param verbose:
         True by default. If set to False, results will be trimmed to just tags
         and descriptions.
     :param show_compliance:
@@ -272,7 +272,7 @@ def top(topfile='top.audit',
     :param show_compliance:
         Whether to show compliance or not
     :param labels:
-        Tests with matching labels are executed. If multiple labels are passed, 
+        Tests with matching labels are executed. If multiple labels are passed,
         then tests which have all those labels are executed.
     :return:
     """

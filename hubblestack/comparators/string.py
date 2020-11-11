@@ -2,14 +2,14 @@
 """
 String type comparator used to match Strings
 
-Comparators are used by Audit module to compare module output 
+Comparators are used by Audit module to compare module output
 with the expected result
 In FDG-connector, comparators might also be used with FDG
 
 String comparator exposes various commands:
 
 - "match"
-  
+
     comparator:
         type: string
         match: '^root'
@@ -17,10 +17,10 @@ String comparator exposes various commands:
         is_multiline: true # Optional, default=True. Works only when is_regex=True
 
 - "match_any"
-  
+
     comparator:
         type: string
-        match_any: 
+        match_any:
             - '^root'
             - 'shadow'
         is_regex: true # Optional, default False
@@ -35,7 +35,7 @@ log = logging.getLogger(__name__)
 def match(audit_id, result_to_compare, args):
     """
     Match String
-    
+
     :param result_to_compare:
         The value to compare.
     :param args:
@@ -51,7 +51,7 @@ def match(audit_id, result_to_compare, args):
 def match_any(audit_id, result_to_compare, args):
     """
     Match list of strings
-    
+
     :param result_to_compare:
         The value to compare.
     :param args:

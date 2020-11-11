@@ -50,7 +50,7 @@ import hubblestack.utils.platform
 
 
 def __virtual__():
-    return not hubblestack.utils.platform.is_windows() 
+    return not hubblestack.utils.platform.is_windows()
 
 
 def audit(data_list, tags, labels, debug=False, **kwargs):

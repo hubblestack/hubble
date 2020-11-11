@@ -211,7 +211,7 @@ def update():
                 '<Code>ContainerNotFound</Code>' in str(exc):
 
                 log.debug('Could not connect to azure container "{0}"'.format(name))
-                container_cache_folder = _get_container_path(container) 
+                container_cache_folder = _get_container_path(container)
                 log.debug('Trying to delete the cache of container "{0}"'.format(name))
                 try:
                     container_cachedir = os.path.join(__opts__['cachedir'], 'azurefs',container_cache_folder)
@@ -269,7 +269,7 @@ def update():
 
                     if not __opts__['delete_inaccessible_azure_containers'] \
                        or ( not "<class 'azure.common.AzureHttpError'>" in str(type(exc)) and \
-                            not "<class 'azure.common.AzureMissingResourceHttpError'>" in str(type(exc)) 
+                            not "<class 'azure.common.AzureMissingResourceHttpError'>" in str(type(exc))
                             ):
                         continue
 

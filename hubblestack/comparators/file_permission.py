@@ -2,7 +2,7 @@
 """
 File-Permission type comparator used to match File permissions
 
-Comparators are used by Audit module to compare module output 
+Comparators are used by Audit module to compare module output
 with the expected result
 In FDG-connector, comparators might also be used with FDG
 
@@ -10,7 +10,7 @@ File-Permission comparator exposes various commands:
 
 - "match"
     To match file permission values
-  
+
     comparator:
         type: file_permission
         match:
@@ -29,7 +29,7 @@ log = logging.getLogger(__name__)
 def match(audit_id, result_to_compare, args):
     """
     Match File permissions
-    
+
     :param result_to_compare:
         The value to compare. Example: 644
     :param args:

@@ -2,21 +2,21 @@
 """
 Number type comparator used to match numbers
 
-Comparators are used by Audit module to compare module output 
+Comparators are used by Audit module to compare module output
 with the expected result
 In FDG-connector, comparators might also be used with FDG
 
 Number comparator exposes various commands:
 
 - "match"
-    
+
     comparator:
         type: number
         match: >= 10
         # < <= > >= !=
 
 - "match_any"
-  
+
     comparator:
         type: number
         match_any:
@@ -36,7 +36,7 @@ Complete Example
                     - 0
                     - 1
                     - 2
-            uid: 0 
+            uid: 0
             user: root
 """
 
@@ -52,7 +52,7 @@ def match(audit_id, result_to_compare, args):
     Match a number
         match: 10
         match: "> 10"
-    
+
     :param audit_id:
     :param result_to_compare:
         The value to compare.
@@ -73,7 +73,7 @@ def match_any(audit_id, result_to_compare, args):
             - 10
             - > 20
             - != 100
-    
+
     :param audit_id:
     :param result_to_compare:
         The value to compare.

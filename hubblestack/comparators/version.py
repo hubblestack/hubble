@@ -2,14 +2,14 @@
 """
 Version type comparator used to match versions
 
-Comparators are used by Audit module to compare module output 
+Comparators are used by Audit module to compare module output
 with the expected result
 In FDG-connector, comparators might also be used with FDG
 
 Version comparator exposes various commands:
 
 - "match"
-  
+
     comparator:
         type: version
         match: >= 3.28.0-1.el7
@@ -21,7 +21,7 @@ Version comparator exposes various commands:
         # < <= > >= !=
 
 - "match_any"
-  
+
     comparator:
         type: version
         match_any:
@@ -72,7 +72,7 @@ def match(audit_id, result_to_compare, args):
 def match_any(audit_id, result_to_compare, args):
     """
     Match against list of versions
-        
+
     :param result_to_compare:
         The value to compare.
     :param args:

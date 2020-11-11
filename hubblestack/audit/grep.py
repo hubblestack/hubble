@@ -348,7 +348,7 @@ def _grep(path,
         options = [' '.join(args)]
     else:
         options = []
-    
+
     # prepare the command
     cmd = ['grep'] + options + [pattern]
     if path:

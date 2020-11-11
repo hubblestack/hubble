@@ -101,7 +101,7 @@ Functions supported:
 --------------------
 - filter_dict
     Given a target dictionary, filter it and return the result.
-    
+
     Arguments supported:
         starting_dict:  (Optional) Starting dictionary
         update_chained: (Default True)
@@ -111,10 +111,10 @@ Functions supported:
         filter_values:  (Default False)
                             By default, the filtering will be done on keys.
                             Set ``filter_values`` to True to filter by values.
-        filter_rules:   (Mandatory) is a dictionary mapping comparison types to values 
+        filter_rules:   (Mandatory) is a dictionary mapping comparison types to values
                             to compare against.
                             It can take the following values:
-                                ge = greater or equal, gt = greater than, 
+                                ge = greater or equal, gt = greater than,
                                 lt = lower than, le = lower or equal
                                 ne = not equal, eq = equal
 
@@ -123,12 +123,12 @@ Functions supported:
 
     Arguments supported:
         starting_seq:  (Optional) Starting sequence
-        extend_chained:(Optional) (Default True) 
+        extend_chained:(Optional) (Default True)
                         If True, update starting_seq with chained value
-        filter_rules:  (Mandatory) is a dictionary mapping comparison types to values 
+        filter_rules:  (Mandatory) is a dictionary mapping comparison types to values
                        to compare against.
                        It can take the following values:
-                        ge = greater or equal, gt = greater than, 
+                        ge = greater or equal, gt = greater than,
                         lt = lower than, le = lower or equal
                         ne = not equal, eq = equal
 
@@ -205,7 +205,7 @@ Functions supported:
                         set ``format_chained=False``.
 
 - dict_remove_none
-    Given a target sequence, look for dictionary keys that have values 
+    Given a target sequence, look for dictionary keys that have values
     of None and remove them.
 
     Arguments supported:
@@ -291,7 +291,7 @@ def validate_params(block_id, block_dict, extra_args=None):
 
     # fetch required param
     error = {}
-    
+
     # This module is callable from FDG only
     if extra_args.get('caller') == Caller.AUDIT:
         error['util'] = 'Module: util called from AUDIT !!!!'
@@ -314,7 +314,7 @@ def validate_params(block_id, block_dict, extra_args=None):
         elif function_param == 'join':
             if not runner_utils.get_param_for_module(block_id, block_dict, 'words'):
                 error['words'] = 'words are required for function: join'
-        elif function_param == ['dict_convert_none', 'print_string', 'dict_to_list', 
+        elif function_param == ['dict_convert_none', 'print_string', 'dict_to_list',
             'get_index', 'dict_remove_none', 'nop', 'encode_base64']:
             # no mandatory key, mentioned here just for clarity
             pass
@@ -341,7 +341,7 @@ def execute(block_id, block_dict, extra_args=None):
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing util module for id: {0}'.format(block_id))
-    
+
     function_param = runner_utils.get_param_for_module(block_id, block_dict, 'function')
     if function_param == 'filter_dict':
         return _filter_dict(block_id, block_dict, extra_args)
@@ -370,18 +370,18 @@ def _filter_seq(block_id, block_dict, extra_args):
     """
     Given a target sequence, filter it and return the result.
 
-    block_dict:    
+    block_dict:
         By default, ``chained`` will have ``.extend()`` or ``.update()`` or ``.format()``
         called on it with ``starting_seq`` as the only argument. Set ``extend_chained`` to False
         to ignore ``starting_seq``.
 
         starting_seq: (Optional) Starting sequence
-        extend_chained: (Optional) (Default True) 
+        extend_chained: (Optional) (Default True)
                         If True, update starting_seq with chained value
-        filter_rules: (Mandatory) is a dictionary mapping comparison types to values 
+        filter_rules: (Mandatory) is a dictionary mapping comparison types to values
                       to compare against.
                       It can take the following values:
-                        ge = greater or equal, gt = greater than, 
+                        ge = greater or equal, gt = greater than,
                         lt = lower than, le = lower or equal
                         ne = not equal, eq = equal
     :param extra_args:
@@ -413,7 +413,7 @@ def _filter_seq(block_id, block_dict, extra_args):
 def _filter(block_id, seq, filter_rules):
     """
     Filter a sequence.
-    
+
     block_id
         Block id
 
@@ -455,10 +455,10 @@ def _filter_dict(block_id, block_dict, extra_args=None):
         filter_values:  (Default False)
                             By default, the filtering will be done on keys.
                             Set ``filter_values`` to True to filter by values.
-        filter_rules:   (Mandatory) is a dictionary mapping comparison types to values 
+        filter_rules:   (Mandatory) is a dictionary mapping comparison types to values
                             to compare against.
                             It can take the following values:
-                                ge = greater or equal, gt = greater than, 
+                                ge = greater or equal, gt = greater than,
                                 lt = lower than, le = lower or equal
                                 ne = not equal, eq = equal
     :param extra_args:
@@ -585,7 +585,7 @@ def _get_index(block_id, block_dict, extra_args):
     except TypeError:
         log.error('Arguments should be of type list', exc_info=True)
         return runner_utils.prepare_negative_result_for_module(block_id, 'invalid_format')
-    
+
     status = bool(ret)
     if status:
         return runner_utils.prepare_positive_result_for_module(block_id, ret)
@@ -689,7 +689,7 @@ def _join(block_id, block_dict, extra_args):
     except (TypeError, AttributeError):
         log.error("Invalid arguments type.", exc_info=True)
         return runner_utils.prepare_negative_result_for_module(block_id, 'invalid_format')
-    
+
     status = bool(ret)
     if not status:
         return runner_utils.prepare_negative_result_for_module(block_id, 'unknown_error')
@@ -711,9 +711,9 @@ def _sort(block_id, block_dict, extra_args):
         desc:           (Optional) (Default False)
                         Set to True if the sorting should be in descending order.
         extend_chained: (Default True)
-                        By default, ``chained`` will have ``.extend()`` or 
+                        By default, ``chained`` will have ``.extend()`` or
                         ``.update()`` or ``.format()``
-                        called on it with ``seq`` as the only argument. 
+                        called on it with ``seq`` as the only argument.
                         Set ``extend_chained`` to False to ignore ``seq``.
 
     :param extra_args:
@@ -880,7 +880,7 @@ def _dict_to_list(block_id, block_dict, extra_args):
 
     update_chained = runner_utils.get_param_for_module(block_id, block_dict, 'update_chained', True)
     starting_dict = runner_utils.get_param_for_module(block_id, block_dict, 'starting_dict')
-    
+
     if update_chained and starting_dict:
         try:
             chained.update(starting_dict)
@@ -923,7 +923,7 @@ def _dict_convert_none(block_id, block_dict, extra_args):
 
     extend_chained = runner_utils.get_param_for_module(block_id, block_dict, 'extend_chained', True)
     starting_seq = runner_utils.get_param_for_module(block_id, block_dict, 'starting_seq')
-    
+
     if extend_chained and starting_seq:
         try:
             if isinstance(chained, (set, dict)):
@@ -1082,7 +1082,7 @@ def _dict_remove_none(block_id, block_dict, extra_args):
     else:
         log.error("Invalid arguments type - dict, list, set or tuple expected")
         return runner_utils.prepare_negative_result_for_module(block_id, 'invalid_format')
-    
+
     status = bool(ret)
     if not status:
         return runner_utils.prepare_negative_result_for_module(block_id, 'unknown_error')

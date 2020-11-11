@@ -85,11 +85,11 @@ def _get_conn():
         conn.execute('''CREATE TABLE if not exists jids(jid TEXT PRIMARY KEY, id INT, load TEXT NOT NULL)''')
         if version[0] >= 3 and version[1] >= 9:
             conn.execute('''CREATE TABLE if not exists ret(
-            jid TEXT, id INT, fun TEXT, fun_args JSON, 
+            jid TEXT, id INT, fun TEXT, fun_args JSON,
             return_data JSON, FOREIGN KEY(jid) REFERENCES jids(jid))''')
         else:
             conn.execute('''CREATE TABLE if not exists ret(
-            jid TEXT,id INT, fun TEXT, fun_args TEXT, 
+            jid TEXT,id INT, fun TEXT, fun_args TEXT,
             return_data TEXT,
              FOREIGN KEY(jid) REFERENCES jids(jid))''')
 
@@ -146,8 +146,8 @@ def get_fun(fun, fun_args=None, conn=None, return_all=False):
     if fun_args:
         log.debug(
             'sqlite3 returner retrieving last job called with function: %s and arguments: %s', fun, fun_args)
-        cur.execute('''SELECT jid, id, fun, fun_args, return_data 
-        FROM jids INNER JOIN ret ON jids.id = ret.id  
+        cur.execute('''SELECT jid, id, fun, fun_args, return_data
+        FROM jids INNER JOIN ret ON jids.id = ret.id
         WHERE fun_args = ? and fun = ? ORDER BY ret.id DESC ''', fun_args, fun)
 
 

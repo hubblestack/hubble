@@ -13,7 +13,7 @@ List comparator exposes various commands:
 
     comparator:
         type: "list"
-        size: ">= 10" 
+        size: ">= 10"
     # Supported operators >, >=, <, <=, ==, !=
     # it can also be written as (without any operator)
     # size: 10
@@ -58,7 +58,7 @@ List comparator exposes various commands:
     - key found and attributes also matched
   Result will be False
     - Key found and attributes did not match
-  
+
     comparator:
         type: "list"
         match_any_if_key_matches:
@@ -115,7 +115,7 @@ log = logging.getLogger(__name__)
 def size(audit_id, result_to_compare, args):
     """
     Check size of a list
-    
+
     :param result_to_compare:
         The value to compare.
     :param args:
@@ -166,7 +166,7 @@ def match_any(audit_id, result_to_compare, args):
     """
     Match any of dictionary mentioned. Match only mentioned attributes
     True if found any entry
-    
+
     :param result_to_compare:
         The value to compare.
     :param args:
@@ -209,7 +209,7 @@ def match_all(audit_id, result_to_compare, args):
     """
     Match all of dictionary mentioned. Match only mentioned attributes
     True if found all entry
-    
+
     :param audit_id:
     :param result_to_compare:
         The value to compare.

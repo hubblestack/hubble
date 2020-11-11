@@ -230,7 +230,7 @@ class TestProcess():
         block_dict = {'args':{'starting_seq':1, 'filter_rules': {'ge':1, 'lt':4}}}
         status, ret = util._filter_seq('test', block_dict, chain_args)
         assert status is False, 'invalid starting_seq, should return False'
-        
+
         # invalid ``chained``
         chain_args = {'chaining_args': {'result': 4, 'status': True}}
         block_dict = {'args':{'starting_seq':[1,2], 'filter_rules': {'ge':1, 'lt':4}}}
@@ -277,11 +277,11 @@ class TestProcess():
         status, ret = util._get_index('test', {'args': {'starting_list':[1, 2, 3]}}, {})
         assert status is False, 'invalid chained, should return False'
         # index out of range
-        status, ret = util._get_index('test', {'args': {'index':4}}, 
+        status, ret = util._get_index('test', {'args': {'index':4}},
             {'chaining_args': {'result': [1, 2, 3], 'status': True}})
         assert status is False, 'index 4 out of range, list length is 3, should return False'
         # invalid ``chained`` type
-        status, ret = util._get_index('test', {}, 
+        status, ret = util._get_index('test', {},
             {'chaining_args': {'result': set([1, 2, 3]), 'status': True}})
         assert status is False, 'invalid chained type, should return False'
 

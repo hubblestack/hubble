@@ -66,7 +66,7 @@ def returner(ret):
     data = _dedup_list(data)
     host_args = _build_args(ret)
     alerts = _build_alerts(data)
-    
+
     # Get cloud details
     cloud_details = __grains__.get('cloud_details', {})
     try:

@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """
-A base class for Audit/FDG module runner. 
+A base class for Audit/FDG module runner.
 
 """
 import os

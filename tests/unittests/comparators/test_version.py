@@ -36,7 +36,7 @@ class TestVersionMatch(TestCase):
         Match simple version with operator
         """
         result_to_compare = '3.28.0-1.el7'
-        
+
         args = {"match": '==3.28.0-1.el7'}
         status, result = version_comparator.match("test-1", result_to_compare, args)
         self.assertTrue(status)
@@ -107,8 +107,8 @@ class TestVersionMatchAny(TestCase):
         """
         result_to_compare = '3.28.0-1.el7'
         args = {"match_any": [
-            '== 3.28.0-1.el6', 
-            '!= 2.28.0-1.el7', 
+            '== 3.28.0-1.el6',
+            '!= 2.28.0-1.el7',
             '< 4.28.0-1.el7'
         ]}
         status, result = version_comparator.match_any("test-1", result_to_compare, args)
@@ -120,8 +120,8 @@ class TestVersionMatchAny(TestCase):
         """
         result_to_compare = '3.28.0-1.el7'
         args = {"match_any": [
-            '== 3.28.0-1.el6', 
-            '<= 2.28.0-1.el7', 
+            '== 3.28.0-1.el6',
+            '<= 2.28.0-1.el7',
             '4.28.0-1.el7'
         ]}
         status, result = version_comparator.match_any("test-1", result_to_compare, args)

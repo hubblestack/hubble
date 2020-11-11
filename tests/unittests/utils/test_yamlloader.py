@@ -4,7 +4,7 @@
 '''
 
 import collections
-import textwrap 
+import textwrap
 
 from yaml.constructor import ConstructorError
 from hubblestack.utils.yamlloader import SaltYamlSafeLoader

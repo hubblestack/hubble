@@ -79,7 +79,7 @@ def apply_labels(__data__, labels):
         ret['stat']=labelled_test_cases
     else:
         ret=__data__
-    return ret    
+    return ret
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
     """

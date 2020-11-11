@@ -130,7 +130,7 @@ class TestReadFile():
         block_dict={"args": {
             "path": json_file,
             "format": "json",
-            "subkey": 'value,key2,key3', 
+            "subkey": 'value,key2,key3',
             "sep": ','
         }}
         check_id = "test-1"
@@ -595,7 +595,7 @@ class TestReadFile():
         expected_status, expected_ret = True, {}
         assert expected_status == status
         assert expected_ret == ret['result']
-        
+
     def test_config_InvalidDictsep_ReturnDict(self, config_file):
         """
         Test that given an invalid ``dictsep`` and valid arguments,

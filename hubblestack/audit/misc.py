@@ -313,7 +313,7 @@ def validate_params(block_id, block_dict, extra_args=None):
         HubbleCheckValidationError: For any validation error
     """
     log.debug('Module: misc Start validating params for check-id: {0}'.format(block_id))
-    
+
     error = {}
 
     # This module is callable from Audit only
@@ -337,9 +337,9 @@ def validate_params(block_id, block_dict, extra_args=None):
         elif function_name == 'check_users_own_their_home':
             _validation_helper(block_id, block_dict, ['max_system_uid'], error)
         elif function_name == 'check_list_values':
-            _validation_helper(block_id, 
-                block_dict, 
-                ['file_path', 'match_pattern', 'value_pattern', 'grep_arg', 'white_list', 'black_list', 'value_delimter'], 
+            _validation_helper(block_id,
+                block_dict,
+                ['file_path', 'match_pattern', 'value_pattern', 'grep_arg', 'white_list', 'black_list', 'value_delimter'],
                 error)
         elif function_name == 'ensure_max_password_expiration':
             _validation_helper(block_id, block_dict, ['allow_max_days', 'except_for_users'], error)
@@ -377,7 +377,7 @@ def execute(block_id, block_dict, extra_args=None):
         tuple of result(value) and status(boolean)
     """
     log.debug('Executing misc module for id: {0}'.format(block_id))
-    
+
     function_name = runner_utils.get_param_for_module(block_id, block_dict, 'function')
 
     result = FUNCTION_MAP[function_name](block_id, block_dict, extra_args)
@@ -574,12 +574,12 @@ def _compare_file_stats(block_id, path, permission):
         "match": {
             "required_value": permission
         }
-    }    
+    }
 
     ret_status, ret_val = hubblestack.module_runner.comparator.run(
         block_id, comparator_args, path_details.get('mode'))
     return True if ret_status else path_details.get('mode')
-    
+
 def _check_core_dumps(block_id, block_dict, extra_args):
     """
     Ensure core dumps are restricted
@@ -658,7 +658,7 @@ def _check_users_home_directory_permissions(block_id, block_dict, extra_args=Non
     """
     max_allowed_permission = runner_utils.get_param_for_module(block_id, block_dict, 'max_allowed_permission', 750)
     except_for_users = runner_utils.get_param_for_module(block_id, block_dict, 'except_for_users', '')
-    
+
     users_list = ['root','halt','sync','shutdown']
     for user in except_for_users.split(","):
         if user.strip() != "":

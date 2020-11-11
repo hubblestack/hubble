@@ -20,7 +20,7 @@ Certificate comparator exposes various commands:
                            # the check is failed if the certificate expires in less than 45 days
             fail_if_not_before: True # fails the check if the certificate is not valid yet (Optional)
                            # if True, the check will fail only if not_before is 0 (or missing): if the certificate is not valid yet, but it is expected to be
-                           
+
             ssl_issuer_common_name: 'DigiCert SHA2 Secure Server CA', (Optional)
             ssl_signature_algorithm: 'sha256WithRSAEncryption', (Optional)
             ssl_subject_country: 'US', (Optional)

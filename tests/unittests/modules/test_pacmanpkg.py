@@ -61,4 +61,4 @@ class PacmanTestCase(TestCase, LoaderModuleMockMixin):
         sortmock.assert_called_with(mock_ret)
         self.assertTrue(stringifymock.call_count == 0)
 
-    
+

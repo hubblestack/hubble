@@ -84,9 +84,9 @@ def _get_local_packages():
     else:
         return None
 
-    return [ vulner_package_format.format(package=pkg, 
+    return [ vulner_package_format.format(package=pkg,
                                           version=local_packages[pkg],
-                                          arch=arch) 
+                                          arch=arch)
              for pkg in local_packages ]
 
 

@@ -179,9 +179,9 @@ check_unique_id:
           comparator:
             type: list
             filter_compare:
-                filter: 
+                filter:
                     replied: true
-                    offset: 
+                    offset:
                         type: number
                         match: <= 15
                 compare:

@@ -48,7 +48,7 @@ class TestStat(TestCase):
         """
         def _stats(path):
             return {"uid": 1, "gid": 2}
-        
+
         isfile_mock.return_value = True
         stat.__mods__ = {
             "file.stats": _stats
@@ -66,7 +66,7 @@ class TestStat(TestCase):
         """
         def _stats(path):
             return {"uid": 1, "gid": 2}
-        
+
         isfile_mock.return_value = False
         stat.__mods__ = {
             "file.stats": _stats

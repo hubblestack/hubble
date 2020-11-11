@@ -6,14 +6,13 @@ Windows Service module.
 '''
 
 # Import Python libs
-from __future__ import absolute_import, unicode_literals, print_function
 import fnmatch
 import logging
 import re
 
 # Import Salt libs
 import hubblestack.utils.platform
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Import 3rd party libs
 try:

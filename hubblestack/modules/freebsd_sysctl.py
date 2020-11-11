@@ -4,7 +4,6 @@ Module for viewing and modifying sysctl parameters
 """
 
 # Import Python libs
-from __future__ import absolute_import, print_function, unicode_literals
 
 import logging
 import os
@@ -12,7 +11,7 @@ import os
 # Import salt libs
 import hubblestack.utils.files
 import hubblestack.utils.stringutils
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Define the module's virtual name
 __virtualname__ = "sysctl"
@@ -84,7 +83,7 @@ def show(config_file=False):
             log.error("Could not open sysctl config file")
             return None
     else:
-        out = __salt__["cmd.run"](cmd, output_loglevel="trace")
+        out = __mods__["cmd.run"](cmd, output_loglevel="trace")
         for line in out.splitlines():
             if any([line.startswith("{0}.".format(root)) for root in roots]):
                 comps = line.split("=", 1)
@@ -104,7 +103,7 @@ def get(name):
         salt '*' sysctl.get hw.physmem
     """
     cmd = "sysctl -n {0}".format(name)
-    out = __salt__["cmd.run"](cmd, python_shell=False)
+    out = __mods__["cmd.run"](cmd, python_shell=False)
     return out
 
 
@@ -117,7 +116,7 @@ def assign(name, value):
     """
     ret = {}
     cmd = 'sysctl {0}="{1}"'.format(name, value)
-    data = __salt__["cmd.run_all"](cmd, python_shell=False)
+    data = __mods__["cmd.run_all"](cmd, python_shell=False)
 
     if data["retcode"] != 0:
         raise CommandExecutionError("sysctl failed: {0}".format(data["stderr"]))

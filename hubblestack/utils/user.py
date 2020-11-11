@@ -11,7 +11,7 @@ import os
 import sys
 
 import hubblestack.utils.stringutils
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Conditional imports
 try:

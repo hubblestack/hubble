@@ -155,8 +155,8 @@ def setup_file_logger(log_file,
     _remove_temp_handler()
     rootlogger = logging.getLogger()
 
-    handler = logging.handlers.RotatingFileHandler(log_file, maxBytes=max_bytes,
-                                                   backupCount=backup_count)
+    fh_cls = logging.handlers.RotatingFileHandler
+    handler = fh_cls(log_file, maxBytes=max_bytes, backupCount=backup_count)
     handler.setLevel(LOG_LEVELS.get(log_level, logging.ERROR))
 
     formatter = logging.Formatter(log_format, date_format)

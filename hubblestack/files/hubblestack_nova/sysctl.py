@@ -31,7 +31,7 @@ import logging
 
 import fnmatch
 import copy
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 
 from distutils.version import LooseVersion
@@ -90,7 +90,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 name = tag_data['name']
                 match_output = tag_data['match_output']
 
-                salt_ret = __salt__['sysctl.get'](name)
+                salt_ret = __mods__['sysctl.get'](name)
                 if not salt_ret:
                     passed = False
                     tag_data['failure_reason'] = "Could not find attribute '{0}' in" \

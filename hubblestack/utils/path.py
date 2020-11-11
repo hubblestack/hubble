@@ -15,7 +15,7 @@ import hubblestack.utils.stringutils
 import hubblestack.utils.args
 import hubblestack.utils.data
 from hubblestack.utils.decorators.memoize import memoize
-from hubblestack.utils.exceptions import CommandNotFoundError
+from hubblestack.exceptions import CommandNotFoundError
 
 log = logging.getLogger(__name__)
 

@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, unicode_literals, print_function
 import io
 import logging
 import binascii
 
-from hubblestack.utils.exceptions import HubbleException
+from hubblestack.exceptions import HubbleException
 
 log = logging.getLogger(__name__)
 

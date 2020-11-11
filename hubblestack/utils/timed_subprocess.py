@@ -6,7 +6,7 @@ For running command line executables with a timeout
 import shlex
 import subprocess
 import threading
-import hubblestack.utils.exceptions
+import hubblestack.exceptions
 import hubblestack.utils.data
 import hubblestack.utils.stringutils
 
@@ -39,7 +39,7 @@ class TimedProc(object):
             self.stderr = kwargs['stderr'] = None
 
         if self.timeout and not isinstance(self.timeout, (int, float)):
-            raise hubblestack.utils.exceptions.TimedProcTimeoutError('Error: timeout {0} must be a number'.format(self.timeout))
+            raise hubblestack.exceptions.TimedProcTimeoutError('Error: timeout {0} must be a number'.format(self.timeout))
         if kwargs.get('shell', False):
             args = hubblestack.utils.data.decode(args, to_str=True)
 
@@ -98,7 +98,7 @@ class TimedProc(object):
                     if rt.isAlive():
                         self.process.terminate()
                 threading.Timer(10, terminate).start()
-                raise hubblestack.utils.exceptions.TimedProcTimeoutError(
+                raise hubblestack.exceptions.TimedProcTimeoutError(
                     '{0} : Timed out after {1} seconds'.format(
                         self.command,
                         str(self.timeout),

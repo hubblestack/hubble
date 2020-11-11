@@ -10,7 +10,6 @@ Package support for pkgin based systems, inspired from freebsdpkg module
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import copy
 import logging
 import os
@@ -21,7 +20,7 @@ import hubblestack.utils.data
 import hubblestack.utils.path
 import hubblestack.utils.pkg
 from hubblestack.utils.decorators.memoize import memoize
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 
@@ -47,13 +46,13 @@ def list_pkgs(versions_as_list=False, **kwargs):
             return __context__['pkg.list_pkgs']
         else:
             ret = copy.deepcopy(__context__['pkg.list_pkgs'])
-            __salt__['pkg_resource.stringify'](ret)
+            __mods__['pkg_resource.stringify'](ret)
             return ret
 
     pkgin = _check_pkgin()
     ret = {}
 
-    out = __salt__['cmd.run'](
+    out = __mods__['cmd.run'](
         [pkgin, 'ls'] if pkgin else ['pkg_info'],
         output_loglevel='trace')
 
@@ -64,12 +63,12 @@ def list_pkgs(versions_as_list=False, **kwargs):
             pkg, ver = re.split('[; ]', line, 1)[0].rsplit('-', 1)
         except ValueError:
             continue
-        __salt__['pkg_resource.add_pkg'](ret, pkg, ver)
+        __mods__['pkg_resource.add_pkg'](ret, pkg, ver)
 
-    __salt__['pkg_resource.sort_pkglist'](ret)
+    __mods__['pkg_resource.sort_pkglist'](ret)
     __context__['pkg.list_pkgs'] = copy.deepcopy(ret)
     if not versions_as_list:
-        __salt__['pkg_resource.stringify'](ret)
+        __mods__['pkg_resource.stringify'](ret)
     return ret
 
 @memoize
@@ -81,7 +80,7 @@ def _check_pkgin():
     if ppath is None:
         # pkgin was not found in $PATH, try to find it via LOCALBASE
         try:
-            localbase = __salt__['cmd.run'](
+            localbase = __mods__['cmd.run'](
                'pkg_info -Q LOCALBASE pkgin',
                 output_loglevel='trace'
             )
@@ -99,7 +98,7 @@ def version(*names, **kwargs):
     installed. If more than one package name is specified, a dict of
     name/version pairs is returned.
     '''
-    return __salt__['pkg_resource.version'](*names, **kwargs)
+    return __mods__['pkg_resource.version'](*names, **kwargs)
 
 def refresh_db(force=False):
     '''
@@ -118,7 +117,7 @@ def refresh_db(force=False):
         cmd = [pkgin, 'up']
         if force:
             cmd.insert(1, '-f')
-        call = __salt__['cmd.run_all'](cmd, output_loglevel='trace')
+        call = __mods__['cmd.run_all'](cmd, output_loglevel='trace')
 
         if call['retcode'] != 0:
             comment = ''

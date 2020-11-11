@@ -325,7 +325,7 @@ class MockOpen(object):
                 C
                 """),
         }
-        with patch('salt.utils.files.fopen', mock_open(read_data=data):
+        with patch('hubblestack.utils.files.fopen', mock_open(read_data=data):
             do stuff
 
     If the file path being opened does not match any of the glob expressions,
@@ -350,7 +350,7 @@ class MockOpen(object):
             '/etc/*': IOError(errno.EACCES, 'Permission denied'),
             '*': 'Hello world!\n',
         }
-        with patch('salt.utils.files.fopen', mock_open(read_data=data)):
+        with patch('hubblestack.utils.files.fopen', mock_open(read_data=data)):
             do stuff
 
     The above would raise an exception if any files within /etc are opened, but
@@ -371,7 +371,7 @@ class MockOpen(object):
                 'Hey, the file exists now!',
             ],
         }
-        with patch('salt.utils.files.fopen', mock_open(read_data=data):
+        with patch('hubblestack.utils.files.fopen', mock_open(read_data=data):
             do stuff
 
     The first open of ``/etc/foo.conf`` would return "before\n" when read,
@@ -391,7 +391,7 @@ class MockOpen(object):
         data['/etc/foo.conf'] = 'Permission granted!'
         data['/etc/*'] = IOError(errno.EACCES, 'Permission denied')
         data['*'] = '*': 'Hello world!\n'
-        with patch('salt.utils.files.fopen', mock_open(read_data=data):
+        with patch('hubblestack.utils.files.fopen', mock_open(read_data=data):
             do stuff
 
     The following attributes are tracked for the life of a mock object:

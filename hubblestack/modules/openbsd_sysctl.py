@@ -2,7 +2,6 @@
 """
 Module for viewing and modifying OpenBSD sysctl parameters
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 import os
 import re
@@ -10,7 +9,7 @@ import re
 import hubblestack.utils.data
 import hubblestack.utils.files
 import hubblestack.utils.stringutils
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Define the module's virtual name
 __virtualname__ = "sysctl"
@@ -38,7 +37,7 @@ def show(config_file=False):
     """
     cmd = "sysctl"
     ret = {}
-    out = __salt__["cmd.run_stdout"](cmd, output_loglevel="trace")
+    out = __mods__["cmd.run_stdout"](cmd, output_loglevel="trace")
     for line in out.splitlines():
         if not line or "=" not in line:
             continue
@@ -55,7 +54,7 @@ def get(name):
         salt '*' sysctl.get hw.physmem
     """
     cmd = "sysctl -n {0}".format(name)
-    out = __salt__["cmd.run"](cmd)
+    out = __mods__["cmd.run"](cmd)
     return out
 
 
@@ -68,7 +67,7 @@ def assign(name, value):
     """
     ret = {}
     cmd = 'sysctl {0}="{1}"'.format(name, value)
-    data = __salt__["cmd.run_all"](cmd)
+    data = __mods__["cmd.run_all"](cmd)
 
     # Certain values cannot be set from this console, at the current
     # securelevel or there are other restrictions that prevent us

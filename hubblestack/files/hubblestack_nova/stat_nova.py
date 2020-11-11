@@ -49,7 +49,7 @@ import logging
 import os
 import fnmatch
 import copy
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 
 from distutils.version import LooseVersion

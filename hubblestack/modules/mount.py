@@ -14,7 +14,7 @@ import hubblestack.utils.mount
 import hubblestack.utils.path
 import hubblestack.utils.platform
 import hubblestack.utils.stringutils
-from hubblestack.utils.exceptions import CommandExecutionError, CommandNotFoundError
+from hubblestack.exceptions import CommandExecutionError, CommandNotFoundError
 from hubblestack.utils.odict import OrderedDict
 
 # Set up logger

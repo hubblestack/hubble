@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import, print_function, unicode_literals
 
 import sys
-
-import salt.payload
+import hubblestack.payload
 
 
 def _trim_dict_in_dict(data, max_val_size, replace_with):
@@ -63,7 +61,7 @@ def trim_dict(
                          that the msgpack data should be decoded with
                          "encoding='utf-8'".
     '''
-    serializer = salt.payload.Serial({'serial': 'msgpack'})
+    serializer = hubblestack.payload.Serial({'serial': 'msgpack'})
     if is_msgpacked:
         dict_size = sys.getsizeof(data)
     else:

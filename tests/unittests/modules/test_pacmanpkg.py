@@ -23,7 +23,7 @@ import hubblestack.modules.pacmanpkg as pacman
 @skipIf(NO_MOCK, NO_MOCK_REASON)
 class PacmanTestCase(TestCase, LoaderModuleMockMixin):
     '''
-    Test cases for salt.modules.pacman
+    Test cases for hubblestack.modules.pacman
     '''
     def setup_loader_modules(self):
         return {pacman: {}}
@@ -36,7 +36,7 @@ class PacmanTestCase(TestCase, LoaderModuleMockMixin):
         sortmock = MagicMock()
         stringifymock = MagicMock()
         mock_ret = {'A': ['1.0'], 'B': ['2.0']}
-        with patch.dict(pacman.__salt__, {
+        with patch.dict(pacman.__mods__, {
                 'cmd.run': cmdmock,
                 'pkg_resource.add_pkg': lambda pkgs, name, version: pkgs.setdefault(name, []).append(version),
                 'pkg_resource.sort_pkglist': sortmock,
@@ -55,7 +55,7 @@ class PacmanTestCase(TestCase, LoaderModuleMockMixin):
         sortmock = MagicMock()
         stringifymock = MagicMock()
         mock_ret = {'A': ['1.0'], 'B': ['2.0']}
-        with patch.dict(pacman.__salt__, {
+        with patch.dict(pacman.__mods__, {
                 'cmd.run': cmdmock,
                 'pkg_resource.add_pkg': lambda pkgs, name, version: pkgs.setdefault(name, []).append(version),
                 'pkg_resource.sort_pkglist': sortmock,

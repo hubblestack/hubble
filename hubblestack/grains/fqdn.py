@@ -6,7 +6,7 @@ import hubblestack.grains.hubble_core
 import hubblestack.modules.cmdmod
 import hubblestack.utils.platform
 
-__salt__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet,
+__mods__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet,
             'cmd.run_all': hubblestack.modules.cmdmod.run_all}
 
 
@@ -18,7 +18,7 @@ def fqdn():
     grains = {}
     local_fqdn = None
     if not hubblestack.utils.platform.is_windows():
-        local_fqdn = __salt__['cmd.run']('hostname --fqdn')
+        local_fqdn = __mods__['cmd.run']('hostname --fqdn')
     if local_fqdn and 'hostname: ' not in local_fqdn:
         grains['local_fqdn'] = local_fqdn
     return grains
@@ -32,7 +32,7 @@ def dest_ip():
     """
     interfaces = hubblestack.grains.hubble_core.ip4_interfaces()['ip4_interfaces']
     try:
-        ret = __salt__['cmd.run_all']('ip route show to 0/0')
+        ret = __mods__['cmd.run_all']('ip route show to 0/0')
         if ret['retcode'] == 0:
             interface = None
             try:

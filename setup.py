@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-import re
 import platform
 
 try:
@@ -22,7 +21,6 @@ build_dependencies = [
     'requests>=2.13.0',
     'daemon',
     'pygit2<0.27.0',
-    'salt-ssh==2019.2.3',
     'gitpython',
     'pyinotify',
     'cffi',
@@ -46,13 +44,17 @@ elif distro == 'Amazon Linux AMI':
 if platform_name == 'Windows':
     build_dependencies.remove('pyinotify')
 
-with open('hubblestack/__init__.py', 'r') as fd:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                        fd.read(), re.MULTILINE).group(1)
+def _hubble_version():
+    try:
+        from hubblestack.version import __version__
+        return __version__
+    except:
+        pass
+    return 'unknown'
 
 setup(
     name='hubblestack',
-    version=version,
+    version=_hubble_version(),
     description='Modular, open-source security compliance framework',
     author='Colton Myers',
     author_email='colton.myers@gmail.com',

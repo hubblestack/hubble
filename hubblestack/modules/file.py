@@ -23,7 +23,7 @@ import hubblestack.utils.stringutils
 import hubblestack.utils.user
 import hubblestack.utils.versions
 
-from hubblestack.utils.exceptions import CommandExecutionError, HubbleInvocationError
+from hubblestack.exceptions import CommandExecutionError, HubbleInvocationError
 
 # pylint: enable=import-error,no-name-in-module,redefined-builtin
 try:
@@ -330,7 +330,7 @@ def get_selinux_context(path):
 
         salt '*' file.get_selinux_context /etc/hosts
     """
-    cmd_ret = __salt__["cmd.run_all"](["stat", "-c", "%C", path], python_shell=False)
+    cmd_ret = __mods__["cmd.run_all"](["stat", "-c", "%C", path], python_shell=False)
 
     if cmd_ret["retcode"] == 0:
         ret = cmd_ret["stdout"]
@@ -366,7 +366,7 @@ def set_selinux_context(
         return False
 
     if persist:
-        fcontext_result = __salt__["selinux.fcontext_add_policy"](
+        fcontext_result = __mods__["selinux.fcontext_add_policy"](
             path, sel_type=type, sel_user=user, sel_level=range
         )
         if fcontext_result.get("retcode", None) != 0:
@@ -386,7 +386,7 @@ def set_selinux_context(
         cmd.extend(["-l", range])
     cmd.append(path)
 
-    ret = not __salt__["cmd.retcode"](cmd, python_shell=False)
+    ret = not __mods__["cmd.retcode"](cmd, python_shell=False)
     if ret:
         return get_selinux_context(path)
     else:
@@ -446,7 +446,7 @@ def _chattr_version():
     if not tune2fs or hubblestack.utils.platform.is_aix():
         return None
     cmd = [tune2fs]
-    result = __salt__["cmd.run"](cmd, ignore_retcode=True, python_shell=False)
+    result = __mods__["cmd.run"](cmd, ignore_retcode=True, python_shell=False)
     match = re.search(
         r"tune2fs (?P<version>[0-9\.]+)", hubblestack.utils.stringutils.to_str(result),
     )
@@ -500,7 +500,7 @@ def lsattr(path):
         raise HubbleInvocationError("File or directory does not exist: " + path)
 
     cmd = ["lsattr", path]
-    result = __salt__["cmd.run"](cmd, ignore_retcode=True, python_shell=False)
+    result = __mods__["cmd.run"](cmd, ignore_retcode=True, python_shell=False)
 
     results = {}
     for line in result.splitlines():
@@ -573,7 +573,7 @@ def chattr(*files, **kwargs):
 
     cmd.extend(files)
 
-    result = __salt__["cmd.run"](cmd, python_shell=False)
+    result = __mods__["cmd.run"](cmd, python_shell=False)
 
     if bool(result):
         return False

@@ -2,7 +2,6 @@
 '''
 Module for gathering and managing network information
 '''
-from __future__ import absolute_import, unicode_literals, print_function
 
 # Import Python libs
 
@@ -48,7 +47,7 @@ def netstat():
     '''
     ret = []
     cmd = ['netstat', '-nao']
-    lines = __salt__['cmd.run'](cmd, python_shell=False).splitlines()
+    lines = __mods__['cmd.run'](cmd, python_shell=False).splitlines()
     for line in lines:
         comps = line.split()
         if line.startswith('  TCP'):

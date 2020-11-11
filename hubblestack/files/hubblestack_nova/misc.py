@@ -44,8 +44,8 @@ import logging
 import fnmatch
 import os
 import re
-import salt.utils
-from hubblestack.utils.exceptions import CommandExecutionError
+import hubblestack.utils
+from hubblestack.exceptions import CommandExecutionError
 from collections import Counter
 
 log = logging.getLogger(__name__)
@@ -192,7 +192,7 @@ def _execute_shell_command(cmd, python_shell=False):
     """
     This function will execute passed command in /bin/shell
     """
-    return __salt__['cmd.run'](cmd, python_shell=python_shell, shell='/bin/bash', ignore_retcode=True)
+    return __mods__['cmd.run'](cmd, python_shell=python_shell, shell='/bin/bash', ignore_retcode=True)
 
 
 def _is_valid_home_directory(directory_path, check_slash_home=False):
@@ -313,7 +313,7 @@ def system_account_non_login(non_login_shell='/sbin/nologin', max_system_uid='50
         if user.strip() != "":
             users_list.append(user.strip())
     result = []
-    cmd = __salt__["cmd.run_all"]('egrep -v "^\+" /etc/passwd ')
+    cmd = __mods__["cmd.run_all"]('egrep -v "^\\+" /etc/passwd')
     for line in cmd['stdout'].split('\n'):
         tokens = line.split(':')
         if tokens[0] not in users_list and int(tokens[2]) < int(max_system_uid) and tokens[6] not in ( non_login_shell , "/bin/false" ):
@@ -326,7 +326,7 @@ def sticky_bit_on_world_writable_dirs(reason=''):
     Ensure sticky bit is set on all world-writable directories
     """
     raise CommandExecutionError('Module disabled due to performance concerns')
-    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type d \( -perm -0002 -a ! -perm -1000 \) 2>/dev/null', python_shell=True)
+    result = _execute_shell_command('df --local -P | awk {\'if (NR!=1) print $6\'} | xargs -I \'{}\' find \'{}\' -xdev -type d \\( -perm -0002 -a ! -perm -1000 \\) 2>/dev/null', python_shell=True)
     return True if result == '' else "There are failures"
 
 
@@ -355,13 +355,13 @@ def test_mount_attrs(mount_name, attribute, check_type='hard'):
     """
     # check that the path exists on system
     command = 'test -e ' + mount_name
-    results = __salt__['cmd.run_all'](command, ignore_retcode=True)
+    results = __mods__['cmd.run_all'](command, ignore_retcode=True)
     retcode = results['retcode']
     if str(retcode) == '1':
         return True if check_type == "soft" else (mount_name + " folder does not exist")
 
     # if the path exits, proceed with following code
-    output = __salt__['cmd.run']('cat /proc/mounts')
+    output = __mods__['cmd.run']('cat /proc/mounts')
     if not re.search(mount_name, output, re.M):
         return True if check_type == "soft" else (mount_name + " is not mounted")
     else:
@@ -528,13 +528,13 @@ def check_service_status(service_name, state):
     Return True otherwise
     state can be enabled or disabled.
     """
-    all_services = __salt__['cmd.run']('systemctl list-unit-files')
+    all_services = __mods__['cmd.run']('systemctl list-unit-files')
     if re.search(service_name, all_services, re.M):
-        output = __salt__['cmd.retcode']('systemctl is-enabled ' + service_name, ignore_retcode=True)
+        output = __mods__['cmd.retcode']('systemctl is-enabled ' + service_name, ignore_retcode=True)
         if (state == "disabled" and str(output) == "1") or (state == "enabled" and str(output) == "0"):
             return True
         else:
-            return __salt__['cmd.run_stdout']('systemctl is-enabled ' + service_name, ignore_retcode=True)
+            return __mods__['cmd.run_stdout']('systemctl is-enabled ' + service_name, ignore_retcode=True)
     else:
         if state == "disabled":
             return True
@@ -622,7 +622,7 @@ def check_users_home_directory_permissions(max_allowed_permission='750', except_
             users_list.append(user.strip())
 
     users_dirs = []
-    cmd = __salt__["cmd.run_all"]('egrep -v "^\+" /etc/passwd ')
+    cmd = __mods__["cmd.run_all"]('egrep -v "^\\+" /etc/passwd ')
     for line in cmd['stdout'].split('\n'):
         tokens = line.split(':')
         if tokens[0] not in users_list and 'nologin' not in tokens[6] and 'false' not in tokens[6]:
@@ -660,7 +660,7 @@ def check_users_own_their_home(max_system_uid):
                     error += ["Either home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is invalid or does not exist."]
             elif int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] != "nfsnobody" and 'nologin' not in user_uid_dir[3] \
                     and 'false' not in user_uid_dir[3]:
-                owner = __salt__['cmd.run']("stat -L -c \"%U\" \"" + user_uid_dir[2] + "\"")
+                owner = __mods__['cmd.run']("stat -L -c \"%U\" \"" + user_uid_dir[2] + "\"")
                 if owner != user_uid_dir[0]:
                     error += ["The home directory " + user_uid_dir[2] + " of user " + user_uid_dir[0] + " is owned by " + owner]
         else:
@@ -763,7 +763,7 @@ def ensure_reverse_path_filtering(reason=''):
     output = _execute_shell_command(command, python_shell=True)
     if output.strip() == '':
         error_list.append("net.ipv4.conf.all.rp_filter not found")
-    search_results = re.findall("rp_filter = (\d+)", output)
+    search_results = re.findall(r"rp_filter = (\d+)", output)
     result = int(search_results[0])
     if result < 1:
         error_list.append("net.ipv4.conf.all.rp_filter  value set to " + str(result))
@@ -771,7 +771,7 @@ def ensure_reverse_path_filtering(reason=''):
     output = _execute_shell_command(command, python_shell=True)
     if output.strip() == '':
         error_list.append("net.ipv4.conf.default.rp_filter not found")
-    search_results = re.findall("rp_filter = (\d+)", output)
+    search_results = re.findall(r"rp_filter = (\d+)", output)
     result = int(search_results[0])
     if result < 1:
         error_list.append("net.ipv4.conf.default.rp_filter  value set to " + str(result))
@@ -892,7 +892,7 @@ def _grep(path,
     )
 
     try:
-        ret = __salt__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
+        ret = __mods__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
     except (IOError, OSError) as exc:
         raise CommandExecutionError(exc.strerror)
 
@@ -975,7 +975,7 @@ def check_if_any_pkg_installed(args):
     """
     result = False
     for pkg in args.split(','):
-        if __salt__['pkg.version'](pkg):
+        if __mods__['pkg.version'](pkg):
             result = True
             break
     return result
@@ -997,7 +997,7 @@ def ensure_max_password_expiration(allow_max_days, except_for_users=''):
 
     #fetch all users with passwords
     grep_args.append('-E')
-    all_users = _grep('/etc/shadow', '^[^:]+:[^\!*]', *grep_args).get('stdout')
+    all_users = _grep('/etc/shadow', r'^[^:]+:[^\!*]', *grep_args).get('stdout')
 
     except_for_users_list=[]
     for user in except_for_users.split(","):
@@ -1027,7 +1027,7 @@ def check_sshd_parameters(*args, **kwargs):
     return check_sshd_paramters(*args, **kwargs)
 
 def check_sshd_paramters(pattern, values=None, comparetype='regex'):
-    """
+    r"""
     This function will check if any pattern passed is present in ssh service
     User can also check for the values for that pattern
     To check for values in any order, then use comparetype as 'only'
@@ -1054,7 +1054,7 @@ def check_sshd_paramters(pattern, values=None, comparetype='regex'):
            comparetype: only
       description: Ensure only approved ciphers are used
     """
-    output = __salt__['cmd.run']('sshd -T')
+    output = __mods__['cmd.run']('sshd -T')
     if comparetype == 'only':
         if not values:
             return "You need to provide values for comparetype 'only'."

@@ -21,13 +21,13 @@ import time
 import uuid
 from datetime import datetime
 
-import salt.fileserver
-import salt.fileserver.gitfs
+import hubblestack.fileserver
+import hubblestack.fileserver.gitfs
 import hubblestack.modules.cmdmod
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
-import salt.utils.jid
-import salt.utils.gitfs
+import hubblestack.utils.jid
+import hubblestack.utils.gitfs
 import hubblestack.utils.path
 from croniter import croniter
 
@@ -40,6 +40,7 @@ import hubblestack.utils.stdrec
 from hubblestack import __version__
 from hubblestack.hangtime import hangtime_wrapper
 import hubblestack.status
+import hubblestack.fileclient
 import hubblestack.saltoverrides
 
 log = logging.getLogger(__name__)
@@ -78,15 +79,15 @@ def _clear_gitfs_locks():
     # Clear old locks
     if 'gitfs' in __opts__['fileserver_backend'] or 'git' in __opts__['fileserver_backend']:
         git_objects = [
-            salt.utils.gitfs.GitFS(
+            hubblestack.utils.gitfs.GitFS(
                 __opts__,
                 __opts__['gitfs_remotes'],
-                per_remote_overrides=salt.fileserver.gitfs.PER_REMOTE_OVERRIDES,
-                per_remote_only=salt.fileserver.gitfs.PER_REMOTE_ONLY)]
+                per_remote_overrides=hubblestack.fileserver.gitfs.PER_REMOTE_OVERRIDES,
+                per_remote_only=hubblestack.fileserver.gitfs.PER_REMOTE_ONLY)]
         ret = {}
         for obj in git_objects:
             lock_type = 'update'
-            cleared, errors = salt.fileserver.clear_lock(obj.clear_lock, 'gitfs', remote=None,
+            cleared, errors = hubblestack.fileserver.clear_lock(obj.clear_lock, 'gitfs', remote=None,
                                                          lock_type=lock_type)
             if cleared:
                 ret.setdefault('cleared', []).extend(cleared)
@@ -140,7 +141,7 @@ def main():
     count = 0
     while True:
         try:
-            file_client = salt.fileclient.get_file_client(__opts__)
+            file_client = hubblestack.fileclient.get_file_client(__opts__)
             file_client.channel.fs.update()
             last_fc_update = time.time()
             break
@@ -359,7 +360,7 @@ def _execute_function(jobdata, func, returners, args, kwargs):
             continue
         log.debug('Returning job data to %s', returner)
         returner_ret = {'id': __grains__['id'],
-                        'jid': salt.utils.jid.gen_jid(__opts__),
+                        'jid': hubblestack.utils.jid.gen_jid(__opts__),
                         'fun': func,
                         'fun_args': args + ([kwargs] if kwargs else []),
                         'return': ret}
@@ -426,7 +427,7 @@ def run_function():
         else:
             log.info('Returning job data to %s', returner)
             returner_ret = {'id': __grains__['id'],
-                            'jid': salt.utils.jid.gen_jid(__opts__),
+                            'jid': hubblestack.utils.jid.gen_jid(__opts__),
                             'fun': __opts__['function'],
                             'fun_args': args + ([kwargs] if kwargs else []),
                             'return': ret}
@@ -446,24 +447,23 @@ def load_config(args=None):
     Load the config from configfile and load into imported salt modules
     """
 
-    # XXX: eventually, all the below should be done in a single pass in hubblestack.config
+    global __opts__
 
     # Parse arguments
     parsed_args = parse_args(args=args)
 
-    # Let's find out the path of this module
-    if 'SETUP_DIRNAME' in globals():
-        # This is from the exec() call in Salt's setup.py
-        this_file = os.path.join(SETUP_DIRNAME, 'salt', 'syspaths.py')  # pylint: disable=E0602
-    else:
-        this_file = __file__
-    _load_salt_config(parsed_args)
-    global __opts__
+    # NOTE: if configfile isn't specified and None is passed to hubblestack.config.get_config
+    # it will default to a platform specific file (see get_config() and DEFAULT_OPTS in hs.config)
     __opts__ = hubblestack.config.get_config(parsed_args.get('configfile'))
+
+    # we seem to have mixed feelings about whether to use __opts__ or parsed_args and mixed feelings
+    # about whether it's spelled 'configfile' or 'conf_file'; so we just make them all work
+    __opts__['configfile'] = parsed_args['configfile'] = __opts__['conf_file']
+
     __opts__.update(parsed_args)
-    __opts__['conf_file'] = parsed_args.get('configfile')
     __opts__['install_dir'] = hubblestack.syspaths.INSTALL_DIR
     __opts__['extension_modules'] = os.path.join(hubblestack.syspaths.CACHE_DIR, 'extmods')
+
     if __opts__['version']:
         print(__version__)
         clean_up_process(None, None)
@@ -482,7 +482,7 @@ def load_config(args=None):
         # them a signal 15 (otherwise refuse to run)
         if not __opts__.get('ignore_running', False):
             check_pidfile(kill_other=True, scan_proc=scan_proc)
-        salt.utils.daemonize()
+        hubblestack.utils.daemonize()
         create_pidfile()
     elif not __opts__['function'] and not __opts__['version'] and not __opts__['buildinfo']:
         # check the pidfile and possibly refuse to run (assuming this isn't a single function call)
@@ -500,6 +500,8 @@ def load_config(args=None):
     if __mods__['config.get']('splunklogging', False):
         hubblestack.log.setup_splunk_logger()
         hubblestack.log.emit_to_splunk(__grains__, 'INFO', 'hubblestack.grains_report')
+
+    return __opts__ # this is also a global, but the return is handy in tests/unittests
 
 
 def _setup_signaling():
@@ -581,52 +583,6 @@ def _setup_cached_uuid():
         log.exception("Problem opening cache files while checking for previously cloned system")
 
 
-def _load_salt_config(parsed_args):
-    """ load the configs for hubblestack.config.DEFAULT_OPTS """
-    # Load unique data for Windows or Linux
-    if hubblestack.utils.platform.is_windows():
-        if parsed_args.get('configfile') is None:
-            parsed_args['configfile'] = 'C:\\Program Files (x86)\\Hubble\\etc\\hubble\\hubble.conf'
-        hubblestack.config.DEFAULT_OPTS['cachedir'] = 'C:\\Program Files (x86)\\hubble\\var\\cache'
-        hubblestack.config.DEFAULT_OPTS[
-            'pidfile'] = 'C:\\Program Files (x86)\\hubble\\var\\run\\hubble.pid'
-        hubblestack.config.DEFAULT_OPTS[
-            'log_file'] = 'C:\\Program Files (x86)\\hubble\\var\\log\\hubble.log'
-        hubblestack.config.DEFAULT_OPTS[
-            'osquery_dbpath'] = 'C:\\Program Files (x86)\\hubble\\var\\hubble_osquery_db'
-        hubblestack.config.DEFAULT_OPTS[
-            'osquerylogpath'] = 'C:\\Program Files (x86)\\hubble\\var\\log\\hubble_osquery'
-        hubblestack.config.DEFAULT_OPTS['osquerylog_backupdir'] = \
-            'C:\\Program Files (x86)\\hubble\\var\\log\\hubble_osquery\\backuplogs'
-
-    else:
-        if parsed_args.get('configfile') is None:
-            parsed_args['configfile'] = '/etc/hubble/hubble'
-        hubblestack.config.DEFAULT_OPTS['cachedir'] = '/var/cache/hubble'
-        hubblestack.config.DEFAULT_OPTS['pidfile'] = '/var/run/hubble.pid'
-        hubblestack.config.DEFAULT_OPTS['log_file'] = '/var/log/hubble'
-        hubblestack.config.DEFAULT_OPTS['osquery_dbpath'] = '/var/cache/hubble/osquery'
-        hubblestack.config.DEFAULT_OPTS['osquerylogpath'] = '/var/log/hubble_osquery'
-        hubblestack.config.DEFAULT_OPTS[
-            'osquerylog_backupdir'] = '/var/log/hubble_osquery/backuplogs'
-
-    hubblestack.config.DEFAULT_OPTS['file_roots'] = {'base': []}
-    hubblestack.config.DEFAULT_OPTS['log_level'] = 'error'
-    hubblestack.config.DEFAULT_OPTS['file_client'] = 'local'
-    hubblestack.config.DEFAULT_OPTS['fileserver_update_frequency'] = 43200  # 12 hours
-    hubblestack.config.DEFAULT_OPTS['grains_refresh_frequency'] = 3600  # 1 hour
-    hubblestack.config.DEFAULT_OPTS['scheduler_sleep_frequency'] = 0.5
-    hubblestack.config.DEFAULT_OPTS['default_include'] = 'hubble.d/*.conf'
-    hubblestack.config.DEFAULT_OPTS['logfile_maxbytes'] = 100000000  # 100MB
-    hubblestack.config.DEFAULT_OPTS['logfile_backups'] = 1  # maximum rotated logs
-    hubblestack.config.DEFAULT_OPTS['delete_inaccessible_azure_containers'] = False
-    # Globbing will not be supported in nebula masking
-    hubblestack.config.DEFAULT_OPTS['enable_globbing_in_nebula_masking'] = False
-    hubblestack.config.DEFAULT_OPTS['osquery_logfile_maxbytes'] = 50000000  # 50MB
-    hubblestack.config.DEFAULT_OPTS['osquery_logfile_maxbytes_toparse'] = 100000000  # 100MB
-    hubblestack.config.DEFAULT_OPTS['osquery_backuplogs_count'] = 2
-
-
 def _setup_logging(parsed_args):
     """
     Get logging options and setup logging
@@ -665,15 +621,15 @@ def _setup_logging(parsed_args):
 
     # Setup logging
     hubblestack.log.setup_console_logger(**console_logging_opts)
-    hubblestack.log.setup_file_logger(**file_logging_opts)
+    if not parsed_args['skip_file_logger']:
+        hubblestack.log.setup_file_logger(**file_logging_opts)
+        with open(__opts__['log_file'], 'a') as _logfile:
+            pass  # ensure the file exists before we set perms on it
+        os.chmod(__opts__['log_file'], 0o600)
 
-    with open(__opts__['log_file'], 'a') as _logfile:
-        pass  # ensure the file exists before we set perms on it
-    # 384 is 0o600 permissions, written without octal for python 2/3 compat
-    os.chmod(__opts__['log_file'], 384)
     configfile = parsed_args.get('configfile')
     if configfile and os.path.isfile(configfile):
-        os.chmod(configfile, 384)
+        os.chmod(configfile, 0o600)
 
 
 def _setup_dirs():
@@ -683,39 +639,20 @@ def _setup_dirs():
 
     this_dir = os.path.dirname(__file__)
 
-    # XXX: remove any section that nolonger needs an 'extmods' dir
-    module_dirs = __opts__.get('module_dirs', [])
-    module_dirs.append(os.path.join(this_dir, 'extmods', 'modules'))
-    __opts__['module_dirs'] = module_dirs
+    # we have to uber-override and make sure our files dir is in root
+    # and that root file systems are enabled
 
-    returner_dirs = __opts__.get('returner_dirs', [])
-    returner_dirs.append(os.path.join(this_dir, 'extmods', 'returners'))
-    __opts__['returner_dirs'] = returner_dirs
-
-    fileserver_dirs = __opts__.get('fileserver_dirs', [])
-    fileserver_dirs.append(os.path.join(this_dir, 'extmods', 'fileserver'))
-    __opts__['fileserver_dirs'] = fileserver_dirs
-
-    utils_dirs = __opts__.get('utils_dirs', [])
-    utils_dirs.append(os.path.join(this_dir, 'extmods', 'utils'))
-    __opts__['utils_dirs'] = utils_dirs
-
-    fdg_dirs = __opts__.get('fdg_dirs', [])
-    fdg_dirs.append(os.path.join(this_dir, 'extmods', 'fdg'))
-    __opts__['fdg_dirs'] = fdg_dirs
-
-    audit_dirs = __opts__.get('audit_dirs', [])
-    audit_dirs.append(os.path.join(this_dir, 'extmods', 'audit'))
-    __opts__['audit_dirs'] = audit_dirs
-
-    # /XXX
+    this_root_files = os.path.join(this_dir, 'files')
 
     if 'file_roots' not in __opts__:
         __opts__['file_roots'] = dict(base=list())
+
     elif 'base' not in __opts__['file_roots']:
-        __opts__['file_roots']['base'] = [ os.path.join(this_dir, 'files') ]
+        __opts__['file_roots']['base'] = [ this_root_files ]
+
     else:
-        __opts__['file_roots']['base'].insert(0, os.path.join(this_dir, 'files'))
+        __opts__['file_roots']['base'] = [this_root_files] \
+            + [x for x in __opts__['file_roots']['base'] if x != this_root_files ]
 
     if 'roots' not in __opts__['fileserver_backend']:
         __opts__['fileserver_backend'].append('roots')
@@ -803,22 +740,22 @@ def refresh_grains(initial=False):
 
     hubblestack.hec.opt.__grains__ = __grains__
     hubblestack.hec.opt.__mods__ = __mods__
-    hubblestack.hec.opt.__salt__ = __mods__
+    hubblestack.hec.opt.__mods__ = __mods__
     hubblestack.hec.opt.__opts__ = __opts__
 
     hubblestack.log.splunk.__grains__ = __grains__
     hubblestack.log.splunk.__mods__ = __mods__
-    hubblestack.log.splunk.__salt__ = __mods__
+    hubblestack.log.splunk.__mods__ = __mods__
     hubblestack.log.splunk.__opts__ = __opts__
 
     hubblestack.status.__opts__ = __opts__
     hubblestack.status.__mods__ = __mods__
-    hubblestack.status.__salt__ = __mods__
+    hubblestack.status.__mods__ = __mods__
     HSS.start_sigusr1_signal_handler()
 
     hubblestack.utils.signing.__opts__ = __opts__
     hubblestack.utils.signing.__mods__ = __mods__
-    hubblestack.utils.signing.__salt__ = __mods__
+    hubblestack.utils.signing.__mods__ = __mods__
 
     clear_selective_context()
 
@@ -871,6 +808,9 @@ def parse_args(args=None):
         help='Pass in an alternative configuration file. Default: /etc/hubble/hubble')
     parser.add_argument('-p', '--no-pprint', help='Turn off pprint for single-function output',
                         action='store_true')
+    parser.add_argument('--skip-file-logger',
+        help="Prevent logger from writing to /var/log/hubble.log",
+        action='store_true')
     parser.add_argument('-v', '--verbose', action='count',
                         help=('Verbosity level. Use -v or -vv or -vvv for '
                               'varying levels of verbosity. Note that -vv '

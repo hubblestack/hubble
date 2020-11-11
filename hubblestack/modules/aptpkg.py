@@ -10,7 +10,6 @@ Support for APT (Advanced Packaging Tool)
 
     For repository management, the ``python-apt`` package must be installed.
 '''
-from __future__ import absolute_import, print_function, unicode_literals
 
 # Import python libs
 import copy
@@ -23,7 +22,7 @@ import hubblestack.utils.data
 import hubblestack.utils.pkg
 import hubblestack.utils.systemd
 import hubblestack.utils.environment
-from hubblestack.utils.exceptions import (
+from hubblestack.exceptions import (
     CommandExecutionError
 )
 
@@ -126,14 +125,14 @@ def list_pkgs(versions_as_list=False,
             if not purge_desired:
                 ret.update(__context__['pkg.list_pkgs']['installed'])
         if not versions_as_list:
-            __salt__['pkg_resource.stringify'](ret)
+            __mods__['pkg_resource.stringify'](ret)
         return ret
 
     ret = {'installed': {}, 'removed': {}, 'purge_desired': {}}
     cmd = ['dpkg-query', '--showformat',
            '${Status} ${Package} ${Version} ${Architecture}\n', '-W']
 
-    out = __salt__['cmd.run_stdout'](
+    out = __mods__['cmd.run_stdout'](
             cmd,
             output_loglevel='trace',
             python_shell=False)
@@ -154,20 +153,20 @@ def list_pkgs(versions_as_list=False,
         if len(cols):
             if ('install' in linetype or 'hold' in linetype) and \
                     'installed' in status:
-                __salt__['pkg_resource.add_pkg'](ret['installed'],
+                __mods__['pkg_resource.add_pkg'](ret['installed'],
                                                  name,
                                                  version_num)
             elif 'deinstall' in linetype:
-                __salt__['pkg_resource.add_pkg'](ret['removed'],
+                __mods__['pkg_resource.add_pkg'](ret['removed'],
                                                  name,
                                                  version_num)
             elif 'purge' in linetype and status == 'installed':
-                __salt__['pkg_resource.add_pkg'](ret['purge_desired'],
+                __mods__['pkg_resource.add_pkg'](ret['purge_desired'],
                                                  name,
                                                  version_num)
 
     for pkglist_type in ('installed', 'removed', 'purge_desired'):
-        __salt__['pkg_resource.sort_pkglist'](ret[pkglist_type])
+        __mods__['pkg_resource.sort_pkglist'](ret[pkglist_type])
 
     __context__['pkg.list_pkgs'] = copy.deepcopy(ret)
 
@@ -178,7 +177,7 @@ def list_pkgs(versions_as_list=False,
         if not purge_desired:
             ret.update(__context__['pkg.list_pkgs']['installed'])
     if not versions_as_list:
-        __salt__['pkg_resource.stringify'](ret)
+        __mods__['pkg_resource.stringify'](ret)
     return ret
 
 def version(*names, **kwargs):
@@ -187,7 +186,7 @@ def version(*names, **kwargs):
     installed. If more than one package name is specified, a dict of
     name/version pairs is returned.
     '''
-    return __salt__['pkg_resource.version'](*names, **kwargs)
+    return __mods__['pkg_resource.version'](*names, **kwargs)
 
 def version_cmp(pkg1, pkg2, ignore_epoch=False):
     '''
@@ -228,7 +227,7 @@ def version_cmp(pkg1, pkg2, ignore_epoch=False):
     try:
         for oper, ret in (('lt', -1), ('eq', 0), ('gt', 1)):
             cmd = ['dpkg', '--compare-versions', pkg1, oper, pkg2]
-            retcode = __salt__['cmd.retcode'](cmd,
+            retcode = __mods__['cmd.retcode'](cmd,
                                               output_loglevel='trace',
                                               python_shell=False,
                                               ignore_retcode=True)
@@ -318,7 +317,7 @@ def _call_apt(args, scope=True, **kwargs):
     Call apt* utilities.
     '''
     cmd = []
-    if scope and hubblestack.utils.systemd.has_scope(__context__) and __salt__['config.get']('systemd.scope', True):
+    if scope and hubblestack.utils.systemd.has_scope(__context__) and __mods__['config.get']('systemd.scope', True):
         cmd.extend(['systemd-run', '--scope'])
     cmd.extend(args)
 
@@ -327,4 +326,4 @@ def _call_apt(args, scope=True, **kwargs):
               'env': hubblestack.utils.environment.get_module_environment(globals())}
     params.update(kwargs)
 
-    return __salt__['cmd.run_all'](cmd, **params)
+    return __mods__['cmd.run_all'](cmd, **params)

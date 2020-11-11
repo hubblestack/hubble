@@ -7,7 +7,7 @@ Configuration Options
 
 The following options can be set in the minion config, grains, pillar, or
 master config. The configuration is read using :py:func:`config.get
-<salt.modules.config.get>`.
+<hubblestack.modules.config.get>`.
 
 - ``iptables.save_filters``: List of REGEX strings to FILTER OUT matching lines
 
@@ -38,7 +38,7 @@ import uuid
 import hubblestack.utils.args
 import hubblestack.utils.files
 import hubblestack.utils.path
-from hubblestack.utils.exceptions import HubbleException
+from hubblestack.exceptions import HubbleException
 
 log = logging.getLogger(__name__)
 

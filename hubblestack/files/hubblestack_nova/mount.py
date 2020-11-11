@@ -33,7 +33,7 @@ import logging
 import fnmatch
 import os
 import copy
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 
 from distutils.version import LooseVersion
@@ -222,7 +222,7 @@ def _check_mount_attribute(path, attribute, check_type):
         else:
             return True
 
-    mount_object = __salt__['mount.active']()
+    mount_object = __mods__['mount.active']()
 
     if path in mount_object:
         attributes = mount_object.get(path)

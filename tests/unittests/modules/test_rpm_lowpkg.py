@@ -21,7 +21,7 @@ import hubblestack.modules.rpm_lowpkg as rpm
 @skipIf(NO_MOCK, NO_MOCK_REASON)
 class RpmTestCase(TestCase, LoaderModuleMockMixin):
     '''
-    Test cases for salt.modules.rpm
+    Test cases for hubblestack.modules.rpm
     '''
     def setup_loader_modules(self):
         return {rpm: {'rpm': MagicMock(return_value=MagicMock)}}

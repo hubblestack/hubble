@@ -7,9 +7,9 @@ Windows package audit module
 import copy
 import fnmatch
 import logging
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 from distutils.version import LooseVersion
 
 
@@ -50,10 +50,10 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
     """
     __data__ = {}
     try:
-        __pkgdata__ = __salt__['pkg.list_pkgs']()
+        __pkgdata__ = __mods__['pkg.list_pkgs']()
     except CommandExecutionError:
-        __salt__['pkg.refresh_db']()
-        __pkgdata__ = __salt__['pkg.list_pkgs']()
+        __mods__['pkg.refresh_db']()
+        __pkgdata__ = __mods__['pkg.list_pkgs']()
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
     __data__ = apply_labels(__data__, labels)
@@ -198,7 +198,7 @@ def _translate_value_type(current, value, evaluator):
 
 
 def _is_domain_controller():
-    ret = __salt__['reg.read_value'](hive="HKLM",
+    ret = __mods__['reg.read_value'](hive="HKLM",
                                      key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
                                      vname="ProductType")
     if ret['vdata'] == "LanmanNT":

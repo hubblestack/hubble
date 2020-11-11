@@ -14,7 +14,7 @@ def test_hec__send_trivially(mock_send):
     assert json.loads(mock_send.call_args.args[0].dat)['test'] == 'test-tacular'
 
 @mock.patch.object(HEC, '_send')
-def test_queue_things_with_compression(mock_send, __opts__, __salt__):
+def test_queue_things_with_compression(mock_send, __opts__, __mods__):
     hec = HEC('token', 'index', 'server',
         disk_queue=TEST_DQ_DIR, disk_queue_size=1000,
         disk_queue_compression=9)

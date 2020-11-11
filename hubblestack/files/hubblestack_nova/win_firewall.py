@@ -7,7 +7,7 @@ HubbleStack Nova Windows Firewall module
 import copy
 import fnmatch
 import logging
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 
 
@@ -18,7 +18,7 @@ __virtualname__ = 'win_firewall'
 def __virtual__():
     if not hubblestack.utils.platform.is_windows():
         return False, 'This audit module only runs on windows'
-    if not salt.utils.powershell.module_exists('NetSecurity'):
+    if not hubblestack.utils.powershell.module_exists('NetSecurity'):
         return False, 'This audit module requires the NetSecurity module'
     return True
 
@@ -194,7 +194,7 @@ def _get_tags(data):
 def _export_firewall():
     dump = []
     try:
-        temp = __salt__['cmd.run']('mode con:cols=1000 lines=1000; Get-NetFirewallProfile -PolicyStore ActiveStore', shell='powershell', python_shell=True)
+        temp = __mods__['cmd.run']('mode con:cols=1000 lines=1000; Get-NetFirewallProfile -PolicyStore ActiveStore', shell='powershell', python_shell=True)
         temp = temp.split('\r\n\r\n')
         if temp:
             for item in temp:
@@ -238,7 +238,7 @@ def _translate_value_type(current, value, evaluator, match):
 
 
 def _is_domain_controller():
-    ret = __salt__['reg.read_value'](hive="HKLM",
+    ret = __mods__['reg.read_value'](hive="HKLM",
                                      key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
                                      vname="ProductType")
     if ret['vdata'] == "LanmanNT":

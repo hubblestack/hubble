@@ -7,7 +7,7 @@ import shlex
 import logging
 import inspect
 
-from hubblestack.utils.exceptions import HubbleInvocationError
+from hubblestack.exceptions import HubbleInvocationError
 import hubblestack.utils.data
 import hubblestack.utils.stringutils
 
@@ -136,7 +136,7 @@ def test_mode(**kwargs):
     """
     Examines the kwargs passed and returns True if any kwarg which matching
     "Test" in any variation on capitalization (i.e. "TEST", "Test", "TeSt",
-    etc) contains a True value (as determined by salt.utils.data.is_true).
+    etc) contains a True value (as determined by hubblestack.utils.data.is_true).
     """
     # Once is_true is moved, remove this import and fix the ref below
 

@@ -15,7 +15,6 @@ Support for YUM/DNF
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import logging
 
 try:
@@ -98,7 +97,7 @@ def list_pkgs(versions_as_list=False, **kwargs):
         ret = {}
         cmd = ['rpm', '-qa', '--queryformat',
                hubblestack.utils.pkg.rpm.QUERYFORMAT.replace('%{REPOID}', '(none)') + '\n']
-        output = __salt__['cmd.run'](cmd,
+        output = __mods__['cmd.run'](cmd,
                                      python_shell=False,
                                      output_loglevel='trace')
         for line in output.splitlines():
@@ -123,14 +122,14 @@ def list_pkgs(versions_as_list=False, **kwargs):
                     'install_date': pkginfo.install_date,
                     'install_date_time_t': pkginfo.install_date_time_t
                 }
-                __salt__['pkg_resource.add_pkg'](ret, pkginfo.name, all_attr)
+                __mods__['pkg_resource.add_pkg'](ret, pkginfo.name, all_attr)
 
         for pkgname in ret:
             ret[pkgname] = sorted(ret[pkgname], key=lambda d: d['version'])
 
         __context__[contextkey] = ret
 
-    return __salt__['pkg_resource.format_pkg_list'](
+    return __mods__['pkg_resource.format_pkg_list'](
         __context__[contextkey],
         versions_as_list,
         attr)
@@ -141,7 +140,7 @@ def version(*names, **kwargs):
     installed. If more than one package name is specified, a dict of
     name/version pairs is returned.
     '''
-    return __salt__['pkg_resource.version'](*names, **kwargs)
+    return __mods__['pkg_resource.version'](*names, **kwargs)
 
 
 def version_cmp(pkg1, pkg2, ignore_epoch=False):
@@ -158,7 +157,7 @@ def version_cmp(pkg1, pkg2, ignore_epoch=False):
         .. versionadded:: 2015.8.10,2016.3.2
     '''
 
-    return __salt__['lowpkg.version_cmp'](pkg1, pkg2, ignore_epoch=ignore_epoch)
+    return __mods__['lowpkg.version_cmp'](pkg1, pkg2, ignore_epoch=ignore_epoch)
 
 def refresh_db(**kwargs):
     '''
@@ -233,12 +232,12 @@ def _call_yum(args, **kwargs):
               'env': hubblestack.utils.environment.get_module_environment(globals())}
     params.update(kwargs)
     cmd = []
-    if hubblestack.utils.systemd.has_scope(__context__) and __salt__['config.get']('systemd.scope', True):
+    if hubblestack.utils.systemd.has_scope(__context__) and __mods__['config.get']('systemd.scope', True):
         cmd.extend(['systemd-run', '--scope'])
     cmd.append(_yum())
     cmd.extend(args)
 
-    return __salt__['cmd.run_all'](cmd, **params)
+    return __mods__['cmd.run_all'](cmd, **params)
 
 def _yum():
     '''

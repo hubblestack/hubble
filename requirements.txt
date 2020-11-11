@@ -19,13 +19,13 @@ gitdb2
 gitpython
 gprof2dot
 idna
-jinja2
 markupsafe
 mock
 msgpack
 ntplib
 objgraph
 patch==1.*
+psutil
 pycryptodome
 pygit2<0.27.0
 pyinotify
@@ -40,10 +40,8 @@ pytest-pythonpath
 python-dateutil
 pyyaml
 requests>=2.13.0
-salt-ssh==2019.2.3
 saltpylint
 singledispatch
-six
 smmap2
 tornado
 urllib3

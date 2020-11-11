@@ -13,7 +13,6 @@ Package support for openSUSE via the zypper package manager
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import fnmatch
 import logging
 import re
@@ -33,7 +32,7 @@ import hubblestack.utils.pkg.rpm
 import hubblestack.utils.stringutils
 import hubblestack.utils.environment
 import hubblestack.utils.args
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 
@@ -288,14 +287,14 @@ class _Zypper(object):
                 cmd.extend(['systemd-run', '--scope'])
             cmd.extend(self.__cmd)
             log.debug("Calling Zypper: " + ' '.join(cmd))
-            self.__call_result = __salt__['cmd.run_all'](cmd, **kwargs)
+            self.__call_result = __mods__['cmd.run_all'](cmd, **kwargs)
             if self._check_result():
                 break
 
             if os.path.exists(self.ZYPPER_LOCK):
                 try:
                     with hubblestack.utils.files.fopen(self.ZYPPER_LOCK) as rfh:
-                        data = __salt__['ps.proc_info'](int(rfh.readline()),
+                        data = __mods__['ps.proc_info'](int(rfh.readline()),
                                                         attrs=['pid', 'name', 'cmdline', 'create_time'])
                         data['cmdline'] = ' '.join(data['cmdline'])
                         data['info'] = 'Blocking process created at {0}.'.format(
@@ -376,7 +375,7 @@ def list_pkgs(versions_as_list=False, **kwargs):
         ret = {}
         cmd = ['rpm', '-qa', '--queryformat',
                hubblestack.utils.pkg.rpm.QUERYFORMAT.replace('%{REPOID}', '(none)') + '\n']
-        output = __salt__['cmd.run'](cmd,
+        output = __mods__['cmd.run'](cmd,
                                      python_shell=False,
                                      output_loglevel='trace')
         for line in output.splitlines():
@@ -401,7 +400,7 @@ def list_pkgs(versions_as_list=False, **kwargs):
                     'install_date': pkginfo.install_date,
                     'install_date_time_t': pkginfo.install_date_time_t
                 }
-                __salt__['pkg_resource.add_pkg'](ret, pkginfo.name, all_attr)
+                __mods__['pkg_resource.add_pkg'](ret, pkginfo.name, all_attr)
 
         _ret = {}
         for pkgname in ret:
@@ -412,7 +411,7 @@ def list_pkgs(versions_as_list=False, **kwargs):
 
         __context__[contextkey] = _ret
 
-    return __salt__['pkg_resource.format_pkg_list'](
+    return __mods__['pkg_resource.format_pkg_list'](
         __context__[contextkey],
         versions_as_list,
         attr)
@@ -423,7 +422,7 @@ def version(*names, **kwargs):
     installed. If more than one package name is specified, a dict of
     name/version pairs is returned.
     '''
-    return __salt__['pkg_resource.version'](*names, **kwargs) or {}
+    return __mods__['pkg_resource.version'](*names, **kwargs) or {}
 
 def version_cmp(ver1, ver2, ignore_epoch=False):
     '''
@@ -438,7 +437,7 @@ def version_cmp(ver1, ver2, ignore_epoch=False):
 
         .. versionadded:: 2015.8.10,2016.3.2
     '''
-    return __salt__['lowpkg.version_cmp'](ver1, ver2, ignore_epoch=ignore_epoch)
+    return __mods__['lowpkg.version_cmp'](ver1, ver2, ignore_epoch=ignore_epoch)
 
 def refresh_db():
     '''

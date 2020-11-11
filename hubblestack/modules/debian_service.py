@@ -8,7 +8,6 @@ Service support for Debian systems (uses update-rc.d and /sbin/service)
     *'service.start' is not available*), see :ref:`here
     <module-provider-override>`.
 '''
-from __future__ import absolute_import, print_function, unicode_literals
 
 # Import python libs
 import logging
@@ -64,7 +63,7 @@ def status(name, sig=None):
         salt '*' service.status <service name> [service signature]
     '''
     if sig:
-        return bool(__salt__['status.pid'](sig))
+        return bool(__mods__['status.pid'](sig))
 
     contains_globbing = bool(re.search(r'\*|\?|\[.+\]', name))
     if contains_globbing:
@@ -74,7 +73,7 @@ def status(name, sig=None):
     results = {}
     for service in services:
         cmd = _service_cmd(service, 'status')
-        results[service] = not __salt__['cmd.retcode'](cmd, ignore_retcode=True)
+        results[service] = not __mods__['cmd.retcode'](cmd, ignore_retcode=True)
     if contains_globbing:
         return results
     return results[name]
@@ -152,7 +151,7 @@ def _get_runlevel():
     '''
     returns the current runlevel
     '''
-    out = __salt__['cmd.run']('runlevel')
+    out = __mods__['cmd.run']('runlevel')
     # unknown can be returned while inside a container environment, since
     # this is due to a lack of init, it should be safe to assume runlevel
     # 2, which is Debian's default. If not, all service related states

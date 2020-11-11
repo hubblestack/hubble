@@ -26,7 +26,7 @@ class IscsiGrainsTestCase(TestCase, LoaderModuleMockMixin):
     def setup_loader_modules(self):
         return {
             disks: {
-                '__salt__': {},
+                '__mods__': {},
             },
         }
 
@@ -47,7 +47,7 @@ class IscsiGrainsTestCase(TestCase, LoaderModuleMockMixin):
                                                'retcode': 0})
 
         with patch('hubblestack.utils.path.which', mock_which), \
-                patch.dict(disks.__salt__, {'cmd.run_all': mock_run_all}):
+                patch.dict(disks.__mods__, {'cmd.run_all': mock_run_all}):
             result = disks._windows_disks()
             expected = {
                 'SSDs': ['\\\\.\\PhysicalDrive0'],
@@ -77,7 +77,7 @@ class IscsiGrainsTestCase(TestCase, LoaderModuleMockMixin):
         mock_run_all = MagicMock(return_value={'stdout': '',
                                                'retcode': 1})
         with patch('hubblestack.utils.path.which', mock_which), \
-                patch.dict(disks.__salt__, {'cmd.run_all': mock_run_all}):
+                patch.dict(disks.__mods__, {'cmd.run_all': mock_run_all}):
             result = disks._windows_disks()
             expected = {
                 'SSDs': [],

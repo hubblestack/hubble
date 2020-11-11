@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 
-# NOTE: this module receives __salt__, __grains__, etc from daemon.py during refresh_grains
+# NOTE: this module receives __mods__, __grains__, etc from daemon.py during refresh_grains
 
 # there's a lot of support below for things like this:
 #   get_splunk_options('hubblestack:returner:splunk', 'hubblestack:nebula:returner:splunk')
@@ -35,7 +35,7 @@ options_for_grains_config = {'token', 'index', 'port'}
 def _get_splunk_options(space, modality, **kw):
     ret = list()
 
-    confg = __salt__['config.get']
+    confg = __mods__['config.get']
 
     # both index and token must be specified if at all overriding in /etc/hubble/hubble
     # is taking place using the variables splunk_token and splunk_index
@@ -81,7 +81,7 @@ def _get_splunk_options(space, modality, **kw):
 
     req = [ k for k in base_opts if base_opts[k] is REQUIRED ]
 
-    sfr = __salt__[modality](space)
+    sfr = __mods__[modality](space)
 
     if sfr:
         if not isinstance(sfr, list):
@@ -177,7 +177,7 @@ def make_hec_args(opts):
 
 
 def _setup_for_testing():
-    global __salt__, __opts__
+    global __mods__, __opts__
     import hubblestack.daemon
     parsed_args = hubblestack.daemon.parse_args()
     import hubblestack.config
@@ -188,4 +188,4 @@ def _setup_for_testing():
     import hubblestack.loader
     __grains__ = hubblestack.loader.grains(__opts__)
     __utils__ = hubblestack.loader.utils(__opts__)
-    __salt__ = hubblestack.loader.moules(__opts__, utils=__utils__)
+    __mods__ = hubblestack.loader.moules(__opts__, utils=__utils__)

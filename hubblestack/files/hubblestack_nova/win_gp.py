@@ -6,7 +6,7 @@
 import copy
 import fnmatch
 import logging
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 
 
@@ -168,7 +168,7 @@ def _get_gp_templates():
     if 'Workgroup' in domain_check:
         return []
 
-    list = __salt__['cmd.run']('Get-ChildItem //{0}/SYSVOL/{0}/Policies/PolicyDefinitions | Format-List '
+    list = __mods__['cmd.run']('Get-ChildItem //{0}/SYSVOL/{0}/Policies/PolicyDefinitions | Format-List '
                                '-Property Name, SID'.format(domain_check['Domain']),
                                shell='powershell', python_shell=True)
     return list
@@ -183,7 +183,7 @@ def _translate_value_type(current, value, evaluator):
 
 
 def _is_domain_controller():
-    ret = __salt__['reg.read_value'](hive="HKLM",
+    ret = __mods__['reg.read_value'](hive="HKLM",
                                      key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
                                      vname="ProductType")
     if ret['vdata'] == "LanmanNT":

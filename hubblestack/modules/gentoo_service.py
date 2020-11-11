@@ -11,7 +11,6 @@ to the correct service manager
 '''
 
 # Import Python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import logging
 import fnmatch
 import re
@@ -62,7 +61,7 @@ def status(name, sig=None):
         salt '*' service.status <service name> [service signature]
     '''
     if sig:
-        return bool(__salt__['status.pid'](sig))
+        return bool(__mods__['status.pid'](sig))
 
     contains_globbing = bool(re.search(r'\*|\?|\[.+\]', name))
     if contains_globbing:
@@ -146,14 +145,14 @@ def _get_service_list(include_enabled=True, include_disabled=False):
     return enabled_services, disabled_services
 
 def _list_services():
-    return __salt__['cmd.run']('rc-update -v show').splitlines()
+    return __mods__['cmd.run']('rc-update -v show').splitlines()
 
 def _service_cmd(*args):
     return '/etc/init.d/{0} {1}'.format(args[0], ' '.join(args[1:]))
 
 def _ret_code(cmd, ignore_retcode=False):
     log.debug('executing [{0}]'.format(cmd))
-    sts = __salt__['cmd.retcode'](cmd, python_shell=False, ignore_retcode=ignore_retcode)
+    sts = __mods__['cmd.retcode'](cmd, python_shell=False, ignore_retcode=ignore_retcode)
     return sts
 
 def get_enabled():

@@ -57,12 +57,12 @@ import logging
 import fnmatch
 import os
 import copy
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 import re
 
 from distutils.version import LooseVersion
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 
@@ -327,7 +327,7 @@ def _grep(path,
     )
 
     try:
-        ret = __salt__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
+        ret = __mods__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
     except (IOError, OSError) as exc:
         raise CommandExecutionError(exc.strerror)
 

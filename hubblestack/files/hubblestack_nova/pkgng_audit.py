@@ -34,7 +34,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
         # No yaml data found, don't do any work
         return ret
 
-    salt_ret = __salt__['pkg.audit']()
+    salt_ret = __mods__['pkg.audit']()
     results = {'pkgng_audit': {'result': salt_ret}}
     results['pkng_audit']['nova_profile'] = profile
     if not verbose:

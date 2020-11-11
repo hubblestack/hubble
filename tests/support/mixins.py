@@ -31,16 +31,14 @@ from tests.support.paths import CODE_DIR
 
 # Import salt libs
 import hubblestack.config
-import salt.utils.event
 import hubblestack.utils.files
-import salt.utils.functools
+import hubblestack.utils.functools
 import hubblestack.utils.path
 import hubblestack.utils.stringutils
 import hubblestack.utils.yaml
-import salt.version
-import salt.utils.process
-from salt.utils.verify import verify_env
-from salt.utils.immutabletypes import freeze
+import hubblestack.version
+import hubblestack.utils.process
+from hubblestack.utils.immutabletypes import freeze
 
 log = logging.getLogger(__name__)
 
@@ -70,7 +68,7 @@ class CheckShellBinaryNameAndVersionMixin(object):
 
         if self._call_binary_expected_version_ is None:
             # Late import
-            self._call_binary_expected_version_ = salt.version.__version__
+            self._call_binary_expected_version_ = hubblestack.version.__version__
 
         out = '\n'.join(self.run_script(self._call_binary_, '--version'))
         self.assertIn(self._call_binary_, out)
@@ -101,29 +99,10 @@ class AdaptedConfigurationTestCaseMixin(object):
         if config_for == 'minion':
             rdict = hubblestack.config.apply_minion_config(config_overrides, cdict)
 
-        verify_env([os.path.join(rdict['pki_dir'], 'minions'),
-                    os.path.join(rdict['pki_dir'], 'minions_pre'),
-                    os.path.join(rdict['pki_dir'], 'minions_rejected'),
-                    os.path.join(rdict['pki_dir'], 'minions_denied'),
-                    os.path.join(rdict['cachedir'], 'jobs'),
-                    os.path.join(rdict['cachedir'], 'raet'),
-                    os.path.join(rdict['cachedir'], 'tokens'),
-                    os.path.join(rdict['root_dir'], 'cache', 'tokens'),
-                    os.path.join(rdict['pki_dir'], 'accepted'),
-                    os.path.join(rdict['pki_dir'], 'rejected'),
-                    os.path.join(rdict['pki_dir'], 'pending'),
-                    os.path.dirname(rdict['log_file']),
-                    rdict['sock_dir'],
-                    conf_dir
-                   ],
-                   RUNTIME_VARS.RUNNING_TESTS_USER,
-                   root_dir=rdict['root_dir'],
-                   )
-
         rdict['config_dir'] = conf_dir
         rdict['conf_file'] = os.path.join(conf_dir, config_for)
-        with salt.utils.files.fopen(rdict['conf_file'], 'w') as wfh:
-            salt.utils.yaml.safe_dump(rdict, wfh, default_flow_style=False)
+        with hubblestack.utils.files.fopen(rdict['conf_file'], 'w') as wfh:
+            hubblestack.utils.yaml.safe_dump(rdict, wfh, default_flow_style=False)
         return rdict
 
     @staticmethod
@@ -247,7 +226,7 @@ class AdaptedConfigurationTestCaseMixin(object):
 class SaltClientTestCaseMixin(AdaptedConfigurationTestCaseMixin):
     '''
     Mix-in class that provides a ``client`` attribute which returns a Salt
-    :class:`LocalClient<salt:salt.client.LocalClient>`.
+    :class:`LocalClient<salt:hubblestack.client.LocalClient>`.
 
     .. code-block:: python
 
@@ -274,17 +253,17 @@ class SaltClientTestCaseMixin(AdaptedConfigurationTestCaseMixin):
     @property
     def client(self):
         # Late import
-        import salt.client
+        import hubblestack.client
         if 'runtime_client' not in RUNTIME_VARS.RUNTIME_CONFIGS:
             mopts = self.get_config(self._salt_client_config_file_name_, from_scratch=True)
-            RUNTIME_VARS.RUNTIME_CONFIGS['runtime_client'] = salt.client.get_local_client(mopts=mopts)
+            RUNTIME_VARS.RUNTIME_CONFIGS['runtime_client'] = hubblestack.client.get_local_client(mopts=mopts)
         return RUNTIME_VARS.RUNTIME_CONFIGS['runtime_client']
 
 
 class SaltMultimasterClientTestCaseMixin(AdaptedConfigurationTestCaseMixin):
     '''
     Mix-in class that provides a ``clients`` attribute which returns a list of Salt
-    :class:`LocalClient<salt:salt.client.LocalClient>`.
+    :class:`LocalClient<salt:hubblestack.client.LocalClient>`.
 
     .. code-block:: python
 
@@ -312,22 +291,22 @@ class SaltMultimasterClientTestCaseMixin(AdaptedConfigurationTestCaseMixin):
     @property
     def clients(self):
         # Late import
-        import salt.client
+        import hubblestack.client
         if 'runtime_clients' not in RUNTIME_VARS.RUNTIME_CONFIGS:
             mopts = self.get_config(self._salt_client_config_file_name_, from_scratch=True)
-            RUNTIME_VARS.RUNTIME_CONFIGS['runtime_clients'] = salt.client.get_local_client(mopts=mopts)
+            RUNTIME_VARS.RUNTIME_CONFIGS['runtime_clients'] = hubblestack.client.get_local_client(mopts=mopts)
         return RUNTIME_VARS.RUNTIME_CONFIGS['runtime_clients']
 
 
 class ShellCaseCommonTestsMixin(CheckShellBinaryNameAndVersionMixin):
 
-    _call_binary_expected_version_ = salt.version.__version__
+    _call_binary_expected_version_ = hubblestack.version.__version__
 
     def test_salt_with_git_version(self):
         if getattr(self, '_call_binary_', None) is None:
             self.skipTest('\'_call_binary_\' not defined.')
-        from salt.version import __version_info__, SaltStackVersion
-        git = salt.utils.path.which('git')
+        from hubblestack.version import __version_info__, SaltStackVersion
+        git = hubblestack.utils.path.which('git')
         if not git:
             self.skipTest('The git binary is not available')
         opts = {
@@ -335,7 +314,7 @@ class ShellCaseCommonTestsMixin(CheckShellBinaryNameAndVersionMixin):
             'stderr': subprocess.PIPE,
             'cwd': CODE_DIR,
         }
-        if not salt.utils.platform.is_windows():
+        if not hubblestack.utils.platform.is_windows():
             opts['close_fds'] = True
         # Let's get the output of git describe
         process = subprocess.Popen(
@@ -353,7 +332,7 @@ class ShellCaseCommonTestsMixin(CheckShellBinaryNameAndVersionMixin):
             self.skipTest(
                 'Failed to get the output of \'git describe\'. '
                 'Error: \'{0}\''.format(
-                    salt.utils.stringutils.to_str(err)
+                    hubblestack.utils.stringutils.to_str(err)
                 )
             )
 
@@ -422,12 +401,11 @@ class LoaderModuleMockMixin(with_metaclass(_FixLoaderModuleMockMixinMroOrder, ob
                 raise RuntimeError(
                     '{}.setup_loader_modules() must return a dictionary where the keys are the '
                     'modules that require loader mocking setup and the values, the global module '
-                    'variables for each of the module being mocked. For example \'__salt__\', '
+                    'variables for each of the module being mocked. For example \'__mods__\', '
                     '\'__opts__\', etc.'.format(self.__class__.__name__)
                 )
-            # XXX: to remove __salt__ at a later date
             salt_dunders = (
-                '__opts__', '__salt__', '__mods__', '__runner__', '__context__', '__utils__',
+                '__opts__', '__mods__', '__runner__', '__context__', '__utils__',
                 '__ext_pillar__', '__thorium__', '__states__', '__serializers__', '__ret__',
                 '__grains__', '__pillar__', '__sdb__',
                 # Proxy is commented out on purpose since some code in salt expects a NameError
@@ -456,26 +434,6 @@ class LoaderModuleMockMixin(with_metaclass(_FixLoaderModuleMockMixinMroOrder, ob
                 module_blacklisted_dunders = module_globals.pop('blacklisted_dunders', ())
 
                 minion_funcs = {}
-
-                # XXX: to remove __salt__ at a later date
-                if '__salt__' in module_globals and module_globals['__salt__'] == 'autoload':
-                    if '__opts__' not in module_globals:
-                        raise RuntimeError(
-                            'You must provide \'__opts__\' on the {} module globals dictionary '
-                            'to auto load the minion functions'.format(module.__name__)
-                        )
-                    import salt.loader
-                    ctx = {}
-                    if '__utils__' not in module_globals:
-                        utils = salt.loader.utils(module_globals['__opts__'],
-                                                  context=module_globals.get('__context__') or ctx)
-                        module_globals['__utils__'] = utils
-                    minion_funcs = salt.loader.minion_mods(
-                        module_globals['__opts__'],
-                        context=module_globals.get('__context__') or ctx,
-                        utils=module_globals.get('__utils__'),
-                    )
-                    module_globals['__salt__'] = minion_funcs
 
                 if '__mods__' in module_globals and module_globals['__mods__'] == 'autoload':
                     if '__opts__' not in module_globals:
@@ -541,9 +499,9 @@ class LoaderModuleMockMixin(with_metaclass(_FixLoaderModuleMockMixinMroOrder, ob
                 if minion_funcs:
                     # Since we autoloaded the minion_funcs, let's namespace the functions with the globals
                     # used to patch above
-                    import salt.utils
+                    import hubblestack.utils
                     for func in minion_funcs:
-                        minion_funcs[func] = salt.utils.functools.namespaced_function(
+                        minion_funcs[func] = hubblestack.utils.functools.namespaced_function(
                             minion_funcs[func],
                             module_globals,
                             preserve_context=True
@@ -733,86 +691,3 @@ class SaltReturnAssertsMixin(object):
         keys = ['changes'] + self.__return_valid_keys(keys)
         for saltret in self.__getWithinSaltReturn(ret, keys):
             self.assertNotEqual(saltret, comparison)
-
-
-def _fetch_events(q):
-    '''
-    Collect events and store them
-    '''
-    def _clean_queue():
-        print('Cleaning queue!')
-        while not q.empty():
-            queue_item = q.get()
-            queue_item.task_done()
-
-    atexit.register(_clean_queue)
-    a_config = AdaptedConfigurationTestCaseMixin()
-    event = salt.utils.event.get_event(
-        'minion',
-        sock_dir=a_config.get_config('minion')['sock_dir'],
-        opts=a_config.get_config('minion'),
-    )
-
-    # Wait for event bus to be connected
-    while not event.connect_pull(30):
-        time.sleep(1)
-
-    # Notify parent process that the event bus is connected
-    q.put('CONNECTED')
-
-    while True:
-        try:
-            events = event.get_event(full=False)
-        except Exception as exc:
-            # This is broad but we'll see all kinds of issues right now
-            # if we drop the proc out from under the socket while we're reading
-            log.exception("Exception caught while getting events %r", exc)
-        q.put(events)
-
-
-class SaltMinionEventAssertsMixin(object):
-    '''
-    Asserts to verify that a given event was seen
-    '''
-
-    def __new__(cls, *args, **kwargs):
-        # We have to cross-call to re-gen a config
-        cls.q = multiprocessing.Queue()
-        cls.fetch_proc = salt.utils.process.SignalHandlingMultiprocessingProcess(
-            target=_fetch_events, args=(cls.q,)
-        )
-        cls.fetch_proc.start()
-        # Wait for the event bus to be connected
-        msg = cls.q.get(block=True)
-        if msg != 'CONNECTED':
-            # Just in case something very bad happens
-            raise RuntimeError('Unexpected message in test\'s event queue')
-        return object.__new__(cls)
-
-    def __exit__(self, *args, **kwargs):
-        self.fetch_proc.join()
-
-    def assertMinionEventFired(self, tag):
-        #TODO
-        raise salt.exceptions.NotImplemented('assertMinionEventFired() not implemented')
-
-    def assertMinionEventReceived(self, desired_event, timeout=5, sleep_time=0.5):
-        start = time.time()
-        while True:
-            try:
-                event = self.q.get(False)
-            except Empty:
-                time.sleep(sleep_time)
-                if time.time() - start >= timeout:
-                    break
-                continue
-            if isinstance(event, dict):
-                event.pop('_stamp')
-            if desired_event == event:
-                self.fetch_proc.terminate()
-                return True
-            if time.time() - start >= timeout:
-                break
-        self.fetch_proc.terminate()
-        raise AssertionError('Event {0} was not received by minion'.format(desired_event))
-

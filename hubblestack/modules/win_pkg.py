@@ -38,7 +38,6 @@ old.
 '''
 
 # Import python future libs
-from __future__ import absolute_import, print_function, unicode_literals
 import collections
 import datetime
 import errno
@@ -52,7 +51,7 @@ from functools import cmp_to_key
 import urllib
 
 # Import salt libs
-from hubblestack.utils.exceptions import (CommandExecutionError,
+from hubblestack.exceptions import (CommandExecutionError,
                              HubbleRenderError)
 import hubblestack.utils.data
 import hubblestack.utils.files
@@ -61,7 +60,7 @@ import hubblestack.utils.pkg
 import hubblestack.utils.platform
 import hubblestack.utils.win_functions
 import hubblestack.template
-import salt.payload
+import hubblestack.payload
 
 log = logging.getLogger(__name__)
 
@@ -139,15 +138,15 @@ def list_pkgs(versions_as_list=False,
                     for pkg_ver in pkg_info.keys():
                         if pkg_info[pkg_ver]['full_name'] == pkg_name:
                             val = pkg_ver
-                __salt__['pkg_resource.add_pkg'](ret, key, val)
+                __mods__['pkg_resource.add_pkg'](ret, key, val)
         else:
             key = pkg_name
             for val in val_list:
-                __salt__['pkg_resource.add_pkg'](ret, key, val)
+                __mods__['pkg_resource.add_pkg'](ret, key, val)
 
-    __salt__['pkg_resource.sort_pkglist'](ret)
+    __mods__['pkg_resource.sort_pkglist'](ret)
     if not versions_as_list:
-        __salt__['pkg_resource.stringify'](ret)
+        __mods__['pkg_resource.stringify'](ret)
     return ret
 
 def _refresh_db_conditional(saltenv, **kwargs):
@@ -378,7 +377,7 @@ def get_repo_data(saltenv='base'):
         log.trace('get_repo_data called reading from disk')
 
     try:
-        serial = salt.payload.Serial(__opts__)
+        serial = hubblestack.payload.Serial(__opts__)
         with hubblestack.utils.files.fopen(repo_details.winrepo_file, 'rb') as repofile:
             try:
                 repodata = hubblestack.utils.data.decode(serial.loads(repofile.read()) or {})
@@ -526,7 +525,7 @@ def genrepo(**kwargs):
                     ret,
                     successful_verbose
                     )
-    serial = salt.payload.Serial(__opts__)
+    serial = hubblestack.payload.Serial(__opts__)
 
     with hubblestack.utils.files.fopen(repo_details.winrepo_file, 'wb') as repo_cache:
         repo_cache.write(serial.dumps(ret))
@@ -565,7 +564,7 @@ def genrepo(**kwargs):
         return results
 
 def _repo_process_pkg_sls(filename, short_path_name, ret, successful_verbose):
-    renderers = hubblestack.loader.render(__opts__, __salt__)
+    renderers = hubblestack.loader.render(__opts__, __mods__)
 
     def _failed_compile(prefix_msg, error_msg):
         log.error('{0} \'{1}\': {2} '.format(prefix_msg, short_path_name, error_msg))

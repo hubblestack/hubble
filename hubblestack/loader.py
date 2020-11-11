@@ -5,8 +5,6 @@ directories for python loadable code and organizes the code into the
 plugin interfaces used by Salt.
 '''
 
-# Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import os
 import re
 import sys
@@ -19,9 +17,9 @@ import functools
 import threading
 import traceback
 import types
+
 from zipimport import zipimporter
 
-# Import salt libs
 import hubblestack.config
 import hubblestack.syspaths
 import hubblestack.utils.args
@@ -33,7 +31,8 @@ import hubblestack.utils.lazy
 import hubblestack.utils.odict
 import hubblestack.utils.platform
 import hubblestack.utils.versions
-from hubblestack.utils.exceptions import LoaderError
+
+from hubblestack.exceptions import LoaderError
 from hubblestack.template import check_render_pipe_str
 from hubblestack.utils.decorators import Depends
 
@@ -50,13 +49,6 @@ except ImportError:
     from collections import MutableMapping
 
 log = logging.getLogger(__name__)
-
-# XXX: we only need this while we're still loading salt modules
-def __salt_basepath():
-    import salt.syspaths
-    return os.path.abspath(salt.syspaths.INSTALL_DIR)
-# XXX: we only need this while we're still loading salt modules
-SALT_BASE_PATH = __salt_basepath()
 
 HUBBLE_BASE_PATH = os.path.abspath(hubblestack.syspaths.INSTALL_DIR)
 LOADED_BASE_NAME = 'hubble.loaded'
@@ -108,9 +100,6 @@ def _module_dirs(
     hubblestack_type = 'hubblestack_' + (int_type or ext_type)
     files_base_types = os.path.join(base_path or HUBBLE_BASE_PATH, 'files', hubblestack_type)
 
-    # XXX should be removed eventually:
-    salt_base_types = os.path.join(SALT_BASE_PATH, int_type or ext_type)
-
     ext_type_types = []
     if ext_dirs:
         if tag is not None and ext_type_dirs is None:
@@ -139,9 +128,11 @@ def _module_dirs(
         if os.path.isdir(maybe_dir):
             cli_module_dirs.insert(0, maybe_dir)
 
+    as_tuple = (cli_module_dirs, ext_type_types, [files_base_types, ext_types, sys_types])
+    log.debug('_module_dirs() => %s', as_tuple)
     if explain:
-        return (cli_module_dirs, ext_type_types, [files_base_types, salt_base_types, ext_types, sys_types])
-    return cli_module_dirs + ext_type_types + [files_base_types, salt_base_types, ext_types, sys_types]
+        return as_tuple
+    return cli_module_dirs + ext_type_types + [files_base_types, ext_types, sys_types]
 
 
 def modules(
@@ -202,10 +193,8 @@ def modules(
     )
 
     ret.pack['__mods__'] = ret
-    ret.pack['__salt__'] = ret # XXX: to remove at a later date
 
     return ret
-minion_mods = modules # XXX: remove eventually
 
 
 def returners(opts, functions, whitelist=None, context=None, proxy=None):
@@ -217,7 +206,7 @@ def returners(opts, functions, whitelist=None, context=None, proxy=None):
         opts,
         tag='returner',
         whitelist=whitelist,
-        pack={'__salt__': functions, '__context__': context, '__proxy__': proxy or {}},
+        pack={'__mods__': functions, '__context__': context, '__proxy__': proxy or {}},
     )
 
 
@@ -275,7 +264,7 @@ def grains(opts, force_refresh=False, proxy=None):
     grains.
 
     Since grains are computed early in the startup process, grains functions
-    do not have __salt__ or __proxy__ available.  At proxy-minion startup,
+    do not have __mods__ or __proxy__ available.  At proxy-minion startup,
     this function is called with the proxymodule LazyLoader object so grains
     functions can communicate with their controlled device.
 
@@ -302,7 +291,7 @@ def grains(opts, force_refresh=False, proxy=None):
     if 'conf_file' in opts:
         pre_opts = {}
         pre_opts.update(hubblestack.config.load_config(
-            opts['conf_file'], 'SALT_MINION_CONFIG',
+            opts['conf_file'], 'HUBBLE_CONFIG',
             hubblestack.config.DEFAULT_OPTS['conf_file']
         ))
         default_include = pre_opts.get(
@@ -408,7 +397,7 @@ def render(opts, functions):
     '''
     Returns the render modules
     '''
-    pack = {'__salt__': functions,
+    pack = {'__mods__': functions,
             '__grains__': opts.get('grains', {})}
     ret = LazyLoader(
         _module_dirs(
@@ -444,11 +433,7 @@ def _generate_module(name):
 
 def _mod_type(module_path):
     if module_path.startswith(HUBBLE_BASE_PATH):
-        if 'extmods' in module_path:
-            return 'e_int' # XXX: we should remove this when we nolonger have internal extmods
         return 'int'
-    if module_path.startswith(SALT_BASE_PATH):
-        return 'salt' # XXX: we should remove this after we nolonger depend on salt
     return 'ext'
 
 
@@ -1425,9 +1410,7 @@ def nova(hubble_dir, opts, modules, context=None):
         funcname_filter=_nova_funcname_filter,
         xlate_modnames=_nova_xlate_modnames,
         xlate_funcnames=_nova_xlate_funcnames,
-        pack={ '__context__': context, '__mods__': modules,
-            '__salt__': modules # XXX to remove eventually
-            }
+        pack={ '__context__': context, '__mods__': modules }
     )
 
     loader.__data__ = d = dict()

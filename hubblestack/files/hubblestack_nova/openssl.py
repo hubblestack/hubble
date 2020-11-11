@@ -70,7 +70,7 @@ import logging
 
 import fnmatch
 import copy
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 import datetime
 import time

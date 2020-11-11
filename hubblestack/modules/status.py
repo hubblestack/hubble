@@ -5,7 +5,6 @@ These data can be useful for compiling into stats later.
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import datetime
 import logging
 import os
@@ -15,7 +14,7 @@ import time
 import hubblestack.utils.files
 import hubblestack.utils.path
 import hubblestack.utils.platform
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__file__)
 
@@ -58,7 +57,7 @@ def pid(sig):
     '''
 
     cmd = __grains__['ps']
-    output = __salt__['cmd.run_stdout'](cmd, python_shell=True)
+    output = __mods__['cmd.run_stdout'](cmd, python_shell=True)
 
     pids = ''
     for line in output.splitlines():
@@ -105,18 +104,18 @@ def uptime():
     elif hubblestack.utils.platform.is_sunos():
         # note: some flavors/versions report the host uptime inside a zone
         #       https://support.oracle.com/epmos/faces/BugDisplay?id=15611584
-        res = __salt__['cmd.run_all']('kstat -p unix:0:system_misc:boot_time')
+        res = __mods__['cmd.run_all']('kstat -p unix:0:system_misc:boot_time')
         if res['retcode'] > 0:
             raise CommandExecutionError('The boot_time kstat was not found.')
         seconds = int(curr_seconds - int(res['stdout'].split()[-1]))
     elif hubblestack.utils.platform.is_openbsd() or hubblestack.utils.platform.is_netbsd():
-        bt_data = __salt__['sysctl.get']('kern.boottime')
+        bt_data = __mods__['sysctl.get']('kern.boottime')
         if not bt_data:
             raise CommandExecutionError('Cannot find kern.boottime system parameter')
         seconds = int(curr_seconds - int(bt_data))
     elif hubblestack.utils.platform.is_freebsd() or hubblestack.utils.platform.is_darwin():
         # format: { sec = 1477761334, usec = 664698 } Sat Oct 29 17:15:34 2016
-        bt_data = __salt__['sysctl.get']('kern.boottime')
+        bt_data = __mods__['sysctl.get']('kern.boottime')
         if not bt_data:
             raise CommandExecutionError('Cannot find kern.boottime system parameter')
         data = bt_data.split("{")[-1].split("}")[0].strip().replace(' ', '')
@@ -125,7 +124,7 @@ def uptime():
     elif hubblestack.utils.platform.is_aix():
         seconds = _get_boot_time_aix()
     else:
-        return __salt__['cmd.run']('uptime')
+        return __mods__['cmd.run']('uptime')
 
     # Setup datetime and timedelta objects
     boot_time = datetime.datetime.utcfromtimestamp(curr_seconds - seconds)
@@ -143,7 +142,7 @@ def uptime():
 
     if hubblestack.utils.path.which('who'):
         who_cmd = 'who' if hubblestack.utils.platform.is_openbsd() else 'who -s'  # OpenBSD does not support -s
-        ut_ret['users'] = len(__salt__['cmd.run'](who_cmd).split(os.linesep))
+        ut_ret['users'] = len(__mods__['cmd.run'](who_cmd).split(os.linesep))
 
     return ut_ret
 
@@ -161,7 +160,7 @@ def _get_boot_time_aix():
     t is 7-20:46:46
     '''
     boot_secs = 0
-    res = __salt__['cmd.run_all']('ps -o etime= -p 1')
+    res = __mods__['cmd.run_all']('ps -o etime= -p 1')
     if res['retcode'] > 0:
         raise CommandExecutionError('Unable to find boot_time for pid 1.')
     bt_time = res['stdout']

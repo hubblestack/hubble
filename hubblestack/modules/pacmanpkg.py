@@ -11,7 +11,6 @@ A module to wrap pacman calls, since Arch is the best
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import copy
 import fnmatch
 import logging
@@ -21,7 +20,7 @@ import os.path
 import hubblestack.utils.data
 import hubblestack.utils.itertools
 import hubblestack.utils.pkg
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 
@@ -54,7 +53,7 @@ def list_pkgs(versions_as_list=False, **kwargs):
             return __context__['pkg.list_pkgs']
         else:
             ret = copy.deepcopy(__context__['pkg.list_pkgs'])
-            __salt__['pkg_resource.stringify'](ret)
+            __mods__['pkg_resource.stringify'](ret)
             return ret
 
     cmd = ['pacman', '-Q']
@@ -63,7 +62,7 @@ def list_pkgs(versions_as_list=False, **kwargs):
         cmd.extend(('-r', kwargs['root']))
 
     ret = {}
-    out = __salt__['cmd.run'](cmd, output_loglevel='trace', python_shell=False)
+    out = __mods__['cmd.run'](cmd, output_loglevel='trace', python_shell=False)
     for line in hubblestack.utils.itertools.split(out, '\n'):
         if not line:
             continue
@@ -73,12 +72,12 @@ def list_pkgs(versions_as_list=False, **kwargs):
             log.error('Problem parsing pacman -Q: Unexpected formatting in '
                       'line: \'%s\'', line)
         else:
-            __salt__['pkg_resource.add_pkg'](ret, name, version_num)
+            __mods__['pkg_resource.add_pkg'](ret, name, version_num)
 
-    __salt__['pkg_resource.sort_pkglist'](ret)
+    __mods__['pkg_resource.sort_pkglist'](ret)
     __context__['pkg.list_pkgs'] = copy.deepcopy(ret)
     if not versions_as_list:
-        __salt__['pkg_resource.stringify'](ret)
+        __mods__['pkg_resource.stringify'](ret)
     return ret
 
 def version(*names, **kwargs):
@@ -87,7 +86,7 @@ def version(*names, **kwargs):
     installed. If more than one package name is specified, a dict of
     name/version pairs is returned.
     '''
-    return __salt__['pkg_resource.version'](*names, **kwargs)
+    return __mods__['pkg_resource.version'](*names, **kwargs)
 
 def refresh_db(root=None):
     '''
@@ -103,7 +102,7 @@ def refresh_db(root=None):
         cmd.extend(('-r', root))
 
     ret = {}
-    call = __salt__['cmd.run_all'](cmd,
+    call = __mods__['cmd.run_all'](cmd,
                                    output_loglevel='trace',
                                    env={'LANG': 'C'},
                                    python_shell=False)

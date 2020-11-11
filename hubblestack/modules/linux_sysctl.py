@@ -2,7 +2,6 @@
 """
 Module for viewing and modifying sysctl parameters
 """
-from __future__ import absolute_import, print_function, unicode_literals
 
 # Import python libs
 import logging
@@ -10,7 +9,7 @@ import os
 import re
 
 import hubblestack.utils.systemd
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 import hubblestack.utils.data
 import hubblestack.utils.files
 import hubblestack.utils.stringutils
@@ -87,7 +86,7 @@ def show(config_file=False):
             return None
     else:
         cmd = "sysctl -a"
-        out = __salt__["cmd.run_stdout"](cmd, output_loglevel="trace")
+        out = __mods__["cmd.run_stdout"](cmd, output_loglevel="trace")
         for line in out.splitlines():
             if not line or " = " not in line:
                 continue
@@ -104,7 +103,7 @@ def get(name):
         salt '*' sysctl.get net.ipv4.ip_forward
     """
     cmd = "sysctl -n {0}".format(name)
-    out = __salt__["cmd.run"](cmd, python_shell=False)
+    out = __mods__["cmd.run"](cmd, python_shell=False)
     return out
 
 
@@ -124,7 +123,7 @@ def assign(name, value):
 
     ret = {}
     cmd = 'sysctl -w {0}="{1}"'.format(name, value)
-    data = __salt__["cmd.run_all"](cmd, python_shell=False)
+    data = __mods__["cmd.run_all"](cmd, python_shell=False)
     out = data["stdout"]
     err = data["stderr"]
 
@@ -148,7 +147,7 @@ def persist(name, value, config=None):
     """
     Assign and persist a simple sysctl parameter for this minion. If ``config``
     is not specified, a sensible default will be chosen using
-    :mod:`sysctl.default_config <salt.modules.linux_sysctl.default_config>`.
+    :mod:`sysctl.default_config <hubblestack.modules.linux_sysctl.default_config>`.
     CLI Example:
     .. code-block:: bash
         salt '*' sysctl.persist net.ipv4.ip_forward 1

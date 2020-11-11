@@ -70,9 +70,9 @@ Jump arguments
 
 Check the following links for more details:
   - iptables.build_rule SaltStack documentation
-  (https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.iptables.html#salt.modules.iptables.build_rule)
+  (https://docs.saltstack.com/en/latest/ref/modules/all/hubblestack.modules.iptables.html#hubblestack.modules.iptables.build_rule)
   - iptables salt execution module source code (search for the build_rule function inside):
-  (https://github.com/saltstack/salt/blob/develop/salt/modules/iptables.py)
+  (https://github.com/saltstack/salt/blob/develop/hubblestack/modules/iptables.py)
 """
 
 
@@ -80,7 +80,7 @@ import logging
 
 import fnmatch
 import copy
-import salt.utils
+import hubblestack.utils
 import hubblestack.utils.platform
 import hubblestack.utils.path
 
@@ -159,13 +159,13 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 args.update(tag_data['rule'])
 
                 # building the rule using iptables.build_rule
-                rule = __salt__['iptables.build_rule'](**args)
+                rule = __mods__['iptables.build_rule'](**args)
 
                 # replacing all the elements of the rule with the actual rule (for verbose mode)
                 tag_data['rule'] = rule
 
                 # checking the existence of the rule
-                salt_ret = __salt__['iptables.check'](table=table, chain=chain, rule=rule, family=family)
+                salt_ret = __mods__['iptables.check'](table=table, chain=chain, rule=rule, family=family)
 
                 if salt_ret not in (True, False):
                     log.error(salt_ret)

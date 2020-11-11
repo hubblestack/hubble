@@ -195,7 +195,7 @@ class HubbleStatus(object):
             self.ema_dt = None
             self.dur = None
             self.ema_dur = None
-            # reported is used exclusively by extmods/modules/hstatus
+            # reported is used exclusively by modules/hstatus
             # cleared on every mark()
             self.reported = list()
 
@@ -541,7 +541,7 @@ class HubbleStatus(object):
             hubble:status:dumpster options (see above).
         """
         try:
-            if __salt__['config.get']('splunklogging', False):
+            if __mods__['config.get']('splunklogging', False):
                 # lazy load to avoid circular import
                 import hubblestack.log
                 hubblestack.log.emit_to_splunk('Signal {0} detected'.format(signal.SIGUSR1),

@@ -79,7 +79,7 @@ def update_config(config_file):
 
 @pytest.fixture(scope='session')
 def config_file():
-    return os.path.join(tests_dir, 'hubble.config')
+    return os.path.join(tests_dir, 'resources', 'test.config')
 
 @pytest.fixture(scope='session')
 def HSL(config_file):
@@ -95,10 +95,6 @@ def HSL(config_file):
 @pytest.fixture(scope='function')
 def __mods__(HSL):
     return HSL.mods
-
-@pytest.fixture(scope='function')
-def __salt__(__mods__): # XXX remove eventually
-    return __mods__
 
 @pytest.fixture(scope='function')
 def __utils__(HSL):

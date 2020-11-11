@@ -4,7 +4,6 @@ Support for rpm
 '''
 
 # Import python libs
-from __future__ import absolute_import, print_function, unicode_literals
 import logging
 import os
 import re
@@ -27,7 +26,7 @@ except ImportError:
     HAS_RPMUTILS = False
 
 # pylint: enable=import-error,redefined-builtin
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 
@@ -108,7 +107,7 @@ def version_cmp(ver1, ver2, ignore_epoch=False):
 
                 ver1 = _ensure_epoch(ver1)
                 ver2 = _ensure_epoch(ver2)
-                result = __salt__['cmd.run_all'](
+                result = __mods__['cmd.run_all'](
                     ['rpmdev-vercmp', ver1, ver2],
                     python_shell=False,
                     redirect_stderr=True,

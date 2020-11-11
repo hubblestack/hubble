@@ -28,7 +28,7 @@ import hubblestack.syspaths
 import hubblestack.defaults.exitcodes
 import hubblestack.utils.builtin_hacking
 
-from hubblestack.utils.exceptions import HubbleConfigurationError
+from hubblestack.exceptions import HubbleConfigurationError
 from hubblestack.utils.url import urlparse
 
 try:
@@ -215,6 +215,18 @@ VALID_OPTS = {
     # Location of the files a minion should look for. Set to 'local' to never ask the master.
     "file_client": str,
     "local": bool,
+    # other non-salt hubble-specific things
+    "fileserver_update_frequency": int,
+    "grains_refresh_frequency": int,
+    "scheduler_sleep_frequency": float,
+    "default_include": str,
+    "logfile_maxbytes": int,
+    "logfile_backups": int,
+    "delete_inaccessible_azure_containers": bool,
+    "enable_globbing_in_nebula_masking": bool,
+    "osquery_logfile_maxbytes": int,
+    "osquery_logfile_maxbytes_toparse": int,
+    "osquery_backuplogs_count": int,
     # When using a local file_client, this parameter is used to allow the client to connect to
     # a master for remote execution.
     "use_master_when_local": bool,
@@ -235,16 +247,14 @@ VALID_OPTS = {
     # A list of additional directories to search for salt returners in
     "returner_dirs": list,
     # A list of additional directories to search for salt states in
-    "states_dirs": list,
-    # A list of additional directories to search for salt grains in
     "grains_dirs": list,
     # A list of additional directories to search for salt renderers in
-    "render_dirs": list,
-    # A list of additional directories to search for salt outputters in
-    "outputter_dirs": list,
-    # A list of additional directories to search for salt utilities in. (Used by the loader
-    # to populate __utils__)
     "utils_dirs": list,
+    # some hubble additions
+    'fdg_dirs': list,
+    'audit_dirs': list,
+    # this is a hubble addition, but it may have already been in use
+    'fileserver_dirs': list,
     # salt cloud providers
     "providers": dict,
     # First remove all modules during any sync operation
@@ -399,6 +409,10 @@ VALID_OPTS = {
     "event_match_type": str,
     # This pidfile to write out to when a daemon starts
     "pidfile": str,
+    # osquery stuff
+    "osquery_dbpath": str,
+    "osquerylogpath": str,
+    "osquerylog_backupdir": str,
     # Used with the SECO range master tops system
     "range_server": str,
     # The tcp keepalive interval to set on TCP ports. This setting can be used to tune Salt
@@ -646,28 +660,30 @@ VALID_OPTS = {
     # used to mitigate a thundering-herd scenario when many minions start up
     # at once and attempt to all connect immediately to the master
     "random_startup_delay": int,
-    # The source location for the winrepo sls files
-    # (used by win_pkg.py, minion only)
-    "winrepo_source_dir": str,
-    "winrepo_dir": str,
-    "winrepo_dir_ng": str,
-    "winrepo_cachefile": str,
-    # NOTE: winrepo_branch omitted here because its value could conceivably be
-    # loaded as a non-string type, which is OK because winrepo will normalize
-    # them to strings. But rather than include all the possible types it could
-    # be, we'll just skip type-checking.
-    "winrepo_cache_expire_max": int,
-    "winrepo_cache_expire_min": int,
-    "winrepo_remotes": list,
-    "winrepo_remotes_ng": list,
-    "winrepo_ssl_verify": bool,
-    "winrepo_user": str,
-    "winrepo_password": str,
-    "winrepo_insecure_auth": bool,
-    "winrepo_privkey": str,
-    "winrepo_pubkey": str,
-    "winrepo_passphrase": str,
-    "winrepo_refspecs": list,
+
+    # TO REMOVE: see below # # The source location for the winrepo sls files
+    # TO REMOVE: see below # # (used by win_pkg.py, minion only)
+    # TO REMOVE: see below # "winrepo_source_dir": str,
+    # TO REMOVE: see below # "winrepo_dir": str,
+    # TO REMOVE: see below # "winrepo_dir_ng": str,
+    # TO REMOVE: see below # "winrepo_cachefile": str,
+    # TO REMOVE: see below # # NOTE: winrepo_branch omitted here because its value could conceivably be
+    # TO REMOVE: see below # # loaded as a non-string type, which is OK because winrepo will normalize
+    # TO REMOVE: see below # # them to strings. But rather than include all the possible types it could
+    # TO REMOVE: see below # # be, we'll just skip type-checking.
+    # TO REMOVE: see below # "winrepo_cache_expire_max": int,
+    # TO REMOVE: see below # "winrepo_cache_expire_min": int,
+    # TO REMOVE: see below # "winrepo_remotes": list,
+    # TO REMOVE: see below # "winrepo_remotes_ng": list,
+    # TO REMOVE: see below # "winrepo_ssl_verify": bool,
+    # TO REMOVE: see below # "winrepo_user": str,
+    # TO REMOVE: see below # "winrepo_password": str,
+    # TO REMOVE: see below # "winrepo_insecure_auth": bool,
+    # TO REMOVE: see below # "winrepo_privkey": str,
+    # TO REMOVE: see below # "winrepo_pubkey": str,
+    # TO REMOVE: see below # "winrepo_passphrase": str,
+    # TO REMOVE: see below # "winrepo_refspecs": list,
+
     # Set a hard limit for the amount of memory modules can consume on a minion.
     "modules_max_memory": int,
     # The number of minutes between the minion refreshing its cache of grains
@@ -822,6 +838,14 @@ VALID_OPTS = {
     "netapi_allow_raw_shell": bool,
 }
 
+DEFAULT_CONF_FILE_NAME = DEFAULT_LOG_FILE_NAME = 'hubble'
+DEFAULT_OSQUERY_DB_PATH = os.path.join(hubblestack.syspaths.CACHE_DIR, 'osquery')
+
+if hubblestack.utils.platform.is_windows():
+    DEFAULT_CONF_FILE_NAME = 'hubble.conf'
+    DEFAULT_LOG_FILE_NAME = "hubble.log"
+    DEFAULT_OSQUERY_DB_PATH = os.path.join(hubblestack.syspaths.ROOT_DIR, 'var', 'hubble_osquery_db')
+
 # default configurations
 DEFAULT_OPTS = {
     "interface": "0.0.0.0",
@@ -842,16 +866,16 @@ DEFAULT_OPTS = {
     "master_sign_key_name": "master_sign",
     "user": hubblestack.utils.user.get_user(),
     "root_dir": hubblestack.syspaths.ROOT_DIR,
-    "pki_dir": os.path.join(hubblestack.syspaths.CONFIG_DIR, "pki", "minion"),
+    "pki_dir": os.path.join(hubblestack.syspaths.CONFIG_DIR, "pki"),
     "id": "",
     "id_function": {},
-    "cachedir": os.path.join(hubblestack.syspaths.CACHE_DIR, "minion"),
+    "cachedir": os.path.join(hubblestack.syspaths.CACHE_DIR),
     "append_minionid_config_dirs": [],
     "cache_jobs": False,
     "grains_cache": False,
     "grains_cache_expiration": 300,
     "grains_deep_merge": False,
-    "conf_file": os.path.join(hubblestack.syspaths.CONFIG_DIR, "minion"),
+    "conf_file": os.path.join(hubblestack.syspaths.CONFIG_DIR, DEFAULT_CONF_FILE_NAME),
     "sock_pool_size": 1,
     "backup_mode": "",
     "renderer": "jinja|yaml",
@@ -873,18 +897,27 @@ DEFAULT_OPTS = {
     "pillar_cache": False,
     "pillar_cache_ttl": 3600,
     "pillar_cache_backend": "disk",
-    "extension_modules": os.path.join(hubblestack.syspaths.CACHE_DIR, "minion", "extmods"),
+    "extension_modules": os.path.join(hubblestack.syspaths.CACHE_DIR, "extmods"),
     "state_top": "top.sls",
     "state_top_saltenv": None,
     "startup_states": "",
     "sls_list": [],
     "top_file": "",
-    "file_client": "remote",
+    "file_client": "local",
+    "fileserver_update_frequency": 43200, # 12 hours
+    "grains_refresh_frequency": 3600, # 1 hour
+    "scheduler_sleep_frequency": 0.5, # 500ms
+    "default_include": 'hubble.d/*.conf',
+    "logfile_maxbytes": 100000000, # 100MB kindof
+    "logfile_backups": 1, # max rotated logs
+    "delete_inaccessible_azure_containers": False,
+    "enable_globbing_in_nebula_masking": False,
+    "osquery_logfile_maxbytes": 50000000, # 50MB kindof
+    "osquery_logfile_maxbytes_toparse": 100000000, # 100MB kindof
+    "osquery_backuplogs_count": 2,
     "local": False,
     "use_master_when_local": False,
-    "file_roots": {
-        "base": [hubblestack.syspaths.BASE_FILE_ROOTS_DIR]
-    },
+    "file_roots": { "base": list() },
     "top_file_merging_strategy": "merge",
     "env_order": [],
     "default_top": "base",
@@ -948,10 +981,10 @@ DEFAULT_OPTS = {
     "module_dirs": [],
     "returner_dirs": [],
     "grains_dirs": [],
-    "states_dirs": [],
-    "render_dirs": [],
-    "outputter_dirs": [],
     "utils_dirs": [],
+    'fdg_dirs': [],
+    'audit_dirs': [],
+    'fileserver_dirs': [],
     "publisher_acl": {},
     "publisher_acl_blacklist": {},
     "providers": {},
@@ -971,8 +1004,8 @@ DEFAULT_OPTS = {
     "tcp_pub_port": 4510,
     "tcp_pull_port": 4511,
     "tcp_authentication_retries": 5,
-    "log_file": os.path.join(hubblestack.syspaths.LOGS_DIR, "minion"),
-    "log_level": "warning",
+    "log_file": os.path.join(hubblestack.syspaths.LOGS_DIR, DEFAULT_LOG_FILE_NAME),
+    "log_level": "error",
     "log_level_logfile": None,
     "log_datefmt": _DFLT_LOG_DATEFMT,
     "log_datefmt_logfile": _DFLT_LOG_DATEFMT_LOGFILE,
@@ -1004,7 +1037,7 @@ DEFAULT_OPTS = {
     "verify_env": True,
     "grains": {},
     "permissive_pki_access": False,
-    "default_include": "minion.d/*.conf",
+    "default_include": "hubble.d/*.conf",
     "update_url": False,
     "update_restart_services": [],
     "retry_dns": 30,
@@ -1015,24 +1048,29 @@ DEFAULT_OPTS = {
     "recon_randomize": True,
     "return_retry_timer": 5,
     "return_retry_timer_max": 10,
-    "winrepo_source_dir": "salt://win/repo-ng/",
-    "winrepo_dir": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo"),
-    "winrepo_dir_ng": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo-ng"),
-    "winrepo_cachefile": "winrepo.p",
-    "winrepo_cache_expire_max": 21600,
-    "winrepo_cache_expire_min": 1800,
-    "winrepo_remotes": ["https://github.com/saltstack/salt-winrepo.git"],
-    "winrepo_remotes_ng": ["https://github.com/saltstack/salt-winrepo-ng.git"],
-    "winrepo_branch": "master",
-    "winrepo_ssl_verify": True,
-    "winrepo_user": "",
-    "winrepo_password": "",
-    "winrepo_insecure_auth": False,
-    "winrepo_privkey": "",
-    "winrepo_pubkey": "",
-    "winrepo_passphrase": "",
-    "winrepo_refspecs": _DFLT_REFSPECS,
-    "pidfile": os.path.join(hubblestack.syspaths.PIDFILE_DIR, "salt-minion.pid"),
+    # NOTE: keeping this here for reference; but we hoppefully won't need it
+    # after the windows phase of the saltless re-work
+    #   "winrepo_dir": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo"),
+    #   "winrepo_dir_ng": os.path.join(hubblestack.syspaths.BASE_FILE_ROOTS_DIR, "win", "repo-ng"),
+    #   "winrepo_source_dir": "salt://win/repo-ng/",
+    #   "winrepo_cachefile": "winrepo.p",
+    #   "winrepo_cache_expire_max": 21600,
+    #   "winrepo_cache_expire_min": 1800,
+    #   "winrepo_remotes": ["https://github.com/saltstack/salt-winrepo.git"],
+    #   "winrepo_remotes_ng": ["https://github.com/saltstack/salt-winrepo-ng.git"],
+    #   "winrepo_branch": "master",
+    #   "winrepo_ssl_verify": True,
+    #   "winrepo_user": "",
+    #   "winrepo_password": "",
+    #   "winrepo_insecure_auth": False,
+    #   "winrepo_privkey": "",
+    #   "winrepo_pubkey": "",
+    #   "winrepo_passphrase": "",
+    #   "winrepo_refspecs": _DFLT_REFSPECS,
+    "pidfile": os.path.join(hubblestack.syspaths.PIDFILE_DIR, "hubble.pid"),
+    "osquery_dbpath": DEFAULT_OSQUERY_DB_PATH,
+    "osquerylogpath": os.path.join(hubblestack.syspaths.LOGS_DIR, 'hubble_osquery'),
+    "osquerylog_backupdir": os.path.join(hubblestack.syspaths.LOGS_DIR, 'hubble_osquery', 'backuplogs'),
     "range_server": "range:80",
     "reactor_refresh_interval": 60,
     "reactor_worker_threads": 10,
@@ -1293,44 +1331,19 @@ def _absolute_path(path, relative_to=None):
     return path
 
 
-def load_config(path, env_var, default_path=None, exit_on_config_errors=True):
+def load_config(path, env_var, exit_on_config_errors=True):
     """
     Returns configuration dict from parsing either the file described by
     ``path`` or the environment variable described by ``env_var`` as YAML.
     """
+
+    path = env_path = os.environ.get(env_var, path)
+    opts = {}
+
     if path is None:
         # When the passed path is None, we just want the configuration
         # defaults, not actually loading the whole configuration.
-        return {}
-
-    if default_path is None:
-        # This is most likely not being used from salt, i.e., could be salt-cloud
-        # or salt-api which have not yet migrated to the new default_path
-        # argument. Let's issue a warning message that the environ vars won't
-        # work.
-        import inspect
-
-        previous_frame = inspect.getframeinfo(inspect.currentframe().f_back)
-        log.warning(
-            "The function '%s()' defined in '%s' is not yet using the "
-            "new 'default_path' argument to `hubblestack.config.load_config()`. "
-            "As such, the '%s' environment variable will be ignored",
-            previous_frame.function,
-            previous_frame.filename,
-            env_var,
-        )
-        # In this case, maintain old behavior
-        default_path = DEFAULT_OPTS["conf_file"]
-
-    # Default to the environment variable path, if it exists
-    env_path = os.environ.get(env_var, path)
-    if not env_path or not os.path.isfile(env_path):
-        env_path = path
-    # If non-default path from `-c`, use that over the env variable
-    if path != default_path:
-        env_path = path
-
-    path = env_path
+        return opts
 
     # If the configuration file is missing, attempt to copy the template,
     # after removing the first header line.
@@ -1342,8 +1355,6 @@ def load_config(path, env_var, default_path=None, exit_on_config_errors=True):
                 with hubblestack.utils.files.fopen(template, "r") as ifile:
                     ifile.readline()  # skip first line
                     out.write(ifile.read())
-
-    opts = {}
 
     if hubblestack.utils.validate.path.is_readable(path):
         try:
@@ -1479,7 +1490,7 @@ def insert_system_path(opts, paths):
 
 
 def get_config(
-    path,
+    path=DEFAULT_OPTS['conf_file'],
     env_var="HUBBLE_CONFIG",
     defaults=None,
     cache_minion_id=False,
@@ -1487,17 +1498,25 @@ def get_config(
     minion_id=None
 ):
     """
-    Reads in the minion configuration file and sets up special options
-
-    This is useful for Minion-side operations, such as the
-    :py:class:`~hubblestack.client.Caller` class, and manually running the loader
-    interface.
+    Reads in the configuration file
 
     .. code-block:: python
 
         import hubblestack.config
-        minion_opts = hubblestack.config.get_config('/etc/salt/minion')
+        __opts__ = hubblestack.config.get_config('/etc/hubble/hubble')
+
+
+    Note that you're probably better off using the daemon loader though. It
+    handles a few other things after it uses this get_config function to pull
+    the configs from the file.
+
+    .. code-block:: python
+
+        import hubblestack.daemon
+        __opts__ = hubblestack.daemon.load_config(['-c', '/etc/hubble/hubble'])
+
     """
+
     if defaults is None:
         defaults = DEFAULT_OPTS.copy()
 
@@ -1506,13 +1525,13 @@ def get_config(
         # Lets see is SALT_CONFIG_DIR is of any use
         salt_config_dir = os.environ.get("SALT_CONFIG_DIR", None)
         if salt_config_dir:
-            env_config_file_path = os.path.join(salt_config_dir, "minion")
+            env_config_file_path = os.path.join(salt_config_dir, "hubble")
             if salt_config_dir and os.path.isfile(env_config_file_path):
                 # We can get a configuration file using SALT_CONFIG_DIR, let's
                 # update the environment with this information
                 os.environ[env_var] = env_config_file_path
 
-    overrides = load_config(path, env_var, DEFAULT_OPTS["conf_file"])
+    overrides = load_config(path or DEFAULT_OPTS['conf_file'], env_var)
     default_include = overrides.get("default_include", defaults["default_include"])
     include = overrides.get("include", [])
 
@@ -1536,6 +1555,69 @@ def get_config(
     _validate_opts(opts)
     return opts
 
+def get_id(opts, cache_minion_id=False):
+    '''
+    Guess the id of the minion.
+
+    If CONFIG_DIR/minion_id exists, use the cached minion ID from that file.
+    If no minion id is configured, use multiple sources to find a FQDN.
+    If no FQDN is found you may get an ip address.
+
+    Returns two values: the detected ID, and a boolean value noting whether or
+    not an IP address is being used for the ID.
+    '''
+    if opts['root_dir'] is None:
+        root_dir = hubblestack.syspaths.ROOT_DIR
+    else:
+        root_dir = opts['root_dir']
+
+    config_dir = hubblestack.syspaths.CONFIG_DIR
+    if config_dir.startswith(hubblestack.syspaths.ROOT_DIR):
+        config_dir = config_dir.split(hubblestack.syspaths.ROOT_DIR, 1)[-1]
+
+    # Check for cached minion ID
+    id_cache = os.path.join(root_dir,
+                            config_dir.lstrip(os.path.sep),
+                            'minion_id')
+
+    if opts.get('minion_id_caching', True):
+        try:
+            with hubblestack.utils.files.fopen(id_cache) as idf:
+                name = hubblestack.utils.stringutils.to_unicode(idf.readline().strip())
+                bname = hubblestack.utils.stringutils.to_bytes(name)
+                if bname.startswith(codecs.BOM):  # Remove BOM if exists
+                    name = hubblestack.utils.stringutils.to_str(bname.replace(codecs.BOM, '', 1))
+            if name and name != 'localhost':
+                log.debug('Using cached minion ID from %s: %s', id_cache, name)
+                return name, False
+        except (IOError, OSError):
+            pass
+    if '__role' in opts and opts.get('__role') == 'minion':
+        log.debug(
+            'Guessing ID. The id can be explicitly set in %s',
+            os.path.join(hubblestack.syspaths.CONFIG_DIR, 'minion')
+        )
+
+    if opts.get('id_function'):
+        newid = call_id_function(opts)
+    else:
+        newid = hubblestack.utils.network.generate_minion_id()
+
+    if opts.get('minion_id_lowercase'):
+        newid = newid.lower()
+        log.debug('Changed minion id %s to lowercase.', newid)
+    if '__role' in opts and opts.get('__role') == 'minion':
+        if opts.get('id_function'):
+            log.debug(
+                'Found minion id from external function %s: %s',
+                opts['id_function'], newid
+            )
+        else:
+            log.debug('Found minion id from generate_minion_id(): %s', newid)
+    if cache_minion_id and opts.get('minion_id_caching', True):
+        _cache_id(newid, id_cache)
+    is_ipv4 = hubblestack.utils.network.is_ipv4(newid)
+    return newid, is_ipv4
 
 def apply_config(overrides=None, defaults=None, cache_minion_id=False, minion_id=None):
     """
@@ -1614,15 +1696,16 @@ def apply_config(overrides=None, defaults=None, cache_minion_id=False, minion_id
     # nothing else!
     opts["open_mode"] = opts["open_mode"] is True
     opts["file_roots"] = _validate_file_roots(opts["file_roots"])
+
     # Make sure ext_mods gets set if it is an untrue value
     # (here to catch older bad configs)
-    opts["extension_modules"] = opts.get("extension_modules") or os.path.join(
-        opts["cachedir"], "extmods"
-    )
+
+    # Intentionally disabled loading extension modules from profile dirs
+    #  (but only by not adding the extmods dirs in the cache locations...
+    #   one could still allow this by explicitly setting such a thing in configs)
+    # opts["extension_modules"] = opts.get("extension_modules") or os.path.join( opts["cachedir"], "extmods")
     # Set up the utils_dirs location from the extension_modules location
-    opts["utils_dirs"] = opts.get("utils_dirs") or [
-        os.path.join(opts["extension_modules"], "utils")
-    ]
+    # opts["utils_dirs"] = opts.get("utils_dirs") or [ os.path.join(opts["extension_modules"], "utils") ]
 
     # Insert all 'utils_dirs' directories to the system path
     insert_system_path(opts, opts["utils_dirs"])

@@ -10,7 +10,7 @@ from tests.support.unit import TestCase, skipIf
 from tests.support.mock import Mock, patch, NO_MOCK, NO_MOCK_REASON
 
 import hubblestack.utils.systemd as _systemd
-from hubblestack.utils.exceptions import HubbleInvocationError
+from hubblestack.exceptions import HubbleInvocationError
 
 
 def _booted_effect(path):

@@ -40,11 +40,10 @@ about this, at least.
 
 .. warning::
     This module should not be used on Red Hat systems. For these,
-    the :mod:`rh_service <salt.modules.rh_service>` module should be
+    the :mod:`rh_service <hubblestack.modules.rh_service>` module should be
     used, as it supports the hybrid upstart/sysvinit system used in
     RHEL/CentOS 6.
 '''
-from __future__ import absolute_import, unicode_literals, print_function
 
 # Import python libs
 import glob
@@ -110,7 +109,7 @@ def status(name, sig=None):
         salt '*' service.status <service name> [service signature]
     '''
     if sig:
-        return bool(__salt__['status.pid'](sig))
+        return bool(__mods__['status.pid'](sig))
 
     contains_globbing = bool(re.search(r'\*|\?|\[.+\]', name))
     if contains_globbing:
@@ -123,13 +122,13 @@ def status(name, sig=None):
         if _service_is_upstart(service):
             # decide result base on cmd output, thus ignore retcode,
             # which makes cmd output not at error lvl even when cmd fail.
-            results[service] = 'start/running' in __salt__['cmd.run'](cmd, python_shell=False,
+            results[service] = 'start/running' in __mods__['cmd.run'](cmd, python_shell=False,
                                                                       ignore_retcode=True)
         else:
             # decide result base on retcode, thus ignore output (set quite)
             # because there is no way to avoid logging at error lvl when
             # service is not running - retcode != 0 (which is totally relevant).
-            results[service] = not bool(__salt__['cmd.retcode'](cmd, python_shell=False,
+            results[service] = not bool(__mods__['cmd.retcode'](cmd, python_shell=False,
                                                                 ignore_retcode=True,
                                                                 quite=True))
     if contains_globbing:
@@ -296,7 +295,7 @@ def _runlevel():
     ret = _default_runlevel()
     utmp = _find_utmp()
     if utmp:
-        out = __salt__['cmd.run'](['runlevel', '{0}'.format(utmp)], python_shell=False)
+        out = __mods__['cmd.run'](['runlevel', '{0}'.format(utmp)], python_shell=False)
         try:
             ret = out.split()[1]
         except IndexError:

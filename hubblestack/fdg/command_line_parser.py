@@ -1,4 +1,4 @@
-"""
+r"""
 This module is used to find the value of a command line parameter.
 Inputs : key_aliases (List) : List of keys whose value is to be fetched
          delimiter (String): the assignment operator between the key and the value
@@ -25,7 +25,7 @@ You can copy paste the regex(s) on this webpage - https://regex101.com/ to under
 However, here is a small explanation
 
 regex_base :
-    "(?<=(\s|{))-{0,2}\"{0,1}\'{0,1}", key_alias, "\"{0,1}\'{0,1}\s*", delimiter
+    "(?<=(\s|{))-{0,2}"{0,1}'{0,1}", key_alias, ""{0,1}'{0,1}\s*", delimiter
     This regex primarily focuses on whether the value is embedded inside brackets.
 
 1. '?<=' : denotes a positive lookbehind
@@ -33,7 +33,7 @@ regex_base :
 3. '{' : matches opening braces
 4. (\s|{) : () brackets signify a group. This is the first group in this regex
 4. -{0,2} : matches (zero to two) hyphens.
-5. \"{0,1}\'{0,1} : matches if any quotes are present.
+5. "{0,1}'{0,1} : matches if any quotes are present.
 5. key_alias : matches the given key_alias.
 6. /s* : matches 0 or more <space> characters
 7. delimiter : matches the input delimiter
@@ -45,14 +45,14 @@ regex_pattern
 4. (?=(\s|$|})) : matches that the end of the pattern must contain either <space> or EOL
 
 regex1 :
-    "\s*([\",\']).*?\\2"
+    "\s*([\"']).*?\2"
     This regex primarily focuses on whether the value is embedded inside double or single quotes
 
 The starting regex is similar to the regex_pattern.
-1. ([\", \']) : () brackets signify a group. This is the second group in this regex.
-                    [\",\'] inside the () matches either a double-quote or a single-quote.
+1. (["']) : () brackets signify a group. This is the second group in this regex.
+                 ["'] inside the () matches either a double-quote or a single-quote.
 2. .*? : matches any character lazily.
-3. \\2 : matches the second group of the regex.
+3. \2 : matches the second group of the regex.
 
 regex2 :
     "\s*.+?(?=(\s|$|}))"
@@ -109,16 +109,16 @@ def parse_cmdline(params=None, chained=None, chained_status=None):
                 log.info("key_alias %s not found in command line %s", key_alias, command_line)
                 continue
 
-            regex_base = "".join(["(?<=(\s|{))-{0,2}\"{0,1}\'{0,1}", key_alias, "\"{0,1}\'{0,1}\s*", delimiter])
+            regex_base = "".join([r"(?<=(\s|{))-{0,2}\"{0,1}'{0,1}", key_alias, r"\"{0,1}'{0,1}\s*", delimiter])
             regex_list = []
-            regex_pattern = "".join([regex_base, "\s*openingbracket.*closingbracket(?=(\s|$))"])
-            braces_list = [('\[','\]'), ('\{','\}'), ('\(','\)')]
+            regex_pattern = "".join([regex_base, r"\s*openingbracket.*closingbracket(?=(\s|$))"])
+            braces_list = [(r'\[',r'\]'), (r'\{',r'\}'), (r'\(',r'\)')]
             for item in braces_list:
                 regex = re.sub("openingbracket", item[0], regex_pattern)
                 regex = re.sub("closingbracket", item[1], regex)
                 regex_list.append(regex)
-            regex1 = "".join([regex_base, "\s*([\",\']).*?\\2"])
-            regex2 = "".join([regex_base, "\s*.+?(?=(\s|$))"])
+            regex1 = "".join([regex_base, r"\s*([\",']).*?\2"])
+            regex2 = "".join([regex_base, r"\s*.+?(?=(\s|$))"])
             regex_list.append(regex1)
             regex_list.append(regex2)
 
@@ -154,12 +154,11 @@ def _get_match_list(regex, key_alias, command_line, delimiter):
     for match_num, match in enumerate(matches, start=1):
         log.info("Match %d was found at %d-%d: %s", match_num, match.start(), match.end(), match.group())
         value = match.group().lstrip("-")
-        value = value.replace("".join(["\"", key_alias, "\""]), key_alias)
-        value = value.replace("".join(["\'", key_alias, "\'"]), key_alias)
-        prefix = "".join([key_alias, "\s*", delimiter, "\s*"])
+        value = value.replace("".join(['"', key_alias, '"']), key_alias)
+        value = value.replace("".join(["'", key_alias, "'"]), key_alias)
+        prefix = "".join([key_alias, r"\s*", delimiter, r"\s*"])
         value = re.sub(prefix, '', value)
-        value = value.rstrip('\"\' ')
-        value = value.lstrip('\"\' ')
+        value = value.strip("\"' ")
         if value[0] in open_bracket_list:
             value = _fetch_bracketed_value(value)
             if not value:

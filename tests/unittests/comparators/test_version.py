@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from hubblestack.extmods.comparators import version as version_comparator
+from hubblestack.comparators import version as version_comparator
 
 
 class TestVersionMatch(TestCase):

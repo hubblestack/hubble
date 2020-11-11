@@ -608,7 +608,7 @@ class TestCommandLineParser(TestCase):
         Value is a regex
         Expected Status : True
         """
-        command_line = {"cmdline" : '/bin/node_exporter --collector.diskstats.ignored-devices=^(dm-\d+|ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+$'}
+        command_line = {"cmdline" : r'/bin/node_exporter --collector.diskstats.ignored-devices=^(dm-\d+|ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+$'}
         key_aliases = ["collector.diskstats.ignored-devices"]
         params = {
             'key_aliases': key_aliases,
@@ -618,7 +618,7 @@ class TestCommandLineParser(TestCase):
         chain_args = {'result': command_line}
         extra_args = {'chaining_args': chain_args}
         status, val = command_line_parser.execute("test-1", block_dict, extra_args)
-        expected_value = ['^(dm-\d+|ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+$']
+        expected_value = [r'^(dm-\d+|ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+$']
         assert val['result'] == expected_value
 
 

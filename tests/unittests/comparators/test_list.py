@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-from hubblestack.extmods.comparators import list as list_comparator
+from hubblestack.comparators import list as list_comparator
 
 
 class TestListSize(TestCase):

@@ -23,7 +23,7 @@ class TestWinFirewall(TestCase):
                             }
                      }
         result = win_firewall.get_filtered_params_to_log(block_id, block_dict, extra_args=None)
-        self.assertEquals(result.get("name"), setting_name)
+        self.assertEqual(result.get("name"), setting_name)
 
     def test_validate_params_positive(self):
         """
@@ -85,4 +85,4 @@ class TestWinFirewall(TestCase):
         print(result)
         self.assertTrue(result[0])
         self.assertTrue(isinstance(result[1], dict))
-        self.assertEquals(result[1].get("result").get("setting_value"), 'true')
+        self.assertEqual(result[1].get("result").get("setting_value"), 'true')

@@ -210,7 +210,7 @@ def __virtual__():
 
 
 def execute(block_id, block_dict, extra_args=None):
-    """
+    r"""
     Execute the module
 
     :param block_id:
@@ -247,7 +247,7 @@ def execute(block_id, block_dict, extra_args=None):
 
 
 def validate_params(block_id, block_dict, extra_args=None):
-    """
+    r"""
         Validate all mandatory params required for this module
 
         :param block_id:
@@ -261,7 +261,7 @@ def validate_params(block_id, block_dict, extra_args=None):
 
         Raises:
             HubbleCheckValidationError: For any validation error
-        """
+    """
     log.debug('Module: win_reg. Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
@@ -281,7 +281,7 @@ def validate_params(block_id, block_dict, extra_args=None):
 
 
 def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
-    """
+    r"""
     For getting params to log, in non-verbose logging
 
     :param block_id:

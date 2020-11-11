@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from hubblestack.extmods.comparators import string as string_comparator
+from hubblestack.comparators import string as string_comparator
 
 
 class TestStringMatch(TestCase):

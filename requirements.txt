@@ -13,6 +13,7 @@ cffi
 chardet
 croniter
 cryptography
+configparser
 daemon
 futures
 gitdb2
@@ -24,6 +25,7 @@ mock
 msgpack
 ntplib
 objgraph
+packaging
 patch==1.*
 psutil
 pycryptodome
@@ -33,6 +35,7 @@ pyinstaller-hooks
 pyinstaller==3.6
 pylint
 pyopenssl>=16.2.0
+pyparsing
 pytest
 pytest-cov
 pytest-html

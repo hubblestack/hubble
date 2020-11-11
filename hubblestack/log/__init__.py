@@ -9,5 +9,6 @@ from hubblestack.log.setup import (
     filter_logs,
     is_logfile_configured,
     is_console_configured,
-    is_logging_configured
+    is_logging_configured,
+    refresh_handler_std_info
 )

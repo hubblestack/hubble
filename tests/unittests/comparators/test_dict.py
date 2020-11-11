@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-import hubblestack.extmods.comparators.dict as dict_comparator
+import hubblestack.comparators.dict as dict_comparator
 
 
 class TestDictMatch(TestCase):

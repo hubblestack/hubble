@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from hubblestack.extmods.comparators import certificate as certificate_comparator
+from hubblestack.comparators import certificate as certificate_comparator
 
 
 class TestCertificate(TestCase):

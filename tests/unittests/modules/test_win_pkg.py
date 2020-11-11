@@ -24,7 +24,7 @@ class TestWinPkg(TestCase):
                      }
         get_param_for_module_mock.return_value = pkg_name
         result = win_pkg.get_filtered_params_to_log(block_id, block_dict, extra_args=None)
-        self.assertEquals(result.get("name"), pkg_name)
+        self.assertEqual(result.get("name"), pkg_name)
 
     @patch('hubblestack.module_runner.runner_utils.get_param_for_module')
     def test_validate_params_positive(self, get_param_for_module_mock):
@@ -93,4 +93,4 @@ class TestWinPkg(TestCase):
         result = win_pkg.execute(block_id, block_dict)
         self.assertTrue(result[0])
         self.assertTrue(isinstance(result[1], dict))
-        self.assertEquals(pkg_list.get("Local Administrator Password Solution"), result[1].get("result").get("package_version"))
+        self.assertEqual(pkg_list.get("Local Administrator Password Solution"), result[1].get("result").get("package_version"))

@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-import hubblestack.extmods.comparators.file_permission as fp_comparator
+import hubblestack.comparators.file_permission as fp_comparator
 
 
 class TestFilePermissionMatch(TestCase):

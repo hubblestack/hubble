@@ -64,7 +64,7 @@ def returner(ret):
         return
 
     host_args = _build_args(ret)
-    if host_args['fun'] != 'fdg.top':
+    if host_args['fun'] != 'fdg.top' and host_args['fun'] != 'fdg.run':
         if len(data) < 2:
             log.error('Non-fdg data found in splunk_fdg_return: %s', data)
             return

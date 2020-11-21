@@ -255,7 +255,7 @@ def execute(block_id, block_dict, extra_args=None):
     returns:
         tuple of result(value) and status(boolean)
     """
-    log.debug('Executing stat module for id: {0}'.format(block_id))
+    log.debug('Executing time_sync module for id: {0}'.format(block_id))
 
     ntp_servers = _get_ntp_servers(block_id, block_dict, extra_args)
 

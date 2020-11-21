@@ -299,7 +299,9 @@ def validate_params(block_id, block_dict, extra_args=None):
     function_param = runner_utils.get_param_for_module(block_id, block_dict, 'function')
     if not function_param:
         error['function'] = 'Mandatory parameter: function not found for id: %s' % (block_id)
-    elif function_param not in ['filter_dict']:
+    elif function_param not in ['filter_dict', 'filter_seq', 'get_index', 'get_key', 'join',
+                                'dict_to_list', 'dict_convert_none', 'print_string',
+                                'dict_remove_none', 'nop', 'encode_base64']:
         error['function'] = 'Unsupported function in util: {0}'.format(function_param)
     else:
         if function_param == 'filter_dict':

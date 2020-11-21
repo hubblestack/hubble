@@ -117,7 +117,7 @@ class TestReadFile():
         }}
         check_id = "test-1"
         status, ret = readfile.execute(check_id, block_dict)
-        expected_status, expected_ret = False, {'error': 'unknown_error'}
+        expected_status, expected_ret = False, {'error': 'KeyError'}
 
         assert expected_status == status
         assert expected_ret == ret
@@ -148,7 +148,8 @@ class TestReadFile():
         block_dict={"args": {
             "path": json_file,
             "format": "json",
-            'subkey':'value,key2,key3', 'sep':'/'
+            'subkey':'value,key2,key3',
+            'sep':'/'
         }}
         check_id = "test-1"
         status, ret = readfile.execute(check_id, block_dict)
@@ -162,7 +163,8 @@ class TestReadFile():
         block_dict={"args": {
             "path": json_file,
             "format": "json",
-            'subkey':'menuitem,1', 'sep':','
+            'subkey':'menuitem,1',
+            'sep':','
         }}
         check_id = "test-1"
         status, ret = readfile.execute(check_id, block_dict)

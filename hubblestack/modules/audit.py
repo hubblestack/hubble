@@ -137,6 +137,7 @@ def run(audit_files=None,
     try:
         if audit_files is None:
             return top(verbose=verbose,
+                       tags=tags,
                        show_compliance=show_compliance,
                        labels=labels)
 
@@ -170,7 +171,6 @@ def run(audit_files=None,
 
         # initialize loader
         audit_runner.init_loader()
-
         for audit_file in audit_files:
             ret = audit_runner.execute(audit_file, {
                 'tags': tags,
@@ -260,6 +260,7 @@ def _calculate_compliance(result_dict):
 
 @hubble_status.watch
 def top(topfile='top.audit',
+        tags='*',
         verbose=None,
         show_compliance=None,
         labels=None):
@@ -288,7 +289,7 @@ def top(topfile='top.audit',
     # have no tag filters, so we'll treat them as tag filter '*'. If we sort
     # all the data by tag filter we can batch where possible under the same
     # tag.
-    data_by_tag = _build_data_by_tag(topfile, results)
+    data_by_tag = _build_data_by_tag(topfile, tags, results)
 
     if not data_by_tag:
         return results
@@ -316,7 +317,7 @@ def top(topfile='top.audit',
     return results
 
 
-def _build_data_by_tag(topfile, results):
+def _build_data_by_tag(topfile, tags, results):
     """
     Helper function that goes over data in top_data and
     aggregate it by tag
@@ -330,8 +331,8 @@ def _build_data_by_tag(topfile, results):
         for data in top_data:
             if isinstance(data, str):
                 if '*' not in data_by_tag:
-                    data_by_tag['*'] = []
-                data_by_tag['*'].append(data)
+                    data_by_tag[tags] = []
+                data_by_tag[tags].append(data)
             elif isinstance(data, dict):
                 for key, tag in data.items():
                     if tag not in data_by_tag:
@@ -368,7 +369,6 @@ def _get_top_data(topfile):
     except Exception as exc:
         log.exception('Could not load topfile: {0}'.format(exc))
         return None
-
     if not isinstance(topdata, dict) or 'audit' not in topdata or \
             (not isinstance(topdata['audit'], dict)):
         log.exception('Audit topfile not formatted correctly')
@@ -376,6 +376,9 @@ def _get_top_data(topfile):
     topdata = topdata['audit']
     ret = []
     for match, data in topdata.items():
+        if data is None:
+            log.exception('No profiles found for one or more filters in topfile')
+            return None
         if __mods__['match.compound'](match):
             ret.extend(data)
     return ret

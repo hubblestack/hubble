@@ -357,7 +357,13 @@ def _handle_file_helper(file_format, block_id, path, subkey=None, sep=None, chai
                 if not isinstance(ret, dict):
                     # If it's not a dict, assume it's a list and that `key` is an int
                     key = int(key)
-                ret = ret[key]
+                if key in ret:
+                    ret = ret[key]
+                elif isinstance(key, int):
+                    ret = ret[key]
+                else:
+                    log.error("key '%s' not found in dictionary '%s'", key, ret)
+                    return runner_utils.prepare_negative_result_for_module(block_id, 'KeyError')
         except (KeyError, TypeError, ValueError, IndexError):
             log.error('Error traversing dict.', exc_info=True)
             return runner_utils.prepare_negative_result_for_module(block_id, 'unknown_error')

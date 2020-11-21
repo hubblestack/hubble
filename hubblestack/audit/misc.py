@@ -261,40 +261,6 @@ import hubblestack.audit.grep as grep_module
 
 log = logging.getLogger(__name__)
 
-FUNCTION_MAP = {
-    'check_all_ports_firewall_rules': _check_all_ports_firewall_rules,
-    'check_password_fields_not_empty': _check_password_fields_not_empty,
-    'system_account_non_login': _system_account_non_login,
-    'default_group_for_root': _default_group_for_root,
-    'root_is_only_uid_0_account': _root_is_only_uid_0_account,
-    'test_success': _test_success,
-    'test_failure': _test_failure,
-    'test_failure_reason': _test_failure_reason,
-    'check_path_integrity': _check_path_integrity,
-    'check_time_synchronization': _check_time_synchronization,
-    'check_core_dumps': _check_core_dumps,
-    'check_directory_files_permission': _check_directory_files_permission,
-    'check_duplicate_gnames': _check_duplicate_gnames,
-    'check_duplicate_unames': _check_duplicate_unames,
-    'check_duplicate_gids': _check_duplicate_gids,
-    'check_duplicate_uids': _check_duplicate_uids,
-    'check_service_status': _check_service_status,
-    'check_ssh_timeout_config': _check_ssh_timeout_config,
-    'check_all_users_home_directory': _check_all_users_home_directory,
-    'check_users_home_directory_permissions': _check_users_home_directory_permissions,
-    'check_users_own_their_home': _check_users_own_their_home,
-    'check_users_dot_files': _check_users_dot_files,
-    'check_users_forward_files': _check_users_forward_files,
-    'check_users_netrc_files': _check_users_netrc_files,
-    'check_groups_validity': _check_groups_validity,
-    'ensure_reverse_path_filtering': _ensure_reverse_path_filtering,
-    'check_users_rhosts_files': _check_users_rhosts_files,
-    'check_netrc_files_accessibility': _check_netrc_files_accessibility,
-    'check_list_values': _check_list_values,
-    'mail_conf_check': _mail_conf_check,
-    'ensure_max_password_expiration': _ensure_max_password_expiration,
-    'check_sshd_parameters': _check_sshd_parameters,
-}
 
 def validate_params(block_id, block_dict, extra_args=None):
     """
@@ -358,6 +324,26 @@ def _validation_helper(block_id, block_dict, expected_args_list, error_dict):
     for expected_arg in expected_args_list:
         if not runner_utils.get_param_for_module(block_id, block_dict, expected_arg):
             error_dict[expected_arg] = 'No {0} provided for block_id: {1}'.format(expected_arg, block_id)
+
+
+def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
+    """
+    For getting params to log, in non-verbose logging
+
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
+    """
+    log.debug('get_filtered_params_to_log for id: {0}'.format(block_id))
+    # fetch required param
+    function_name = runner_utils.get_param_for_module(block_id, block_dict, 'function')
+
+    return {'function_name': function_name}
 
 
 def execute(block_id, block_dict, extra_args=None):
@@ -1081,3 +1067,38 @@ def _execute_shell_command(cmd, python_shell=False):
     """
     return __mods__['cmd.run'](cmd, python_shell=python_shell, shell='/bin/bash', ignore_retcode=True)
 
+
+FUNCTION_MAP = {
+    'check_all_ports_firewall_rules': _check_all_ports_firewall_rules,
+    'check_password_fields_not_empty': _check_password_fields_not_empty,
+    'system_account_non_login': _system_account_non_login,
+    'default_group_for_root': _default_group_for_root,
+    'root_is_only_uid_0_account': _root_is_only_uid_0_account,
+    'test_success': _test_success,
+    'test_failure': _test_failure,
+    'test_failure_reason': _test_failure_reason,
+    'check_path_integrity': _check_path_integrity,
+    'check_time_synchronization': _check_time_synchronization,
+    'check_core_dumps': _check_core_dumps,
+    'check_directory_files_permission': _check_directory_files_permission,
+    'check_duplicate_gnames': _check_duplicate_gnames,
+    'check_duplicate_unames': _check_duplicate_unames,
+    'check_duplicate_gids': _check_duplicate_gids,
+    'check_duplicate_uids': _check_duplicate_uids,
+    'check_service_status': _check_service_status,
+    'check_ssh_timeout_config': _check_ssh_timeout_config,
+    'check_all_users_home_directory': _check_all_users_home_directory,
+    'check_users_home_directory_permissions': _check_users_home_directory_permissions,
+    'check_users_own_their_home': _check_users_own_their_home,
+    'check_users_dot_files': _check_users_dot_files,
+    'check_users_forward_files': _check_users_forward_files,
+    'check_users_netrc_files': _check_users_netrc_files,
+    'check_groups_validity': _check_groups_validity,
+    'ensure_reverse_path_filtering': _ensure_reverse_path_filtering,
+    'check_users_rhosts_files': _check_users_rhosts_files,
+    'check_netrc_files_accessibility': _check_netrc_files_accessibility,
+    'check_list_values': _check_list_values,
+    'mail_conf_check': _mail_conf_check,
+    'ensure_max_password_expiration': _ensure_max_password_expiration,
+    'check_sshd_parameters': _check_sshd_parameters,
+}

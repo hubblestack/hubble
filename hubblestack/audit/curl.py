@@ -254,6 +254,13 @@ def validate_params(block_id, block_dict, extra_args=None):
     if not function_name:
         function_name = 'GET'
 
+    chain_error = {}
+    chained_result = runner_utils.get_chained_param(extra_args)
+    if chained_result:
+        log.warning("Chained params are not supported in curl Module.")
+        chain_error['chained_params'] = "Chained params found in CURL module, returning with error"
+        raise HubbleCheckValidationError(chain_error)
+
     url = runner_utils.get_param_for_module(block_id, block_dict, 'url')
 
     error = {}

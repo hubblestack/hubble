@@ -359,7 +359,7 @@ def execute(block_id, block_dict, extra_args=None):
                 if match_list:
                     ret_match_list.extend(match_list)
                     break
-
+        log.debug("command_line_parser module output for block_id %s, is %s", block_id, ret_match_list)
         return runner_utils.prepare_positive_result_for_module(block_id, ret_match_list)
 
     except Exception as e:

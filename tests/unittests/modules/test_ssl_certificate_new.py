@@ -131,7 +131,8 @@ class TestSSL(TestCase):
         self.assertDictEqual(expected_dict, result)
 
     @patch('hubblestack.audit.ssl_certificate._get_cert')
-    def testExecute1(self, get_cert_mock):
+    @patch('hubblestack.audit.ssl_certificate._parse_cert')
+    def testExecute1(self, parse_cert_mock, get_cert_mock):
         """
         Run execute for a common test case - google
         Match the expected output
@@ -143,6 +144,23 @@ class TestSSL(TestCase):
                 'host_port': 443
             }
         }
+        parse_cert_mock.return_value = {
+            'ssl_src_port': '443',
+            'ssl_src_host': 'www.google.com',
+            'ssl_issuer_common_name': 'None',
+            'ssl_src_path': 'None',
+            'ssl_subject_country': 'None',
+            'ssl_subject_organisation': 'None',
+            'ssl_cert_version': '2',
+            'ssl_has_expired': False,
+            'ssl_subject_organisation_unit': 'None',
+            'ssl_subject_common_name': 'None',
+            'ssl_serial_number': '10409658328798172064',
+            'ssl_end_time': '2030-01-01 00:00:00',
+            'ssl_start_time': '2015-01-01 00:00:00',
+            'ssl_signature_algorithm': "b'sha256WithRSAEncryption'"
+        }
+
         get_cert_mock.return_value = "-----BEGIN CERTIFICATE-----\n" \
                                      "MIIDfDCCAmSgAwIBAgIJAJB2iRjpM5OgMA0GCSqGSIb3DQEBCwUAME4xMTAvBgNV\n" \
                                      "BAsMKE5vIFNOSSBwcm92aWRlZDsgcGxlYXNlIGZpeCB5b3VyIGNsaWVudC4xGTAX\n" \

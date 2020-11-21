@@ -122,12 +122,12 @@ class Runner(ABC):
             for key in module_args:
                 if key not in acceptable_block_args:
                     # Just doing error logging for unsupported tags
-                    log.error('Could not execute block \'{0}\': '
-                                                '\'{1}\' is not a valid block key'
+                    log.warning('Please check block \'{0}\': '
+                                                '\'{1}\' is an unsupported block key'
                                                 .format(profile_id, key))
             if 'args' not in module_args and 'comparator' not in module_args:
                 raise CommandExecutionError('Could not execute block \'{0}\': '
-                                            '\'{1}\' is not a valid block key'
+                                            'either \'args\' or \'comparator\' is not present in block.'
                                             .format(profile_id, key))
 
     def _execute_module(self, module_name, profile_id, module_args, extra_args=None, chaining_args=None):

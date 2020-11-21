@@ -148,6 +148,9 @@ def match(audit_id, result_to_compare, args):
     """
     log.debug('Running list::match for check: {0}'.format(audit_id))
     expected_list = args.get('match')
+    if not isinstance(result_to_compare, list) or len(result_to_compare) == 0:
+        log.error("empty list received in list::match for audit_id: {0}".format(audit_id))
+        return False, "list::match failure. {0} is not an instance of list".format(result_to_compare)
     if isinstance(result_to_compare[0], dict):
         # If list to compare has dict, it uses first key of dict to sort list
         sort_key = list(result_to_compare[0].keys())[0]

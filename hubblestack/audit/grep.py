@@ -277,6 +277,7 @@ def execute(block_id, block_dict, extra_args=None):
     grep_result = _grep(filepath, file_content, pattern, *flags)
     ret_code = grep_result.get('retcode')
     result = grep_result.get('stdout')
+    log.debug("grep module output for block_id %s, is %s", block_id, result)
     if ret_code != 0:
         if ret_code == 1:
             return runner_utils.prepare_negative_result_for_module(block_id, "pattern_not_found")

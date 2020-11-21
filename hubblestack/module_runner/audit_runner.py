@@ -34,7 +34,6 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
         tags = args.get('tags', '*')
         labels = args.get('labels', None)
         verbose = args.get('verbose', None)
-
         result_list = []
         boolean_expr_check_list = []
         audit_profile = os.path.splitext(os.path.basename(audit_file))[0]
@@ -74,9 +73,10 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
                     'check_id': audit_id,
                     'tag': audit_data['tag'],
                     'description': audit_data['description'],
+                    'sub_check': audit_data.get('sub_check', False),
                     'check_result': CHECK_STATUS['Error'] if isinstance(herror, HubbleCheckValidationError) else
                     CHECK_STATUS['Skipped'],
-                    'nova_profile': audit_profile
+                    'audit_profile': audit_profile
                 })
                 log.error(herror)
             except Exception as exc:
@@ -135,20 +135,20 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
     def _is_boolean_expression(self, audit_impl):
         return audit_impl.get('module', '') == 'bexpr'
 
-    def _execute_audit(self, audit_id, audit_impl, audit_data, verbose, nova_profile, result_list=None):
+    def _execute_audit(self, audit_id, audit_impl, audit_data, verbose, audit_profile, result_list=None):
         """
         Function to execute the module and return the result
         :param audit_id:
         :param audit_impl:
         :param audit_data:
         :param verbose:
-        :param nova_profile:
+        :param audit_profile:
         :return:
         """
         audit_result = {
             "check_id": audit_id,
             "description": audit_data['description'],
-            "nova_profile": nova_profile,
+            "audit_profile": audit_profile,
             "sub_check": audit_data.get('sub_check', False),
             "tag": audit_data['tag'],
             "module": audit_impl['module'],
@@ -159,7 +159,14 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
 
         failure_reason = audit_data.get('failure_reason', '')
         invert_result = audit_data.get('invert_result', False)
+        # check if the type of invert_result is boolean
+        if not isinstance(invert_result, bool):
+            raise HubbleCheckValidationError('value of invert_result is not a boolean in audit_id: {0}'.format(audit_id))
+
         return_no_exec = audit_impl.get('return_no_exec', False)
+        # check if the type of invert_result is boolean
+        if not isinstance(return_no_exec, bool):
+            raise HubbleCheckValidationError('value of return_no_exec is not a boolean in audit_id: {0}'.format(audit_id))
         check_eval_logic = audit_impl.get('check_eval_logic', 'and')
         if check_eval_logic:
             check_eval_logic = check_eval_logic.lower().strip()
@@ -263,6 +270,7 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
                     boolean_expr_result_list.append({
                         'check_id': boolean_expr['check_id'],
                         'tag': boolean_expr['audit_data']['tag'],
+                        'sub_check': boolean_expr['audit_data'].get('sub_check', False),
                         'description': boolean_expr['audit_data']['description'],
                         'check_result': CHECK_STATUS['Error'] if isinstance(herror, HubbleCheckValidationError) else
                         CHECK_STATUS['Skipped'],

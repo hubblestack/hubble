@@ -209,6 +209,9 @@ def match_any_if_key_matches(audit_id, result_to_compare, args):
     log.debug('Running dict::match_any_if_key_matches for audit_id: {0}'.format(audit_id))
 
     key_name = args['match_any_if_key_matches']['match_key']
+    if key_name not in result_to_compare:
+        log.debug("Required key '%s' is not found in '%s' for audit_id '%s'", key_name, result_to_compare, audit_id)
+        return True, "pass_as_key_not_found"
     key_found_once = False
     for to_match_dict in args['match_any_if_key_matches']['args']:
         errors = []

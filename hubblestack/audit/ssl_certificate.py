@@ -418,7 +418,15 @@ def _parse_cert(cert, host, port, path):
 def _format_components(x509name):
     items = {}
     for item in x509name.get_components():
-        items[item[0]] = item[1]
+        if isinstance(item[0], bytes):
+            key = item[0].decode("utf-8")
+        else:
+            key = item[0]
+        if isinstance(item[1], bytes):
+            value = item[1].decode("utf-8")
+        else:
+            value = item[1]
+        items[key] = value
     return items
 
 

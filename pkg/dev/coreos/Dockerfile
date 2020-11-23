@@ -115,9 +115,9 @@ RUN /opt/osquery/osqueryi --version
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=v4.0.1_rc3
+ARG HUBBLE_CHECKOUT=v4.0.1
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=4.0.1_rc3
+ENV HUBBLE_VERSION=4.0.1
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_SRC_PATH=/hubble_src

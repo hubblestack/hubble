@@ -1,7 +1,4 @@
-import sys
 import os
-myPath = os.path.abspath(os.getcwd())
-sys.path.insert(0, myPath)
 import hubblestack.files.hubblestack_nova.grep
 
 
@@ -51,7 +48,7 @@ class TestGrep():
         __salt__['cmd.run_all'] = cmd_run_all
         hubblestack.files.hubblestack_nova.grep.__salt__ = __salt__
         hubblestack.files.hubblestack_nova.grep.__grains__ = {'osfinger': 'Ubuntu-16.04'}
-        val = hubblestack.files.hubblestack_nova.grep.audit(data_list, __tags__, debug=False)
+        val = hubblestack.files.hubblestack_nova.grep.audit(data_list, __tags__, [], debug=False)
         assert len(val['Success']) != 0
         assert len(val['Failure']) == 0
 
@@ -68,7 +65,7 @@ class TestGrep():
         hubblestack.files.hubblestack_nova.grep.__salt__ = __salt__
         hubblestack.files.hubblestack_nova.grep.__grains__ = {'osfinger': 'Ubuntu-16.04'}
         try:
-            val = hubblestack.files.hubblestack_nova.grep.audit(data_list, __tags__, debug=False)
+            val = hubblestack.files.hubblestack_nova.grep.audit(data_list, __tags__, [], debug=False)
         except ValueError:
             pass
         hubblestack.files.hubblestack_nova.grep.__salt__ = {}
@@ -86,7 +83,7 @@ class TestGrep():
         __salt__['cmd.run_all'] = cmd_run_all
         hubblestack.files.hubblestack_nova.grep.__salt__ = __salt__
         hubblestack.files.hubblestack_nova.grep.__grains__ = {'osfinger': 'Ubuntu-16.04'}
-        val = hubblestack.files.hubblestack_nova.grep.audit(data_list, __tags__, debug=False)
+        val = hubblestack.files.hubblestack_nova.grep.audit(data_list, __tags__, [], debug=False)
         assert val == expected_val
         hubblestack.files.hubblestack_nova.grep.__salt__ = {}
 

@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova module for auditing SSL certificates.
 
 This audit module requires YAML data to execute. It will search the yaml data
@@ -63,9 +63,9 @@ Some notes:
 Known issues: for unknown reasons (yet), the module can fail downloading the certificate from certain endpoints. When
 this happens, the check will be failed.
 
-'''
+"""
 
-from __future__ import absolute_import
+
 import logging
 
 import fnmatch
@@ -98,9 +98,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    '''
+    """
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    '''
+    """
     ret={}
     if labels:
         labelled_test_cases=[]
@@ -174,7 +174,7 @@ def audit(data_list, tags, labels, debug=True, **kwargs):
 def _merge_yaml(ret, data, profile=None):
     if 'openssl' not in ret:
         ret['openssl'] = []
-    for key, val in data.get('openssl', {}).iteritems():
+    for key, val in data.get('openssl', {}).items():
         if profile and isinstance(val, dict):
             val['nova_profile'] = profile
         ret['openssl'].append({key: val})
@@ -184,7 +184,7 @@ def _merge_yaml(ret, data, profile=None):
 def _get_tags(data):
     ret = {}
     for audit_dict in data.get('openssl', {}):
-        for audit_id, audit_data in audit_dict.iteritems():
+        for audit_id, audit_data in audit_dict.items():
             tags_dict = audit_data.get('data', {})
             tag = tags_dict.pop('tag')
             if tag not in ret:
@@ -271,8 +271,8 @@ def _get_cert_from_file(cert_file_path):
 def _get_x509_days_left(x509):
     date_fmt = '%Y%m%d%H%M%SZ'
     current_datetime = datetime.datetime.utcnow()
-    not_after = time.strptime(x509.get_notAfter(), date_fmt)
-    not_before = time.strptime(x509.get_notBefore(), date_fmt)
+    not_after = time.strptime(x509.get_notAfter().decode(), date_fmt)
+    not_before = time.strptime(x509.get_notBefore().decode(), date_fmt)
 
     ret = {'not_after': (datetime.datetime(*not_after[:6]) - current_datetime).days,
            'not_before': (datetime.datetime(*not_before[:6]) - current_datetime).days}

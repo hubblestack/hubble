@@ -1,18 +1,17 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 This is intended to generate data for splunk returners in a standard way.
 Currently each returner seems to generate these data by hand in their own way.
 This is being tested/used in the generic returner and probably only from
 hstatus exec module (for now).
-'''
+"""
 import socket
 
 
 def std_info():
-    ''' Generate and return hubble standard host data for use in events:
-          master, minion_id, dest_host, dest_ip, dest_fqdn and system_uuid
-    '''
-    master = __grains__['master']
+    """ Generate and return hubble standard host data for use in events:
+          minion_id, dest_host, dest_ip, dest_fqdn and system_uuid
+    """
     minion_id = __opts__['id']
     local_fqdn = __grains__.get('local_fqdn', __grains__['fqdn'])
 
@@ -71,8 +70,8 @@ def get_fqdn_ip4():
 
 
 def index_extracted(payload):
-    ''' generate index extracted fields dictionary from the given payload based
-    on the options in the config file '''
+    """ generate index extracted fields dictionary from the given payload based
+    on the options in the config file """
     if not isinstance(payload.get('event'), dict):
         return
     index_extracted_fields = []
@@ -91,12 +90,14 @@ def index_extracted(payload):
 
 
 def update_payload(payload):
-    ''' update the given payload with index extracted fields (if applicable)
-    and append std host data to the event (iff it's a dictionary) '''
+    """ update the given payload with index extracted fields (if applicable)
+    and append std host data to the event (iff it's a dictionary) """
     if 'event' not in payload:
         payload['event'] = dict()
     if isinstance(payload['event'], dict):
         payload['event'].update(std_info())
+    if not payload.get('host'):
+        payload['host'] = get_fqdn()
     fields = index_extracted(payload)
     if fields:
         payload['fields'] = fields

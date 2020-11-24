@@ -4,54 +4,59 @@
     $osqueryd_flagfile_path = $hubble_path + "\var\cache\files\base\hubblestack_nebula_v2\osquery.flags"
     $osqueryd_logfile_path = $hubble_path + "\var\log\hubble_osquery"
     $osqueryd_backuplog_path = $osqueryd_logfile_path + "\backuplogs"
-
-    $acl = Get-Item $osqueryd_path |get-acl
-    $acl.SetAccessRuleProtection($true,$true)
-    $acl |Set-Acl
-    $binpath = "\" + '"' + $osqueryd_path + "osqueryd.exe" + "\" + '"' 	+ " --flagfile=\" + '"' + $osqueryd_flagfile_path + "\" + '"' + " --config_path=\" + '"' + $osqueryd_conffile_path + "\" + '"' + " --logger_path=\" + '"' + $osqueryd_logfile_path + "\" + '"'
     $osqueryd_service_name = "hubble_osqueryd"
+    $binpath = "\" + '"' + $osqueryd_path + "osqueryd.exe" + "\" + '"'  + " --flagfile=\" + '"' + $osqueryd_flagfile_path + "\" + '"' + " --config_path=\" + '"' + $osqueryd_conffile_path + "\" + '"' + " --logger_path=\" + '"' + $osqueryd_logfile_path + "\" + '"'
+    $target = $osqueryd_path
+    $acl = Get-Acl $target
 
-    $group = "NT SERVICE\TrustedInstaller"
-    $acl = Get-Acl $osqueryd_path
-    $inherit =[system.security.accesscontrol.InheritanceFlags]"ContainerInherit,ObjectInherit"
-    $propagation =[system.security.accesscontrol.PropagationFlags]"None"
-    $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule($group,"FullControl", $inherit, $Propagation ,,,"Allow")
-    $acl.RemoveAccessRuleAll($accessrule)
-    set-acl -aclobject $acl $osqueryd_path
+    # First, to ensure success, we remove the entirety of the ACL
+    $acl.SetAccessRuleProtection($true, $false)
+    foreach ($access in $acl.Access) {
+      $acl.RemoveAccessRule($access)
+    }
+    Set-Acl $target $acl
 
-    $group = "ALL APPLICATION PACKAGES"
-    $acl = Get-Acl $osqueryd_path
-    $inherit =[system.security.accesscontrol.InheritanceFlags]"ContainerInherit,ObjectInherit"
-    $propagation =[system.security.accesscontrol.PropagationFlags]"None"
-    $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule($group,"FullControl", $inherit, $Propagation ,,,"Allow")
-    $acl.RemoveAccessRuleAll($accessrule)
-    set-acl -aclobject $acl $osqueryd_path
+    $acl = Get-Acl $target
+    $inheritanceFlag = [System.Security.AccessControl.InheritanceFlags]::ContainerInherit -bor [System.Security.AccessControl.InheritanceFlags]::ObjectInherit
+    $propagationFlag = [System.Security.AccessControl.PropagationFlags]::None
+    $permType = [System.Security.AccessControl.AccessControlType]::Allow
 
-    $group = "ALL APPLICATION PACKAGES"
-    $acl = Get-Acl $osqueryd_path
-    $inherit =[system.security.accesscontrol.InheritanceFlags]"ContainerInherit,ObjectInherit"
-    $propagation =[system.security.accesscontrol.PropagationFlags]"None"
-    $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule($group,"Write", $inherit, $Propagation ,,,"Deny")
-    $acl.AddAccessRule($accessrule)
-    set-acl -aclobject $acl $osqueryd_path
+    # "Safe" permissions in osquery entail the containing folder and binary both
+    # are owned by the Administrators group, as well as no account has Write
+    # permissions except for the Administrators group and SYSTEM account
+    $systemSid = New-Object System.Security.Principal.SecurityIdentifier('S-1-5-18')
+    $systemUser = $systemSid.Translate([System.Security.Principal.NTAccount])
 
-    $group = "ALL RESTRICTED APPLICATION PACKAGES"
-    $acl = Get-Acl $osqueryd_path
-    $inherit =[system.security.accesscontrol.InheritanceFlags]"ContainerInherit,ObjectInherit"
-    $propagation =[system.security.accesscontrol.PropagationFlags]"None"
-    $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule($group,"FullControl", $inherit, $Propagation ,,,"Allow")
-    $acl.RemoveAccessRuleAll($accessrule)
-    set-acl -aclobject $acl $osqueryd_path
+    $adminsSid = New-Object System.Security.Principal.SecurityIdentifier('S-1-5-32-544')
+    $adminsGroup = $adminsSid.Translate([System.Security.Principal.NTAccount])
 
-    $group = "CREATOR OWNER"
-    $acl = Get-Acl $osqueryd_path
-    $inherit =[system.security.accesscontrol.InheritanceFlags]"ContainerInherit,ObjectInherit"
-    $propagation =[system.security.accesscontrol.PropagationFlags]"None"
-    $accessrule = New-Object System.Security.AccessControl.FileSystemAccessRule($group,"FullControl", $inherit, $Propagation ,,,"Allow")
-    $acl.RemoveAccessRuleAll($accessrule)
-    set-acl -aclobject $acl $osqueryd_path
+    $usersSid = New-Object System.Security.Principal.SecurityIdentifier('S-1-5-32-545')
+    $usersGroup = $usersSid.Translate([System.Security.Principal.NTAccount])
 
-    if(!(Test-Path -Path $osqueryd_backuplog_path )){
+    $permGroups = @($systemUser, $adminsGroup, $usersGroup)
+    foreach ($accnt in $permGroups) {
+      $grantedPerm = ''
+      if ($accnt -eq $usersGroup) {
+        $grantedPerm = 'ReadAndExecute'
+      } else {
+        $grantedPerm = 'FullControl'
+      }
+      $permission = $accnt.Value, $grantedPerm, $inheritanceFlag, $propagationFlag, $permType
+      $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule $permission
+      $acl.SetAccessRule($accessRule)
+    }
+    $acl.SetOwner($adminsGroup)
+    Set-Acl $target $acl
+
+    # Finally set the Administrators group as the owner for all items
+    $items = Get-ChildItem -Recurse -Path $target
+    foreach ($item in $items) {
+      $acl = Get-Acl -Path $item.FullName
+      $acl.SetOwner($adminsGroup)
+      Set-Acl $item.FullName $acl
+    }
+  
+  if(!(Test-Path -Path $osqueryd_backuplog_path )){
         New-Item -Path $osqueryd_backuplog_path -ItemType Directory
     }
 

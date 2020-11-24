@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova module for using sysctl to verify sysctl parameter.
 
 This audit module requires yaml data to execute. It will search the local
@@ -24,9 +24,9 @@ sysctl:
       - critical
     alert: email
     trigger: state
-'''
+"""
 
-from __future__ import absolute_import
+
 import logging
 
 import fnmatch
@@ -45,9 +45,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    '''
+    """
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    '''
+    """
     ret={}
     if labels:
         labelled_test_cases=[]
@@ -63,9 +63,9 @@ def apply_labels(__data__, labels):
     return ret
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    '''
+    """
     Run the sysctl audits contained in the YAML files processed by __virtual__
-    '''
+    """
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -114,12 +114,12 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    '''
+    """
     Merge two yaml dicts together
-    '''
+    """
     if 'sysctl' not in ret:
         ret['sysctl'] = []
-    for key, val in data.get('sysctl', {}).iteritems():
+    for key, val in data.get('sysctl', {}).items():
         if profile and isinstance(val, dict):
             val['nova_profile'] = profile
         ret['sysctl'].append({key: val})
@@ -127,13 +127,13 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    '''
+    """
     Retrieve all the tags for this distro from the yaml
-    '''
+    """
     ret = {}
     distro = __grains__.get('osfinger')
     for audit_dict in data.get('sysctl', []):
-        for audit_id, audit_data in audit_dict.iteritems():
+        for audit_id, audit_data in audit_dict.items():
             tags_dict = audit_data.get('data', {})
             tags = None
             for osfinger in tags_dict:
@@ -152,11 +152,11 @@ def _get_tags(data):
             if isinstance(tags, dict):
                 # malformed yaml, convert to list of dicts
                 tmp = []
-                for name, tag in tags.iteritems():
+                for name, tag in tags.items():
                     tmp.append({name: tag})
                 tags = tmp
             for item in tags:
-                for name, tag in item.iteritems():
+                for name, tag in item.items():
                     if isinstance(tag, dict):
                         tag_data = copy.deepcopy(tag)
                         tag = tag_data.pop('tag')

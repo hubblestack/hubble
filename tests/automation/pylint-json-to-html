@@ -1,0 +1,22 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+import sys
+import json
+from jinja2 import Template
+
+FIELDS = u'module obj path line column type symbol message-id message'.split()
+
+if __name__ == '__main__':
+    with open('tests/static/pylint.css') as ifh:
+        with open('tests/unittests/output/pylint.css', 'w') as ofh:
+            ofh.write(ifh.read())
+    with open('tests/static/pylint.html') as ifh:
+        template = Template(ifh.read())
+    msgs = list()
+    for filename in sys.argv[1:]:
+        with open(sys.argv[1], 'r') as ifh:
+            for msg in json.load(ifh):
+                msgs.append(msg)
+    with open('tests/unittests/output/pylint.html', 'w') as ofh:
+        ofh.write(template.render(fields=FIELDS, messages=msgs))

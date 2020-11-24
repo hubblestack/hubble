@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 The backend for serving files from the Azure blob storage service.
 
 To enable, add ``azurefs`` to the :conf_master:`fileserver_backend` option in
@@ -44,10 +44,10 @@ permissions. Proxy can also be provided in the configuration.
 .. note::
 
     Do not include the leading ? for sas_token if generated from the web
-'''
+"""
 
 # Import python libs
-from __future__ import absolute_import
+
 from distutils.version import LooseVersion
 import base64
 import json
@@ -70,6 +70,7 @@ except ImportError:
 # Import third party libs
 import salt.ext.six as six
 
+from hubblestack.utils.signing import find_wrapf
 
 __virtualname__ = 'azurefs'
 
@@ -77,9 +78,9 @@ log = logging.getLogger()
 
 
 def __virtual__():
-    '''
+    """
     Only load if defined in fileserver_backend and azure.storage.common is present
-    '''
+    """
     if __virtualname__ not in __opts__['fileserver_backend']:
         return False
 
@@ -95,10 +96,11 @@ def __virtual__():
     return True
 
 
+@find_wrapf(not_found={'path': '', 'rel': ''})
 def find_file(path, saltenv='base', **kwargs):
-    '''
+    """
     Search the environment for the relative path
-    '''
+    """
     fnd = {'path': '',
            'rel': ''}
     for container in __opts__.get('azurefs', []):
@@ -130,10 +132,10 @@ def find_file(path, saltenv='base', **kwargs):
 
 
 def envs():
-    '''
+    """
     Each container configuration can have an environment setting, or defaults
     to base
-    '''
+    """
     saltenvs = []
     for container in __opts__.get('azurefs', []):
         saltenvs.append(container.get('saltenv', 'base'))
@@ -142,9 +144,9 @@ def envs():
 
 
 def serve_file(load, fnd):
-    '''
+    """
     Return a chunk from a file based on the data received
-    '''
+    """
     ret = {'data': '',
            'dest': ''}
     required_load_keys = set(['path', 'loc', 'saltenv'])
@@ -174,7 +176,7 @@ def serve_file(load, fnd):
 
 
 def update():
-    '''
+    """
     Update caches of the storage containers.
 
     Compares the md5 of the files on disk to the md5 of the blobs in the
@@ -182,7 +184,7 @@ def update():
 
     Also processes deletions by walking the container caches and comparing
     with the list of blobs in the container
-    '''
+    """
     for container in __opts__['azurefs']:
         path = _get_container_path(container)
         try:
@@ -250,7 +252,8 @@ def update():
             if os.path.exists(fname):
                 # File exists, check the hashes
                 source_md5 = blob.properties.content_settings.content_md5
-                local_md5 = base64.b64encode(salt.utils.hashutils.get_hash(fname, 'md5').decode('hex'))
+                local_md5_hex = salt.utils.hashutils.get_hash(fname, 'md5')
+                local_md5 = base64.b64encode(bytes.fromhex(local_md5_hex))
                 if local_md5 != source_md5:
                     update = True
             else:
@@ -318,9 +321,9 @@ def update():
 
 
 def file_hash(load, fnd):
-    '''
+    """
     Return a file hash based on the hash type set in the master config
-    '''
+    """
     if not all(x in load for x in ('path', 'saltenv')):
         return '', None
     ret = {'hash_type': __opts__['hash_type']}
@@ -345,9 +348,9 @@ def file_hash(load, fnd):
 
 
 def file_list(load):
-    '''
+    """
     Return a list of all files in a specified environment
-    '''
+    """
     ret = set()
     try:
         for container in __opts__['azurefs']:
@@ -369,9 +372,9 @@ def file_list(load):
 
 
 def dir_list(load):
-    '''
+    """
     Return a list of all directories in a specified environment
-    '''
+    """
     ret = set()
     files = file_list(load)
     for f in files:
@@ -384,12 +387,12 @@ def dir_list(load):
 
 
 def _get_container_path(container):
-    '''
+    """
     Get the cache path for the container in question
 
     Cache paths are generate by combining the account name, container name,
     and saltenv, separated by underscores
-    '''
+    """
     root = os.path.join(__opts__['cachedir'], 'azurefs')
     container_dir = '{0}_{1}_{2}'.format(container.get('account_name', ''),
                                          container.get('container_name', ''),
@@ -398,11 +401,11 @@ def _get_container_path(container):
 
 
 def _get_container_service(container):
-    '''
+    """
     Get the azure block blob service for the container in question
 
     Try account_key, sas_token, and no auth in that order
-    '''
+    """
     if 'account_key' in container:
         account = azure.storage.common.CloudStorageAccount(container['account_name'], account_key=container['account_key'])
     elif 'sas_token' in container:
@@ -412,13 +415,16 @@ def _get_container_service(container):
     blob_service = account.create_block_blob_service()
     if 'proxy' in container and len(container['proxy'].split(':')) == 2:
         blob_service.set_proxy(container['proxy'].split(':')[0], container['proxy'].split(':')[1])
+    # If 'proxy' isn't specified in container block, check if 'https_proxy' is set.
+    elif 'https_proxy' in __opts__ and len(__opts__['https_proxy'].split(':')) == 2:
+        blob_service.set_proxy(__opts__['https_proxy'].split(':')[0], __opts__['https_proxy'].split(':')[1])
     return blob_service
 
 
 def _validate_config():
-    '''
+    """
     Validate azurefs config, return False if it doesn't validate
-    '''
+    """
     if not isinstance(__opts__['azurefs'], list):
         log.error('azurefs configuration is not formed as a list, skipping azurefs')
         return False

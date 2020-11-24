@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova plugin for using systemctl to verify status of a given service.
 
 Supports both blacklisting and whitelisting patterns. Blacklisted services must
@@ -26,8 +26,8 @@ systemctl:
       trigger: state
 
 
-'''
-from __future__ import absolute_import
+"""
+
 import logging
 
 import fnmatch
@@ -64,9 +64,9 @@ def apply_labels(__data__, labels):
     return labelled_data
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    '''
+    """
     Run the systemctl audits contained in the YAML files processed by __virtual__
-    '''
+    """
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -113,16 +113,16 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    '''
+    """
     Merge two yaml dicts together at the systemctl:blacklist and systemctl:whitelist level
-    '''
+    """
     if 'systemctl' not in ret:
         ret['systemctl'] = {}
     for topkey in ('blacklist', 'whitelist'):
         if topkey in data.get('systemctl', {}):
             if topkey not in ret['systemctl']:
                 ret['systemctl'][topkey] = []
-            for key, val in data['systemctl'][topkey].iteritems():
+            for key, val in data['systemctl'][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret['systemctl'][topkey].append({key: val})
@@ -131,14 +131,14 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    '''
+    """
     Retrieve all the tags for this distro from the yaml
-    '''
+    """
     ret = {}
     distro = __grains__.get('osfinger')
-    for toplist, toplevel in data.get('systemctl', {}).iteritems():
+    for toplist, toplevel in data.get('systemctl', {}).items():
         for audit_dict in toplevel:
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 tags_dict = audit_data.get('data', {})
                 tags = None
                 for osfinger in tags_dict:
@@ -158,11 +158,11 @@ def _get_tags(data):
                 if isinstance(tags, dict):
                     # malformed yaml, convert to list of dicts
                     tmp = []
-                    for name, tag in tags.iteritems():
+                    for name, tag in tags.items():
                         tmp.append({name: tag})
                     tags = tmp
                 for item in tags:
-                    for name, tag in item.iteritems():
+                    for name, tag in item.items():
                         tag_data = {}
                         # Whitelist could have a dictionary, not a string
                         if isinstance(tag, dict):

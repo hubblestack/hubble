@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 Hubble Nova plugin for using iptables to verify firewall rules
 
 This audit module requires yaml data to execute. Running hubble.audit will
@@ -73,9 +73,9 @@ Check the following links for more details:
   (https://docs.saltstack.com/en/latest/ref/modules/all/salt.modules.iptables.html#salt.modules.iptables.build_rule)
   - iptables salt execution module source code (search for the build_rule function inside):
   (https://github.com/saltstack/salt/blob/develop/salt/modules/iptables.py)
-'''
+"""
 
-from __future__ import absolute_import
+
 import logging
 
 import fnmatch
@@ -98,9 +98,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    '''
+    """
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    '''
+    """
     labelled_data = {}
     if labels:
         labelled_data['firewall'] = {}
@@ -184,16 +184,16 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    '''
+    """
     Merge two yaml dicts together at the pkg:blacklist and pkg:whitelist level
-    '''
+    """
     if 'firewall' not in ret:
         ret['firewall'] = {}
     for topkey in ('blacklist', 'whitelist'):
         if topkey in data.get('firewall', {}):
             if topkey not in ret['firewall']:
                 ret['firewall'][topkey] = []
-            for key, val in data['firewall'][topkey].iteritems():
+            for key, val in data['firewall'][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret['firewall'][topkey].append({key: val})
@@ -202,9 +202,9 @@ def _merge_yaml(ret, data, profile=None):
 
 def _get_tags(data):
     ret = {}
-    for toplist, toplevel in data.get('firewall', {}).iteritems():
+    for toplist, toplevel in data.get('firewall', {}).items():
         for audit_dict in toplevel:
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 tags_dict = audit_data.get('data', {})
                 tag = tags_dict.pop('tag')
                 if tag not in ret:

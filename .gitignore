@@ -7,6 +7,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# patch detritus
+*.rej
+*.orig
+
 # C extensions
 *.so
 
@@ -36,9 +40,11 @@ var/
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+pytest-output.txt
 
 # Unit test / coverage reports
 htmlcov/
+coverage/
 .tox/
 .coverage
 .coverage.*
@@ -81,10 +87,6 @@ celerybeat-schedule
 # dotenv
 .env
 
-# virtualenv
-venv/
-ENV/
-
 # Spyder project settings
 .spyderproject
 
@@ -94,4 +96,46 @@ ENV/
 # Visual Studio Code settings
 .vscode
 
+# PyCharm settings
+.idea/
 doc/_build
+
+# misc setup.py output
+setup.txt
+
+# jenkins noise
+*output*.txt
+*manifest*.txt
+setup.txt
+pip.cache
+vlib/
+venv/
+ENV/
+pylint-*.txt
+pytest-*.txt
+bandit-*.txt
+
+# things that populate during tests
+tests/unittests/*cache*
+tests/unittests/*log*
+tests/unittests/output
+relevant-files.txt
+
+# PyCharm project
+.idea/
+
+# sometimes when I stop docker with a sigquit, hubble drops core (??)
+core
+core.*
+
+# contrib/gen-pretend-certs.sh data dumptory
+.pretend-certs
+MANIFEST
+SIGNATURE
+test-*.file
+
+# certificate bundles for binary distributions
+pre_packaged_certificates.py
+
+# this comes up rarely when building at home
+osquery_*.tar

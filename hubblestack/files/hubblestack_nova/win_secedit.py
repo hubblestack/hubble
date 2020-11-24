@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 Windows secedit audit module
-'''
+"""
 
-from __future__ import absolute_import
+
 import copy
 import fnmatch
 import logging
@@ -27,9 +27,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    '''
+    """
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    '''
+    """
     labelled_data = {}
     if labels:
         labelled_data[__virtualname__] = {}
@@ -48,10 +48,10 @@ def apply_labels(__data__, labels):
     return labelled_data
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    '''
+    """
     Runs secedit on the local machine and audits the return data
     with the CIS yaml processed by __virtual__
-    '''
+    """
     __data__ = {}
     __secdata__ = _secedit_export()
     __sidaccounts__ = _get_account_sid()
@@ -145,17 +145,17 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    '''
+    """
     Merge two yaml dicts together at the secedit:blacklist and
     secedit:whitelist level
-    '''
+    """
     if __virtualname__ not in ret:
         ret[__virtualname__] = {}
     for topkey in ('blacklist', 'whitelist'):
         if topkey in data.get(__virtualname__, {}):
             if topkey not in ret[__virtualname__]:
                 ret[__virtualname__][topkey] = []
-            for key, val in data[__virtualname__][topkey].iteritems():
+            for key, val in data[__virtualname__][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret[__virtualname__][topkey].append({key: val})
@@ -163,15 +163,15 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    '''
+    """
     Retrieve all the tags for this distro from the yaml
-    '''
+    """
     ret = {}
     distro = __grains__.get('osfullname')
-    for toplist, toplevel in data.get(__virtualname__, {}).iteritems():
+    for toplist, toplevel in data.get(__virtualname__, {}).items():
         # secedit:whitelist
         for audit_dict in toplevel:
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 # secedit:whitelist:PasswordComplexity
                 tags_dict = audit_data.get('data', {})
                 # secedit:whitelist:PasswordComplexity:data
@@ -193,11 +193,11 @@ def _get_tags(data):
                 if isinstance(tags, dict):
                     # malformed yaml, convert to list of dicts
                     tmp = []
-                    for name, tag in tags.iteritems():
+                    for name, tag in tags.items():
                         tmp.append({name: tag})
                     tags = tmp
                 for item in tags:
-                    for name, tag in item.iteritems():
+                    for name, tag in item.items():
                         tag_data = {}
                         # Whitelist could have a dictionary, not a string
                         if isinstance(tag, dict):
@@ -217,10 +217,10 @@ def _get_tags(data):
 
 
 def _secedit_export():
-    '''Helper function that will create(dump) a secedit inf file.  You can
+    """Helper function that will create(dump) a secedit inf file.  You can
     specify the location of the file and the file will persist, or let the
     function create it and the file will be deleted on completion.  Should
-    only be called once.'''
+    only be called once."""
     dump = "C:\ProgramData\{}.inf".format(uuid.uuid4())
     try:
         ret = __salt__['cmd.run']('secedit /export /cfg {0}'.format(dump))
@@ -228,14 +228,14 @@ def _secedit_export():
             secedit_ret = _secedit_import(dump)
             ret = __salt__['file.remove'](dump)
             return secedit_ret
-    except StandardError:
+    except Exception:
         log.debug('Error occurred while trying to get / export secedit data')
         return False, None
 
 
 def _secedit_import(inf_file):
-    '''This function takes the inf file that SecEdit dumps
-    and returns a dictionary'''
+    """This function takes the inf file that SecEdit dumps
+    and returns a dictionary"""
     sec_return = {}
     with codecs.open(inf_file, 'r', encoding='utf-16') as f:
         for line in f:
@@ -251,8 +251,8 @@ def _secedit_import(inf_file):
 
 
 def _get_account_sid():
-    '''This helper function will get all the users and groups on the computer
-    and return a dictionary'''
+    """This helper function will get all the users and groups on the computer
+    and return a dictionary"""
     win32 = __salt__['cmd.run']('Get-WmiObject win32_useraccount -Filter "localaccount=\'True\'"'
                                 ' | Format-List -Property Name, SID', shell='powershell',
                                 python_shell=True)
@@ -264,7 +264,7 @@ def _get_account_sid():
 
         dict_return = {}
         lines = win32.split('\n')
-        lines = filter(None, lines)
+        lines = [_f for _f in lines if _f]
         if 'local:' in lines:
             lines.remove('local:')
         for line in lines:
@@ -293,8 +293,8 @@ def _get_account_sid():
 
 
 def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
-    '''This will take a value type and convert it to what it needs to do.
-    Under the covers you have conversion for more, less, and equal'''
+    """This will take a value type and convert it to what it needs to do.
+    Under the covers you have conversion for more, less, and equal"""
     value = value.lower()
     if 'more' in value:
         if ',' in evaluator:
@@ -407,8 +407,8 @@ def _translate_value_type(current, value, evaluator, __sidaccounts__=False):
 
 
 def _evaluator_translator(input_string):
-    '''This helper function takes words from the CIS yaml and replaces
-    them with what you actually find in the secedit dump'''
+    """This helper function takes words from the CIS yaml and replaces
+    them with what you actually find in the secedit dump"""
     if type(input_string) == str:
         input_string = input_string.replace(' ', '').lower()
 
@@ -431,8 +431,8 @@ def _evaluator_translator(input_string):
 
 
 def _account_audit(current, __sidaccounts__):
-    '''This helper function takes the account names from the cis yaml and
-    replaces them with the account SID that you find in the secedit dump'''
+    """This helper function takes the account names from the cis yaml and
+    replaces them with the account SID that you find in the secedit dump"""
     user_list = current.split(', ')
     ret_string = ''
     if __sidaccounts__:

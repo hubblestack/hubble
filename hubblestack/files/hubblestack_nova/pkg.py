@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova module for auditing installed packages.
 
 Supports both blacklisting and whitelisting pacakges. Blacklisted packages
@@ -55,8 +55,8 @@ pkg:
       alert: email
       trigger: state
 
-'''
-from __future__ import absolute_import
+"""
+
 import logging
 
 import fnmatch
@@ -75,9 +75,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    '''
+    """
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    '''
+    """
     labelled_data = {}
     if labels:
         labelled_data['pkg'] = {}
@@ -96,9 +96,9 @@ def apply_labels(__data__, labels):
     return labelled_data
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    '''
+    """
     Run the pkg audits contained in the YAML files processed by __virtual__
-    '''
+    """
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -195,16 +195,16 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    '''
+    """
     Merge two yaml dicts together at the pkg:blacklist and pkg:whitelist level
-    '''
+    """
     if 'pkg' not in ret:
         ret['pkg'] = {}
     for topkey in ('blacklist', 'whitelist'):
         if topkey in data.get('pkg', {}):
             if topkey not in ret['pkg']:
                 ret['pkg'][topkey] = []
-            for key, val in data['pkg'][topkey].iteritems():
+            for key, val in data['pkg'][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret['pkg'][topkey].append({key: val})
@@ -212,16 +212,16 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    '''
+    """
     Retrieve all the tags for this distro from the yaml
-    '''
+    """
     ret = {}
     distro = __grains__.get('osfinger')
-    for toplist, toplevel in data.get('pkg', {}).iteritems():
+    for toplist, toplevel in data.get('pkg', {}).items():
         # pkg:blacklist
         for audit_dict in toplevel:
             # pkg:blacklist:0
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 # pkg:blacklist:0:telnet
                 tags_dict = audit_data.get('data', {})
                 # pkg:blacklist:0:telnet:data
@@ -243,11 +243,11 @@ def _get_tags(data):
                 if isinstance(tags, dict):
                     # malformed yaml, convert to list of dicts
                     tmp = []
-                    for name, tag in tags.iteritems():
+                    for name, tag in tags.items():
                         tmp.append({name: tag})
                     tags = tmp
                 for item in tags:
-                    for name, tag in item.iteritems():
+                    for name, tag in item.items():
                         tag_data = {}
                         # Whitelist could have a dictionary, not a string
                         if isinstance(tag, dict):

@@ -1,4 +1,4 @@
-'''
+"""
 Hubblestack python log handler for splunk
 
 Uses the same configuration as the rest of the splunk returners, returns to
@@ -18,8 +18,8 @@ default)
 You can also add an `custom_fields` argument which is a list of keys to add to events
 with using the results of config.get(<custom_field>). These new keys will be prefixed
 with 'custom_' to prevent conflicts. The values of these keys should be
-strings or lists (will be sent as CSV string), do not choose grains or pillar values with complex values or they will
-be skipped:
+strings or lists (will be sent as CSV string), do not choose grains or
+pillar values with complex values or they will be skipped:
 
 .. code-block:: yaml
 
@@ -33,23 +33,22 @@ be skipped:
             custom_fields:
               - site
               - product_group
-'''
+"""
 import socket
 
 # Imports for http event forwarder
-import requests
-import json
-import time
 import copy
+import time
+import logging
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
 import hubblestack.utils.stdrec
 
-import logging
 
 class SplunkHandler(logging.Handler):
-    '''
+    """
     Log handler for splunk
-    '''
+    """
+
     def __init__(self):
         super(SplunkHandler, self).__init__()
 
@@ -71,33 +70,7 @@ class SplunkHandler(logging.Handler):
             args, kwargs = make_hec_args(opts)
             hec = http_event_collector(*args, **kwargs)
 
-            minion_id = __grains__['id']
-            master = __grains__['master']
-            fqdn = __grains__['fqdn']
-            # Sometimes fqdn is blank. If it is, replace it with minion_id
-            fqdn = fqdn if fqdn else minion_id
-            try:
-                fqdn_ip4 = __grains__.get('local_ip4')
-                if not fqdn_ip4:
-                    fqdn_ip4 = __grains__['fqdn_ip4'][0]
-            except IndexError:
-                try:
-                    fqdn_ip4 = __grains__['ipv4'][0]
-                except IndexError:
-                    raise Exception('No ipv4 grains found. Is net-tools installed?')
-            if fqdn_ip4.startswith('127.'):
-                for ip4_addr in __grains__['ipv4']:
-                    if ip4_addr and not ip4_addr.startswith('127.'):
-                        fqdn_ip4 = ip4_addr
-                        break
-
-            # Sometimes fqdn reports a value of localhost. If that happens, try another method.
-            bad_fqdns = ['localhost', 'localhost.localdomain', 'localhost6.localdomain6']
-            if fqdn in bad_fqdns:
-                new_fqdn = socket.gethostname()
-                if '.' not in new_fqdn or new_fqdn in bad_fqdns:
-                    new_fqdn = fqdn_ip4
-                fqdn = new_fqdn
+            fqdn = hubblestack.utils.stdrec.get_fqdn()
 
             event = {}
             event.update(hubblestack.utils.stdrec.std_info())
@@ -105,7 +78,7 @@ class SplunkHandler(logging.Handler):
             for custom_field in custom_fields:
                 custom_field_name = 'custom_' + custom_field
                 custom_field_value = __salt__['config.get'](custom_field, '')
-                if isinstance(custom_field_value, (str, unicode)):
+                if isinstance(custom_field_value, str):
                     event.update({custom_field_name: custom_field_value})
                 elif isinstance(custom_field_value, list):
                     custom_field_value = ','.join(custom_field_value)
@@ -124,13 +97,13 @@ class SplunkHandler(logging.Handler):
             if fields:
                 payload.update({'fields': fields})
 
-            self.endpoint_list.append((hec, event, payload))
+            self.endpoint_list.append([hec, event, payload])
 
     def emit(self, record):
-        '''
+        """
         Emit a single record using the hec/event template/payload template
         generated in __init__()
-        '''
+        """
 
         # NOTE: poor man's filtering ... goal: prevent logging loops and
         # various objects from logging to splunk in an infinite spiral of spam.
@@ -151,9 +124,9 @@ class SplunkHandler(logging.Handler):
         rpn = getattr(record, 'name', '')
         for i in filtered:
             if i in rpn:
-                return
+                return False
 
-        log_entry = self.format_record(record)
+        log_entry = SplunkHandler.format_record(record)
         for hec, event, payload in self.endpoint_list:
             event = copy.deepcopy(event)
             payload = copy.deepcopy(payload)
@@ -164,21 +137,30 @@ class SplunkHandler(logging.Handler):
             hec.flushBatch()
         return True
 
-    def format_record(self, record):
-        '''
+    def update_event_std_info(self):
+        """
+        Update the `event` template in the `endpoint_list` object. This allows
+        grains and other values that were updated to be updated here.
+        """
+        for entry in self.endpoint_list:
+            entry[1].update(hubblestack.utils.stdrec.std_info())
+
+    @staticmethod
+    def format_record(record):
+        """
         Format the log record into a dictionary for easy insertion into a
         splunk event dictionary
-        '''
+        """
         try:
             log_entry = {'message': record.message,
                          'level': record.levelname,
                          'timestamp': int(time.time()),
                          'loggername': record.name,
-                         }
-        except:
+                        }
+        except Exception:
             log_entry = {'message': record.msg,
                          'level': record.levelname,
                          'loggername': record.name,
                          'timestamp': int(time.time()),
-                         }
+                        }
         return log_entry

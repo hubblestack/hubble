@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nebula-to-graylog (http input) returner
 
 Deliver HubbleStack Nebula query data into graylog using the HTTP input
@@ -19,123 +19,116 @@ hubblestack:
         sourcetype_nova: hubble_audit
         gelfhttp: https://graylog-gelf-http-input-addr
 
-'''
+"""
+
+
 
 import json
-import time
 import requests
-from datetime import datetime
 
 
 def returner(ret):
-    '''
-    '''
+    """
+    Aggregates the configuration options related to graylog and returns a dict containing them.
+    """
+    # sanity check
+    if not ret['return']:
+        return
+
     opts_list = _get_options()
 
     # Get cloud details
     cloud_details = __grains__.get('cloud_details', {})
 
+    fqdn = __grains__['fqdn'] if __grains__['fqdn'] else ret['id']
+    try:
+        fqdn_ip4 = __grains__['fqdn_ip4'][0]
+    except IndexError:
+        fqdn_ip4 = __grains__['ipv4'][0]
+    if fqdn_ip4.startswith('127.'):
+        for ip4_addr in __grains__['ipv4']:
+            if ip4_addr and not ip4_addr.startswith('127.'):
+                fqdn_ip4 = ip4_addr
+                break
+
     for opts in opts_list:
-        proxy = opts['proxy']
-        timeout = opts['timeout']
-        custom_fields = opts['custom_fields']
+        for query in ret['return']:
+            for query_name, value in query.items():
+                for query_data in value['data']:
+                    args = {'query': query_name,
+                            'job_id': ret['jid'],
+                            'minion_id': ret['id'],
+                            'dest_host': fqdn,
+                            'dest_ip': fqdn_ip4}
+                    event = _generate_event(opts['custom_fields'], args, cloud_details, query_data)
 
-        gelfhttp = opts['gelfhttp']
-        port = opts['port']
-        # assign all the things
-        data = ret['return']
-        minion_id = ret['id']
-        jid = ret['jid']
-        master = __grains__['master']
-        fqdn = __grains__['fqdn']
-        fqdn = fqdn if fqdn else minion_id
-        try:
-            fqdn_ip4 = __grains__['fqdn_ip4'][0]
-        except gelfhttpror:
-            fqdn_ip4 = __grains__['ipv4'][0]
-        if fqdn_ip4.startswith('127.'):
-            for ip4_addr in __grains__['ipv4']:
-                if ip4_addr and not ip4_addr.startswith('127.'):
-                    fqdn_ip4 = ip4_addr
-                    break
+                    payload = {'host': fqdn,
+                               '_sourcetype': opts['sourcetype'],
+                               'short_message': 'hubblestack',
+                               'hubblemsg': event}
 
-        if not data:
-            return
-        else:
-            for query in data:
-                for query_name, query_results in query.iteritems():
-                    for query_result in query_results['data']:
-                        event = {}
-                        payload = {}
-                        event.update(query_result)
-                        event.update({'query': query_name})
-                        event.update({'job_id': jid})
-                        event.update({'master': master})
-                        event.update({'minion_id': minion_id})
-                        event.update({'dest_host': fqdn})
-                        event.update({'dest_ip': fqdn_ip4})
-
-                        event.update(cloud_details)
-
-                        for custom_field in custom_fields:
-                            custom_field_name = 'custom_' + custom_field
-                            custom_field_value = __salt__['config.get'](custom_field, '')
-                            if isinstance(custom_field_value, str):
-                                event.update({custom_field_name: custom_field_value})
-                            elif isinstance(custom_field_value, list):
-                                custom_field_value = ','.join(custom_field_value)
-                                event.update({custom_field_name: custom_field_value})
-
-                        payload.update({'host': fqdn})
-                        payload.update({'_sourcetype': opts['sourcetype']})
-                        payload.update({'short_message': 'hubblestack'})
-                        payload.update({'hubblemsg': event})
-
-                        # If the osquery query includes a field called 'time' it will be checked.
-                        # If it's within the last year, it will be used as the eventtime.
-                        event_time = query_result.get('time', '')
-                        try:
-                            if (datetime.fromtimestamp(time.time()) - datetime.fromtimestamp(float(event_time))).days > 365:
-                                event_time = ''
-                        except:
-                            event_time = ''
-                        finally:
-                            rdy = json.dumps(payload)
-                            requests.post('{}:{}/gelf'.format(gelfhttp, port), rdy)
+                    rdy = json.dumps(payload)
+                    requests.post('{}:{}/gelf'.format(opts['gelfhttp'], opts['port']), rdy)
     return
 
 
+def _generate_event(custom_fields, args, cloud_details, query_data):
+    """
+    Helper function that builds and returns the event dict
+    """
+    event = {}
+    event.update(query_data)
+    event.update(args)
+    event.update(cloud_details)
+
+    for custom_field in custom_fields:
+        custom_field_name = 'custom_' + custom_field
+        custom_field_value = __salt__['config.get'](custom_field, '')
+        if isinstance(custom_field_value, list):
+            custom_field_value = ','.join(custom_field_value)
+        if isinstance(custom_field_value, str):
+            event.update({custom_field_name: custom_field_value})
+
+    return event
+
+
 def _get_options():
+    """
+    Function that aggregates the configs for graylog and returns them as a list of dicts.
+    """
     if __salt__['config.get']('hubblestack:returner:graylog'):
-        graylog_opts = []
         returner_opts = __salt__['config.get']('hubblestack:returner:graylog')
         if not isinstance(returner_opts, list):
             returner_opts = [returner_opts]
-        for opt in returner_opts:
-            processed = {}
-            processed['gelfhttp'] = opt.get('gelfhttp')
-            processed['port'] = str(opt.get('port', '12022'))
-            processed['custom_fields'] = opt.get('custom_fields', [])
-            processed['sourcetype'] = opt.get('sourcetype_nebula', 'hubble_osquery')
-            processed['gelfhttp_ssl'] = opt.get('gelfhttp_ssl', True)
-            processed['proxy'] = opt.get('proxy', {})
-            processed['timeout'] = opt.get('timeout', 9.05)
-            graylog_opts.append(processed)
-        return graylog_opts
-    else:
-        try:
-            port = __salt__['config.get']('hubblestack:returner:graylog:port')
-            gelfhttp = __salt__['config.get']('hubblestack:returner:graylog:gelfhttp')
-            sourcetype = __salt__['config.get']('hubblestack:nebula:returner:graylog:sourcetype')
-            custom_fields = __salt__['config.get']('hubblestack:nebula:returner:graylog:custom_fields', [])
-        except:
-            return None
+        return [_process_opt(opt) for opt in returner_opts]
 
-        graylog_opts = {'gelfhttp': gelfhttp, 'sourcetype': sourcetype, 'custom_fields': custom_fields}
+    try:
+        graylog_opts = {
+            'gelfhttp': __salt__['config.get']('hubblestack:returner:graylog:gelfhttp'),
+            'sourcetype': __salt__['config.get']('hubblestack:nebula:returner:graylog:sourcetype'),
+            'custom_fields': __salt__['config.get'](
+                'hubblestack:nebula:returner:graylog:custom_fields', []),
+            'port': __salt__['config.get']('hubblestack:returner:graylog:port'),
+            'http_input_server_ssl': __salt__['config.get'](
+                'hubblestack:nebula:returner:graylog:gelfhttp_ssl', True),
+            'proxy': __salt__['config.get']('hubblestack:nebula:returner:graylog:proxy', {}),
+            'timeout': __salt__['config.get']('hubblestack:nebula:returner:graylog:timeout', 9.05)
+        }
 
-        gelfhttp_ssl = __salt__['config.get']('hubblestack:nebula:returner:graylog:gelfhttp_ssl', True)
-        graylog_opts['http_input_server_ssl'] = gelfhttp_ssl
-        graylog_opts['proxy'] = __salt__['config.get']('hubblestack:nebula:returner:graylog:proxy', {})
-        graylog_opts['timeout'] = __salt__['config.get']('hubblestack:nebula:returner:graylog:timeout', 9.05)
+    except Exception:
+        return None
 
-        return [graylog_opts]
+    return [graylog_opts]
+
+
+def _process_opt(opt):
+    """
+    Helper function that extracts certain fields from the opt dict and assembles the processed dict
+    """
+    return {'gelfhttp': opt.get('gelfhttp'),
+            'port': str(opt.get('port', '12022')),
+            'custom_fields': opt.get('custom_fields', []),
+            'sourcetype': opt.get('sourcetype_nebula', 'hubble_osquery'),
+            'gelfhttp_ssl': opt.get('gelfhttp_ssl', True),
+            'proxy': opt.get('proxy', {}),
+            'timeout': opt.get('timeout', 9.05)}

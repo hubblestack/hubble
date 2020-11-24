@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 Return salt data via slack
 
 This version of the returner is designed to be used with hubblestack pulsar, as
@@ -53,16 +53,17 @@ Slack settings may also be configured as:
         profile: slack_profile
         channel: RoomName
 
-'''
-from __future__ import absolute_import
+"""
+
 
 # Import Python libs
 import pprint
 import logging
-import urllib
+import urllib.request, urllib.parse, urllib.error
 
 # pylint: disable=import-error,no-name-in-module,redefined-builtin
-from salt.ext.six.moves.urllib.parse import urljoin as _urljoin  # pylint: disable=import-error,no-name-in-module
+from salt.ext.six.moves.urllib.parse import urljoin as _urljoin
+# pylint: disable=import-error,no-name-in-module
 import salt.ext.six.moves.http_client
 # pylint: enable=import-error,no-name-in-module,redefined-builtin
 
@@ -74,10 +75,28 @@ log = logging.getLogger(__name__)
 __virtualname__ = 'slack_pulsar'
 
 
+API_URL = 'https://slack.com'
+
+SLACK_FUNCTIONS = {
+    'rooms': {
+        'request': 'channels.list',
+        'response': 'channels',
+        },
+    'users': {
+        'request': 'users.list',
+        'response': 'members',
+        },
+    'message': {
+        'request': 'chat.postMessage',
+        'response': 'channel',
+        },
+}
+
+
 def _get_options(ret=None):
-    '''
+    """
     Get the slack options from salt.
-    '''
+    """
 
     defaults = {'channel': '#general'}
 
@@ -86,14 +105,14 @@ def _get_options(ret=None):
              'username': 'username',
              'as_user': 'as_user',
              'api_key': 'api_key',
-             }
+            }
 
     profile_attr = 'slack_profile'
 
     profile_attrs = {'from_jid': 'from_jid',
                      'api_key': 'api_key',
                      'api_version': 'api_key'
-                     }
+                    }
 
     _options = salt.returners.get_returner_options(__virtualname__,
                                                    ret,
@@ -107,11 +126,11 @@ def _get_options(ret=None):
 
 
 def __virtual__():
-    '''
+    """
     Return virtual name of the module.
 
     :return: The virtual name of the module.
-    '''
+    """
     return __virtualname__
 
 
@@ -121,7 +140,7 @@ def _query(function,
            method='GET',
            header_dict=None,
            data=None):
-    '''
+    """
     Slack object method function to construct and execute on the API URL.
 
     :param api_key:     The Slack api key.
@@ -129,26 +148,11 @@ def _query(function,
     :param method:      The HTTP method, e.g. GET or POST.
     :param data:        The data to be sent for POST method.
     :return:            The json response from the API call or False.
-    '''
+    """
     query_params = {}
 
     ret = {'message': '',
            'res': True}
-
-    slack_functions = {
-        'rooms': {
-            'request': 'channels.list',
-            'response': 'channels',
-        },
-        'users': {
-            'request': 'users.list',
-            'response': 'members',
-        },
-        'message': {
-            'request': 'chat.postMessage',
-            'response': 'channel',
-        },
-    }
 
     if not api_key:
         try:
@@ -161,9 +165,8 @@ def _query(function,
             ret['res'] = False
             return ret
 
-    api_url = 'https://slack.com'
-    base_url = _urljoin(api_url, '/api/')
-    path = slack_functions.get(function).get('request')
+    base_url = _urljoin(API_URL, '/api/')
+    path = SLACK_FUNCTIONS.get(function).get('request')
     url = _urljoin(base_url, path, False)
 
     if not isinstance(args, dict):
@@ -189,7 +192,7 @@ def _query(function,
 
     if result.get('status', None) == salt.ext.six.moves.http_client.OK:
         _result = result['dict']
-        response = slack_functions.get(function).get('response')
+        response = SLACK_FUNCTIONS.get(function).get('response')
         if 'error' in _result:
             ret['message'] = _result['error']
             ret['res'] = False
@@ -198,18 +201,17 @@ def _query(function,
         return ret
     elif result.get('status', None) == salt.ext.six.moves.http_client.NO_CONTENT:
         return True
-    else:
-        log.debug(url)
-        log.debug(query_params)
-        log.debug(data)
-        log.debug(result)
-        _result = result['dict']
-        if 'error' in _result:
-            ret['message'] = _result['error']
-            ret['res'] = False
-            return ret
-        ret['message'] = _result.get(response)
+    log.debug(url)
+    log.debug(query_params)
+    log.debug(data)
+    log.debug(result)
+    _result = result['dict']
+    if 'error' in _result:
+        ret['message'] = _result['error']
+        ret['res'] = False
         return ret
+    ret['message'] = _result.get('response')
+    return ret
 
 
 def _post_message(channel,
@@ -217,7 +219,7 @@ def _post_message(channel,
                   username,
                   as_user,
                   api_key=None):
-    '''
+    """
     Send a message to a Slack room.
     :param channel:     The room name.
     :param message:     The message to send to the Slack room.
@@ -226,7 +228,7 @@ def _post_message(channel,
     :param api_key:     The Slack api key, if not specified in the configuration.
     :param api_version: The Slack api version, if not specified in the configuration.
     :return:            Boolean if message was sent successfully.
-    '''
+    """
 
     parameters = dict()
     parameters['channel'] = channel
@@ -239,19 +241,17 @@ def _post_message(channel,
                     api_key=api_key,
                     method='POST',
                     header_dict={'Content-Type': 'application/x-www-form-urlencoded'},
-                    data=urllib.urlencode(parameters))
+                    data=urllib.parse.urlencode(parameters))
 
-    log.debug('result {0}'.format(result))
-    if result:
-        return True
-    else:
-        return False
+    log.debug('result %s', result)
+
+    return bool(result)
 
 
 def returner(ret):
-    '''
+    """
     Send an slack message with the data
-    '''
+    """
 
     _options = _get_options(ret)
 
@@ -262,19 +262,19 @@ def returner(ret):
 
     if not channel:
         log.error('slack_pulsar.channel not defined in salt config')
-        return
+        return None
 
     if not username:
         log.error('slack_pulsar.username not defined in salt config')
-        return
+        return None
 
     if not as_user:
         log.error('slack_pulsar.as_user not defined in salt config')
-        return
+        return None
 
     if not api_key:
         log.error('slack_pulsar.api_key not defined in salt config')
-        return
+        return None
 
     if ret and isinstance(ret, dict):
         message = ('id: {0}\r\n'
@@ -282,12 +282,12 @@ def returner(ret):
                                              pprint.pformat(ret.get('return')))
     elif ret and isinstance(ret, list):
         message = 'id: {0}\r\n'
-        for r in ret:
-            message += pprint.pformat(r.get('return'))
+        for return_data in ret:
+            message += pprint.pformat(return_data.get('return'))
             message += '\r\n'
     else:
         log.error('Data sent to slack_pulsar formatted incorrectly')
-        return
+        return None
 
     slack = _post_message(channel,
                           message,

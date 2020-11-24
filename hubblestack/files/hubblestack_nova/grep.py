@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova plugin for using grep to verify settings in files.
 
 Supports both blacklisting and whitelisting patterns. Blacklisted patterns must
@@ -50,8 +50,8 @@ the file is missing, then it will be considered a match (success for whitelist,
 failure for blacklist). If it's set to False and the file is missing, then it
 will be considered a non-match (success for blacklist, failure for whitelist).
 If the file exists, this setting is ignored.
-'''
-from __future__ import absolute_import
+"""
+
 import logging
 
 import fnmatch
@@ -73,9 +73,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    '''
+    """
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    '''
+    """
     labelled_data = {}
     if labels:
         labelled_data['grep'] = {}
@@ -94,9 +94,9 @@ def apply_labels(__data__, labels):
     return labelled_data
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    '''
+    """
     Run the grep audits contained in the YAML files processed by __virtual__
-    '''
+    """
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -175,7 +175,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 if not os.path.exists(name) and 'match_on_file_missing' in tag_data:
                     if tag_data['match_on_file_missing']:
                         found = True
-                        failure_reason = "Found the file '{0}'. This blaclisted file " \
+                        failure_reason = "Found the file '{0}'. This blacklisted file " \
                                          "should not exist.".format(name)
                     else:
                         found = False
@@ -201,16 +201,16 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    '''
+    """
     Merge two yaml dicts together at the grep:blacklist and grep:whitelist level
-    '''
+    """
     if 'grep' not in ret:
         ret['grep'] = {}
     for topkey in ('blacklist', 'whitelist'):
         if topkey in data.get('grep', {}):
             if topkey not in ret['grep']:
                 ret['grep'][topkey] = []
-            for key, val in data['grep'][topkey].iteritems():
+            for key, val in data['grep'][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret['grep'][topkey].append({key: val})
@@ -218,16 +218,16 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    '''
+    """
     Retrieve all the tags for this distro from the yaml
-    '''
+    """
     ret = {}
     distro = __grains__.get('osfinger')
-    for toplist, toplevel in data.get('grep', {}).iteritems():
+    for toplist, toplevel in data.get('grep', {}).items():
         # grep:blacklist
         for audit_dict in toplevel:
             # grep:blacklist:0
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 # grep:blacklist:0:telnet
                 tags_dict = audit_data.get('data', {})
                 # grep:blacklist:0:telnet:data
@@ -249,11 +249,11 @@ def _get_tags(data):
                 if isinstance(tags, dict):
                     # malformed yaml, convert to list of dicts
                     tmp = []
-                    for name, tag in tags.iteritems():
+                    for name, tag in tags.items():
                         tmp.append({name: tag})
                     tags = tmp
                 for item in tags:
-                    for name, tag in item.iteritems():
+                    for name, tag in item.items():
                         tag_data = {}
                         # Whitelist could have a dictionary, not a string
                         if isinstance(tag, dict):
@@ -275,7 +275,7 @@ def _get_tags(data):
 def _grep(path,
           pattern,
           *args):
-    '''
+    """
     Grep for a string in the specified file
 
     .. note::
@@ -310,7 +310,7 @@ def _grep(path,
         salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr -- -i
         salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr -- -i -B2
         salt '*' file.grep "/etc/sysconfig/network-scripts/*" ipaddr -- -i -l
-    '''
+    """
     path = os.path.expanduser(path)
 
     if args:

@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova module for auditing running services.
 
 Supports both blacklisting and whitelisting services. Blacklisted services
@@ -49,8 +49,8 @@ service:
       alert: email
       trigger: state
 
-'''
-from __future__ import absolute_import
+"""
+
 import logging
 
 import fnmatch
@@ -66,9 +66,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    '''
+    """
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    '''
+    """
     labelled_data = {}
     if labels:
         labelled_data['service'] = {}
@@ -87,9 +87,9 @@ def apply_labels(__data__, labels):
     return labelled_data
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    '''
+    """
     Run the service audits contained in the YAML files processed by __virtual__
-    '''
+    """
     __data__ = {}
     for profile, data in data_list:
         _merge_yaml(__data__, data, profile)
@@ -136,16 +136,16 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    '''
+    """
     Merge two yaml dicts together at the service:blacklist and service:whitelist level
-    '''
+    """
     if 'service' not in ret:
         ret['service'] = {}
     for topkey in ('blacklist', 'whitelist'):
         if topkey in data.get('service', {}):
             if topkey not in ret['service']:
                 ret['service'][topkey] = []
-            for key, val in data['service'][topkey].iteritems():
+            for key, val in data['service'][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret['service'][topkey].append({key: val})
@@ -153,16 +153,16 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    '''
+    """
     Retrieve all the tags for this distro from the yaml
-    '''
+    """
     ret = {}
     distro = __grains__.get('osfinger')
-    for toplist, toplevel in data.get('service', {}).iteritems():
+    for toplist, toplevel in data.get('service', {}).items():
         # service:blacklist
         for audit_dict in toplevel:
             # service:blacklist:0
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 # service:blacklist:0:telnet
                 tags_dict = audit_data.get('data', {})
                 # service:blacklist:0:telnet:data
@@ -184,11 +184,11 @@ def _get_tags(data):
                 if isinstance(tags, dict):
                     # malformed yaml, convert to list of dicts
                     tmp = []
-                    for name, tag in tags.iteritems():
+                    for name, tag in tags.items():
                         tmp.append({name: tag})
                     tags = tmp
                 for item in tags:
-                    for name, tag in item.iteritems():
+                    for name, tag in item.items():
                         if tag not in ret:
                             ret[tag] = []
                         formatted_data = {'name': name,

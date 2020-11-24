@@ -1,9 +1,9 @@
 # -*- encoding: utf-8 -*-
-'''
+"""
 HubbleStack Nova Windows Firewall module
-'''
+"""
 
-from __future__ import absolute_import
+
 import copy
 import fnmatch
 import logging
@@ -23,9 +23,9 @@ def __virtual__():
     return True
 
 def apply_labels(__data__, labels):
-    '''
+    """
     Filters out the tests whose label doesn't match the labels given when running audit and returns a new data structure with only labelled tests.
-    '''
+    """
     labelled_data = {}
     if labels:
         labelled_data[__virtualname__] = {}
@@ -44,10 +44,10 @@ def apply_labels(__data__, labels):
     return labelled_data
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
-    '''
+    """
     Runs auditpol on the local machine and audits the return data
     with the CIS yaml processed by __virtual__
-    '''
+    """
     __data__ = {}
     __firewalldata__ = {}
     for profile, data in data_list:
@@ -120,17 +120,17 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
 
 def _merge_yaml(ret, data, profile=None):
-    '''
+    """
     Merge two yaml dicts together at the secedit:blacklist and
     secedit:whitelist level
-    '''
+    """
     if __virtualname__ not in ret:
         ret[__virtualname__] = {}
     for topkey in ('blacklist', 'whitelist'):
         if topkey in data.get(__virtualname__, {}):
             if topkey not in ret[__virtualname__]:
                 ret[__virtualname__][topkey] = []
-            for key, val in data[__virtualname__][topkey].iteritems():
+            for key, val in data[__virtualname__][topkey].items():
                 if profile and isinstance(val, dict):
                     val['nova_profile'] = profile
                 ret[__virtualname__][topkey].append({key: val})
@@ -138,15 +138,15 @@ def _merge_yaml(ret, data, profile=None):
 
 
 def _get_tags(data):
-    '''
+    """
     Retrieve all the tags for this distro from the yaml
-    '''
+    """
     ret = {}
     distro = __grains__.get('osfullname')
-    for toplist, toplevel in data.get(__virtualname__, {}).iteritems():
+    for toplist, toplevel in data.get(__virtualname__, {}).items():
         # secedit:whitelist
         for audit_dict in toplevel:
-            for audit_id, audit_data in audit_dict.iteritems():
+            for audit_id, audit_data in audit_dict.items():
                 # secedit:whitelist:PasswordComplexity
                 tags_dict = audit_data.get('data', {})
                 # secedit:whitelist:PasswordComplexity:data
@@ -168,11 +168,11 @@ def _get_tags(data):
                 if isinstance(tags, dict):
                     # malformed yaml, convert to list of dicts
                     tmp = []
-                    for name, tag in tags.iteritems():
+                    for name, tag in tags.items():
                         tmp.append({name: tag})
                     tags = tmp
                 for item in tags:
-                    for name, tag in item.iteritems():
+                    for name, tag in item.items():
                         tag_data = {}
                         # Whitelist could have a dictionary, not a string
                         if isinstance(tag, dict):
@@ -203,7 +203,7 @@ def _export_firewall():
             return dump
         else:
             log.error('Nothing was returned from the auditpol command.')
-    except StandardError:
+    except Exception:
         log.error('An error occurred running the auditpol command.')
 
 

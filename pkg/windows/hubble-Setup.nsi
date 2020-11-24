@@ -46,15 +46,15 @@
   ;Name and File
   Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
   OutFile "Hubble-${PRODUCT_VERSION}-Setup.exe"
-  
+
   ;Default Installation folder
   InstallDir "C:\${PFILES}\Hubble"
-  
+
   ;Get installation folder from registry if available
   InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
   ShowInstDetails show
   ShowUnInstDetails show
-  
+
   ;Request application privileges for Windows Vista
   RequestExecutionLevel highest
 
@@ -136,7 +136,7 @@
 
     ${NSD_CreateText} 0 43u 100% 12u $IndexName_State
     Pop $IndexName
-	
+
     ${NSD_CreateLabel} 0 60u 100% 12u "Indexer:"
     Pop $Label
 
@@ -146,7 +146,7 @@
     nsDialogs::Show
 
   FunctionEnd
-  
+
   Function pageHubbleConfig_Leave
 
     ${NSD_GetText} $HECToken $HECToken_State
@@ -172,7 +172,7 @@
     SetCtlColors $CheckBox_Hubble_Start "" "ffffff"
     # This command required to bring the checkbox to the front
     System::Call "User32::SetWindowPos(i, i, i, i, i, i, i) b ($CheckBox_Hubble_Start, ${HWND_TOP}, 0, 0, 0, 0, ${SWP_NOSIZE}|${SWP_NOMOVE})"
-	
+
 	# Create Start Hubble Delayed Checkbox
 	${NSD_CreateCheckbox} 130u 102u 100% 12u "&Delayed Start"
     Pop $CheckBox_Hubble_Start_Delayed
@@ -241,13 +241,13 @@
   Section "MainSection" SEC01
 
     SetOutPath "$INSTDIR\"
-    SetOverwrite ifdiff 
+    SetOverwrite ifdiff
 	CreateDirectory $INSTDIR\var
     CreateDirectory $INSTDIR\etc\hubble\hubble.d
     File /r "..\..\dist\hubble\"
 
   SectionEnd
-  
+
   Section -Post
 
     WriteUninstaller "$INSTDIR\uninst.exe"
@@ -280,26 +280,28 @@
     ; Register the Hubble Service
     nsExec::Exec "nssm.exe install Hubble $INSTDIR\hubble.exe"
     nsExec::Exec "nssm.exe set Hubble Description Open Source software for security compliance"
-    nsExec::Exec "nssm.exe set Hubble Application $INSTDIR\PortableGit\git-cmd.exe"
+    nsExec::Exec "nssm.exe set Hubble Application $INSTDIR\hubble.exe"
     nsExec::Exec "nssm.exe set Hubble AppDirectory $INSTDIR"
-    nsExec::Exec "nssm.exe set Hubble AppParameters hubble.exe -c .\etc\hubble\hubble.conf"
+    nsExec::Exec "nssm.exe set Hubble AppParameters -c .\etc\hubble\hubble.conf"
     nsExec::Exec "nssm.exe set Hubble Start SERVICE_AUTO_START"
 
+    ExecWait 'powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File .\prerequisites.ps1 "$INSTDIR" -FFFeatureOff'
     ExecWait 'powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File .\osqueryd_safe_permissions.ps1 "$INSTDIR" -FFFeatureOff'
+    ExecWait 'powershell -ExecutionPolicy Bypass -WindowStyle Hidden -File .\hubble_config_permissions.ps1 "$INSTDIR" -FFFeatureOff'
     RMDir /R "$INSTDIR\var\cache" ; removing cache from old version
 
     ${if} $HECToken_State != "xxxxx-xxx-xxx-xxx-xxxxxx"
 	${AndIf} $HECToken_State != ""
         Call makeUserConfig
     ${endif}
-	
+
     Push "C:\${PFILES}\Hubble"
     Call AddToPath
 
     Delete "$INSTDIR\vcredist.exe"
 
   SectionEnd
-  
+
   Section Uninstall
 
     Call un.uninstallHubble
@@ -386,7 +388,7 @@
         "$(^Name) was successfully removed from your computer." \
         /SD IDOK
   FunctionEnd
-  
+
 
 ;--------------------------------
 ;functions
@@ -445,7 +447,7 @@
     skipUninstall:
 
   FunctionEnd
-  
+
   Function .onInstSuccess
 
     ; If StartHubbleDelayed is 1, then set the service to start delayed
@@ -459,7 +461,7 @@
     ${EndIf}
 
   FunctionEnd
-  
+
 ;--------------------------------
 ;Helper Functions Section
 
@@ -705,11 +707,11 @@
   !macroend
   !insertmacro RemoveFromPath ""
   !insertmacro RemoveFromPath "un."
-  
+
 ;--------------------------------
 ;Specialty Fuctions
   Function makeUserConfig
-  
+
     confFind:
 	IfFileExists "$INSTDIR\etc\hubble\hubble.d\user.conf" confFound confNotFound
 
@@ -724,7 +726,7 @@
         goto confFind
 
     confLoop:
-    
+
         FileWrite $9 "hubblestack:$\r$\n"
         FileWrite $9 "  returner:$\r$\n"
         FileWrite $9 "    splunk:$\r$\n"
@@ -733,6 +735,7 @@
         FileWrite $9 "        index: $IndexName_State$\r$\n"
         FileWrite $9 "        sourcetype_nova: hubble_audit$\r$\n"
         FileWrite $9 "        sourcetype_nebula: hubble_osquery$\r$\n"
+        FileWrite $9 "        sourcetype_osqueryd: hubble_osqd$\r$\n"
         FileWrite $9 "        sourcetype_pulsar: hubble_fim$\r$\n"
         FileWrite $9 "        sourcetype_log: hubble_log$\r$\n"
             goto EndOfFile
@@ -787,7 +790,7 @@ Function parseCommandLineSwitches
     ${ElseIf} $IndexName_State == ""
         StrCpy $IndexName_State "index"
     ${EndIf}
-	
+
 	# Hubble Config: Indexer
     ${GetOptions} $R0 "/indexer=" $R1
     ${IfNot} $R1 == ""

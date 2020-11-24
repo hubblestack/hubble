@@ -34,11 +34,11 @@ import salt.utils.stringutils
 import salt.utils.versions
 from salt.ext import six
 
-from hubblestack.utils.signing import find_wrapf
+# from hubblestack.utils.signing import find_wrapf
 
 log = logging.getLogger(__name__)
 
-@find_wrapf(not_found={'path': '', 'rel': ''})
+# @find_wrapf(not_found={'path': '', 'rel': ''})
 def find_file(path, saltenv='base', **kwargs):
     '''
     Search the environment for the relative path.

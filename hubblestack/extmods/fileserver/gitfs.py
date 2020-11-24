@@ -65,7 +65,7 @@ AUTH_PROVIDERS = ('pygit2',)
 AUTH_PARAMS = ('user', 'password', 'pubkey', 'privkey', 'passphrase',
                'insecure_auth')
 
-from hubblestack.utils.signing import find_wrapf
+# from hubblestack.utils.signing import find_wrapf
 from hubblestack.extmods.utils.gitfs import GitFS
 from salt.exceptions import FileserverConfigError
 
@@ -140,7 +140,7 @@ def envs(ignore_cache=False):
     '''
     return _gitfs().envs(ignore_cache=ignore_cache)
 
-@find_wrapf(not_found={'rel': '', 'path': ''}, real_path='path')
+# @find_wrapf(not_found={'rel': '', 'path': ''}, real_path='path')
 def find_file(path, tgt_env='base', **kwargs):  # pylint: disable=W0613
     '''
     Find the first file to match the path and ref, read the file out of git

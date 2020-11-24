@@ -31,7 +31,7 @@ import salt.utils.gitfs
 import salt.utils.path
 from croniter import croniter
 
-import hubblestack.utils.signing
+# import hubblestack.utils.signing
 import hubblestack.splunklogging
 import hubblestack.log
 import hubblestack.hec.opt
@@ -801,11 +801,11 @@ def refresh_grains(initial=False):
     hubblestack.status.__salt__ = __salt__
     HSS.start_sigusr1_signal_handler()
 
-    hubblestack.utils.signing.__opts__ = __opts__
-    hubblestack.utils.signing.__salt__ = __salt__
+    # hubblestack.utils.signing.__opts__ = __opts__
+    # hubblestack.utils.signing.__salt__ = __salt__
 
-    hubblestack.utils.signing.__opts__ = __opts__
-    hubblestack.utils.signing.__salt__ = __salt__
+    # hubblestack.utils.signing.__opts__ = __opts__
+    # hubblestack.utils.signing.__salt__ = __salt__
 
     hubblestack.log.refresh_handler_std_info()
 

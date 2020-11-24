@@ -101,7 +101,7 @@ from salt.ext.six.moves import filter
 from salt.ext.six.moves.urllib.parse import quote as _quote
 # pylint: enable=import-error,no-name-in-module,redefined-builtin
 
-from hubblestack.utils.signing import find_wrapf
+# from hubblestack.utils.signing import find_wrapf
 
 log = logging.getLogger(__name__)
 
@@ -141,7 +141,7 @@ def update():
         log.info('Sync local cache from S3 completed.')
 
 
-@find_wrapf(not_found={'bucket': None, 'path': None}, real_path='cpath')
+# @find_wrapf(not_found={'bucket': None, 'path': None}, real_path='cpath')
 def find_file(path, saltenv='base', **kwargs):
     """
     Look through the buckets cache file for a match.

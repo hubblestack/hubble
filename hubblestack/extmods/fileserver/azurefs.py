@@ -70,7 +70,7 @@ except ImportError:
 # Import third party libs
 import salt.ext.six as six
 
-from hubblestack.utils.signing import find_wrapf
+# from hubblestack.utils.signing import find_wrapf
 
 __virtualname__ = 'azurefs'
 
@@ -96,7 +96,7 @@ def __virtual__():
     return True
 
 
-@find_wrapf(not_found={'path': '', 'rel': ''})
+# @find_wrapf(not_found={'path': '', 'rel': ''})
 def find_file(path, saltenv='base', **kwargs):
     """
     Search the environment for the relative path

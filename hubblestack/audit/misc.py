@@ -17,24 +17,24 @@ Common Schema
     Its a unique string within a yaml file.
     It is present on top of a yaml block
 
-- description 
+- description
     Description of the check
 
-- tag 
+- tag
     (Applicable only for Audit)
     Check tag value
 
-- sub_check (Optional, default: false) 
+- sub_check (Optional, default: false)
     (Applicable only for Audit)
     If true, its individual result will not be counted in compliance
     It might be referred in some boolean expression
 
-- failure_reason (Optional) 
+- failure_reason (Optional)
     (Applicable only for Audit)
     By default, module will generate failure reason string at runtime
     If this is passed, this will override module's actual failure reason
 
-- invert_result (Optional, default: false) 
+- invert_result (Optional, default: false)
     (Applicable only for Audit)
     This is used to flip the boolean output from a check
 
@@ -46,7 +46,7 @@ Common Schema
 
 - grains (under filter)
     (Applicable only for Audit)
-    Any grains with and/or/not supported. This is used to filter whether 
+    Any grains with and/or/not supported. This is used to filter whether
     this check can run on the current OS or not.
     To run this check on all OS, put a '*'
 
@@ -68,7 +68,7 @@ Common Schema
     (Applicable only for Audit)
     It takes a boolean (true/false) value.
     If its true, the implementation will not be executed. And true is returned
-    
+
     This can be useful in cases where you don't have any implementation for some OS,
     and you want a result from the block. Else, your meta-check(bexpr) will be failed.
 
@@ -76,7 +76,7 @@ Common Schema
     (Applicable only for Audit)
     An array of multiple module implementations. At least one block is necessary.
     Each item in array will result into a boolean value.
-    If multiple module implementations exists, final result will be evaluated as 
+    If multiple module implementations exists, final result will be evaluated as
     boolean AND (default, see parameter: check_eval_logic)
 
 - check_eval_logic (Optional, default: and)
@@ -91,7 +91,7 @@ Common Schema
 - comparator
     For the purpose of comparing output of module with expected values.
     Parameters depends upon the comparator used.
-    For detailed documentation on comparators, 
+    For detailed documentation on comparators,
     read comparator's implementations at (/hubblestack/extmods/comparators/)
 
 Module Arguments
@@ -303,9 +303,9 @@ def validate_params(block_id, block_dict, extra_args=None):
         elif function_name == 'check_users_own_their_home':
             _validation_helper(block_id, block_dict, ['max_system_uid'], error)
         elif function_name == 'check_list_values':
-            _validation_helper(block_id,
-                block_dict,
-                ['file_path', 'match_pattern', 'value_pattern', 'grep_arg', 'white_list', 'black_list', 'value_delimter'],
+            _validation_helper(block_id, 
+                block_dict, 
+                ['file_path', 'match_pattern', 'value_pattern', 'value_delimter'],
                 error)
         elif function_name == 'ensure_max_password_expiration':
             _validation_helper(block_id, block_dict, ['allow_max_days', 'except_for_users'], error)
@@ -322,7 +322,8 @@ def _validation_helper(block_id, block_dict, expected_args_list, error_dict):
     Helper function to validate params, and prepare error dictionary
     """
     for expected_arg in expected_args_list:
-        if not runner_utils.get_param_for_module(block_id, block_dict, expected_arg):
+        expected_arg_value = runner_utils.get_param_for_module(block_id, block_dict, expected_arg)
+        if not isinstance(expected_arg_value, int) and not expected_arg_value:
             error_dict[expected_arg] = 'No {0} provided for block_id: {1}'.format(expected_arg, block_id)
 
 
@@ -369,7 +370,7 @@ def execute(block_id, block_dict, extra_args=None):
     result = FUNCTION_MAP[function_name](block_id, block_dict, extra_args)
 
     if result is True:
-        return runner_utils.prepare_positive_result_for_module(block_id, None)
+        return runner_utils.prepare_positive_result_for_module(block_id, True)
     return runner_utils.prepare_negative_result_for_module(block_id, result)
 
 def _check_all_ports_firewall_rules(block_id, block_dict, extra_args):
@@ -867,6 +868,70 @@ def _check_netrc_files_accessibility(block_id, block_dict, extra_args):
     output = _execute_shell_command(script, python_shell=True)
     return True if output.strip() == '' else output
 
+
+def _grep(path,
+          pattern,
+          *args):
+    """
+    Grep for a string in the specified file
+
+    .. note::
+        This function's return value is slated for refinement in future
+        versions of Salt
+
+    path
+        Path to the file to be searched
+
+        .. note::
+            Globbing is supported (i.e. ``/var/log/foo/*.log``, but if globbing
+            is being used then the path should be quoted to keep the shell from
+            attempting to expand the glob expression.
+
+    pattern
+        Pattern to match. For example: ``test``, or ``a[0-5]``
+
+    opts
+        Additional command-line flags to pass to the grep command. For example:
+        ``-v``, or ``-i -B2``
+
+        .. note::
+            The options should come after a double-dash (as shown in the
+            examples below) to keep Salt's own argument parser from
+            interpreting them.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' file.grep /etc/passwd nobody
+        salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr -- -i
+        salt '*' file.grep /etc/sysconfig/network-scripts/ifcfg-eth0 ipaddr -- -i -B2
+        salt '*' file.grep "/etc/sysconfig/network-scripts/*" ipaddr -- -i -l
+    """
+    path = os.path.expanduser(path)
+
+    if args:
+        options = ' '.join(args)
+    else:
+        options = ''
+    cmd = (
+        r'''grep {options} {pattern} {path}'''
+        .format(
+            options=options,
+            pattern=pattern,
+            path=path,
+        )
+    )
+
+    try:
+        log.info(cmd)
+        ret = __salt__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
+    except (IOError, OSError) as exc:
+        raise CommandExecutionError(exc.strerror)
+
+    return ret
+
+
 def _check_list_values(block_id, block_dict, extra_args=None):
     """
     This function will first get the line matching given match_pattern.
@@ -877,21 +942,28 @@ def _check_list_values(block_id, block_dict, extra_args=None):
     Only one of white_list and blacklist is allowed.
     white_list and black_list should have comma(,) seperated values.
 
-    Example for CIS-2.2.1.2
-    ensure_ntp_configured:
-      data:
-        CentOS Linux-7:
-         tag: 2.2.1.2
-         function: check_list_values
-         args:
-           - /etc/ntp.conf
-           - '^restrict.*default'
-           - '^restrict.*default(.*)$'
-           - null
-           - kod,nomodify,notrap,nopeer,noquery
-           - null
-           - ' '
-         description: Ensure ntp is configured
+    audit profile example:
+
+sshd_hostbased_auth_coreos:
+  description: 'Ensure SSH HostbasedAuthentication is disabled'
+  tag: 'test1'
+  implementations:
+    - filter:
+        grains: 'G@osfinger:CentOS*Linux-7'
+      module: misc
+      items:
+        - args:
+            function: check_list_values
+            file_path: /srv/hubble/hubblestack_audit_profiles/ssh_config
+            match_pattern: '^restrict.*default'
+            value_pattern: '^restrict.*default(.*)$'
+            grep_arg: null
+            white_list: kod,nomodify,notrap,nopeer,noquery
+            black_list: null
+            value_delimter: ' '
+          comparator:
+            type: "boolean"
+            match: true
     """
     file_path = runner_utils.get_param_for_module(block_id, block_dict, 'file_path')
     match_pattern = runner_utils.get_param_for_module(block_id, block_dict, 'match_pattern')
@@ -905,9 +977,8 @@ def _check_list_values(block_id, block_dict, extra_args=None):
 
     if black_list is not None and white_list is not None:
         return "Both black_list and white_list values are not allowed."
-
     grep_args = [] if grep_arg is None else [grep_arg]
-    matched_lines = grep_module._grep(file_path, None, match_pattern, *grep_args).get('stdout')
+    matched_lines = _grep(file_path, match_pattern, *grep_args).get('stdout')
     if not matched_lines:
         return "No match found for the given pattern: " + str(match_pattern)
 
@@ -949,8 +1020,7 @@ def _ensure_max_password_expiration(block_id, block_dict, extra_args=None):
     except_for_users = runner_utils.get_param_for_module(block_id, block_dict, 'except_for_users', '')
 
     grep_args = []
-    pass_max_days_output = grep_module._grep(
-        '/etc/login.defs', None, '^PASS_MAX_DAYS', *grep_args).get('stdout')
+    pass_max_days_output = _grep('/etc/login.defs', '^PASS_MAX_DAYS', *grep_args).get('stdout')
     if not pass_max_days_output:
         return "PASS_MAX_DAYS must be set"
     system_pass_max_days = pass_max_days_output.split()[1]
@@ -962,7 +1032,7 @@ def _ensure_max_password_expiration(block_id, block_dict, extra_args=None):
 
     #fetch all users with passwords
     grep_args.append('-E')
-    all_users = grep_module._grep('/etc/shadow', None, '^[^:]+:[^\!*]', *grep_args).get('stdout')
+    all_users = _grep('/etc/shadow', '^[^:]+:[^\!*]', *grep_args).get('stdout')
 
     except_for_users_list=[]
     for user in except_for_users.split(","):

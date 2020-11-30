@@ -38,11 +38,11 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
         boolean_expr_check_list = []
         audit_profile = os.path.splitext(os.path.basename(audit_file))[0]
         for audit_id, audit_data in audit_data_dict.items():
-            log.debug('Executing check-id: %s in nova profile: %s', audit_id, audit_profile)
+            log.debug('Executing check-id: %s in audit profile: %s', audit_id, audit_profile)
             audit_impl = self._get_matched_implementation(audit_id, audit_data, tags, labels)
             if not audit_impl:
                 # no matched impl found
-                log.debug('No matched implementation found for check-id: %s in nova profile: %s', audit_id,
+                log.debug('No matched implementation found for check-id: %s in audit profile: %s', audit_id,
                           audit_profile)
                 continue
 

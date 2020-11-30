@@ -234,14 +234,17 @@ def execute(block_id, block_dict, extra_args=None):
         reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     reg_dict = _reg_path_splitter(reg_name)
     secret = _find_option_value_in_reg(reg_dict.get('hive'), reg_dict.get('key'), reg_dict.get('value'))
-    if isinstance(secret, dict):
+    if isinstance(secret, dict) and extra_args.get('caller') == 'Audit':
         return runner_utils.prepare_negative_result_for_module(block_id,
-                                                               "registry output is a dict, currently unsupported")
+                                                               "registry output is a dict, currently unsupported."
+                                                               " Output is {0}".format(secret))
     result = {reg_name: secret}
     log.debug("win_reg module output for block_id %s, is %s", block_id, result)
 
     if secret is False:
-        return runner_utils.prepare_negative_result_for_module(block_id, "registry value couldn't be fetched")
+        return runner_utils.prepare_negative_result_for_module(block_id,
+                                                               "registry value couldn't "
+                                                               "be fetched for reg_name {0}".format(reg_name))
 
     return runner_utils.prepare_positive_result_for_module(block_id, result)
 
@@ -271,7 +274,8 @@ def validate_params(block_id, block_dict, extra_args=None):
     chained_result = runner_utils.get_chained_param(extra_args)
     if chained_result:
         chained_pkg_name = chained_result
-    reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+    else:
+        reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     if not chained_pkg_name and not reg_name:
         error['name'] = 'Mandatory parameter: name not found for id: %s' % block_id
     if error:

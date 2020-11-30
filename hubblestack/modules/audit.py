@@ -377,7 +377,7 @@ def _get_top_data(topfile):
     ret = []
     for match, data in topdata.items():
         if data is None:
-            log.exception('No profiles found for one or more filters in topfile')
+            log.exception('No profiles found for one or more filters in topfile %s', topfile)
             return None
         if __mods__['match.compound'](match):
             ret.extend(data)

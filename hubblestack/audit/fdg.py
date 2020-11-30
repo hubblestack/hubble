@@ -207,7 +207,8 @@ def validate_params(block_id, block_dict, extra_args=None):
     error = {}
     # fetch required param
     fdg_file_chained = runner_utils.get_chained_param(extra_args)
-    fdg_file = runner_utils.get_param_for_module(block_id, block_dict, 'fdg_file')
+    if not fdg_file_chained:
+        fdg_file = runner_utils.get_param_for_module(block_id, block_dict, 'fdg_file')
     if not fdg_file_chained and not fdg_file:
         error['fdg_file'] = 'Mandatory parameter: fdg_file not found for id: %s' % (block_id)
 
@@ -244,15 +245,17 @@ def execute(block_id, block_dict, extra_args=None):
     true_for_success = runner_utils.get_param_for_module(block_id, block_dict, 'true_for_success', True)
     use_status = runner_utils.get_param_for_module(block_id, block_dict, 'use_status', False)
     consolidation_operator = runner_utils.get_param_for_module(block_id, block_dict, 'consolidation_operator', 'and')
+    try:
+        # fdg runner class
+        fdg_runner = runner_factory.get_fdg_runner()
+        fdg_runner.init_loader()
 
-    # fdg runner class
-    fdg_runner = runner_factory.get_fdg_runner()
-    fdg_runner.init_loader()
-
-    # Handover to fdg_runner
-    _, fdg_run = fdg_runner.execute(fdg_file, {
-        'starting_chained': starting_chained
-    })
+        # Handover to fdg_runner
+        _, fdg_run = fdg_runner.execute(fdg_file, {
+            'starting_chained': starting_chained
+        })
+    except Exception as e:
+        raise HubbleCheckValidationError('fdg_runner raised {0}: in file {1}, {2}'.format(e.__class__, fdg_file, e))
 
     if not isinstance(fdg_run, tuple):
         log.debug("consolidation_operator is %s", consolidation_operator)

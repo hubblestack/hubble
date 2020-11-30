@@ -134,6 +134,14 @@ def size(audit_id, result_to_compare, args):
     return False, "list::size failure. Expected={0} Got={1}".format(len(result_to_compare), str(args['size']))
 
 
+def is_integer(value):
+    try:
+        int(value)
+        return True
+    except ValueError:
+        return False
+
+
 def match(audit_id, result_to_compare, args):
     """
     Exact match the given list with result
@@ -151,6 +159,13 @@ def match(audit_id, result_to_compare, args):
     if not isinstance(result_to_compare, list) or len(result_to_compare) == 0:
         log.error("empty list received in list::match for audit_id: {0}".format(audit_id))
         return False, "list::match failure. {0} is not an instance of list".format(result_to_compare)
+    if is_integer(result_to_compare[0]):
+        ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
+            audit_id,
+            {"type": "number", "match": expected_list[0]},
+            int(result_to_compare[0]))
+        if ret_status:
+            return True, "Check Passed"
     if isinstance(result_to_compare[0], dict):
         # If list to compare has dict, it uses first key of dict to sort list
         sort_key = list(result_to_compare[0].keys())[0]
@@ -178,6 +193,13 @@ def match_any(audit_id, result_to_compare, args):
     log.debug('Running list::match_any for check: {0}'.format(audit_id))
 
     for r_compare in result_to_compare:
+        if is_integer(r_compare):
+            ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
+                audit_id,
+                {"type": "number", "match_any": args['match_any']},
+                int(r_compare))
+            if ret_status:
+                return True, "Check Passed"
         if isinstance(r_compare, dict):
             # using dict::match_any
             ret_status, ret_val = hubblestack.module_runner.comparator.run(

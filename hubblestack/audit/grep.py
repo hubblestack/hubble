@@ -216,7 +216,8 @@ def validate_params(block_id, block_dict, extra_args=None):
     error = {}
     # fetch required param
     file_content = runner_utils.get_chained_param(extra_args)
-    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
+    if not file_content:
+        filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
     if not file_content and not filepath:
         error['path'] = 'Mandatory parameter: path not found for id: %s' % (block_id)
 

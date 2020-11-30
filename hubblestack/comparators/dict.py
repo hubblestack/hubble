@@ -221,12 +221,20 @@ def match_any_if_key_matches(audit_id, result_to_compare, args):
 
             if not errors:
                 # found a match
+                log.debug("dictionary comparison successful."
+                          " '%s' matches '%s'", to_match_dict, result_to_compare)
                 return True, "Dictionary comparison passed"
+            else:
+                log.debug("dictionary comparison is not successful."
+                          " '%s' does not match '%s'", to_match_dict, result_to_compare)
+                return False, "Dictionary comparison failed in dict::match_any_if_key_matches, " \
+                              "errors={0}".format(str(errors))
 
-    if key_found_once:
-        error_message = 'dict::match_any_if_key_matches failed, errors={0}'.format(str(errors))
+    if not key_found_once:
+        error_message = "key '{0}' exists in dict '{1}', " \
+                        "but does not match intended values".format(key_name, result_to_compare)
+        log.debug(error_message)
         return False, error_message
-    return True, "pass_as_key_not_found"
 
 
 def match_key_any(audit_id, result_to_compare, args):

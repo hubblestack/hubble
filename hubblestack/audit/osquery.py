@@ -323,8 +323,9 @@ def _osquery(block_id, query, osquery_path=None, args=None, cast_to_string=None)
                 log.error('Invalid data type returned by osquery call %s.', res, exc_info=True)
                 return runner_utils.prepare_negative_result_for_module(block_id, 'Error while casting to string')
         return runner_utils.prepare_positive_result_for_module(block_id, ret)
-
-    return runner_utils.prepare_negative_result_for_module(block_id, res['stdout'])
+    else:
+        ret = {'stdout': res.get('stdout'), 'stderr': res.get('stderr')}
+        return runner_utils.prepare_negative_result_for_module(block_id, ret)
 
 
 def _convert_to_str(data):

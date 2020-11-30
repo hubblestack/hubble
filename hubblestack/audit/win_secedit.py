@@ -254,7 +254,9 @@ def execute(block_id, block_dict, extra_args=None):
     coded_sec_value = __secdata__.get(sec_name)
 
     if coded_sec_value is None:
-        coded_sec_value = "No One"
+        result = {'sec_name': sec_name, 'coded_sec_value': "No One", 'sec_value': ['']}
+        log.debug("win_secedit module output for block_id %s, is %s", block_id, result)
+        return runner_utils.prepare_positive_result_for_module(block_id, result)
     if 'account' == value_type:
         sec_value = _get_account_name(coded_sec_value)
     elif 'MACHINE\\' in sec_name:
@@ -299,7 +301,8 @@ def validate_params(block_id, block_dict, extra_args=None):
     chained_result = runner_utils.get_chained_param(extra_args)
     if chained_result:
         chained_pkg_name = chained_result
-    sec_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+    else:
+        sec_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     if not chained_pkg_name and not sec_name:
         error['name'] = 'Mandatory parameter: name not found for id: %s' % block_id
 
@@ -394,7 +397,7 @@ def _reg_value_reverse_translator(input_string):
     elif input_string == '4,2':
         return ['prompt for consent on the secure desktop']
     elif input_string == '7,':
-        return ['defined (blank)']
+        return ['']
     else:
         input_string = input_string.replace('"', '')
         input_string = input_string.split(',')

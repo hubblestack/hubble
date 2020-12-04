@@ -3,7 +3,7 @@
 # osquery needs to be built once. Resulting tar file can be used in hubblev4 Dockerfiles.
 # Before building hubble, build osquery using a Dockerfile in pkg/osquery/ directory.
 # To build this image: 1. copy previously built osquery_4hubble.tar to directory with this Dockerfile
-#                      2. docker build -t <image_name> --build-arg=HUBBLE_CHECKOUT=<tag or commit> .
+#                      2. docker build -t <image_name> --build-arg HUBBLE_CHECKOUT=<tag or commit> --build-arg HUBBLE_VERSION=<Hubble Version> .
 # The resulting image is ready to build and run pyinstaller on container start that should 
 # create hubble<version>-centos8.tar.gz in the /data directory inside the container.
 # Mount /data volume into a directory on the host to access the package.
@@ -125,7 +125,7 @@ RUN /opt/osquery/osqueryi --version
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
 ARG HUBBLE_CHECKOUT=v4.0.0
-ENV HUBBLE_VERSION=4.5.0_rc0
+ARG HUBBLE_VERSION=4.5.0_rc0
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
@@ -144,5 +144,6 @@ WORKDIR /hubble_build
 
 COPY entrypoint.sh /entrypoint.sh
 ENV HUBBLE_CHECKOUT_ENV=$HUBBLE_CHECKOUT
+ENV HUBBLE_VERSION_ENV=$HUBBLE_VERSION
 ENV HUBBLE_GIT_URL_ENV=$HUBBLE_GIT_URL
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

@@ -19,9 +19,10 @@ cp -rf "${HUBBLE_SRC_PATH}"/* /hubble_build
 rm -rf /hubble_build/.git
 
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.orig
-
 sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT_ENV}/g" -e "s/COMMIT_NOT_SET/$(cd ${HUBBLE_SRC_PATH}; git describe --long --always --tags)/g" /hubble_build/hubblestack/__init__.py
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixed
+
+sed -i -e "s/'.*'/'$HUBBLE_VERSION_ENV'/g" /hubble_build/hubblestack/version.py
 
 eval "$(pyenv init -)"
 
@@ -131,7 +132,7 @@ if [ -d /data/opt ]
 then cp -r /data/opt/* /opt
 fi
 
-PKG_FILE="/data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.coreos.tar.gz"
+PKG_FILE="/data/hubblestack-${HUBBLE_VERSION_ENV}-${HUBBLE_ITERATION}.coreos.tar.gz"
 
 tar -cSPvvzf "$PKG_FILE" \
     --exclude opt/hubble/pyenv \

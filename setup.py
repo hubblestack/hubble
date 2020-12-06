@@ -14,6 +14,7 @@ data_files = [('/usr/lib/systemd/system', ['pkg/source/hubble.service']),
               ('/etc/hubble', ['conf/hubble']), ]
 
 build_dependencies = [
+    'pyyaml',
     'objgraph',
     'pycryptodome',
     'cryptography',
@@ -72,14 +73,6 @@ setup(
     },
     install_requires=build_dependencies,
     data_files=data_files,
-    options={
-#        'build_scripts': {
-#            'executable': '/usr/bin/env python',
-#        },
-        'bdist_rpm': {
-            'requires': 'salt python-argparse python-inotify python-pygit2 python-setuptools',
-        },
-    },
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',

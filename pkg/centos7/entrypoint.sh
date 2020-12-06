@@ -1,7 +1,17 @@
 #!/bin/bash
 #Moving hubble source code logic in the shell script
+
+# if ENTRYPOINT is given a CMD other than nothing
+# abort here and do that other CMD
+if [ $# -gt 0 ]
+then exec "$@"
+fi
+
 set -x -e
-git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+if [ ! -d "${HUBBLE_SRC_PATH}" ]
+then git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+fi
+
 cd "${HUBBLE_SRC_PATH}"
 git checkout "${HUBBLE_CHECKOUT_ENV}"
 
@@ -21,12 +31,6 @@ python_binary="$(pyenv which python)"
 while [ -L "$python_binary" ]
 do python_binary="$(readlink -f "$python_binary")"
 done
-
-# if ENTRYPOINT is given a CMD other than nothing
-# abort here and do that other CMD
-if [ $# -gt 0 ]
-then exec "$@"
-fi
 
 # from now on, exit on error (rather than && every little thing)
 PS4=$'-------------=: '
@@ -158,7 +162,7 @@ fi
 # symlink to have hubble binary in path
 cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
 mkdir -p usr/bin
-ln -s /opt/hubble/hubble usr/bin/hubble
+ln -sf /opt/hubble/hubble usr/bin/hubble
 
 if [ "X$NO_FPM" = X1 ]; then
     echo "exiting (as requested by NO_FPM=$NO_FPM) without building package"

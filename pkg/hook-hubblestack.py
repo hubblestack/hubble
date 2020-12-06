@@ -1,4 +1,4 @@
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 HIDDEN_IMPORTS = [
     'yaml',
@@ -37,7 +37,9 @@ HIDDEN_IMPORTS = [
     'hubblestack',
     'hubblestack.daemon',
     'hubblestack.loader',
+]
 
+LOADERS = [
     'hubblestack.audit',
     'hubblestack.comparators',
     'hubblestack.fdg',
@@ -48,9 +50,8 @@ HIDDEN_IMPORTS = [
     'hubblestack.returners',
     'hubblestack.serializers',
     'hubblestack.utils',
-
-    'hubblestack.modules.config',
 ]
+
 
 try:
     import hubblestack.pre_packaged_certificates
@@ -61,6 +62,9 @@ except ImportError:
 datas = list()
 binaries = list()
 hiddenimports = list(HIDDEN_IMPORTS)
+
+for l in LOADERS:
+    datas.extend(collect_data_files(l, subdir='.', include_py_files=True))
 
 for i in HIDDEN_IMPORTS:
     hiddenimports.extend( collect_submodules(i) )

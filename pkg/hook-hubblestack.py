@@ -1,18 +1,16 @@
 from PyInstaller.utils.hooks import collect_submodules
 
 HIDDEN_IMPORTS = [
+    'yaml',
     'ssl',
     'objgraph',
-    'Cryptodome',
     'OpenSSL',
     'argparse',
     'base64',
-    'HTMLParser',
     'json',
     'logging',
     'requests',
     'functools',
-    'BaseHTTPServer',
     'argparse',
     'logging',
     'time',
@@ -25,7 +23,6 @@ HIDDEN_IMPORTS = [
     'boto3',
     'botocore',
     'imp',
-    'six',
     'inspect',
     'yaml',
     'traceback',
@@ -37,14 +34,20 @@ HIDDEN_IMPORTS = [
     'vulners',
     'sqlite3',
 
-    # fdg readfile.json tries to absolute import a module during lazy load. Too
-    # late for the packer to notice it should be packed in the binary.
-    # marking it here for "hidden import"
-    'hubblestack.utils.encoding',
+    'hubblestack',
+    'hubblestack.daemon',
+    'hubblestack.loader',
 
-    # signign uses pycryptodome and pyopenssl and various other things
-    # make sure pyinstaller see this
-    'hubblestack.utils.signing',
+    'hubblestack.audit',
+    'hubblestack.comparators',
+    'hubblestack.fdg',
+    'hubblestack.grains',
+    'hubblestack.matchers',
+    'hubblestack.modules',
+    'hubblestack.platform',
+    'hubblestack.returners',
+    'hubblestack.serializers',
+    'hubblestack.utils',
 ]
 
 try:
@@ -53,8 +56,9 @@ try:
 except ImportError:
     pass
 
-def _yield_all(HI):
-    for i in HI:
-        yield from collect_submodules(i)
+datas = list()
+binaries = list()
+hiddenimports = list(HIDDEN_IMPORTS)
 
-hiddenimports = list(_yield_all(HIDDEN_IMPORTS))
+for i in HIDDEN_IMPORTS:
+    hiddenimports.extend( collect_submodules(i) )

@@ -48,6 +48,8 @@ HIDDEN_IMPORTS = [
     'hubblestack.returners',
     'hubblestack.serializers',
     'hubblestack.utils',
+
+    'hubblestack.modules.config',
 ]
 
 try:

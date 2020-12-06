@@ -1552,6 +1552,7 @@ def get_config(
     opts = apply_config(
         overrides, defaults, cache_minion_id=cache_minion_id, minion_id=minion_id
     )
+    opts['__role'] = 'minion' # vestigial, but various things look for it
     _validate_opts(opts)
     return opts
 

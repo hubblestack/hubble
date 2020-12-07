@@ -125,7 +125,7 @@ RUN /opt/osquery/osqueryi --version
 #use the following variables to choose the version of hubble
 ARG HUBBLE_CHECKOUT=v4.0.0
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=4.0.0
+ENV HUBBLE_VERSION=4.5.0_rc0
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_SRC_PATH=/hubble_src

@@ -43,6 +43,7 @@ LOADERS = [
     'hubblestack.audit',
     'hubblestack.comparators',
     'hubblestack.fdg',
+    'hubblestack.fileserver',
     'hubblestack.grains',
     'hubblestack.matchers',
     'hubblestack.modules',

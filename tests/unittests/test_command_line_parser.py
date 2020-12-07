@@ -1,4 +1,4 @@
-import hubblestack.extmods.fdg.command_line_parser as command_line_parser
+import hubblestack.fdg.command_line_parser as command_line_parser
 import logging
 
 log = logging.getLogger(__name__)
@@ -497,7 +497,7 @@ def test_value_has_regex():
         Expected Status : True
     """
     log.info("Executing test_value_with_regex")
-    command_line = {"cmdline" : '/bin/node_exporter --collector.diskstats.ignored-devices=^(dm-\d+|ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+$'}
+    command_line = {"cmdline" : r'/bin/node_exporter --collector.diskstats.ignored-devices=^(dm-\d+|ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+$'}
     key_aliases = ["collector.diskstats.ignored-devices"]
     params = {
         'key_aliases': key_aliases,
@@ -505,7 +505,7 @@ def test_value_has_regex():
     }
     val = command_line_parser.parse_cmdline(params=params, chained=command_line)
     log.debug("return value is %s", val)
-    expected_value = (True, ['^(dm-\d+|ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+$'])
+    expected_value = (True, [r'^(dm-\d+|ram|loop|fd|(h|s|v|xv)d[a-z]|nvme\d+n\d+p)\d+$'])
     assert val == expected_value
 
 

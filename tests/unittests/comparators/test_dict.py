@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-import hubblestack.extmods.comparators.dict as dict_comparator
+import hubblestack.comparators.dict as dict_comparator
 
 
 class TestDictMatch(TestCase):
@@ -136,7 +136,7 @@ class TestDictMatch(TestCase):
             }
         }
 
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = dict_comparator.match("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -207,7 +207,7 @@ class TestDictMatch(TestCase):
             }
         }
 
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (False, "Failed")
             status, result = dict_comparator.match("test-1", result_to_compare, args)
             self.assertFalse(status)

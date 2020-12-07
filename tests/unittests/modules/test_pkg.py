@@ -1,8 +1,8 @@
 from unittest import TestCase
 import pytest
 
-from hubblestack.extmods.hubble_mods import pkg
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import pkg
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestPkg(TestCase):
@@ -61,7 +61,7 @@ class TestPkg(TestCase):
         def _list_pkgs():
             return test_dict
 
-        pkg.__salt__ = {
+        pkg.__mods__ = {
             'pkg.list_pkgs': _list_pkgs
         }
 
@@ -88,7 +88,7 @@ class TestPkg(TestCase):
         def _list_pkgs():
             return test_dict
 
-        pkg.__salt__ = {
+        pkg.__mods__ = {
             'pkg.list_pkgs': _list_pkgs
         }
 
@@ -114,7 +114,7 @@ class TestPkg(TestCase):
         def _list_pkgs():
             return test_dict
 
-        pkg.__salt__ = {
+        pkg.__mods__ = {
             'pkg.list_pkgs': _list_pkgs
         }
 
@@ -143,7 +143,7 @@ class TestPkg(TestCase):
         def _list_pkgs():
             return test_dict
 
-        pkg.__salt__ = {
+        pkg.__mods__ = {
             'pkg.list_pkgs': _list_pkgs
         }
 

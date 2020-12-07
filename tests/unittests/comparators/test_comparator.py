@@ -1,8 +1,8 @@
 from unittest import TestCase
 import pytest
 
-from hubblestack.utils.hubble_error import HubbleCheckFailedError
-import hubblestack.extmods.module_runner.comparator as comparator
+from hubblestack.exceptions import HubbleCheckFailedError
+import hubblestack.module_runner.comparator as comparator
 
 class TestComparatorMatch(TestCase):
     """

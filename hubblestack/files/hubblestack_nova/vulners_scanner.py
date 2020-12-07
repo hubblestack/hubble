@@ -67,7 +67,7 @@ def _get_local_packages():
     :return: A nice list of packages.
     """
 
-    local_packages = __salt__['pkg.list_pkgs']()
+    local_packages = __mods__['pkg.list_pkgs']()
     os_family = __grains__['os_family'].lower()
     arch = __grains__['osarch']
 
@@ -84,9 +84,9 @@ def _get_local_packages():
     else:
         return None
 
-    return [ vulner_package_format.format(package=pkg, 
+    return [ vulner_package_format.format(package=pkg,
                                           version=local_packages[pkg],
-                                          arch=arch) 
+                                          arch=arch)
              for pkg in local_packages ]
 
 

@@ -6,16 +6,21 @@
 import copy
 import fnmatch
 import logging
-import salt.utils
-import salt.utils.platform
+import hubblestack.utils.platform
+import hubblestack.modules.cmdmod
+import hubblestack.modules.reg
 
+__mods__ = {
+    'cmd.run': hubblestack.modules.cmdmod._run_quiet,
+    'reg.read_value': hubblestack.modules.reg.read_value
+}
 
 log = logging.getLogger(__name__)
 __virtualname__ = 'win_reg'
 
 
 def __virtual__():
-    if not salt.utils.platform.is_windows():
+    if not hubblestack.utils.platform.is_windows():
         return False, 'This audit module only runs on windows'
     return True
 
@@ -243,7 +248,7 @@ def _find_option_value_in_reg(reg_hive, reg_key, reg_value):
     if reg_hive.lower() in ('hku', 'hkey_users'):
         key_list = []
         ret_dict = {}
-        sid_return = __salt__['cmd.run']('reg query hku').split('\n')
+        sid_return = __mods__['cmd.run']('reg query hku').split('\n')
         for line in sid_return:
             if '\\' in line:
                 key_list.append(line.split('\\')[1].strip())
@@ -251,7 +256,7 @@ def _find_option_value_in_reg(reg_hive, reg_key, reg_value):
             if len(sid) <= 15 or '_Classes' in sid:
                 continue
             temp_reg_key = reg_key.replace('<SID>', sid)
-            reg_result = __salt__['reg.read_value'](reg_hive, temp_reg_key, reg_value)
+            reg_result = __mods__['reg.read_value'](reg_hive, temp_reg_key, reg_value)
             if reg_result['success']:
                 if reg_result['vdata'] == '(value not set)':
                     ret_dict[sid] = False
@@ -262,7 +267,7 @@ def _find_option_value_in_reg(reg_hive, reg_key, reg_value):
         return ret_dict
 
     else:
-        reg_result = __salt__['reg.read_value'](reg_hive, reg_key, reg_value)
+        reg_result = __mods__['reg.read_value'](reg_hive, reg_key, reg_value)
         if reg_result['success']:
             if reg_result['vdata'] == '(value not set)':
                 return False
@@ -301,7 +306,7 @@ def _translate_value_type(current, value, evaluator):
 
 
 def _is_domain_controller():
-    ret = __salt__['reg.read_value'](hive="HKLM",
+    ret = __mods__['reg.read_value'](hive="HKLM",
                                      key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
                                      vname="ProductType")
     if ret['vdata'] == "LanmanNT":

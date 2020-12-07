@@ -1,0 +1,909 @@
+# NOTE: This CIS Profile only includes Level 1 Scored Items for Red Hat Enterprise Linux Server 6.
+# NOTE: Within this file, there are a few sections that should be tailored to your
+#       organization's specific policy.  Search for '# NOTE: ' comments through the file.
+
+# TODO: Checks that aren't implemented yet:
+#       1.1.21
+#       1.1.22
+#       1.3.1
+#       1.3.2
+#       1.4.3
+#       1.4.4
+#       1.5.4
+#       1.7.2
+#       1.7.1.1
+#       2.1.1-5
+#       2.1.10
+#       2.2.2-4
+#       2.2.6-15
+#       2.2.1.3
+#       2.3.5
+#       3.4.1-3
+#       3.6.1-3
+#       3.6.5
+#       4.2.2.1
+#       4.2.2.3
+#       4.2.4
+#       5.3.1
+#       5.3.2
+#       5.3.4
+#       5.4.1.4
+#       5.4.2
+#       5.4.3
+#       6.1.10-12
+#       6.2.1
+#       6.2.5-19
+
+
+pkg:
+  blacklist:
+
+    telnet-client:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'telnet': CIS-2.3.4
+      description: Ensure telnet client is not installed
+    telnet-server:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'telnet-server': CIS-2.1.8
+      description: Ensure telnet server is not enabled
+
+    rsh-server:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'rsh-server': CIS-2.1.6
+      description: Ensure rsh server is not enabled
+    rsh-client:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'rsh': CIS-2.3.2
+      description: Ensure rsh client is not installed
+
+    nis-client:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'ypbind': CIS-2.3.1
+      description: Ensure NIS Client is not installed
+    nis-server:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'ypserv': CIS-2.2.16
+      description: Ensure NIS Server is not enabled
+
+    tftp-server:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'tftp-server': CIS-2.1.9
+      description: Ensure tftp server is not enabled
+
+    talk-client:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'talk': CIS-2.3.3
+      description: Ensure talk client is not installed
+    talk-server:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'talk-server': CIS-2.1.7
+      description: Ensure talk server is not enabled
+
+    xinetd:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'xinetd': CIS-2.1.11
+      description: Ensure xinetd is not enabled
+
+    dhcp:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'dhcp': CIS-2.2.5
+      description: Ensure DHCP Server is not enabled
+
+  whitelist:
+
+    rsyslog:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - 'rsyslog': CIS-4.2.3
+      description: Ensure rsyslog or syslog-ng is installed
+
+
+stat:
+  grub_conf_perm:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/grub.conf':
+            tag: CIS-1.4.1
+            mode: 600
+    description: Ensure permissions on bootloader config are configured
+
+  hosts_allow:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/hosts.allow':
+            tag: CIS-3.4.4
+            mode: 644
+    description: Ensure permissions on /etc/hosts.allow are configured
+
+  hosts_deny:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/hosts.deny':
+            tag: CIS-3.4.5
+            mode: 644
+    description: Ensure permissions on /etc/hosts.deny are configured
+
+  crontab:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/crontab':
+            tag: CIS-5.1.2
+            mode: 600
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/crontab are configured
+
+  cron_hourly:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/cron.hourly':
+            tag: CIS-5.1.3
+            mode: 700
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/cron.hourly are configured
+
+  cron_daily:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/cron.daily':
+            tag: CIS-5.1.4
+            mode: 700
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/cron.daily are configured
+
+  cron_weekly:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/cron.weekly':
+            tag: CIS-5.1.5
+            mode: 700
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/cron.weekly are configured
+
+  cron_monthly:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/cron.monthly':
+            tag: CIS-5.1.6
+            mode: 700
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/cron.monthly are configured
+
+  cron_d:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/cron.d':
+            tag: CIS-5.1.7
+            mode: 700
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/cron.d are configured
+
+  at_cron_allow:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/cron.deny':
+            tag: CIS-5.1.8
+            mode: null
+            user: null
+            uid: null
+            group: null
+            gid: null
+        - '/etc/at.deny':
+            tag: CIS-5.1.8
+            mode: null
+            user: null
+            uid: null
+            group: null
+            gid: null
+        - '/etc/cron.allow':
+            tag: CIS-5.1.8
+            mode: 600
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+        - '/etc/at.allow':
+            tag: CIS-5.1.8
+            mode: 600
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure at/cron is restricted to authorized users
+
+  sshd_config:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/ssh/sshd_config':
+            tag: CIS-5.2.1
+            mode: 600
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/ssh/sshd_config are configured
+
+  warning_banner-issue:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/issue':
+            tag: CIS-1.7.1.5
+            mode: 644
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/issue are configured
+
+  passwd_perm:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/passwd':
+            tag: CIS-6.1.2
+            mode: 644
+    description: Ensure permissions on /etc/passwd are configured
+
+  passwd_own:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/passwd':
+            tag: CIS-6.1.6
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/passwd- are configured
+
+  shadow_perm:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/shadow':
+            tag: CIS-6.1.3
+            mode: 0
+    description: Ensure permissions on /etc/shadow are configured
+
+  shadow_own:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/shadow':
+            tag: CIS-6.1.7
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/shadow- are configured
+
+  gshadow_perm:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/gshadow':
+            tag: CIS-6.1.9
+            mode: 0
+    description: Ensure permissions on /etc/gshadow- are configured
+
+  gshadow_own:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/gshadow':
+            tag: CIS-6.1.5
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/gshadow are configured
+
+  group_perm:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/group':
+            tag: CIS-6.1.8
+            mode: 644
+    description: Ensure permissions on /etc/group- are configured
+
+  group_own:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - '/etc/group':
+            tag: CIS-6.1.4
+            user: 'root'
+            uid: 0
+            group: 'root'
+            gid: 0
+    description: Ensure permissions on /etc/group are configured
+
+
+
+sysctl:
+  bad_error_message_protection:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - net.ipv4.icmp_ignore_bogus_error_responses:
+            match_output: '1'
+            tag: CIS-3.2.6
+    description: Ensure bogus ICMP responses are ignored
+  icmp_redirect_acceptance:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - net.ipv4.conf.all.accept_redirects:
+            match_output: '0'
+            tag: CIS-3.2.2
+        - net.ipv4.conf.default.accept_redirects:
+            match_output: '0'
+            tag: CIS-3.2.2
+    description: Ensure ICMP redirects are not accepted
+  ipv6_redirect_acceptance:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - net.ipv6.conf.all.accept_redirects:
+            match_output: '0'
+            tag: CIS-3.3.2
+        - net.ipv6.conf.default.accept_redirects:
+            match_output: '0'
+            tag: CIS-3.3.2
+    description: Ensure IPv6 redirects are not accepted
+  icmp_secure_redirect_acceptance:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - net.ipv4.conf.all.secure_redirects:
+            match_output: '0'
+            tag: CIS-3.2.3
+        - net.ipv4.conf.default.secure_redirects:
+            match_output: '0'
+            tag: CIS-3.2.3
+    description: Ensure secure ICMP redirects are not accepted
+  ignore_broadcast_requests:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - net.ipv4.icmp_echo_ignore_broadcasts:
+            match_output: '1'
+            tag: CIS-3.2.5
+    description: Ensure broadcast ICMP requests are ignored
+  ip_forwarding:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - net.ipv4.ip_forward:
+            match_output: '0'
+            tag: CIS-3.1.1
+    description: Ensure IP forwarding is disabled
+  log_suspicious_packets:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+          - net.ipv4.conf.all.log_martians:
+              match_output: '1'
+              tag: CIS-3.2.4
+          - net.ipv4.conf.default.log_martians:
+              match_output: '1'
+              tag: CIS-3.2.4
+    description: Ensure suspicious packets are logged
+  randomize_va_space:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - kernel.randomize_va_space:
+            match_output: '2'
+            tag: CIS-1.5.3
+    description: Ensure address space layout randomization (ASLR) is enabled
+  send_packet_redirect:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - net.ipv4.conf.all.send_redirects:
+            match_output: '0'
+            tag: CIS-3.1.2
+        - net.ipv4.conf.default.send_redirects:
+            match_output: '0'
+            tag: CIS-3.1.2
+    description: Ensure packet redirect sending is disabled
+  source_routed_packet_acceptance:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - net.ipv4.conf.all.accept_source_route:
+            match_output: '0'
+            tag: CIS-3.2.1
+        - net.ipv4.conf.default.accept_source_route:
+            match_output: '0'
+            tag: CIS-3.2.1
+    description: Ensure source routed packets are not accepted
+  ipv6_router_advertisements:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - net.ipv6.conf.all.accept_ra:
+            match_output: '0'
+            tag: CIS-3.3.1
+        - net.ipv6.conf.default.accept_ra:
+            match_output: '0'
+            tag: CIS-3.3.1
+    description: Ensure IPv6 router advertisements are not accepted
+  reverse_path_filtering:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - net.ipv4.conf.all.rp_filter:
+            match_output: '1'
+            tag: CIS-3.2.7
+        - net.ipv4.conf.default.rp_filter:
+            match_output: '1'
+            tag: CIS-3.2.7
+    description: Ensure Reverse Path Filtering is enabled
+  tcp_syn_cookies:
+    data:
+      'Red Hat Enterprise Linux Server-6':
+        - net.ipv4.tcp_syncookies:
+            match_output: '1'
+            tag: CIS-3.2.8
+    description: Ensure TCP SYN Cookies is enabled
+
+
+grep:
+  blacklist:
+    legacy_passwd_entries_passwd:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/passwd':
+              tag: CIS-6.2.2
+              pattern: "^+:"
+      description: Ensure no legacy "+" entries exist in /etc/passwd
+
+    legacy_passwd_entries_shadow:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/shadow':
+              tag: CIS-6.2.3
+              pattern: "^+:"
+      description: Ensure no legacy "+" entries exist in /etc/shadow
+
+    legacy_passwd_entries_group:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/group':
+              tag: CIS-6.2.4
+              pattern: "^+:"
+      description: Ensure no legacy "+" entries exist in /etc/group
+    disable_mount_cramfs:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /proc/modules:
+            pattern: "^cramfs "
+            tag: CIS-1.1.1.1
+      description: Ensure mounting of cramfs filesystems is disabled
+    disable_mount_freevxfs:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /proc/modules:
+            pattern: "^freevxfs "
+            tag: CIS-1.1.1.2
+      description: Ensure mounting of freevxfs filesystems is disabled
+    disable_mount_jffs2:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /proc/modules:
+            pattern: "^jffs2 "
+            tag: CIS-1.1.1.3
+      description: Ensure mounting of jffs2 filesystems is disabled
+    disable_mount_hfs:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /proc/modules:
+            pattern: "^hfs "
+            tag: CIS-1.1.1.4
+      description: Ensure mounting of hfs filesystems is disabled
+    disable_mount_hfsplus:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /proc/modules:
+            pattern: "^hfsplus "
+            tag: CIS-1.1.1.5
+      description: Ensure mounting of hfsplus filesystems is disabled
+    disable_mount_squashfs:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /proc/modules:
+            pattern: "^squashfs "
+            tag: CIS-1.1.1.6
+      description: Ensure mounting of squashfs filesystems is disabled
+    disable_mount_udf:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /proc/modules:
+            pattern: "^udf "
+            tag: CIS-1.1.1.7
+      description: Ensure mounting of udf filesystems is disabled
+    disable_mount_fat:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - /proc/modules:
+            pattern: "^vfat "
+            tag: CIS-1.1.1.8
+      description: Ensure mounting of FAT filesystems is disabled
+  whitelist:
+    mounts_tmp_partition_nodev:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/proc/mounts':
+              tag: CIS-1.1.3
+              pattern: '/tmp'
+              match_output: 'nodev'
+      description: Ensure nodev option set on /tmp partition
+
+    mounts_var_tmp_partition_nodev:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/proc/mounts':
+              tag: CIS-1.1.8
+              pattern: '/var/tmp'
+              match_output: 'nodev'
+      description: Ensure nodev option set on /var/tmp partition
+
+    mounts_var_tmp_partition_nosuid:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/proc/mounts':
+              tag: CIS-1.1.9
+              pattern: '/var/tmp'
+              match_output: 'nosuid'
+      description: Ensure nosuid option set on /var/tmp partition
+
+    mounts_tmp_partition_nosuid:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/proc/mounts':
+              tag: CIS-1.1.4
+              pattern: '/tmp'
+              match_output: 'nosuid'
+      description: Ensure nosuid option set on /tmp partition
+
+    mounts_tmp_partition_noexec:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/proc/mounts':
+              tag: CIS-1.1.5
+              pattern: '/tmp'
+              match_output: 'noexec'
+      description: Ensure noexec option set on /tmp partition
+
+    mounts_home_partition_nodev:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/proc/mounts':
+              tag: CIS-1.1.14
+              pattern: '/home'
+              match_output: 'nodev'
+      description: Ensure nodev option set on /home partition
+
+    mounts_dev_shm_partition_nodev:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/proc/mounts':
+              tag: CIS-1.1.15
+              pattern: '/dev/shm'
+              match_output: 'nodev'
+      description: Ensure nodev option set on /dev/shm partition
+
+    mounts_dev_shm_partition_nosuid:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/proc/mounts':
+              tag: CIS-1.1.16
+              pattern: '/dev/shm'
+              match_output: 'nosuid'
+      description: Ensure nosuid option set on /dev/shm partition
+
+    mounts_dev_shm_partition_noexec:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/proc/mounts':
+              tag: CIS-1.1.17
+              pattern: '/dev/shm'
+              match_output: 'noexec'
+      description: Ensure noexec option set on /dev/shm partition
+
+    mounts_var_tmp_partition_noexec:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/proc/mounts':
+              tag: CIS-1.1.10
+              pattern: '/var/tmp'
+              match_output: 'noexec'
+      description: Ensure noexec option set on /var/tmp partition
+
+    activate_gpg_check:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/yum.conf':
+              tag: CIS-1.2.3
+              pattern: 'gpgcheck'
+              match_output: 'gpgcheck=1'
+      description: Ensure gpgcheck is globally activated
+
+    boot_loader_passwd:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/grub.conf':
+              tag: CIS-1.4.2
+              pattern: '^password'
+      description: Ensure bootloader password is set
+
+    restrict_core_dumps:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/security/limits.conf':
+              tag: CIS-1.5.1
+              pattern: 'hard core'
+      description: Ensure core dumps are restricted
+
+    configure_ntp:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ntp.conf':
+              tag: CIS-2.2.1.2
+              pattern: 'restrict default'
+          - '/etc/ntp.conf':
+              tag: CIS-2.2.1.2
+              pattern: 'restrict -6 default'
+          - '/etc/ntp.conf':
+              tag: CIS-2.2.1.2
+              pattern: '^server'
+          - '/etc/sysconfig/ntpd':
+              tag: CIS-2.2.1.2
+              pattern: 'ntp:ntp'
+      description: Ensure ntp is configured
+
+    rsyslog_default_file_permissions:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/rsyslog.conf':
+              tag: CIS-4.2.1.3
+              pattern: "^\\$FileCreateMode"
+              match_output: '$FileCreateMode 0640'
+      description: Ensure rsyslog default file permissions configured
+
+    rsyslog_remote_logging:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/rsyslog.conf':
+              tag: CIS-4.2.1.4
+              pattern: "^*.*[^I][^I]*@"
+      description: Ensure rsyslog is configured to send logs to a remote log host
+
+    sshd_protocol_2:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.2
+              pattern: "^Protocol"
+              match_output: 'Protocol 2'
+      description: Ensure SSH Protocol is set to 2
+
+    sshd_loglevel_info:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.3
+              pattern: "^LogLevel"
+              match_output: 'LogLevel INFO'
+      description: Ensure SSH LogLevel is set to INFO
+
+    sshd_x11_forwarding:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.4
+              pattern: "^X11Forwarding"
+              match_output: 'X11Forwarding no'
+      description: Ensure SSH X11 forwarding is disabled
+
+    sshd_max_auth_retries:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.5
+              pattern: "^MaxAuthTries"
+              match_output_regex: True
+              match_output: "^MaxAuthTries +[1-4]$"
+      description: Ensure SSH MaxAuthTries is set to 4 or less
+
+    sshd_ignore_rhosts:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.6
+              pattern: "^IgnoreRhosts"
+              match_output: "IgnoreRhosts yes"
+      description: Ensure SSH IgnoreRhosts is enabled
+
+    sshd_hostbased_auth:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.7
+              pattern: "^HostbasedAuthentication"
+              match_output: "HostbasedAuthentication no"
+      description: Ensure SSH HostbasedAuthentication is disabled
+
+    sshd_disable_root_login:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.8
+              pattern: "^PermitRootLogin"
+              match_output: "PermitRootLogin no"
+      description: Ensure SSH root login is disabled
+
+    sshd_permit_empty_passwords:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.9
+              pattern: "^PermitEmptyPasswords"
+              match_output: "PermitEmptyPasswords no"
+      description: Ensure SSH PermitEmptyPasswords is disabled
+
+    sshd_permit_user_environment:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.10
+              pattern: "^PermitUserEnvironment"
+              match_output: "PermitUserEnvironment no"
+      description: Ensure SSH PermitUserEnvironment is disabled
+
+    sshd_approved_cipher:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.11
+              pattern: "Ciphers"
+              match_output: "^Ciphers aes256-ctr,aes192-ctr,aes128-ctr$|^Ciphers aes256-ctr,aes128-ctr,aes192-ctr$|^Ciphers aes192-ctr,aes128-ctr,aes256-ctr$|^Ciphers aes192-ctr,aes256-ctr,aes128-ctr$|^Ciphers aes128-ctr,aes256-ctr,aes192-ctr$|^Ciphers aes128-ctr,aes192-ctr,aes256-ctr$"
+              match_output_regex: True
+      description: Ensure only approved ciphers are used
+
+    sshd_approved_mac:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.12
+              pattern: "MACs"
+              match_output: "MACs hmac-sha2-512,hmac-sha2-256"
+      description: Ensure only approved MAC algorithms are used
+
+    sshd_idle_timeout:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.13
+              pattern: "^ClientAliveInterval"
+              match_output: ^ClientAliveInterval +([1-2]{0,1}\d{1,2}|300)$
+              match_output_regex: True
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.13
+              pattern: "^ClientAliveCountMax"
+              match_output: "^ClientAliveCountMax +[0-3]$"
+              match_output_regex: True
+      description: Ensure SSH Idle Timeout Interval is configured
+
+    sshd_gracetime:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.14
+              pattern: ^LoginGraceTime
+              match_output: ^LoginGraceTime ([0-5]{0,1}\d|60|1m)$
+              match_output_regex: True
+      description: Ensure SSH LoginGraceTime is set to one minute or less
+
+    sshd_limit_access:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.15
+              pattern: '(^AllowUsers)|(^AllowGroups)|(^DenyUsers)|(^DenyGroups)'
+              grep_args:
+                - '-E'
+      description: Ensure SSH access is limited
+
+    sshd_banner:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/ssh/sshd_config':
+              tag: CIS-5.2.16
+              pattern: "^Banner"
+      description: Ensure SSH warning banner is configured
+
+    # NOTE: Need to update this entry to reflect your organization's password policy
+    limit_password_reuse:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/pam.d/system-auth':
+              tag: CIS-5.3.3
+              pattern: "pam_unix.so"
+              match_output: "remember=5"  # number of passwords to remember
+      description: Ensure password reuse is limited
+
+    limit_su_command_access:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/pam.d/su':
+              tag: CIS-5.6
+              pattern: "pam_wheel.so"
+              match_output: "use_uid"  # number of passwords to remember
+          - '/etc/group':
+              tag: CIS-5.6
+              pattern: "wheel"
+      description: Ensure access to the su command is restricted
+
+    passwd_expiration_days:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/login.defs':
+              tag: CIS-5.4.1.1
+              pattern: "PASS_MAX_DAYS"
+              match_output: "90"
+      description: Ensure password expiration is 90 days or less
+
+    passwd_change_min_days:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/login.defs':
+              tag: CIS-5.4.1.2
+              pattern: "PASS_MIN_DAYS"
+              match_output: "7"
+      description: Ensure minimum days between password changes is 7 or more
+
+    passwd_expiry_warning:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/login.defs':
+              tag: CIS-5.4.1.3
+              pattern: "PASS_WARN_AGE"
+              match_output: "7"
+      description: Ensure password expiration warning days is 7 or more
+
+    default_umask:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+          - '/etc/bashrc':
+              tag: CIS-5.4.4
+              pattern: "^umask 077"
+          - '/etc/profile':
+              tag: CIS-5.4.4
+              pattern: "^umask 077"
+      description: Ensure default user umask is 027 or more restrictive
+
+
+service:
+  whitelist:
+    rsyslogd_running:
+      data:
+        'Red Hat Enterprise Linux Server-6':
+        - rsyslog: CIS-4.2.1.1
+      description: Ensure rsyslog Service is enabled
+    crond_running:
+      data:
+        Red Hat Enterprise Linux Server-6:
+        - crond: CIS-5.1.1
+      description: Ensure cron daemon is enabled

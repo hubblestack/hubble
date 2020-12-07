@@ -2,7 +2,7 @@ from unittest import TestCase
 from unittest.mock import patch
 import pytest
 
-from hubblestack.extmods.comparators import boolean as boolean_comparator
+from hubblestack.comparators import boolean as boolean_comparator
 
 
 class TestBooleanMatch(TestCase):

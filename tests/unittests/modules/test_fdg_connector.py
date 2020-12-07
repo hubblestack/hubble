@@ -2,8 +2,8 @@ from unittest import TestCase
 from unittest.mock import patch
 import pytest
 
-from hubblestack.extmods.hubble_mods import fdg
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import fdg
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestFdg(TestCase):
@@ -45,7 +45,7 @@ class TestFdg(TestCase):
         block_dict={"args": {"fdg_file": "salt://abc/test.yaml"}}
         check_id = "test-1"
 
-        with patch('hubblestack.extmods.hubble_mods.fdg.runner_factory.get_fdg_runner') as runner_mock:
+        with patch('hubblestack.audit.fdg.runner_factory.get_fdg_runner') as runner_mock:
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), ("result", True))
 
@@ -59,7 +59,7 @@ class TestFdg(TestCase):
         block_dict={"args": {"fdg_file": "salt://abc/test.yaml"}}
         check_id = "test-1"
 
-        with patch('hubblestack.extmods.hubble_mods.fdg.runner_factory.get_fdg_runner') as runner_mock:
+        with patch('hubblestack.audit.fdg.runner_factory.get_fdg_runner') as runner_mock:
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), ("", False))
 
@@ -77,7 +77,7 @@ class TestFdg(TestCase):
             }}
         check_id = "test-1"
 
-        with patch('hubblestack.extmods.hubble_mods.fdg.runner_factory.get_fdg_runner') as runner_mock:
+        with patch('hubblestack.audit.fdg.runner_factory.get_fdg_runner') as runner_mock:
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), ("test", False))
 
@@ -95,7 +95,7 @@ class TestFdg(TestCase):
             }}
         check_id = "test-1"
 
-        with patch('hubblestack.extmods.hubble_mods.fdg.runner_factory.get_fdg_runner') as runner_mock:
+        with patch('hubblestack.audit.fdg.runner_factory.get_fdg_runner') as runner_mock:
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), [("test", False)])
 
@@ -114,7 +114,7 @@ class TestFdg(TestCase):
             }}
         check_id = "test-1"
 
-        with patch('hubblestack.extmods.hubble_mods.fdg.runner_factory.get_fdg_runner') as runner_mock:
+        with patch('hubblestack.audit.fdg.runner_factory.get_fdg_runner') as runner_mock:
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), [[("test", False)]])
 
@@ -133,7 +133,7 @@ class TestFdg(TestCase):
             }}
         check_id = "test-1"
 
-        with patch('hubblestack.extmods.hubble_mods.fdg.runner_factory.get_fdg_runner') as runner_mock:
+        with patch('hubblestack.audit.fdg.runner_factory.get_fdg_runner') as runner_mock:
             runner_mock.return_value.init_loader.return_value = True
             runner_mock.return_value.execute.return_value = ((), {"test": False})
 

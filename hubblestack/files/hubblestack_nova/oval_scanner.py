@@ -46,11 +46,11 @@ import xml.etree.ElementTree as ET
 import json
 import requests
 import logging
-import salt.utils.platform
+import hubblestack.utils.platform
 
 
 def __virtual__():
-    return not salt.utils.platform.is_windows() 
+    return not hubblestack.utils.platform.is_windows()
 
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
@@ -67,7 +67,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
             if distro_name not in (supported_dist):
                 logging.info('The oval CVE scanner does not currently support {0}'.format(distro_name.capitalize()))
                 return ret
-            local_pkgs = __salt__['pkg.list_pkgs']()
+            local_pkgs = __mods__['pkg.list_pkgs']()
             # Scanner options
             opt_baseurl = data['oval_scanner']['opt_baseurl']
             opt_remote_sourcefile = data['oval_scanner']['opt_remote_sourcefile']
@@ -170,7 +170,7 @@ def get_impact(local_ver, name, ver, title, cve, advisory, severity):
     """Compare local package ver to vulnerability ver in rpm distros"""
     logging.debug('get_rpm_impact')
     impact = {}
-    if __salt__['pkg.version_cmp'](ver, local_ver) > 0:
+    if __mods__['pkg.version_cmp'](ver, local_ver) > 0:
         impact[title] = {
             'updated_pkg': {'name': name, 'version': ver},
             'installed': {'name': name, 'version': local_ver},

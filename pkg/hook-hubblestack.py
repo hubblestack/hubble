@@ -16,7 +16,6 @@ HIDDEN_IMPORTS = [
     'argparse',
     'logging',
     'time',
-    'pprint',
     'os',
     'random',
     'signal',

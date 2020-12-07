@@ -3,8 +3,8 @@ from unittest.mock import patch
 import pytest
 
 
-from hubblestack.extmods.hubble_mods import curl
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import curl
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestCurl(TestCase):
@@ -67,7 +67,7 @@ class TestCurl(TestCase):
         block_dict={"args": {"function": "GET", "url": "test"}}
         result_mock = ResultMock(200)
         expected_result = {'status': 200, 'response': {'id': 1, 'name': 'test'}}
-        with patch('hubblestack.extmods.hubble_mods.curl.requests') as requests_mock:
+        with patch('hubblestack.audit.curl.requests') as requests_mock:
             requests_mock.get.return_value = result_mock
             status, res = curl.execute('test', block_dict, {})
             self.assertEqual(res['result'], expected_result)
@@ -86,7 +86,7 @@ class TestCurl(TestCase):
         block_dict={"args": {"function": "POST", "url": "test"}}
         result_mock = ResultMock(200)
         expected_result = {'status': 200, 'response': {'id': 1, 'name': 'test'}}
-        with patch('hubblestack.extmods.hubble_mods.curl.requests') as requests_mock:
+        with patch('hubblestack.audit.curl.requests') as requests_mock:
             requests_mock.post.return_value = result_mock
             status, res = curl.execute('test', block_dict, {})
             self.assertEqual(res['result'], expected_result)
@@ -105,7 +105,7 @@ class TestCurl(TestCase):
         block_dict={"args": {"function": "PUT", "url": "test"}}
         result_mock = ResultMock(200)
         expected_result = {'status': 200, 'response': {'id': 1, 'name': 'test'}}
-        with patch('hubblestack.extmods.hubble_mods.curl.requests') as requests_mock:
+        with patch('hubblestack.audit.curl.requests') as requests_mock:
             requests_mock.put.return_value = result_mock
             status, res = curl.execute('test', block_dict, {})
             self.assertEqual(res['result'], expected_result)

@@ -1,7 +1,7 @@
 from unittest import TestCase
 from unittest.mock import patch
 
-from hubblestack.extmods.comparators import list as list_comparator
+from hubblestack.comparators import list as list_comparator
 
 
 class TestListSize(TestCase):
@@ -18,7 +18,7 @@ class TestListSize(TestCase):
             "type": "list",
             "size": 3
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.size("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -32,7 +32,7 @@ class TestListSize(TestCase):
             "type": "list",
             "size": 3
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (False, "Failed")
             status, result = list_comparator.size("test-1", result_to_compare, args)
             self.assertFalse(status)
@@ -59,7 +59,7 @@ class TestListMatch(TestCase):
                 "test-str2"
             ]
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -79,7 +79,7 @@ class TestListMatch(TestCase):
                 {"name": "abcd", "status": True, "disabled": False}
             ]
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -101,7 +101,7 @@ class TestListMatch(TestCase):
                 "test-str1"
             ]
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -123,7 +123,7 @@ class TestListMatch(TestCase):
                 {"name": "abcd", "disabled": False, "status": True}
             ]
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -145,7 +145,7 @@ class TestListMatch(TestCase):
                 {"name": "mnop", "status": True, "disabled": False}
             ]
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match("test-1", result_to_compare, args)
             self.assertFalse(status)
@@ -166,7 +166,7 @@ class TestListMatch(TestCase):
                 "test-str2"
             ]
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match("test-1", result_to_compare, args)
             self.assertFalse(status)
@@ -192,7 +192,7 @@ class TestListMatchAny(TestCase):
                 {"name": "xyz", "status": True}
             ]
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match_any("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -232,7 +232,7 @@ class TestListMatchAny(TestCase):
             ]
         }
 
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match_any("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -252,7 +252,7 @@ class TestListMatchAny(TestCase):
             ]
         }
 
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match_any("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -272,7 +272,7 @@ class TestListMatchAny(TestCase):
                 {"name": "xyz", "status": True}
             ]
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (False, "Fail")
             status, result = list_comparator.match_any("test-1", result_to_compare, args)
             self.assertFalse(status)
@@ -302,7 +302,7 @@ class TestListMatchAnyIfKeyMatches(TestCase):
             }
         }
 
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (False, "Fail")
             status, result = list_comparator.match_any_if_key_matches("test-1", result_to_compare, args)
             self.assertFalse(status)
@@ -326,7 +326,7 @@ class TestListMatchAnyIfKeyMatches(TestCase):
             }
         }
 
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "pass_as_key_not_found")
             status, result = list_comparator.match_any_if_key_matches("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -350,7 +350,7 @@ class TestListMatchAnyIfKeyMatches(TestCase):
             }
         }
 
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match_any_if_key_matches("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -376,7 +376,7 @@ class TestListMatchAll(TestCase):
                 {"name": "mno", "status": True}
             ]
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match_all("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -400,7 +400,7 @@ class TestListMatchAll(TestCase):
                 }
             ]
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match_all("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -418,7 +418,7 @@ class TestListMatchAll(TestCase):
                 "abc", "abcd"
             ]
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.match_all("test-1", result_to_compare, args)
             self.assertFalse(status)
@@ -453,7 +453,7 @@ class TestListFilterCompare(TestCase):
                 }
             }
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
             status, result = list_comparator.filter_compare("test-1", result_to_compare, args)
             self.assertTrue(status)
@@ -483,7 +483,7 @@ class TestListFilterCompare(TestCase):
                 }
             }
         }
-        with patch('hubblestack.extmods.module_runner.comparator') as comparator_mock:
+        with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (False, "Pass")
             status, result = list_comparator.filter_compare("test-1", result_to_compare, args)
             self.assertFalse(status)

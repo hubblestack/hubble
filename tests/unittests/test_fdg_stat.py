@@ -1,6 +1,6 @@
 # coding: utf-8
 import logging
-import hubblestack.extmods.fdg.stat
+import hubblestack.fdg.stat
 import hubblestack.utils.stat_functions
 import mock
 import pytest
@@ -27,7 +27,7 @@ def test_match_stats_positive():
                 'ctime': 1491870657.914388}
     chained = {'file_stats': file_stats, 'filepath': "/etc/docker/daemon.json"}
     with mock.patch.object(hubblestack.utils.stat_functions, 'check_mode', return_value=True):
-        val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+        val = hubblestack.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert val[0]
     assert isinstance(val[1], dict)
@@ -56,7 +56,7 @@ def test_match_stats_negative():
                   'ctime': 1491870657.914388}
     chained = {'file_stats': file_stats, 'filepath': "/etc/docker/daemon.json"}
     with mock.patch.object(hubblestack.utils.stat_functions, 'check_mode', return_value=False):
-        val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+        val = hubblestack.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert not val[0]
     assert isinstance(val[1], dict)
@@ -85,7 +85,7 @@ def test_match_stats_negative_subcheck_failed():
                 'ctime': 1491870657.914388}
     chained = {'file_stats': file_stats, 'filepath': "/etc/docker/daemon.json"}
     with mock.patch.object(hubblestack.utils.stat_functions, 'check_mode', return_value=False):
-        val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+        val = hubblestack.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert not val[0]
     assert isinstance(val[1], dict)
@@ -111,7 +111,7 @@ def test_match_stats_negative_invalid_inputs():
                 'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322,
                 'ctime': 1491870657.914388}
     chained = {'file_stats': file_stats, 'filepath': "/etc/docker/daemon.json"}
-    val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+    val = hubblestack.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert not val[0]
     assert isinstance(val[1], dict)
@@ -131,7 +131,7 @@ def test_match_stats_positive_no_params():
                 'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322,
                 'ctime': 1491870657.914388}
     chained = {'file_stats': file_stats, 'filepath': "random_file_path"}
-    val = hubblestack.extmods.fdg.stat.match_stats(chained=chained)
+    val = hubblestack.fdg.stat.match_stats(chained=chained)
     log.debug("return value is %s", val)
     assert val[0]
     assert isinstance(val[1], dict)
@@ -158,7 +158,7 @@ def test_match_stats_incorrect_param_type_negative():
                 'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322,
                 'ctime': 1491870657.914388}
     chained = {'file_stats': file_stats, 'filepath': "random_file_path"}
-    val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+    val = hubblestack.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert not val[0]
     assert isinstance(val[1], dict)
@@ -183,7 +183,7 @@ def test_positive_match_on_file_missing():
                 }
     file_stats = {"file_not_found" : True}
     chained = {'file_stats': file_stats, 'filepath':'file_not_exists'}
-    val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+    val = hubblestack.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert val[0]
     assert isinstance(val[1], dict)
@@ -208,7 +208,7 @@ def test_negative_match_on_file_missing():
                }
     file_stats = {"file_not_found": True}
     chained = {'file_stats': file_stats, 'filepath': "random_file_path"}
-    val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+    val = hubblestack.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert not val[0]
     assert isinstance(val[1], dict)
@@ -233,7 +233,7 @@ def test_negative_no_file_stats():
                }
     file_stats = {}
     chained = {'file_stats': file_stats, 'filepath': "random_file_path"}
-    val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+    val = hubblestack.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert not val[0]
     assert isinstance(val[1], dict)
@@ -261,7 +261,7 @@ def test_negative_no_filepath():
                   'user': 'root', 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322,
                   'ctime': 1491870657.914388}
     chained = {'file_stats': file_stats}
-    val = hubblestack.extmods.fdg.stat.match_stats(params=params, chained=chained)
+    val = hubblestack.fdg.stat.match_stats(params=params, chained=chained)
     log.debug("return value is %s", val)
     assert not val[0]
     assert isinstance(val[1], dict)
@@ -277,7 +277,7 @@ def test_get_stats_positive():
     :expected: Success, file stats
     """
     log.info('Executing test_get_stats_positive')
-    __salt__ = {}
+    __mods__ = {}
     params = {"filepath" : "/Users/muagarwa/hubble/tests/unittests/test_fdg_stat.py"}
 
     expected_file_stats = {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0,
@@ -287,9 +287,9 @@ def test_get_stats_positive():
     def file_stats(name):
         return expected_file_stats
 
-    __salt__['file.stats'] = file_stats
-    hubblestack.extmods.fdg.stat.__salt__ = __salt__
-    val = hubblestack.extmods.fdg.stat.get_stats(params=params)
+    __mods__['file.stats'] = file_stats
+    hubblestack.fdg.stat.__mods__ = __mods__
+    val = hubblestack.fdg.stat.get_stats(params=params)
     log.debug("return value is %s", val)
     assert val[0]
     assert val[1].get('file_stats') == expected_file_stats
@@ -301,7 +301,7 @@ def test_get_stats_negative_file_not_exists():
     :expected: Failure, file stats
     """
     log.info('Executing test_get_stats_negative_file_not_exists')
-    __salt__ = {}
+    __mods__ = {}
     params = {"filepath" : "/Users/muagarwa/hubble/tests/unittests/file_not_exists"}
 
     def file_stats(name):
@@ -309,9 +309,9 @@ def test_get_stats_negative_file_not_exists():
                 'target': '/Users/muagarwa/hubble/tests/unittests/test_fdg_stat.py', 'user': 'root',
                 'mtime': 1486511757.0, 'atime': 1507221810.408013, 'inode': 1322, 'ctime': 1491870657.914388}
 
-    __salt__['file.stats'] = file_stats
-    hubblestack.extmods.fdg.stat.__salt__ = __salt__
-    val = hubblestack.extmods.fdg.stat.get_stats(params=params)
+    __mods__['file.stats'] = file_stats
+    hubblestack.fdg.stat.__mods__ = __mods__
+    val = hubblestack.fdg.stat.get_stats(params=params)
     log.debug("return value is %s", val)
     assert not val[0]
     assert val[1].get('file_stats') == {"file_not_found" : True}
@@ -324,7 +324,7 @@ def test_get_stats_positive_filepath_is_chained_dict():
     :expected: Failure, file stats
     """
     log.info('Executing test_get_stats_positive_filepath_is_chained')
-    __salt__ = {}
+    __mods__ = {}
     params = {"filepath" : "/Users/muagarwa/hubble/tests/unittests/test_fdg_stat.py"}
 
     expected_file_stats = {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0,
@@ -333,9 +333,9 @@ def test_get_stats_positive_filepath_is_chained_dict():
     def file_stats(name):
         return expected_file_stats
 
-    __salt__['file.stats'] = file_stats
-    hubblestack.extmods.fdg.stat.__salt__ = __salt__
-    val = hubblestack.extmods.fdg.stat.get_stats(chained=params)
+    __mods__['file.stats'] = file_stats
+    hubblestack.fdg.stat.__mods__ = __mods__
+    val = hubblestack.fdg.stat.get_stats(chained=params)
     log.debug("return value is %s", val)
     assert val[0]
     assert val[1].get('file_stats') == expected_file_stats
@@ -348,7 +348,7 @@ def test_get_stats_positive_filepath_is_chained_value():
     :expected: Failure, file stats
     """
     log.info('Executing test_get_stats_positive_filepath_is_chained')
-    __salt__ = {}
+    __mods__ = {}
     params = "/Users/muagarwa/hubble/tests/unittests/test_fdg_stat.py"
 
     expected_file_stats = {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0,
@@ -357,9 +357,9 @@ def test_get_stats_positive_filepath_is_chained_value():
     def file_stats(name):
         return expected_file_stats
 
-    __salt__['file.stats'] = file_stats
-    hubblestack.extmods.fdg.stat.__salt__ = __salt__
-    val = hubblestack.extmods.fdg.stat.get_stats(chained=params)
+    __mods__['file.stats'] = file_stats
+    hubblestack.fdg.stat.__mods__ = __mods__
+    val = hubblestack.fdg.stat.get_stats(chained=params)
     log.debug("return value is %s", val)
     assert val[0]
     assert val[1].get('file_stats') == expected_file_stats
@@ -371,7 +371,7 @@ def test_get_stats_negative_incorrect_format_of_chained():
     :expected: Failure, failure_reason_dict
     """
     log.info('Executing test_get_stats_negative_incorrect_format_of_chained')
-    __salt__ = {}
+    __mods__ = {}
     params = [["/Users/muagarwa/hubble/tests/unittests/test_fdg_stat.py"]]
 
     expected_file_stats = {'size': 26, 'group': 'root', 'uid': 0, 'type': 'file', 'mode': '0644', 'gid': 0,
@@ -380,9 +380,9 @@ def test_get_stats_negative_incorrect_format_of_chained():
     def file_stats(name):
         return expected_file_stats
 
-    __salt__['file.stats'] = file_stats
-    hubblestack.extmods.fdg.stat.__salt__ = __salt__
-    val = hubblestack.extmods.fdg.stat.get_stats(chained=params)
+    __mods__['file.stats'] = file_stats
+    hubblestack.fdg.stat.__mods__ = __mods__
+    val = hubblestack.fdg.stat.get_stats(chained=params)
     log.debug("return value is %s", val)
     assert not val[0]
     assert "value of chained is not in correct format" in val[1].get('Failure')
@@ -394,7 +394,7 @@ def test_get_stats_negative_no_params():
     :expected: Failure, failure_reason_dict
     """
     log.info('Executing test_get_stats_negative_no_params')
-    val = hubblestack.extmods.fdg.stat.get_stats()
+    val = hubblestack.fdg.stat.get_stats()
     log.debug("return value is %s", val)
     assert not val[0]
     assert "No filepath provided in get_stats, returning False" in val[1].get('Failure')

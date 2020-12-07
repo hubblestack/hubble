@@ -117,7 +117,7 @@ def test_x509_basics(no_ppc, cdbt):
     # 7 (signature failed)
     assert acert(cdb('public-1.crt', cdbt, 2), bndl) == F
 
-def test_msign_and_verify_files(__salt__, targets, no_ppc, cdbt):
+def test_msign_and_verify_files(__mods__, targets, no_ppc, cdbt):
     inverse = {2:1, 1:2}
     sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))
 
@@ -125,7 +125,7 @@ def test_msign_and_verify_files(__salt__, targets, no_ppc, cdbt):
         # setup key-{i} and sign the repo
         sig.Options.public_crt  = cdb('public-{}.crt'.format(i), cdbt, 1)
         sig.Options.private_key = cdb('private-{}.key'.format(i), cdbt, 1)
-        __salt__['signing.msign'](*targets)
+        __mods__['signing.msign'](*targets)
 
         # verify that we trust the files
         res = sig.verify_files(targets, public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
@@ -148,41 +148,41 @@ def test_msign_and_verify_files(__salt__, targets, no_ppc, cdbt):
         for thing in [ 'MANIFEST' ] + list(targets):
             assert thing in res and res[thing] == F
 
-def test_cert_outside_ca(__salt__, targets, no_ppc, cdbt):
+def test_cert_outside_ca(__mods__, targets, no_ppc, cdbt):
     # the public/private-3 keypair is not from the same modulo group
     # as the other keys. we should get a FAIL result here
     sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))
     sig.Options.public_crt  = cdb('public-1.crt', cdbt, 2)
     sig.Options.private_key = cdb('private-1.key', cdbt, 2)
-    __salt__['signing.msign'](*targets)
+    __mods__['signing.msign'](*targets)
     res = sig.verify_files(targets, public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
     for thing in [ 'MANIFEST' ] + list(targets):
         assert thing in res and res[thing] == F
 
-def test_no_ca_given(__salt__, targets, no_ppc, cdbt):
+def test_no_ca_given(__mods__, targets, no_ppc, cdbt):
     # the public/private-3 is from some unknown CA
     # ... so if we don't specify any CA, then our result should be unknown
     sig.Options.ca_crt = ''
     sig.Options.public_crt  = cdb('public-1.crt', cdbt, 2)
     sig.Options.private_key = cdb('private-1.key', cdbt, 2)
-    __salt__['signing.msign'](*targets)
+    __mods__['signing.msign'](*targets)
     res = sig.verify_files(targets, public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
     for thing in [ 'MANIFEST' ] + list(targets):
         assert thing in res and res[thing] == U
 
-def test_no_SIGNATURE(__salt__, targets, no_ppc, cdbt):
+def test_no_SIGNATURE(__mods__, targets, no_ppc, cdbt):
     # the public/private-3 is from some unknown CA
     # ... so if we don't specify any CA, then our result should be unknown
     sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))
     sig.Options.public_crt  = cdb('public-1.crt', cdbt, 1)
     sig.Options.private_key = cdb('private-1.key', cdbt, 1)
-    __salt__['signing.msign'](*targets)
+    __mods__['signing.msign'](*targets)
     os.unlink('SIGNATURE')
     res = sig.verify_files(targets, public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
     for thing in [ 'MANIFEST' ] + list(targets):
         assert thing in res and res[thing] == U
 
-def test_no_MANIFEST(__salt__, targets, no_ppc, cdbt):
+def test_no_MANIFEST(__mods__, targets, no_ppc, cdbt):
     # If we have a SIGNATURE without a MANIFEST, we should fail, because our
     # MANIFEST hash will not match the signed hash -- a sig without manifest is
     # probably a really bad sign and also a rare condition anyway. Also,
@@ -191,21 +191,21 @@ def test_no_MANIFEST(__salt__, targets, no_ppc, cdbt):
     sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))
     sig.Options.public_crt  = cdb('public-1.crt', cdbt, 1)
     sig.Options.private_key = cdb('private-1.key', cdbt, 1)
-    __salt__['signing.msign'](*targets)
+    __mods__['signing.msign'](*targets)
     os.unlink('MANIFEST')
     res = sig.verify_files(targets, public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
     assert 'MANIFEST' in res and res['MANIFEST'] == F
     for thing in list(targets):
         assert thing in res and res[thing] == U
 
-def test_no_MANIFEST_or_SIGNATURE(__salt__, targets, no_ppc, cdbt):
+def test_no_MANIFEST_or_SIGNATURE(__mods__, targets, no_ppc, cdbt):
     # if we have a SIGNATURE without a MANIFEST, we should fail
     # because our MANIFEST hash will not match the signed hash
     # (a sig without manifest is probably a really bad sign and also a rare condition anyway)
     sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))
     sig.Options.public_crt  = cdb('public-1.crt', cdbt, 1)
     sig.Options.private_key = cdb('private-1.key', cdbt, 1)
-    __salt__['signing.msign'](*targets) # re-sign just to make sure the two files are present
+    __mods__['signing.msign'](*targets) # re-sign just to make sure the two files are present
     os.unlink('MANIFEST') # but remove them
     os.unlink('SIGNATURE') # bahleeted
     res = sig.verify_files(targets, public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
@@ -223,7 +223,7 @@ def pretend_finder(path, saltenv, **kwargs):
 wrapped_finder = sig.find_wrapf( # but due to verification trouble, ?wf?
     not_found={'path': '?wf?', 'rel': '?wf?'})(pretend_finder)
 
-def test_fs_find_wrapper_correct_required(__salt__, targets, no_ppc, cdbt):
+def test_fs_find_wrapper_correct_required(__mods__, targets, no_ppc, cdbt):
     btargets = [ (os.path.basename(x),x) for x in targets ]
     sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))
     sig.Options.require_verify = True
@@ -231,14 +231,14 @@ def test_fs_find_wrapper_correct_required(__salt__, targets, no_ppc, cdbt):
     for i in (1,2):
         sig.Options.public_crt = cdb('public-{}.crt'.format(i), cdbt, 1)
         sig.Options.private_key = cdb('private-{}.key'.format(i), cdbt, 1)
-        __salt__['signing.msign'](*targets)
+        __mods__['signing.msign'](*targets)
 
         for btarget,target in btargets:
             full = os.path.realpath(target)
             assert pretend_finder(btarget, 'base').get('path') == full
             assert wrapped_finder(btarget, 'base').get('path') == full
 
-def test_fs_find_wrapper_correct_optional(__salt__, targets, no_ppc, cdbt):
+def test_fs_find_wrapper_correct_optional(__mods__, targets, no_ppc, cdbt):
     btargets = [ (os.path.basename(x),x) for x in targets ]
     sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))
     sig.Options.require_verify = False
@@ -246,14 +246,14 @@ def test_fs_find_wrapper_correct_optional(__salt__, targets, no_ppc, cdbt):
     for i in (1,2):
         sig.Options.public_crt = cdb('public-{}.crt'.format(i), cdbt, 1)
         sig.Options.private_key = cdb('private-{}.key'.format(i), cdbt, 1)
-        __salt__['signing.msign'](*targets)
+        __mods__['signing.msign'](*targets)
 
         for btarget,target in btargets:
             full = os.path.realpath(target)
             assert pretend_finder(btarget, 'base').get('path') == full
             assert wrapped_finder(btarget, 'base').get('path') == full
 
-def test_fs_find_wrapper_unknown_required(__salt__, targets, no_ppc, cdbt):
+def test_fs_find_wrapper_unknown_required(__mods__, targets, no_ppc, cdbt):
     btargets = [ (os.path.basename(x),x) for x in targets ]
     sig.Options.ca_crt = ''
     sig.Options.require_verify = True
@@ -261,14 +261,14 @@ def test_fs_find_wrapper_unknown_required(__salt__, targets, no_ppc, cdbt):
     for i in (1,2):
         sig.Options.public_crt = cdb('public-{}.crt'.format(i), cdbt, 1)
         sig.Options.private_key = cdb('private-{}.key'.format(i), cdbt, 1)
-        __salt__['signing.msign'](*targets)
+        __mods__['signing.msign'](*targets)
 
         for btarget,target in btargets:
             full = os.path.realpath(target)
             assert pretend_finder(btarget, 'base').get('path') == full
             assert wrapped_finder(btarget, 'base').get('path') == '?wf?'
 
-def test_fs_find_wrapper_unknown_optional(__salt__, targets, no_ppc, cdbt):
+def test_fs_find_wrapper_unknown_optional(__mods__, targets, no_ppc, cdbt):
     btargets = [ (os.path.basename(x),x) for x in targets ]
     sig.Options.ca_crt = ''
     sig.Options.require_verify = False
@@ -276,14 +276,14 @@ def test_fs_find_wrapper_unknown_optional(__salt__, targets, no_ppc, cdbt):
     for i in (1,2):
         sig.Options.public_crt = cdb('public-{}.crt'.format(i), cdbt, 1)
         sig.Options.private_key = cdb('private-{}.key'.format(i), cdbt, 1)
-        __salt__['signing.msign'](*targets)
+        __mods__['signing.msign'](*targets)
 
         for btarget,target in btargets:
             full = os.path.realpath(target)
             assert pretend_finder(btarget, 'base').get('path') == full
             assert wrapped_finder(btarget, 'base').get('path') == full
 
-def test_fs_find_wrapper_incorrect_required(__salt__, targets, no_ppc, cdbt):
+def test_fs_find_wrapper_incorrect_required(__mods__, targets, no_ppc, cdbt):
     btargets = [ (os.path.basename(x),x) for x in targets ]
     sig.Options.ca_crt = ''
     sig.Options.require_verify = True
@@ -291,7 +291,7 @@ def test_fs_find_wrapper_incorrect_required(__salt__, targets, no_ppc, cdbt):
     for i in (1,2):
         sig.Options.public_crt = cdb('public-{}.crt'.format(i), cdbt, 1)
         sig.Options.private_key = cdb('private-{}.key'.format(i), cdbt, 1)
-        __salt__['signing.msign'](*targets)
+        __mods__['signing.msign'](*targets)
         sig.Options.public_crt = cdb('public-{}.crt'.format(3), cdbt, 1)
 
         for btarget,target in btargets:
@@ -299,7 +299,7 @@ def test_fs_find_wrapper_incorrect_required(__salt__, targets, no_ppc, cdbt):
             assert pretend_finder(btarget, 'base').get('path') == full
             assert wrapped_finder(btarget, 'base').get('path') == '?wf?'
 
-def test_fs_find_wrapper_incorrect_optional(__salt__, targets, no_ppc, cdbt):
+def test_fs_find_wrapper_incorrect_optional(__mods__, targets, no_ppc, cdbt):
     btargets = [ (os.path.basename(x),x) for x in targets ]
     sig.Options.ca_crt = ''
     sig.Options.require_verify = False
@@ -307,7 +307,7 @@ def test_fs_find_wrapper_incorrect_optional(__salt__, targets, no_ppc, cdbt):
     for i in (1,2):
         sig.Options.public_crt = cdb('public-{}.crt'.format(i), cdbt, 1)
         sig.Options.private_key = cdb('private-{}.key'.format(i), cdbt, 1)
-        __salt__['signing.msign'](*targets)
+        __mods__['signing.msign'](*targets)
         sig.Options.public_crt = cdb('public-3.crt', cdbt, 2)
 
         for btarget,target in btargets:
@@ -348,13 +348,13 @@ def test_bundled_certs(no_ppc, cdbt):
         else:
             assert x_fingerprint == y_fingerprint
 
-def test_msign_and_verify_signature(__salt__, targets, no_ppc, cdbt):
+def test_msign_and_verify_signature(__mods__, targets, no_ppc, cdbt):
     sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))
 
     sig.Options.public_crt  = cdb('public-1.crt', cdbt, 1)
     sig.Options.private_key = cdb('private-1.key', cdbt, 1)
 
-    __salt__['signing.msign'](*targets)
+    __mods__['signing.msign'](*targets)
     res = sig.verify_signature('MANIFEST', 'SIGNATURE',
         public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
 
@@ -363,7 +363,7 @@ def test_msign_and_verify_signature(__salt__, targets, no_ppc, cdbt):
     sig.Options.public_crt  = cdb('public-1.crt', cdbt, 1)
     sig.Options.private_key = cdb('private-2.key', cdbt, 1)
 
-    __salt__['signing.msign'](*targets)
+    __mods__['signing.msign'](*targets)
     res = sig.verify_signature('MANIFEST', 'SIGNATURE',
         public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
 
@@ -372,20 +372,20 @@ def test_msign_and_verify_signature(__salt__, targets, no_ppc, cdbt):
     sig.Options.public_crt  = cdb('public-1.crt', cdbt, 2)
     sig.Options.private_key = cdb('private-1.key', cdbt, 2)
 
-    __salt__['signing.msign'](*targets)
+    __mods__['signing.msign'](*targets)
     res = sig.verify_signature('MANIFEST', 'SIGNATURE',
         public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
 
     assert res == sig.STATUS.FAIL
 
 
-def test_like_a_daemon_with_bundle(__salt__, no_ppc, cdbt):
+def test_like_a_daemon_with_bundle(__mods__, no_ppc, cdbt):
     sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))
     sig.Options.public_crt = cdb('public-1.crt', cdbt, 1)
     sig.Options.private_key = cdb('private-1.key', cdbt, 1)
 
-    __salt__['signing.msign']('tests/unittests/conftest.py')
-    res = __salt__['signing.verify']('tests/unittests/conftest.py')
+    __mods__['signing.msign']('tests/unittests/conftest.py')
+    res = __mods__['signing.verify']('tests/unittests/conftest.py')
     assert len(res) == 2
     for item in res:
         assert res[item] == sig.STATUS.VERIFIED

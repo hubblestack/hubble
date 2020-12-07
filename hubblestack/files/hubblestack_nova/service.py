@@ -54,8 +54,8 @@ service:
 import logging
 
 import fnmatch
-import salt.utils
-import salt.utils.platform
+import hubblestack.utils
+import hubblestack.utils.platform
 
 from distutils.version import LooseVersion
 
@@ -114,7 +114,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
                 # Blacklisted packages (must not be installed)
                 if audittype == 'blacklist':
-                    if __salt__['service.available'](name) and __salt__['service.status'](name):
+                    if __mods__['service.available'](name) and __mods__['service.status'](name):
                         tag_data['failure_reason'] = "Found blacklisted service '{0}' " \
                                                      "running on the system" \
                                                      .format(name)
@@ -124,7 +124,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
                 # Whitelisted packages (must be installed)
                 elif audittype == 'whitelist':
-                    if __salt__['service.available'](name) and __salt__['service.status'](name):
+                    if __mods__['service.available'](name) and __mods__['service.status'](name):
                         ret['Success'].append(tag_data)
                     else:
                         tag_data['failure_reason'] = "Could not find requisite service" \

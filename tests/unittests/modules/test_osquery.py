@@ -2,8 +2,8 @@ from unittest import TestCase
 from unittest.mock import patch
 import pytest
 
-from hubblestack.extmods.hubble_mods import osquery
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import osquery
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestOsquery(TestCase):
@@ -59,7 +59,7 @@ class TestOsquery(TestCase):
         osquery.__grains__ = {
             'osquerybinpath': 'dummy path'
         }
-        osquery.__salt__ = {
+        osquery.__mods__ = {
             'cmd.run_all': _mock_osquery
         }
         block_dict = {"args": {"query": "sample query"}}
@@ -85,7 +85,7 @@ class TestOsquery(TestCase):
         osquery.__grains__ = {
             'osquerybinpath': 'dummy path'
         }
-        osquery.__salt__ = {
+        osquery.__mods__ = {
             'cmd.run_all': _mock_osquery
         }
         block_dict = {"args": {"query": "sample query",
@@ -110,7 +110,7 @@ class TestOsquery(TestCase):
         osquery.__grains__ = {
             'osquerybinpath': 'dummy path'
         }
-        osquery.__salt__ = {
+        osquery.__mods__ = {
             'cmd.run_all': _mock_osquery
         }
         block_dict = {"args": {"query": "sample query"}}
@@ -133,7 +133,7 @@ class TestOsquery(TestCase):
         osquery.__grains__ = {
             'osquerybinpath': 'dummy path'
         }
-        osquery.__salt__ = {
+        osquery.__mods__ = {
             'cmd.run_all': _mock_osquery
         }
         block_dict = {"args": {"query": "curl query"}}
@@ -156,7 +156,7 @@ class TestOsquery(TestCase):
         osquery.__grains__ = {
             'osquerybinpath': 'dummy path'
         }
-        osquery.__salt__ = {
+        osquery.__mods__ = {
             'cmd.run_all': _mock_osquery
         }
         block_dict = {"args": {"query": "sample query",

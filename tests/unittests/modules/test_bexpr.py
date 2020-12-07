@@ -2,8 +2,8 @@ from unittest import TestCase
 from unittest.mock import patch
 import pytest
 
-from hubblestack.extmods.hubble_mods import bexpr
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import bexpr
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestBexpr(TestCase):
@@ -231,7 +231,7 @@ class TestBexpr(TestCase):
         self.assertTrue(status)
         self.assertDictEqual(expected_dict, result_dict)
 
-    @patch('hubblestack.extmods.hubble_mods.bexpr._evaluate_expression')
+    @patch('hubblestack.audit.bexpr._evaluate_expression')
     def testExecute8(self, mockBexpr):
         """
         Run execute when boolean expression evaluated throws an Exception

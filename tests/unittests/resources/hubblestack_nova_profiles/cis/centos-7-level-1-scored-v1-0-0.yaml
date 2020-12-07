@@ -1,0 +1,786 @@
+# NOTE: This CIS Profile only includes Level 1 Scored Items for CentOS7.
+# NOTE: Within this file, there are a few sections that should be tailored to your
+#       organization's specific policy.  Search for '# NOTE: ' comments through the file.
+
+# TODO: Checks that aren't implemented yet:
+#       1.1.17
+#       1.2.1
+#       2.1.12-18
+#       3.16
+#       5.1.4
+#       6.1.10
+#       6.3.1
+#       6.3.2
+#       7.2
+#       7.3
+#       7.5
+#       8.2
+#       9.1.11
+#       9.1.12
+#       9.2.1
+#       9.2.5-20
+
+
+grep:
+  blacklist:
+    legacy_passwd_entries_group:
+      data:
+        CentOS Linux-7:
+        - /etc/group:
+            pattern: '^+:'
+            tag: CIS-9.2.4
+      description: Verify No Legacy "+" Entries Exist in /etc/group File
+    legacy_passwd_entries_passwd:
+      data:
+        CentOS Linux-7:
+        - /etc/passwd:
+            pattern: '^+:'
+            tag: CIS-9.2.2
+      description: Verify No Legacy "+" Entries Exist in /etc/passwd File
+    legacy_passwd_entries_shadow:
+      data:
+        CentOS Linux-7:
+        - /etc/shadow:
+            pattern: '^+:'
+            tag: CIS-9.2.3
+      description: Verify No Legacy "+" Entries Exist in /etc/shadow File
+  whitelist:
+    activate_gpg_check:
+      data:
+        CentOS Linux-7:
+        - /etc/yum.conf:
+            match_output: gpgcheck=1
+            pattern: gpgcheck
+            tag: CIS-1.2.2
+      description: Verify that gpgcheck is Globally Activated
+    boot_loader_passwd:
+      data:
+        CentOS Linux-7:
+        - /boot/grub2/grub.cfg:
+            pattern: ^password
+            tag: CIS-1.5.3
+      description: Set Boot Loader Password
+    configure_ntp:
+      data:
+        CentOS Linux-7:
+        - /etc/ntp.conf:
+            pattern: restrict default
+            tag: CIS-3.6
+        - /etc/ntp.conf:
+            pattern: restrict -6 default
+            tag: CIS-3.6
+        - '/etc/ntp.conf':
+            tag: 'CIS-3.6'
+            pattern: '^server'
+        - '/etc/sysconfig/ntpd':
+            tag: 'CIS-3.6'
+            pattern: 'ntp:ntp'
+      description: Configure Network Time Protocol (NTP)
+    default_umask:
+      data:
+        CentOS Linux-7:
+        - /etc/bashrc:
+            pattern: ^umask 077
+            tag: CIS-7.4
+        - /etc/profile.d/*:
+            pattern: ^umask 077
+            tag: CIS-7.4
+      description: Set Default umask for Users
+    mounts_dev_shm_partition_nodev:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            match_output: nodev
+            pattern: /dev/shm
+            tag: CIS-1.1.14
+      description: Add nodev Option to /dev/shm Partition
+    mounts_dev_shm_partition_noexec:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            match_output: noexec
+            pattern: /dev/shm
+            tag: CIS-1.1.16
+      description: Add noexec Option to /dev/shm Partition
+    mounts_dev_shm_partition_nosuid:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            match_output: nosuid
+            pattern: /dev/shm
+            tag: CIS-1.1.15
+      description: Add nosuid Option to /dev/shm Partition
+    mounts_home_partition:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            pattern: /home
+            tag: CIS-1.1.9
+      description: Create Separate Partition for /home
+    mounts_home_partition_nodev:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            match_output: nodev
+            pattern: /home
+            tag: CIS-1.1.10
+      description: Add nodev Option to /home
+    mounts_tmp_partition:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            pattern: /tmp
+            tag: CIS-1.1.1
+      description: Create Separate Partition for /tmp
+    mounts_tmp_partition_nodev:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            match_output: nodev
+            pattern: /tmp
+            tag: CIS-1.1.2
+      description: Set nodev option for /tmp Partition
+    mounts_tmp_partition_noexec:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            match_output: noexec
+            pattern: /tmp
+            tag: CIS-1.1.4
+      description: Set noexec option for /tmp Partition
+    mounts_tmp_partition_nosuid:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            match_output: nosuid
+            pattern: /tmp
+            tag: CIS-1.1.3
+      description: Set nosuid option for /tmp Partition
+    mounts_var_log_audit_partition:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            pattern: /var/log/audit
+            tag: CIS-1.1.8
+      description: Create Separate Partition for /var/log/audit
+    mounts_var_log_partition:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            pattern: /var/log
+            tag: CIS-1.1.7
+      description: Create Separate Partition for /var/log
+    mounts_var_partition:
+      data:
+        CentOS Linux-7:
+        - /proc/mounts:
+            pattern: /var
+            tag: CIS-1.1.5
+      description: Create Separate Partition for /var
+    fstab_var_tmp_bind_mount:
+      data:
+        CentOS Linux-7:
+        - /etc/fstab:
+            match_output: /var/tmp
+            pattern: /tmp
+            tag: CIS-1.1.6
+      description: Bind Mount the /var/tmp directory to /tmp
+    limit_password_reuse:
+      data:
+        CentOS Linux-7:
+        - /etc/pam.d/system-auth:
+            match_output: remember=5
+            pattern: pam_unix.so
+            tag: CIS-6.3.4
+      description: Limit Password Reuse
+    limit_su_command_access:
+      data:
+        CentOS Linux-7:
+        - /etc/pam.d/su:
+            match_output: use_uid
+            pattern: pam_wheel.so
+            tag: CIS-6.5
+        - /etc/group:
+            pattern: wheel
+            tag: CIS-6.5
+      description: Restrict Access to the su Command
+    passwd_change_min_days:
+      data:
+        CentOS Linux-7:
+        - /etc/login.defs:
+            match_output: '7'
+            pattern: PASS_MIN_DAYS
+            tag: CIS-7.1.2
+      description: Set Password Change Minimum Number of Days
+    passwd_expiration_days:
+      data:
+        CentOS Linux-7:
+        - /etc/login.defs:
+            match_output: '90'
+            pattern: PASS_MAX_DAYS
+            tag: CIS-7.1.1
+      description: Set Password Expiration Days
+    passwd_expiry_warning:
+      data:
+        CentOS Linux-7:
+        - /etc/login.defs:
+            match_output: '7'
+            pattern: PASS_WARN_AGE
+            tag: CIS-7.1.3
+      description: Set Password Expiring Warning Days
+    restrict_core_dumps:
+      data:
+        CentOS Linux-7:
+        - /etc/security/limits.conf:
+            pattern: hard core
+            tag: CIS-1.6.1
+      description: Restrict Core Dumps
+    rsyslog_remote_logging:
+      data:
+        CentOS Linux-7:
+        - /etc/rsyslog.conf:
+            pattern: ^*.*[^I][^I]*@
+            tag: CIS-5.1.5
+      description: Configure rsyslog to Send Logs to a Remote Log Host
+    set_daemon_umask:
+      data:
+        CentOS Linux-7:
+        - /etc/sysconfig/init:
+            match_output: umask 027
+            pattern: umask
+            tag: CIS-3.1
+      description: Set Daemon umask
+    sshd_approved_cipher:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            match_output: '^Ciphers aes256-ctr,aes192-ctr,aes128-ctr$|^Ciphers aes256-ctr,aes128-ctr,aes192-ctr$|^Ciphers aes192-ctr,aes128-ctr,aes256-ctr$|^Ciphers aes192-ctr,aes256-ctr,aes128-ctr$|^Ciphers aes128-ctr,aes256-ctr,aes192-ctr$|^Ciphers aes128-ctr,aes192-ctr,aes256-ctr$'
+            match_output_regex: True
+            pattern: Ciphers
+            tag: CIS-6.2.11
+      description: Use Only Approved Cipher in Counter Mode
+    sshd_banner:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            pattern: ^Banner
+            tag: CIS-6.2.14
+      description: Set SSH Banner
+    sshd_disable_root_login:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            match_output: PermitRootLogin no
+            pattern: ^PermitRootLogin
+            tag: CIS-6.2.8
+      description: Disable SSH Root Login
+    sshd_hostbased_auth:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            match_output: HostbasedAuthentication no
+            pattern: ^HostbasedAuthentication
+            tag: CIS-6.2.7
+      description: Set SSH HostbasedAuthentication to No
+    sshd_idle_timeout:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            match_output: ^ClientAliveInterval +([1-2]{0,1}\d{1,2}|300)$
+            match_output_regex: True
+            pattern: ^ClientAliveInterval
+            tag: CIS-6.2.12
+        - /etc/ssh/sshd_config:
+            match_output: "^ClientAliveCountMax +[0-3]$"
+            match_output_regex: True
+            pattern: ^ClientAliveCountMax
+            tag: CIS-6.2.12
+      description: Set Idle Timeout Interval for User Login
+    sshd_ignore_rhosts:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            match_output: IgnoreRhosts yes
+            pattern: ^IgnoreRhosts
+            tag: CIS-6.2.6
+      description: Set SSH IgnoreRhosts to Yes
+    sshd_limit_access:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            pattern: ^AllowUsers
+            tag: CIS-6.2.13
+        - /etc/ssh/sshd_config:
+            pattern: ^AllowGroups
+            tag: CIS-6.2.13
+        - /etc/ssh/sshd_config:
+            pattern: ^DenyUsers
+            tag: CIS-6.2.13
+        - /etc/ssh/sshd_config:
+            pattern: ^DenyGroups
+            tag: CIS-6.2.13
+      description: Limit Access via SSH
+    sshd_loglevel_info:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            match_output: LogLevel INFO
+            pattern: ^LogLevel
+            tag: CIS-6.2.2
+      description: Set LogLevel to INFO
+    sshd_max_auth_retries:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            match_output: "^MaxAuthTries +[1-4]$"
+            pattern: ^MaxAuthTries
+            match_output_regex: True
+            tag: CIS-6.2.5
+      description: Set SSH MaxAuthTries to 4 or Less
+    sshd_permit_empty_passwords:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            match_output: PermitEmptyPasswords no
+            pattern: ^PermitEmptyPasswords
+            tag: CIS-6.2.9
+      description: Set SSH PermitEmptyPasswords to No
+    sshd_permit_user_environment:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            match_output: PermitUserEnvironment no
+            pattern: ^PermitUserEnvironment
+            tag: CIS-6.2.10
+      description: Do Not Allow Users to Set Environment Options
+    sshd_protocol_2:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            match_output: Protocol 2
+            pattern: ^Protocol
+            tag: CIS-6.2.1
+      description: Set SSH Protocol to 2
+    sshd_x11_forwarding:
+      data:
+        CentOS Linux-7:
+        - /etc/ssh/sshd_config:
+            match_output: X11Forwarding no
+            pattern: ^X11Forwarding
+            tag: CIS-6.2.4
+      description: Disable SSH X11 Forwarding
+pkg:
+  blacklist:
+    avahi-daemon:
+      data:
+        CentOS Linux-7:
+        - avahi-daemon: CIS-3.3
+      description: Disable Avahi Server
+    dhcp:
+      data:
+        CentOS Linux-7:
+        - dhcp: CIS-3.5
+      description: Remove DHCP Server
+    nis-client:
+      data:
+        CentOS Linux-7:
+        - ypbind: CIS-2.1.5
+      description: Remove NIS Client
+    nis-server:
+      data:
+        CentOS Linux-7:
+        - ypserv: CIS-2.1.6
+      description: Remove NIS Server
+    rsh-client:
+      data:
+        CentOS Linux-7:
+        - rsh: CIS-2.1.4
+      description: Remove rsh
+    rsh-server:
+      data:
+        CentOS Linux-7:
+        - rsh-server: CIS-2.1.3
+      description: Remove rsh-server
+    talk-client:
+      data:
+        CentOS Linux-7:
+        - talk: CIS-2.1.9
+      description: Remove talk
+    talk-server:
+      data:
+        CentOS Linux-7:
+        - talk-server: CIS-2.1.10
+      description: Remove talk-server
+    telnet-client:
+      data:
+        CentOS Linux-7:
+        - telnet: CIS-2.1.2
+      description: Remove telnet Clients
+    telnet-server:
+      data:
+        CentOS Linux-7:
+        - telnet-server: CIS-2.1.1
+      description: Remove telnet-server
+    tftp-client:
+      data:
+        CentOS Linux-7:
+        - tftp: CIS-2.1.7
+      description: Remove tftp
+    tftp-server:
+      data:
+        CentOS Linux-7:
+        - tftp-server: CIS-2.1.8
+      description: Remove tftp-server
+    xorg-x11-server-common:
+      data:
+        CentOS Linux-7:
+        - xorg-x11-server-common: CIS-3.2
+      description: Remove the X Window System
+  whitelist:
+    anacron:
+      data:
+        CentOS Linux-7:
+        - cronie-anacron: CIS-6.1.1
+      description: Enable anacron Daemon
+    firewalld:
+      data:
+        CentOS Linux-7:
+        - firewalld: CIS-4.7
+      description: Enable firewalld
+    rsyslog:
+      data:
+        CentOS Linux-7:
+        - rsyslog: CIS-5.1.1
+      description: Install the rsyslog package
+stat:
+  anacrontab:
+    data:
+      CentOS Linux-7:
+      - /etc/anacrontab:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.3
+          uid: 0
+          user: root
+    description: Set User/Group Owner and Permission on /etc/anacrontab
+  at_cron_allow:
+    data:
+      CentOS Linux-7:
+      - /etc/cron.deny:
+          gid: null
+          group: null
+          mode: null
+          tag: CIS-6.1.11
+          uid: null
+          user: null
+      - /etc/at.deny:
+          gid: null
+          group: null
+          mode: null
+          tag: CIS-6.1.11
+          uid: null
+          user: null
+      - /etc/cron.allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.11
+          uid: 0
+          user: root
+      - /etc/at.allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.11
+          uid: 0
+          user: root
+    description: Restrict at/cron to Authorized Users
+  cron_d:
+    data:
+      CentOS Linux-7:
+      - /etc/cron.d:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-6.1.9
+          uid: 0
+          user: root
+    description: Set User/Group Owner and Permission on /etc/cron.d
+  cron_daily:
+    data:
+      CentOS Linux-7:
+      - /etc/cron.daily:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-6.1.6
+          uid: 0
+          user: root
+    description: Set User/Group Owner and Permission on /etc/cron.daily
+  cron_hourly:
+    data:
+      CentOS Linux-7:
+      - /etc/cron.hourly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-6.1.5
+          uid: 0
+          user: root
+    description: Set User/Group Owner and Permission on /etc/cron.hourly
+  cron_monthly:
+    data:
+      CentOS Linux-7:
+      - /etc/cron.monthly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-6.1.8
+          uid: 0
+          user: root
+    description: Set User/Group Owner and Permission on /etc/cron.monthly
+  cron_weekly:
+    data:
+      CentOS Linux-7:
+      - /etc/cron.weekly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-6.1.7
+          uid: 0
+          user: root
+    description: Set User/Group Owner and Permission on /etc/cron.weekly
+  crontab:
+    data:
+      CentOS Linux-7:
+      - /etc/crontab:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.4
+          uid: 0
+          user: root
+    description: Set User/Group Owner and Permission on /etc/crontab
+  group_own:
+    data:
+      CentOS Linux-7:
+      - /etc/group:
+          gid: 0
+          group: root
+          tag: CIS-9.1.9
+          uid: 0
+          user: root
+    description: Verify User/Group Ownership on /etc/group
+  group_perm:
+    data:
+      CentOS Linux-7:
+      - /etc/group:
+          mode: 644
+          tag: CIS-9.1.5
+    description: Verify Permissions on /etc/group
+  grub_conf_own:
+    data:
+      CentOS Linux-7:
+      - /boot/grub2/grub.cfg:
+          gid: 0
+          group: root
+          tag: CIS-1.5.1
+          uid: 0
+          user: root
+    description: Set User/Group Owner on /boot/grub2/grub.cfg
+  grub_conf_perm:
+    data:
+      CentOS Linux-7:
+      - /boot/grub2/grub.cfg:
+          mode: 600
+          tag: CIS-1.5.2
+    description: Set Permissions on /boot/grub2/grub.cfg
+  gshadow_own:
+    data:
+      CentOS Linux-7:
+      - /etc/gshadow:
+          gid: 0
+          group: root
+          tag: CIS-9.1.8
+          uid: 0
+          user: root
+    description: Verify User/Group Ownership on /etc/gshadow
+  gshadow_perm:
+    data:
+      CentOS Linux-7:
+      - /etc/gshadow:
+          mode: 0
+          tag: CIS-9.1.4
+    description: Verify Permissions on /etc/gshadow
+  hosts_allow:
+    data:
+      CentOS Linux-7:
+      - /etc/hosts.allow:
+          mode: 644
+          tag: CIS-4.5.3
+    description: Verify Permissions on /etc/hosts.allow
+  hosts_deny:
+    data:
+      CentOS Linux-7:
+      - /etc/hosts.deny:
+          mode: 644
+          tag: CIS-4.5.5
+    description: Verify Permissions on /etc/hosts.deny
+  passwd_own:
+    data:
+      CentOS Linux-7:
+      - /etc/passwd:
+          group: root
+          tag: CIS-9.1.6
+          uid: 0
+          user: root
+    description: Verify User/Group Ownership on /etc/passwd
+  passwd_perm:
+    data:
+      CentOS Linux-7:
+      - /etc/passwd:
+          mode: 644
+          tag: CIS-9.1.2
+    description: Verify Permissions on /etc/passwd
+  shadow_perm:
+    data:
+      CentOS Linux-7:
+      - /etc/shadow:
+          mode: 0
+          tag: CIS-9.1.3
+    description: Verify Permissions on /etc/shadow
+  shadow_own:
+    data:
+      CentOS Linux-7:
+      - /etc/shadow:
+          gid: 0
+          group: root
+          tag: CIS-9.1.7
+          uid: 0
+          user: root
+    description: Verify User/Group Ownership on /etc/shadow
+  sshd_config:
+    data:
+      CentOS Linux-7:
+      - /etc/ssh/sshd_config:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.2.3
+          uid: 0
+          user: root
+    description: Set Permissions on /etc/ssh/sshd_config
+  warning_banner:
+    data:
+      CentOS Linux-7:
+      - /etc/motd:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-8.1
+          uid: 0
+          user: root
+      - /etc/issue:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-8.1
+          uid: 0
+          user: root
+      - /etc/issue.net:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-8.1
+          uid: 0
+          user: root
+    description: Set Warning Banner for Standard Login Services
+sysctl:
+  bad_error_message_protection:
+    data:
+      CentOS Linux-7:
+      - net.ipv4.icmp_ignore_bogus_error_responses:
+          match_output: '1'
+          tag: CIS-4.2.6
+    description: Enable Bad Error Message Protection
+  icmp_redirect_acceptance:
+    data:
+      CentOS Linux-7:
+      - net.ipv4.conf.all.accept_redirects:
+          match_output: '0'
+          tag: CIS-4.2.2
+      - net.ipv4.conf.default.accept_redirects:
+          match_output: '0'
+          tag: CIS-4.2.2
+    description: Disable ICMP Redirect Acceptance
+  ignore_broadcast_requests:
+    data:
+      CentOS Linux-7:
+      - net.ipv4.icmp_echo_ignore_broadcasts:
+          match_output: '1'
+          tag: CIS-4.2.5
+    description: Enable Ignore Broadcast Requests
+  ip_forwarding:
+    data:
+      CentOS Linux-7:
+      - net.ipv4.ip_forward:
+          match_output: '0'
+          tag: CIS-4.1.1
+    description: Disable IP Forwarding
+  log_suspicious_packets:
+    data:
+      CentOS Linux-7:
+      - net.ipv4.conf.all.log_martians:
+          match_output: '1'
+          tag: CIS-4.2.4
+      - net.ipv4.conf.default.log_martians:
+          match_output: '1'
+          tag: CIS-4.2.4
+    description: Log Suspicious Packets
+  randomize_va_space:
+    data:
+      CentOS Linux-7:
+      - kernel.randomize_va_space:
+          match_output: '2'
+          tag: CIS-1.6.2
+    description: Enable Randomized Virtual Memory Region Placement
+  send_packet_redirect:
+    data:
+      CentOS Linux-7:
+      - net.ipv4.conf.all.send_redirects:
+          match_output: '0'
+          tag: CIS-4.1.2
+      - net.ipv4.conf.default.send_redirects:
+          match_output: '0'
+          tag: CIS-4.1.2
+    description: Disable Send Packet Redirects
+  source_routed_packet_acceptance:
+    data:
+      CentOS Linux-7:
+      - net.ipv4.conf.all.accept_source_route:
+          match_output: '0'
+          tag: CIS-4.2.1
+      - net.ipv4.conf.default.accept_source_route:
+          match_output: '0'
+          tag: CIS-4.2.1
+    description: Disable Source Routed Packet Acceptance
+  tcp_syn_cookies:
+    data:
+      CentOS Linux-7:
+      - net.ipv4.tcp_syncookies:
+          match_output: '1'
+          tag: CIS-4.2.8
+    description: Enable TCP SYN Cookies
+service:
+  whitelist:
+    rsyslogd_running:
+      data:
+        CentOS Linux-7:
+        - rsyslog: CIS-5.1.2
+      description: Activate the rsyslog Service
+    crond_running:
+      data:
+        CentOS Linux-7:
+        - crond: CIS-6.1.2
+      description: Enable crond Daemon

@@ -1,0 +1,306 @@
+# -*- coding: utf-8 -*-
+'''
+Service support for RHEL-based systems, including support for both upstart and sysvinit
+
+.. important::
+    If you feel that Salt should be using this module to manage services on a
+    minion, and it is using a different module (or gives an error similar to
+    *'service.start' is not available*), see :ref:`here
+    <module-provider-override>`.
+'''
+
+# Import python libs
+import glob
+import logging
+import os
+import stat
+import fnmatch
+import re
+
+# Import salt libs
+import hubblestack.utils.path
+
+log = logging.getLogger(__name__)
+
+__func_alias__ = {
+    'reload_': 'reload'
+}
+
+# Define the module's virtual name
+__virtualname__ = 'service'
+
+# Import upstart module if needed
+HAS_UPSTART = False
+if hubblestack.utils.path.which('initctl'):
+    try:
+        # Don't re-invent the wheel, import the helper functions from the
+        # upstart module.
+        from hubblestack.modules.upstart_service import _upstart_enable, _upstart_disable, _upstart_is_enabled
+    except Exception as exc:
+        log.error('Unable to import helper functions from '
+                  'hubblestack.modules.upstart: %s', exc)
+    else:
+        HAS_UPSTART = True
+
+
+def __virtual__():
+    '''
+    Only work on select distros which still use Red Hat's /usr/bin/service for
+    management of either sysvinit or a hybrid sysvinit/upstart init system.
+    '''
+    # Disable when booted with systemd
+    if __utils__['systemd.booted'](__context__):
+        return (False, 'The rh_service execution module failed to load: this system was booted with systemd.')
+
+    # Enable on these platforms only.
+    enable = set((
+        'XenServer',
+        'XCP-ng',
+        'RedHat',
+        'CentOS',
+        'ScientificLinux',
+        'CloudLinux',
+        'Amazon',
+        'Fedora',
+        'ALT',
+        'OEL',
+        'SUSE  Enterprise Server',
+        'SUSE',
+        'McAfee  OS Server',
+        'VirtuozzoLinux'
+    ))
+    if __grains__['os'] in enable:
+
+        if __grains__['os'] == 'SUSE':
+            if str(__grains__['osrelease']).startswith('11'):
+                return __virtualname__
+            else:
+                return (False, 'Cannot load rh_service module on SUSE > 11')
+
+        osrelease_major = __grains__.get('osrelease_info', [0])[0]
+
+        if __grains__['os'] in ('XenServer', 'XCP-ng'):
+            if osrelease_major >= 7:
+                return (
+                    False,
+                    'XenServer and XCP-ng >= 7 use systemd, will not load rh_service.py '
+                    'as virtual \'service\''
+                )
+            return __virtualname__
+
+        if __grains__['os'] == 'Fedora':
+            if osrelease_major >= 15:
+                return (
+                    False,
+                    'Fedora >= 15 uses systemd, will not load rh_service.py '
+                    'as virtual \'service\''
+                )
+        if __grains__['os'] in ('RedHat', 'CentOS', 'ScientificLinux', 'OEL', 'CloudLinux'):
+            if osrelease_major >= 7:
+                return (
+                    False,
+                    'RedHat-based distros >= version 7 use systemd, will not '
+                    'load rh_service.py as virtual \'service\''
+                )
+        return __virtualname__
+    return (False, 'Cannot load rh_service module: OS not in {0}'.format(enable))
+
+def status(name, sig=None):
+    '''
+    Return the status for a service.
+    If the name contains globbing, a dict mapping service name to True/False
+    values is returned.
+
+    .. versionchanged:: 2018.3.0
+        The service name can now be a glob (e.g. ``salt*``)
+
+    Args:
+        name (str): The name of the service to check
+        sig (str): Signature to use to find the service via ps
+
+    Returns:
+        bool: True if running, False otherwise
+        dict: Maps service name to True if running, False otherwise
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' service.status <service name> [service signature]
+    '''
+    if sig:
+        return bool(__mods__['status.pid'](sig))
+
+    contains_globbing = bool(re.search(r'\*|\?|\[.+\]', name))
+    if contains_globbing:
+        services = fnmatch.filter(get_all(), name)
+    else:
+        services = [name]
+    results = {}
+    for service in services:
+        if _service_is_upstart(service):
+            cmd = 'status {0}'.format(service)
+            results[service] = 'start/running' in __mods__['cmd.run'](cmd, python_shell=False)
+        else:
+            cmd = '/sbin/service {0} status'.format(service)
+            results[service] = __mods__['cmd.retcode'](cmd, python_shell=False, ignore_retcode=True) == 0
+    if contains_globbing:
+        return results
+    return results[name]
+
+def available(name, limit=''):
+    '''
+    Return True if the named service is available.  Use the ``limit`` param to
+    restrict results to services of that type.
+
+    CLI Examples:
+
+    .. code-block:: bash
+
+        salt '*' service.available sshd
+        salt '*' service.available sshd limit=upstart
+        salt '*' service.available sshd limit=sysvinit
+    '''
+    if limit == 'upstart':
+        return _service_is_upstart(name)
+    elif limit == 'sysvinit':
+        return _service_is_sysv(name)
+    else:
+        return _service_is_upstart(name) or _service_is_sysv(name) or _service_is_chkconfig(name)
+
+def enabled(name, **kwargs):
+    '''
+    Check to see if the named service is enabled to start on boot
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' service.enabled <service name>
+    '''
+    if _service_is_upstart(name):
+        return _upstart_is_enabled(name)
+    else:
+        return _sysv_is_enabled(name)
+
+def _service_is_upstart(name):
+    '''
+    Return True if the service is an upstart service, otherwise return False.
+    '''
+    return HAS_UPSTART and os.path.exists('/etc/init/{0}.conf'.format(name))
+
+def _service_is_sysv(name):
+    '''
+    Return True if the service is a System V service (includes those managed by
+    chkconfig); otherwise return False.
+    '''
+    try:
+        # Look for user-execute bit in file mode.
+        return bool(os.stat(
+            os.path.join('/etc/init.d', name)).st_mode & stat.S_IXUSR)
+    except OSError:
+        return False
+
+def _service_is_chkconfig(name):
+    '''
+    Return True if the service is managed by chkconfig.
+    '''
+    cmdline = '/sbin/chkconfig --list {0}'.format(name)
+    return __mods__['cmd.retcode'](cmdline, python_shell=False, ignore_retcode=True) == 0
+
+def _sysv_is_enabled(name, runlevel=None):
+    '''
+    Return True if the sysv (or chkconfig) service is enabled for the specified
+    runlevel; otherwise return False.  If `runlevel` is None, then use the
+    current runlevel.
+    '''
+    # Try chkconfig first.
+    result = _chkconfig_is_enabled(name, runlevel)
+    if result:
+        return True
+
+    if runlevel is None:
+        runlevel = _runlevel()
+    return (
+        len(glob.glob('/etc/rc.d/rc{0}.d/S??{1}'.format(runlevel, name))) > 0)
+
+def _chkconfig_is_enabled(name, runlevel=None):
+    '''
+    Return ``True`` if the service is enabled according to chkconfig; otherwise
+    return ``False``.  If ``runlevel`` is ``None``, then use the current
+    runlevel.
+    '''
+    cmdline = '/sbin/chkconfig --list {0}'.format(name)
+    result = __mods__['cmd.run_all'](cmdline, python_shell=False)
+
+    if runlevel is None:
+        runlevel = _runlevel()
+    if result['retcode'] == 0:
+        for row in result['stdout'].splitlines():
+            if '{0}:on'.format(runlevel) in row:
+                if row.split()[0] == name:
+                    return True
+            elif row.split() == [name, 'on']:
+                return True
+    return False
+
+def _runlevel():
+    '''
+    Return the current runlevel
+    '''
+    out = __mods__['cmd.run']('/sbin/runlevel')
+    # unknown will be returned while inside a kickstart environment, since
+    # this is usually a server deployment it should be safe to assume runlevel
+    # 3.  If not all service related states will throw an out of range
+    # exception here which will cause other functions to fail.
+    if 'unknown' in out:
+        return '3'
+    else:
+        return out.split()[1]
+
+def get_all(limit=''):
+    '''
+    Return all installed services. Use the ``limit`` param to restrict results
+    to services of that type.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' service.get_all
+        salt '*' service.get_all limit=upstart
+        salt '*' service.get_all limit=sysvinit
+    '''
+    limit = limit.lower()
+    if limit == 'upstart':
+        return sorted(_upstart_services())
+    elif limit == 'sysvinit':
+        return sorted(_sysv_services())
+    else:
+        return sorted(_sysv_services() + _upstart_services())
+
+def _upstart_services():
+    '''
+    Return list of upstart services.
+    '''
+    if HAS_UPSTART:
+        return [os.path.basename(name)[:-5]
+            for name in glob.glob('/etc/init/*.conf')]
+    else:
+        return []
+
+def _sysv_services():
+    '''
+    Return list of sysv services.
+    '''
+    _services = []
+    output = __mods__['cmd.run'](['chkconfig', '--list'], python_shell=False)
+    for line in output.splitlines():
+        comps = line.split()
+        try:
+            if comps[1].startswith('0:'):
+                _services.append(comps[0])
+        except IndexError:
+            continue
+    # Return only the services that have an initscript present
+    return [x for x in _services if _service_is_sysv(x)]

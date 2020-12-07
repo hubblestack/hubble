@@ -2,8 +2,8 @@ from unittest import TestCase
 from unittest.mock import patch
 import pytest
 
-from hubblestack.extmods.hubble_mods import stat
-from hubblestack.utils.hubble_error import HubbleCheckValidationError
+from hubblestack.audit import stat
+from hubblestack.exceptions import HubbleCheckValidationError
 
 
 class TestStat(TestCase):
@@ -48,9 +48,9 @@ class TestStat(TestCase):
         """
         def _stats(path):
             return {"uid": 1, "gid": 2}
-        
+
         isfile_mock.return_value = True
-        stat.__salt__ = {
+        stat.__mods__ = {
             "file.stats": _stats
         }
         block_dict={"args": {"path": "randompath"}}
@@ -66,9 +66,9 @@ class TestStat(TestCase):
         """
         def _stats(path):
             return {"uid": 1, "gid": 2}
-        
+
         isfile_mock.return_value = False
-        stat.__salt__ = {
+        stat.__mods__ = {
             "file.stats": _stats
         }
         block_dict={"args": {"path": "randompath"}}

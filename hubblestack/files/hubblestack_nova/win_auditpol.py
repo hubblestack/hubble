@@ -8,8 +8,8 @@ import copy
 import csv
 import fnmatch
 import logging
-import salt.utils
-import salt.utils.platform
+import hubblestack.utils
+import hubblestack.utils.platform
 
 
 log = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ __virtualname__ = 'win_auditpol'
 
 
 def __virtual__():
-    if not salt.utils.platform.is_windows():
+    if not hubblestack.utils.platform.is_windows():
         return False, 'This audit module only runs on windows'
     return True
 
@@ -184,7 +184,7 @@ def _get_tags(data):
 
 def _auditpol_export():
     try:
-        dump = __salt__['cmd.run']('auditpol /get /category:* /r')
+        dump = __mods__['cmd.run']('auditpol /get /category:* /r')
         if dump:
             dump = dump.split('\n')
             return dump
@@ -213,7 +213,7 @@ def _translate_value_type(current, value, evaluator):
 
 
 def _is_domain_controller():
-    ret = __salt__['reg.read_value'](hive="HKLM",
+    ret = __mods__['reg.read_value'](hive="HKLM",
                                      key=r"SYSTEM\CurrentControlSet\Control\ProductOptions",
                                      vname="ProductType")
     if ret['vdata'] == "LanmanNT":

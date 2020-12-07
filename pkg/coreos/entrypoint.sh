@@ -108,7 +108,7 @@ mkdir -p /etc/systemd/system
 mkdir -p /etc/profile.d
 mkdir -p /etc/hubble
 
-cp -v /hubble_build/pkg/hubble.service /etc/systemd/system
+cp -v /hubble_build/pkg/hubble.service /etc/hubble/hubble-example.service
 cp -v /hubble_build/conf/hubble-profile.sh /etc/profile.d/
 
 if [ -f /data/hubble ]
@@ -133,7 +133,7 @@ tar -cSPvvzf "$PKG_FILE" \
     /etc/hubble /opt/hubble /opt/osquery \
     /etc/profile.d/hubble-profile.sh \
     /var/log/hubble_osquery/backuplogs \
-    /etc/systemd/system/hubble.service \
+    /etc/hubble/hubble-example.service \
     2>&1 | tee /hubble_build/deb-pkg-start-tar.log
 
 openssl dgst -sha256 "$PKG_FILE" > "$PKG_FILE".sha256

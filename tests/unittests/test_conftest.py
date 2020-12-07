@@ -2,8 +2,7 @@
 
 import os
 
-def test_unders(salt_loaders):
-    __opts__, __salt__, __grains__, __utils__ = salt_loaders
+def test_unders(__opts__, __mods__, __grains__, __utils__):
     assert __grains__['id'] == 'test-minion'
 
     config = __opts__['conf_file']
@@ -13,11 +12,15 @@ def test_unders(salt_loaders):
     fr_base = file_roots.get('base')
     assert file_roots and fr_base
 
-    assert os.path.isfile(os.path.join(fr_base[0], 'top.nebula'))
-    assert os.path.isdir(os.path.join(fr_base[0], 'hubblestack_nebula_v2'))
-    assert os.path.isfile(os.path.join(fr_base[0],
-        'hubblestack_nebula_v2', 'hubblestack_nebula_queries.yaml'))
+    def find_file(x):
+        for path in fr_base:
+            filepath = os.path.join(path, x)
+            if os.path.isfile(filepath) or os.path.isdir(filepath):
+                return filepath
+
+    for i in ('top.nebula', 'hubblestack_nebula_v2', 'hubblestack_nebula_v2/hubblestack_nebula_queries.yaml'):
+        assert find_file(i) == 'tests/unittests/resources/' + i
 
     mdirs = __opts__.get('modules_dirs')
-    assert 'test.ping' in __salt__
-    assert 'hstatus.msg_counts' in __salt__
+    assert 'test.ping' in __mods__
+    assert 'hstatus.msg_counts' in __mods__

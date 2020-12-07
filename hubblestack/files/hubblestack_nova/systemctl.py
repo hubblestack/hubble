@@ -32,8 +32,8 @@ import logging
 
 import fnmatch
 import copy
-import salt.utils
-import salt.utils.platform
+import hubblestack.utils
+import hubblestack.utils.platform
 
 from distutils.version import LooseVersion
 
@@ -41,7 +41,7 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     return True
 
@@ -89,7 +89,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 name = tag_data['name']
                 audittype = tag_data['type']
 
-                enabled = __salt__['service.enabled'](name)
+                enabled = __mods__['service.enabled'](name)
                 # Blacklisted service (must not be running or not found)
                 if audittype == 'blacklist':
                     if not enabled:

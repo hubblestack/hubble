@@ -195,7 +195,7 @@ class HubbleStatus(object):
             self.ema_dt = None
             self.dur = None
             self.ema_dur = None
-            # reported is used exclusively by extmods/modules/hstatus
+            # reported is used exclusively by modules/hstatus
             # cleared on every mark()
             self.reported = list()
 
@@ -541,7 +541,7 @@ class HubbleStatus(object):
             hubble:status:dumpster options (see above).
         """
         try:
-            if __salt__['config.get']('splunklogging', False):
+            if __mods__['config.get']('splunklogging', False):
                 # lazy load to avoid circular import
                 import hubblestack.log
                 hubblestack.log.emit_to_splunk('Signal {0} detected'.format(signal.SIGUSR1),
@@ -598,10 +598,10 @@ def _setup_for_testing():
     global __opts__
     import hubblestack.daemon
     parsed_args = hubblestack.daemon.parse_args()
-    import salt.config
+    import hubblestack.config
     parsed_args['configfile'] = config_file = '/etc/hubble/hubble'
-    __opts__ = salt.config.minion_config(config_file)
+    __opts__ = hubblestack.config.get_config(config_file)
     __opts__['conf_file'] = config_file
     __opts__.update(parsed_args)
-    import salt.loader
-    __grains__ = salt.loader.grains(__opts__)
+    import hubblestack.loader
+    __grains__ = hubblestack.loader.grains(__opts__)

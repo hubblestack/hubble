@@ -20,13 +20,13 @@ import copy
 import fnmatch
 import logging
 
-import salt.utils
+import hubblestack.utils
 
 log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if 'network.netstat' in __salt__:
+    if 'network.netstat' in __mods__:
         return True
     return False, 'No network.netstat function found'
 
@@ -55,7 +55,7 @@ def audit(data_list, tags, labels, debug=True, **kwargs):
         # No yaml data found, don't do any work
         return ret
 
-    for address_data in __salt__['network.netstat']():
+    for address_data in __mods__['network.netstat']():
 
         success = False
         for whitelisted_address in __tags__:

@@ -57,18 +57,18 @@ import logging
 import fnmatch
 import os
 import copy
-import salt.utils
-import salt.utils.platform
+import hubblestack.utils
+import hubblestack.utils.platform
 import re
 
 from distutils.version import LooseVersion
-from salt.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     return True
 
@@ -327,7 +327,7 @@ def _grep(path,
     )
 
     try:
-        ret = __salt__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
+        ret = __mods__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
     except (IOError, OSError) as exc:
         raise CommandExecutionError(exc.strerror)
 

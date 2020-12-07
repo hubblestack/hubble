@@ -89,6 +89,16 @@ pipeline {
                     pip install --cache-dir .pip-cache -U pip
                     echo no | ./mk-requires.sh
                     pip install --cache-dir .pip-cache -U -r requirements.txt
+                    pip uninstall -y salt-ssh
+                    python -c "
+import sys
+try:
+    import salt
+    print('ERROR, SALT IS FOUND, ERROR')
+    sys.exit(1)
+except:
+    pass
+"
                     '''
             }
         }
@@ -98,7 +108,7 @@ pipeline {
                     steps {
                         sh '''#!/bin/bash
                             source ./venv/bin/activate
-                            pytest tests/unittests --html=tests/unittests/output/pytest.html
+                            pytest -v tests/unittests --html=tests/unittests/output/pytest.html
                             x=$?
                             cp tests/unittests/output/combined.svg tests/unittests/output/profile-diagram.svg
                             exit $x

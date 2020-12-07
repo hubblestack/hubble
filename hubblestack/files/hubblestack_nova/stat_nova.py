@@ -49,16 +49,17 @@ import logging
 import os
 import fnmatch
 import copy
-import salt.utils
-import salt.utils.platform
+import hubblestack.utils.platform
 import hubblestack.utils.stat_functions as stat_functions
+
+from distutils.version import LooseVersion
+
 log = logging.getLogger(__name__)
 
 __virtualname__ = 'stat'
 
-
 def __virtual__():
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     return True
 
@@ -78,7 +79,7 @@ def apply_labels(__data__, labels):
         ret['stat']=labelled_test_cases
     else:
         ret=__data__
-    return ret    
+    return ret
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
     """
@@ -121,7 +122,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
 
                 # getting the stats using salt
                 if os.path.exists(name):
-                    salt_ret = __salt__['file.stats'](name)
+                    salt_ret = __mods__['file.stats'](name)
                 else:
                     salt_ret = {}
                 if not salt_ret:

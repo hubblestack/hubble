@@ -4,11 +4,11 @@ Author - Mudit Agarwal (muagarwa@adobe.com)
 """
 import logging
 import os
-import salt.modules.cmdmod
+import hubblestack.modules.cmdmod
 import json
 
-__salt__ = {'cmd.run': salt.modules.cmdmod._run_quiet,
-            'cmd.run_all': salt.modules.cmdmod.run_all}
+__mods__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet,
+            'cmd.run_all': hubblestack.modules.cmdmod.run_all}
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ def query(query_sql='', osquery_path='/opt/osquery/osqueryi', args=None, max_fil
 
     # Run the command
 
-    res = __salt__['cmd.run_all'](cmd, timeout=timeout, python_shell=False, output_loglevel=output_loglevel)
+    res = __mods__['cmd.run_all'](cmd, timeout=timeout, python_shell=False, output_loglevel=output_loglevel)
     if res['retcode'] == 0:
       ret = json.loads(res['stdout'])
       return ret

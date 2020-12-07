@@ -3,7 +3,6 @@
 
 import logging
 import base64
-import salt.ext.six as six
 
 log = logging.getLogger(__name__)
 
@@ -31,13 +30,10 @@ def encode_base64(starting_string, format_chained=True, chained=None, chained_st
     if not isinstance(starting_string, str):
         log.error('Invalid arguments - starting_string should be a string')
         return False, None
-    # compatbility with python2 & 3
-    if six.PY3:
-        ret = base64.b64encode(bytes(starting_string, 'utf-8'))
-        # convert from bytes to str
-        ret = ret.decode('ascii')
-    else:
-        ret = base64.b64encode(starting_string)
+
+    ret = base64.b64encode(bytes(starting_string, 'utf-8'))
+    # convert from bytes to str
+    ret = ret.decode('ascii')
 
     return bool(ret), ret
 

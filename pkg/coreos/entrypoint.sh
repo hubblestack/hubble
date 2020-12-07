@@ -1,7 +1,17 @@
 #!/bin/bash
 #Moving hubble source code logic in the shell script
+
+# if ENTRYPOINT is given a CMD other than nothing
+# abort here and do that other CMD
+if [ $# -gt 0 ]
+then exec "$@"
+fi
+
 set -x -e
-git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+if [ ! -d "${HUBBLE_SRC_PATH}" ]
+then git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+fi
+
 cd "${HUBBLE_SRC_PATH}"
 git checkout "${HUBBLE_CHECKOUT_ENV}"
 
@@ -21,12 +31,6 @@ python_binary="$(pyenv which python)"
 while [ -L "$python_binary" ]
 do python_binary="$(readlink -f "$python_binary")"
 done
-
-# if ENTRYPOINT is given a CMD other than nothing
-# abort here and do that other CMD
-if [ $# -gt 0 ]
-then exec "$@"
-fi
 
 # from now on, exit on error (rather than && every little thing)
 PS4=$'-------------=: '
@@ -69,6 +73,7 @@ cd /hubble_build
 
 # we may have preinstalled requirements that may need upgrading
 # pip install . might not upgrade/downgrade the requirements
+pip install pip==20.2 wheel
 python setup.py egg_info
 pip install --upgrade \
     -r hubblestack.egg-info/requires.txt \

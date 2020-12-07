@@ -14,6 +14,7 @@ data_files = [('/usr/lib/systemd/system', ['pkg/source/hubble.service']),
               ('/etc/hubble', ['conf/hubble']), ]
 
 build_dependencies = [
+    'msgpack',
     'pyyaml',
     'objgraph',
     'pycryptodome',

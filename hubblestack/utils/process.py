@@ -8,6 +8,7 @@ import time
 import signal
 import logging
 import io
+import sys
 
 import hubblestack.defaults.exitcodes
 import hubblestack.utils.files
@@ -74,7 +75,7 @@ def daemonize(redirect_out=True):
     try:
         pid = os.fork()
         if pid > 0:
-            os._exit(salt.defaults.exitcodes.EX_OK)
+            os._exit(hubblestack.defaults.exitcodes.EX_OK)
     except OSError as exc:
         log.error('fork #1 failed: %s (%s)', exc.errno, exc)
         sys.exit(hubblestack.defaults.exitcodes.EX_GENERIC)
@@ -89,11 +90,10 @@ def daemonize(redirect_out=True):
     try:
         pid = os.fork()
         if pid > 0:
-            salt.utils.crypt.reinit_crypto()
-            sys.exit(salt.defaults.exitcodes.EX_OK)
+            sys.exit(hubblestack.defaults.exitcodes.EX_OK)
     except OSError as exc:
         log.error('fork #2 failed: %s (%s)', exc.errno, exc)
-        sys.exit(salt.defaults.exitcodes.EX_GENERIC)
+        sys.exit(hubblestack.defaults.exitcodes.EX_GENERIC)
 
     # A normal daemonization redirects the process output to /dev/null.
     # Unfortunately when a python multiprocess is called the output is

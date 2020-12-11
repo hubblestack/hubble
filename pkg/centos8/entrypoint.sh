@@ -80,6 +80,7 @@ pip install --upgrade \
     -r hubblestack.egg-info/requires.txt \
     -r optional-requirements.txt \
     -r package-requirements.txt
+pip freeze > /data/requirements.txt
 
 [ -f ${_HOOK_DIR:-./pkg}/hook-hubblestack.py ] || exit 1
 

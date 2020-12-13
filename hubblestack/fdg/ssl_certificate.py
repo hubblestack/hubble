@@ -9,7 +9,7 @@ certificate details that might be attached on those ports.
 Testing -
     1. Configure this module through Hubble's schedule using the following configuration
        fdg_ssl_certificate:
-         function: fdg.fdg
+         function: fdg.run
          seconds: __seconds__
          splay: __splay__
          returner: __returner__
@@ -18,7 +18,7 @@ Testing -
            - <path to fdg profile>
     Make sure that cert_discovery.fdg profile exists and contains Osquery as the first
     module and this module as the second module.
-    2. Alternately, execute hubble fdg.fdg <path to fdg profile> to run this module via cmd.
+    2. Alternately, execute hubble fdg.run <path to fdg profile> to run this module via cmd.
        Example Profile 1 :
          __________________________________________________________
         |       main:                                              |

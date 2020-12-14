@@ -88,7 +88,7 @@ def netmask(mask):
     '''
     Returns True if the value passed is a valid netmask, otherwise return False
     '''
-    if not isinstance(mask, string_types):
+    if not isinstance(mask, str):
         return False
 
     octets = mask.split('.')

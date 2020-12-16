@@ -144,7 +144,7 @@ class TestWinSecedit(TestCase):
         self.assertTrue(result[0])
         self.assertTrue(isinstance(result[1], dict))
         self.assertTrue(isinstance(result[1].get('result').get('sec_value'), list))
-        self.assertEqual(['No One'], result[1].get('result').get('sec_value'))
+        self.assertEqual([''], result[1].get('result').get('sec_value'))
 
     @patch('hubblestack.audit.win_secedit._secedit_export')
     @patch('hubblestack.audit.win_secedit._get_account_name')

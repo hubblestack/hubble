@@ -129,6 +129,46 @@ import hubblestack.module_runner.comparator
 log = logging.getLogger(__name__)
 
 
+def _compare_dictionary_values(audit_id, result_to_compare, args, errors):
+    for key, value in result_to_compare.items():
+        if isinstance(value, dict):
+            _compare_dictionary_values(audit_id, value, args, errors)
+        else:
+            if 'type' in args:
+                ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(audit_id, args, int(value))
+                if not ret_status:
+                    errors.append(ret_val)
+
+
+def compare_all_values(audit_id, result_to_compare, args):
+    """
+    For a given dictionary, this function will only consider the values.
+    All values must match.
+    Example :
+    {
+    'HKEY_USERS\\<SID>\\Software\\Policies\\Microsoft\\Windows\\Control Panel\\Desktop\\ScreenSaveTimeOut':
+        {
+        'S-1-5-21-1645406227-2048958880-3100449314-500': '900',
+        'S-1-5-21-1645406227-2048958880-3100449314-1008': 900
+        }
+    }
+    for the above dictionary, you can use this function to compare the leaf values to be 900.
+    :param audit_id
+        audit_id for the check
+    :param result_to_compare:
+        Dictionary values to compare
+    :param args:
+        Comparator dictionary as mentioned in the check.
+    """
+    errors = []
+    _compare_dictionary_values(audit_id, result_to_compare, args['compare_all_values'], errors)
+    if errors:
+        error_message = 'dict::match failed, errors={0}'.format(str(errors))
+        log.debug("for check %s errors occurred %s", audit_id, error_message)
+        return False, error_message
+    return True, "Dictionary comparison passed"
+
+
 def match(audit_id, result_to_compare, args):
     """
     Match dictionary elements dynamically. All elements must match

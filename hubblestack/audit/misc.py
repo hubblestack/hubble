@@ -548,18 +548,19 @@ def _check_directory_files_permission(block_id, block_dict, extra_args=None):
     files_list = files_list.split('\n') if files_list != "" else []
     bad_permission_files = []
     for file_in_directory in files_list:
-        per = _compare_file_stats(block_id, file_in_directory, permission)
+        per = _compare_file_stats(block_id, file_in_directory, permission, True)
         if per is not True:
             bad_permission_files += [file_in_directory + ": Bad Permission - " + per + ":"]
     return True if bad_permission_files == [] else str(bad_permission_files)
 
-def _compare_file_stats(block_id, path, permission):
+def _compare_file_stats(block_id, path, permission, allow_more_strict=False):
     path_details = __mods__['file.stats'](path)
 
     comparator_args = {
         "type": "file_permission",
         "match": {
-            "required_value": permission
+            "required_value": permission,
+            "allow_more_strict": allow_more_strict
         }
     }
 
@@ -663,7 +664,7 @@ def _check_users_home_directory_permissions(block_id, block_dict, extra_args=Non
         if len(user_dir) < 2:
                 user_dir = user_dir + [''] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
-            result = _compare_file_stats(block_id, user_dir[1], max_allowed_permission)
+            result = _compare_file_stats(block_id, user_dir[1], max_allowed_permission, False)
             if result is not True:
                 error += ["permission on home directory " + user_dir[1] + " of user " + user_dir[0] + " is wrong: " + result]
 

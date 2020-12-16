@@ -234,10 +234,6 @@ def execute(block_id, block_dict, extra_args=None):
         reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     reg_dict = _reg_path_splitter(reg_name)
     secret = _find_option_value_in_reg(reg_dict.get('hive'), reg_dict.get('key'), reg_dict.get('value'))
-    if isinstance(secret, dict) and extra_args.get('caller') == 'Audit':
-        return runner_utils.prepare_negative_result_for_module(block_id,
-                                                               "registry output is a dict, currently unsupported."
-                                                               " Output is {0}".format(secret))
     result = {reg_name: secret}
     log.debug("win_reg module output for block_id %s, is %s", block_id, result)
 

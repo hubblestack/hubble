@@ -905,7 +905,7 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         except IOError:
             raise
         except ImportError as exc:
-            if 'magic number' in str(exec):
+            if 'magic number' in str(exc):
                 error_msg = 'Failed to import {0} {1}. Bad magic number. If migrating from Python2 to Python3, remove all .pyc files and try again.'.format(self.tag, name)
                 log.warning(error_msg)
                 self.missing_modules[name] = error_msg

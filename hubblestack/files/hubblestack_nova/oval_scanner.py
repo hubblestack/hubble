@@ -43,13 +43,11 @@ This scanner currently only supports the Linux platform.
 
 from __future__ import absolute_import
 
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as etree
+from xml.etree.ElementTree import Element
 import re
 import json
 import datetime
-import functools
-import threading
-from queue import Queue
 import requests
 import logging
 import salt.utils.platform
@@ -57,16 +55,13 @@ from pkg_resources import parse_version
 
 
 def __virtual__():
-    return not salt.utils.platform.is_windows() 
-
+    return not salt.utils.platform.is_windows()
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
     """Hubble audit function"""
     ret = {'Success': [], 'Failure': []}
     for profile, data in data_list:
         if 'oval_scanner' in data:
-            # Create queue for threaded jobs
-            queue = Queue()
             # Distro facts
             distro_name = __grains__.get('os').lower()
             distro_release = __grains__.get('osmajorrelease')
@@ -79,7 +74,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
             local_pkgs = __salt__['pkg.list_pkgs']()
             if distro_name in ('debian'):
                 logging.info('Referencing source packages to binary packages. This could take awhile...'.format(distro_name.capitalize()))
-                pkg_src_ref = build_pkg_src_ref(local_pkgs, queue)
+                pkg_src_ref = build_pkg_src_ref(local_pkgs)
             else:
                 pkg_src_ref = {}
             # Scanner options
@@ -92,7 +87,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
             oval_definition = build_oval(source_content)
             oval_and_maps = map_oval_ids(oval_definition)
             vulns = create_vulns(oval_and_maps, pkg_src_ref)
-            report = get_impact_report(vulns, local_pkgs, distro_name, queue)
+            report = get_impact_report(vulns, local_pkgs, distro_name)
             # Write report to file if specified
             if opt_output_file:
                 write_report_to_file(opt_output_file, report)
@@ -122,6 +117,7 @@ def parse_impact_report(report, local_pkgs, hubble_format, impacted_pkgs=[]):
 
 def write_report_to_file(opt_output_file, report):
     """Write report to local disk"""
+    logging.debug('write_report_to_file')
     time = datetime.datetime.now()
     now = time.strftime("%Y-%m-%d@%H:%M:%S")
     logging.info('Writing CVE data to {0}'.format(opt_output_file))
@@ -133,27 +129,47 @@ def write_report_to_file(opt_output_file, report):
         outfile.write(json.dumps(report, indent=2, sort_keys=True))
 
 
-def get_impact_report(vulns, local_pkgs, distro_name, queue):
+def get_impact_report(vulns, local_pkgs, distro_name):
     """Get impact report"""
     logging.debug('get_impact_report')
-    report = build_impact(vulns, local_pkgs, distro_name, queue)
+    report = build_impact(vulns, local_pkgs, distro_name)
     logging.debug(json.dumps(report, indent=4, sort_keys=True))
     return report
 
 
 # Build an impact report
-def build_impact(vulns, local_pkgs, distro_name, queue, result={}):
-    """Build impact"""
+def build_impact(vulns, local_pkgs, distro_name, result={}):
+    """Build impacts based on pkg comparisons"""
     logging.debug('build_impact')
-    determine_impact(vulns, local_pkgs, distro_name, queue)
-    while not queue.empty():
-        impact = queue.get()
-        if impact:
-            if 'kernel-aarch64' in list(impact.keys())[0]:
-                queue.task_done()
-                continue
-            result = build_impact_report(impact)
-        queue.task_done()
+    for data in vulns.values():
+        for pkg in data['pkg']:
+            name = pkg['name']
+            ver = pkg['version']
+            if name in local_pkgs:
+                title = data['title']
+                cve = data['cve']
+                if 'severity' in data:
+                    severity = data['severity']
+                else:
+                    severity = 'N/A'
+                if distro_name in ('centos', 'redhat'):
+                    advisory = data['rhsa']
+                elif 'advisories' in data:
+                    advisory = data['advisories']
+                else:
+                    advisory = cve
+                impact = get_impact(
+                    local_pkgs[name],
+                    distro_name,
+                    name=name,
+                    ver=ver,
+                    title=title,
+                    cve=cve,
+                    advisory=advisory,
+                    severity=severity
+                )
+                if impact:
+                    result = build_impact_report(impact)
     return result
 
 
@@ -174,52 +190,9 @@ def build_impact_report(impact, report={}):
     return report
 
 
-def determine_impact(vulns, local_pkgs, distro_name, queue):
-    """Determine impacts based on pkg comparisons"""
-    threads = []
-    for data in vulns.values():
-        for pkg in data['pkg']:
-            name = pkg['name']
-            ver = pkg['version']
-            if name in local_pkgs:
-                title = data['title']
-                cve = data['cve']
-                if 'severity' in data:
-                    severity = data['severity']
-                else:
-                    severity = 'N/A'
-                if distro_name in ('centos', 'redhat'):
-                    advisory = data['rhsa']
-                elif 'advisories' in data:
-                    advisory = data['advisories']
-                else:
-                    advisory = cve
-                worker = threading.Thread(target=functools.partial(
-                    get_impact,
-                    local_pkgs[name],
-                    queue,
-                    distro_name,
-                    title=title,
-                    cve=cve,
-                    name=name,
-                    ver=ver,
-                    severity=severity,
-                    advisory=advisory
-                ))
-                threads.append(worker)
-                worker.start()
-    for thread in threads:
-        thread.join()
-
-
-def get_impact(local_ver, queue, distro_name, **kargs):
-    """Add impact worker to queue"""
-    queue.put(impact_worker(local_ver, distro_name, **kargs))
-
-
-def impact_worker(local_ver, distro_name, **kargs):
-    """Compare local package version to vulnerability version"""
-    logging.debug('impact_worker')
+def get_impact(local_ver, distro_name, **kargs):
+    """Compare local package ver to vulnerability ver in rpm distros"""
+    logging.debug('get_rpm_impact')
     impact = {}
     if distro_name in ('centos', 'redhat'):
         impact = parse_rpm_version(impact, local_ver, **kargs)
@@ -236,6 +209,8 @@ def parse_rpm_version(impact, local_ver, **kargs):
         local_version = '0:' + local_version
     split_local_ver = re.split(':+|.el', local_version)
     split_impact_ver = re.split(':+|.el', kargs['ver'])
+    check_release_local = split_local_ver[2].split('_')[0]
+    check_release_impact = split_impact_ver[2].split('_')[0]
     if (
         not re.search('.el', local_ver, re.IGNORECASE)
         and parse_version(split_local_ver[0]) <= parse_version(split_impact_ver[0])
@@ -244,12 +219,19 @@ def parse_rpm_version(impact, local_ver, **kargs):
         parse_version(split_local_ver[0]) <= parse_version(split_impact_ver[0])
         and parse_version(split_local_ver[1]) < parse_version(split_impact_ver[1])
         and split_local_ver[2] <= split_impact_ver[2]
+    ) or (
+        parse_version(split_local_ver[0]) <= parse_version(split_impact_ver[0])
+        and parse_version(split_local_ver[1]) <= parse_version(split_impact_ver[1])
+        and split_local_ver[2] < split_impact_ver[2]
     ):
-        impact = create_impact(impact, local_ver, **kargs)
+        if (check_release_local == check_release_impact):
+            impact = create_impact(impact, local_ver, **kargs)
     return impact
 
 
 def create_impact(impact, local_ver, **kargs):
+    """create impact based on local version"""
+    logging.debug('create_impact')
     impact[kargs['title']] = {
         'updated_pkg': {'name': kargs['name'], 'version': kargs['ver']},
         'installed': {'name': kargs['name'], 'version': local_ver},
@@ -260,42 +242,30 @@ def create_impact(impact, local_ver, **kargs):
     return impact
 
 
-# Build source package reference to binary packages
-def build_pkg_src_ref(local_pkgs, queue, pkg_src_ref={}):
+# Build source package reference to binary packages (for Debian)
+def build_pkg_src_ref(local_pkgs, pkg_src_ref={}):
     """Build source package reference for binary packages"""
     logging.debug('build_pkg_src_ref')
-    get_package_detail(local_pkgs, queue)
-    while not queue.empty():
-        pkg_detail = queue.get()
-        for pkg, detail in pkg_detail.items():
-            if 'Source' in next(iter(detail.values())):
-                source = next(iter(detail.values()))['Source'].split()[0]
-                if source not in pkg_src_ref and not source == pkg:
-                    pkg_src_ref[source] = []
-                if not source == pkg:
-                    pkg_src_ref[source].append(pkg)
-        queue.task_done()
+    pkg_detail = get_package_detail(local_pkgs)
+    for pkg, detail in pkg_detail.items():
+        if 'Source' in next(iter(detail.values())):
+            source = next(iter(detail.values()))['Source'].split()[0]
+            if source not in pkg_src_ref and not source == pkg:
+                pkg_src_ref[source] = []
+            if not source == pkg:
+                pkg_src_ref[source].append(pkg)
     return pkg_src_ref
 
 
-def get_package_detail(local_pkgs, queue):
+def get_package_detail(local_pkgs):
     """Get package details"""
-    threads = []
+    logging.debug('get_package_detail')
     for pkg in local_pkgs:
-        worker = threading.Thread(target=pkg_show, args=(pkg, queue,))
-        threads.append(worker)
-        worker.start()
-    for thread in threads:
-        thread.join()
-
-
-def pkg_show(pkg, queue):
-    """Add package show worker to queue"""
-    queue.put(__salt__['pkg.show'](pkg))
+        __salt__['pkg.show'](pkg)
 
 
 # Create vulnerability dictionary
-def create_vulns(oval_and_maps, pkg_src_ref=None, vulns={}):
+def create_vulns(oval_and_maps, vulns={}):
     """Create vuln dict that maps definitions directly to objects and states"""
     logging.debug('create_vulns')
     id_maps = oval_and_maps[0]
@@ -312,8 +282,6 @@ def create_vulns(oval_and_maps, pkg_src_ref=None, vulns={}):
                     name = oval['objects'][obj['object_id']]['name']
                     if name in oval['vars']:
                         pkg_group = oval['vars'][name]['pkg_names']
-                    elif name in pkg_src_ref:
-                        pkg_group = pkg_src_ref[name]
                 else:
                     continue
                 if 'version' in oval['states'][obj['state_id']]:
@@ -461,7 +429,7 @@ def build_objects(root, namespace, objs={}):
             if is_et(object_name):
                 if object_name.text:
                     name = object_name.text
-                elif object_name.attrib['var_ref']:
+                elif 'var_ref' in object_name.attrib:
                     name = object_name.attrib['var_ref']
                 build_data['name'] = name
     return objs
@@ -503,13 +471,13 @@ def build_vars(root, namespace, vrs={}):
 
 def is_et(item):
     """Determine if specific item is a valid ElementTree element"""
-    return isinstance(item, ET.Element)
+    return isinstance(item, Element)
 
 
 def build_element_tree(source_content):
     """Build an element tree from source content"""
     logging.debug('build_element_tree')
-    return ET.fromstring(source_content)
+    return etree.fromstring(source_content)
 
 
 # Get oval source

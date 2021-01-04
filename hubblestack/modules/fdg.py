@@ -132,6 +132,10 @@ BASE_DIR_FDG_PROFILES = 'fdg'
 
 def fdg(fdg_file, starting_chained=None):
     """
+    This is the old fdg function, which should ideally be deprecated, but
+    is still kept to support the old fdg functionality. Everything which was
+    possible using this function is now available as fdg.run function.
+    
     Given an fdg file (usually a salt:// file, but can also be the absolute
     path to a file on the system), execute that fdg file, starting with the
     ``main`` block

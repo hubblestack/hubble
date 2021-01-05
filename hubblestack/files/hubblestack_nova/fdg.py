@@ -96,7 +96,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 true_for_success = tag_data.get('true_for_success', True)
                 use_status = tag_data.get('use_status', False)
 
-                _, fdg_run = __mods__['fdg.run'](fdg_file, starting_chained=starting_chained)
+                _, fdg_run = __mods__['fdg.fdg'](fdg_file, starting_chained=starting_chained)
 
                 if not isinstance(fdg_run, tuple):
                     if 'consolidation_operator' not in tag_data:

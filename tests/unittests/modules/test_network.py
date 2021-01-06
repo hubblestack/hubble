@@ -10,7 +10,7 @@ import socket
 import hubblestack.config
 import hubblestack.modules.network as network
 from hubblestack.utils._compat import ipaddress
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin

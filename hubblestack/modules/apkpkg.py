@@ -5,7 +5,7 @@ Support for apk
 .. important::
     If you feel that Salt should be using this module to manage packages on a
     minion, and it is using a different module (or gives an error similar to
-    *'pkg.install' is not available*), see :ref:`here
+    *'pkg.insll' is not available*), see :ref:`here
     <module-provider-override>`.
 
 .. versionadded: 2017.7.0

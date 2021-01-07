@@ -335,7 +335,7 @@ class TestDictMatchAny(TestCase):
 
 class TestDictMatchAnyIfKeyMatches(TestCase):
     """
-    Unit tests for dict::match_any_if_key_matches comparator
+    Unit tests for dict::match_any_if_keyvalue_matches comparator
     """
 
     def test_match1(self):
@@ -345,7 +345,7 @@ class TestDictMatchAnyIfKeyMatches(TestCase):
         result_to_compare = {"name": "abc", "status": True, "disabled": False}
         args = {
             "type": "dict",
-            "match_any_if_key_matches": {
+            "match_any_if_keyvalue_matches": {
                 "match_key": "name",
                 "args": [
                     {"name": "abc", "status": True},
@@ -353,7 +353,7 @@ class TestDictMatchAnyIfKeyMatches(TestCase):
                 ]
             }
         }
-        status, result = dict_comparator.match_any_if_key_matches("test-1", result_to_compare, args)
+        status, result = dict_comparator.match_any_if_keyvalue_matches("test-1", result_to_compare, args)
         self.assertTrue(status)
 
     def test_match2(self):
@@ -363,7 +363,7 @@ class TestDictMatchAnyIfKeyMatches(TestCase):
         result_to_compare = {"name": "abc", "status": True, "disabled": False}
         args = {
             "type": "dict",
-            "match_any_if_key_matches": {
+            "match_any_if_keyvalue_matches": {
                 "match_key": "name",
                 "args": [
                     {"name": "abcd", "status": True},
@@ -371,9 +371,9 @@ class TestDictMatchAnyIfKeyMatches(TestCase):
                 ]
             }
         }
-        status, result = dict_comparator.match_any_if_key_matches("test-1", result_to_compare, args)
+        status, result = dict_comparator.match_any_if_keyvalue_matches("test-1", result_to_compare, args)
         self.assertTrue(status)
-        self.assertEqual(result, 'pass_as_key_not_found')
+        self.assertEqual(result, 'pass_as_keyvalue_not_found')
 
     def test_match3(self):
         """
@@ -382,7 +382,7 @@ class TestDictMatchAnyIfKeyMatches(TestCase):
         result_to_compare = {"name": "abc", "status": True, "disabled": False}
         args = {
             "type": "dict",
-            "match_any_if_key_matches": {
+            "match_any_if_keyvalue_matches": {
                 "match_key": "name",
                 "args": [
                     {"name": "abc", "status": False},
@@ -390,5 +390,5 @@ class TestDictMatchAnyIfKeyMatches(TestCase):
                 ]
             }
         }
-        status, result = dict_comparator.match_any_if_key_matches("test-1", result_to_compare, args)
+        status, result = dict_comparator.match_any_if_keyvalue_matches("test-1", result_to_compare, args)
         self.assertFalse(status)

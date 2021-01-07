@@ -49,19 +49,19 @@ Dictionary comparator exposes various commands:
             - name: xyz
               running: true
 
-- "match_any_if_key_matches"
-  This is a special case when user want to match only when desired key is found.
+- "match_any_if_keyvalue_matches"
+  This is a special case when user want to match only when desired key-value is found.
   Example: If name=rsync found, then match other attributes.
 
   Result will be True
     - if specified key not found.
-    - key found and attributes also matched
+    - key-value found and attributes also matched
   Result will be False
-    - Key found and attributes did not match
+    - Key-value found and attributes did not match
 
     comparator:
         type: "dict"
-        match_any_if_key_matches:
+        match_any_if_keyvalue_matches:
             match_key: name
             args:
                 - name: abc
@@ -69,8 +69,43 @@ Dictionary comparator exposes various commands:
                 - name: xyz
                   running: true
 
-In above example, we are invoking another comparator: "file_permission"
-for "mode" field.
+    Examples:
+        1.  output from a module: 
+                {name: 'splunkd', running: false, enabled: true}
+            match_any_if_keyvalue_matches:
+                match_key: name
+                args:
+                    - name: abc
+                      running: false
+                    - name: def
+                      running: true
+            Result: True
+            Reason: Since result does not have "name" as either [abc, def]
+                    And, we want to match only when we found our desired key-value
+        2.  output from a module: 
+                {name: 'splunkd', running: false, enabled: true}
+            match_any_if_keyvalue_matches:
+                match_key: name
+                args:
+                    - name: abc
+                      running: false
+                    - name: splunkd
+                      running: false
+            Result: True
+            Reason: Since result matches "name: splunkd" and "running: false"
+                    
+        3.  output from a module: 
+                {name: 'splunkd', running: false, enabled: true}
+            match_any_if_keyvalue_matches:
+                match_key: name
+                args:
+                    - name: abc
+                      running: false
+                    - name: splunkd
+                      running: true
+            Result: False
+            Reason: Since result matches "name: splunkd", but did not match "running" attribute
+        
 
 Example with nested dictionary
 ---------------------------------
@@ -213,9 +248,9 @@ def match_any(audit_id, result_to_compare, args):
     return False, error_message
 
 
-def match_any_if_key_matches(audit_id, result_to_compare, args):
+def match_any_if_keyvalue_matches(audit_id, result_to_compare, args):
     """
-    We want to compare things if we found our interested key
+    We want to compare things if we found our interested key-value
     Even if the list does not have my interested name, it will pass
 
     Match dictionary elements dynamically. Match from a list of available dictionaries
@@ -227,7 +262,7 @@ def match_any_if_key_matches(audit_id, result_to_compare, args):
 
     comparator:
         type: dict
-        match_any_if_key_matches:
+        match_any_if_keyvalue_matches:
             match_key: name
             args:
                 - name: abc
@@ -246,14 +281,15 @@ def match_any_if_key_matches(audit_id, result_to_compare, args):
     :param args:
         Comparator dictionary as mentioned in the check.
     """
-    log.debug('Running dict::match_any_if_key_matches for audit_id: {0}'.format(audit_id))
+    log.debug('Running dict::match_any_if_keyvalue_matches for audit_id: {0}'.format(audit_id))
 
-    key_name = args['match_any_if_key_matches']['match_key']
+    key_name = args['match_any_if_keyvalue_matches']['match_key']
     if key_name not in result_to_compare:
         log.debug("Required key '%s' is not found in '%s' for audit_id '%s'", key_name, result_to_compare, audit_id)
-        return True, "pass_as_key_not_found"
+        return True, "pass_as_keyvalue_not_found"
+
     key_found_once = False
-    for to_match_dict in args['match_any_if_key_matches']['args']:
+    for to_match_dict in args['match_any_if_keyvalue_matches']['args']:
         errors = []
         if result_to_compare[key_name] == to_match_dict[key_name]:
             key_found_once = True
@@ -261,20 +297,12 @@ def match_any_if_key_matches(audit_id, result_to_compare, args):
 
             if not errors:
                 # found a match
-                log.debug("dictionary comparison successful."
-                          " '%s' matches '%s'", to_match_dict, result_to_compare)
                 return True, "Dictionary comparison passed"
-            else:
-                log.debug("dictionary comparison is not successful."
-                          " '%s' does not match '%s'", to_match_dict, result_to_compare)
-                return False, "Dictionary comparison failed in dict::match_any_if_key_matches, " \
-                              "errors={0}".format(str(errors))
 
-    if not key_found_once:
-        error_message = "key '{0}' exists in dict '{1}', " \
-                        "but does not match intended values".format(key_name, result_to_compare)
-        log.debug(error_message)
+    if key_found_once:
+        error_message = 'dict::match_any_if_keyvalue_matches failed, errors={0}'.format(str(errors))
         return False, error_message
+    return True, "pass_as_keyvalue_not_found"
 
 
 def match_key_any(audit_id, result_to_compare, args):

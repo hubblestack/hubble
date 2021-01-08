@@ -38,6 +38,36 @@ def _client():
     _mk_client()
     return __context__["cp.fileclient_{}".format(id(__opts__))]
 
+def get_file(path,
+             dest,
+             saltenv='base',
+             makedirs=False,
+             gzip=None,
+             **kwargs):
+    '''
+    Used to get a single file on the minion
+    CLI Example:
+    .. code-block:: bash
+        salt '*' cp.get_file salt://path/to/file /minion/dest
+    
+    .. note::
+        It may be necessary to quote the URL when using the querystring method,
+        depending on the shell being used to run the command.
+    '''
+    path, senv = hubblestack.utils.url.split_env(path)
+    if senv:
+        saltenv = senv
+
+    if not hash_file(path, saltenv):
+        return ''
+    else:
+        return _client().get_file(
+                path,
+                dest,
+                makedirs,
+                saltenv,
+                gzip)
+
 
 def cache_file(path, saltenv="base", source_hash=None):
     """

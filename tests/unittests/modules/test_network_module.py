@@ -10,7 +10,7 @@ import socket
 import hubblestack.config
 import hubblestack.modules.network as network
 from hubblestack.utils._compat import ipaddress
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 # Import Salt Testing Libs
 from tests.support.mixins import LoaderModuleMockMixin
@@ -81,7 +81,7 @@ class NetworkTestCase(TestCase, LoaderModuleMockMixin):
         """
         Test for Performs a DNS lookup with dig
         """
-        with patch("salt.utils.path.which", MagicMock(return_value="dig")), patch.dict(
+        with patch("hubblestack.utils.path.which", MagicMock(return_value="dig")), patch.dict(
             network.__utils__, {"network.sanitize_host": MagicMock(return_value="A")}
         ), patch.dict(network.__mods__, {"cmd.run": MagicMock(return_value="A")}):
             self.assertEqual(network.dig("host"), "A")
@@ -92,7 +92,7 @@ class NetworkTestCase(TestCase, LoaderModuleMockMixin):
         """
         with patch.dict(
             network.__mods__, {"cmd.run": MagicMock(return_value="A,B,C,D\nE,F,G,H\n")}
-        ), patch("salt.utils.path.which", MagicMock(return_value="")):
+        ), patch("hubblestack.utils.path.which", MagicMock(return_value="")):
             self.assertDictEqual(network.arp(), {})
 
     def test_interfaces(self):

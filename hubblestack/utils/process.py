@@ -7,6 +7,11 @@ import os
 import time
 import signal
 import logging
+import io
+import sys
+
+import hubblestack.defaults.exitcodes
+import hubblestack.utils.files
 
 log = logging.getLogger(__name__)
 
@@ -62,3 +67,70 @@ def os_is_running(pid):
             return True
         except OSError:
             return False
+
+def daemonize(redirect_out=True):
+    '''
+    Daemonize hubblestack process
+    '''
+    try:
+        pid = os.fork()
+        if pid > 0:
+            os._exit(hubblestack.defaults.exitcodes.EX_OK)
+    except OSError as exc:
+        log.error('fork #1 failed: %s (%s)', exc.errno, exc)
+        sys.exit(hubblestack.defaults.exitcodes.EX_GENERIC)
+
+    # decouple from parent environment
+    os.chdir('/')
+    # noinspection PyArgumentList
+    os.setsid()
+    os.umask(0o022)  # pylint: disable=blacklisted-function
+
+    # do second fork
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(hubblestack.defaults.exitcodes.EX_OK)
+    except OSError as exc:
+        log.error('fork #2 failed: %s (%s)', exc.errno, exc)
+        sys.exit(hubblestack.defaults.exitcodes.EX_GENERIC)
+
+    # A normal daemonization redirects the process output to /dev/null.
+    # Unfortunately when a python multiprocess is called the output is
+    # not cleanly redirected and the parent process dies when the
+    # multiprocessing process attempts to access stdout or err.
+    if redirect_out:
+        with hubblestack.utils.files.fopen('/dev/null', 'r+') as dev_null:
+            # Redirect python stdin/out/err
+            # and the os stdin/out/err which can be different
+            dup2(dev_null, sys.stdin)
+            dup2(dev_null, sys.stdout)
+            dup2(dev_null, sys.stderr)
+            dup2(dev_null, 0)
+            dup2(dev_null, 1)
+            dup2(dev_null, 2)
+
+
+def dup2(file1, file2):
+    '''
+    Duplicate file descriptor fd to fd2, closing the latter first if necessary.
+    This method is similar to os.dup2 but ignores streams that do not have a
+    supported fileno method.
+    '''
+    if isinstance(file1, int):
+        fno1 = file1
+    else:
+        try:
+            fno1 = file1.fileno()
+        except io.UnsupportedOperation:
+            log.warn('Unsupported operation on file: %r', file1)
+            return
+    if isinstance(file2, int):
+        fno2 = file2
+    else:
+        try:
+            fno2 = file2.fileno()
+        except io.UnsupportedOperation:
+            log.warn('Unsupported operation on file: %r', file2)
+            return
+    os.dup2(fno1, fno2)

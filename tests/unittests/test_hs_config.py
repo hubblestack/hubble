@@ -116,7 +116,12 @@ def intentionally_removed_opts():
 
 @pytest.fixture
 def added_opts():
-    return {'skip_file_logger',}
+    # NOTE on '__role':
+    # We didn't really "add" or invent it: but we don't have the 'minion'
+    # environment that would populate the field in __opts__; so it's been
+    # spuriously added to __opts__ during config build to cover vestigial edge
+    # cases.
+    return {'skip_file_logger', '__role'}
 
 @pytest.fixture
 def salt_config_opts(intentionally_removed_opts):

@@ -43,6 +43,7 @@ LOADERS = [
     'hubblestack.audit',
     'hubblestack.comparators',
     'hubblestack.fdg',
+    'hubblestack.files',
     'hubblestack.fileserver',
     'hubblestack.grains',
     'hubblestack.matchers',
@@ -66,6 +67,8 @@ hiddenimports = list(HIDDEN_IMPORTS)
 
 for l in LOADERS:
     datas.extend(collect_data_files(l, subdir='.', include_py_files=True))
+
+datas = list((path,mod) for path,mod in datas if path.endswith(('.py', '.pyc')))
 
 for i in HIDDEN_IMPORTS:
     hiddenimports.extend( collect_submodules(i) )

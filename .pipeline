@@ -86,9 +86,10 @@ pipeline {
                     pip install --cache-dir .pip-cache -t ./vlib virtualenv
                     PYTHONPATH=./vlib ./vlib/bin/virtualenv ./venv
                     source ./venv/bin/activate
-                    pip install --cache-dir .pip-cache -U pip
+                    pip install --cache-dir .pip-cache -U pip==20.2
                     echo no | ./mk-requires.sh
                     pip install --cache-dir .pip-cache -U -r requirements.txt
+                    pip install --cache-dir .pip-cache -U -r tests/automation/requirements.txt
                     pip uninstall -y salt-ssh
                     python -c "
 import sys

@@ -18,7 +18,7 @@ import hubblestack.utils.decorators.path
 import hubblestack.utils.network
 import hubblestack.utils.validate.net
 from hubblestack.utils._compat import ipaddress
-from hubblestack.utils.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
 

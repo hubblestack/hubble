@@ -130,7 +130,7 @@ class FdgRunner(Runner):
         log.debug('Returning job data to %s', returner)
         returner_ret = {'id': __grains__['id'],
                         'jid': hubblestack.utils.jid.gen_jid(__opts__),
-                        'fun': 'fdg.fdg',
+                        'fun': 'fdg.run',
                         'fun_args': [],
                         'return': data[0],
                         'return_status': data[1]}

@@ -127,10 +127,14 @@ def setup_console_logger(log_level='error',
     date format.
     """
     _remove_temp_handler()
+
+    level = LOG_LEVELS.get(log_level, logging.ERROR)
+
     rootlogger = logging.getLogger()
+    rootlogger.setLevel(level)
 
     handler = logging.StreamHandler()
-    handler.setLevel(LOG_LEVELS.get(log_level, logging.ERROR))
+    handler.setLevel(level)
 
     formatter = logging.Formatter(log_format, date_format)
 

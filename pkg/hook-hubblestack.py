@@ -40,6 +40,7 @@ HIDDEN_IMPORTS = [
 ]
 
 LOADERS = [
+    'hubblestack',
     'hubblestack.audit',
     'hubblestack.comparators',
     'hubblestack.fdg',

@@ -14,7 +14,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 import logging
 import os
 
-import salt.utils.path
+import hubblestack.utils.path
 
 log = logging.getLogger(__name__)
 
@@ -38,8 +38,8 @@ def module_exists(name):
 
     .. code-block:: python
 
-        import salt.utils.powershell
-        exists = salt.utils.powershell.module_exists('ServerManager')
+        import hubblestack.utils.powershell
+        exists = hubblestack.utils.powershell.module_exists('ServerManager')
     """
     return name in get_modules()
 
@@ -58,13 +58,13 @@ def get_modules():
 
     .. code-block:: python
 
-        import salt.utils.powershell
-        modules = salt.utils.powershell.get_modules()
+        import hubblestack.utils.powershell
+        modules = hubblestack.utils.powershell.get_modules()
     """
     ret = list()
     valid_extensions = (".psd1", ".psm1", ".cdxml", ".xaml", ".dll")
     # need to create an info function to get PS information including version
-    # __salt__ is not available from salt.utils... need to create a salt.util
+    # __salt__ is not available from hubblestack.utils... need to create a hubblestack.util
     # for the registry to avoid loading powershell to get the version
     # not sure how to get the powershell version in linux outside of powershell
     # if running powershell to get version need to use subprocess.Popen
@@ -106,7 +106,7 @@ def get_modules():
             continue
 
         # get a list of all files in the root_path
-        for root_dir, sub_dirs, file_names in salt.utils.path.os_walk(root_path):
+        for root_dir, sub_dirs, file_names in hubblestack.utils.path.os_walk(root_path):
             for file_name in file_names:
                 base_name, file_extension = os.path.splitext(file_name)
 

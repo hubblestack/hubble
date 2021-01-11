@@ -9,6 +9,7 @@ import fnmatch
 import logging
 import hubblestack.utils
 import hubblestack.utils.platform
+import hubblestack.utils.powershell
 
 
 log = logging.getLogger(__name__)

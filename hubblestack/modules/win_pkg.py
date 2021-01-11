@@ -61,6 +61,7 @@ import hubblestack.utils.platform
 import hubblestack.utils.win_functions
 import hubblestack.template
 import hubblestack.payload
+from urllib.parse import urlparse
 
 log = logging.getLogger(__name__)
 
@@ -402,7 +403,7 @@ def _get_repo_details(saltenv):
     else:
         winrepo_source_dir = __opts__['winrepo_source_dir']
         dirs = [__opts__['cachedir'], 'files', saltenv]
-        url_parts = urllib._urlparse(winrepo_source_dir)
+        url_parts = urlparse(winrepo_source_dir)
         dirs.append(url_parts.netloc)
         dirs.extend(url_parts.path.strip('/').split('/'))
         local_dest = os.sep.join(dirs)

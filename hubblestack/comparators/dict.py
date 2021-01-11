@@ -170,7 +170,7 @@ def _compare_dictionary_values(audit_id, result_to_compare, args, errors):
             _compare_dictionary_values(audit_id, value, args, errors)
         else:
             if 'type' in args:
-                ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(audit_id, args, int(value))
+                ret_status, ret_val = hubblestack.module_runner.comparator.run(audit_id, args, int(value))
                 if not ret_status:
                     errors.append(ret_val)
 

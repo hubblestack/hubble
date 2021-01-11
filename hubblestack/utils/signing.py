@@ -264,12 +264,15 @@ class X509AwareCertBucket:
 
         if public_crt is None:
             public_crt = Options.public_crt
+
         if ca_crt is None:
             ca_crt = Options.ca_crt
 
         if isinstance(ca_crt, (list, tuple)):
             untrusted_crt = ca_crt[1:]
             ca_crt = ca_crt[0]
+        else:
+            untrusted_crt = list()
 
         if not isinstance(public_crt, (list, tuple)):
             public_crt = [ public_crt ]

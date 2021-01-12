@@ -166,10 +166,7 @@ def _get_gcp_details():
     if gcp:
         try:
             # build gcp extra
-            gcp_extra = _build_gcp_extra(gcp_header, proxies)
-            for key in gcp_extra:
-                if not gcp_extra[key]:
-                    gcp_extra.pop(key)
+            gcp_extra = { k:v for k,v in _build_gcp_extra(gcp_header, proxies).items() if v }
         except (requests.exceptions.RequestException, ValueError):
             gcp_extra = None
 

@@ -36,6 +36,7 @@ def verify(*targets, **kw):
     KW Arguments:
         mfname :- the MANIFEST filename (default ./MANIFEST)
         sfname :- the SIGNATURE filename (default ./SIGNATURE)
+        cfname :- the CERTIFICATES filename (default ./CERTIFICATES)
 
         public_crt :- the signing key (default: /etc/hubble/sign/public.crt)
         ca_crt :- the trust chain for the public_crt (default: /etc/hubble/sign/ca-root.crt)
@@ -47,15 +48,16 @@ def verify(*targets, **kw):
 
     mfname = kw.get('mfname', 'MANIFEST')
     sfname = kw.get('sfname', 'SIGNATURE')
+    cfname = kw.get('cfname', 'CERTIFICATES')
     public_crt = kw.get('public_crt', HuS.Options.public_crt)
     ca_crt = kw.get('ca_crt', HuS.Options.ca_crt)
     pwd = os.path.abspath(os.path.curdir)
 
-    log.debug('signing.verify(targets=%s, mfname=%s, sfname=%s, public_crt=%s, ca_crt=%s, pwd=%s)',
-        targets, mfname, sfname, public_crt, ca_crt, pwd)
+    log.debug('signing.verify(targets=%s, mfname=%s, sfname=%s, public_crt=%s, ca_crt=%s, cfname=%s, pwd=%s)',
+        targets, mfname, sfname, public_crt, ca_crt, cfname, pwd)
 
     return dict(HuS.verify_files(targets, mfname=mfname, sfname=sfname,
-        public_crt=public_crt, ca_crt=ca_crt))
+        public_crt=public_crt, ca_crt=ca_crt, extra_crt=cfname))
 
 def enumerate():
     """ enumerate installed certificates """

@@ -72,6 +72,21 @@ verif_log_timestamps = {}
 # maybe set in /etc/hubble/hubble
 verif_log_dampener_lim = 3600
 
+def check_is_ca(crt):
+    try:
+        crt = crt.to_cryptography()
+    except (TypeError, AttributeError):
+        pass
+    try:
+        for e in crt.extensions:
+            try:
+                if e.value.ca:
+                    return True
+            except AttributeError:
+                pass
+    except AttributeError:
+        pass
+    return False
 
 def check_verif_timestamp(target, dampener_limit=None):
     '''This function writes/updates a timestamp cache
@@ -249,36 +264,50 @@ class X509AwareCertBucket:
 
         if public_crt is None:
             public_crt = Options.public_crt
+
         if ca_crt is None:
             ca_crt = Options.ca_crt
-
-        untrusted_crt = list()
 
         if isinstance(ca_crt, (list, tuple)):
             untrusted_crt = ca_crt[1:]
             ca_crt = ca_crt[0]
+        else:
+            untrusted_crt = list()
 
         if not isinstance(public_crt, (list, tuple)):
             public_crt = [ public_crt ]
 
-        if extra_crt:
-            untrusted_crt = list(untrusted_crt)
-            untrusted_crt.append(extra_crt)
+        # load all the certs into cryptography objects
+        ca_crt = list(read_certs(ca_crt)) # no *, only one
+        untrusted_crt = list(read_certs(*untrusted_crt))
+        public_crt = list(read_certs(*public_crt))
 
+        # if there are extra_crts; try to parse them into intermediates and
+        # signing certificates per their basicConstraints.ca header (if any)
+        if extra_crt:
+            if not isinstance(extra_crt, (list,tuple)):
+                extra_crt = [ extra_crt ]
+            for crt in read_certs(*extra_crt):
+                if check_is_ca(crt):
+                    untrusted_crt.append(crt)
+                else:
+                    public_crt.append(crt)
+
+        # build a keyring
         self.store = ossl.X509Store()
         self.trusted = list()
         # NOTE: trusted is mostly useless. We do use it in
         # testing, and that's probably about it
         seconds_day = 86400
         already = set()
-        for i in read_certs(ca_crt):
+        for i in ca_crt:
             log_level = log.debug
             digest = i.digest('sha1')
             if digest in already:
                 continue
             already.add(digest)
             digest = digest.decode() + " " + stringify_ossl_cert(i)
-            self.store.add_cert(i)
+            self.store.add_cert(i) # add cert to keyring as a trusted cert
             self.trusted.append(digest)
             log_level = log.debug
             if check_verif_timestamp(digest, dampener_limit=seconds_day):
@@ -288,7 +317,7 @@ class X509AwareCertBucket:
             log_level('ca cert | file: "%s" | status: %s | digest "%s" | added to verify store',
                     str_ca, status, digest)
 
-        for i in read_certs(*untrusted_crt):
+        for i in untrusted_crt:
             digest = i.digest('sha1')
             if digest in already:
                 continue
@@ -296,7 +325,7 @@ class X509AwareCertBucket:
             digest = digest.decode() + " " + stringify_ossl_cert(i)
             try:
                 ossl.X509StoreContext(self.store, i).verify_certificate()
-                self.store.add_cert(i)
+                self.store.add_cert(i) # add to trusted keyring
                 self.trusted.append(digest)
                 status = STATUS.VERIFIED
                 log_level = log.debug
@@ -315,7 +344,7 @@ class X509AwareCertBucket:
                     str_untrusted, status, digest)
 
         self.public_crt = list()
-        for i in read_certs(*public_crt):
+        for i in public_crt:
             status = STATUS.FAIL
             digest = i.digest('sha1')
             if digest in already:
@@ -362,6 +391,7 @@ class X509AwareCertBucket:
                 log_level('public cert | file: "%s" | status: %s | digest: "%s" | X509 error code: %s | depth: %s | message: "%s"',
                         str_public, status, digest, code, depth, message)
 
+            # add to list of keys we'll use to check signatures:
             self.public_crt.append(self.PublicCertObj(i, digest, status))
 
 

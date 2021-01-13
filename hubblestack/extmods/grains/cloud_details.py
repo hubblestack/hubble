@@ -166,10 +166,7 @@ def _get_gcp_details():
     if gcp:
         try:
             # build gcp extra
-            gcp_extra = _build_gpc_extra(gcp_header, proxies)
-            for key in gcp_extra:
-                if not gcp_extra[key]:
-                    gcp_extra.pop(key)
+            gcp_extra = { k:v for k,v in _build_gcp_extra(gcp_header, proxies).items() if v }
         except (requests.exceptions.RequestException, ValueError):
             gcp_extra = None
 
@@ -178,7 +175,7 @@ def _get_gcp_details():
     return ret
 
 
-def _build_gpc_extra(gcp_header, proxies):
+def _build_gcp_extra(gcp_header, proxies):
     """ Helper function to build the gcp extra dict """
     gcp_extra = {
         'cloud_project_id': requests.get(

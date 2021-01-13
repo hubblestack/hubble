@@ -199,6 +199,11 @@ def _run_osqueryi_query(query, query_sql, timing, verbose):
     # Run the osqueryi query
     cmd = [__grains__['osquerybinpath'], '--read_max', max_file_size, '--json',
           '--augeas_lenses', augeas_lenses, query_sql]
+    
+    if hubblestack.utils.platform.is_windows():
+        # augeas_lenses are not available on windows
+        cmd = [__grains__['osquerybinpath'], '--read_max', max_file_size, '--json',
+                query_sql]
 
     time_start = time.time()
     res = __mods__['cmd.run_all'](cmd, timeout=600)

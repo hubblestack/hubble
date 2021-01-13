@@ -1,0 +1,4 @@
+-r req_win.txt
+cryptography==2.6.1
+pyopenssl==19.0.0
+pygit2==0.27.2

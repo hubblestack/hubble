@@ -54,5 +54,5 @@ def write_cache(cache, opts):
             fp_.write(_cache)
         return True
     except (IOError, OSError):
-        log.error("Failed to cache mounts", exc_info_on_loglevel=logging.DEBUG)
+        log.error("Failed to cache mounts", exc_info=True)
         return False

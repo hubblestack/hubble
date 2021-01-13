@@ -22,7 +22,7 @@ build_dependencies = [
     'pyopenssl>=16.2.0',
     'requests>=2.13.0',
     'daemon',
-    'pygit2<0.27.0',
+    'pygit2==0.27.2',
     'gitpython',
     'pyinotify',
     'cffi',

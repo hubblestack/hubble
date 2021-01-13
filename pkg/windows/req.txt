@@ -1,0 +1,4 @@
+-r req_win.txt
+cryptography
+pyopenssl
+pygit2

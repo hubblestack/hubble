@@ -14,15 +14,16 @@ data_files = [('/usr/lib/systemd/system', ['pkg/source/hubble.service']),
               ('/etc/hubble', ['conf/hubble']), ]
 
 build_dependencies = [
+    'distro',
     'msgpack',
     'pyyaml',
     'objgraph',
     'pycryptodome',
     'cryptography',
-    'pyopenssl>=16.2.0',
+    'pyopenssl',
     'requests>=2.13.0',
     'daemon',
-    'pygit2<0.27.0',
+    'pygit2',
     'gitpython',
     'pyinotify',
     'cffi',

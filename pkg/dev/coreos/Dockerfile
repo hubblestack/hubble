@@ -91,7 +91,7 @@ RUN apt-get install -y libbz2-dev libsqlite3-dev \
  && rm -rf /var/cache/apt
 
 # use pyenv
-ARG PYENV_VERSION=3.6.10
+ARG PYENV_VERSION=3.7.0
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
 ENV PYENV_ROOT=/opt/hubble/pyenv
 ENV PATH=$PYENV_ROOT/bin:$PATH

@@ -1187,7 +1187,7 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
                         'Exception raised when processing __virtual__ function'
                         ' for {0}. Module will not be loaded: {1}'.format(
                             mod.__name__, exc))
-                    log.error(error_reason, exc_info_on_loglevel=logging.DEBUG)
+                    log.error(error_reason, exc_info=True)
                     virtual = None
                 # Get the module's virtual name
                 virtualname = getattr(mod, '__virtualname__', virtual)

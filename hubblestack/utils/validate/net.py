@@ -9,7 +9,7 @@ import socket
 import hubblestack.utils.platform
 
 if hubblestack.utils.platform.is_windows():
-    from hubblestack.ext import win_inet_pton  # pylint: disable=unused-import
+    from hubblestack.utils.validate import win_inet_pton  # pylint: disable=unused-import
 
 
 def mac(addr):

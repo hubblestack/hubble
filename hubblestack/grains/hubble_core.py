@@ -52,6 +52,10 @@ try:
 except ImportError:
     from distro import linux_distribution
 
+
+from inspect import getfullargspec
+isFipsEnabled = True if 'usedforsecurity' in getfullargspec(hashlib.new).kwonlyargs else False
+
 import hubblestack.exceptions
 import hubblestack.log
 import hubblestack.utils.dns
@@ -2749,7 +2753,10 @@ def get_server_id():
         return {}
 
     id_ = __opts__.get('id', '')
-    md5 = hashlib.md5()
+    if isFipsEnabled:
+        md5 = hashlib.md5(usedforsecurity=False)
+    else:
+        md5 = hashlib.md5()
     md5.update( str(id_).encode() )
     id_hash = int( md5.hexdigest(), 16 )
 

@@ -17,6 +17,7 @@ import hubblestack.status
 hubble_status = hubblestack.status.HubbleStatus(__name__)
 
 from . dq import DiskQueue, NoQueue, QueueCapacityError
+from inspect import getfullargspec
 from hubblestack.utils.stdrec import update_payload
 from hubblestack.utils.encoding import encode_something_to_bytes
 
@@ -29,6 +30,8 @@ http_event_collector_debug = False
 # are hashed into an md5 string that identifies the URL set
 # these maximums are per URL set, not for the entire disk cache
 max_diskqueue_size  = 10 * (1024 ** 2)
+isFipsEnabled = True if 'usedforsecurity' in getfullargspec(hashlib.new).kwonlyargs else False
+
 
 def count_input(payload):
     hs_key = ':'.join(['input', payload.sourcetype])
@@ -257,7 +260,10 @@ class HEC(object):
             self.pool_manager = urllib3.PoolManager(**pm_kw)
 
         if disk_queue:
-            md5 = hashlib.md5()
+            if isFipsEnabled:
+                md5 = hashlib.md5(usedforsecurity=False)
+            else:
+                md5 = hashlib.md5()
             uril = sorted([ x.uri for x in self.server_uri ])
             for u in uril:
                 md5.update(encode_something_to_bytes(u))

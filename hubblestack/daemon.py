@@ -459,6 +459,13 @@ def load_config(args=None):
     # it will default to a platform specific file (see get_config() and DEFAULT_OPTS in hs.config)
     __opts__ = hubblestack.config.get_config(parsed_args.get('configfile'))
 
+
+    # Loading default included config options and updating them in the main __opts__
+    default_include_config_options = hubblestack.config.include_config(
+        __opts__.get('default_include'), __opts__.get('conf_file'), verbose=False
+    )
+    __opts__.update(default_include_config_options)
+
     # we seem to have mixed feelings about whether to use __opts__ or parsed_args and mixed feelings
     # about whether it's spelled 'configfile' or 'conf_file'; so we just make them all work
     __opts__['configfile'] = parsed_args['configfile'] = __opts__['conf_file']

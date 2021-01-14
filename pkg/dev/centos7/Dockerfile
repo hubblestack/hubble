@@ -122,7 +122,7 @@ RUN /opt/osquery/osqueryi --version
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
 ARG HUBBLE_CHECKOUT=v4.0.1
-ENV HUBBLE_VERSION=4.0.1
+ARG HUBBLE_VERSION=4.0.1
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
@@ -141,5 +141,6 @@ WORKDIR /hubble_build
 
 COPY entrypoint.sh /entrypoint.sh
 ENV HUBBLE_CHECKOUT_ENV=$HUBBLE_CHECKOUT
+ENV HUBBLE_VERSION_ENV=$HUBBLE_VERSION
 ENV HUBBLE_GIT_URL_ENV=$HUBBLE_GIT_URL
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

@@ -1,5 +1,12 @@
 #!/bin/bash
 #Moving hubble source code logic in the shell script
+
+# if ENTRYPOINT is given a CMD other than nothing
+# abort here and do that other CMD
+if [ $# -gt 0 ]
+then exec "$@"
+fi
+
 set -x -e
 git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
 cd "${HUBBLE_SRC_PATH}"
@@ -21,12 +28,6 @@ python_binary="$(pyenv which python)"
 while [ -L "$python_binary" ]
 do python_binary="$(readlink -f "$python_binary")"
 done
-
-# if ENTRYPOINT is given a CMD other than nothing
-# abort here and do that other CMD
-if [ $# -gt 0 ]
-then exec "$@"
-fi
 
 # from now on, exit on error (rather than && every little thing)
 PS4=$'-------------=: '
@@ -126,7 +127,7 @@ if [ -d /data/opt ]
 then cp -r /data/opt/* /opt
 fi
 
-PKG_FILE="/data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.coreos.tar.gz"
+PKG_FILE="/data/hubblestack-${HUBBLE_VERSION_ENV}-${HUBBLE_ITERATION}.coreos.tar.gz"
 
 tar -cSPvvzf "$PKG_FILE" \
     --exclude opt/hubble/pyenv \

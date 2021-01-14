@@ -91,8 +91,8 @@ RUN choco install git nssm -y;
 RUN choco install osquery --version 3.4.0 -y;
 
 #All the variables used for hubble
-ARG HUBBLE_CHECKOUT=v4.0.0
-ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
+ARG HUBBLE_CHECKOUT=audit_fdg_comparator
+ARG HUBBLE_GIT_URL=https://github.com/goravsingal/hubble.git
 ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 #Clone Hubble
 

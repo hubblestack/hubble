@@ -201,10 +201,13 @@ def validate_params(block_id, block_dict, extra_args=None):
     """
     log.debug('Module: win_auditpol. Start validating params for check-id: {0}'.format(block_id))
     error = {}
-    chained_name = runner_utils.get_chained_param(extra_args)
-    name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+    chained_result = runner_utils.get_chained_param(extra_args)
+    if chained_result:
+        name = chained_result.get('name')
+    else:
+        name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     # fetch required param
-    if not name and not chained_name:
+    if not name:
         error['name'] = 'Mandatory parameter: name not found for id: %s' % block_id
 
     if error:
@@ -231,8 +234,10 @@ def execute(block_id, block_dict, extra_args=None):
     """
     log.debug('Executing win_auditpol module for id: {0}'.format(block_id))
     # fetch required param
-    name = runner_utils.get_chained_param(extra_args)
-    if not name:
+    chained_result = runner_utils.get_chained_param(extra_args)
+    if chained_result:
+        name = chained_result.get('name')
+    else:
         name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
 
     __auditdata__ = _auditpol_import()

@@ -252,12 +252,13 @@ def validate_params(block_id, block_dict, extra_args=None):
     error = {}
 
     # fetch required param
-    chained_pkg_name = None
     chained_result = runner_utils.get_chained_param(extra_args)
     if chained_result:
-        chained_pkg_name = chained_result
-    pkg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
-    if not chained_pkg_name and not pkg_name:
+        pkg_name = chained_result.get('name')
+    else:
+        pkg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+
+    if not pkg_name:
         error['name'] = 'Mandatory parameter: name not found for id: %s' % block_id
 
     if error:

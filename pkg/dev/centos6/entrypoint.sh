@@ -1,7 +1,17 @@
 #!/bin/bash
 #Moving hubble source code logic in the shell script
+
+# if ENTRYPOINT is given a CMD other than nothing
+# abort here and do that other CMD
+if [ $# -gt 0 ]
+then exec "$@"
+fi
+
 set -x -e
-git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+if [ ! -d "${HUBBLE_SRC_PATH}" ]
+then git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+fi
+
 cd "${HUBBLE_SRC_PATH}"
 git checkout "${HUBBLE_CHECKOUT_ENV}"
 
@@ -9,9 +19,10 @@ cp -rf "${HUBBLE_SRC_PATH}"/* /hubble_build
 rm -rf /hubble_build/.git
 
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.orig
-
 sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT_ENV}/g" -e "s/COMMIT_NOT_SET/$(cd ${HUBBLE_SRC_PATH}; git describe --long --always --tags)/g" /hubble_build/hubblestack/__init__.py
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixed
+
+sed -i -e "s/'.*'/'$HUBBLE_VERSION_ENV'/g" /hubble_build/hubblestack/version.py
 
 eval "$(pyenv init -)"
 
@@ -21,12 +32,6 @@ python_binary="$(pyenv which python)"
 while [ -L "$python_binary" ]
 do python_binary="$(readlink -f "$python_binary")"
 done
-
-# if ENTRYPOINT is given a CMD other than nothing
-# abort here and do that other CMD
-if [ $# -gt 0 ]
-then exec "$@"
-fi
 
 # from now on, exit on error (rather than && every little thing)
 PS4=$'-------------=: '
@@ -69,11 +74,13 @@ cd /hubble_build
 
 # we may have preinstalled requirements that may need upgrading
 # pip install . might not upgrade/downgrade the requirements
+pip install pip==20.2 wheel
 python setup.py egg_info
 pip install --upgrade \
     -r hubblestack.egg-info/requires.txt \
     -r optional-requirements.txt \
     -r package-requirements.txt
+pip freeze > /data/requirements.txt
 
 [ -f ${_HOOK_DIR:-./pkg}/hook-hubblestack.py ] || exit 1
 
@@ -137,7 +144,7 @@ if [ "X$NO_TAR" = X1 ]; then
 fi 2>/dev/null
 
 # rpm pkg start
-tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz \
+tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION_ENV}.tar.gz \
     --exclude opt/hubble/pyenv \
     /etc/hubble /opt/hubble /opt/osquery \
     /etc/profile.d/hubble-profile.sh \
@@ -145,19 +152,19 @@ tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz \
     /var/log/hubble_osquery/backuplogs \
     2>&1 | tee /hubble_build/rpm-pkg-start-tar.log
 
-PKG_STRUCT_DIR=/hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
-mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
-tar -xSzvvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C $PKG_STRUCT_DIR
+PKG_STRUCT_DIR=/hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}
+mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}
+tar -xSzvvf /data/hubblestack-${HUBBLE_VERSION_ENV}.tar.gz -C $PKG_STRUCT_DIR
 
 # also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
 if [ -d /data/opt ]
-then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/opt/
+then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}/opt/
 fi
 
 # symlink to have hubble binary in path
-cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
+cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}
 mkdir -p usr/bin
-ln -s /opt/hubble/hubble usr/bin/hubble
+ln -sf /opt/hubble/hubble usr/bin/hubble
 
 if [ "X$NO_FPM" = X1 ]; then
     echo "exiting (as requested by NO_FPM=$NO_FPM) without building package"
@@ -167,7 +174,7 @@ fi
 # fpm start
 scl enable rh-ruby23 'fpm -s dir -t rpm \
     -n hubblestack \
-    -v ${HUBBLE_VERSION} \
+    -v ${HUBBLE_VERSION_ENV} \
     --iteration ${HUBBLE_ITERATION} \
     --url ${HUBBLE_URL} \
     --description "${HUBBLE_DESCRIPTION}" \
@@ -178,7 +185,7 @@ scl enable rh-ruby23 'fpm -s dir -t rpm \
     etc/hubble etc/init.d opt usr /var/log/hubble_osquery/backuplogs'
 
 # edit to change iteration number, if necessary
-PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
+PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION_ENV}-${HUBBLE_ITERATION}
 PKG_OUT_EXT=x86_64.rpm
 PKG_FIN_EXT=el6.$PKG_OUT_EXT
 PKG_ONAME="$PKG_BASE_NAME.$PKG_OUT_EXT"

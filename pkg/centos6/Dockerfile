@@ -11,6 +11,8 @@
 
 FROM centos:6
 
+COPY centos-vault.repo /etc/yum.repos.d/CentOS-Base.repo
+
 RUN yum makecache fast && yum -y update
 
 #paths that hubble or hubble parts need in the package

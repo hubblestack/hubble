@@ -27,12 +27,12 @@ packaging
 patch==1.*
 psutil
 pycryptodome
-pygit2==0.27.2
+pygit2
 pyinotify
 pyinstaller
 pyinstaller-hooks
 pylint
-pyopenssl>=16.2.0
+pyopenssl
 pyparsing
 pytest
 pytest-cov

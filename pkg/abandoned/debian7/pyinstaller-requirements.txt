@@ -3,13 +3,13 @@ Tornado>=4.0.0,<5.0.0
 crypto
 pycryptodome
 cryptography
-pyopenssl>=16.2.0
+pyopenssl
 argparse
 requests>=2.13.0
 daemon
 boto3
 botocore
-pygit2==0.27.2
+pygit2
 salt-ssh
 gitpython
 pyinotify

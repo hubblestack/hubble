@@ -11,6 +11,9 @@
 
 FROM centos:6
 
+COPY centos-vault.repo /etc/yum.repos.d/CentOS-Base.repo
+COPY centos-sclo.pub /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-SCLo
+
 RUN yum makecache fast && yum -y update
 
 #paths that hubble or hubble parts need in the package
@@ -85,10 +88,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && rm -rf "$LIBGIT2TEMP"
 
 #fpm package making requirements start
-RUN yum install -y centos-release-scl scl-utils \
- && yum clean all \
- && rm -rf /var/cache/yum
-RUN yum install -y rpmbuild rpm-build gcc make rh-ruby23 rh-ruby23-ruby-devel \
+RUN yum install -y scl-utils rpmbuild rpm-build gcc make rh-ruby23 rh-ruby23-ruby-devel \
  && yum clean all \
  && rm -rf /var/cache/yum
 RUN scl enable rh-ruby23 "gem install --no-ri --no-rdoc fpm"

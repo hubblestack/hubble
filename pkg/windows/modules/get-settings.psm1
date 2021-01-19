@@ -15,9 +15,9 @@ Function Get-Settings {
         # Location where the files are kept
         $Settings = @{
             "SaltRepo"    = "https://repo.saltstack.com/windows/dependencies"
-            "Python3Dir"   = "C:\Python38"
-            "Scripts3Dir"  = "C:\Python38\Scripts"
-            "SitePkgs3Dir" = "C:\Python38\Lib\site-packages"
+            "Python3Dir"   = "C:\Python37"
+            "Scripts3Dir"  = "C:\Python37\Scripts"
+            "SitePkgs3Dir" = "C:\Python37\Lib\site-packages"
             "DownloadDir" = "$env:Temp\DevSalt"
             }
         # The script deletes the DownLoadDir (above) for each install.

@@ -20,9 +20,9 @@ RUN New-Item C:/temp -ItemType Directory; \
 WORKDIR C:/temp
 VOLUME C:/data
 
-#Installing Python 3.8.0
-ENV PYTHON_VERSION 3.8.0
-ENV PYTHON_RELEASE 3.8.0
+#Installing Python 3.7.0
+ENV PYTHON_VERSION 3.7.0
+ENV PYTHON_RELEASE 3.7.0
 
 RUN $url = ('https://www.python.org/ftp/python/{0}/python-{1}-amd64.exe' -f $env:PYTHON_RELEASE, $env:PYTHON_VERSION); \
 	Write-Host ('Downloading {0} ...' -f $url); \
@@ -30,12 +30,12 @@ RUN $url = ('https://www.python.org/ftp/python/{0}/python-{1}-amd64.exe' -f $env
 	Invoke-WebRequest -Uri $url -OutFile 'python.exe'; \
 	\
 	Write-Host 'Installing ...'; \
-# https://docs.python.org/3.8/using/windows.html#installing-without-ui
+# https://docs.python.org/3.7/using/windows.html#installing-without-ui
 	Start-Process python.exe -Wait \
 		-ArgumentList @( \
 			'/quiet', \
 			'InstallAllUsers=1', \
-			'TargetDir=C:\Python38', \
+			'TargetDir=C:\Python37', \
 			'PrependPath=1', \
 			'Shortcuts=0', \
 			'Include_doc=0', \

@@ -206,11 +206,13 @@ def read_certs(*fnames):
             siofh = cStringIO.StringIO(fname)
             siofh.name = '<a string>'
             for i in split_certs(siofh):
+                i.source_filename = '<string>'
                 yield i
         elif os.path.isfile(fname):
             try:
                 with open(fname, 'r') as fh:
                     for i in split_certs(fh):
+                        i.source_filename = fname
                         yield i
             except Exception as exception_object:
                 log_level = log.debug
@@ -222,7 +224,9 @@ def read_certs(*fnames):
 def stringify_cert_files(cert):
     """this function returns a string version of cert(s) for returner"""
     if isinstance(cert, (tuple,list)) and cert:
-        return ', '.join([str(c) for c in cert])
+        return ', '.join([stringify_cert_files(c) for c in cert])
+    elif hasattr(cert, 'source_filename'):
+        return cert.source_filename
     elif hasattr(cert, 'name'):
         # probably a file handle
         return cert.name

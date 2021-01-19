@@ -540,8 +540,8 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
 
-    args = { 'signature': sig, 'data': digest }
     for crt,txt,status in x509.public_crt:
+        args = { 'signature': sig, 'data': digest }
         log_level = log.debug
         sha256sum = hash_target(fname)
         pubkey = crt.get_pubkey().to_cryptography_key()

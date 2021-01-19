@@ -555,6 +555,12 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
             log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
                     short_fname, fname, status, sha256sum, txt)
             return status
+        except TypeError as tee:
+            status = STATUS.FAIL
+            log.critical('%s | file "%s" | status: %s | internal error using %s.verify() (%s): %s',
+                    short_fname, fname, status,
+                    type(pubkey).__name__,
+                    stringify_cert_files(crt), tee)
         except InvalidSignature:
             status = STATUS.FAIL
             if check_verif_timestamp(fname):

@@ -561,7 +561,6 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
                 log_level = log.critical
             log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
                     short_fname, fname, status, sha256sum, txt)
-            pass
     return STATUS.FAIL
 
 

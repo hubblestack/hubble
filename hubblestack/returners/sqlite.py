@@ -125,7 +125,7 @@ def _open_close_conn(func):
         if not kwargs['conn']:
             log.exception('failed to retrieve sqlite connection object')
             return
-        results = func(*args, **kwargs)
+        results = func(args[0], **kwargs)
         _close_connection(kwargs['conn'])
         return results
 
@@ -187,13 +187,17 @@ def get_load(jid, conn=None):
 @_open_close_conn
 def _insert_helper(ret, conn=None):
     log.debug('populating jids table with %s', ret.get('jid'))
+    ret_jid = ret.get('jid', '') 
+    ret_return = ret.get('return', '')
+    fun = ret.get('fun', '')
+    fun_args = ret.get('fun_args', '')
     conn.execute('''INSERT INTO  jids (id, jid, load)
-    VALUES((SELECT IFNULL(MAX(id), 0) + 1 FROM jids),?,?);''', (ret.get('jid'), ret.get('return')))
+    VALUES((SELECT IFNULL(MAX(id), 0) + 1 FROM jids),?,?);''', (ret_jid, json.dumps(ret_return)))
 
-    log.debug('populating ret table with jid %s'.ret.get('jid'))
+    log.debug('populating ret table with jid %s', ret_jid)
     conn.execute('''INSERT INTO  ret (id, jid, fun, fun_args, return_data)
-    VALUES((SELECT IFNULL(MAX(id), 0) + 1 FROM ret),?,?,?,?,?,?);''',
-                 (ret.get('jid'), ret.get('fun'), ret.get('fun_args'), ret.get('return')))
+    VALUES((SELECT IFNULL(MAX(id), 0) + 1 FROM ret),?,?,?,?);''',
+                 (ret_jid, fun, fun_args, json.dumps(ret_return)))
 
 
 def _insert(ret, conn=None):

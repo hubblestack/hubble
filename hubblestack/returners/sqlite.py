@@ -187,10 +187,10 @@ def get_load(jid, conn=None):
 @_open_close_conn
 def _insert_helper(ret, conn=None):
     log.debug('populating jids table with %s', ret.get('jid'))
-    ret_jid = '' if ret.get('jid') is None else ret.get('jid')
-    ret_return = '' if ret.get('return') is None else ret.get('return')
-    fun = '' if ret.get('fun') is None else ret.get('fun')
-    fun_args = '' if ret.get('fun_args') is None else ret.get('fun_args')
+    ret_jid = ret.get('jid', '') 
+    ret_return = ret.get('return', '')
+    fun = ret.get('fun', '')
+    fun_args = ret.get('fun_args', '')
     conn.execute('''INSERT INTO  jids (id, jid, load)
     VALUES((SELECT IFNULL(MAX(id), 0) + 1 FROM jids),?,?);''', (ret_jid, json.dumps(ret_return)))
 

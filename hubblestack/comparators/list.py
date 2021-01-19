@@ -160,7 +160,7 @@ def match(audit_id, result_to_compare, args):
         log.error("empty list received in list::match for audit_id: {0}".format(audit_id))
         return False, "list::match failure. {0} is not an instance of list".format(result_to_compare)
     if is_integer(result_to_compare[0]):
-        ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
+        ret_status, ret_val = hubblestack.module_runner.comparator.run(
             audit_id,
             {"type": "number", "match": expected_list[0]},
             int(result_to_compare[0]))
@@ -194,7 +194,7 @@ def match_any(audit_id, result_to_compare, args):
 
     for r_compare in result_to_compare:
         if is_integer(r_compare):
-            ret_status, ret_val = hubblestack.extmods.module_runner.comparator.run(
+            ret_status, ret_val = hubblestack.module_runner.comparator.run(
                 audit_id,
                 {"type": "number", "match_any": args['match_any']},
                 int(r_compare))

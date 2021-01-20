@@ -280,7 +280,7 @@ class TestListMatchAny(TestCase):
 
 class TestListMatchAnyIfKeyMatches(TestCase):
     """
-    Unit tests for list::match_any_if_key_matches comparator
+    Unit tests for list::match_any_if_keyvalue_matches comparator
     """
 
     def test_match1(self):
@@ -304,7 +304,7 @@ class TestListMatchAnyIfKeyMatches(TestCase):
 
         with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (False, "Fail")
-            status, result = list_comparator.match_any_if_key_matches("test-1", result_to_compare, args)
+            status, result = list_comparator.match_any_if_keyvalue_matches("test-1", result_to_compare, args)
             self.assertFalse(status)
 
     def test_match2(self):
@@ -328,7 +328,7 @@ class TestListMatchAnyIfKeyMatches(TestCase):
 
         with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "pass_as_key_not_found")
-            status, result = list_comparator.match_any_if_key_matches("test-1", result_to_compare, args)
+            status, result = list_comparator.match_any_if_keyvalue_matches("test-1", result_to_compare, args)
             self.assertTrue(status)
 
     def test_match3(self):
@@ -352,7 +352,7 @@ class TestListMatchAnyIfKeyMatches(TestCase):
 
         with patch('hubblestack.module_runner.comparator') as comparator_mock:
             comparator_mock.run.return_value = (True, "Pass")
-            status, result = list_comparator.match_any_if_key_matches("test-1", result_to_compare, args)
+            status, result = list_comparator.match_any_if_keyvalue_matches("test-1", result_to_compare, args)
             self.assertTrue(status)
 
 

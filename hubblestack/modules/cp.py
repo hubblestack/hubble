@@ -68,6 +68,23 @@ def get_file(path,
                 saltenv,
                 gzip)
 
+def hash_file(path, saltenv='base'):
+    '''
+    Return the hash of a file, to get the hash of a file on the
+    salt master file server prepend the path with salt://<file on server>
+    otherwise, prepend the file with / for a local file.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' cp.hash_file salt://path/to/file
+    '''
+    path, senv = hubblestack.utils.url.split_env(path)
+    if senv:
+        saltenv = senv
+
+    return _client().hash_file(path, saltenv)
 
 def cache_file(path, saltenv="base", source_hash=None):
     """

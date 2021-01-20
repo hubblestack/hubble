@@ -1,5 +1,5 @@
 azure==4.0.0
-azure-storage-common==2.1.0
-azure-storage-blob==2.1.0
+azure-storage-common~=1.4
+azure-storage-blob~=1.3
 boto3
 botocore

@@ -2,7 +2,7 @@ Push-Location C:/temp/hubble;
 #Create pyinstaller spec and edit it to work with windows
 pyi-makespec --additional-hooks-dir=$env:_HOOK_DIR ./hubble.py;
 $specFile = Get-Content -Path ./hubble.spec;
-$specFile = $specFile -replace 'a.binaries','a.binaries + [(''libeay32.dll'', ''C:\Python35\libeay32.dll'', ''BINARY'')]';
+$specFile = $specFile -replace 'a.binaries','a.binaries + [(''libeay32.dll'', ''C:\Python37\libeay32.dll'', ''BINARY'')]';
 Set-Content -Path ./hubble.spec -Value $specFile -Force;
 pyinstaller ./hubble.spec;
 Pop-Location;

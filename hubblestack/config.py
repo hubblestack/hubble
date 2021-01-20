@@ -663,16 +663,16 @@ VALID_OPTS = {
 
     # TO REMOVE: see below # # The source location for the winrepo sls files
     # TO REMOVE: see below # # (used by win_pkg.py, minion only)
-    # TO REMOVE: see below # "winrepo_source_dir": str,
+    "winrepo_source_dir": str,
     # TO REMOVE: see below # "winrepo_dir": str,
     # TO REMOVE: see below # "winrepo_dir_ng": str,
-    # TO REMOVE: see below # "winrepo_cachefile": str,
+    "winrepo_cachefile": str,
     # TO REMOVE: see below # # NOTE: winrepo_branch omitted here because its value could conceivably be
     # TO REMOVE: see below # # loaded as a non-string type, which is OK because winrepo will normalize
     # TO REMOVE: see below # # them to strings. But rather than include all the possible types it could
     # TO REMOVE: see below # # be, we'll just skip type-checking.
-    # TO REMOVE: see below # "winrepo_cache_expire_max": int,
-    # TO REMOVE: see below # "winrepo_cache_expire_min": int,
+    "winrepo_cache_expire_max": int,
+    "winrepo_cache_expire_min": int,
     # TO REMOVE: see below # "winrepo_remotes": list,
     # TO REMOVE: see below # "winrepo_remotes_ng": list,
     # TO REMOVE: see below # "winrepo_ssl_verify": bool,

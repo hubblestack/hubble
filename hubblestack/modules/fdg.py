@@ -128,7 +128,7 @@ log = logging.getLogger(__name__)
 __fdg__ = None
 __returners__ = None
 RETURNER_ID_BLOCK = None
-BASE_DIR_FDG_PROFILES = 'fdg'
+BASE_DIR_FDG_PROFILES = 'fdg_v2'
 
 def fdg(fdg_file, starting_chained=None):
     """

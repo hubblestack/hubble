@@ -64,7 +64,7 @@ def _get_splunk_options(space, modality, **kw):
         'port': confg('splunk_port', '8088'),
         'custom_fields': [],
         'sourcetype': 'hubble_log',
-        'http_event_server_ssl': True,
+        'http_event_server_ssl': confg('http_event_server_ssl', True),
         'proxy': confg('https_proxy', None),
         'timeout': 9.05,
         'index_extracted_fields': [],

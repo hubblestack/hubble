@@ -15,7 +15,7 @@ env:
     LD_LIBRARY_PATH: ${LIBGIT2}/lib:${LD_LIBRARY_PATH}
 
 python:
-  - "3.9"
+  - "3.6.10"
   - "3.7"
   - "3.8"
 

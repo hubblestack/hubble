@@ -293,7 +293,7 @@ class TestListMatchAnyIfKeyMatches(TestCase):
         ]
         args = {
             "type": "list",
-            "match_any_if_key_matches": {
+            "match_any_if_keyvalue_matches": {
                 "match_key": "name",
                 "args": [
                     {"name": "abc", "status": True},
@@ -317,7 +317,7 @@ class TestListMatchAnyIfKeyMatches(TestCase):
         ]
         args = {
             "type": "list",
-            "match_any_if_key_matches": {
+            "match_any_if_keyvalue_matches": {
                 "match_key": "name",
                 "args": [
                     {"name": "abc", "status": True},
@@ -341,7 +341,7 @@ class TestListMatchAnyIfKeyMatches(TestCase):
         ]
         args = {
             "type": "list",
-            "match_any_if_key_matches": {
+            "match_any_if_keyvalue_matches": {
                 "match_key": "name",
                 "args": [
                     {"name": "abc", "status": True},

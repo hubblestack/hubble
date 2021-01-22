@@ -206,11 +206,13 @@ def read_certs(*fnames):
             siofh = cStringIO.StringIO(fname)
             siofh.name = '<a string>'
             for i in split_certs(siofh):
+                i.source_filename = '<string>'
                 yield i
         elif os.path.isfile(fname):
             try:
                 with open(fname, 'r') as fh:
                     for i in split_certs(fh):
+                        i.source_filename = fname
                         yield i
             except Exception as exception_object:
                 log_level = log.debug
@@ -222,7 +224,9 @@ def read_certs(*fnames):
 def stringify_cert_files(cert):
     """this function returns a string version of cert(s) for returner"""
     if isinstance(cert, (tuple,list)) and cert:
-        return ', '.join([str(c) for c in cert])
+        return ', '.join([stringify_cert_files(c) for c in cert])
+    elif hasattr(cert, 'source_filename'):
+        return cert.source_filename
     elif hasattr(cert, 'name'):
         # probably a file handle
         return cert.name
@@ -536,8 +540,8 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
 
-    args = { 'signature': sig, 'data': digest }
     for crt,txt,status in x509.public_crt:
+        args = { 'signature': sig, 'data': digest }
         log_level = log.debug
         sha256sum = hash_target(fname)
         pubkey = crt.get_pubkey().to_cryptography_key()
@@ -551,13 +555,18 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
             log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
                     short_fname, fname, status, sha256sum, txt)
             return status
+        except TypeError as tee:
+            status = STATUS.FAIL
+            log.critical('%s | file "%s" | status: %s | internal error using %s.verify() (%s): %s',
+                    short_fname, fname, status,
+                    type(pubkey).__name__,
+                    stringify_cert_files(crt), tee)
         except InvalidSignature:
             status = STATUS.FAIL
             if check_verif_timestamp(fname):
                 log_level = log.critical
             log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
                     short_fname, fname, status, sha256sum, txt)
-            pass
     return STATUS.FAIL
 
 

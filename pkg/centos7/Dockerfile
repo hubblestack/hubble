@@ -103,7 +103,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 COPY pyinstaller-requirements.txt /
 #default python-pip from yum does not like upgrading itself from pip. looking for better options other than wget.
 RUN wget -c https://bootstrap.pypa.io/get-pip.py \
- && python get-pip.py pip=20.2 \
+ && python get-pip.py pip==20.2 \
  && pip -v install -r pyinstaller-requirements.txt
 
 #fpm package making requirements start

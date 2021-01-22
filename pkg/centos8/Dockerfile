@@ -24,7 +24,7 @@ RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osque
 #to build, osquery scripts want sudo and a user to sudo with.
 ENV OSQUERY_BUILD_USER=osquerybuilder
 RUN dnf -y install dnf-plugins-core \
- && dnf config-manager --set-enabled PowerTools \
+ && dnf config-manager --set-enabled powertools \
  && dnf -y install python2 git make ruby sudo which doxygen \
  && ln -svf /usr/bin/python2 /usr/bin/python
 ENV OSQUERY_BUILD_USER=osquerybuilder

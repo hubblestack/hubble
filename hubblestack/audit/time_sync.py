@@ -300,7 +300,10 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
 
 
 def _get_ntp_servers(block_id, block_dict, extra_args):
-    ntp_servers = runner_utils.get_param_for_module(block_id, block_dict, 'ntp_servers')
+    try:
+        ntp_servers = runner_utils.get_param_for_module(block_id, block_dict, 'ntp_servers')
+    except Exception:
+        log.debug("Input profile %s does not contain ntp_servers", block_id)
     ntp_servers_chained = runner_utils.get_chained_param(extra_args)
 
     extend_chained = runner_utils.get_param_for_module(block_id, block_dict, 'extend_chained', True)
@@ -311,7 +314,10 @@ def _get_ntp_servers(block_id, block_dict, extra_args):
         else:
             ntp_servers = ntp_servers_chained
 
-    return ntp_servers
+    if ntp_servers:
+        return ntp_servers
+    else:
+        return ntp_servers_chained
 
 
 def _query_ntp_server(ntp_server):

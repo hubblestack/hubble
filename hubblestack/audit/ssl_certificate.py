@@ -244,8 +244,7 @@ def validate_params(block_id, block_dict, extra_args=None):
     log.debug('Module: ssl_certificate Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
-    chain_args = extra_args.get('chaining_args')
-    endpoint_chained = runner_utils.get_chained_param(chain_args)
+    endpoint_chained = runner_utils.get_chained_param(extra_args)
     if endpoint_chained:
         host_ip = endpoint_chained.get('host_ip')
         host_port = endpoint_chained.get('host_port')
@@ -293,8 +292,7 @@ def execute(block_id, block_dict, extra_args=None):
     """
     start_time = time.time()
     log.debug('Executing ssl_certificate module for id: {0}'.format(block_id))
-    chain_args = extra_args.get('chaining_args') if extra_args else None
-    endpoint_chained = runner_utils.get_chained_param(chain_args)
+    endpoint_chained = runner_utils.get_chained_param(extra_args)
     if endpoint_chained:
         host_ip = endpoint_chained.get('host_ip')
         host_port = endpoint_chained.get('host_port')

@@ -35,7 +35,7 @@ def get_param_for_module(block_id, block_dict, param_name, default_value=None):
     if 'args' not in block_dict:
         return default_value
 
-    if param_name in block_dict['args']:
+    if block_dict['args'] and param_name in block_dict['args']:
         return block_dict['args'][param_name]
 
     return default_value

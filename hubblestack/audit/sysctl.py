@@ -196,10 +196,11 @@ def validate_params(block_id, block_dict, extra_args=None):
     log.debug('Module: sysctl Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
-    name_param_chained = runner_utils.get_chained_param(extra_args)
-    name_param = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+    name = runner_utils.get_chained_param(extra_args)
+    if not name:
+        name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
 
-    if not name_param_chained and not name_param:
+    if not name:
         error['name'] = 'Mandatory parameter: name not found for id: %s' %(block_id)
 
     if error:

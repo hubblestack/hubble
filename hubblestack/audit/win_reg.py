@@ -229,7 +229,7 @@ def execute(block_id, block_dict, extra_args=None):
 
     chained_result = runner_utils.get_chained_param(extra_args)
     if chained_result:
-        reg_name = chained_result
+        reg_name = chained_result.get("name")
     else:
         reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     reg_dict = _reg_path_splitter(reg_name)
@@ -267,9 +267,10 @@ def validate_params(block_id, block_dict, extra_args=None):
 
     # fetch required param
     chained_pkg_name = None
+    reg_name = None
     chained_result = runner_utils.get_chained_param(extra_args)
     if chained_result:
-        chained_pkg_name = chained_result
+        chained_pkg_name = chained_result.get("name")
     else:
         reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     if not chained_pkg_name and not reg_name:

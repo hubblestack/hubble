@@ -240,7 +240,7 @@ def execute(block_id, block_dict, extra_args=None):
     log.debug('Executing win_secedit module for id: {0}'.format(block_id))
     chained_result = runner_utils.get_chained_param(extra_args)
     if chained_result:
-        sec_name = chained_result
+        sec_name = chained_result.get("name")
     else:
         sec_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
 
@@ -298,9 +298,10 @@ def validate_params(block_id, block_dict, extra_args=None):
 
     # fetch required param
     chained_pkg_name = None
+    sec_name = None
     chained_result = runner_utils.get_chained_param(extra_args)
     if chained_result:
-        chained_pkg_name = chained_result
+        chained_pkg_name = chained_result.get("name")
     else:
         sec_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     if not chained_pkg_name and not sec_name:

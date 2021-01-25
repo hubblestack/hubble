@@ -113,7 +113,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 #must be preceded by libgit2 install
 COPY pyinstaller-requirements.txt /
 #default python-pip from yum does not like upgrading itself from pip. looking for better options other than wget.
-RUN wget -c https://bootstrap.pypa.io/get-pip.py \
+RUN wget -c https://bootstrap.pypa.io/3.4/get-pip.py \
  && yum -y install centos-release-scl \
  && yum -y install python27 \
  && yum clean all \

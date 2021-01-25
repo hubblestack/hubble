@@ -311,6 +311,8 @@ def _get_ntp_servers(block_id, block_dict, extra_args):
         else:
             ntp_servers = ntp_servers_chained
 
+    if ntp_servers and not isinstance(ntp_servers, list):
+        ntp_servers = [ntp_servers]
     return ntp_servers
 
 

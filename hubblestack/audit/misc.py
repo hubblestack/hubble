@@ -200,6 +200,14 @@ Functions supported:
         pattern (Mandatory)
         values (Mandatory)
         comparetype (Default 'regex')
+- test_mount_attrs
+    Ensure that a given directory is mounted with appropriate attributes
+    If check_type is soft, then in absence of volume, True will be returned
+    If check_type is hard, then in absence of volume, False will be returned
+    Params:
+        mount_name (Mandatory)
+        attribute (Mandatory)
+        check_type (Default 'hard')
 
 Module Output
 -------------
@@ -311,7 +319,8 @@ def validate_params(block_id, block_dict, extra_args=None):
             _validation_helper(block_id, block_dict, ['allow_max_days', 'except_for_users'], error)
         elif function_name == 'check_sshd_parameters':
             _validation_helper(block_id, block_dict, ['pattern', 'values', 'comparetype'], error)
-
+        elif function_name == 'test_mount_attrs':
+            _validation_helper(block_id, block_dict, ['mount_name', 'attribute'], error)
     if error:
         raise HubbleCheckValidationError(error)
 
@@ -1112,6 +1121,33 @@ def _check_sshd_parameters(block_id, block_dict, extra_args=None):
     else:
         return "The comparetype: " + comparetype + " not found. It can be 'regex' or 'only'. Please check."
 
+def _test_mount_attrs(block_id, block_dict, extra_args=None):
+    """
+    Ensure that a given directory is mounted with appropriate attributes
+    If check_type is soft, then in absence of volume, True will be returned
+    If check_type is hard, then in absence of volume, False will be returned
+    """
+    mount_name = runner_utils.get_param_for_module(block_id, block_dict, 'mount_name')
+    attribute = runner_utils.get_param_for_module(block_id, block_dict, 'attribute')
+    check_type = runner_utils.get_param_for_module(block_id, block_dict, 'check_type', 'hard')
+
+    # check that the path exists on system
+    command = 'test -e ' + mount_name
+    results = __mods__['cmd.run_all'](command, ignore_retcode=True)
+    retcode = results['retcode']
+    if str(retcode) == '1':
+        return True if check_type == "soft" else (mount_name + " folder does not exist")
+
+    # if the path exits, proceed with following code
+    output = __mods__['cmd.run']('cat /proc/mounts')
+    if not re.search(mount_name, output, re.M):
+        return True if check_type == "soft" else (mount_name + " is not mounted")
+    else:
+        for line in output.splitlines():
+            if mount_name in line and attribute not in line:
+                return str(line)
+    return True
+
 def _test_success(block_id, block_dict, extra_args):
     """
     Automatically returns success
@@ -1172,4 +1208,5 @@ FUNCTION_MAP = {
     'mail_conf_check': _mail_conf_check,
     'ensure_max_password_expiration': _ensure_max_password_expiration,
     'check_sshd_parameters': _check_sshd_parameters,
+    'test_mount_attrs': _test_mount_attrs
 }

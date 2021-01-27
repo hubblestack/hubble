@@ -176,7 +176,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 #pyinstaller requirements start
 #must be preceded by libgit2 install
 COPY pyinstaller-requirements.txt /
-RUN wget -c https://bootstrap.pypa.io/get-pip.py \
+RUN wget -c https://bootstrap.pypa.io/3.4/get-pip.py \
  && python get-pip.py pip==20.2 \
  && pip -v install -r pyinstaller-requirements.txt
 

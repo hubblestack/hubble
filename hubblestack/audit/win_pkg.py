@@ -213,7 +213,7 @@ def execute(block_id, block_dict, extra_args=None):
 
     chained_result = runner_utils.get_chained_param(extra_args)
     if chained_result:
-        pkg_name = chained_result
+        pkg_name = chained_result.get('name')
     else:
         pkg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
 

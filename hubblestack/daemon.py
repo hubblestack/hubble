@@ -418,11 +418,12 @@ def run_function():
             args.append(arg)
     log.debug('Parsed args: %s | Parsed kwargs: %s', args, kwargs)
     log.info('Executing user-requested function %s', __opts__['function'])
-    try:
-        ret = __mods__[__opts__['function']](*args, **kwargs)
-    except KeyError:
+
+    mod_fun = __mods__.get(__opts__['function'])
+    if not mod_fun or not callable(mod_fun):
         log.error('Function %s is not available, or not valid.', __opts__['function'])
         sys.exit(1)
+    ret = mod_fun(*args, **kwargs)
     if __opts__['return']:
         returner = '{0}.returner'.format(__opts__['return'])
         if returner not in __returners__:

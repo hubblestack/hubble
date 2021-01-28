@@ -97,7 +97,7 @@ RUN dnf -y update && dnf install -y ruby ruby-devel rpm-build rubygems gcc make 
 
 # install fpm
 RUN gem install --no-ri --no-rdoc ffi --version 1.12.2 \
- && gem install --no-ri --no-rdoc fpm
+ && gem install --no-ri --no-rdoc --version 1.11.0 fpm
 
 # use pyenv
 ARG PYENV_VERSION=3.6.10

@@ -91,7 +91,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 RUN yum install -y scl-utils rpmbuild rpm-build gcc make rh-ruby23 rh-ruby23-ruby-devel \
  && yum clean all \
  && rm -rf /var/cache/yum
-RUN scl enable rh-ruby23 "gem install --no-ri --no-rdoc fpm"
+RUN scl enable rh-ruby23 "gem install --no-ri --no-rdoc --version 1.11.0 fpm"
 
 # things we may need to build a python
 RUN yum install -y bzip2-devel sqlite-devel \

@@ -322,6 +322,7 @@ class X509AwareCertBucket:
                     str_ca, status, digest)
 
         for i in untrusted_crt:
+            log_level = log.debug
             digest = i.digest('sha1')
             if digest in already:
                 continue
@@ -332,7 +333,6 @@ class X509AwareCertBucket:
                 self.store.add_cert(i) # add to trusted keyring
                 self.trusted.append(digest)
                 status = STATUS.VERIFIED
-                log_level = log.debug
             except ossl.X509StoreContextError as exception_object:
                 # log at either log.error or log.critical according to the error code
                 status = STATUS.FAIL

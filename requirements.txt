@@ -1,2 +1,1 @@
-salt-ssh
-vulners
+pyinstaller-requirements.txt

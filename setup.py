@@ -42,7 +42,7 @@ setup(
         ],
     },
     install_requires=[
-        'salt-ssh >= 2019.2.0',
+        'salt-ssh==2019.2.3',
         'croniter',
         'pyinotify',
         'azure',

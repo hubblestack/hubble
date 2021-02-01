@@ -8,7 +8,7 @@ pyopenssl>=16.2.0
 pytest
 pyyaml
 requests>=2.13.0
-salt-ssh
+salt-ssh==2019.2.3
 pylint
 saltpylint
 singledispatch

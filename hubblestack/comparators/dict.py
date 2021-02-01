@@ -291,7 +291,8 @@ def match_any_if_keyvalue_matches(audit_id, result_to_compare, args):
     key_found_once = False
     for to_match_dict in args['match_any_if_keyvalue_matches']['args']:
         errors = []
-        if not to_match_dict.get(key_name, None):
+        key_found = to_match_dict.get(key_name, None)
+        if key_found is None:
             return True, "pass_as_keyvalue_not_found"
         if result_to_compare[key_name] == to_match_dict[key_name]:
             key_found_once = True

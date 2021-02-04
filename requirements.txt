@@ -28,7 +28,6 @@ pycryptodome
 pygit2
 pyinotify
 pyinstaller
-pyinstaller-hooks
 pylint
 pyopenssl
 pyparsing

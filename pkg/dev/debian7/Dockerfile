@@ -1,7 +1,6 @@
 # This Dockerfile aims to make building Hubble v2 packages easier.
 # To build an image: 1. copy pkg/scripts/pyinstaller-requirements.txt to directory with this Dockerfile
-#                    2. docker build -t <image_name> . --build-arg=HUBBLE_GIT_URL=<git_repo_url>
-#                                                      --build-arg=HUBBLE_CHECKOUT=<branch/tag/commit>
+#                    2. docker build -t <image_name> .
 # The resulting image is ready to run the pyinstaller on container start and drop hubble<version>-coreos.tar.gz
 # in the /data directory. Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
@@ -18,6 +17,7 @@ ONBUILD RUN echo "Copying osquery from local folder"
 
 #--------------- TEMP CONTAINER FOR GIT OSQUERY ----------------------------
 FROM alpine/git as osquery_remote
+#to pin osquery to a different version change the following envirnment variable
 ENV OSQUERY_SRC_VERSION=3.3.2
 ENV OSQUERY_GIT_URL=https://github.com/facebook/osquery.git
 ONBUILD RUN cd / \
@@ -27,7 +27,7 @@ ONBUILD RUN cd / \
  && echo "Fetching osquery from git"
 
 
-#--------------- TEMP CONTAINER FOR OSQUERY ( BASED UPON FLAG)  ----------------
+#--------------- TEMP CONTAINER FOR OSQUERY ( BASED UPON ARGUMENT )  ----------------
 FROM osquery_"$OSQUERY_BUILD_ENV" as osquery
 
 
@@ -58,7 +58,6 @@ RUN mkdir -p "$PATCHELF_TEMP" \
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
-#to pin to a different version change the following envirnment variable
 ENV OSQUERY_BUILD_USER=osquerybuilder
 RUN apt-get -y install git make python ruby sudo locales curl
 RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \
@@ -188,9 +187,10 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=3.0
-ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=3.0-branch
+ENV LC_ALL=C.UTF-8
+ENV HUBBLE_CHECKOUT=v3.0.14
+ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
+ENV HUBBLE_VERSION=3.0.14
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_SRC_PATH=/hubble_src
@@ -221,7 +221,7 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
     # hack to get libssh2 since pyinstaller 3.2 does not do it
     && cp /usr/lib/x86_64-linux-gnu/libssh2.so.1 /opt/hubble/hubble-libs \
 #debian pkg start
-    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /opt/hubble /opt/osquery /etc/profile.d/hubble-profile.sh /var/log/hubble_osquery/backuplogs\
+    && tar -cPvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz /etc/hubble /opt/hubble /opt/osquery /etc/profile.d/hubble-profile.sh /var/log/hubble_osquery/backuplogs \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && tar -xzvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION} \
     && mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/etc/init.d \
@@ -249,6 +249,6 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
        etc opt usr /var/log/hubble_osquery/backuplogs \
-    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb7_amd64.deb \
-    && openssl dgst -sha256 /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb7_amd64.deb \
-                          > /data/hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}deb7_amd64.deb.sha256" ]
+    && cp hubblestack_${HUBBLE_VERSION}-${HUBBLE_ITERATION}_amd64.deb /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb7.amd64.deb \
+    && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb7.amd64.deb \
+                          > /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.deb7.amd64.deb.sha256" ]

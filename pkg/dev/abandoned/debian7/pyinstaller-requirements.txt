@@ -14,9 +14,7 @@ salt-ssh
 gitpython
 pyinotify
 cffi
-azure==4.0.0
-azure-storage-common~=1.4
-azure-storage-blob~=1.3
+azure-storage-blob
 croniter
 vulners
 ntplib

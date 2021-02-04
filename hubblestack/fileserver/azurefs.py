@@ -60,8 +60,7 @@ import hubblestack.utils.hashutils
 from hubblestack.utils.signing import find_wrapf
 
 try:
-    import azure.storage.common
-    import azure.storage.blob
+    from azure.storage.blob import BlobServiceClient
     HAS_AZURE = True
 except ImportError:
     HAS_AZURE = False
@@ -193,7 +192,7 @@ def update():
         blob_service = _get_container_service(container)
         name = container['container_name']
         try:
-            blob_list = blob_service.list_blobs(name)
+            blob_list = blob_service.list_blobs()
         except Exception as exc:
             log.exception('Error occurred fetching blob list for azurefs')
 
@@ -224,8 +223,14 @@ def update():
                     log.exception('Problem occurred trying to invalidate cache for container "{0}"'.format(name))
             continue
 
+        blobs_data = []
+        for blob in blob_list:
+            # list_blobs returns an iterator
+            # and we iterate over it more than once
+            blobs_data.append(blob)
+
         # Walk the cache directory searching for deletions
-        blob_names = [blob.name for blob in blob_list]
+        blob_names = [blob.name for blob in blobs_data]
         blob_set = set(blob_names)
         for root, dirs, files in os.walk(path):
             for f in files:
@@ -240,12 +245,12 @@ def update():
             if not dirs and not files:
                 shutil.rmtree(root)
 
-        for blob in blob_list:
+        for blob in blobs_data:
             fname = os.path.join(path, blob.name)
             update = False
             if os.path.exists(fname):
                 # File exists, check the hashes
-                source_md5 = blob.properties.content_settings.content_md5
+                source_md5 = blob.content_settings.content_md5
                 local_md5_hex = hubblestack.utils.hashutils.get_hash(fname, 'md5')
                 local_md5 = base64.b64encode(bytes.fromhex(local_md5_hex))
                 if local_md5 != source_md5:
@@ -263,7 +268,10 @@ def update():
                     fp_.write('')
 
                 try:
-                    blob_service.get_blob_to_path(name, blob.name, fname)
+                    blob_client = blob_service.get_blob_client(blob)
+
+                    with open(fname, "wb") as download_file:
+                        download_file.write(blob_client.download_blob().readall())
                 except Exception as exc:
                     log.exception('Error occurred fetching blob from azurefs')
 
@@ -400,21 +408,27 @@ def _get_container_service(container):
 
     Try account_key, sas_token, and no auth in that order
     """
-    if 'account_key' in container:
-        account = azure.storage.common.CloudStorageAccount(container['account_name'], account_key=container['account_key'])
-    elif 'sas_token' in container:
-        account = azure.storage.common.CloudStorageAccount(container['account_name'], sas_token=container['sas_token'])
-    else:
-        account = azure.storage.common.CloudStorageAccount(container['account_name'])
-    blob_service = account.create_block_blob_service()
-    if 'proxy' in container and len(container['proxy'].split(':')) == 2:
-        blob_service.set_proxy(container['proxy'].split(':')[0], container['proxy'].split(':')[1])
+    account_url = f'https://{container["account_name"]}.blob.core.windows.net'
+    
+    proxies = None
+    if 'proxy' in container:
+        proxies = {'http': container['proxy']}
     # If 'proxy' isn't specified in container block, check if 'https_proxy' is set.
-    elif 'https_proxy' in __opts__ and len(__opts__['https_proxy'].split(':')) == 2:
-        blob_service.set_proxy(__opts__['https_proxy'].split(':')[0], __opts__['https_proxy'].split(':')[1])
-    return blob_service
+    elif 'https_proxy' in __opts__:
+        proxies = {'https': __opts__['https_proxy']}
 
+    # instantiate based upon credential
+    if "account_key" in container:
+        blob_service = BlobServiceClient(
+            account_url=account_url, credential=container["account_key"], proxies=proxies)
+    elif "sas_token" in container:
+        blob_service = BlobServiceClient(
+            account_url=account_url, credential=container["sas_token"], proxies=proxies)
+    else:
+        blob_service = BlobServiceClient(account_url=account_url, proxies=proxies)
 
+    return blob_service.get_container_client(container['container_name'])
+    
 def _validate_config():
     """
     Validate azurefs config, return False if it doesn't validate

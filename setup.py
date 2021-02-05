@@ -21,9 +21,10 @@ elif distro == 'Amazon Linux AMI':
     data_files = [('/etc/init.d', ['pkg/hubble']),
                   ('/etc/hubble', ['conf/hubble']), ]
 
-with open('hubblestack/__init__.py', 'r') as fd:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                        fd.read(), re.MULTILINE).group(1)
+from hubblestack import __version__ as version
+
+with open('requirements.txt', 'r') as fh:
+    inst_req = [ x.strip() for x in fh ]
 
 setup(
     name='hubblestack',
@@ -41,13 +42,7 @@ setup(
             'hubble = hubblestack.daemon:run',
         ],
     },
-    install_requires=[
-        'salt-ssh==2019.2.3',
-        'croniter',
-        'pyinotify',
-        'azure',
-        'ntplib',
-    ],
+    install_requires=inst_req,
     data_files=data_files,
     options={
 #        'build_scripts': {

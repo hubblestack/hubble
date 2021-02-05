@@ -10,6 +10,9 @@ __pycache__/
 # C extensions
 *.so
 
+# pfft
+pkg/*/*osquery*
+
 # Distribution / packaging
 .Python
 env/

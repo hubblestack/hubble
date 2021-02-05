@@ -7,12 +7,14 @@ daemon
 boto3
 botocore
 pygit2<0.27.0
-salt-ssh==2019.2.0
+salt-ssh==2019.2.3
 gitpython
 pyinotify
 cffi
 croniter
 vulners
+jinja2>=2.10,<=2.11.2
+pip<=20.2
 azure==4.0.0
 azure-applicationinsights==0.1.0
 azure-batch==4.1.3

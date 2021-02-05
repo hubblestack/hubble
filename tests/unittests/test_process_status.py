@@ -130,7 +130,7 @@ class TestProcessStatus():
         mock_query.return_value = {'data': []}
         status, ret = hubblestack.extmods.fdg.process_status.is_running('parent > 1')
         assert status is False
-        assert ret is None
+        assert ret in (False,None)
 
     @mock.patch('hubblestack.extmods.fdg.process_status._run_query')
     def test_isRunning_validArguments_validReturn(self, mock_query):

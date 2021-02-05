@@ -226,7 +226,7 @@ def execute(block_id, block_dict, extra_args=None):
     result = {"package_name": pkg_name, "package_version": audit_value}
     log.debug("win_pkg module output for block_id %s, is %s", block_id, result)
 
-    if not result:
+    if audit_value == "Not Found":
         return runner_utils.prepare_negative_result_for_module(block_id, "package information couldn't be fetched")
 
     return runner_utils.prepare_positive_result_for_module(block_id, result)

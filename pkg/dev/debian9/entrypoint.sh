@@ -74,7 +74,7 @@ cd /hubble_build
 
 # we may have preinstalled requirements that may need upgrading
 # pip install . might not upgrade/downgrade the requirements
-pip install pip==21.0.1 wheel
+pip install wheel
 python setup.py egg_info
 pip install --upgrade \
     -r hubblestack.egg-info/requires.txt \

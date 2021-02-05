@@ -54,8 +54,6 @@ RUN $url = ('https://www.python.org/ftp/python/{0}/python-{1}-amd64.exe' -f $env
 	\
 	Write-Host 'Complete.'
 
-# if this is called "PIP_VERSION", pip explodes with "ValueError: invalid truth value '<VERSION>'"
-ENV PYTHON_PIP_VERSION 21.0.1
 # https://github.com/pypa/get-pip
 ENV PYTHON_GET_PIP_URL https://github.com/pypa/get-pip/raw/d59197a3c169cef378a22428a3fa99d33e080a5d/get-pip.py
 ENV PYTHON_GET_PIP_SHA256 421ac1d44c0cf9730a088e337867d974b91bdce4ea2636099275071878cc189e
@@ -69,11 +67,10 @@ RUN Write-Host ('Downloading get-pip.py ({0}) ...' -f $env:PYTHON_GET_PIP_URL); 
 		exit 1; \
 	}; \
 	\
-	Write-Host ('Installing pip=={0} ...' -f $env:PYTHON_PIP_VERSION); \
+	Write-Host ('Installing pip ...'); \
 	python get-pip.py \
 		--disable-pip-version-check \
 		--no-cache-dir \
-		('pip=={0}' -f $env:PYTHON_PIP_VERSION) \
 	; \
 	Remove-Item get-pip.py -Force; \
 	\

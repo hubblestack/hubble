@@ -110,8 +110,9 @@ RUN wget -c https://bootstrap.pypa.io/3.4/get-pip.py \
  && pip -v install -r pyinstaller-requirements.txt
 
 #fpm package making requirements start
-RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
- && gem install --no-ri --no-rdoc --version 1.11.0 fpm
+RUN yum -y install centos-release-scl
+RUN yum install -y rh-ruby23 rh-ruby23-ruby-devel rpmbuild rpm-build rubygems gcc make libffi libffi-devel
+RUN scl enable rh-ruby23 "gem install --no-ri --no-rdoc --version 1.11.0 fpm"
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
@@ -165,7 +166,7 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
 #symlink to have hubble binary in path
     && ln -s /opt/hubble/hubble usr/bin/hubble \
 #fpm start
-    && fpm -s dir -t rpm \
+    && scl enable rh-ruby23 'fpm -s dir -t rpm \
        -n hubblestack \
        -v ${HUBBLE_VERSION} \
        --iteration ${HUBBLE_ITERATION} \
@@ -175,7 +176,7 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --after-install /hubble_build/conf/afterinstall-systemd.sh \
        --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
-       etc/hubble opt usr /var/log/hubble_osquery/backuplogs \
+       etc/hubble opt usr /var/log/hubble_osquery/backuplogs' \
 #edit to change iteration number, if necessary
     && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm \
     && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.el7.x86_64.rpm \

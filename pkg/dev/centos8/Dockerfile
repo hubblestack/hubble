@@ -24,7 +24,7 @@ RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osque
 #to build, osquery scripts want sudo and a user to sudo with.
 ENV OSQUERY_BUILD_USER=osquerybuilder
 RUN dnf -y install dnf-plugins-core \
- && dnf config-manager --set-enabled PowerTools \
+ && dnf config-manager --set-enabled powertools \
  && dnf -y install python2 git make ruby sudo which doxygen \
  && ln -svf /usr/bin/python2 /usr/bin/python
 ENV OSQUERY_BUILD_USER=osquerybuilder
@@ -103,6 +103,8 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
+ENV LC_ALL=C.UTF-8
+
 #pyinstaller requirements start
 #must be preceded by libgit2 install
 COPY pyinstaller-requirements.txt /
@@ -118,7 +120,6 @@ RUN dnf install -y ruby ruby-devel rpm-build rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV LC_ALL=C.UTF-8
 ENV HUBBLE_CHECKOUT=v3.0.14
 ENV HUBBLE_VERSION=3.0.14
 ENV HUBBLE_ITERATION=1

@@ -98,7 +98,8 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
-ENV LC_ALL=C.UTF-8
+RUN localedef -i en_US -c -f UTF-8 en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 #pyinstaller requirements start
 #must be preceded by libgit2 install

@@ -124,7 +124,7 @@ RUN wget -c https://bootstrap.pypa.io/3.4/get-pip.py \
 
 #fpm package making requirements start
 RUN yum install -y rpmbuild rpm-build gcc make rh-ruby23 rh-ruby23-ruby-devel \
- && scl enable rh-ruby23 "gem install --no-ri --no-rdoc fpm"
+ && scl enable rh-ruby23 "gem install --no-ri --no-rdoc --version 1.11.0 fpm"
  && yum clean all \
  && rm -rf /var/cache/yum
 

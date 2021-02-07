@@ -129,7 +129,7 @@ RUN wget -c https://bootstrap.pypa.io/3.4/get-pip.py \
 
 #deb package making requirements start
 RUN apt-get install -y ruby ruby-dev rubygems gcc make \
- && gem install --no-ri --no-rdoc fpm
+ && gem install --no-ri --no-rdoc --version 1.11.0 fpm
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built

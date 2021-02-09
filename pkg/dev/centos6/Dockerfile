@@ -15,7 +15,13 @@
 #--------------- ACTUAL DOCKERFILE FOR BUILD CREATION  --------------------------
 FROM centos:6
 
-RUN yum makecache fast && yum -y update
+COPY centos-vault.repo /etc/yum.repos.d/CentOS-Base.repo
+COPY centos-sclo.pub /etc/pki/rpm-gpg/RPM-GPG-KEY-CentOS-SIG-SCLo
+
+RUN yum makecache fast \
+ && yum -y update
+ && yum clean all \
+ && rm -rf /var/cache/yum
 
 #paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs 
@@ -110,13 +116,17 @@ COPY pyinstaller-requirements.txt /
 RUN wget -c https://bootstrap.pypa.io/3.4/get-pip.py \
  && yum -y install centos-release-scl \
  && yum -y install python27 \
+ && yum clean all \
+ && rm -rf /var/cache/yum
  && chmod u+x ./get-pip.py \
- && scl enable python27 "./get-pip.py" \
+ && scl enable python27 "./get-pip.py pip==20.2" \
  && scl enable python27 "pip -v install -r pyinstaller-requirements.txt"
 
 #fpm package making requirements start
 RUN yum install -y rpmbuild rpm-build gcc make rh-ruby23 rh-ruby23-ruby-devel \
- && scl enable rh-ruby23 "gem install --no-ri --no-rdoc fpm"
+ && scl enable rh-ruby23 "gem install --no-ri --no-rdoc --version 1.11.0 fpm"
+ && yum clean all \
+ && rm -rf /var/cache/yum
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built

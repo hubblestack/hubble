@@ -103,6 +103,8 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
+ENV LC_ALL=C.UTF-8
+
 #pyinstaller requirements start
 #must be preceded by libgit2 install
 COPY pyinstaller-requirements.txt /
@@ -113,12 +115,11 @@ RUN wget -c https://bootstrap.pypa.io/3.4/get-pip.py \
 
 #fpm package making requirements start
 RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
- && gem install --no-ri --no-rdoc fpm
+ && gem install --no-ri --no-rdoc --version 1.11.0 fpm
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV LC_ALL=C.UTF-8
 ENV HUBBLE_CHECKOUT=v3.0.14
 ENV HUBBLE_VERSION=3.0.14
 ENV HUBBLE_ITERATION=1

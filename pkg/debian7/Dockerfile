@@ -55,11 +55,13 @@ RUN mkdir -p "$PATCHELF_TEMP" \
  && make \
  && make install
 
+RUN apt-get install -y build-essential zlib1g-dev libssl-dev libreadline-dev libgdbm-dev \
+    openssl gnupg2 locales python xz-utils sudo curl
+
 #osquery build start
 #osquery should be built first since requirements for other packages can interfere with osquery dependencies
 #to build, osquery scripts want sudo and a user to sudo with.
 ENV OSQUERY_BUILD_USER=osquerybuilder
-RUN apt-get -y install git make python ruby sudo locales curl
 RUN useradd --shell /bin/bash --create-home --user-group --groups sudo "$OSQUERY_BUILD_USER" \
  && sed -i 's/^%sudo.*/%sudo\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
 COPY --from=osquery /osquery /home/"$OSQUERY_BUILD_USER"/osquery
@@ -173,6 +175,15 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
+# we seem to need a modern-ish ruby>=2.3
+RUN curl -sSL https://rvm.io/mpapis.asc | gpg2 --import - \
+ && curl -sSL https://rvm.io/pkuczynski.asc | gpg2 --import - \
+ && curl -sSL https://get.rvm.io | bash -s stable
+RUN bash -c 'source /etc/profile.d/rvm.sh; rvm install 2.7'
+RUN bash -c 'source /etc/profile.d/rvm.sh; which ruby'
+ENV PATH=$PATH:/usr/local/rvm/rubies/ruby-2.7.2/bin
+RUN gem install --no-document --version 1.11.0 fpm
+
 #pyinstaller requirements start
 #must be preceded by libgit2 install
 COPY pyinstaller-requirements.txt /
@@ -180,14 +191,9 @@ RUN wget -c https://bootstrap.pypa.io/3.4/get-pip.py \
  && python get-pip.py pip==20.2 \
  && pip -v install -r pyinstaller-requirements.txt
 
-#deb package making requirements start
-RUN apt-get install -y ruby ruby-dev rubygems gcc make \
- && gem install --no-ri --no-rdoc fpm
-
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ENV LC_ALL=C.UTF-8
 ENV HUBBLE_CHECKOUT=v3.0.14
 ENV HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_VERSION=3.0.14

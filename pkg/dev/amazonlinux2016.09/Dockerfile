@@ -103,7 +103,13 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
-ENV LC_ALL=C.UTF-8
+RUN localedef -i en_US -c -f UTF-8 en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
+
+#fpm package making requirements start
+RUN yum -y install centos-release-scl
+RUN yum install -y rh-ruby23 rh-ruby23-ruby-devel rpmbuild rpm-build rubygems gcc make libffi libffi-devel
+RUN scl enable rh-ruby23 "gem install --no-ri --no-rdoc --version 1.11.0 fpm"
 
 #pyinstaller requirements start
 #must be preceded by libgit2 install
@@ -171,7 +177,7 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
 #symlink to have hubble binary in path
     && ln -s /opt/hubble/hubble usr/bin/hubble \
 #fpm start
-    && fpm -s dir -t rpm \
+    && scl enable rh-ruby23 'fpm -s dir -t rpm \
        -n hubblestack \
        -v ${HUBBLE_VERSION} \
        --iteration ${HUBBLE_ITERATION} \
@@ -181,7 +187,7 @@ CMD [ "if [ -f /data/hubble_buildinfo ] ; then echo \"\" >> /hubble_build/hubble
        --after-install /hubble_build/conf/afterinstall.sh \
        --after-upgrade /hubble_build/conf/afterupgrade.sh \
        --before-remove /hubble_build/conf/beforeremove.sh \
-       etc opt usr /var/log/hubble_osquery/backuplogs \
+       etc opt usr /var/log/hubble_osquery/backuplogs' \
 #edit to change iteration number, if necessary
     && cp hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.x86_64.rpm /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.al1609.x86_64.rpm \
     && openssl dgst -sha256 /data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.al1609.x86_64.rpm \

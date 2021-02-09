@@ -32,7 +32,7 @@ ENV OSQUERY_TAR_FILENAME=$OSQUERY_SRC_VERSION"_amazonlinux2016.09.tar"
 COPY $OSQUERY_TAR_FILENAME /$OSQUERY_TAR_FILENAME
 
 ENV OSQUERY_BUILD_USER=osquerybuilder
-RUN yum -y install git make python ruby sudo which
+RUN yum -y install git make python ruby23 ruby23-devel sudo which
 RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
  && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
 ADD osquerybuilder.sh /osquerybuilder.sh
@@ -115,7 +115,7 @@ RUN wget -c https://bootstrap.pypa.io/3.4/get-pip.py \
  && pip -v install -r pyinstaller-requirements.txt
 
 #fpm package making requirements start
-RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
+RUN yum install -y ruby23 ruby23-devel rpmbuild rpm-build rubygems gcc make \
  && gem install --no-ri --no-rdoc --version 1.11.0 fpm
 
 #pyinstaller start

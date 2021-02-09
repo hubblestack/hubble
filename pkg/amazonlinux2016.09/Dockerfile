@@ -32,7 +32,7 @@ ENV OSQUERY_TAR_FILENAME=$OSQUERY_SRC_VERSION"_amazonlinux2016.09.tar"
 COPY $OSQUERY_TAR_FILENAME /$OSQUERY_TAR_FILENAME
 
 ENV OSQUERY_BUILD_USER=osquerybuilder
-RUN yum -y install git make python ruby sudo which
+RUN yum -y install git make python ruby23 ruby23-devel sudo which
 RUN useradd --shell /bin/bash --create-home --user-group --groups wheel "$OSQUERY_BUILD_USER" \
  && sed -i '0,/^#\ %wheel/s/^#\ %wheel.*/%wheel\ ALL=\(ALL\)\ NOPASSWD:\ ALL/' /etc/sudoers
 ADD osquerybuilder.sh /osquerybuilder.sh
@@ -103,7 +103,8 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make \
  && make install
 
-ENV LC_ALL=C.UTF-8
+RUN localedef -i en_US -c -f UTF-8 en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
 #pyinstaller requirements start
 #must be preceded by libgit2 install
@@ -114,8 +115,8 @@ RUN wget -c https://bootstrap.pypa.io/3.4/get-pip.py \
  && pip -v install -r pyinstaller-requirements.txt
 
 #fpm package making requirements start
-RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
- && gem install --no-ri --no-rdoc --version 1.11.0 fpm
+RUN yum install -y ruby23 ruby23-devel rpmbuild rpm-build rubygems gcc make \
+ && gem2.3 install --no-ri --no-rdoc --version 1.11.0 fpm
 
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built

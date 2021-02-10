@@ -53,6 +53,7 @@ from Crypto.IO import PEM
 from Crypto.Hash import SHA256
 
 import OpenSSL.crypto as ossl
+import OpenSSL._util
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes
@@ -63,6 +64,13 @@ from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
 MANIFEST_RE = re.compile(r'^\s*(?P<digest>[0-9a-fA-F]+)\s+(?P<fname>.+)$')
 log = logging.getLogger(__name__)
+
+def _our_byte_string(x, charmap='utf-8'):
+    # MONKEYPATCH OpenSSL._utils:byte_string to avoid "charmap" issues on POSIX
+    # locale platforms
+    return x.encode('utf-8')
+
+OpenSSL._util.byte_string = _our_byte_string
 
 # "verification_log_timestamps" is a global dict that contains str path
 # and time() kv pairs. When the time() value exceeds the dampening_limit (3600 sec),

@@ -180,10 +180,11 @@ def run(audit_files=None,
             combined_dict[audit_file] = ret
 
         _evaluate_results(result_dict, combined_dict, show_compliance, verbose)
+        _clean_up_results(result_dict)
+        return result_dict
     except Exception as e:
         log.error("Error while running audit run method: %s" % e)
-
-    return result_dict
+        return None
 
 
 def _get_audit_files(audit_files):
@@ -245,9 +246,9 @@ def _calculate_compliance(result_dict):
     :param result_dict:
     :return:
     """
-    success = len(result_dict[CHECK_STATUS['Success']])
-    failure = len(result_dict[CHECK_STATUS['Failure']])
-    error = len(result_dict[CHECK_STATUS['Error']])
+    success = len(result_dict.get(CHECK_STATUS['Success'], []))
+    failure = len(result_dict.get(CHECK_STATUS['Failure'], []))
+    error = len(result_dict.get(CHECK_STATUS['Error'], []))
     # skipped = len(result_dict[CHECK_STATUS['Skipped']])
     total_checks = success + failure + error
     if total_checks > 0:

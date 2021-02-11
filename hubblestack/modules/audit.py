@@ -182,7 +182,7 @@ def run(audit_files=None,
         _evaluate_results(result_dict, combined_dict, show_compliance, verbose)
     except Exception as e:
         log.error("Error while running audit run method: %s" % e)
-
+    _clean_up_results(result_dict)
     return result_dict
 
 

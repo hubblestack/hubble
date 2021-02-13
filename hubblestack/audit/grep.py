@@ -214,6 +214,7 @@ def validate_params(block_id, block_dict, extra_args=None):
     log.debug('Module: grep Start validating params for check-id: {0}'.format(block_id))
 
     error = {}
+    filepath = None
     # fetch required param
     file_content = runner_utils.get_chained_param(extra_args)
     if not file_content:
@@ -272,8 +273,11 @@ def execute(block_id, block_dict, extra_args=None):
         flags = [flags]
 
     # check filepath existence
-    if file_mode and not os.path.isfile(filepath):
-        return runner_utils.prepare_negative_result_for_module(block_id, 'file_not_found')
+    if file_mode:
+        file_paths = filepath.split(' ')
+        for file_path in file_paths:
+            if not os.path.exists(file_path.strip()):
+                return runner_utils.prepare_negative_result_for_module(block_id, 'file_not_found')
 
     grep_result = _grep(filepath, file_content, pattern, *flags)
     ret_code = grep_result.get('retcode')
@@ -347,17 +351,22 @@ def _grep(path,
         path = os.path.expanduser(path)
 
     if args:
-        options = [' '.join(args)]
+        options = ' '.join(args)
     else:
-        options = []
+        options = ''
 
     # prepare the command
-    cmd = ['grep'] + options + [pattern]
-    if path:
-        cmd += [path]
+    cmd = (
+        r'''grep  {options} {pattern} {path}'''
+        .format(
+            options=options,
+            pattern=pattern,
+            path=path,
+        )
+    )
 
     try:
-        ret = __mods__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True, stdin=string)
+        ret = __mods__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
     except (IOError, OSError) as exc:
         raise CommandExecutionError(exc.strerror)
 

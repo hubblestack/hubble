@@ -254,7 +254,7 @@ def execute(block_id, block_dict, extra_args=None):
         filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
 
     # check filepath existence
-    if not os.path.isfile(filepath):
+    if not os.path.exists(filepath):
         return runner_utils.prepare_negative_result_for_module(block_id, 'file_not_found')
 
     stat_res = __mods__['file.stats'](filepath)

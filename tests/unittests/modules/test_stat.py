@@ -41,7 +41,7 @@ class TestStat(TestCase):
         res = stat.get_filtered_params_to_log(check_id, block_dict, {})
         self.assertEqual(res, {"path": "test234"})
 
-    @patch("os.path.isfile")
+    @patch("os.path.exists")
     def test_execute1(self, isfile_mock):
         """
         File exists, run module. Should pass
@@ -59,7 +59,7 @@ class TestStat(TestCase):
         status, res = stat.execute(check_id, block_dict, {})
         self.assertEqual(res, {"result": {"uid": 1, "gid": 2}})
 
-    @patch("os.path.isfile")
+    @patch("os.path.exists")
     def test_execute2(self, isfile_mock):
         """
         File doesnt exist. Should fail

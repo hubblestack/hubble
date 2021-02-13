@@ -74,3 +74,12 @@ def prepare_positive_result_for_module(block_id, result):
     log.debug('Preparing return result for id: {0}'.format(block_id))
 
     return True, {'result': result}
+
+def apply_case_on_string(arg, ignore_case=False):
+    """
+    If the arg is string, and ignore_case is true. returns the lower-case
+    Else, just return the arg
+    """
+    if arg and isinstance(arg, str) and ignore_case:
+        return arg.lower()
+    return arg

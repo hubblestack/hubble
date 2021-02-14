@@ -76,7 +76,7 @@ class TestGrep(TestCase):
         self.assertFalse(status)
         self.assertDictEqual(expected_dict, result_dict)
 
-    @patch('os.path.isfile')
+    @patch('os.path.exists')
     @patch('hubblestack.audit.grep._grep')
     def testExecute2(self, mockGrep, mockOS):
         """
@@ -108,7 +108,7 @@ class TestGrep(TestCase):
         path = 'test-file'
         pattern = 'test'
 
-        def mock_grep(cmd, python_shell, ignore_retcode, stdin):
+        def mock_grep(cmd, python_shell, ignore_retcode):
             return {"stdout": text}
         mockOS.return_value = path
         __mods__ = {}

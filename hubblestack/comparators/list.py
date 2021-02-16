@@ -108,6 +108,7 @@ check_id:
 
 import logging
 import hubblestack.module_runner.comparator
+import hubblestack.module_runner.runner_utils as runner_utils
 
 log = logging.getLogger(__name__)
 
@@ -192,6 +193,7 @@ def match_any(audit_id, result_to_compare, args):
     """
     log.debug('Running list::match_any for check: {0}'.format(audit_id))
 
+    ignore_case = args.get('ignore_case', False)
     for r_compare in result_to_compare:
         if is_integer(r_compare):
             ret_status, ret_val = hubblestack.module_runner.comparator.run(
@@ -204,7 +206,7 @@ def match_any(audit_id, result_to_compare, args):
             # using dict::match_any
             ret_status, ret_val = hubblestack.module_runner.comparator.run(
                 audit_id,
-                {"type": "dict", "match_any": args['match_any']},
+                {"type": "dict", "match_any": args['match_any'], "ignore_case": ignore_case},
                 r_compare)
             if ret_status:
                 return True, "Check Passed"
@@ -224,7 +226,9 @@ def match_any(audit_id, result_to_compare, args):
                             return True, "Check Passed"
                 else:
                     # primitive datatype comparison
-                    if to_compare == r_compare:
+                    to_compare_val1 = runner_utils.apply_case_on_string(to_compare, ignore_case)
+                    to_compare_val2 = runner_utils.apply_case_on_string(r_compare, ignore_case)
+                    if to_compare_val1 == to_compare_val2:
                         return True, "Check Passed"
 
     return False, "list::match_any failure. Got={0}".format(result_to_compare)
@@ -243,6 +247,7 @@ def match_all(audit_id, result_to_compare, args):
     """
     log.debug('Running list::match_all for check: {0}'.format(audit_id))
 
+    ignore_case = args.get('ignore_case', False)
     for to_compare in args['match_all']:
         found_match = False
         for r_compare in result_to_compare:
@@ -252,7 +257,7 @@ def match_all(audit_id, result_to_compare, args):
                 # using dict::match
                 ret_status, ret_val = hubblestack.module_runner.comparator.run(
                     audit_id,
-                    {"type": "dict", "match": to_compare},
+                    {"type": "dict", "match": to_compare, "ignore_case": ignore_case},
                     r_compare)
             elif isinstance(to_compare, dict):
                 dict_key = list(to_compare.keys())[0]
@@ -264,7 +269,9 @@ def match_all(audit_id, result_to_compare, args):
                         r_compare)
             else:
                 # simple comparison between primitive data types
-                ret_status = r_compare == to_compare
+                to_compare_val1 = runner_utils.apply_case_on_string(r_compare, ignore_case)
+                to_compare_val2 = runner_utils.apply_case_on_string(to_compare, ignore_case)
+                ret_status = to_compare_val1 == to_compare_val2
 
             if ret_status:
                 found_match = True
@@ -312,12 +319,17 @@ def match_any_if_keyvalue_matches(audit_id, result_to_compare, args):
     """
     log.debug('Running list::match_any_if_keyvalue_matches for check: {0}'.format(audit_id))
 
+    ignore_case = args.get('ignore_case', False)
     key_name = args['match_any_if_keyvalue_matches']['match_key']
     failed_once = False
     for r_compare in result_to_compare:
         ret_status, ret_val = hubblestack.module_runner.comparator.run(
             audit_id,
-            {"type": "dict", "match_any_if_keyvalue_matches": args['match_any_if_keyvalue_matches']},
+            {
+                "type": "dict", 
+                "match_any_if_keyvalue_matches": args['match_any_if_keyvalue_matches'],
+                "ignore_case": ignore_case
+            },
             r_compare)
         if ret_status and ret_val != "pass_as_key_not_found":
             return True, "Check Passed"
@@ -359,3 +371,4 @@ def filter_compare(audit_id, result_to_compare, args):
         audit_id,
         filter_comparator_args,
         filtered_list)
+

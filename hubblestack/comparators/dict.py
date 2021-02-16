@@ -160,6 +160,7 @@ check_id:
 import logging
 
 import hubblestack.module_runner.comparator
+import hubblestack.module_runner.runner_utils as runner_utils
 
 log = logging.getLogger(__name__)
 
@@ -216,7 +217,8 @@ def match(audit_id, result_to_compare, args):
     log.debug('Running dict::match for audit_id: {0}'.format(audit_id))
 
     errors = []
-    _compare_dictionary(audit_id, result_to_compare, args['match'], errors)
+    ignore_case = args.get('ignore_case', False)
+    _compare_dictionary(audit_id, result_to_compare, args['match'], errors, ignore_case)
 
     if errors:
         error_message = 'dict::match failed, errors={0}'.format(str(errors))
@@ -237,9 +239,10 @@ def match_any(audit_id, result_to_compare, args):
     """
     log.debug('Running dict::match_any for audit_id: {0}'.format(audit_id))
 
+    ignore_case = args.get('ignore_case', False)
     for to_match_dict in args['match_any']:
         errors = []
-        _compare_dictionary(audit_id, result_to_compare, to_match_dict, errors)
+        _compare_dictionary(audit_id, result_to_compare, to_match_dict, errors, ignore_case)
         if not errors:
             # found a match
             return True, "Dictionary comparison passed"
@@ -283,6 +286,7 @@ def match_any_if_keyvalue_matches(audit_id, result_to_compare, args):
     """
     log.debug('Running dict::match_any_if_keyvalue_matches for audit_id: {0}'.format(audit_id))
 
+    ignore_case = args.get('ignore_case', False)
     key_name = args['match_any_if_keyvalue_matches']['match_key']
     if key_name not in result_to_compare:
         log.debug("Required key '%s' is not found in '%s' for audit_id '%s'", key_name, result_to_compare, audit_id)
@@ -294,9 +298,12 @@ def match_any_if_keyvalue_matches(audit_id, result_to_compare, args):
         key_found = to_match_dict.get(key_name, None)
         if key_found is None:
             return True, "pass_as_keyvalue_not_found"
-        if result_to_compare[key_name] == to_match_dict[key_name]:
+        
+        to_compare_val1 = runner_utils.apply_case_on_string(result_to_compare[key_name], ignore_case)
+        to_compare_val2 = runner_utils.apply_case_on_string(to_match_dict[key_name], ignore_case)
+        if to_compare_val1 == to_compare_val2:
             key_found_once = True
-            _compare_dictionary(audit_id, result_to_compare, to_match_dict, errors)
+            _compare_dictionary(audit_id, result_to_compare, to_match_dict, errors, ignore_case)
 
             if not errors:
                 # found a match
@@ -348,7 +355,7 @@ def match_key_all(audit_id, result_to_compare, args):
     return True, "dict::match_key_all passed"
 
 
-def _compare_dictionary(audit_id, input_dictionary, expected_dictionary, errors):
+def _compare_dictionary(audit_id, input_dictionary, expected_dictionary, errors, ignore_case=False):
     for key, value in expected_dictionary.items():
         if key not in input_dictionary:
             errors.append('Key: {0} not found in result'.format(key))
@@ -363,8 +370,11 @@ def _compare_dictionary(audit_id, input_dictionary, expected_dictionary, errors)
                     errors.append(ret_val)
             else:
                 # got nested dictionary to compare
-                _compare_dictionary(audit_id, input_dictionary[key], expected_dictionary[key], errors)
+                _compare_dictionary(audit_id, input_dictionary[key], expected_dictionary[key], errors, ignore_case)
 
         else:
-            if input_dictionary[key] != value:
-                errors.append('Expected={0}, Got={1}'.format(input_dictionary[key], value))
+            to_compare_val1 = runner_utils.apply_case_on_string(input_dictionary[key], ignore_case)
+            to_compare_val2 = runner_utils.apply_case_on_string(value, ignore_case)
+            if to_compare_val1 != to_compare_val2:
+                errors.append('Expected={0}, Got={1}'.format(to_compare_val1, to_compare_val2))
+

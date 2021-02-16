@@ -318,7 +318,7 @@ def validate_params(block_id, block_dict, extra_args=None):
         elif function_name == 'ensure_max_password_expiration':
             _validation_helper(block_id, block_dict, ['allow_max_days', 'except_for_users'], error)
         elif function_name == 'check_sshd_parameters':
-            _validation_helper(block_id, block_dict, ['pattern', 'values', 'comparetype'], error)
+            _validation_helper(block_id, block_dict, ['pattern'], error)
         elif function_name == 'test_mount_attrs':
             _validation_helper(block_id, block_dict, ['mount_name', 'attribute'], error)
     if error:
@@ -673,7 +673,7 @@ def _check_users_home_directory_permissions(block_id, block_dict, extra_args=Non
         if len(user_dir) < 2:
                 user_dir = user_dir + [''] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
-            result = _compare_file_stats(block_id, user_dir[1], max_allowed_permission, False)
+            result = _compare_file_stats(block_id, user_dir[1], max_allowed_permission, True)
             if result is not True:
                 error += ["permission on home directory " + user_dir[1] + " of user " + user_dir[0] + " is wrong: " + result]
 
@@ -1094,7 +1094,7 @@ def _check_sshd_parameters(block_id, block_dict, extra_args=None):
       description: Ensure only approved ciphers are used
     """
     pattern = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
-    values = runner_utils.get_param_for_module(block_id, block_dict, 'values')
+    values = runner_utils.get_param_for_module(block_id, block_dict, 'values', None)
     comparetype = runner_utils.get_param_for_module(block_id, block_dict, 'comparetype', 'regex')
 
     output = __mods__['cmd.run']('sshd -T')

@@ -67,8 +67,12 @@ except ImportError:
 
 __virtualname__ = 'azurefs'
 
-log = logging.getLogger()
+# Setting azure logger to warn, as it logs every GET request and params
+az_log = logging.getLogger('azure')
+az_log.setLevel(logging.WARN)
 
+# app logger
+log = logging.getLogger()
 
 def __virtual__():
     """
@@ -178,6 +182,7 @@ def update():
     Also processes deletions by walking the container caches and comparing
     with the list of blobs in the container
     """
+    log.info('Updating cache of azure container')
     for container in __opts__['azurefs']:
         path = _get_container_path(container)
         try:
@@ -191,8 +196,13 @@ def update():
             continue
         blob_service = _get_container_service(container)
         name = container['container_name']
+        blobs_data = []
         try:
             blob_list = blob_service.list_blobs()
+            for blob in blob_list:
+                # list_blobs returns an iterator
+                # and we iterate over it more than once
+                blobs_data.append(blob)
         except Exception as exc:
             log.exception('Error occurred fetching blob list for azurefs')
 
@@ -222,12 +232,6 @@ def update():
                 except Exception:
                     log.exception('Problem occurred trying to invalidate cache for container "{0}"'.format(name))
             continue
-
-        blobs_data = []
-        for blob in blob_list:
-            # list_blobs returns an iterator
-            # and we iterate over it more than once
-            blobs_data.append(blob)
 
         # Walk the cache directory searching for deletions
         blob_names = [blob.name for blob in blobs_data]

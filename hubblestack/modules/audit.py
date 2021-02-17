@@ -119,7 +119,7 @@ def run(audit_files=None,
     """
     :param audit_files:
         Profile to execute. Can have one or more files
-        (python list or comma separated) (default: {None})
+        (comma separated) (default: {None})
     :param tags:
         Can be used to target a subset of tags via glob targeting.
     :param labels:
@@ -161,6 +161,8 @@ def run(audit_files=None,
             show_compliance = show_compliance.lower().strip() == 'true'
         if type(verbose) is str and verbose.lower().strip() in ['true', 'false']:
             verbose = verbose.lower().strip() == 'true'
+        else:
+            verbose = None
         if labels:
             if not isinstance(labels, list):
                 labels = labels.split(',')

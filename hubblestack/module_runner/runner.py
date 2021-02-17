@@ -102,12 +102,10 @@ class Runner(ABC):
             raise CommandExecutionError('Could not execute block \'{0}\', as it is not found.'
                                         .format(profile_id))
 
-        validate_param_method = '{0}.validate_params'.format(module_name)
-        __hmods__[validate_param_method](profile_id, module_args, {'chaining_args': chaining_args,
-                                                                   'caller': self._caller})
-
         # Comparators must exist in Audit
         if self._caller == Caller.AUDIT:
+            if 'args' not in module_args:
+                raise HubbleCheckValidationError('No mention of args in audit-id: {0}'.format(profile_id))
             if 'comparator' not in module_args:
                 raise HubbleCheckValidationError('No mention of comparator in audit-id: {0}'.format(profile_id))
         elif self._caller == Caller.FDG:
@@ -129,6 +127,10 @@ class Runner(ABC):
                 raise CommandExecutionError('Could not execute block \'{0}\': '
                                             'either \'args\' or \'comparator\' is not present in block.'
                                             .format(profile_id, key))
+
+        validate_param_method = '{0}.validate_params'.format(module_name)
+        __hmods__[validate_param_method](profile_id, module_args, {'chaining_args': chaining_args,
+                                                                   'caller': self._caller})
 
     def _execute_module(self, module_name, profile_id, module_args, extra_args=None, chaining_args=None):
         """

@@ -18,7 +18,7 @@ File-Permission comparator exposes various commands:
             allow_more_strict: true
 
 If allow_more_strict=False, exact file permission will be matched
-If allow_more_strict=False, file permissions can be same or more strict
+If allow_more_strict=True, file permissions can be same or more strict
 default value of allow_more_strict is False
 """
 import logging
@@ -39,6 +39,8 @@ def match(audit_id, result_to_compare, args):
 
     errors = []
     allow_more_strict = args['match'].get('allow_more_strict', False)
+    if not isinstance(allow_more_strict, bool):
+        allow_more_strict = False
     given_permission = str(result_to_compare)
     if given_permission != '0':
         given_permission = given_permission[1:]

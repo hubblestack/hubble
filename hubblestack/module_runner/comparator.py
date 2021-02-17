@@ -7,6 +7,7 @@ Also, if a specific comparator is mentioned in other comparator. This will be in
 
 import logging
 from hubblestack.exceptions import HubbleCheckFailedError
+from hubblestack.exceptions import HubbleCheckValidationError
 
 log = logging.getLogger(__name__)
 
@@ -56,6 +57,8 @@ def _find_comparator_command(args):
         if comparator_key in ['type', 'success_on_error']:
             continue
 
+        if 'type' not in args:
+            raise HubbleCheckValidationError('type keyword is not present in comparator')
         method_name = '{0}.{1}'.format(args['type'], comparator_key)
         if method_name in __comparator__:
             return method_name

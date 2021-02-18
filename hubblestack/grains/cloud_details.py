@@ -59,7 +59,11 @@ def _get_aws_details():
             # AWS account id is always an integer number
             # So if it's an aws machine it must be a valid integer number
             # Else it will throw an Exception
+            #
+            # Once it's a confirmed aws account, pad the account id to 12 digits to account for leading zeros.
+            # https://docs.aws.amazon.com/general/latest/gr/acct-identifiers.html#awsdocs-filter-selector:~:text=A%2012%2Ddigit%20number
             int(aws['cloud_account_id'])
+            aws['cloud_account_id'] = f"{aws['cloud_account_id']:0>12}"
         else:
             raise ValueError("Error while fetching AWS account id. Got status code: %s " % (response.status_code))
 

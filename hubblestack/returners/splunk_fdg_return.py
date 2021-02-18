@@ -188,9 +188,9 @@ def _file_url_to_sourcetype(filename, base='hubble_fdg'):
     """
     if re.search(r'^\w+://', filename):
         filename = filename.split('://', 1)[1]
-    if base.endswith('_fdg') and filename.startswith('fdg/'):
+    if base.endswith('_fdg') and filename.startswith('fdg'):
         filename = filename[4:]
-    if base.endswith('_fdg') and filename.startswith('fdg_v2/'):
+    if base.endswith('_fdg') and filename.startswith('fdg_v2'):
         filename = filename[7:]
     if re.search(r'\.fdg$', filename):
         filename = filename[:-4]

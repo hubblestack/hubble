@@ -356,17 +356,22 @@ def _grep(path,
         options = ''
 
     # prepare the command
-    cmd = (
-        r'''grep  {options} {pattern} {path}'''
-        .format(
-            options=options,
-            pattern=pattern,
-            path=path,
+    cmd = None
+    if path:
+        cmd = (
+            r'''grep  {options} {pattern} {path}'''
+            .format(options=options, pattern=pattern, path=path,)
         )
-    )
+    else:
+        # in stdin mode
+        options = [] if options == '' else [options]
+        cmd = ['grep'] + options + [pattern]
 
     try:
-        ret = __mods__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
+        if path:
+            ret = __mods__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
+        else:
+            ret = __mods__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True, stdin=string)
     except (IOError, OSError) as exc:
         raise CommandExecutionError(exc.strerror)
 

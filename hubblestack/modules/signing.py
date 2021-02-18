@@ -22,8 +22,8 @@ def msign(*targets, **kw):
         private_key :- the private key to use for the signature (default
             /etc/hubble/sign/private.key)
     """
-    mfname = kw.get('mfname', 'MANIFEST')
-    sfname = kw.get('sfname', 'SIGNATURE')
+    mfname = kw.get('mfname', HuS.Options.manifest_file_name)
+    sfname = kw.get('sfname', HuS.Options.signature_file_name)
     private_key = kw.get('private_key', HuS.Options.private_key)
 
     HuS.manifest(targets, mfname=mfname)
@@ -46,8 +46,8 @@ def verify(*targets, **kw):
                   found.
     """
 
-    mfname = kw.get('mfname', 'MANIFEST')
-    sfname = kw.get('sfname', 'SIGNATURE')
+    mfname = kw.get('mfname', HuS.Options.manifest_file_name)
+    sfname = kw.get('sfname', HuS.Options.signature_file_name)
     cfname = kw.get('cfname', 'CERTIFICATES')
     public_crt = kw.get('public_crt', HuS.Options.public_crt)
     ca_crt = kw.get('ca_crt', HuS.Options.ca_crt)

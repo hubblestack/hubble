@@ -144,6 +144,8 @@ class Options(object):
         ca_crt = '/etc/hubble/sign/ca-root.crt'
         public_crt = '/etc/hubble/sign/public.crt'
         private_key = '/etc/hubble/sign/private.key'
+        manifest_file_name = 'MANIFEST'
+        signature_file_name = 'SIGNATURE'
 
     def __getattribute__(self, name):
         """ If the option exists in the default pseudo meta class
@@ -705,8 +707,10 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             return fnd.get(real_path, fnd.get('path', ''))
 
         def inner(path, saltenv, *a, **kwargs):
-            f_mani = find_file_f('MANIFEST', saltenv, *a, **kwargs )
-            f_sign = find_file_f('SIGNATURE', saltenv, *a, **kwargs )
+            manifest_file_name = Options.manifest_file_name
+            signature_file_name = Options.signature_file_name
+            f_mani = find_file_f(manifest_file_name, saltenv, *a, **kwargs )
+            f_sign = find_file_f(signature_file_name, saltenv, *a, **kwargs )
             f_pub_cert = find_file_f('CERTIFICATES', saltenv, *a, **kwargs)
             f_path = find_file_f(path, saltenv, *a, **kwargs)
             real_path = _p(f_path)

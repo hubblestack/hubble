@@ -215,12 +215,20 @@ def validate_params(block_id, block_dict, extra_args=None):
 
     error = {}
     filepath = None
-    # fetch required param
-    file_content = runner_utils.get_chained_param(extra_args)
-    if not file_content:
-        filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
-    if not file_content and not filepath:
-        error['path'] = 'Mandatory parameter: path not found for id: %s' % (block_id)
+
+    chaining_file_mode = runner_utils.get_param_for_module(block_id, block_dict, 'chain_filepath', False)
+    if chaining_file_mode:
+        # in chain_filepath mode, filepath from chaining is mandatory
+        filepath = runner_utils.get_chained_param(extra_args)
+        if not filepath:
+            error['path'] = 'Mandatory parameter: path not found for id: %s' % (block_id)
+    else:
+        # fetch required param
+        file_content = runner_utils.get_chained_param(extra_args)
+        if not file_content:
+            filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
+        if not file_content and not filepath:
+            error['path'] = 'Mandatory parameter: path not found for id: %s' % (block_id)
 
     pattern_val = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
     if not pattern_val:
@@ -250,27 +258,43 @@ def execute(block_id, block_dict, extra_args=None):
     """
     log.debug('Executing grep module for id: {0}'.format(block_id))
     # default mode=file, search in file.
-    # In chaining, this will search in chained content
-    file_mode = True
-    filepath = None
+    # In chaining, there can be two modes:
+    #   filepath from chaining
+    #   content from chaining
 
-    # check if chained content is available
-    file_content = runner_utils.get_chained_param(extra_args)
-    if file_content:
-        file_mode = False
-        format_chained = runner_utils.get_param_for_module(block_id, block_dict, 'format_chained', True)
-        starting_string = runner_utils.get_param_for_module(block_id, block_dict, 'starting_string', False)
-        if format_chained and starting_string:
-            file_content = starting_string.format(file_content)
-    # fetch required param
-    if file_mode:
-        filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
+    filepath = None
+    chained_filepath = None
+    file_mode = True
+
     pattern = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
     flags = runner_utils.get_param_for_module(block_id, block_dict, 'flags')
     if flags is None:
         flags = []
     if isinstance(flags, str):
         flags = [flags]
+
+    # check if chained content is available
+    format_chained = runner_utils.get_param_for_module(block_id, block_dict, 'format_chained', True)
+    starting_string = runner_utils.get_param_for_module(block_id, block_dict, 'starting_string', False)
+    chaining_file_mode = runner_utils.get_param_for_module(block_id, block_dict, 'chain_filepath', False)
+    if chaining_file_mode:
+        # in chain_filepath mode, filepath from chaining is mandatory
+        chained_filepath = runner_utils.get_chained_param(extra_args)
+        filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
+        if format_chained:
+            pattern = pattern.format(chained_filepath)
+            filepath = filepath.format(chained_filepath)
+    else:
+        file_content = runner_utils.get_chained_param(extra_args)
+        if file_content:
+            file_mode = False
+            if format_chained and starting_string:
+                file_content = starting_string.format(file_content)
+        # fetch required param
+        if file_mode:
+            filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
+            if format_chained:
+                filepath = filepath.format(file_content)
 
     # check filepath existence
     if file_mode:

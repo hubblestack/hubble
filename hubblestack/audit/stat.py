@@ -250,6 +250,10 @@ def execute(block_id, block_dict, extra_args=None):
     log.debug('Executing stat module for id: {0}'.format(block_id))
     # fetch required param
     filepath = runner_utils.get_chained_param(extra_args)
+    if filepath and isinstance(filepath, dict):
+        # in case, the result is a dictionary. Fetch the path
+        for key, value in filepath.items():
+            filepath = value
     if not filepath:
         filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
 

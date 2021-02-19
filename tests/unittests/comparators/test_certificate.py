@@ -1,7 +1,13 @@
+
+import datetime
+
 from unittest import TestCase
 
 from hubblestack.comparators import certificate as certificate_comparator
 
+def datestring(days=0, fmt='%Y-%m-%d %H:%M:%S'):
+    ret = datetime.datetime.now() + datetime.timedelta(days=days)
+    return ret.strftime(fmt)
 
 class TestCertificate(TestCase):
     """
@@ -14,8 +20,8 @@ class TestCertificate(TestCase):
         """
         audit_id = 'test-1'
         result_to_match = {
-            'ssl_start_time': '2019-02-06 00:00:00',
-            'ssl_end_time': '2022-02-02 00:00:00'
+            'ssl_start_time': datestring(-300),
+            'ssl_end_time': datestring(300)
         }
         args = {
             'match': {
@@ -32,8 +38,8 @@ class TestCertificate(TestCase):
         """
         audit_id = 'test-2'
         result_to_match = {
-            'ssl_start_time': '2022-02-06 00:00:00',
-            'ssl_end_time': '2022-02-02 00:00:00'
+            'ssl_start_time': datestring(300),
+            'ssl_end_time': datestring(300),
         }
         args = {
             'match': {
@@ -51,8 +57,8 @@ class TestCertificate(TestCase):
         """
         audit_id = 'test-3'
         result_to_match = {
-            'ssl_start_time': '2019-02-06 00:00:00',
-            'ssl_end_time': '2020-02-02 00:00:00'
+            'ssl_start_time': datestring(-300),
+            'ssl_end_time': datestring(-15),
         }
         args = {
             'match': {
@@ -70,8 +76,8 @@ class TestCertificate(TestCase):
         """
         audit_id = 'test-4'
         result_to_match = {
-            'ssl_start_time': '2025-02-06 00:00:00',
-            'ssl_end_time': '2026-02-02 00:00:00'
+            'ssl_start_time': datestring(300),
+            'ssl_end_time': datestring(600)
         }
         args = {
             'match': {
@@ -90,8 +96,8 @@ class TestCertificate(TestCase):
         """
         audit_id = 'test-5'
         result_to_match = {
-            'ssl_start_time': '2019-02-06 00:00:00',
-            'ssl_end_time': '2022-02-02 00:00:00',
+            'ssl_start_time': datestring(-300),
+            'ssl_end_time': datestring(300),
             'ssl_issuer_common_name' : 'DigiCert SHA2 Secure Server CA'
         }
         args = {
@@ -110,8 +116,8 @@ class TestCertificate(TestCase):
         """
         audit_id = 'test-5'
         result_to_match = {
-            'ssl_start_time': '2019-02-06 00:00:00',
-            'ssl_end_time': '2022-02-02 00:00:00',
+            'ssl_start_time': datestring(-300),
+            'ssl_end_time': datestring(300),
             'ssl_issuer_common_name' : 'DigiCert SHA2 Secure Server CA'
         }
         args = {

@@ -378,6 +378,27 @@ def test_msign_and_verify_signature(__mods__, targets, no_ppc, cdbt):
 
     assert res == sig.STATUS.FAIL
 
+def test_various_padding_bits(__mods__, targets, no_ppc, cdbt):
+    sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))
+
+    sig.Options.public_crt  = cdb('public-1.crt', cdbt, 1)
+    sig.Options.private_key = cdb('private-1.key', cdbt, 1)
+
+    sig.Options.salt_padding_bits = 32
+    __mods__['signing.msign'](*targets)
+    res = sig.verify_signature('MANIFEST', 'SIGNATURE',
+        public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
+
+    assert res == sig.STATUS.VERIFIED
+
+    sig.Options.salt_padding_bits = 'max'
+    __mods__['signing.msign'](*targets)
+    res = sig.verify_signature('MANIFEST', 'SIGNATURE',
+        public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
+
+    assert res == sig.STATUS.VERIFIED
+
+
 
 def test_like_a_daemon_with_bundle(__mods__, no_ppc, cdbt):
     sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))

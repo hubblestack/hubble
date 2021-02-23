@@ -197,13 +197,13 @@ def split_certs(fh):
             ret += line
             if line.startswith('----'):
                 ret = ret.encode()
+                log_level = log.debug
                 try:
-                    log_level = log.debug
                     yield ossl.load_certificate(ossl.FILETYPE_PEM, ret)
                 except Exception as exception_object:
                     status = STATUS.UNKNOWN
                     if check_verif_timestamp(fh):
-                        log_level = log.error
+                        log_level = log.warning
                     log_level('%s: | file: "%s" | cert decoding status: %s | attempting as PEM encoded private key',
                             short_fname, fh.name, status)
                     yield load_pem_private_key(ret, password=None, backend=default_backend())

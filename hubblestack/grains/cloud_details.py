@@ -48,31 +48,33 @@ def _get_aws_details():
         ttl_header = {'X-aws-ec2-metadata-token-ttl-seconds': '300'}
         token_url = 'http://169.254.169.254/latest/api/token'
         token_request = requests.put(token_url, headers=ttl_header, timeout=3, proxies=proxies)
-        token = token_request.text
-        aws_token_header = {'X-aws-ec2-metadata-token': token}
-        response = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
-                            headers=aws_token_header, timeout=3, proxies=proxies)
-        if response.status_code == requests.codes.ok:
-            res = response.json()
-            aws['cloud_account_id'] = res.get('accountId', 'unknown')
-
-            # AWS account id is always an integer number
-            # So if it's an aws machine it must be a valid integer number
-            # Else it will throw an Exception
-            #
-            # Once it's a confirmed aws account, pad the account id to 12 digits to account for leading zeros.
-            # https://docs.aws.amazon.com/general/latest/gr/acct-identifiers.html#awsdocs-filter-selector:~:text=A%2012%2Ddigit%20number
-            int(aws['cloud_account_id'])
-            aws['cloud_account_id'] = f"{aws['cloud_account_id']:0>12}"
-        else:
-            raise ValueError("Error while fetching AWS account id. Got status code: %s " % (response.status_code))
-
-        response = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
+        if token_request.status_code == requests.codes.ok:
+            token = token_request.text
+            aws_token_header = {'X-aws-ec2-metadata-token': token}
+            response = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
                                 headers=aws_token_header, timeout=3, proxies=proxies)
-        if response.status_code == requests.codes.ok:
-            aws['cloud_instance_id'] = response.text
+            if response.status_code == requests.codes.ok:
+                res = response.json()
+                aws['cloud_account_id'] = res.get('accountId', 'unknown')
+                # AWS account id is always an integer number
+                # So if it's an aws machine it must be a valid integer number
+                # Else it will throw an Exception
+                #
+                # Once it's a confirmed aws account, pad the account id to 12 digits to account for leading zeros.
+                # https://docs.aws.amazon.com/general/latest/gr/acct-identifiers.html#awsdocs-filter-selector:~:text=A%2012%2Ddigit%20number
+                id = int(aws['cloud_account_id'])
+                aws['cloud_account_id'] = f"{id:0>12}"
+            else:
+                raise ValueError("Error while fetching AWS account id. Got status code: %s " % (response.status_code))
+
+            response = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
+                                    headers=aws_token_header, timeout=3, proxies=proxies)
+            if response.status_code == requests.codes.ok:
+                aws['cloud_instance_id'] = response.text
+            else:
+                raise ValueError("Error while fetching AWS instance id. Got status code: %s " % (response.status_code))
         else:
-            raise ValueError("Error while fetching AWS account id. Got status code: %s " % (response.status_code))
+            aws = None
     except (requests.exceptions.RequestException, ValueError) as e:
         log.error(e)
         # Not on an AWS box
@@ -101,11 +103,11 @@ def _get_aws_details():
                     aws_extra.pop(key)
 
         except (requests.exceptions.RequestException, ValueError) as e:
-            log.error(e)
+            log.debug(e)
             aws_extra = None
-
-    ret['cloud_details'] = aws
-    ret['cloud_details_extra'] = aws_extra
+        ret['cloud_details'] = aws
+        if aws_extra:
+            ret['cloud_details_extra'] = aws_extra
     return ret
 
 

@@ -155,6 +155,10 @@ class Options(object):
         manifest_file_name = 'MANIFEST'
         signature_file_name = 'SIGNATURE'
         certificates_file_name = 'CERTIFICATES'
+        salt_padding_bits = [padding.PSS.MAX_LENGTH, 32]
+        # The first generation signature padding bits were 32 (only) the
+        # crypto-recommended is "however many we can fit". AWS CloudHSM is
+        # incompatible with max, ... we'll need to try both. See below.
 
     def __getattribute__(self, name):
         """ If the option exists in the default pseudo meta class
@@ -516,10 +520,14 @@ def sign_target(fname, ofname, private_key=None, **kwargs): # pylint: disable=un
     first_key = the_keys[0]
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     args = { 'data': hasher.finalize() }
+
+    salt_padding_bits = Options.salt_padding_bits
+    if isinstance(salt_padding_bits, (list,tuple)):
+        salt_padding_bits = salt_padding_bits[0]
+
     if isinstance(first_key, rsa.RSAPrivateKey):
         args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
-            #salt_length=padding.PSS.MAX_LENGTH)
-            salt_length=32)
+            salt_length=salt_padding_bits)
         args['algorithm'] = utils.Prehashed(chosen_hash)
     sig = first_key.sign(**args)
     with open(ofname, 'w') as fh:
@@ -563,33 +571,37 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
 
+    salt_padding_bits_list = Options.salt_padding_bits
+    if not isinstance(salt_padding_bits_list, (list,tuple)):
+        salt_padding_bits_list = [ salt_padding_bits_list ]
+
     for crt,txt,status in x509.public_crt:
         args = { 'signature': sig, 'data': digest }
         log_level = log.debug
         sha256sum = hash_target(fname)
         pubkey = crt.get_pubkey().to_cryptography_key()
-        if isinstance(pubkey, rsa.RSAPublicKey):
-            args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
-                #salt_length=padding.PSS.MAX_LENGTH)
-                salt_length=32)
-            args['algorithm'] = utils.Prehashed(chosen_hash)
-        try:
-            pubkey.verify(**args)
-            log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
-                    short_fname, fname, status, sha256sum, txt)
-            return status
-        except TypeError as tee:
-            status = STATUS.FAIL
-            log.critical('%s | file "%s" | status: %s | internal error using %s.verify() (%s): %s',
-                    short_fname, fname, status,
-                    type(pubkey).__name__,
-                    stringify_cert_files(crt), tee)
-        except InvalidSignature:
-            status = STATUS.FAIL
-            if check_verif_timestamp(fname):
-                log_level = log.critical
-            log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
-                    short_fname, fname, status, sha256sum, txt)
+        for salt_padding_bits in salt_padding_bits_list:
+            if isinstance(pubkey, rsa.RSAPublicKey):
+                args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=salt_padding_bits)
+                args['algorithm'] = utils.Prehashed(chosen_hash)
+            try:
+                pubkey.verify(**args)
+                log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
+                        short_fname, fname, status, sha256sum, txt)
+                return status
+            except TypeError as tee:
+                status = STATUS.FAIL
+                log.critical('%s | file "%s" | status: %s | internal error using %s.verify() (%s): %s',
+                        short_fname, fname, status,
+                        type(pubkey).__name__,
+                        stringify_cert_files(crt), tee)
+            except InvalidSignature:
+                status = STATUS.FAIL
+                if check_verif_timestamp(fname):
+                    log_level = log.critical
+                log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
+                        short_fname, fname, status, sha256sum, txt)
     return STATUS.FAIL
 
 

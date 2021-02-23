@@ -1012,7 +1012,7 @@ def _mask_event_data_helper(event_data, query_name, column, perform_masking_kwar
                       column, query_name)
         if custom_args['should_break']:
             return False, blacklisted_object, event_data
-    if isinstance(event_data[column], str):
+    if event_data[column] != "" and isinstance(event_data[column], str):
         # If column is of 'string' type, then replace pattern in-place
         # No need for recursion here
         value = event_data[column]

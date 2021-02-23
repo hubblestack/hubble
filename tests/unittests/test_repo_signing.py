@@ -384,19 +384,44 @@ def test_various_padding_bits(__mods__, targets, no_ppc, cdbt):
     sig.Options.public_crt  = cdb('public-1.crt', cdbt, 1)
     sig.Options.private_key = cdb('private-1.key', cdbt, 1)
 
+    # sign with 32-bit-salt-padding
     sig.Options.salt_padding_bits = 32
     __mods__['signing.msign'](*targets)
+    # check either 'max' or 32 or whatever
+    sig.Options.salt_padding_bits = ['max', 32]
     res = sig.verify_signature('MANIFEST', 'SIGNATURE',
         public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
-
     assert res == sig.STATUS.VERIFIED
 
+    # sign with max-bit-salt-padding
     sig.Options.salt_padding_bits = 'max'
     __mods__['signing.msign'](*targets)
+    # check with max or 32 or whatever
+    sig.Options.salt_padding_bits = ['max', 32]
     res = sig.verify_signature('MANIFEST', 'SIGNATURE',
         public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
-
     assert res == sig.STATUS.VERIFIED
+
+    # check one more time with 32/max instead of max/32 (shouldn't matter)
+    sig.Options.salt_padding_bits = [32, 'max']
+    res = sig.verify_signature('MANIFEST', 'SIGNATURE',
+        public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
+    assert res == sig.STATUS.VERIFIED
+
+    # stick with the 'max'-salt-padding-bits and re-check, should fail
+    sig.Options.salt_padding_bits = 32
+    res = sig.verify_signature('MANIFEST', 'SIGNATURE',
+        public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
+    assert res == sig.STATUS.FAIL
+
+    # re-sign with 32 bit salt padding bits
+    sig.Options.salt_padding_bits = 32
+    __mods__['signing.msign'](*targets)
+    # but verify under max-padding-bits (should fail)
+    sig.Options.salt_padding_bits = 'max'
+    res = sig.verify_signature('MANIFEST', 'SIGNATURE',
+        public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
+    assert res == sig.STATUS.FAIL
 
 
 

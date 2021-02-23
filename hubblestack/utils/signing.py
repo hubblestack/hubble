@@ -559,9 +559,10 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
     log_level = log.debug
     if fname is None or sfname is None:
         status = STATUS.UNKNOWN
-        log_level('fname=%s or sfname=%s is Nones => status=%s', fname, sfname, status)
+        log_level('fname=%s or sfname=%s is None => status=%s', fname, sfname, status)
         return status
     short_fname = fname.split('/')[-1]
+
     try:
         with open(sfname, 'r') as fh:
             sig,_,_ = PEM.decode(fh.read()) # also returns header and decrypted-status

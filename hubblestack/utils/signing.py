@@ -81,9 +81,18 @@ verif_log_timestamps = {}
 verif_log_dampener_lim = 3600
 
 def _format_padding_bits(x):
+    if isinstance(x, (list,tuple)):
+        x = x[0]
     if isinstance(x, str) and 'max' in x.lower():
         return padding.PSS.MAX_LENGTH
     return int(x)
+
+def _format_padding_bits_txt(x):
+    if isinstance(x, (tuple,list)):
+        return "/".join([ _format_padding_bits(y) for y in x ])
+    if x is padding.PSS.MAX_LENGTH:
+        return "max"
+    return str(x)
 
 def check_is_ca(crt):
     try:
@@ -526,23 +535,22 @@ def sign_target(fname, ofname, private_key=None, **kwargs): # pylint: disable=un
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     args = { 'data': hasher.finalize() }
 
-    salt_padding_bits = Options.salt_padding_bits
-    if isinstance(salt_padding_bits, (list,tuple)):
-        salt_padding_bits = _format_padding_bits(salt_padding_bits[0])
+    salt_padding_bits = _format_padding_bits(Options.salt_padding_bits)
+
+    log.error('signing %s using %s', fname, private_key)
 
     if isinstance(first_key, rsa.RSAPrivateKey):
-        args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
-            salt_length=salt_padding_bits)
+        log.error('signing %s using SBP:%s', fname, _format_padding_bits_txt(salt_padding_bits))
+        args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()), salt_length=salt_padding_bits)
         args['algorithm'] = utils.Prehashed(chosen_hash)
     sig = first_key.sign(**args)
     with open(ofname, 'w') as fh:
-        log.debug('writing signature of %s to %s', os.path.abspath(fname), os.path.abspath(ofname))
+        log.error('writing signature of %s to %s', os.path.abspath(fname), os.path.abspath(ofname))
         fh.write(PEM.encode(sig, 'Detached Signature of {}'.format(fname)))
         fh.write('\n')
 
 
 def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None, **kwargs): # pylint: disable=unused-argument
-    ### make
     """
         Given the fname, sfname public_crt and ca_crt:
 
@@ -573,6 +581,7 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
             log_level = log.error
         log_level('%s | file "%s" | status: %s ', short_fname, fname, status)
         return status
+
     x509 = X509AwareCertBucket(public_crt, ca_crt, extra_crt)
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
@@ -589,26 +598,25 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
         for salt_padding_bits in salt_padding_bits_list:
             salt_padding_bits = _format_padding_bits(salt_padding_bits)
             if isinstance(pubkey, rsa.RSAPublicKey):
-                args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
-                    salt_length=salt_padding_bits)
+                args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()), salt_length=salt_padding_bits)
                 args['algorithm'] = utils.Prehashed(chosen_hash)
             try:
                 pubkey.verify(**args)
-                log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
-                        short_fname, fname, status, sha256sum, txt)
+                log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (1) public cert fingerprint and requester: "%s"',
+                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), status, sha256sum, txt)
                 return status
             except TypeError as tee:
-                status = STATUS.FAIL
-                log.critical('%s | file "%s" | status: %s | internal error using %s.verify() (%s): %s',
-                        short_fname, fname, status,
+                log.critical('verify_signature(%s, %s) | status: %s | internal error using %s.verify() (%s): %s',
+                        fname, sfname, status,
                         type(pubkey).__name__,
                         stringify_cert_files(crt), tee)
             except InvalidSignature:
-                status = STATUS.FAIL
                 if check_verif_timestamp(fname):
                     log_level = log.critical
-                log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
-                        short_fname, fname, status, sha256sum, txt)
+                log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (2) public cert fingerprint and requester: "%s"',
+                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), status, sha256sum, txt)
+    log_level('verify_signature(%s, %s) | sbp: %s | status: FAIL | sha256sum: "%s" | (3) public cert fingerprint and requester: "%s"',
+            fname, sfname, _format_padding_bits_txt(salt_padding_bits), STATUS.FAIL, sha256sum, txt)
     return STATUS.FAIL
 
 

@@ -408,11 +408,18 @@ def test_various_padding_bits(__mods__, targets, no_ppc, cdbt):
         public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
     assert res == sig.STATUS.VERIFIED
 
-    # stick with the 'max'-salt-padding-bits and re-check, should fail
+    # The padding thing really only applies to RSA.
+    # So, for the below expected failures, it's only when cdbt is 'rsa'.
+    expected = sig.STATUS.FAIL if cdbt == 'rsa' else sig.STATUS.VERIFIED
+
+    # sign with max-bit-salt-padding
+    sig.Options.salt_padding_bits = 'max'
+    __mods__['signing.msign'](*targets)
+    # check with 32bit only
     sig.Options.salt_padding_bits = 32
     res = sig.verify_signature('MANIFEST', 'SIGNATURE',
         public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
-    assert res == sig.STATUS.FAIL
+    assert res == expected
 
     # re-sign with 32 bit salt padding bits
     sig.Options.salt_padding_bits = 32
@@ -421,8 +428,7 @@ def test_various_padding_bits(__mods__, targets, no_ppc, cdbt):
     sig.Options.salt_padding_bits = 'max'
     res = sig.verify_signature('MANIFEST', 'SIGNATURE',
         public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
-    assert res == sig.STATUS.FAIL
-
+    assert res == expected
 
 
 def test_like_a_daemon_with_bundle(__mods__, no_ppc, cdbt):

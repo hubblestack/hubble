@@ -11,6 +11,7 @@ chardet
 croniter
 cryptography
 daemon
+distro
 futures
 gitdb2
 gitpython

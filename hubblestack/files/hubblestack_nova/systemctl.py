@@ -80,6 +80,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
         log.debug(__tags__)
 
     ret = {'Success': [], 'Failure': [], 'Controlled': []}
+
     for tag in __tags__:
         if fnmatch.fnmatch(tag, tags):
             for tag_data in __tags__[tag]:
@@ -88,6 +89,11 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                     continue
                 name = tag_data['name']
                 audittype = tag_data['type']
+
+                if 'service.enabled' not in __mods__:
+                    tag_data['failure_reason'] = f"unable to look for service '{name}' since host seems to lack init system"
+                    ret['Failure'].append(tag_data)
+                    continue
 
                 enabled = __mods__['service.enabled'](name)
                 # Blacklisted service (must not be running or not found)

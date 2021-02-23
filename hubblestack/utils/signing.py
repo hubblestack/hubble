@@ -154,6 +154,7 @@ class Options(object):
         private_key = '/etc/hubble/sign/private.key'
         manifest_file_name = 'MANIFEST'
         signature_file_name = 'SIGNATURE'
+        certificates_file_name = 'CERTIFICATES'
 
     def __getattribute__(self, name):
         """ If the option exists in the default pseudo meta class
@@ -482,10 +483,14 @@ def descend_targets(targets, callback):
                     callback(fname_)
 
 
-def manifest(targets, mfname='MANIFEST'):
+def manifest(targets, mfname=None):
     """
     Produce a manifest file given `targets`.
     """
+
+    if mfname is None:
+        mfname = Options.manifest_file_name
+
     with open(mfname, 'w') as mfh:
         def append_hash(fname):
             fname = normalize_path(fname)
@@ -495,10 +500,12 @@ def manifest(targets, mfname='MANIFEST'):
         descend_targets(targets, append_hash)
 
 
-def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: disable=unused-argument
+def sign_target(fname, ofname, private_key=None, **kwargs): # pylint: disable=unused-argument
     """
     Sign a given `fname` and write the signature to `ofname`.
     """
+    if private_key is None:
+        private_key = Options.private_key
     # NOTE: This is intended to crash if there's some number of keys other than
     # exactly 1 read from the private_key file:
     the_keys = list(read_certs(private_key))
@@ -521,7 +528,7 @@ def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: d
         fh.write('\n')
 
 
-def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt', extra_crt=None, **kwargs): # pylint: disable=unused-argument
+def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None, **kwargs): # pylint: disable=unused-argument
     ### make
     """
         Given the fname, sfname public_crt and ca_crt:
@@ -530,6 +537,12 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
         return STATUS.UNKNOWN if the certificate signature can't be verified with the ca cert
         return STATUS.VERIFIED if both the signature and the CA sig match
     """
+
+    if public_crt is None:
+        public_crt = Options.public_crt
+    if ca_crt is None:
+        ca_crt = Options.ca_crt
+
     log_level = log.debug
     if fname is None or sfname is None:
         status = STATUS.UNKNOWN
@@ -594,7 +607,8 @@ def iterate_manifest(mfname):
                 yield manifested_fname
 
 
-def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='public.crt', ca_crt='ca-root.crt', extra_crt=None):
+def verify_files(targets, mfname=None, sfname=None,
+        public_crt=None, ca_crt=None, extra_crt=None):
     """ given a list of `targets`, a MANIFEST, and a SIGNATURE file:
 
         1. Check the signature of the manifest, mark the 'MANIFEST' item of the return as:
@@ -610,9 +624,13 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
     """
 
     if mfname is None:
-        mfname = 'MANIFEST'
+        mfname = Options.manifest_file_name
     if sfname is None:
-        sfname = 'SIGNATURE'
+        sfname = Options.signature_file_name
+    if public_crt is None:
+        public_crt = Options.public_crt
+    if ca_crt is None:
+        ca_crt = Options.ca_crt
 
     log.debug("verifying: files: %s | mfname: %s | sfname: %s | public_crt: %s| ca_crt: %s",
             targets, mfname, sfname, public_crt, ca_crt)
@@ -717,9 +735,10 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
         def inner(path, saltenv, *a, **kwargs):
             manifest_file_name = Options.manifest_file_name
             signature_file_name = Options.signature_file_name
+            certificates_file_name = Options.certificates_file_name
             f_mani = find_file_f(manifest_file_name, saltenv, *a, **kwargs )
             f_sign = find_file_f(signature_file_name, saltenv, *a, **kwargs )
-            f_pub_cert = find_file_f('CERTIFICATES', saltenv, *a, **kwargs)
+            f_pub_cert = find_file_f(certificates_file_name, saltenv, *a, **kwargs)
             f_path = find_file_f(path, saltenv, *a, **kwargs)
             real_path = _p(f_path)
             mani_path = _p(f_mani)
@@ -731,7 +750,8 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
                 return f_path
             verify_res = verify_files([real_path],
                                         mfname=mani_path, sfname=sign_path,
-                                        public_crt=Options.public_crt, ca_crt=Options.ca_crt, extra_crt=cert_path)
+                                        public_crt=Options.public_crt,
+                                        ca_crt=Options.ca_crt, extra_crt=cert_path)
             log.debug('verify: %s', dict(**verify_res))
             vrg = verify_res.get(real_path, STATUS.UNKNOWN)
             if vrg == STATUS.VERIFIED:

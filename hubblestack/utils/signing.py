@@ -80,6 +80,11 @@ verif_log_timestamps = {}
 # maybe set in /etc/hubble/hubble
 verif_log_dampener_lim = 3600
 
+def _format_padding_bits(x):
+    if isinstance(x, str) and 'max' in x.lower():
+        return padding.PSS.MAX_LENGTH
+    return int(x)
+
 def check_is_ca(crt):
     try:
         crt = crt.to_cryptography()
@@ -155,7 +160,7 @@ class Options(object):
         manifest_file_name = 'MANIFEST'
         signature_file_name = 'SIGNATURE'
         certificates_file_name = 'CERTIFICATES'
-        salt_padding_bits = [padding.PSS.MAX_LENGTH, 32]
+        salt_padding_bits = ['max', 32]
         # The first generation signature padding bits were 32 (only) the
         # crypto-recommended is "however many we can fit". AWS CloudHSM is
         # incompatible with max, ... we'll need to try both. See below.
@@ -523,7 +528,7 @@ def sign_target(fname, ofname, private_key=None, **kwargs): # pylint: disable=un
 
     salt_padding_bits = Options.salt_padding_bits
     if isinstance(salt_padding_bits, (list,tuple)):
-        salt_padding_bits = salt_padding_bits[0]
+        salt_padding_bits = _format_padding_bits(salt_padding_bits[0])
 
     if isinstance(first_key, rsa.RSAPrivateKey):
         args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
@@ -581,6 +586,7 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
         sha256sum = hash_target(fname)
         pubkey = crt.get_pubkey().to_cryptography_key()
         for salt_padding_bits in salt_padding_bits_list:
+            salt_padding_bits = _format_padding_bits(salt_padding_bits)
             if isinstance(pubkey, rsa.RSAPublicKey):
                 args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
                     salt_length=salt_padding_bits)

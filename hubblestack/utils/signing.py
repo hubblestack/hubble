@@ -89,7 +89,7 @@ def _format_padding_bits(x):
 
 def _format_padding_bits_txt(x):
     if isinstance(x, (tuple,list)):
-        return "/".join([ _format_padding_bits(y) for y in x ])
+        return "/".join([ _format_padding_bits_txt(y) for y in x ])
     if x is padding.PSS.MAX_LENGTH:
         return "max"
     return str(x)
@@ -590,10 +590,11 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
     if not isinstance(salt_padding_bits_list, (list,tuple)):
         salt_padding_bits_list = [ salt_padding_bits_list ]
 
+    sha256sum = hash_target(fname)
+
     for crt,txt,status in x509.public_crt:
         args = { 'signature': sig, 'data': digest }
         log_level = log.debug
-        sha256sum = hash_target(fname)
         pubkey = crt.get_pubkey().to_cryptography_key()
         for salt_padding_bits in salt_padding_bits_list:
             salt_padding_bits = _format_padding_bits(salt_padding_bits)
@@ -615,8 +616,8 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
                     log_level = log.critical
                 log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (2) public cert fingerprint and requester: "%s"',
                         fname, sfname, _format_padding_bits_txt(salt_padding_bits), status, sha256sum, txt)
-    log_level('verify_signature(%s, %s) | sbp: %s | status: FAIL | sha256sum: "%s" | (3) public cert fingerprint and requester: "%s"',
-            fname, sfname, _format_padding_bits_txt(salt_padding_bits), STATUS.FAIL, sha256sum, txt)
+    log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (3)',
+            fname, sfname, _format_padding_bits_txt(salt_padding_bits_list), STATUS.FAIL, sha256sum)
     return STATUS.FAIL
 
 

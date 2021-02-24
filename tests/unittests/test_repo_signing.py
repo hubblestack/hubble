@@ -378,6 +378,58 @@ def test_msign_and_verify_signature(__mods__, targets, no_ppc, cdbt):
 
     assert res == sig.STATUS.FAIL
 
+def test_various_padding_bits(__mods__, targets, no_ppc, cdbt):
+    sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))
+
+    sig.Options.public_crt  = cdb('public-1.crt', cdbt, 1)
+    sig.Options.private_key = cdb('private-1.key', cdbt, 1)
+
+    # sign with 32-bit-salt-padding
+    sig.Options.salt_padding_bits = 32
+    __mods__['signing.msign'](*targets)
+    # check either 'max' or 32 or whatever
+    sig.Options.salt_padding_bits = ['max', 32]
+    res = sig.verify_signature('MANIFEST', 'SIGNATURE',
+        public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
+    assert res == sig.STATUS.VERIFIED
+
+    # sign with max-bit-salt-padding
+    sig.Options.salt_padding_bits = 'max'
+    __mods__['signing.msign'](*targets)
+    # check with max or 32 or whatever
+    sig.Options.salt_padding_bits = ['max', 32]
+    res = sig.verify_signature('MANIFEST', 'SIGNATURE',
+        public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
+    assert res == sig.STATUS.VERIFIED
+
+    # check one more time with 32/max instead of max/32 (shouldn't matter)
+    sig.Options.salt_padding_bits = [32, 'max']
+    res = sig.verify_signature('MANIFEST', 'SIGNATURE',
+        public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
+    assert res == sig.STATUS.VERIFIED
+
+    # The padding thing really only applies to RSA.
+    # So, for the below expected failures, it's only when cdbt is 'rsa'.
+    expected = sig.STATUS.FAIL if cdbt == 'rsa' else sig.STATUS.VERIFIED
+
+    # sign with max-bit-salt-padding
+    sig.Options.salt_padding_bits = 'max'
+    __mods__['signing.msign'](*targets)
+    # check with 32bit only
+    sig.Options.salt_padding_bits = 32
+    res = sig.verify_signature('MANIFEST', 'SIGNATURE',
+        public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
+    assert res == expected
+
+    # re-sign with 32 bit salt padding bits
+    sig.Options.salt_padding_bits = 32
+    __mods__['signing.msign'](*targets)
+    # but verify under max-padding-bits (should fail)
+    sig.Options.salt_padding_bits = 'max'
+    res = sig.verify_signature('MANIFEST', 'SIGNATURE',
+        public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
+    assert res == expected
+
 
 def test_like_a_daemon_with_bundle(__mods__, no_ppc, cdbt):
     sig.Options.ca_crt = (cdb('ca-root.crt', cdbt, 1), cdb('bundle.pem', cdbt, 1))

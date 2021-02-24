@@ -48,7 +48,7 @@ def verify(*targets, **kw):
 
     mfname = kw.get('mfname', HuS.Options.manifest_file_name)
     sfname = kw.get('sfname', HuS.Options.signature_file_name)
-    cfname = kw.get('cfname', 'CERTIFICATES')
+    cfname = kw.get('cfname', HuS.Options.certificates_file_name)
     public_crt = kw.get('public_crt', HuS.Options.public_crt)
     ca_crt = kw.get('ca_crt', HuS.Options.ca_crt)
     pwd = os.path.abspath(os.path.curdir)

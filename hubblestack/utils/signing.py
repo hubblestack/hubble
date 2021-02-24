@@ -80,6 +80,20 @@ verif_log_timestamps = {}
 # maybe set in /etc/hubble/hubble
 verif_log_dampener_lim = 3600
 
+def _format_padding_bits(x):
+    if isinstance(x, (list,tuple)):
+        x = x[0]
+    if isinstance(x, str) and 'max' in x.lower():
+        return padding.PSS.MAX_LENGTH
+    return int(x)
+
+def _format_padding_bits_txt(x):
+    if isinstance(x, (tuple,list)):
+        return "/".join([ _format_padding_bits_txt(y) for y in x ])
+    if x is padding.PSS.MAX_LENGTH:
+        return "max"
+    return str(x)
+
 def check_is_ca(crt):
     try:
         crt = crt.to_cryptography()
@@ -154,6 +168,11 @@ class Options(object):
         private_key = '/etc/hubble/sign/private.key'
         manifest_file_name = 'MANIFEST'
         signature_file_name = 'SIGNATURE'
+        certificates_file_name = 'CERTIFICATES'
+        salt_padding_bits = ['max', 32]
+        # The first generation signature padding bits were 32 (only) the
+        # crypto-recommended is "however many we can fit". AWS CloudHSM is
+        # incompatible with max, ... we'll need to try both. See below.
 
     def __getattribute__(self, name):
         """ If the option exists in the default pseudo meta class
@@ -192,13 +211,13 @@ def split_certs(fh):
             ret += line
             if line.startswith('----'):
                 ret = ret.encode()
+                log_level = log.debug
                 try:
-                    log_level = log.debug
                     yield ossl.load_certificate(ossl.FILETYPE_PEM, ret)
                 except Exception as exception_object:
                     status = STATUS.UNKNOWN
                     if check_verif_timestamp(fh):
-                        log_level = log.error
+                        log_level = log.warning
                     log_level('%s: | file: "%s" | cert decoding status: %s | attempting as PEM encoded private key',
                             short_fname, fh.name, status)
                     yield load_pem_private_key(ret, password=None, backend=default_backend())
@@ -482,10 +501,14 @@ def descend_targets(targets, callback):
                     callback(fname_)
 
 
-def manifest(targets, mfname='MANIFEST'):
+def manifest(targets, mfname=None):
     """
     Produce a manifest file given `targets`.
     """
+
+    if mfname is None:
+        mfname = Options.manifest_file_name
+
     with open(mfname, 'w') as mfh:
         def append_hash(fname):
             fname = normalize_path(fname)
@@ -495,10 +518,12 @@ def manifest(targets, mfname='MANIFEST'):
         descend_targets(targets, append_hash)
 
 
-def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: disable=unused-argument
+def sign_target(fname, ofname, private_key=None, **kwargs): # pylint: disable=unused-argument
     """
     Sign a given `fname` and write the signature to `ofname`.
     """
+    if private_key is None:
+        private_key = Options.private_key
     # NOTE: This is intended to crash if there's some number of keys other than
     # exactly 1 read from the private_key file:
     the_keys = list(read_certs(private_key))
@@ -509,20 +534,23 @@ def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: d
     first_key = the_keys[0]
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     args = { 'data': hasher.finalize() }
+
+    salt_padding_bits = _format_padding_bits(Options.salt_padding_bits)
+
+    log.error('signing %s using %s', fname, private_key)
+
     if isinstance(first_key, rsa.RSAPrivateKey):
-        args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
-            #salt_length=padding.PSS.MAX_LENGTH)
-            salt_length=32)
+        log.error('signing %s using SBP:%s', fname, _format_padding_bits_txt(salt_padding_bits))
+        args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()), salt_length=salt_padding_bits)
         args['algorithm'] = utils.Prehashed(chosen_hash)
     sig = first_key.sign(**args)
     with open(ofname, 'w') as fh:
-        log.debug('writing signature of %s to %s', os.path.abspath(fname), os.path.abspath(ofname))
+        log.error('writing signature of %s to %s', os.path.abspath(fname), os.path.abspath(ofname))
         fh.write(PEM.encode(sig, 'Detached Signature of {}'.format(fname)))
         fh.write('\n')
 
 
-def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt', extra_crt=None, **kwargs): # pylint: disable=unused-argument
-    ### make
+def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None, **kwargs): # pylint: disable=unused-argument
     """
         Given the fname, sfname public_crt and ca_crt:
 
@@ -530,12 +558,19 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
         return STATUS.UNKNOWN if the certificate signature can't be verified with the ca cert
         return STATUS.VERIFIED if both the signature and the CA sig match
     """
+
+    if public_crt is None:
+        public_crt = Options.public_crt
+    if ca_crt is None:
+        ca_crt = Options.ca_crt
+
     log_level = log.debug
     if fname is None or sfname is None:
         status = STATUS.UNKNOWN
-        log_level('fname=%s or sfname=%s is Nones => status=%s', fname, sfname, status)
+        log_level('fname=%s or sfname=%s is None => status=%s', fname, sfname, status)
         return status
     short_fname = fname.split('/')[-1]
+
     try:
         with open(sfname, 'r') as fh:
             sig,_,_ = PEM.decode(fh.read()) # also returns header and decrypted-status
@@ -546,37 +581,43 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
             log_level = log.error
         log_level('%s | file "%s" | status: %s ', short_fname, fname, status)
         return status
+
     x509 = X509AwareCertBucket(public_crt, ca_crt, extra_crt)
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
 
+    salt_padding_bits_list = Options.salt_padding_bits
+    if not isinstance(salt_padding_bits_list, (list,tuple)):
+        salt_padding_bits_list = [ salt_padding_bits_list ]
+
+    sha256sum = hash_target(fname)
+
     for crt,txt,status in x509.public_crt:
         args = { 'signature': sig, 'data': digest }
         log_level = log.debug
-        sha256sum = hash_target(fname)
         pubkey = crt.get_pubkey().to_cryptography_key()
-        if isinstance(pubkey, rsa.RSAPublicKey):
-            args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
-                #salt_length=padding.PSS.MAX_LENGTH)
-                salt_length=32)
-            args['algorithm'] = utils.Prehashed(chosen_hash)
-        try:
-            pubkey.verify(**args)
-            log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
-                    short_fname, fname, status, sha256sum, txt)
-            return status
-        except TypeError as tee:
-            status = STATUS.FAIL
-            log.critical('%s | file "%s" | status: %s | internal error using %s.verify() (%s): %s',
-                    short_fname, fname, status,
-                    type(pubkey).__name__,
-                    stringify_cert_files(crt), tee)
-        except InvalidSignature:
-            status = STATUS.FAIL
-            if check_verif_timestamp(fname):
-                log_level = log.critical
-            log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
-                    short_fname, fname, status, sha256sum, txt)
+        for salt_padding_bits in salt_padding_bits_list:
+            salt_padding_bits = _format_padding_bits(salt_padding_bits)
+            if isinstance(pubkey, rsa.RSAPublicKey):
+                args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()), salt_length=salt_padding_bits)
+                args['algorithm'] = utils.Prehashed(chosen_hash)
+            try:
+                pubkey.verify(**args)
+                log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (1) public cert fingerprint and requester: "%s"',
+                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), status, sha256sum, txt)
+                return status
+            except TypeError as tee:
+                log.critical('verify_signature(%s, %s) | status: %s | internal error using %s.verify() (%s): %s',
+                        fname, sfname, status,
+                        type(pubkey).__name__,
+                        stringify_cert_files(crt), tee)
+            except InvalidSignature:
+                if check_verif_timestamp(fname):
+                    log_level = log.critical
+                log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (2) public cert fingerprint and requester: "%s"',
+                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), status, sha256sum, txt)
+    log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (3)',
+            fname, sfname, _format_padding_bits_txt(salt_padding_bits_list), STATUS.FAIL, sha256sum)
     return STATUS.FAIL
 
 
@@ -594,7 +635,8 @@ def iterate_manifest(mfname):
                 yield manifested_fname
 
 
-def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='public.crt', ca_crt='ca-root.crt', extra_crt=None):
+def verify_files(targets, mfname=None, sfname=None,
+        public_crt=None, ca_crt=None, extra_crt=None):
     """ given a list of `targets`, a MANIFEST, and a SIGNATURE file:
 
         1. Check the signature of the manifest, mark the 'MANIFEST' item of the return as:
@@ -610,9 +652,13 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
     """
 
     if mfname is None:
-        mfname = 'MANIFEST'
+        mfname = Options.manifest_file_name
     if sfname is None:
-        sfname = 'SIGNATURE'
+        sfname = Options.signature_file_name
+    if public_crt is None:
+        public_crt = Options.public_crt
+    if ca_crt is None:
+        ca_crt = Options.ca_crt
 
     log.debug("verifying: files: %s | mfname: %s | sfname: %s | public_crt: %s| ca_crt: %s",
             targets, mfname, sfname, public_crt, ca_crt)
@@ -717,9 +763,10 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
         def inner(path, saltenv, *a, **kwargs):
             manifest_file_name = Options.manifest_file_name
             signature_file_name = Options.signature_file_name
+            certificates_file_name = Options.certificates_file_name
             f_mani = find_file_f(manifest_file_name, saltenv, *a, **kwargs )
             f_sign = find_file_f(signature_file_name, saltenv, *a, **kwargs )
-            f_pub_cert = find_file_f('CERTIFICATES', saltenv, *a, **kwargs)
+            f_pub_cert = find_file_f(certificates_file_name, saltenv, *a, **kwargs)
             f_path = find_file_f(path, saltenv, *a, **kwargs)
             real_path = _p(f_path)
             mani_path = _p(f_mani)
@@ -731,7 +778,8 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
                 return f_path
             verify_res = verify_files([real_path],
                                         mfname=mani_path, sfname=sign_path,
-                                        public_crt=Options.public_crt, ca_crt=Options.ca_crt, extra_crt=cert_path)
+                                        public_crt=Options.public_crt,
+                                        ca_crt=Options.ca_crt, extra_crt=cert_path)
             log.debug('verify: %s', dict(**verify_res))
             vrg = verify_res.get(real_path, STATUS.UNKNOWN)
             if vrg == STATUS.VERIFIED:

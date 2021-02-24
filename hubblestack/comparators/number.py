@@ -98,6 +98,7 @@ def _match(result_to_compare, expected_result):
     if isinstance(expected_result, int):
         return result_to_compare == expected_result
 
+    result_to_compare = int(result_to_compare)
     # got string having some comparison operators
     expected_result_value = expected_result.strip()
     if expected_result_value.startswith('<='):

@@ -14,17 +14,17 @@ def get_cloud_details():
     grains = {}
 
     aws = _get_aws_details()
-    if not aws['cloud_details']: # Unable to fetch details from AWS. Let's try from Azure
+    if not aws.get('cloud_details'):
         log.debug("Unable to fetch AWS details. Now trying to fetch Azure details")
         azure = _get_azure_details()
-        if not azure['cloud_details']: # Unable to fetch details from Azure. Let's try from GCP
+        if azure.get('cloud_details'):
             log.debug("Unable to fetch Azure details. Now trying to fetch GCP details")
             gcp = _get_gcp_details()
             if gcp['cloud_details']:
                 log.debug("Fetched instance metadata from GCP")
                 grains.update(gcp)
             else:
-                log.error("Unable to fetch details from AWS/Azure/GCP. Please verify the instance settings.")
+                log.debug("Unable to fetch details from AWS/Azure/GCP. Please verify the instance settings.")
         else:
             log.debug("Fetched instance metadata from Azure")
             grains.update(azure)
@@ -48,34 +48,35 @@ def _get_aws_details():
         ttl_header = {'X-aws-ec2-metadata-token-ttl-seconds': '300'}
         token_url = 'http://169.254.169.254/latest/api/token'
         token_request = requests.put(token_url, headers=ttl_header, timeout=3, proxies=proxies)
-        token = token_request.text
-        aws_token_header = {'X-aws-ec2-metadata-token': token}
-        response = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
-                            headers=aws_token_header, timeout=3, proxies=proxies)
-        if response.status_code == requests.codes.ok:
-            res = response.json()
-            aws['cloud_account_id'] = res.get('accountId', 'unknown')
-
-            # AWS account id is always an integer number
-            # So if it's an aws machine it must be a valid integer number
-            # Else it will throw an Exception
-            #
-            # Once it's a confirmed aws account, pad the account id to 12 digits to account for leading zeros.
-            # https://docs.aws.amazon.com/general/latest/gr/acct-identifiers.html#awsdocs-filter-selector:~:text=A%2012%2Ddigit%20number
-            int(aws['cloud_account_id'])
-            aws['cloud_account_id'] = f"{aws['cloud_account_id']:0>12}"
-        else:
-            raise ValueError("Error while fetching AWS account id. Got status code: %s " % (response.status_code))
-
-        response = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
+        if token_request.status_code == requests.codes.ok:
+            token = token_request.text
+            aws_token_header = {'X-aws-ec2-metadata-token': token}
+            response = requests.get('http://169.254.169.254/latest/dynamic/instance-identity/document',
                                 headers=aws_token_header, timeout=3, proxies=proxies)
-        if response.status_code == requests.codes.ok:
-            aws['cloud_instance_id'] = response.text
+            if response.status_code == requests.codes.ok:
+                res = response.json()
+                aws['cloud_account_id'] = res.get('accountId', 'unknown')
+                # AWS account id is always an integer number
+                # So if it's an aws machine it must be a valid integer number
+                # Else it will throw an Exception
+                #
+                # Once it's a confirmed aws account, pad the account id to 12 digits to account for leading zeros.
+                # https://docs.aws.amazon.com/general/latest/gr/acct-identifiers.html#awsdocs-filter-selector:~:text=A%2012%2Ddigit%20number
+                id = int(aws['cloud_account_id'])
+                aws['cloud_account_id'] = f"{id:0>12}"
+            else:
+                raise ValueError("Error while fetching AWS account id. Got status code: %s " % (response.status_code))
+
+            response = requests.get('http://169.254.169.254/latest/meta-data/instance-id',
+                                    headers=aws_token_header, timeout=3, proxies=proxies)
+            if response.status_code == requests.codes.ok:
+                aws['cloud_instance_id'] = response.text
+            else:
+                raise ValueError("Error while fetching AWS instance id. Got status code: %s " % (response.status_code))
         else:
-            raise ValueError("Error while fetching AWS account id. Got status code: %s " % (response.status_code))
+            aws = None
     except (requests.exceptions.RequestException, ValueError) as e:
-        log.error(e)
-        # Not on an AWS box
+        log.debug(e)
         aws = None
     if aws:
         try:
@@ -101,11 +102,11 @@ def _get_aws_details():
                     aws_extra.pop(key)
 
         except (requests.exceptions.RequestException, ValueError) as e:
-            log.error(e)
+            log.debug(e)
             aws_extra = None
-
-    ret['cloud_details'] = aws
-    ret['cloud_details_extra'] = aws_extra
+        ret['cloud_details'] = aws
+        if aws_extra:
+            ret['cloud_details_extra'] = aws_extra
     return ret
 
 
@@ -131,7 +132,7 @@ def _get_azure_details():
         else:
             raise ValueError("Error while fetching Azure instance metadata. Got status code: %s " % (response.status_code))
     except (requests.exceptions.RequestException, ValueError) as e:
-        log.error(e)
+        log.debug(e)
         # Not on an Azure box
         azure = None
 
@@ -169,11 +170,13 @@ def _get_azure_details():
             else:
                 raise ValueError("Error while fetching metadata for Azure instance: %s. Got status code: %s" % (azure['cloud_instance_id'], response.status_code))
         except (requests.exceptions.RequestException, ValueError) as e:
-            log.error(e)
+            log.debug(e)
             azure_extra = None
 
-    ret['cloud_details'] = azure
-    ret['cloud_details_extra'] = azure_extra
+    if azure:
+        ret['cloud_details'] = azure
+    if azure_extra:
+        ret['cloud_details_extra'] = azure_extra
     return ret
 
 
@@ -198,7 +201,7 @@ def _get_gcp_details():
             raise ValueError("Error while fetching GCP instance metadata. Got status code: %s" % (response.status_code))
 
     except (requests.exceptions.RequestException, KeyError, ValueError) as e:
-        log.error(e)
+        log.debug(e)
         # Not on gcp box
         gcp = None
     if gcp:
@@ -209,11 +212,13 @@ def _get_gcp_details():
                 if not gcp_extra[key]:
                     gcp_extra.pop(key)
         except (requests.exceptions.RequestException, KeyError, ValueError) as e:
-            log.error(e)
+            log.debug(e)
             gcp_extra = None
 
-    ret['cloud_details'] = gcp
-    ret['cloud_details_extra'] = gcp_extra
+    if gcp:
+        ret['cloud_details'] = gcp
+    if gcp_extra:
+        ret['cloud_details_extra'] = gcp_extra
     return ret
 
 

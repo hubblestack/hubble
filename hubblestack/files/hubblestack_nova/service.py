@@ -112,6 +112,11 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 name = tag_data['name']
                 audittype = tag_data['type']
 
+                if 'service.status' not in __mods__ or 'service.available' not in __mods__:
+                    tag_data['failure_reason'] = f"unable to look for service '{name}' since host seems to lack init system"
+                    ret['Failure'].append(tag_data)
+                    continue
+
                 # Blacklisted packages (must not be installed)
                 if audittype == 'blacklist':
                     if __mods__['service.available'](name) and __mods__['service.status'](name):

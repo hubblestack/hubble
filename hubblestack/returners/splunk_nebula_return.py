@@ -165,7 +165,7 @@ def _generate_event(host_args, query_result, query_name, custom_fields, cloud_de
             event.update({custom_field_name: custom_field_value})
 
     # Remove any empty fields from the event payload
-    remove_keys = [k for k in event if event[k] == ""]
+    remove_keys = [k for k,v in event.items() if v is None or v == ""]
     for k in remove_keys:
         del event[k]
 

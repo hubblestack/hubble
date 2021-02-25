@@ -221,8 +221,8 @@ def _generate_payload(args, fdg_args, cloud_details, opts, index_extracted_field
                             cloud_details=cloud_details,
                             custom_fields=opts['custom_fields'])
     # Remove any empty fields from the event payload
-    remove_keys = [k for k in event
-                   if event[k] == "" and not k.startswith('fdg_')]
+    remove_keys = [k for k,v in event.items()
+                   if not k.startswith('fdg_') and (v == "" or v is None)]
     for k in remove_keys:
         del event[k]
 

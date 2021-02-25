@@ -316,7 +316,7 @@ def _update_event(custom_fields, host_args, cloud_details, event):
         if isinstance(custom_field_value, str):
             event.update({custom_field_name: custom_field_value})
     # Remove any empty fields from the event payload
-    remove_keys = [k for k in event if event[k] == ""]
+    remove_keys = [k for k,v in event.items() if v is None or v == ""]
     for k in remove_keys:
         del event[k]
 

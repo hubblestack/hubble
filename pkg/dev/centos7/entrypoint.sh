@@ -15,6 +15,8 @@ fi
 cd "${HUBBLE_SRC_PATH}"
 git checkout "${HUBBLE_CHECKOUT_ENV}"
 
+HUBBLE_VERSION_ENV="$( sed -e 's/^v//' -e 's/[_-]rc/rc/g' <<< "$HUBBLE_VERSION_ENV" )"
+
 cp -rf "${HUBBLE_SRC_PATH}"/* /hubble_build
 rm -rf /hubble_build/.git
 

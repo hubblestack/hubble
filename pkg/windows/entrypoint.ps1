@@ -6,10 +6,24 @@ $specFile = $specFile -replace 'a.binaries','a.binaries + [(''libeay32.dll'', ''
 Set-Content -Path ./hubble.spec -Value $specFile -Force;
 pyinstaller ./hubble.spec;
 Pop-Location;
+#include certs
+If (Test-Path C:/data/certs/ca-root.crt) {
+  $cert = Get-Content -Path C:/data/certs/ca-root.crt
+  $content_start = "ca_crt = list()"
+  $content = "ca_crt.append('''"
+  $content_end = "''')"
+  Add-Content -Path pre_packaged_certificates.py -Value $content_start
+  Add-Content -Path pre_packaged_certificates.py -Value $content
+  Add-Content -Path pre_packaged_certificates.py -Value $cert
+  Add-Content -Path pre_packaged_certificates.py -Value $content_end
+}
 #Move the hubble.conf, nssm, and osquery to the correct location
 New-Item './hubble/dist/hubble/etc/hubble' -ItemType Directory;
 New-Item './hubble/dist/hubble/osqueryd' -ItemType Directory;
 Move-Item hubble.conf -Destination ./hubble/dist/hubble/etc/hubble/;
+If (Test-Path C:/temp/pre_packaged_certificates.py) {
+  Move-Item C:/temp/pre_packaged_certificates.py -Destination C:/temp/hubble/dist/hubble/hubblestack
+}
 Move-Item 'C:/ProgramData/chocolatey/lib/NSSM/tools/nssm.exe' -Destination './hubble/dist/hubble/' -Force;
 If (Test-Path C:/ProgramData/osquery/osqueryi.exe) {Copy-Item 'C:/ProgramData/osquery/osqueryi.exe' -Destination './hubble/dist/hubble/' -Force}
 Else {Copy-Item 'C:/Program Files/osquery/osqueryi.exe' -Destination './hubble/dist/hubble/' -Force};

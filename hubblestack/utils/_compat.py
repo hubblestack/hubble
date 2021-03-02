@@ -130,6 +130,9 @@ class IPv6AddressScoped(ipaddress.IPv6Address):
         else:
             self.__scope = None
 
+        # For compatibility with python3.9 ipaddress
+        self._scope_id = self.__scope
+
         # Python 3.4 fix. Versions higher are simply not affected
         # https://github.com/python/cpython/blob/3.4/Lib/ipaddress.py#L543-L544
         self._version = 6

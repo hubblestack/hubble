@@ -174,7 +174,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make install
 
 # use pyenv
-ARG PYENV_VERSION=3.7.9
+ARG PYENV_VERSION=3.9.2
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
 ENV PYENV_ROOT=/usr/local/pyenv
 ENV PATH=$PYENV_ROOT/bin:$PATH

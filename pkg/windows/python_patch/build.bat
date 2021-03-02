@@ -1,0 +1,1 @@
+"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\Common7\Tools\VsDevCmd.bat" && C:\Python39\PCbuild\build.bat && python C:\temp\get-pip.py --disable-pip-version-check --no-cache-dir

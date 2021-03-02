@@ -19,7 +19,7 @@ build_dependencies = [
     'pyyaml',
     'objgraph',
     'pycryptodome',
-    'cryptography',
+    # 'cryptography',
     'pyopenssl',
     'requests>=2.13.0',
     'daemon',

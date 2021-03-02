@@ -425,7 +425,7 @@ class GitProvider(object):
             )
             failhard(self.role)
 
-        hash_type = getattr(hashlib, self.opts.get('hash_type', 'md5'))
+        hash_type = getattr(hashlib, self.opts.get('hash_type', 'sha256'))
         # We loaded this data from yaml configuration files, so, its safe
         # to use UTF-8
         self.hash = hash_type(self.id.encode('utf-8')).hexdigest()

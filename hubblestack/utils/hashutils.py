@@ -24,7 +24,10 @@ def get_hash(path, form="sha256", chunk_size=65536):
         raise ValueError('Invalid hash type: {0}'.format(form))
 
     with hubblestack.utils.files.fopen(path, 'rb') as ifile:
-        hash_obj = hash_type()
+        if form == 'md5':
+            hash_obj = hash_type(usedforsecurity=False)    
+        else:
+            hash_obj = hash_type()
         # read the file in in chunks, not the entire file
         for chunk in iter(lambda: ifile.read(chunk_size), b''):
             hash_obj.update(chunk)

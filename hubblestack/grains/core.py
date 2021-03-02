@@ -35,26 +35,7 @@ except ImportError:
 __proxyenabled__ = ['*']
 __FQDN__ = None
 
-# Extend the default list of supported distros. This will be used for the
-# /etc/DISTRO-release checking that is part of linux_distribution()
-from platform import _supported_dists
-_supported_dists += ('arch', 'mageia', 'meego', 'vmware', 'bluewhite64',
-                     'slamd64', 'ovs', 'system', 'mint', 'oracle', 'void')
-
-# linux_distribution deprecated in py3.7
-try:
-    from platform import linux_distribution as _deprecated_linux_distribution
-
-    def linux_distribution(**kwargs):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            return _deprecated_linux_distribution(**kwargs)
-except ImportError:
-    from distro import linux_distribution
-
-
-import inspect
-IS_FIPS_ENABLED = True if 'usedforsecurity' in inspect.getfullargspec(hashlib.new).kwonlyargs else False
+from distro import linux_distribution
 
 import hubblestack.exceptions
 import hubblestack.log
@@ -1391,7 +1372,7 @@ _REPLACE_LINUX_RE = re.compile(r'\W(?:gnu/)?linux', re.IGNORECASE)
 
 # This maps (at most) the first ten characters (no spaces, lowercased) of
 # 'osfullname' to the 'os' grain that Salt traditionally uses.
-# Please see os_data() and _supported_dists.
+# Please see os_data().
 # If your system is not detecting properly it likely needs an entry here.
 _OS_NAME_MAP = {
     'redhatente': 'RedHat',
@@ -1916,11 +1897,11 @@ def os_data():
         # (though apparently it's not intelligent enough to strip quotes)
         log.trace(
             'Getting OS name, release, and codename from '
-            'platform.linux_distribution()'
+            'distro.linux_distribution()'
         )
         (osname, osrelease, oscodename) = \
             [x.strip('"').strip("'") for x in
-             linux_distribution(supported_dists=_supported_dists)]
+             linux_distribution()]
         # Try to assign these three names based on the lsb info, they tend to
         # be more accurate than what python gets from /etc/DISTRO-release.
         # It's worth noting that Ubuntu has patched their Python distribution
@@ -2753,10 +2734,7 @@ def get_server_id():
         return {}
 
     id_ = __opts__.get('id', '')
-    if IS_FIPS_ENABLED:
-        md5 = hashlib.md5(usedforsecurity=False)
-    else:
-        md5 = hashlib.md5()
+    md5 = hashlib.md5(usedforsecurity=False)
     md5.update( str(id_).encode() )
     id_hash = int( md5.hexdigest(), 16 )
 

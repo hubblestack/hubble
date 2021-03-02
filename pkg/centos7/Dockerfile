@@ -18,9 +18,9 @@ RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osque
 
 #install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN yum -y install git \
-    libffi-devel openssl-devel libffi libssh2-devel autoconf automake libtool \
+    libffi-devel libffi libssh2-devel autoconf automake libtool \
     libxml2-devel libxslt-devel libjpeg-devel zlib-devel \
-    make cmake gcc python-devel python-setuptools wget openssl \
+    make cmake gcc python-devel python-setuptools wget \
     && yum clean all \
     && rm -rf /var/cache/yum
 
@@ -96,22 +96,46 @@ RUN yum install -y bzip2-devel sqlite-devel \
  && yum clean all \
  && rm -rf /var/cache/yum
 
-# use pyenv
-ARG PYENV_VERSION=3.7.9
-ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
-ENV PYENV_ROOT=/opt/hubble/pyenv
-ENV PATH=$PYENV_ROOT/bin:$PATH
-ENV PYTHON_CONFIGURE_OPTS="--enable-shared"
-RUN umask 022 \
- && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
- && chmod 0755 /usr/bin/pyenv-installer \
- && /usr/bin/pyenv-installer \
- && eval "$(pyenv init -)" \
- && pyenv install $PYENV_VERSION \
- && pyenv global $PYENV_VERSION
 
-RUN eval "$(pyenv init -)" \
- && pip -v install --upgrade pip
+# OpenSSL build steps
+ENV OPENSSL_FIPS=1
+RUN mkdir -p /usr/local/src/ /python_installation \
+  && cd /usr/local/src/ \
+  && curl -O https://www.openssl.org/source/openssl-fips-2.0.16.tar.gz \
+  && curl -O https://www.openssl.org/source/openssl-1.0.2t.tar.gz \
+  && tar -xvf openssl-fips-2.0.16.tar.gz \
+  && cd openssl-fips-2.0.16 \
+  && ./config \
+  && make install \
+  && cd ../ \
+  && tar -xvf openssl-1.0.2t.tar.gz \
+  && cd openssl-1.0.2t \
+  && ./config shared fips no-ssl2 no-ssl3 \
+  && make depend \
+  && make install \
+  && cd ../ && rm -rf openssl-fips-2.0.16.tar.gz ./openssl-fips-2.0.16 \
+  && echo "/usr/local/ssl/lib" > /etc/ld.so.conf.d/openssl-1.0.2t.conf \
+  && ldconfig -v \
+  && ln -s /usr/local/ssl/bin/openssl /usr/bin/openssl \
+  && openssl version
+
+RUN yum -y install patch
+ADD python_patch_3.9.2.diff /python_installation
+RUN cd /python_installation \
+  && wget https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tgz \
+  && tar -xzf Python-3.9.2.tgz \
+  && cd Python-3.9.2 \
+  && patch -p1 < ../python_patch_3.9.2.diff \
+  && CFLAGS=-Wl,--enable-new-dtags,-rpath,/usr/local/ssl/lib LDFLAGS=-L/usr/local/ssl/lib CPPFLAGS=-I/usr/local/ssl/include LIBS=-lcrypto ./configure --enable-shared \
+  && make && make install \
+  && export LD_LIBRARY_PATH=/usr/local/ssl/lib:/usr/local/lib \
+  && rm -f /usr/bin/python && ln -s /usr/local/bin/python3.9 /usr/bin/python \
+  && python --version
+ENV LD_LIBRARY_PATH=/usr/local/ssl/lib:/usr/local/lib
+RUN python -m pip install --upgrade pip \
+  && python -m pip install wheel
+RUN CRYPTOGRAPHY_DONT_BUILD_RUST=1 CFLAGS="-I/usr/local/ssl/include" LDFLAGS="-L/usr/local/ssl/lib" python3.9 -m pip wheel --no-binary :all: cryptography==3.0 \
+  && CRYPTOGRAPHY_DONT_BUILD_RUST=1 CFLAGS="-I/usr/local/ssl/include" LDFLAGS="-L/usr/local/ssl/lib" python3.9 -m pip install cryptography-3.0-cp39-cp39-linux_x86_64.whl 
 
 #extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
 ARG OSQUERY_TAR_FILENAME=osquery_4hubble.tar

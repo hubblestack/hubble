@@ -42,6 +42,7 @@ import logging
 import re
 import json
 import io as cStringIO
+import hubblestack.utils.platform
 
 from time import time
 from collections import OrderedDict, namedtuple
@@ -673,7 +674,10 @@ def verify_files(targets, mfname=None, sfname=None,
     sf_dir, _ = os.path.split(sfname)
 
     if mf_dir and mf_dir == sf_dir:
-        trunc = mf_dir + '/'
+        if hubblestack.utils.platform.is_windows():
+            trunc = mf_dir
+        else:
+            trunc = mf_dir + '/'
     else:
         trunc = None
 

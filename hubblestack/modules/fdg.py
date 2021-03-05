@@ -154,8 +154,7 @@ def fdg(fdg_file=None, starting_chained=None, fdg_version='fdg'):
         the ``chained`` argument for the ``main`` block. Optional.
     """
     if fdg_version not in ["fdg", "fdg_v2"]:
-        log.exception("invalid param for fdg_version passed %s, possible values are 'fdg' and 'fdg_v2'", fdg_version)
-        return {}
+        raise Exception("invalid param for fdg_version passed '{0}', possible values are 'fdg' and 'fdg_v2'".format(fdg_version))
     if fdg_file is None:
         return top(fdg_version=fdg_version)
     if fdg_file and fdg_file.startswith('salt://'):
@@ -215,8 +214,7 @@ def run(fdg_file=None, starting_chained=None, fdg_version='fdg_v2'):
         the ``chained`` argument for the ``main`` block. Optional.
     """
     if fdg_version not in ["fdg", "fdg_v2"]:
-        log.exception("invalid param for fdg_version passed %s, possible values are 'fdg' and 'fdg_v2'", fdg_version)
-        return {}
+        raise Exception("invalid param for fdg_version passed '{0}', possible values are 'fdg' and 'fdg_v2'".format(fdg_version))
     if fdg_file is None:
         return top(fdg_version=fdg_version)
     fdg_file = _get_fdg_file(fdg_file, fdg_version)
@@ -267,8 +265,7 @@ def top(fdg_topfile='top.fdg', fdg_version='fdg'):
     """
     ret = {}
     if fdg_version not in ["fdg", "fdg_v2"]:
-        log.exception("invalid param for fdg_version passed %s, possible values are 'fdg' and 'fdg_v2'", fdg_version)
-        return {}
+        raise Exception("invalid param for fdg_version passed '{0}', possible values are 'fdg' and 'fdg_v2'".format(fdg_version))
     fdg_routines = _get_top_data(fdg_topfile, fdg_version)
     # there are currently two cases for fdg_version 'fdg' and 'fdg_v2'
     # We call the function 'fdg' when the old fdg is refered.

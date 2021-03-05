@@ -128,10 +128,13 @@ log = logging.getLogger(__name__)
 __fdg__ = None
 __returners__ = None
 RETURNER_ID_BLOCK = None
-BASE_DIR_FDG_PROFILES = 'fdg_v2'
+BASE_DIR_FDG_PROFILES = {'fdg_v2':'fdg_v2', 'fdg':'fdg'}
 
-def fdg(fdg_file, starting_chained=None):
+def fdg(fdg_file, starting_chained=None, fdg_version='fdg'):
     """
+    fdg_version can take two values 'fdg' and 'fdg_v2' and it defines whether 
+    fdg is executed with profiles in old format or new format.
+
     This is the old fdg function, which should ideally be deprecated, but
     is still kept to support the old fdg functionality. Everything which was
     possible using this function is now available as fdg.run function.
@@ -150,7 +153,13 @@ def fdg(fdg_file, starting_chained=None):
         Allows you to pass in a starting argument, which will be treated as
         the ``chained`` argument for the ``main`` block. Optional.
     """
+
+    if fdg_version == 'fdg_v2':
+        return run(fdg_file, starting_chained, fdg_version)
     if fdg_file and fdg_file.startswith('salt://'):
+        cached = __mods__['cp.cache_file'](fdg_file)
+    elif not os.path.isfile(fdg_file):
+        fdg_file = _get_fdg_file(fdg_file, fdg_version)
         cached = __mods__['cp.cache_file'](fdg_file)
     else:
         cached = fdg_file
@@ -185,11 +194,13 @@ def fdg(fdg_file, starting_chained=None):
     ret = _fdg_execute('main', block_data, chained=starting_chained)
     return RETURNER_ID_BLOCK, ret
 
-def run(fdg_file=None, starting_chained=None):
+def run(fdg_file=None, starting_chained=None, fdg_version='fdg'):
     """
     Given an fdg file (usually a salt:// file, but can also be the absolute
     path to a file on the system), execute that fdg file, starting with the
     ``main`` block
+    fdg_version can take two values 'fdg' and 'fdg_v2' and it defines whether 
+    fdg is executed with profiles in old format or new format.
 
     Returns a tuple, with the first item in that tuple being a two-item tuple
     with the fdg_file and the starting_chained value (dumped to a string),
@@ -201,9 +212,11 @@ def run(fdg_file=None, starting_chained=None):
         Allows you to pass in a starting argument, which will be treated as
         the ``chained`` argument for the ``main`` block. Optional.
     """
+    if fdg_version == 'fdg':
+        return fdg(fdg_file, starting_chained, fdg_version)
     if fdg_file is None:
         return top()
-    fdg_file = _get_fdg_file(fdg_file)
+    fdg_file = _get_fdg_file(fdg_file, fdg_version)
     if not fdg_file:
         log.warning('fdg.run called without any fdg file')
         return
@@ -219,10 +232,12 @@ def run(fdg_file=None, starting_chained=None):
     })
 
 
-def top(fdg_topfile='top.fdg'):
+def top(fdg_topfile='top.fdg', fdg_version='fdg'):
     """
     fdg has topfile support, similar to audit, osquery, and fim support for
     topfiles.
+    fdg_version can take two values 'fdg' and 'fdg_v2' and it defines whether 
+    fdg is executed with profiles in old format or new format.
 
     .. code-block:: yaml
 
@@ -247,7 +262,15 @@ def top(fdg_topfile='top.fdg'):
     (optional) ``starting_chained`` value dumped to a string. The values
     in the dictionary are the associated returns from the fdg runs.
     """
-    fdg_routines = _get_top_data(fdg_topfile)
+    fdg_routines = _get_top_data(fdg_topfile, fdg_version)
+    # there are currently two cases for fdg_version 'fdg' and 'fdg_v2'. 
+    # We call the function 'fdg' when the old fdg is refered.
+    # And 'run' when fdg_v2 is called.
+    if fdg_version == 'fdg':
+        call_function = fdg
+    else:
+        call_function = run
+
 
     ret = {}
     if not fdg_routines:
@@ -256,20 +279,20 @@ def top(fdg_topfile='top.fdg'):
     for fdg_file in fdg_routines:
         if isinstance(fdg_file, dict):
             for key, val in fdg_file.items():
-                retkey, retval = run(key, val)
+                retkey, retval = call_function(key, val, fdg_version=fdg_version)
                 ret[retkey] = retval
         else:
-            retkey, retval = run(fdg_file)
+            retkey, retval = call_function(fdg_file, fdg_version=fdg_version)
             ret[retkey] = retval
     return ret
 
 
-def _get_top_data(topfile):
+def _get_top_data(topfile, fdg_version):
     """
     Helper method to retrieve and parse the FDG topfile
     """
     if not topfile.startswith('salt://'):
-        topfile = 'salt://' + BASE_DIR_FDG_PROFILES + os.sep + topfile
+        topfile = 'salt://' + BASE_DIR_FDG_PROFILES.get(fdg_version) + os.sep + topfile
     cached_topfile = __mods__['cp.cache_file'](topfile)
 
     if not cached_topfile:
@@ -288,6 +311,7 @@ def _get_top_data(topfile):
                                     'dict: {0}'.format(topdata))
 
     topdata = topdata['fdg']
+
     ret = []
 
     for match, data in topdata.items():
@@ -398,7 +422,7 @@ def _pipe(chained, chained_status, block_data, block_id, returner=None):
         _return(ret, returner)
     return ret
 
-def _get_fdg_file(fdg_file):
+def _get_fdg_file(fdg_file, fdg_version='fdg'):
     """
     Get FDG file path
     :param fdg_file: Name of fdg file
@@ -409,4 +433,5 @@ def _get_fdg_file(fdg_file):
         return None
     if fdg_file.startswith('salt://'):
         return fdg_file
-    return 'salt://' + BASE_DIR_FDG_PROFILES + os.sep + fdg_file.replace('.', os.sep) + '.fdg'
+    return 'salt://' + BASE_DIR_FDG_PROFILES.get(fdg_version) + os.sep + fdg_file.replace('.', os.sep) + '.fdg'
+

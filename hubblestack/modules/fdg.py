@@ -130,9 +130,9 @@ __returners__ = None
 RETURNER_ID_BLOCK = None
 BASE_DIR_FDG_PROFILES = {'fdg_v2':'fdg_v2', 'fdg':'fdg'}
 
-def fdg(fdg_file, starting_chained=None, fdg_version='fdg'):
+def fdg(fdg_file=None, starting_chained=None, fdg_version='fdg'):
     """
-    fdg_version can take two values 'fdg' and 'fdg_v2' and it defines whether 
+    fdg_version can take two values 'fdg' and 'fdg_v2' and it defines whether
     fdg is executed with profiles in old format or new format.
 
     This is the old fdg function, which should ideally be deprecated, but
@@ -153,9 +153,11 @@ def fdg(fdg_file, starting_chained=None, fdg_version='fdg'):
         Allows you to pass in a starting argument, which will be treated as
         the ``chained`` argument for the ``main`` block. Optional.
     """
-
-    if fdg_version == 'fdg_v2':
-        return run(fdg_file, starting_chained, fdg_version)
+    if fdg_version not in ["fdg", "fdg_v2"]:
+        log.exception("invalid param for fdg_version passed %s, possible values are 'fdg' and 'fdg_v2'", fdg_version)
+        return {}
+    if fdg_file is None:
+        return top(fdg_version=fdg_version)
     if fdg_file and fdg_file.startswith('salt://'):
         cached = __mods__['cp.cache_file'](fdg_file)
     elif not os.path.isfile(fdg_file):
@@ -194,12 +196,12 @@ def fdg(fdg_file, starting_chained=None, fdg_version='fdg'):
     ret = _fdg_execute('main', block_data, chained=starting_chained)
     return RETURNER_ID_BLOCK, ret
 
-def run(fdg_file=None, starting_chained=None, fdg_version='fdg'):
+def run(fdg_file=None, starting_chained=None, fdg_version='fdg_v2'):
     """
     Given an fdg file (usually a salt:// file, but can also be the absolute
     path to a file on the system), execute that fdg file, starting with the
     ``main`` block
-    fdg_version can take two values 'fdg' and 'fdg_v2' and it defines whether 
+    fdg_version can take two values 'fdg' and 'fdg_v2' and it defines whether
     fdg is executed with profiles in old format or new format.
 
     Returns a tuple, with the first item in that tuple being a two-item tuple
@@ -212,10 +214,11 @@ def run(fdg_file=None, starting_chained=None, fdg_version='fdg'):
         Allows you to pass in a starting argument, which will be treated as
         the ``chained`` argument for the ``main`` block. Optional.
     """
-    if fdg_version == 'fdg':
-        return fdg(fdg_file, starting_chained, fdg_version)
+    if fdg_version not in ["fdg", "fdg_v2"]:
+        log.exception("invalid param for fdg_version passed %s, possible values are 'fdg' and 'fdg_v2'", fdg_version)
+        return {}
     if fdg_file is None:
-        return top()
+        return top(fdg_version=fdg_version)
     fdg_file = _get_fdg_file(fdg_file, fdg_version)
     if not fdg_file:
         log.warning('fdg.run called without any fdg file')
@@ -236,7 +239,7 @@ def top(fdg_topfile='top.fdg', fdg_version='fdg'):
     """
     fdg has topfile support, similar to audit, osquery, and fim support for
     topfiles.
-    fdg_version can take two values 'fdg' and 'fdg_v2' and it defines whether 
+    fdg_version can take two values 'fdg' and 'fdg_v2' and it defines whether
     fdg is executed with profiles in old format or new format.
 
     .. code-block:: yaml
@@ -262,17 +265,19 @@ def top(fdg_topfile='top.fdg', fdg_version='fdg'):
     (optional) ``starting_chained`` value dumped to a string. The values
     in the dictionary are the associated returns from the fdg runs.
     """
+    ret = {}
+    if fdg_version not in ["fdg", "fdg_v2"]:
+        log.exception("invalid param for fdg_version passed %s, possible values are 'fdg' and 'fdg_v2'", fdg_version)
+        return {}
     fdg_routines = _get_top_data(fdg_topfile, fdg_version)
-    # there are currently two cases for fdg_version 'fdg' and 'fdg_v2'. 
+    # there are currently two cases for fdg_version 'fdg' and 'fdg_v2'
     # We call the function 'fdg' when the old fdg is refered.
     # And 'run' when fdg_v2 is called.
     if fdg_version == 'fdg':
         call_function = fdg
-    else:
+    elif fdg_version == 'fdg_v2':
         call_function = run
 
-
-    ret = {}
     if not fdg_routines:
         log.exception("No fdg_routines found for one or more filters in topfile %s", fdg_topfile)
         return ret

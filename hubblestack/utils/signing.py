@@ -762,13 +762,16 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
     """
     def wrapper(find_file_f):
         def _p(fnd):
+            # real_path is poorly named. it should contain the name of the key
+            # where we'll find the real path of the file we're finding with
+            # find_file_f()
             return fnd.get(real_path, fnd.get('path', ''))
 
         def inner(path, saltenv, *a, **kwargs):
             f_path = find_file_f(path, saltenv, *a, **kwargs)
-            real_path = _p( f_path )
+            p_path = _p( f_path )
 
-            if not real_path:
+            if not p_path:
                 # if the file doesn't exist anyway, there's no reason to continue
                 return f_path
 
@@ -776,16 +779,16 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             sign_path = _p( find_file_f(Options.signature_file_name, saltenv, *a, **kwargs ) )
             cert_path = _p( find_file_f(Options.certificates_file_name, saltenv, *a, **kwargs) )
 
-            log.debug('path: %s | manifest: "%s" | signature: "%s"', path,  mani_path, sign_path)
+            log.debug('path: %s | manifest: "%s" | signature: "%s"', path, mani_path, sign_path)
 
-            verify_res = verify_files([real_path],
+            verify_res = verify_files([p_path],
                                         mfname=mani_path, sfname=sign_path,
                                         public_crt=Options.public_crt,
                                         ca_crt=Options.ca_crt, extra_crt=cert_path)
 
             log.debug('verify: %s', dict(**verify_res))
 
-            vrg = verify_res.get(real_path, STATUS.UNKNOWN)
+            vrg = verify_res.get(p_path, STATUS.UNKNOWN)
             if vrg == STATUS.VERIFIED:
                 return f_path
             if vrg == STATUS.UNKNOWN and not Options.require_verify:

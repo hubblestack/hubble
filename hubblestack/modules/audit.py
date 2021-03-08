@@ -305,6 +305,16 @@ def top(topfile='top.audit',
                   show_compliance=False,
                   labels=labels)
 
+        if not ret:
+            # ret can sometimes be None (eg, when the files named in
+            # audit_files=data do not exist). If we fall through to below, we
+            # could trigger a stack trace and fail to process the rest of the
+            # audit stanza.
+            #
+            # But we do log an error in that case, so there's no harm in a
+            # simple continue here.
+            continue
+
         # Merge in the results
         for key, val in ret.items():
             if key not in results:

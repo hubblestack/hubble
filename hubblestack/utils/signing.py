@@ -566,9 +566,9 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
         ca_crt = Options.ca_crt
 
     log_level = log.debug
-    if fname is None or sfname is None:
+    if not (fname and sfname):
         status = STATUS.UNKNOWN
-        log_level('fname=%s or sfname=%s is None => status=%s', fname, sfname, status)
+        log_level('!(fname=%s and sfname=%s) => status=%s', fname, sfname, status)
         return status
     short_fname = fname.split('/')[-1]
 

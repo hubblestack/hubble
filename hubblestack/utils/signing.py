@@ -765,12 +765,9 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             return fnd.get(real_path, fnd.get('path', ''))
 
         def inner(path, saltenv, *a, **kwargs):
-            manifest_file_name = Options.manifest_file_name
-            signature_file_name = Options.signature_file_name
-            certificates_file_name = Options.certificates_file_name
-            f_mani = find_file_f(manifest_file_name, saltenv, *a, **kwargs )
-            f_sign = find_file_f(signature_file_name, saltenv, *a, **kwargs )
-            f_pub_cert = find_file_f(certificates_file_name, saltenv, *a, **kwargs)
+            f_mani = find_file_f(Options.manifest_file_name, saltenv, *a, **kwargs )
+            f_sign = find_file_f(Options.signature_file_name, saltenv, *a, **kwargs )
+            f_pub_cert = find_file_f(Options.certificates_file_name, saltenv, *a, **kwargs)
             f_path = find_file_f(path, saltenv, *a, **kwargs)
             real_path = _p(f_path)
             mani_path = _p(f_mani)

@@ -765,23 +765,26 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             return fnd.get(real_path, fnd.get('path', ''))
 
         def inner(path, saltenv, *a, **kwargs):
-            f_mani = find_file_f(Options.manifest_file_name, saltenv, *a, **kwargs )
-            f_sign = find_file_f(Options.signature_file_name, saltenv, *a, **kwargs )
-            f_pub_cert = find_file_f(Options.certificates_file_name, saltenv, *a, **kwargs)
             f_path = find_file_f(path, saltenv, *a, **kwargs)
-            real_path = _p(f_path)
-            mani_path = _p(f_mani)
-            sign_path = _p(f_sign)
-            cert_path = _p(f_pub_cert)
-            log.debug('path: %s | manifest: "%s" | signature: "%s"',
-                    path,  mani_path, sign_path)
+            real_path = _p( f_path )
+
             if not real_path:
+                # if the file doesn't exist anyway, there's no reason to continue
                 return f_path
+
+            mani_path = _p( find_file_f(Options.manifest_file_name, saltenv, *a, **kwargs ) )
+            sign_path = _p( find_file_f(Options.signature_file_name, saltenv, *a, **kwargs ) )
+            cert_path = _p( find_file_f(Options.certificates_file_name, saltenv, *a, **kwargs) )
+
+            log.debug('path: %s | manifest: "%s" | signature: "%s"', path,  mani_path, sign_path)
+
             verify_res = verify_files([real_path],
                                         mfname=mani_path, sfname=sign_path,
                                         public_crt=Options.public_crt,
                                         ca_crt=Options.ca_crt, extra_crt=cert_path)
+
             log.debug('verify: %s', dict(**verify_res))
+
             vrg = verify_res.get(real_path, STATUS.UNKNOWN)
             if vrg == STATUS.VERIFIED:
                 return f_path

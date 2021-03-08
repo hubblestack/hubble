@@ -374,13 +374,13 @@ def _get_top_data(topfile):
         return None
     if not isinstance(topdata, dict) or 'audit' not in topdata or \
             (not isinstance(topdata['audit'], dict)):
-        log.exception('Audit topfile not formatted correctly')
+        log.error('Audit topfile not formatted correctly')
         return None
     topdata = topdata['audit']
     ret = []
     for match, data in topdata.items():
         if data is None:
-            log.exception('No profiles found for one or more filters in topfile %s', topfile)
+            log.error('No profiles found for one or more filters in topfile %s', topfile)
             return None
         if __mods__['match.compound'](match):
             ret.extend(data)

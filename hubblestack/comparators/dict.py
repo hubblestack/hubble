@@ -308,7 +308,9 @@ def match_any_if_keyvalue_matches(audit_id, result_to_compare, args):
             if not errors:
                 # found a match
                 return True, "Dictionary comparison passed"
-
+        else:
+            error_msg = "required key value '{0}' does not match with found value '{1}'".format(to_compare_val2, to_compare_val1)
+            return False, error_msg
     if key_found_once:
         error_message = 'dict::match_any_if_keyvalue_matches failed, errors={0}'.format(str(errors))
         return False, error_message

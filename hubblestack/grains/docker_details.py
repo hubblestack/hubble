@@ -5,7 +5,6 @@ Example Output - {u'installed': True, u'running': True}
 Author - Mudit Agarwal (muagarwa@adobe.com)
 """
 import hubblestack.utils.platform
-import hubblestack.grains.hubble_core
 import logging
 
 __virtualname__ = "docker_details"
@@ -24,12 +23,11 @@ def __virtual__():
     return __virtualname__
 
 
-def get_docker_details():
-    os_family = hubblestack.grains.hubble_core.os_data()['os_family'].lower()
+def get_docker_details(grains):
     docker_grains = {}
 
     docker_details = {}
-    docker_details["installed"] = _is_docker_installed(os_family)
+    docker_details["installed"] = _is_docker_installed(grains)
     docker_details["running"] = False
 
     if docker_details["installed"]:
@@ -42,7 +40,8 @@ def get_docker_details():
     return docker_grains
 
 
-def _is_docker_installed(os_family):
+def _is_docker_installed(grains):
+    os_family = grains.get("os_family", "unknown").lower()
     if "coreos" in os_family:
         return True
     elif "debian" in os_family:

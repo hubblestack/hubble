@@ -344,3 +344,21 @@ def _query_ntp_server(ntp_server):
         log.error("Unexpected error occured while querying the server.", exc_info=True)
 
     return ret
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': ['server1', 'server2'], 'status': True},
+                  'caller': 'Audit'}
+    :return:
+    """
+    ntp_servers = _get_ntp_servers(block_id, block_dict, extra_args)
+    failure_reason = "Fetching information about following NTP servers {0}".format(ntp_servers)
+    return failure_reason

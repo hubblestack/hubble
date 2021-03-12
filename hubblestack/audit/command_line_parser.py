@@ -457,3 +457,22 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
         'key_aliases': key_aliases,
         'delimiter': delimiter
     }
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': {'cmdline': 'app --config-file=test test'}, 'status': True},
+                  'caller': 'Audit'}
+    :return:
+    """
+    key_aliases = runner_utils.get_param_for_module(block_id, block_dict, 'key_aliases')
+    command_line = runner_utils.get_param_for_module(block_id, block_dict, 'cmdline')
+    failure_reason = "Fetching value of {0} in {1}".format(key_aliases, command_line)
+    return failure_reason

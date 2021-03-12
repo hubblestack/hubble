@@ -666,3 +666,22 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     # fetch required param
     filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
     return {'path': filepath}
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': '/some/path', 'status': True},
+                  'caller': 'Audit'}
+    :return:
+    """
+    subkey = runner_utils.get_param_for_module(block_id, block_dict, 'subkey')
+    path = runner_utils.get_param_for_module(block_id, block_dict, 'path')
+    failure_reason = "Fetching subkey '{0}' in file {1}".format(subkey, path)
+    return failure_reason

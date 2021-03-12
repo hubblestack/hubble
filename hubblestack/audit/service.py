@@ -278,3 +278,21 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     if not name:
         name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
     return {'name': name}
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
+    :return:
+    """
+    name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+    failure_reason = "Fetching service information for '{0}'".format(name)
+    return failure_reason

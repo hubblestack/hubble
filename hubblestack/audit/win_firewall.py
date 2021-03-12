@@ -328,3 +328,21 @@ def _import_firewall():
                 temp_values[value_list[0].strip()] = value_list[1].strip()
         dict_return[temp_values['Name']] = temp_values
     return dict_return
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': {"name": "LogFileName", "value_type": "public"}, 'status': True},
+                  'caller': 'Audit'}
+    :return:
+    """
+    name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+    failure_reason = "Fetching firewall rule {0}".format(name)
+    return failure_reason

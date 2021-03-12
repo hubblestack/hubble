@@ -382,6 +382,25 @@ def execute(block_id, block_dict, extra_args=None):
         return runner_utils.prepare_positive_result_for_module(block_id, True)
     return runner_utils.prepare_negative_result_for_module(block_id, result)
 
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
+    :return:
+    """
+    function_name = runner_utils.get_param_for_module(block_id, block_dict, 'function')
+    failure_reason = "Executing function {0}".format(function_name)
+    return failure_reason
+
+
 def _check_all_ports_firewall_rules(block_id, block_dict, extra_args):
     """
     Ensure firewall rule for all open ports

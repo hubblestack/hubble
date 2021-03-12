@@ -357,6 +357,25 @@ def _evaluate_expression(expr_list, keyword_list, referred_checks_result):
     return boolExpr.parseString(parsed_expr)[0]
 
 
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "True", 'status': True},
+                  'extra_args': [{'check_id': 'ADOBE-01',
+                                  'check_status': 'Success'}]
+                  'caller': 'Audit'}
+    :return:
+    """
+    expression = runner_utils.get_param_for_module(block_id, block_dict, 'expr')
+    failure_reason = "Executing expression {0}".format(expression)
+    return failure_reason
+
 class BoolOperand:
     def __init__(self, t):
         self.label = t[0]

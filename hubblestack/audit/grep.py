@@ -400,3 +400,22 @@ def _grep(path,
         raise CommandExecutionError(exc.strerror)
 
     return ret
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
+    :return:
+    """
+    pattern_val = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
+    filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
+    failure_reason = "Finding pattern {0} in filepath {1}".format(pattern_val, filepath)
+    return failure_reason

@@ -300,5 +300,5 @@ def get_failure_reason(block_id, block_dict, extra_args=None):
     :return:
     """
     path = runner_utils.get_param_for_module(block_id, block_dict, 'path')
-    failure_reason = "fetching file stats for file {0}".format(path)
+    failure_reason = "Fetching file stats for file {0}".format(path)
     return failure_reason

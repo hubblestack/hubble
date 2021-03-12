@@ -591,7 +591,7 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
     if not isinstance(salt_padding_bits_list, (list,tuple)):
         salt_padding_bits_list = [ salt_padding_bits_list ]
 
-    sha256sum = hash_target(fname)
+    sha256sum = ''.join(f'{x:02x}' for x in digest)
 
     for crt,txt,status in x509.public_crt:
         args = { 'signature': sig, 'data': digest }

@@ -323,23 +323,26 @@ def match_any_if_keyvalue_matches(audit_id, result_to_compare, args):
     key_name = args['match_any_if_keyvalue_matches']['match_key']
     failed_once = False
     for r_compare in result_to_compare:
-        ret_status, ret_val = hubblestack.module_runner.comparator.run(
-            audit_id,
-            {
-                "type": "dict", 
-                "match_any_if_keyvalue_matches": args['match_any_if_keyvalue_matches'],
-                "ignore_case": ignore_case
-            },
-            r_compare)
-        if ret_status and ret_val != "pass_as_key_not_found":
-            return True, "Check Passed"
-        if not ret_status:
-            failed_once = True
+        for arg_list in args['match_any_if_keyvalue_matches']['args']:
+            if r_compare[key_name] == arg_list.get(key_name, None):
+                ret_status, ret_val = hubblestack.module_runner.comparator.run(
+                    audit_id,
+                    {
+                        "type": "dict",
+                        "match": arg_list,
+                        "ignore_case": ignore_case
+                    },
+                    r_compare)
+            else:
+                continue
+            if ret_status and ret_val != "pass_as_key_not_found":
+                return True, "Check Passed"
+            if not ret_status:
+                failed_once = True
 
     if failed_once:
         return False, "list::match_any_if_keyvalue_matches failure. Got={0}".format(result_to_compare)
     return True, "Check Passed"
-
 
 def filter_compare(audit_id, result_to_compare, args):
     """

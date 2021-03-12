@@ -30,7 +30,7 @@ import hubblestack.utils.files
 import hubblestack.utils.network
 import hubblestack.utils.platform
 import hubblestack.utils.path
-import hubblestack.grains.hubble_core as core
+import hubblestack.grains.core as core
 from hubblestack.utils._compat import ipaddress
 
 log = logging.getLogger(__name__)
@@ -938,7 +938,7 @@ class CoreGrainsTestCase(TestCase, LoaderModuleMockMixin):
 
     @skipIf(not hubblestack.utils.platform.is_linux(), 'System is not Linux')
     @patch.object(hubblestack.utils.platform, 'is_windows', MagicMock(return_value=False))
-    @patch('hubblestack.grains.hubble_core.__opts__', {'ipv6': False})
+    @patch('hubblestack.grains.core.__opts__', {'ipv6': False})
     def test_dns_return(self):
         '''
         test the return for a dns grain. test for issue:

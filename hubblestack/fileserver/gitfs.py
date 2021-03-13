@@ -86,7 +86,6 @@ def __virtual__():
     properly in the master config file.
     """
     if __virtualname__ not in __opts__['fileserver_backend']:
-        log.info("no fileserver_backend configs, skipping gitfs")
         return False
     try:
         _gitfs(init_remotes=False)

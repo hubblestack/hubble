@@ -325,3 +325,20 @@ def _get_consolidated_result(fdg_run, consolidation_operator):
         else:
             overall_result = overall_result or fdg_status
     return fdg_run, overall_result
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+    The function is used to find the action that was performed during the audit check
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "/some/path/file.txt", 'status': True},
+                  'caller': 'Audit'}
+    :return:
+    """
+    fdg_file = runner_utils.get_param_for_module(block_id, block_dict, 'fdg_file')
+    return "Executing fdg_file {0}".format(fdg_file)

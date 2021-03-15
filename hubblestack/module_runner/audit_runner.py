@@ -218,7 +218,9 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
                 audit_result_local['check_result'] = CHECK_STATUS['Failure']
                 audit_result_local['failure_reason'] = comparator_result if comparator_result else module_result_local[
                     'error']
+                module_failure_reason = self._get_module_failure_reason(audit_impl['module'], audit_id, audit_check)
                 failure_reasons.append(audit_result_local['failure_reason'])
+                failure_reasons.append(module_failure_reason)
             module_logs = {}
             if not verbose:
                 log.debug('Non verbose mode')

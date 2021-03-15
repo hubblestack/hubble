@@ -349,3 +349,20 @@ def _read_reg_value(reg_hive, reg_key, reg_value):
             return reg_result.get('vdata')
     else:
         return False
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+    The function is used to find the action that was performed during the audit check
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "HKEY_LOCAL_MACHINE\Software\Policies\Microsoft\Windows\EventLog\Application\MaxSize", 'status': True},
+                  'caller': 'Audit'}
+    :return:
+    """
+    reg_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+    return "Fetching registry information for {0}".format(reg_name)

@@ -347,3 +347,20 @@ def _convert_to_str(data):
         return None
 
     return ret
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+    The function is used to find the action that was performed during the audit check
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': [{'name': 'CentOS Linux', 'platform': 'rhel', 'version': 'CentOS Linux release 7.8.2003 (Core)'}], 'status': True},
+                  'caller': 'FDG'}
+    :return:
+    """
+    query = runner_utils.get_param_for_module(block_id, block_dict, 'query')
+    return "Executing query '{0}'".format(query)

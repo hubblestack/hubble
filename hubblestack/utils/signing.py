@@ -558,7 +558,7 @@ def _stat_file(fname):
             return (os.path.abspath(fname), st.st_mtime, st.st_ctime)
         except FileNotFoundError:
             pass
-    return (0,0)
+    return tuple()
 
 def _cache_key(*files):
     return sum((_stat_file(x) for x in files), tuple())

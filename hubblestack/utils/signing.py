@@ -565,7 +565,9 @@ def _cache_key(*files):
 
 VERIFY_CACHE = dict()
 
-def _clean_verify_cache(old=Options.verify_cache_age):
+def _clean_verify_cache(old=None):
+    if old is None:
+        old = Options.verify_cache_age
     if old < 1:
         return
     old = time() - old
@@ -579,7 +581,7 @@ def _clean_verify_cache(old=Options.verify_cache_age):
     for k in to_remove:
         del VERIFY_CACHE[k]
 
-def _get_verify_cache(key, auto_clean=Options.verify_cache_age):
+def _get_verify_cache(key, auto_clean=None):
     _clean_verify_cache(old=auto_clean)
     log.debug('verify_signature()_get_verify_cache(%s) -> %s', key, VERIFY_CACHE.get(key))
     try:

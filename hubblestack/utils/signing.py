@@ -604,11 +604,17 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
         return STATUS.VERIFIED if both the signature and the CA sig match
     """
 
+    if check_verif_timestamp(fname):
+        log_error = log.critical
+        log_info  = log.info
+    else:
+        log_error = log_info = log.debug
+
     if Options.verify_cache_age > 0:
         cache_key = _cache_key(fname, sfname, public_crt, ca_crt, extra_crt)
         res = _get_verify_cache(cache_key)
         if res is not None:
-            log.debug('using cached verify_signature(%s, %s) -> %s', fname, sfname, res)
+            log_info('using cached verify_signature(%s, %s) -> %s', fname, sfname, res)
             return res
 
     if public_crt is None:
@@ -616,10 +622,9 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
     if ca_crt is None:
         ca_crt = Options.ca_crt
 
-    log_level = log.debug
     if not (fname and sfname):
         status = STATUS.UNKNOWN
-        log_level('!(fname=%s and sfname=%s) => status=%s', fname, sfname, status)
+        log_info('!(fname=%s and sfname=%s) => status=%s', fname, sfname, status)
         return status
 
     short_fname = os.path.basename(fname)
@@ -630,9 +635,7 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
     except IOError:
         status = STATUS.UNKNOWN
         verif_key = ':'.join([fname, sfname])
-        if check_verif_timestamp(verif_key):
-            log_level = log.error
-        log_level('%s | file "%s" | status: %s ', short_fname, fname, status)
+        log_error('%s | file "%s" | status: %s ', short_fname, fname, status)
         return status
 
     x509 = X509AwareCertBucket(public_crt, ca_crt, extra_crt)
@@ -645,9 +648,8 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
 
     sha256sum = ''.join(f'{x:02x}' for x in digest)
 
-    for crt,txt,status in x509.public_crt:
+    for crt,txt,pcrt_status in x509.public_crt:
         args = { 'signature': sig, 'data': digest }
-        log_level = log.debug
         pubkey = crt.get_pubkey().to_cryptography_key()
         for salt_padding_bits in salt_padding_bits_list:
             salt_padding_bits = _format_padding_bits(salt_padding_bits)
@@ -656,24 +658,21 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
                 args['algorithm'] = utils.Prehashed(chosen_hash)
             try:
                 pubkey.verify(**args)
-                log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (1) public cert fingerprint and requester: "%s"',
-                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), status, sha256sum, txt)
+                log_info('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (1) public cert fingerprint and requester: "%s"',
+                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), pcrt_status, sha256sum, txt)
                 if Options.verify_cache_age < 1:
-                    return status
-                return _set_verify_cache(cache_key, status)
+                    return pcrt_status
+                return _set_verify_cache(cache_key, pcrt_status)
             except TypeError as tee:
-                log.critical('verify_signature(%s, %s) | status: %s | internal error using %s.verify() (%s): %s',
-                        fname, sfname, status,
-                        type(pubkey).__name__,
-                        stringify_cert_files(crt), tee)
+                log_error('verify_signature(%s, %s) | sbp: %s | internal error using %s.verify() (%s): (2) %s',
+                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), type(pubkey).__name__, stringify_cert_files(crt), tee)
             except InvalidSignature:
-                if check_verif_timestamp(fname):
-                    log_level = log.critical
-                log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (2) public cert fingerprint and requester: "%s"',
-                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), status, sha256sum, txt)
-    log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (3)',
-            fname, sfname, _format_padding_bits_txt(salt_padding_bits_list), STATUS.FAIL, sha256sum)
-    return _set_verify_cache(cache_key, STATUS.FAIL)
+                log_error('verify_signature(%s, %s) InvalidSignature | sbp: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
+                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), sha256sum, txt)
+    status = STATUS.FAIL
+    log_error('verify_signature(%s, %s) UnverifiedSignature | status: %s | sha256sum: "%s" | (4)',
+            fname, sfname, status, sha256sum)
+    return _set_verify_cache(cache_key, status)
 
 
 def iterate_manifest(mfname):

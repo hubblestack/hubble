@@ -164,6 +164,7 @@ class Options(object):
     class Defaults:
         """ defaults storage for options """
         require_verify = False
+        verify_cache_age = 600
         ca_crt = '/etc/hubble/sign/ca-root.crt'
         public_crt = '/etc/hubble/sign/public.crt'
         private_key = '/etc/hubble/sign/private.key'
@@ -550,6 +551,47 @@ def sign_target(fname, ofname, private_key=None, **kwargs): # pylint: disable=un
         fh.write(PEM.encode(sig, 'Detached Signature of {}'.format(fname)))
         fh.write('\n')
 
+def _stat_file(fname):
+    if isinstance(fname, str):
+        try:
+            st = os.stat(fname)
+            return (os.path.abspath(fname), st.st_mtime, st.st_ctime)
+        except FileNotFoundError:
+            pass
+    return (0,0)
+
+def _cache_key(*files):
+    return sum((_stat_file(x) for x in files), tuple())
+
+VERIFY_CACHE = dict()
+
+def _clean_verify_cache(old=Options.verify_cache_age):
+    if old < 1:
+        return
+    old = time() - old
+    to_remove = set()
+    for k,v in VERIFY_CACHE.items():
+        try:
+            if v['t'] < old:
+                to_remove.add(k)
+        except (TypeError, KeyError):
+            to_remove.add(k)
+    for k in to_remove:
+        del VERIFY_CACHE[k]
+
+def _get_verify_cache(key, auto_clean=Options.verify_cache_age):
+    _clean_verify_cache(old=auto_clean)
+    log.debug('verify_signature()_get_verify_cache(%s) -> %s', key, VERIFY_CACHE.get(key))
+    try:
+        return VERIFY_CACHE[key]['v']
+    except (KeyError, TypeError):
+        pass
+
+def _set_verify_cache(key, val, auto_clean=0):
+    _clean_verify_cache(old=auto_clean)
+    log.debug('verify_signature()_set_verify_cache(%s) <- %s', key, val)
+    VERIFY_CACHE[key] = dict(t=time(), v=val)
+    return val
 
 def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None, **kwargs): # pylint: disable=unused-argument
     """
@@ -559,6 +601,13 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
         return STATUS.UNKNOWN if the certificate signature can't be verified with the ca cert
         return STATUS.VERIFIED if both the signature and the CA sig match
     """
+
+    if Options.verify_cache_age > 0:
+        cache_key = _cache_key(fname, sfname, public_crt, ca_crt, extra_crt)
+        res = _get_verify_cache(cache_key)
+        if res is not None:
+            log.debug('using cached verify_signature(%s, %s) -> %s', fname, sfname, res)
+            return res
 
     if public_crt is None:
         public_crt = Options.public_crt
@@ -570,7 +619,8 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
         status = STATUS.UNKNOWN
         log_level('!(fname=%s and sfname=%s) => status=%s', fname, sfname, status)
         return status
-    short_fname = fname.split('/')[-1]
+
+    short_fname = os.path.basename(fname)
 
     try:
         with open(sfname, 'r') as fh:
@@ -606,7 +656,9 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
                 pubkey.verify(**args)
                 log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (1) public cert fingerprint and requester: "%s"',
                         fname, sfname, _format_padding_bits_txt(salt_padding_bits), status, sha256sum, txt)
-                return status
+                if Options.verify_cache_age < 1:
+                    return status
+                return _set_verify_cache(cache_key, status)
             except TypeError as tee:
                 log.critical('verify_signature(%s, %s) | status: %s | internal error using %s.verify() (%s): %s',
                         fname, sfname, status,
@@ -619,7 +671,7 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
                         fname, sfname, _format_padding_bits_txt(salt_padding_bits), status, sha256sum, txt)
     log_level('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (3)',
             fname, sfname, _format_padding_bits_txt(salt_padding_bits_list), STATUS.FAIL, sha256sum)
-    return STATUS.FAIL
+    return _set_verify_cache(cache_key, STATUS.FAIL)
 
 
 def iterate_manifest(mfname):

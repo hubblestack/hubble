@@ -351,7 +351,7 @@ def _convert_to_str(data):
 
 def get_failure_reason(block_id, block_dict, extra_args=None):
     """
-
+    The function is used to find the action that was performed during the audit check
     :param block_id:
         id of the block
     :param block_dict:
@@ -363,5 +363,4 @@ def get_failure_reason(block_id, block_dict, extra_args=None):
     :return:
     """
     query = runner_utils.get_param_for_module(block_id, block_dict, 'query')
-    failure_reason = "Executing query '{0}'".format(query)
-    return failure_reason
+    return "Executing query '{0}'".format(query)

@@ -293,7 +293,7 @@ def _auditpol_export():
 
 def get_failure_reason(block_id, block_dict, extra_args=None):
     """
-
+    The function is used to find the action that was performed during the audit check
     :param block_id:
         id of the block
     :param block_dict:
@@ -305,5 +305,4 @@ def get_failure_reason(block_id, block_dict, extra_args=None):
     :return:
     """
     name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
-    failure_reason = "Fetching audit policy {0}".format(name)
-    return failure_reason
+    return "Fetching audit policy {0}".format(name)

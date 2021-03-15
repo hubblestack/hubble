@@ -461,7 +461,7 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
 
 def get_failure_reason(block_id, block_dict, extra_args=None):
     """
-
+    The function is used to find the action that was performed during the audit check
     :param block_id:
         id of the block
     :param block_dict:
@@ -474,5 +474,4 @@ def get_failure_reason(block_id, block_dict, extra_args=None):
     """
     key_aliases = runner_utils.get_param_for_module(block_id, block_dict, 'key_aliases')
     command_line = runner_utils.get_param_for_module(block_id, block_dict, 'cmdline')
-    failure_reason = "Fetching value of {0} in {1}".format(key_aliases, command_line)
-    return failure_reason
+    return "Fetching value of {0} in {1}".format(key_aliases, command_line)

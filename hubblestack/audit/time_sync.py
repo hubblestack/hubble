@@ -348,7 +348,7 @@ def _query_ntp_server(ntp_server):
 
 def get_failure_reason(block_id, block_dict, extra_args=None):
     """
-
+    The function is used to find the action that was performed during the audit check
     :param block_id:
         id of the block
     :param block_dict:
@@ -360,5 +360,4 @@ def get_failure_reason(block_id, block_dict, extra_args=None):
     :return:
     """
     ntp_servers = _get_ntp_servers(block_id, block_dict, extra_args)
-    failure_reason = "Fetching information about following NTP servers {0}".format(ntp_servers)
-    return failure_reason
+    return "Fetching information about following NTP servers {0}".format(ntp_servers)

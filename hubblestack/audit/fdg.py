@@ -329,7 +329,7 @@ def _get_consolidated_result(fdg_run, consolidation_operator):
 
 def get_failure_reason(block_id, block_dict, extra_args=None):
     """
-
+    The function is used to find the action that was performed during the audit check
     :param block_id:
         id of the block
     :param block_dict:
@@ -341,5 +341,4 @@ def get_failure_reason(block_id, block_dict, extra_args=None):
     :return:
     """
     fdg_file = runner_utils.get_param_for_module(block_id, block_dict, 'fdg_file')
-    failure_reason = "Executing fdg_file {0}".format(fdg_file)
-    return failure_reason
+    return "Executing fdg_file {0}".format(fdg_file)

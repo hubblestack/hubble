@@ -449,7 +449,7 @@ def _get_certificate_san(x509cert):
 
 def get_failure_reason(block_id, block_dict, extra_args=None):
     """
-
+    The function is used to find the action that was performed during the audit check
     :param block_id:
         id of the block
     :param block_dict:
@@ -464,5 +464,4 @@ def get_failure_reason(block_id, block_dict, extra_args=None):
     """
     host_ip = runner_utils.get_param_for_module(block_id, block_dict, 'host_ip')
     host_port = runner_utils.get_param_for_module(block_id, block_dict, 'host_port')
-    failure_reason = "Fetching certificate information for {0}:{1}".format(host_ip, host_port)
-    return failure_reason
+    return "Fetching certificate information for {0}:{1}".format(host_ip, host_port)

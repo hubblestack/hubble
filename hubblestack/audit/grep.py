@@ -404,7 +404,7 @@ def _grep(path,
 
 def get_failure_reason(block_id, block_dict, extra_args=None):
     """
-
+    The function is used to find the action that was performed during the audit check
     :param block_id:
         id of the block
     :param block_dict:
@@ -417,5 +417,4 @@ def get_failure_reason(block_id, block_dict, extra_args=None):
     """
     pattern_val = runner_utils.get_param_for_module(block_id, block_dict, 'pattern')
     filepath = runner_utils.get_param_for_module(block_id, block_dict, 'path')
-    failure_reason = "Finding pattern {0} in filepath {1}".format(pattern_val, filepath)
-    return failure_reason
+    return "Finding pattern {0} in filepath {1}".format(pattern_val, filepath)

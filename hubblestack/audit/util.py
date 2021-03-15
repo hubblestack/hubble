@@ -1208,7 +1208,7 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
 
 def get_failure_reason(block_id, block_dict, extra_args=None):
     """
-
+    The function is used to find the action that was performed during the audit check
     :param block_id:
         id of the block
     :param block_dict:
@@ -1222,5 +1222,4 @@ def get_failure_reason(block_id, block_dict, extra_args=None):
     :return:
     """
     function_param = runner_utils.get_param_for_module(block_id, block_dict, 'function')
-    failure_reason = "Executing function {0}".format(function_param)
-    return failure_reason
+    return "Executing function {0}".format(function_param)

@@ -52,7 +52,7 @@ def _is_docker_installed(grains):
         log.debug("OS not supported")
         return False
     query_result = osquery_util(query_sql=osquery_sql)
-    if len(query_result) != 0:
+    if query_result:
         for result in query_result:
             if isinstance(result, dict):
                 package_name = result.get("name")

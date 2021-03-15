@@ -263,6 +263,8 @@ def execute(block_id, block_dict, extra_args=None):
 
     fdg_result, fdg_status = fdg_run
     check_value = fdg_status if use_status else bool(fdg_result)
+    if 'error' in (k.lower() for k in fdg_result):
+        return runner_utils.prepare_negative_result_for_module(block_id, False)
 
     if true_for_success == check_value:
         return runner_utils.prepare_positive_result_for_module(block_id, True)

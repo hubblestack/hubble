@@ -161,6 +161,8 @@ def run(audit_files=None,
             show_compliance = show_compliance.lower().strip() == 'true'
         if type(verbose) is str and verbose.lower().strip() in ['true', 'false']:
             verbose = verbose.lower().strip() == 'true'
+        elif type(verbose) is bool:
+            pass
         else:
             verbose = None
         if labels:

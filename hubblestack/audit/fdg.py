@@ -101,17 +101,11 @@ Module Arguments
     Example: 'salt://fdg/my_fdg_file.fdg'
 - starting_chained (Optional)
     Starting value as parameter for main(first) chaining block in fdg
-- true_for_success
-    The ``true_for_success`` argument decides how success/failure are decided
-    based on the fdg return. By default, any "truthy" value in the ``results`` piece
-    of the FDG return will constitute success. Set this option to False to treat
-    "falsey" values as success.
 - use_status
     The ``use_status`` argument determines whether the status result or the actual
     result returned from fdg will be used. If this is True, only the status result of
     the fdg run will be considered. If it is False, only the actual result of the
-    fdg run will be considered. Regardless, the ``true_for_success`` argument
-    will be respected.
+    fdg run will be considered.
 - consolidation_operator
     Only values allowed (and/or)
     The consolidation_operator is used when chaining is done using xpipe and the
@@ -162,7 +156,6 @@ fdg_check:   # unique ID
         - args:
             fdg_file: 'salt://fdg/my_fdg_file.fdg'  # filename for fdg routine
             starting_chained: 'value'  # value for fdg `starting_chained` (optional)
-            true_for_success: True  # Whether a "truth" value constitutes success
             use_status: False  # Use the status result of the fdg run.
             consolidation_operator: and/or
           comparator:
@@ -242,7 +235,6 @@ def execute(block_id, block_dict, extra_args=None):
 
     # read other params for fdg connector module
     starting_chained = runner_utils.get_param_for_module(block_id, block_dict, 'starting_chained')
-    true_for_success = runner_utils.get_param_for_module(block_id, block_dict, 'true_for_success', True)
     use_status = runner_utils.get_param_for_module(block_id, block_dict, 'use_status', False)
     consolidation_operator = runner_utils.get_param_for_module(block_id, block_dict, 'consolidation_operator', 'and')
     try:
@@ -262,9 +254,11 @@ def execute(block_id, block_dict, extra_args=None):
         fdg_run = _get_consolidated_result(fdg_run, consolidation_operator)
 
     fdg_result, fdg_status = fdg_run
-    check_value = fdg_status if use_status else bool(fdg_result)
+    if isinstance(fdg_result, dict) and 'error' in (k.lower() for k in fdg_result):
+        return runner_utils.prepare_negative_result_for_module(block_id, False)
 
-    if true_for_success == check_value:
+    check_value = fdg_status if use_status else bool(fdg_result)
+    if check_value:
         return runner_utils.prepare_positive_result_for_module(block_id, True)
     return runner_utils.prepare_negative_result_for_module(block_id, False)
 

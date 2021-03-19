@@ -184,7 +184,7 @@ fpm -s dir -t rpm \
     --after-install /hubble_build/conf/afterinstall.sh \
     --after-upgrade /hubble_build/conf/afterupgrade.sh \
     --before-remove /hubble_build/conf/beforeremove.sh \
-    etc/hubble opt usr /var/log/hubble_osquery/backuplogs
+    etc/init.d etc/hubble opt usr /var/log/hubble_osquery/backuplogs
 
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION_ENV}-${HUBBLE_ITERATION}

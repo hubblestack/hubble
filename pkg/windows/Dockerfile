@@ -8,7 +8,7 @@
 #                    3. Copy over any other items you want to include with hubble and place them in <host folder>/opt
 #                    4. docker run -it --rm -v <host folder>:c:\data <image_name>
 #build docker image from windowscore
-FROM microsoft/windowsservercore:ltsc2016
+FROM microsoft/windowsservercore:ltsc2016_old
 #Needed to just work
 ENV PYTHONIOENCODING='UTF-8'
 ENV _HOOK_DIR='./pkg/'

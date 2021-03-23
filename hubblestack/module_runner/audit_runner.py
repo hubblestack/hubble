@@ -59,7 +59,7 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
                     # Gather boolean expressions in separate list and evaluate after evaluating all other checks.
                     log.debug('Boolean expression found. Gathering it to evaluate later.')
                     boolean_expr_check_list.append({
-                        'check_id': audit_id,
+                        'check_unique_id': audit_id,
                         'audit_impl': audit_impl,
                         'audit_data': audit_data
                     })
@@ -70,8 +70,9 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
             except (HubbleCheckValidationError, HubbleCheckVersionIncompatibleError) as herror:
                 # add into error/skipped section
                 result_list.append({
-                    'check_id': audit_id,
+                    'check_unique_id': audit_id,
                     'tag': audit_data['tag'],
+                    'check_id': audit_data['tag'],
                     'description': audit_data['description'],
                     'sub_check': audit_data.get('sub_check', False),
                     'check_result': CHECK_STATUS['Error'] if isinstance(herror, HubbleCheckValidationError) else
@@ -146,11 +147,12 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
         :return:
         """
         audit_result = {
-            "check_id": audit_id,
+            "check_unique_id": audit_id,
             "description": audit_data['description'],
             "audit_profile": audit_profile,
             "sub_check": audit_data.get('sub_check', False),
             "tag": audit_data['tag'],
+            "check_id": audit_data['tag'],
             "module": audit_impl['module'],
             "run_config": {
                 "filter": audit_impl['filter'],
@@ -270,8 +272,9 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
                 except (HubbleCheckValidationError, HubbleCheckVersionIncompatibleError) as herror:
                     # add into error section
                     boolean_expr_result_list.append({
-                        'check_id': boolean_expr['check_id'],
+                        'check_unique_id': boolean_expr['check_id'],
                         'tag': boolean_expr['audit_data']['tag'],
+                        'check_id': boolean_expr['audit_data']['tag'],
                         'sub_check': boolean_expr['audit_data'].get('sub_check', False),
                         'description': boolean_expr['audit_data']['description'],
                         'check_result': CHECK_STATUS['Error'] if isinstance(herror, HubbleCheckValidationError) else

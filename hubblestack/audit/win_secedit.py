@@ -459,3 +459,20 @@ def _get_account_name(account_id):
             if sec_value[1:].lower() == value.lower():
                 ret_list.append(key)
     return ret_list
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+    The function is used to find the action that was performed during the audit check
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "SeRemoteInteractiveLogonRight", 'status': True},
+                  'caller': 'Audit'}
+    :return:
+    """
+    sec_name = runner_utils.get_param_for_module(block_id, block_dict, 'name')
+    return "Fetching security configuration  for {0}".format(sec_name)

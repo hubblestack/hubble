@@ -161,6 +161,8 @@ def run(audit_files=None,
             show_compliance = show_compliance.lower().strip() == 'true'
         if type(verbose) is str and verbose.lower().strip() in ['true', 'false']:
             verbose = verbose.lower().strip() == 'true'
+        elif type(verbose) is bool:
+            pass
         else:
             verbose = None
         if labels:
@@ -305,6 +307,16 @@ def top(topfile='top.audit',
                   show_compliance=False,
                   labels=labels)
 
+        if not ret:
+            # ret can sometimes be None (eg, when the files named in
+            # audit_files=data do not exist). If we fall through to below, we
+            # could trigger a stack trace and fail to process the rest of the
+            # audit stanza.
+            #
+            # But we do log an error in that case, so there's no harm in a
+            # simple continue here.
+            continue
+
         # Merge in the results
         for key, val in ret.items():
             if key not in results:
@@ -374,13 +386,13 @@ def _get_top_data(topfile):
         return None
     if not isinstance(topdata, dict) or 'audit' not in topdata or \
             (not isinstance(topdata['audit'], dict)):
-        log.exception('Audit topfile not formatted correctly')
+        log.error('Audit topfile not formatted correctly')
         return None
     topdata = topdata['audit']
     ret = []
     for match, data in topdata.items():
         if data is None:
-            log.exception('No profiles found for one or more filters in topfile %s', topfile)
+            log.error('No profiles found for one or more filters in topfile %s', topfile)
             return None
         if __mods__['match.compound'](match):
             ret.extend(data)

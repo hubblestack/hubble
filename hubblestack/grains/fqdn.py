@@ -2,7 +2,7 @@
 """
 Custom grains around fqdn
 """
-import hubblestack.grains.hubble_core
+import hubblestack.grains.core
 import hubblestack.modules.cmdmod
 import hubblestack.utils.platform
 
@@ -30,7 +30,7 @@ def dest_ip():
     gateway for the host. This is because the current methods can result in
     various IPs due to round robin DNS.
     """
-    interfaces = hubblestack.grains.hubble_core.ip4_interfaces()['ip4_interfaces']
+    interfaces = hubblestack.grains.core.ip4_interfaces()['ip4_interfaces']
     try:
         ret = __mods__['cmd.run_all']('ip route show to 0/0')
         if ret['retcode'] == 0:

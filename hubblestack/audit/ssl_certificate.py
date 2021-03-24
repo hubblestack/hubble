@@ -191,7 +191,7 @@ ssl_cert_check:
             path: /path/to/pem/file
           comparator:
             type: certificate
-            compare:
+            match:
                 not_before: 30 # maximum number of days until the certificate becomes valid (Optional)
                                # the check is failed if the certificate becomes valid in more than 30 days
                 not_after: 45  # minimum number of days until certificate expires (Optional)
@@ -445,3 +445,23 @@ def _get_certificate_san(x509cert):
         message = "ssl_certificate couldn't fetch SANs: {0}".format(e)
         log.error(message)
     return trimmed_san_list
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+    The function is used to find the action that was performed during the audit check
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': {'host_ip': '127.0.0.1',
+                                                'host_port': 443},
+                                    'status': True},
+                  'caller': 'Audit'}
+    :return:
+    """
+    host_ip = runner_utils.get_param_for_module(block_id, block_dict, 'host_ip')
+    host_port = runner_utils.get_param_for_module(block_id, block_dict, 'host_port')
+    return "Fetching certificate information for {0}:{1}".format(host_ip, host_port)

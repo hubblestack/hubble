@@ -150,6 +150,13 @@ class Runner(ABC):
                                                                    'extra_args': extra_args,
                                                                    'caller': self._caller})
 
+    def _get_module_failure_reason(self, module_name, profile_id, module_args):
+        """
+        Helper method to execute a Module's get_failure_reason() method.
+        """
+        failure_reason_method = '{0}.get_failure_reason'.format(module_name)
+        return __hmods__[failure_reason_method](profile_id, module_args, {'caller': self._caller})
+
     def _make_file_available(self, file):
         """
         Cache file if path is salt://...

@@ -1204,3 +1204,22 @@ def get_filtered_params_to_log(block_id, block_dict, extra_args=None):
     function_param = runner_utils.get_param_for_module(block_id, block_dict, 'function')
 
     return {'function': function_param}
+
+
+def get_failure_reason(block_id, block_dict, extra_args=None):
+    """
+    The function is used to find the action that was performed during the audit check
+    :param block_id:
+        id of the block
+    :param block_dict:
+        parameter for this module
+    :param extra_args:
+        Extra argument dictionary, (If any)
+        Example: {'chaining_args': {'result': "string/dict", 'status': True},
+                  'extra_args': [{'check_id': 'ADOBE-01',
+                                  'check_status': 'Success'}]
+                  'caller': 'FDG'}
+    :return:
+    """
+    function_param = runner_utils.get_param_for_module(block_id, block_dict, 'function')
+    return "Executing function {0}".format(function_param)

@@ -71,7 +71,7 @@ def _gather_buffer_space():
         total_mem = psutil.virtual_memory().total
     else:
         # Avoid loading core grains unless absolutely required
-        import hubblestack.grains.hubble_core as core
+        import hubblestack.grains.core as core
 
         # We need to load up ``mem_total`` grain. Let's mimic required OS data.
         if not hasattr(core, '__opts__'):

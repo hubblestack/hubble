@@ -86,7 +86,7 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
  [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'; \
  iex ((New-Object System.Net.WebClient).DownloadString("$env:CHOCO_URL"));
 RUN choco install git nssm -y;
-RUN choco install osquery --version 3.4.0 -y;
+RUN choco install osquery --version 4.6.0.2 -y;
 
 #All the variables used for hubble
 ARG HUBBLE_CHECKOUT=v4.0.0

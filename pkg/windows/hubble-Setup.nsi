@@ -198,46 +198,6 @@
 ;--------------------------------
 ;Installer Sections
 
-  Section -Prerequisites
-
-    ; VCRedist only needed on Windows Server 2008R2/Windows 7 and below
-    ${If} ${AtMostWin2008R2}
-
-        !define VC_REDIST_X64_GUID "{5FCE6D76-F5DC-37AB-B2B8-22AB8CEDB1D4}"
-        !define VC_REDIST_X86_GUID "{9BE518E6-ECC6-35A9-88E4-87755C07200F}"
-
-        Var /GLOBAL VcRedistGuid
-        Var /GLOBAL NeedVcRedist
-        ${If} ${CPUARCH} == "AMD64"
-            StrCpy $VcRedistGuid ${VC_REDIST_X64_GUID}
-        ${Else}
-            StrCpy $VcRedistGuid ${VC_REDIST_X86_GUID}
-        ${EndIf}
-
-        Push $VcRedistGuid
-        Call MsiQueryProductState
-        ${If} $NeedVcRedist == "True"
-            MessageBox MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON2 \
-                "VC Redist 2008 SP1 MFC is currently not installed. Would you like to install?" \
-                /SD IDYES IDNO endVcRedist
-
-            ClearErrors
-            ; The Correct version of VCRedist is copied over by "build_pkg.bat"
-            SetOutPath "$INSTDIR\"
-            File "vcredist.exe"
-            ExecWait "$INSTDIR\vcredist.exe /qb!"
-            IfErrors 0 endVcRedist
-                MessageBox MB_OK \
-                    "VC Redist 2008 SP1 MFC failed to install. Try installing the package manually." \
-                    /SD IDOK
-
-            endVcRedist:
-        ${EndIf}
-
-    ${EndIf}
-
-  SectionEnd
-
   Section "MainSection" SEC01
 
     SetOutPath "$INSTDIR\"
@@ -298,8 +258,6 @@
     Push "C:\${PFILES}\Hubble"
     Call AddToPath
 
-    Delete "$INSTDIR\vcredist.exe"
-
   SectionEnd
 
   Section Uninstall
@@ -342,14 +300,13 @@
     ${EndIf}
 
     ; Stop and Remove hubble service
-    nsExec::Exec 'net stop hubble'
+    nsExec::Exec 'net stop hubble /yes'
     nsExec::Exec 'sc delete hubble'
     nsExec::Exec 'sc delete hubble_osqueryd'
 
     ; Remove files
     Delete "$INSTDIR\uninst.exe"
     Delete "$INSTDIR\nssm.exe"
-    Delete "$INSTDIR\vcredist.exe"
 
     ; Remove Registry entries
     DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
@@ -459,21 +416,6 @@
     ${If} $StartHubble == 1
         nsExec::Exec 'net start hubble'
     ${EndIf}
-
-  FunctionEnd
-
-;--------------------------------
-;Helper Functions Section
-
-  Function MsiQueryProductState
-
-    !define INSTALLSTATE_DEFAULT "5"
-
-    Pop $R0
-    StrCpy $NeedVcRedist "False"
-    System::Call "msi::MsiQueryProductStateA(t '$R0') i.r0"
-    StrCmp $0 ${INSTALLSTATE_DEFAULT} +2 0
-    StrCpy $NeedVcRedist "True"
 
   FunctionEnd
 

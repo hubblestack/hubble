@@ -10,6 +10,9 @@
 #build docker image from windowscore
 #the sha is used here to pin the image that has been working correctly before
 FROM microsoft/windowsservercore@sha256:10e43e24be6eb5f3e19e705a88adb9794b569028f0e0d715d40f25e53e04c3fc
+FROM hubble_python_fips:latest
+COPY --from=hubble_python_fips C:\temp\Python-3.9.2\PCBuild\amd64 C:\Python39
+
 #Needed to just work
 ENV PYTHONIOENCODING='UTF-8'
 ENV _HOOK_DIR='./pkg/'
@@ -20,40 +23,6 @@ RUN New-Item C:/temp -ItemType Directory; \
   New-Item C:/data -ItemType Directory;
 WORKDIR C:/temp
 VOLUME C:/data
-
-#Installing Python 3.7.9
-ENV PYTHON_VERSION 3.7.9
-ENV PYTHON_RELEASE 3.7.9
-
-RUN $url = ('https://www.python.org/ftp/python/{0}/python-{1}-amd64.exe' -f $env:PYTHON_RELEASE, $env:PYTHON_VERSION); \
-	Write-Host ('Downloading {0} ...' -f $url); \
-	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; \
-	Invoke-WebRequest -Uri $url -OutFile 'python.exe'; \
-	\
-	Write-Host 'Installing ...'; \
-# https://docs.python.org/3.7/using/windows.html#installing-without-ui
-	Start-Process python.exe -Wait \
-		-ArgumentList @( \
-			'/quiet', \
-			'InstallAllUsers=1', \
-			'TargetDir=C:\Python37', \
-			'PrependPath=1', \
-			'Shortcuts=0', \
-			'Include_doc=0', \
-			'Include_pip=0', \
-			'Include_test=0' \
-		); \
-	\
-#the installer updated PATH, so we should refresh our local value
-	$env:PATH = [Environment]::GetEnvironmentVariable('PATH', [EnvironmentVariableTarget]::Machine); \
-	\
-	Write-Host 'Verifying install ...'; \
-	Write-Host '  python --version'; python --version; \
-	\
-	Write-Host 'Removing ...'; \
-	Remove-Item python.exe -Force; \
-	\
-	Write-Host 'Complete.'
 
 # https://github.com/pypa/get-pip
 ENV PYTHON_GET_PIP_URL https://github.com/pypa/get-pip/raw/d59197a3c169cef378a22428a3fa99d33e080a5d/get-pip.py
@@ -89,8 +58,8 @@ RUN choco install git nssm -y;
 RUN choco install osquery --version 3.4.0 -y;
 
 #All the variables used for hubble
-ARG HUBBLE_CHECKOUT=v4.0.0
-ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
+ARG HUBBLE_CHECKOUT=dev
+ARG HUBBLE_GIT_URL=https://github.com/goravsingal/hubble.git
 ENV HUBBLE_SRC_PATH='C:/temp/hubble/'
 #Clone Hubble
 

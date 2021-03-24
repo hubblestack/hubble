@@ -1,0 +1,26 @@
+FROM microsoft/windowsservercore:ltsc2016
+ 
+# Download the tools
+SHELL ["cmd", "/S", "/C"]
+ADD "https://aka.ms/vs/15/release/vs_community.exe" "C:\TEMP\vs_community.exe"
+ 
+# Install VS 2017 community
+RUN C:\TEMP\vs_community.exe --includeRecommended --includeOptional --quiet --nocache --norestart --wait \
+    --add Microsoft.VisualStudio.Workload.Python \
+    || IF "%ERRORLEVEL%"=="3010" EXIT 0
+
+WORKDIR C:/temp
+SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
+
+ENV CHOCO_URL=https://chocolatey.org/install.ps1
+ADD https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tar.xz C:/temp/
+RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
+  [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]'Tls,Tls11,Tls12'; \
+  iex ((New-Object System.Net.WebClient).DownloadString("$env:CHOCO_URL")); \
+  choco install git 7zip.install -y; \
+  7z x Python-3.9.2.tar.xz; \
+  7z x Python-3.9.2.tar;
+
+SHELL ["cmd", "/S", "/C"]
+RUN "C:\Program^ Files^ ^(x86)\Microsoft^ Visual^ Studio\2017\Community\Common7\Tools\VsDevCmd.bat" && \
+	C:\temp\Python-3.9.2\PCbuild\build.bat

@@ -41,9 +41,7 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
   $env:Path += ';C:\Python39'; \
   $env:Path += ';C:\Python39\Scripts'; \
   $env:Path += ';C:\Program Files\git\bin'; \
-  [Environment]::SetEnvironmentVariable('PATH', $env:Path, [System.EnvironmentVariableTarget]::Machine);
-
-#RUN cmd.exe /c C:\temp\build.bat;
-
-#RUN python --version; \
-#	python -m pip --version;
+  [Environment]::SetEnvironmentVariable('PATH', $env:Path, [System.EnvironmentVariableTarget]::Machine); \
+  cmd.exe /c C:\temp\build.bat; \
+  python --version; \
+	python -m pip --version;

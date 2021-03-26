@@ -23,7 +23,7 @@ WORKDIR C:/temp
 VOLUME C:/data
 
 RUN choco install git nssm -y;
-RUN choco install osquery --version 3.4.0 -y;
+RUN choco install osquery --version 4.6.0.2 -y;
 
 #All the variables used for hubble
 ARG HUBBLE_CHECKOUT=dev
@@ -50,10 +50,6 @@ RUN Push-Location C:/temp/hubble; \
   -r optional-requirements.txt \
   -r package-requirements.txt; \
   Pop-Location;
-
-#Get vcredist prereq for hubble
-RUN $ProgressPreference = 'SilentlyContinue'; \
-  Invoke-WebRequest -Uri 'http://repo.saltstack.com/windows/dependencies/64/vcredist_x64_2008_mfc.exe' -OutFile "C:/temp/hubble/pkg/windows/vcredist.exe"
 
 COPY entrypoint.ps1 C:/temp/
 ENV HUBBLE_CHECKOUT_ENV=$HUBBLE_CHECKOUT

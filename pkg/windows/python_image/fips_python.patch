@@ -1,7 +1,8 @@
-diff -aur Python-3.9.2/Modules/_hashopenssl.c /Users/gsingal/Downloads/Python-3.9.2/Modules/_hashopenssl.c
---- Python-3.9.2/Modules/_hashopenssl.c 2021-02-19 18:01:44.000000000 +0530
-+++ /Users/gsingal/Downloads/Python-3.9.2/Modules/_hashopenssl.c    2021-03-16 17:54:25.000000000 +0530
-@@ -875,6 +875,11 @@
+diff --git a/Modules/_hashopenssl.c b/Modules/_hashopenssl.c
+index adc8653773..edfc133d81 100644
+--- a/Modules/_hashopenssl.c
++++ b/Modules/_hashopenssl.c
+@@ -875,6 +875,11 @@ _hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj,
                            int usedforsecurity)
  /*[clinic end generated code: output=87b0186440a44f8c input=990e36d5e689b16e]*/
  {
@@ -13,10 +14,11 @@ diff -aur Python-3.9.2/Modules/_hashopenssl.c /Users/gsingal/Downloads/Python-3.
      return EVP_fast_new(module, data_obj, EVP_md5(), usedforsecurity);
  }
  
-diff -aur Python-3.9.2/Modules/md5module.c /Users/gsingal/Downloads/Python-3.9.2/Modules/md5module.c
---- Python-3.9.2/Modules/md5module.c    2021-02-19 18:01:44.000000000 +0530
-+++ /Users/gsingal/Downloads/Python-3.9.2/Modules/md5module.c   2021-03-16 17:54:17.000000000 +0530
-@@ -513,6 +513,12 @@
+diff --git a/Modules/md5module.c b/Modules/md5module.c
+index 6ed843376a..782c1ea707 100644
+--- a/Modules/md5module.c
++++ b/Modules/md5module.c
+@@ -513,6 +513,11 @@ static PyObject *
  _md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity)
  /*[clinic end generated code: output=587071f76254a4ac input=7a144a1905636985]*/
  {
@@ -25,6 +27,6 @@ diff -aur Python-3.9.2/Modules/md5module.c /Users/gsingal/Downloads/Python-3.9.2
 +        PyErr_SetString(PyExc_RuntimeError,
 +                        "Non fips-compliant algorithm");
 +    }
-+
      MD5object *new;
      Py_buffer buf;
+ 

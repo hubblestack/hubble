@@ -38,10 +38,13 @@ RUN Set-ExecutionPolicy Bypass -Scope Process -Force; \
   Move-Item C:\TEMP\Python-3.9.2 C:\Python39; \
   cd C:\Python39; \
   patch -p1 -i C:\temp\fips_python.patch; \
-  $env:Path += ';C:\Python39'; \
   $env:Path += ';C:\Python39\Scripts'; \
+  $env:Path += ';C:\Python39'; \
   $env:Path += ';C:\Program Files\git\bin'; \
-  [Environment]::SetEnvironmentVariable('PATH', $env:Path, [System.EnvironmentVariableTarget]::Machine); \
+  $bkp_path = $env:Path; \
   cmd.exe /c C:\temp\build.bat; \
+  Copy-Item 'C:/Python39/PCbuild/amd64/python.exe' -Destination 'C:/Python39/PCbuild/amd64/python39.exe' -Force; \
+  $env:Path = $bkp_path; \
+  [Environment]::SetEnvironmentVariable('PATH', $env:Path, [System.EnvironmentVariableTarget]::Machine); \
   python --version; \
 	python -m pip --version;

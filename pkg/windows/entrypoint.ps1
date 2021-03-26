@@ -1,7 +1,7 @@
 Push-Location C:/temp/hubble;
 #include branch and commit
-(Get-Content -path C:\temp\hubble\dist\hubble\hubblestack\__init__.py -Raw) -replace 'BRANCH_NOT_SET', $env:HUBBLE_CHECKOUT_ENV | Set-Content -Path C:\temp\hubble\dist\hubble\hubblestack\__init__.py
-(Get-Content -path C:\temp\hubble\dist\hubble\hubblestack\__init__.py -Raw) -replace 'COMMIT_NOT_SET', $(cd C:\temp\hubble; git describe --long --always --tags) | Set-Content -Path C:\temp\hubble\dist\hubble\hubblestack\__init__.py
+(Get-Content -path C:\temp\hubble\hubblestack\__init__.py -Raw) -replace 'BRANCH_NOT_SET', $env:HUBBLE_CHECKOUT_ENV | Set-Content -Path C:\temp\hubble\hubblestack\__init__.py
+(Get-Content -path C:\temp\hubble\hubblestack\__init__.py -Raw) -replace 'COMMIT_NOT_SET', $(cd C:\temp\hubble; git describe --long --always --tags) | Set-Content -Path C:\temp\hubble\hubblestack\__init__.py
 #Create pyinstaller spec and edit it to work with windows
 pyi-makespec --additional-hooks-dir=$env:_HOOK_DIR ./hubble.py;
 $specFile = Get-Content -Path ./hubble.spec;

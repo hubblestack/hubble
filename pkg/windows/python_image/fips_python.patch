@@ -1,32 +1,37 @@
 diff --git a/Modules/_hashopenssl.c b/Modules/_hashopenssl.c
-index adc8653773..edfc133d81 100644
+index adc8653773..19bd1867b9 100644
 --- a/Modules/_hashopenssl.c
 +++ b/Modules/_hashopenssl.c
-@@ -875,6 +875,11 @@ _hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj,
+@@ -875,6 +875,13 @@ _hashlib_openssl_md5_impl(PyObject *module, PyObject *data_obj,
                            int usedforsecurity)
  /*[clinic end generated code: output=87b0186440a44f8c input=990e36d5e689b16e]*/
  {
 +    //should work only when usedforsecurity is false (0)
-+    if (usedforsecurity == 1) {
-+        PyErr_SetString(PyExc_RuntimeError,
-+                        "Non fips-compliant algorithm");
++    if (getenv("ENABLE_FIPS") != NULL) {
++        if (usedforsecurity == 1) {
++            PyErr_SetString(PyExc_RuntimeError,
++                            "Non fips-compliant algorithm");
++        }
 +    }
      return EVP_fast_new(module, data_obj, EVP_md5(), usedforsecurity);
  }
  
 diff --git a/Modules/md5module.c b/Modules/md5module.c
-index 6ed843376a..782c1ea707 100644
+index 6ed843376a..0d3014d11b 100644
 --- a/Modules/md5module.c
 +++ b/Modules/md5module.c
-@@ -513,6 +513,11 @@ static PyObject *
+@@ -513,6 +513,14 @@ static PyObject *
  _md5_md5_impl(PyObject *module, PyObject *string, int usedforsecurity)
  /*[clinic end generated code: output=587071f76254a4ac input=7a144a1905636985]*/
  {
 +    //should work only when usedforsecurity is false (0)
-+    if (usedforsecurity == 1) {
-+        PyErr_SetString(PyExc_RuntimeError,
-+                        "Non fips-compliant algorithm");
++    if (getenv("ENABLE_FIPS") != NULL) {
++        if (usedforsecurity == 1) {
++            PyErr_SetString(PyExc_RuntimeError,
++                            "Non fips-compliant algorithm");
++        }
 +    }
++
      MD5object *new;
      Py_buffer buf;
  

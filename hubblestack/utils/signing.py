@@ -43,6 +43,7 @@ import re
 import json
 import io as cStringIO
 import hubblestack.utils.platform
+import inspect
 
 from time import time
 from collections import OrderedDict, namedtuple
@@ -833,7 +834,7 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             cert_path = _p( find_file_f(Options.certificates_file_name, saltenv, *a, **kwargs) )
 
             log.debug('path: %s | f_path: %s | p_path: %s | manifest: "%s" | signature: "%s"',
-                path, f_path: p_path: mani_path, sign_path)
+                path, f_path, p_path, mani_path, sign_path)
 
             verify_res = verify_files([p_path],
                                         mfname=mani_path, sfname=sign_path,
@@ -847,7 +848,10 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
                 return f_path
             if vrg == STATUS.UNKNOWN and not Options.require_verify:
                 return f_path
-            log.debug('claiming not found')
+            log.debug('claiming %s (%s) not found', path, f_path)
+            for idx,frame in enumerate(inspect.stack()[1:11]):
+                if 'hubblestack' in frame.filename:
+                    log.debug('find caller[%d] %s %s() %s', idx, frame.filename, frame.function, frame.lineno)
             return dict(**not_found)
         return inner
     return wrapper

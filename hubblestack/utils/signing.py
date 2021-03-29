@@ -832,7 +832,8 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             sign_path = _p( find_file_f(Options.signature_file_name, saltenv, *a, **kwargs ) )
             cert_path = _p( find_file_f(Options.certificates_file_name, saltenv, *a, **kwargs) )
 
-            log.debug('path: %s | manifest: "%s" | signature: "%s"', path, mani_path, sign_path)
+            log.debug('path: %s | f_path: %s | p_path: %s | manifest: "%s" | signature: "%s"',
+                path, f_path: p_path: mani_path, sign_path)
 
             verify_res = verify_files([p_path],
                                         mfname=mani_path, sfname=sign_path,

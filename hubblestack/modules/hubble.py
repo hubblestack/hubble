@@ -730,7 +730,10 @@ def _get_top_data(topfile):
     """
     Helper method to retrieve and parse the nova topfile
     """
+    orig_topfile = topfile
     topfile = os.path.join(_hubble_dir()[1], topfile)
+
+    log.debug('reading nova topfile=%s (%s)', topfile, orig_topfile)
 
     try:
         with open(topfile) as handle:

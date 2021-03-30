@@ -271,6 +271,7 @@ class Client(object):
             to_remove = set(scan_files(scan_target, cachedir)) - set(ret)
             for i,item in enumerate(to_remove):
                 log.debug('cache_dir(%s) to_remove[%d]: %s', path, i, item)
+                os.unlink(item)
 
         return ret
 

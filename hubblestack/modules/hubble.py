@@ -738,6 +738,10 @@ def _get_top_data(topfile):
     try:
         with open(topfile) as handle:
             topdata = yaml.safe_load(handle)
+    except FileNotFoundError:
+        log.error('could not find any nova topfile')
+        return list()
+
     except Exception as exc:
         raise CommandExecutionError('Could not load topfile: {0}'.format(exc))
 

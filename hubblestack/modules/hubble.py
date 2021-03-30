@@ -743,7 +743,7 @@ def _get_top_data(topfile):
         return list()
 
     except Exception as exc:
-        raise CommandExecutionError('Could not load topfile: {0}'.format(exc))
+        raise CommandExecutionError('Could not load topfile') from exc
 
     if not isinstance(topdata, dict) or 'nova' not in topdata or \
             (not isinstance(topdata['nova'], dict)):

@@ -207,7 +207,8 @@ class Client(object):
         return ret
 
     def cache_dir(self, path, saltenv='base', include_empty=False,
-                  include_pat=None, exclude_pat=None, cachedir=None):
+                  include_pat=None, exclude_pat=None, cachedir=None,
+                  cleanup_existing=True):
         '''
         Download all of the files in a subdir of the master
         '''
@@ -255,6 +256,22 @@ class Client(object):
                     if not os.path.isdir(minion_dir):
                         os.makedirs(minion_dir)
                     ret.append(minion_dir)
+
+        def scan_files(target, cachedir):
+            log.debug('cache_dir(%s) scanning %s for files that should be removed', path, target)
+            for wpath, dirs, files in os.walk(target):
+                for file in files:
+                    log.trace('cache_dir(%s) %s/%s seems potentially to be worth removing', path, wpath, file)
+                    yield os.path.join(wpath,file)
+
+        if cleanup_existing:
+            cachedir = self.get_cachedir(cachedir)
+            scan_target = os.path.join(cachedir, 'files', saltenv, path)
+            log.debug('cache_dir(%s) cleanup_existing is set', path)
+            to_remove = set(scan_files(scan_target, cachedir)) - set(ret)
+            for i,item in enumerate(to_remove):
+                log.debug('cache_dir(%s) to_remove[%d]: %s', path, i, item)
+
         return ret
 
     def cache_local_file(self, path, **kwargs):

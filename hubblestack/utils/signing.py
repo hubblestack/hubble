@@ -43,7 +43,6 @@ import re
 import json
 import io as cStringIO
 import hubblestack.utils.platform
-import inspect
 
 from time import time
 from collections import OrderedDict, namedtuple
@@ -848,10 +847,12 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
                 return f_path
             if vrg == STATUS.UNKNOWN and not Options.require_verify:
                 return f_path
-            log.debug('claiming %s (%s) not found', path, f_path)
-            for idx,frame in enumerate(inspect.stack()[1:11]):
-                if 'hubblestack' in frame.filename:
-                    log.debug('find caller[%d] %s %s() %s', idx, frame.filename, frame.function, frame.lineno)
+            log.debug('claiming not found: %s (%s)', path, f_path)
+            if os.environ.get('HUBBLE_SIGNING_STACK_DEBUG'):
+                import inspect
+                for idx,frame in enumerate(inspect.stack()[1:60]):
+                    if 'hubblestack' in frame.filename:
+                        log.debug('find caller[%d] %s %s() %s', idx, frame.filename, frame.function, frame.lineno)
             return dict(**not_found)
         return inner
     return wrapper

@@ -7,16 +7,8 @@ import subprocess
 import sys
 
 import warnings
-# linux_distribution deprecated in py3.7
-try:
-    from platform import linux_distribution as _deprecated_linux_distribution
 
-    def linux_distribution(**kwargs):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            return _deprecated_linux_distribution(**kwargs)
-except ImportError:
-    from distro import linux_distribution
+from distro import linux_distribution
 
 from hubblestack.utils.decorators.memoize import memoize
 

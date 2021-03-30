@@ -37,21 +37,14 @@ __FQDN__ = None
 
 # Extend the default list of supported distros. This will be used for the
 # /etc/DISTRO-release checking that is part of linux_distribution()
-from platform import _supported_dists
+_supported_dists = (
+    'SuSE', 'debian', 'fedora', 'redhat', 'centos',
+    'mandrake', 'mandriva', 'rocks', 'slackware', 'yellowdog', 'gentoo',
+    'UnitedLinux', 'turbolinux', 'arch', 'mageia')
 _supported_dists += ('arch', 'mageia', 'meego', 'vmware', 'bluewhite64',
                      'slamd64', 'ovs', 'system', 'mint', 'oracle', 'void')
 
-# linux_distribution deprecated in py3.7
-try:
-    from platform import linux_distribution as _deprecated_linux_distribution
-
-    def linux_distribution(**kwargs):
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            return _deprecated_linux_distribution(**kwargs)
-except ImportError:
-    from distro import linux_distribution
-
+from distro import linux_distribution
 
 import inspect
 IS_FIPS_ENABLED = True if 'usedforsecurity' in inspect.getfullargspec(hashlib.new).kwonlyargs else False
@@ -1916,7 +1909,7 @@ def os_data():
         # (though apparently it's not intelligent enough to strip quotes)
         log.trace(
             'Getting OS name, release, and codename from '
-            'platform.linux_distribution()'
+            'distro.linux_distribution()'
         )
         (osname, osrelease, oscodename) = \
             [x.strip('"').strip("'") for x in

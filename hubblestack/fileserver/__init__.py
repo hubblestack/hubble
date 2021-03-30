@@ -171,7 +171,8 @@ def reap_fileserver_cache_dir(cache_base, find_func):
                 ret = find_func(filename, saltenv=saltenv)
                 # if we don't actually have the file, lets clean up the cache
                 # object
-                log.debug('REAP file_path=%s, file_rel_path=%s; ret = find_func => %s', ret)
+                log.debug('REAP file_path=%s, file_rel_path=%s; ret = find_func => %s',
+                    file_path, file_rel_path, ret)
                 if ret['path'] == '':
                     log.debug('REAP os.unlink(%s)', file_path)
                     os.unlink(file_path)

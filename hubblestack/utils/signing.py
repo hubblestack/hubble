@@ -300,7 +300,7 @@ class X509AwareCertBucket:
         if public_crt is None:
             public_crt = Options.public_crt
 
-        if ca_crt is None:
+        if ca_crt is None or not ca_crt:
             ca_crt = Options.ca_crt
 
         if isinstance(ca_crt, (list, tuple)):

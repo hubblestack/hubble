@@ -848,7 +848,7 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
             if vrg == STATUS.UNKNOWN and not Options.require_verify:
                 return f_path
             log.debug('claiming not found: %s (%s)', path, f_path)
-            if os.environ.get('HUBBLE_SIGNING_STACK_DEBUG'):
+            if log.isEnabledFor(logging.DEBUG):
                 import inspect
                 for idx,frame in enumerate(inspect.stack()[1:60]):
                     if 'hubblestack' in frame.filename:

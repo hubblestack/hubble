@@ -266,7 +266,7 @@ def execute(block_id, block_dict, extra_args=None):
     for referred_check_id in referred_checks_list:
         check_found = False
         for result in result_list:
-            if result.get('check_id', '') == referred_check_id:
+            if result.get('check_unique_id', '') == referred_check_id:
                 check_found = True
                 check_result = result.get('check_result', '')
                 if check_result == "Success":

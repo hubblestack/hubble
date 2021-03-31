@@ -131,11 +131,11 @@ class TestBexpr(TestCase):
             }
         }
         result_list = [{
-            'check_id': 'check1',
+            'check_unique_id': 'check1',
             'check_result': 'Success'
         },
             {
-                'check_id': 'check2',
+                'check_unique_id': 'check2',
                 'check_result': 'Error'
             }]
         extra_args = {
@@ -160,11 +160,11 @@ class TestBexpr(TestCase):
             }
         }
         result_list = [{
-            'check_id': 'check1',
+            'check_unique_id': 'check1',
             'check_result': 'Success'
         },
             {
-                'check_id': 'check2',
+                'check_unique_id': 'check2',
                 'check_result': 'Skipped'
             }]
         extra_args = {
@@ -189,11 +189,11 @@ class TestBexpr(TestCase):
             }
         }
         result_list = [{
-            'check_id': 'check1',
+            'check_unique_id': 'check1',
             'check_result': 'Success'
         },
             {
-                'check_id': 'check2',
+                'check_unique_id': 'check2',
                 'check_result': 'Failure'
             }]
         extra_args = {
@@ -216,11 +216,11 @@ class TestBexpr(TestCase):
             }
         }
         result_list = [{
-            'check_id': 'check1',
+            'check_unique_id': 'check1',
             'check_result': 'Success'
         },
             {
-                'check_id': 'check2',
+                'check_unique_id': 'check2',
                 'check_result': 'Failure'
             }]
         extra_args = {
@@ -244,11 +244,11 @@ class TestBexpr(TestCase):
             }
         }
         result_list = [{
-            'check_id': 'check1',
+            'check_unique_id': 'check1',
             'check_result': 'Success'
         },
             {
-                'check_id': 'check2',
+                'check_unique_id': 'check2',
                 'check_result': 'Failure'
             }]
         extra_args = {

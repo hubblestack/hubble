@@ -159,7 +159,8 @@ def cache_file(path, saltenv="base", source_hash=None):
 
 
 def cache_dir(
-    path, saltenv="base", include_empty=False, include_pat=None, exclude_pat=None
+    path, saltenv="base", include_empty=False, include_pat=None, exclude_pat=None,
+    cleanup_existing=True
 ):
     """
     Download and cache everything under a directory from the master
@@ -184,6 +185,10 @@ def cache_dir(
 
         .. versionadded:: 2014.7.0
 
+    cleanup_existing : True
+        Files that don't exist int he source location will be automatically
+        removed from the destination
+
 
     CLI Examples:
 
@@ -192,4 +197,5 @@ def cache_dir(
         salt '*' cp.cache_dir salt://path/to/dir
         salt '*' cp.cache_dir salt://path/to/dir include_pat='E@*.py$'
     """
-    return _client().cache_dir(path, saltenv, include_empty, include_pat, exclude_pat)
+    return _client().cache_dir(path, saltenv, include_empty, include_pat, exclude_pat,
+        cleanup_existing=cleanup_existing)

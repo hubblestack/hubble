@@ -60,6 +60,7 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
                     log.debug('Boolean expression found. Gathering it to evaluate later.')
                     boolean_expr_check_list.append({
                         'check_unique_id': audit_id,
+                        'check_id': audit_data['tag'],
                         'audit_impl': audit_impl,
                         'audit_data': audit_data
                     })
@@ -266,13 +267,13 @@ class AuditRunner(hubblestack.module_runner.runner.Runner):
             log.debug("Evaluating boolean expression checks")
             for boolean_expr in boolean_expr_check_list:
                 try:
-                    check_result = self._execute_audit(boolean_expr['check_id'], boolean_expr['audit_impl'],
+                    check_result = self._execute_audit(boolean_expr['check_unique_id'], boolean_expr['audit_impl'],
                                                        boolean_expr['audit_data'], verbose, audit_profile, result_list)
                     boolean_expr_result_list.append(check_result)
                 except (HubbleCheckValidationError, HubbleCheckVersionIncompatibleError) as herror:
                     # add into error section
                     boolean_expr_result_list.append({
-                        'check_unique_id': boolean_expr['check_id'],
+                        'check_unique_id': boolean_expr['check_unique_id'],
                         'tag': boolean_expr['audit_data']['tag'],
                         'check_id': boolean_expr['audit_data']['tag'],
                         'sub_check': boolean_expr['audit_data'].get('sub_check', False),

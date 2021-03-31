@@ -740,7 +740,7 @@ def _get_top_data(topfile):
             topdata = yaml.safe_load(handle)
 
     except Exception as exc:
-        log.error('error loading nova topfile: %s', e)
+        log.error('error loading nova topfile: %s', exc)
         return list()
 
     if not isinstance(topdata, dict) or 'nova' not in topdata or \

@@ -32,7 +32,8 @@ build_dependencies = [
     'ntplib',
     'patch==1.*',
     'packaging',
-    'pyparsing'
+    'pyparsing',
+    'urllib3==1.25.8'
 ]
 
 if distro == 'redhat' or distro == 'centos':

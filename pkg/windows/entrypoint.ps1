@@ -40,6 +40,6 @@ Move-Item 'C:/temp/hubble/pkg/windows/prerequisites.ps1' -Destination './hubble/
 #Build the installer
 Push-Location 'C:/Program Files (x86)/NSIS';
 ./makensis.exe /DHubbleVersion="$env:HUBBLE_CHECKOUT_ENV" 'C:/temp/hubble/pkg/windows/hubble-Setup.nsi';
-Get-FileHash -Path C:/temp/hubble/pkg/windows/Hubble*exe -Algorithm SHA256 | Out-File C:/temp/hubble/pkg/windows/Hubble-$env:HUBBLE_CHECKOUT_ENV-Setup.exe.sha256;
+Get-FileHash -Path C:/temp/hubble/pkg/windows/Hubble*exe -Algorithm SHA256 | Out-File C:/temp/hubble/pkg/windows/Hubble-$env:HUBBLE_CHECKOUT_ENV-Setup.exe.sha256.txt;
 Copy-Item C:/temp/hubble/pkg/windows/Hubble*exe -Destination C:/data/;
 Copy-Item C:/temp/hubble/pkg/windows/hubble*.sha256 -Destination C:/data/;

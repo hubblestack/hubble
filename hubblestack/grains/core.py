@@ -46,9 +46,6 @@ _supported_dists += ('arch', 'mageia', 'meego', 'vmware', 'bluewhite64',
 
 from distro import linux_distribution
 
-import inspect
-IS_FIPS_ENABLED = True if 'usedforsecurity' in inspect.getfullargspec(hashlib.new).kwonlyargs else False
-
 import hubblestack.exceptions
 import hubblestack.log
 import hubblestack.utils.dns
@@ -2746,10 +2743,7 @@ def get_server_id():
         return {}
 
     id_ = __opts__.get('id', '')
-    if IS_FIPS_ENABLED:
-        md5 = hashlib.md5(usedforsecurity=False)
-    else:
-        md5 = hashlib.md5()
+    md5 = hashlib.md5(usedforsecurity=False)
     md5.update( str(id_).encode() )
     id_hash = int( md5.hexdigest(), 16 )
 

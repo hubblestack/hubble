@@ -12,7 +12,6 @@ import re
 import socket
 import time
 from multiprocessing.pool import ThreadPool
-from inspect import getfullargspec
 
 # Import hubble libs
 import hubblestack.utils.decorators.path
@@ -22,7 +21,6 @@ from hubblestack.utils._compat import ipaddress
 from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
-isFipsEnabled = True if 'usedforsecurity' in getfullargspec(hashlib.new).kwonlyargs else False
 
 def __virtual__():
     """
@@ -1561,10 +1559,7 @@ def connect(host, port=None, **kwargs):
         if proto == "udp":
             # Generate a random string of a
             # decent size to test UDP connection
-            if isFipsEnabled:
-                md5h = hashlib.md5(usedforsecurity=False)
-            else:
-                md5h = hashlib.md5()
+            md5h = hashlib.md5(usedforsecurity=False)
             md5h.update(datetime.datetime.now().strftime("%s"))
             msg = md5h.hexdigest()
             skt.sendto(msg, _address)

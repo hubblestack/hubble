@@ -953,7 +953,7 @@ def _grep(path,
 
     try:
         log.info(cmd)
-        ret = __salt__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
+        ret = __mods__['cmd.run_all'](cmd, python_shell=False, ignore_retcode=True)
     except (IOError, OSError) as exc:
         raise CommandExecutionError(exc.strerror)
 

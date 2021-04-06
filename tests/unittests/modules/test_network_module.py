@@ -206,57 +206,6 @@ class NetworkTestCase(TestCase, LoaderModuleMockMixin):
         ):
             self.assertTrue(network.mod_hostname("hostname"))
 
-    def test_connect(self):
-        """
-        Test for Test connectivity to a host using a particular
-        port from the minion.
-        """
-        with patch("socket.socket") as mock_socket:
-            self.assertDictEqual(
-                network.connect(False, "port"),
-                {"comment": "Required argument, host, is missing.", "result": False},
-            )
-
-            self.assertDictEqual(
-                network.connect("host", False),
-                {"comment": "Required argument, port, is missing.", "result": False},
-            )
-
-            ret = "Unable to connect to host (0) on tcp port port"
-            mock_socket.side_effect = Exception("foo")
-            with patch.dict(
-                network.__utils__,
-                {"network.sanitize_host": MagicMock(return_value="A")},
-            ):
-                with patch.object(
-                    socket,
-                    "getaddrinfo",
-                    return_value=[["ipv4", "A", 6, "B", "0.0.0.0"]],
-                ):
-                    self.assertDictEqual(
-                        network.connect("host", "port"),
-                        {"comment": ret, "result": False},
-                    )
-
-            ret = "Successfully connected to host (0) on tcp port port"
-            mock_socket.side_effect = MagicMock()
-            mock_socket.settimeout().return_value = None
-            mock_socket.connect().return_value = None
-            mock_socket.shutdown().return_value = None
-            with patch.dict(
-                network.__utils__,
-                {"network.sanitize_host": MagicMock(return_value="A")},
-            ):
-                with patch.object(
-                    socket,
-                    "getaddrinfo",
-                    return_value=[["ipv4", "A", 6, "B", "0.0.0.0"]],
-                ):
-                    self.assertDictEqual(
-                        network.connect("host", "port"),
-                        {"comment": ret, "result": True},
-                    )
-
     @skipIf(not bool(ipaddress), "unable to import 'ipaddress'")
     def test_is_private(self):
         """

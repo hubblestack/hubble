@@ -882,7 +882,7 @@ class RemoteClient(Client):
                         # Master has prompted a file verification, if the
                         # verification fails, re-download the file. Try 3 times
                         d_tries += 1
-                        hsum = hubblestack.utils.hashutils.get_hash(dest, hubblestack.utils.stringutils.to_str(data.get('hash_type', b'md5')))
+                        hsum = hubblestack.utils.hashutils.get_hash(dest, hubblestack.utils.stringutils.to_str(data.get('hash_type', b'sha256')))
                         if hsum != data['hsum']:
                             log.warning(
                                 'Bad download of file %s, attempt %d of 3',
@@ -993,7 +993,7 @@ class RemoteClient(Client):
                 return {}, None
             else:
                 ret = {}
-                hash_type = self.opts.get('hash_type', 'md5')
+                hash_type = self.opts.get('hash_type', 'sha256')
                 ret['hsum'] = hubblestack.utils.hashutils.get_hash(path, form=hash_type)
                 ret['hash_type'] = hash_type
                 return ret

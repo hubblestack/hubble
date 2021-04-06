@@ -26,7 +26,7 @@ _max_content_bytes = 100000
 http_event_collector_debug = False
 
 # the list of collector URLs given to the HEC object
-# are hashed into an md5 string that identifies the URL set
+# are hashed into an sha256 string that identifies the URL set
 # these maximums are per URL set, not for the entire disk cache
 max_diskqueue_size  = 10 * (1024 ** 2)
 
@@ -257,11 +257,11 @@ class HEC(object):
             self.pool_manager = urllib3.PoolManager(**pm_kw)
 
         if disk_queue:
-            md5 = hashlib.md5(usedforsecurity=False)
+            sha_hash = hashlib.sha256()
             uril = sorted([ x.uri for x in self.server_uri ])
             for u in uril:
-                md5.update(encode_something_to_bytes(u))
-            actual_disk_queue = os.path.join(disk_queue, md5.hexdigest())
+                sha_hash.update(encode_something_to_bytes(u))
+            actual_disk_queue = os.path.join(disk_queue, sha_hash.hexdigest())
             log.debug("disk_queue for %s: %s", uril, actual_disk_queue)
             self.queue = DiskQueue(actual_disk_queue, size=disk_queue_size, compression=disk_queue_compression)
         else:

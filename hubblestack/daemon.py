@@ -840,24 +840,13 @@ def setup_fips_mode():
         os.environ["ENABLE_FIPS"] = "1"
         log.info('FIPS mode enabled')
 
-    # For now, it is not enabled on any other machine
-    allowed_os_config = {
-        'centos': '7'
-    }
-    
-    import distro
-    os_flavor, os_version, _ = distro.linux_distribution(full_distribution_name=False)
-    if os_flavor in allowed_os_config and os_version.startswith(allowed_os_config[os_flavor]):
-        try:
-            import ssl
-            ssl.FIPS_mode_set(1)
-            log.debug('FIPS mode: {0}'.format(ssl.FIPS_mode()))
-            log.info('FIPS mode enabled')
-        except:
-            log.error('Could not set FIPS mode! Continuing...')
-        return
-
-    log.info('FIPS mode not enabled')
+    try:
+        import ssl
+        ssl.FIPS_mode_set(1)
+        log.debug('FIPS mode: {0}'.format(ssl.FIPS_mode()))
+        log.info('FIPS mode enabled')
+    except:
+        log.error('Could not set FIPS mode! Continuing...')
 
 def parse_args(args=None):
     """

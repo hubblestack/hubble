@@ -35,15 +35,6 @@ except ImportError:
 __proxyenabled__ = ['*']
 __FQDN__ = None
 
-# Extend the default list of supported distros. This will be used for the
-# /etc/DISTRO-release checking that is part of linux_distribution()
-_supported_dists = (
-    'SuSE', 'debian', 'fedora', 'redhat', 'centos',
-    'mandrake', 'mandriva', 'rocks', 'slackware', 'yellowdog', 'gentoo',
-    'UnitedLinux', 'turbolinux', 'arch', 'mageia')
-_supported_dists += ('arch', 'mageia', 'meego', 'vmware', 'bluewhite64',
-                     'slamd64', 'ovs', 'system', 'mint', 'oracle', 'void')
-
 from distro import linux_distribution
 
 import hubblestack.exceptions
@@ -1381,7 +1372,7 @@ _REPLACE_LINUX_RE = re.compile(r'\W(?:gnu/)?linux', re.IGNORECASE)
 
 # This maps (at most) the first ten characters (no spaces, lowercased) of
 # 'osfullname' to the 'os' grain that Salt traditionally uses.
-# Please see os_data() and _supported_dists.
+# Please see os_data().
 # If your system is not detecting properly it likely needs an entry here.
 _OS_NAME_MAP = {
     'redhatente': 'RedHat',
@@ -1910,7 +1901,7 @@ def os_data():
         )
         (osname, osrelease, oscodename) = \
             [x.strip('"').strip("'") for x in
-             linux_distribution(supported_dists=_supported_dists)]
+             linux_distribution()]
         # Try to assign these three names based on the lsb info, they tend to
         # be more accurate than what python gets from /etc/DISTRO-release.
         # It's worth noting that Ubuntu has patched their Python distribution

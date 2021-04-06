@@ -399,6 +399,10 @@ def _reg_value_reverse_translator(input_string):
         return ['prompt for consent on the secure desktop']
     elif input_string == '7,':
         return ['']
+    elif input_string.startswith("4,"):
+        ret = input_string.split(',')
+        if len(ret) >=2:
+            return ret[1]
     else:
         input_string = input_string.replace('"', '')
         input_string = input_string.split(',')

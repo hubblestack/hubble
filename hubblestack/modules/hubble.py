@@ -588,7 +588,7 @@ def _clean_up_results(results, show_success):
         results.pop('Success')
 
 
-def sync(clean=False):
+def sync(clean=True):
     """
     Sync the nova audit modules and profiles from the saltstack fileserver.
 
@@ -606,9 +606,13 @@ def sync(clean=False):
 
     Returns a boolean representing success
 
-    NOTE: This function will optionally clean out existing files at the cached
-    location, as cp.cache_dir doesn't clean out old files. Pass ``clean=True``
-    to enable this behavior
+    NOTE: This function will optionally clean out files that are already
+    cached, but do not exist in the source location. Historically, this was
+    done with file.remove followed by a fresh copy, but that's unacceptably
+    slow for large repositories, so it was usually disabled. That is now fixed
+    such that cp.cache_dir knows how to clean up files that aren't found in the
+    source repo. The default is to clean up these files; pass ``clean=False``
+    to disable this behavior.
 
     CLI Examples:
 
@@ -623,10 +627,6 @@ def sync(clean=False):
     _nova_module_dir, cached_profile_dir = _hubble_dir()
     saltenv = __mods__['config.get']('hubblestack:nova:saltenv', 'base')
 
-    # Clean previously synced files
-    if clean:
-        __mods__['file.remove'](cached_profile_dir)
-
     synced = []
     # Support optional salt:// in config
     if 'salt://' in nova_profile_dir:
@@ -636,7 +636,7 @@ def sync(clean=False):
         path = 'salt://{0}'.format(nova_profile_dir)
 
     # Sync the files
-    cached = __mods__['cp.cache_dir'](path, saltenv=saltenv)
+    cached = __mods__['cp.cache_dir'](path, saltenv=saltenv, cleanup_existing=True)
 
     if cached and isinstance(cached, list):
         # Success! Trim the paths
@@ -730,13 +730,18 @@ def _get_top_data(topfile):
     """
     Helper method to retrieve and parse the nova topfile
     """
+    orig_topfile = topfile
     topfile = os.path.join(_hubble_dir()[1], topfile)
+
+    log.debug('reading nova topfile=%s (%s)', topfile, orig_topfile)
 
     try:
         with open(topfile) as handle:
             topdata = yaml.safe_load(handle)
+
     except Exception as exc:
-        raise CommandExecutionError('Could not load topfile: {0}'.format(exc))
+        log.error('error loading nova topfile: %s', exc)
+        return list()
 
     if not isinstance(topdata, dict) or 'nova' not in topdata or \
             (not isinstance(topdata['nova'], dict)):

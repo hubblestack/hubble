@@ -137,13 +137,13 @@ def update():
     When we are asked to update (regular interval) lets reap the cache
     """
     try:
-        hubblestack.fileserver.reap_fileserver_cache_dir(
-            os.path.join(__opts__['cachedir'], 'roots', 'hash'),
-            find_file
-        )
-    except (IOError, OSError):
+        reap_target = os.path.join(__opts__['cachedir'], 'roots', 'hash')
+        log.debug('reap_fileserver_cache_dir(%s)', reap_target)
+        hubblestack.fileserver.reap_fileserver_cache_dir(reap_target, find_file)
+    except (IOError, OSError) as e:
         # Hash file won't exist if no files have yet been served up
-        pass
+        # not really an error, but maybe worth noting if we're debugging
+        log.debug('reap_fileserver_cache_dir(%s) error: %s', reap_target, e)
 
     mtime_map_path = os.path.join(__opts__['cachedir'], 'roots', 'mtime_map')
     # data to send on event

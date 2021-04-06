@@ -198,10 +198,26 @@ class HEC(object):
         self.currentByteLength = 0
         self.server_uri = []
 
-        if proxy and http_event_server_ssl:
-            self.proxy = 'https://{0}'.format(proxy)
-        elif proxy:
-            self.proxy = 'http://{0}'.format(proxy)
+        if proxy:
+            proxy_s = proxy.split('://')
+            if len(proxy_s) == 2:
+                # the form http://host:port is preferred, so we can just use
+                # the value directly although this does work, essentially all
+                # proxy servies will 403 the CONNECT to an https endpoint over
+                # http; so an http://proxy setting may be completely useless
+                #
+                # No, the above is unique to squid3 proxy in default configs --
+                # probably for security reasons. a tinyproxy setting of
+                # http://iphere:porthere actually does work! \o/
+                self.proxy = proxy
+            elif http_event_server_ssl:
+                # the old behavior is to default to https proxy if the hec was https
+                # this may not work for the various tinyproxy and etc running out there
+                # but to make those older configs continue to work, we leave this behavior
+                # however, using a form 'http://hostname:port' will disable it
+                self.proxy = 'https://{0}'.format(proxy)
+            else:
+                self.proxy = 'http://{0}'.format(proxy)
         else:
             self.proxy = None
 
@@ -255,6 +271,7 @@ class HEC(object):
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         if self.proxy:
+            log.debug('using ProxyManager(%s)', self.proxy)
             self.pool_manager = urllib3.ProxyManager(self.proxy, **pm_kw)
         else:
             self.pool_manager = urllib3.PoolManager(**pm_kw)

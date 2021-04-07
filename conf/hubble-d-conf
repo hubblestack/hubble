@@ -1,0 +1,31 @@
+# For deployment purposes, it's typical to have a default
+# corporate config /etc/hubble/hubble that you're not meant to
+# alter.
+#
+# Installers should then create a section like this in
+# /etc/hubble.d/filenamehere.conf
+#
+# Each section listed in such .conf files completely replaces the
+# section listed in /etc/hubble
+#
+# Side note: each .conf file will replace the sections in the
+# .conf files loaded before it. The order of such applications is
+# undefined, so it's best to limit the number of these files.
+#
+# One last point of confusion: if more than one splunk index is
+# listed, they will be tried in order until one works. Hubble
+# does not attempt to send events to more than one index or
+# indexer at the same time.
+
+#hubblestack:
+#  returner:
+#    splunk:
+#      - token: XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX
+#        indexer: splunk-indexer.domain.tld
+#        index: hubble
+#        add_query_to_sourcetype: True  # Separate nebula sourcetype per query
+#        sourcetype_nova: hubble_audit
+#        sourcetype_nebula: hubble_osquery
+#        sourcetype_osqueryd: hubble_osqd
+#        sourcetype_pulsar: hubble_fim
+#        sourcetype_log: hubble_log

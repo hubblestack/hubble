@@ -181,8 +181,8 @@ fpm -s dir -t rpm \
     --url ${HUBBLE_URL} \
     --description "${HUBBLE_DESCRIPTION}" \
     --rpm-summary "${HUBBLE_SUMMARY}" \
-    --after-install /hubble_build/conf/afterinstall-systemd.sh \
-    --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
+    --after-install /hubble_build/conf/afterinstall.sh \
+    --after-upgrade /hubble_build/conf/afterupgrade.sh \
     --before-remove /hubble_build/conf/beforeremove.sh \
     etc/init.d etc/hubble opt usr /var/log/hubble_osquery/backuplogs
 

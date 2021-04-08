@@ -12,10 +12,11 @@
 # .conf files loaded before it. The order of such applications is
 # undefined, so it's best to limit the number of these files.
 #
-# One last point of confusion: if more than one splunk index is
+# One last point of confusion: if more than one endpoint is
 # listed, they will be tried in order until one works. Hubble
-# does not attempt to send events to more than one index or
-# indexer at the same time.
+# does not attempt to send events to more than one endpoint.
+
+
 
 #hubblestack:
 #  returner:

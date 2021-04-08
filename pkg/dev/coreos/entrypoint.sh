@@ -115,10 +115,11 @@ mkdir -p /var/log/hubble_osquery/backuplogs
 
 mkdir -p /etc/systemd/system
 mkdir -p /etc/profile.d
-mkdir -p /etc/hubble
+mkdir -p /etc/hubble/hubble.d
 
 cp -v /hubble_build/pkg/hubble.service /etc/hubble/hubble-example.service
 cp -v /hubble_build/conf/hubble-profile.sh /etc/profile.d/
+cp -v /hubble_build/conf/hubble-d-conf     /etc/hubble/hubble.d
 
 if [ -f /data/hubble ]
 then cp -v /data/hubble /etc/hubble/

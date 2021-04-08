@@ -50,12 +50,12 @@ import json
 import datetime
 import requests
 import logging
-import salt.utils.platform
+import hubblestack.utils.platform
 from pkg_resources import parse_version
 
 
 def __virtual__():
-    return not salt.utils.platform.is_windows()
+    return not hubblestack.utils.platform.is_windows()
 
 def audit(data_list, tags, labels, debug=False, **kwargs):
     """Hubble audit function"""
@@ -71,7 +71,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
             if distro_name not in (supported_dist):
                 logging.info('The oval CVE scanner does not currently support {0}'.format(distro_name.capitalize()))
                 return ret
-            local_pkgs = __salt__['pkg.list_pkgs']()
+            local_pkgs = __mods__['pkg.list_pkgs']()
             if distro_name in ('debian'):
                 logging.info('Referencing source packages to binary packages. This could take awhile...'.format(distro_name.capitalize()))
                 pkg_src_ref = build_pkg_src_ref(local_pkgs)
@@ -121,10 +121,10 @@ def write_report_to_file(opt_output_file, report):
     time = datetime.datetime.now()
     now = time.strftime("%Y-%m-%d@%H:%M:%S")
     logging.info('Writing CVE data to {0}'.format(opt_output_file))
-    if __salt__['file.file_exists'](opt_output_file):
+    if __mods__['file.file_exists'](opt_output_file):
         logging.info('Found existing log, backing up...')
         back_up = opt_output_file + now
-        __salt__['file.rename'](opt_output_file, back_up)
+        __mods__['file.rename'](opt_output_file, back_up)
     with open(opt_output_file, 'w') as outfile:
         outfile.write(json.dumps(report, indent=2, sort_keys=True))
 
@@ -196,7 +196,7 @@ def get_impact(local_ver, distro_name, **kargs):
     impact = {}
     if distro_name in ('centos', 'redhat'):
         impact = parse_rpm_version(impact, local_ver, **kargs)
-    elif __salt__['pkg.version_cmp'](kargs['ver'], local_ver) > 0:
+    elif __mods__['pkg.version_cmp'](kargs['ver'], local_ver) > 0:
         impact = create_impact(impact, local_ver, **kargs)
     return impact
 
@@ -261,7 +261,7 @@ def get_package_detail(local_pkgs):
     """Get package details"""
     logging.debug('get_package_detail')
     for pkg in local_pkgs:
-        __salt__['pkg.show'](pkg)
+        __mods__['pkg.show'](pkg)
 
 
 # Create vulnerability dictionary

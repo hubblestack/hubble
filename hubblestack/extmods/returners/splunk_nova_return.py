@@ -183,7 +183,7 @@ def _generate_event(args, cloud_details, custom_fields, check_type=None, data=No
 
     for custom_field in custom_fields:
         custom_field_name = 'custom_' + custom_field
-        custom_field_value = __salt__['config.get'](custom_field, '')
+        custom_field_value = __mods__['config.get'](custom_field, '')
         if isinstance(custom_field_value, list):
             custom_field_value = ','.join(custom_field_value)
         if isinstance(custom_field_value, str):
@@ -191,7 +191,7 @@ def _generate_event(args, cloud_details, custom_fields, check_type=None, data=No
 
     if check_type == 'Success':
         # Remove any empty fields from the event payload
-        remove_keys = [k for k in event if event[k] == ""]
+        remove_keys = [k for k,v in event.items() if v is None or v == ""]
         for k in remove_keys:
             del event[k]
 

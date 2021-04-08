@@ -13,26 +13,22 @@ Configuration:
 """
 
 
-import logging
 import os
+import sys
+import logging
 import traceback
 import yaml
 
-from salt.exceptions import CommandExecutionError
+from hubblestack.exceptions import CommandExecutionError
 from hubblestack import __version__
 from hubblestack.status import HubbleStatus
+from hubblestack.loader import nova as NovaLazyLoader
 
 log = logging.getLogger(__name__)
 
 hubble_status = HubbleStatus(__name__, 'top', 'audit')
 
-try:
-    from nova_loader import NovaLazyLoader
-except ImportError:
-    pass  # This is here to make the sphinx import of this module work
-
 __nova__ = {}
-
 
 @hubble_status.watch
 def audit(configs=None,
@@ -115,23 +111,23 @@ def audit(configs=None,
     if labels:
         if not isinstance(labels, list):
             labels = labels.split(',')
-    if not called_from_top and __salt__['config.get']('hubblestack:nova:autoload', True):
+    if not called_from_top and __mods__['config.get']('hubblestack:nova:autoload', True):
         load()
     if not __nova__:
         return False, 'No nova modules/data have been loaded.'
 
     if verbose is None:
-        verbose = __salt__['config.get']('hubblestack:nova:verbose', False)
+        verbose = __mods__['config.get']('hubblestack:nova:verbose', False)
     if show_success is None:
-        show_success = __salt__['config.get']('hubblestack:nova:show_success', True)
+        show_success = __mods__['config.get']('hubblestack:nova:show_success', True)
     if show_compliance is None:
-        show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
+        show_compliance = __mods__['config.get']('hubblestack:nova:show_compliance', True)
     if show_profile is not None:
         log.warning(
             'Keyword argument \'show_profile\' is no longer supported'
         )
     if debug is None:
-        debug = __salt__['config.get']('hubblestack:nova:debug', False)
+        debug = __mods__['config.get']('hubblestack:nova:debug', False)
 
     if not isinstance(configs, list):
         # Convert string
@@ -186,7 +182,7 @@ def _get_nova_kwargs(**kwargs):
     """
     nova_kwargs = {}
     # Get values from config first (if any) and merge into nova_kwargs
-    nova_kwargs_config = __salt__['config.get']('hubblestack:nova:nova_kwargs', False)
+    nova_kwargs_config = __mods__['config.get']('hubblestack:nova:nova_kwargs', False)
     if nova_kwargs_config is not False:
         nova_kwargs.update(nova_kwargs_config)
     # Now process arguments from CLI and merge into nova_kwargs_dict
@@ -298,7 +294,8 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
     # have available with the data list, so data will be processed multiple
     # times. However, for the scale we're working at this should be fine.
     # We can revisit if this ever becomes a big bottleneck
-    for key, func in __nova__._dict.items():
+
+    for key, func in __nova__.items():
         try:
             ret = func(data_list, tags, labels, **kwargs)
         except Exception:
@@ -340,6 +337,12 @@ def _run_audit(configs, tags, debug, labels, **kwargs):
     return results
 
 
+def _no_yaml(filename):
+    if filename.endswith('.yaml'):
+        return filename[:-5]
+    return filename
+
+
 def _build_audit_data(configs, results):
     """
     Helper function that goes over each config and extract the audit data sets
@@ -349,25 +352,16 @@ def _build_audit_data(configs, results):
     for config in configs:
         found_for_config = False
         for key in __nova__.__data__:
-            key_path_split = key.split('.yaml')[0].split(os.path.sep)
-            matches = True
-            if config != os.path.sep:
-                for i, path in enumerate(config.split(os.path.sep)):
-                    if i >= len(key_path_split) or path != key_path_split[i]:
-                        matches = False
-            if matches:
-                # Found a match, add the audit data to the set
-                found_for_config = True
+            if _no_yaml(key).startswith(config):
                 to_run.add(key)
+                found_for_config = True
         if not found_for_config:
             # No matches were found for this entry, add an error
             if 'Errors' not in results:
                 results['Errors'] = []
             results['Errors'].append(
                 {config: {'error': 'No matching profiles found for {0}'.format(config)}})
-
-    return [(key.split('.yaml')[0].split(os.path.sep)[-1],
-             __nova__.__data__[key]) for key in to_run]
+    return [(_no_yaml(os.path.basename(key)), __nova__.__data__[key]) for key in to_run]
 
 
 def _build_processed_controls(data_list, debug):
@@ -489,17 +483,19 @@ def top(topfile='top.nova',
         salt '*' hubble.top foo/bar/top.nova
         salt '*' hubble.top foo/bar.nova verbose=True
     """
-    if __salt__['config.get']('hubblestack:nova:autoload', True):
-        load()
+    if __mods__['config.get']('hubblestack:nova:autoload', True):
+        load_result = load()
+        if not load_result[0]:
+            return load_result
     if not __nova__:
         return False, 'No nova modules/data have been loaded.'
 
     if verbose is None:
-        verbose = __salt__['config.get']('hubblestack:nova:verbose', False)
+        verbose = __mods__['config.get']('hubblestack:nova:verbose', False)
     if show_success is None:
-        show_success = __salt__['config.get']('hubblestack:nova:show_success', True)
+        show_success = __mods__['config.get']('hubblestack:nova:show_success', True)
     if show_compliance is None:
-        show_compliance = __salt__['config.get']('hubblestack:nova:show_compliance', True)
+        show_compliance = __mods__['config.get']('hubblestack:nova:show_compliance', True)
     if show_profile is not None:
         log.warning(
             'Keyword argument \'show_profile\' is no longer supported'
@@ -592,7 +588,7 @@ def _clean_up_results(results, show_success):
         results.pop('Success')
 
 
-def sync(clean=False):
+def sync(clean=True):
     """
     Sync the nova audit modules and profiles from the saltstack fileserver.
 
@@ -610,9 +606,13 @@ def sync(clean=False):
 
     Returns a boolean representing success
 
-    NOTE: This function will optionally clean out existing files at the cached
-    location, as cp.cache_dir doesn't clean out old files. Pass ``clean=True``
-    to enable this behavior
+    NOTE: This function will optionally clean out files that are already
+    cached, but do not exist in the source location. Historically, this was
+    done with file.remove followed by a fresh copy, but that's unacceptably
+    slow for large repositories, so it was usually disabled. That is now fixed
+    such that cp.cache_dir knows how to clean up files that aren't found in the
+    source repo. The default is to clean up these files; pass ``clean=False``
+    to disable this behavior.
 
     CLI Examples:
 
@@ -622,14 +622,10 @@ def sync(clean=False):
         salt '*' nova.sync saltenv=hubble
     """
     log.debug('syncing nova modules')
-    nova_profile_dir = __salt__['config.get']('hubblestack:nova:profile_dir',
+    nova_profile_dir = __mods__['config.get']('hubblestack:nova:profile_dir',
                                               'salt://hubblestack_nova_profiles')
     _nova_module_dir, cached_profile_dir = _hubble_dir()
-    saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
-
-    # Clean previously synced files
-    if clean:
-        __salt__['file.remove'](cached_profile_dir)
+    saltenv = __mods__['config.get']('hubblestack:nova:saltenv', 'base')
 
     synced = []
     # Support optional salt:// in config
@@ -640,7 +636,7 @@ def sync(clean=False):
         path = 'salt://{0}'.format(nova_profile_dir)
 
     # Sync the files
-    cached = __salt__['cp.cache_dir'](path, saltenv=saltenv)
+    cached = __mods__['cp.cache_dir'](path, saltenv=saltenv, cleanup_existing=True)
 
     if cached and isinstance(cached, list):
         # Success! Trim the paths
@@ -663,23 +659,24 @@ def load():
     """
     Load the synced audit modules.
     """
-    if __salt__['config.get']('hubblestack:nova:autosync', True):
+    if __mods__['config.get']('hubblestack:nova:autosync', True):
         sync()
 
     for nova_dir in _hubble_dir():
         if not os.path.isdir(nova_dir):
-            return False, 'No synced nova modules/profiles found'
+            return False, 'No synced nova modules/profiles found in nova_dir={}'.format(nova_dir)
 
     log.debug('loading nova modules')
 
     global __nova__
-    __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __grains__, __pillar__, __salt__)
+    __nova__ = NovaLazyLoader(_hubble_dir(), __opts__, __mods__)
 
-    ret = {'loaded': list(__nova__._dict.keys()),
+    ret = {'loaded': list(__nova__),
            'missing': __nova__.missing_modules,
-           'data': list(__nova__.__data__.keys()),
+           'data': list(__nova__.__data__),
            'missing_data': __nova__.__missing_data__}
-    return ret
+
+    return True, ret
 
 
 def version():
@@ -697,13 +694,13 @@ def _hubble_dir():
     Returns a tuple of two paths, the first for nova modules, the second for
     nova profiles
     """
-    nova_profile_dir = __salt__['config.get']('hubblestack:nova:profile_dir',
+    nova_profile_dir = __mods__['config.get']('hubblestack:nova:profile_dir',
                                               'salt://hubblestack_nova_profiles')
     nova_module_dir = os.path.join(__opts__['install_dir'], 'files', 'hubblestack_nova')
     # Support optional salt:// in config
     if 'salt://' in nova_profile_dir:
         _, _, nova_profile_dir = nova_profile_dir.partition('salt://')
-    saltenv = __salt__['config.get']('hubblestack:nova:saltenv', 'base')
+    saltenv = __mods__['config.get']('hubblestack:nova:saltenv', 'base')
     cachedir = os.path.join(__opts__.get('cachedir'),
                             'files',
                             saltenv,
@@ -733,13 +730,18 @@ def _get_top_data(topfile):
     """
     Helper method to retrieve and parse the nova topfile
     """
+    orig_topfile = topfile
     topfile = os.path.join(_hubble_dir()[1], topfile)
+
+    log.debug('reading nova topfile=%s (%s)', topfile, orig_topfile)
 
     try:
         with open(topfile) as handle:
             topdata = yaml.safe_load(handle)
+
     except Exception as exc:
-        raise CommandExecutionError('Could not load topfile: {0}'.format(exc))
+        log.error('error loading nova topfile: %s', exc)
+        return list()
 
     if not isinstance(topdata, dict) or 'nova' not in topdata or \
             (not isinstance(topdata['nova'], dict)):
@@ -750,7 +752,7 @@ def _get_top_data(topfile):
     ret = []
 
     for match, data in topdata.items():
-        if __salt__['match.compound'](match):
+        if __mods__['match.compound'](match):
             ret.extend(data)
 
     return ret

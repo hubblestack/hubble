@@ -1,5 +1,4 @@
 from setuptools import setup, find_packages
-import re
 import platform
 
 try:
@@ -15,14 +14,16 @@ data_files = [('/usr/lib/systemd/system', ['pkg/source/hubble.service']),
               ('/etc/hubble', ['conf/hubble']), ]
 
 build_dependencies = [
+    'distro',
+    'msgpack',
+    'pyyaml',
     'objgraph',
     'pycryptodome',
     'cryptography',
-    'pyopenssl>=16.2.0',
+    'pyopenssl',
     'requests>=2.13.0',
     'daemon',
-    'pygit2<0.27.0',
-    'salt-ssh==2019.2.3',
+    'pygit2',
     'gitpython',
     'pyinotify',
     'cffi',
@@ -30,6 +31,9 @@ build_dependencies = [
     'vulners',
     'ntplib',
     'patch==1.*',
+    'packaging',
+    'pyparsing',
+    'urllib3==1.25.8'
 ]
 
 if distro == 'redhat' or distro == 'centos':
@@ -46,13 +50,17 @@ elif distro == 'Amazon Linux AMI':
 if platform_name == 'Windows':
     build_dependencies.remove('pyinotify')
 
-with open('hubblestack/__init__.py', 'r') as fd:
-    version = re.search(r'^__version__\s*=\s*[\'"]([^\'"]*)[\'"]',
-                        fd.read(), re.MULTILINE).group(1)
+def _hubble_version():
+    try:
+        from hubblestack.version import __version__
+        return __version__
+    except:
+        pass
+    return 'unknown'
 
 setup(
     name='hubblestack',
-    version=version,
+    version=_hubble_version(),
     description='Modular, open-source security compliance framework',
     author='Colton Myers',
     author_email='colton.myers@gmail.com',
@@ -68,14 +76,6 @@ setup(
     },
     install_requires=build_dependencies,
     data_files=data_files,
-    options={
-#        'build_scripts': {
-#            'executable': '/usr/bin/env python',
-#        },
-        'bdist_rpm': {
-            'requires': 'salt python-argparse python-inotify python-pygit2 python-setuptools',
-        },
-    },
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',

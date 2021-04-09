@@ -1,0 +1,16 @@
+fail_fast: false
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v3.2.0
+  hooks:
+  - id: check-yaml
+  - id: end-of-file-fixer
+  - id: trailing-whitespace
+- repo: https://github.com/psf/black
+  rev: 20.8b1
+  hooks:
+  - id: black
+- repo: https://github.com/pre-commit/mirrors-pylint
+  rev: 'v2.6.0'
+  hooks:
+  - id: pylint

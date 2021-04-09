@@ -68,10 +68,6 @@ def test_bucket_len():
     B = 5
 
     with HubbleStatusContext('test1', bucket_len=B) as hubble_status:
-        # XXX: There's currently a bug in the status system where if we don't mark
-        # something in the current time bucket, all the dicts returned from short()
-        # may be empty … In the interests of getting this test working, just mark
-        # something then circle back to this afterwards.
         hubble_status.mark('test1')
 
         # issue test1 mark N times, pretending one mark per second
@@ -115,8 +111,7 @@ class HubbleStatusContext(object):
     #
     # The python context manager will do nicely:
 
-    orig_dat = hubblestack.status.HubbleStatus.dat
-    orig_opt = hubblestack.status.__opts__.get('hubble_status')
+    orig_dat = orig_opt = None
 
     def __init__(self, *args, **kwargs):
         self.args = args
@@ -124,6 +119,9 @@ class HubbleStatusContext(object):
 
     def __enter__(self):
         log.debug("__enter__ nuking HubbleStatus.dat and tuning __opts__")
+
+        self.orig_dat = hubblestack.status.HubbleStatus.dat
+        self.orig_opt = hubblestack.status.__opts__.get('hubble_status')
 
         # completely reset the status stack
         hubblestack.status.HubbleStatus.dat = dict()
@@ -146,7 +144,7 @@ class HubbleStatusContext(object):
         log.debug("__exit__ restoring HubbleStatus.dat and repairing __opts__")
         hubblestack.status.HubbleStatus.dat = self.orig_dat
         if self.orig_opt is not None:
-            hubblestack.status.__opts__ = self.orig_opt
+            hubblestack.status.__opts__['hubble_status'] = self.orig_opt
 
 
 

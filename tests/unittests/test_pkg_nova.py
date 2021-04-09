@@ -40,12 +40,12 @@ class TestPkg():
                        'whitelist': {'ntp': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0', 'data': {'Ubuntu-16.04': [{'ntp': 'CIS-6.5'}]}, 'description': 'Configure Network Time Protocol (NTP)'}, 'rsyslog': {'nova_profile': 'ubuntu-1604-level-1-scored-v1-0-0', 'data': {'Ubuntu-16.04': [{'rsyslog': 'CIS-8.2.1'}]}, 'description': 'Install the rsyslog package'}}}})]
         __tags__ = 'CIS-6.5'
         hubblestack.files.hubblestack_nova.pkg.__grains__ = {'osfinger': 'Ubuntu-16.04'}
-        __salt__ = {}
+        __mods__ = {}
 
         def pkg_version(name):
             return name
-        __salt__['pkg.version'] = pkg_version
-        hubblestack.files.hubblestack_nova.pkg.__salt__ = __salt__
+        __mods__['pkg.version'] = pkg_version
+        hubblestack.files.hubblestack_nova.pkg.__mods__ = __mods__
         val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, [], debug=False)
         assert len(val['Success']) != 0
         assert len(val['Failure']) == 0
@@ -55,13 +55,13 @@ class TestPkg():
         data_list = []
         __tags__ = 'wrong_test_data'
         hubblestack.files.hubblestack_nova.pkg.__grains__ = {'osfinger': 'Ubuntu-16.04'}
-        __salt__ = {}
+        __mods__ = {}
         expected_val = {'Failure': [], 'Controlled': [], 'Success': []}
 
         def pkg_version(name):
             return name
-        __salt__['pkg.version'] = pkg_version
-        hubblestack.files.hubblestack_nova.pkg.__salt__ = __salt__
+        __mods__['pkg.version'] = pkg_version
+        hubblestack.files.hubblestack_nova.pkg.__mods__ = __mods__
         val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, [], debug=False)
         assert val == expected_val
 
@@ -70,12 +70,12 @@ class TestPkg():
         data_list = 'wrong_test_data'
         __tags__ = 'CIS-6.5'
         hubblestack.files.hubblestack_nova.pkg.__grains__ = {'osfinger': 'Ubuntu-16.04'}
-        __salt__ = {}
+        __mods__ = {}
 
         def pkg_version(name):
             return name
-        __salt__['pkg.version'] = pkg_version
-        hubblestack.files.hubblestack_nova.pkg.__salt__ = __salt__
+        __mods__['pkg.version'] = pkg_version
+        hubblestack.files.hubblestack_nova.pkg.__mods__ = __mods__
         try:
             val = hubblestack.files.hubblestack_nova.pkg.audit(data_list, __tags__, [], debug=False)
         except ValueError:

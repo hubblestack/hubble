@@ -31,8 +31,8 @@ import logging
 
 import fnmatch
 import copy
-import salt.utils
-import salt.utils.platform
+import hubblestack.utils
+import hubblestack.utils.platform
 
 from distutils.version import LooseVersion
 
@@ -40,7 +40,7 @@ log = logging.getLogger(__name__)
 
 
 def __virtual__():
-    if salt.utils.platform.is_windows():
+    if hubblestack.utils.platform.is_windows():
         return False, 'This audit module only runs on linux'
     return True
 
@@ -90,7 +90,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 name = tag_data['name']
                 match_output = tag_data['match_output']
 
-                salt_ret = __salt__['sysctl.get'](name)
+                salt_ret = __mods__['sysctl.get'](name)
                 if not salt_ret:
                     passed = False
                     tag_data['failure_reason'] = "Could not find attribute '{0}' in" \

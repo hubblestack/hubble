@@ -4,11 +4,9 @@ pyopenssl
 argparse
 requests>=2.13.0
 logging
-pprint
 daemon
 boto3
 botocore
-salt-ssh
 gitpython
 pyinotify
 cffi

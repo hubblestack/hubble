@@ -1,7 +1,5 @@
-argparse
 daemon
 backports-abc
-bandit
 certifi
 chardet
 croniter
@@ -10,11 +8,11 @@ gitdb2
 gitpython
 gprof2dot
 idna
-jinja2
 markupsafe
 mock
 msgpack
 ntplib
+psutil
 pyinotify
 pytest
 pytest-cov
@@ -24,11 +22,9 @@ pytest-pythonpath
 python-dateutil
 pyyaml
 requests
-salt-ssh
 pylint
 saltpylint
 singledispatch
-six
 smmap2
 tornado
 urllib3

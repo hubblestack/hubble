@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # coding: UTF-8
 
-import six
 import os
 import shutil
 import argparse
@@ -66,7 +65,7 @@ def gen_CA(fname='ca-root', cn='ca-root', path_length=0, authority=None, pdir=DE
         x509.NameAttribute(NameOID.LOCALITY_NAME, u'City'),
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, u'Org'),
         x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, u'Group'),
-        x509.NameAttribute(NameOID.COMMON_NAME, six.text_type(cn)),
+        x509.NameAttribute(NameOID.COMMON_NAME, str(cn)),
     ])
 
     if authority:
@@ -142,7 +141,7 @@ def gen_leaf(authority, fname_template='{}', cn='Certy Cert McCertFace', pdir=DE
         x509.NameAttribute(NameOID.LOCALITY_NAME, u'City'),
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, u'Org'),
         x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, u'Group'),
-        x509.NameAttribute(NameOID.COMMON_NAME, six.text_type(cn)),
+        x509.NameAttribute(NameOID.COMMON_NAME, str(cn)),
     ])
 
     builder = builder.subject_name(subject)
@@ -213,10 +212,10 @@ if __name__ == '__main__':
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-v', '--verbose', action='store_true')
     parser.add_argument('-o', '--output-dir', dest='pdir', type=str, default=DEFAULT_PDIR)
-    parser.add_argument('-R', '--root-cn', type=six.text_type, default='car.hubblestack.io')
-    parser.add_argument('-I', '--int1-cn', type=six.text_type, default='ia1.hubblestack.io')
-    parser.add_argument('-J', '--int2-cn', type=six.text_type, default='ia2.hubblestack.io')
-    parser.add_argument('-t', '--key-type', type=six.text_type,
+    parser.add_argument('-R', '--root-cn', type=str, default='car.hubblestack.io')
+    parser.add_argument('-I', '--int1-cn', type=str, default='ia1.hubblestack.io')
+    parser.add_argument('-J', '--int2-cn', type=str, default='ia2.hubblestack.io')
+    parser.add_argument('-t', '--key-type', type=str,
         choices=['rsa', 'ed448', 'ed25519'], default='rsa')
     parser.add_argument('-z', '--rsa-key-size', type=int, default=1024)
     parser.add_argument('-p', '--rsa-public-exponent', type=int, default=65537)

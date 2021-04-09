@@ -42,6 +42,7 @@ import logging
 import re
 import json
 import io as cStringIO
+import hubblestack.utils.platform
 
 from time import time
 from collections import OrderedDict, namedtuple
@@ -53,6 +54,7 @@ from Crypto.IO import PEM
 from Crypto.Hash import SHA256
 
 import OpenSSL.crypto as ossl
+import OpenSSL._util
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes
@@ -64,6 +66,13 @@ from cryptography.hazmat.primitives.serialization import load_pem_private_key
 MANIFEST_RE = re.compile(r'^\s*(?P<digest>[0-9a-fA-F]+)\s+(?P<fname>.+)$')
 log = logging.getLogger(__name__)
 
+def _our_byte_string(x, charmap='utf-8'):
+    # MONKEYPATCH OpenSSL._utils:byte_string to avoid "charmap" issues on POSIX
+    # locale platforms
+    return x.encode('utf-8')
+
+OpenSSL._util.byte_string = _our_byte_string
+
 # "verification_log_timestamps" is a global dict that contains str path
 # and time() kv pairs. When the time() value exceeds the dampening_limit (3600 sec),
 # we reset time and set log level accordingly.
@@ -72,6 +81,35 @@ verif_log_timestamps = {}
 # maybe set in /etc/hubble/hubble
 verif_log_dampener_lim = 3600
 
+def _format_padding_bits(x):
+    if isinstance(x, (list,tuple)):
+        x = x[0]
+    if isinstance(x, str) and 'max' in x.lower():
+        return padding.PSS.MAX_LENGTH
+    return int(x)
+
+def _format_padding_bits_txt(x):
+    if isinstance(x, (tuple,list)):
+        return "/".join([ _format_padding_bits_txt(y) for y in x ])
+    if x is padding.PSS.MAX_LENGTH:
+        return "max"
+    return str(x)
+
+def check_is_ca(crt):
+    try:
+        crt = crt.to_cryptography()
+    except (TypeError, AttributeError):
+        pass
+    try:
+        for e in crt.extensions:
+            try:
+                if e.value.ca:
+                    return True
+            except AttributeError:
+                pass
+    except AttributeError:
+        pass
+    return False
 
 def check_verif_timestamp(target, dampener_limit=None):
     '''This function writes/updates a timestamp cache
@@ -121,14 +159,22 @@ class Options(object):
     """
     The Options class is simply a convenience interface for interacting with repo_signing options.
 
-    Instead of `__salt__['config.get']('repo_signing:public_crt')`, write `Options.public_crt`.
+    Instead of `__mods__['config.get']('repo_signing:public_crt')`, write `Options.public_crt`.
     """
     class Defaults:
         """ defaults storage for options """
         require_verify = False
+        verify_cache_age = 600
         ca_crt = '/etc/hubble/sign/ca-root.crt'
         public_crt = '/etc/hubble/sign/public.crt'
         private_key = '/etc/hubble/sign/private.key'
+        manifest_file_name = 'MANIFEST'
+        signature_file_name = 'SIGNATURE'
+        certificates_file_name = 'CERTIFICATES'
+        salt_padding_bits = ['max', 32]
+        # The first generation signature padding bits were 32 (only) the
+        # crypto-recommended is "however many we can fit". AWS CloudHSM is
+        # incompatible with max, ... we'll need to try both. See below.
 
     def __getattribute__(self, name):
         """ If the option exists in the default pseudo meta class
@@ -142,7 +188,7 @@ class Options(object):
             pass
         try:
             default = getattr(self.Defaults, name)
-            return __salt__['config.get']('repo_signing:{}'.format(name), default)
+            return __mods__['config.get']('repo_signing:{}'.format(name), default)
         except AttributeError:
             raise
 
@@ -167,13 +213,13 @@ def split_certs(fh):
             ret += line
             if line.startswith('----'):
                 ret = ret.encode()
+                log_level = log.debug
                 try:
-                    log_level = log.debug
                     yield ossl.load_certificate(ossl.FILETYPE_PEM, ret)
                 except Exception as exception_object:
                     status = STATUS.UNKNOWN
                     if check_verif_timestamp(fh):
-                        log_level = log.error
+                        log_level = log.warning
                     log_level('%s: | file: "%s" | cert decoding status: %s | attempting as PEM encoded private key',
                             short_fname, fh.name, status)
                     yield load_pem_private_key(ret, password=None, backend=default_backend())
@@ -191,11 +237,13 @@ def read_certs(*fnames):
             siofh = cStringIO.StringIO(fname)
             siofh.name = '<a string>'
             for i in split_certs(siofh):
+                i.source_filename = '<string>'
                 yield i
         elif os.path.isfile(fname):
             try:
                 with open(fname, 'r') as fh:
                     for i in split_certs(fh):
+                        i.source_filename = fname
                         yield i
             except Exception as exception_object:
                 log_level = log.debug
@@ -207,7 +255,9 @@ def read_certs(*fnames):
 def stringify_cert_files(cert):
     """this function returns a string version of cert(s) for returner"""
     if isinstance(cert, (tuple,list)) and cert:
-        return ', '.join([str(c) for c in cert])
+        return ', '.join([stringify_cert_files(c) for c in cert])
+    elif hasattr(cert, 'source_filename'):
+        return cert.source_filename
     elif hasattr(cert, 'name'):
         # probably a file handle
         return cert.name
@@ -249,36 +299,50 @@ class X509AwareCertBucket:
 
         if public_crt is None:
             public_crt = Options.public_crt
+
         if ca_crt is None:
             ca_crt = Options.ca_crt
-
-        untrusted_crt = list()
 
         if isinstance(ca_crt, (list, tuple)):
             untrusted_crt = ca_crt[1:]
             ca_crt = ca_crt[0]
+        else:
+            untrusted_crt = list()
 
         if not isinstance(public_crt, (list, tuple)):
             public_crt = [ public_crt ]
 
-        if extra_crt:
-            untrusted_crt = list(untrusted_crt)
-            untrusted_crt.append(extra_crt)
+        # load all the certs into cryptography objects
+        ca_crt = list(read_certs(ca_crt)) # no *, only one
+        untrusted_crt = list(read_certs(*untrusted_crt))
+        public_crt = list(read_certs(*public_crt))
 
+        # if there are extra_crts; try to parse them into intermediates and
+        # signing certificates per their basicConstraints.ca header (if any)
+        if extra_crt:
+            if not isinstance(extra_crt, (list,tuple)):
+                extra_crt = [ extra_crt ]
+            for crt in read_certs(*extra_crt):
+                if check_is_ca(crt):
+                    untrusted_crt.append(crt)
+                else:
+                    public_crt.append(crt)
+
+        # build a keyring
         self.store = ossl.X509Store()
         self.trusted = list()
         # NOTE: trusted is mostly useless. We do use it in
         # testing, and that's probably about it
         seconds_day = 86400
         already = set()
-        for i in read_certs(ca_crt):
+        for i in ca_crt:
             log_level = log.debug
             digest = i.digest('sha1')
             if digest in already:
                 continue
             already.add(digest)
             digest = digest.decode() + " " + stringify_ossl_cert(i)
-            self.store.add_cert(i)
+            self.store.add_cert(i) # add cert to keyring as a trusted cert
             self.trusted.append(digest)
             log_level = log.debug
             if check_verif_timestamp(digest, dampener_limit=seconds_day):
@@ -288,7 +352,8 @@ class X509AwareCertBucket:
             log_level('ca cert | file: "%s" | status: %s | digest "%s" | added to verify store',
                     str_ca, status, digest)
 
-        for i in read_certs(*untrusted_crt):
+        for i in untrusted_crt:
+            log_level = log.debug
             digest = i.digest('sha1')
             if digest in already:
                 continue
@@ -296,10 +361,9 @@ class X509AwareCertBucket:
             digest = digest.decode() + " " + stringify_ossl_cert(i)
             try:
                 ossl.X509StoreContext(self.store, i).verify_certificate()
-                self.store.add_cert(i)
+                self.store.add_cert(i) # add to trusted keyring
                 self.trusted.append(digest)
                 status = STATUS.VERIFIED
-                log_level = log.debug
             except ossl.X509StoreContextError as exception_object:
                 # log at either log.error or log.critical according to the error code
                 status = STATUS.FAIL
@@ -315,7 +379,7 @@ class X509AwareCertBucket:
                     str_untrusted, status, digest)
 
         self.public_crt = list()
-        for i in read_certs(*public_crt):
+        for i in public_crt:
             status = STATUS.FAIL
             digest = i.digest('sha1')
             if digest in already:
@@ -362,6 +426,7 @@ class X509AwareCertBucket:
                 log_level('public cert | file: "%s" | status: %s | digest: "%s" | X509 error code: %s | depth: %s | message: "%s"',
                         str_public, status, digest, code, depth, message)
 
+            # add to list of keys we'll use to check signatures:
             self.public_crt.append(self.PublicCertObj(i, digest, status))
 
 
@@ -438,10 +503,14 @@ def descend_targets(targets, callback):
                     callback(fname_)
 
 
-def manifest(targets, mfname='MANIFEST'):
+def manifest(targets, mfname=None):
     """
     Produce a manifest file given `targets`.
     """
+
+    if mfname is None:
+        mfname = Options.manifest_file_name
+
     with open(mfname, 'w') as mfh:
         def append_hash(fname):
             fname = normalize_path(fname)
@@ -451,10 +520,12 @@ def manifest(targets, mfname='MANIFEST'):
         descend_targets(targets, append_hash)
 
 
-def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: disable=unused-argument
+def sign_target(fname, ofname, private_key=None, **kwargs): # pylint: disable=unused-argument
     """
     Sign a given `fname` and write the signature to `ofname`.
     """
+    if private_key is None:
+        private_key = Options.private_key
     # NOTE: This is intended to crash if there's some number of keys other than
     # exactly 1 read from the private_key file:
     the_keys = list(read_certs(private_key))
@@ -465,20 +536,66 @@ def sign_target(fname, ofname, private_key='private.key', **kwargs): # pylint: d
     first_key = the_keys[0]
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     args = { 'data': hasher.finalize() }
+
+    salt_padding_bits = _format_padding_bits(Options.salt_padding_bits)
+
+    log.error('signing %s using %s', fname, private_key)
+
     if isinstance(first_key, rsa.RSAPrivateKey):
-        args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
-            #salt_length=padding.PSS.MAX_LENGTH)
-            salt_length=32)
+        log.error('signing %s using SBP:%s', fname, _format_padding_bits_txt(salt_padding_bits))
+        args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()), salt_length=salt_padding_bits)
         args['algorithm'] = utils.Prehashed(chosen_hash)
     sig = first_key.sign(**args)
     with open(ofname, 'w') as fh:
-        log.debug('writing signature of %s to %s', os.path.abspath(fname), os.path.abspath(ofname))
+        log.error('writing signature of %s to %s', os.path.abspath(fname), os.path.abspath(ofname))
         fh.write(PEM.encode(sig, 'Detached Signature of {}'.format(fname)))
         fh.write('\n')
 
+def _stat_file(fname):
+    if isinstance(fname, str):
+        try:
+            st = os.stat(fname)
+            return (os.path.abspath(fname), st.st_mtime, st.st_ctime)
+        except FileNotFoundError:
+            pass
+    return tuple()
 
-def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt', extra_crt=None, **kwargs): # pylint: disable=unused-argument
-    ### make
+def _cache_key(*files):
+    return sum((_stat_file(x) for x in files), tuple())
+
+VERIFY_CACHE = dict()
+
+def _clean_verify_cache(old=None):
+    if old is None:
+        old = Options.verify_cache_age
+    if old < 1:
+        return
+    old = time() - old
+    to_remove = set()
+    for k,v in VERIFY_CACHE.items():
+        try:
+            if v['t'] < old:
+                to_remove.add(k)
+        except (TypeError, KeyError):
+            to_remove.add(k)
+    for k in to_remove:
+        del VERIFY_CACHE[k]
+
+def _get_verify_cache(key, auto_clean=None):
+    _clean_verify_cache(old=auto_clean)
+    log.debug('verify_signature()_get_verify_cache(%s) -> %s', key, VERIFY_CACHE.get(key))
+    try:
+        return VERIFY_CACHE[key]['v']
+    except (KeyError, TypeError):
+        pass
+
+def _set_verify_cache(key, val, auto_clean=0):
+    _clean_verify_cache(old=auto_clean)
+    log.debug('verify_signature()_set_verify_cache(%s) <- %s', key, val)
+    VERIFY_CACHE[key] = dict(t=time(), v=val)
+    return val
+
+def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None, **kwargs): # pylint: disable=unused-argument
     """
         Given the fname, sfname public_crt and ca_crt:
 
@@ -486,49 +603,76 @@ def verify_signature(fname, sfname, public_crt='public.crt', ca_crt='ca-root.crt
         return STATUS.UNKNOWN if the certificate signature can't be verified with the ca cert
         return STATUS.VERIFIED if both the signature and the CA sig match
     """
-    log_level = log.debug
-    if fname is None or sfname is None:
+
+    if check_verif_timestamp(fname):
+        log_error = log.critical
+        log_info  = log.info
+    else:
+        log_error = log_info = log.debug
+
+    if Options.verify_cache_age > 0:
+        cache_key = _cache_key(fname, sfname, public_crt, ca_crt, extra_crt)
+        res = _get_verify_cache(cache_key)
+        if res is not None:
+            log_info('using cached verify_signature(%s, %s) -> %s', fname, sfname, res)
+            return res
+
+    if public_crt is None:
+        public_crt = Options.public_crt
+    if ca_crt is None:
+        ca_crt = Options.ca_crt
+
+    if not (fname and sfname):
         status = STATUS.UNKNOWN
-        log_level('fname=%s or sfname=%s is Nones => status=%s', fname, sfname, status)
+        log_info('!(fname=%s and sfname=%s) => status=%s', fname, sfname, status)
         return status
-    short_fname = fname.split('/')[-1]
+
+    short_fname = os.path.basename(fname)
+
     try:
         with open(sfname, 'r') as fh:
             sig,_,_ = PEM.decode(fh.read()) # also returns header and decrypted-status
     except IOError:
         status = STATUS.UNKNOWN
         verif_key = ':'.join([fname, sfname])
-        if check_verif_timestamp(verif_key):
-            log_level = log.error
-        log_level('%s | file "%s" | status: %s ', short_fname, fname, status)
+        log_error('%s | file "%s" | status: %s ', short_fname, fname, status)
         return status
+
     x509 = X509AwareCertBucket(public_crt, ca_crt, extra_crt)
     hasher, chosen_hash = hash_target(fname, obj_mode=True)
     digest = hasher.finalize()
 
-    args = { 'signature': sig, 'data': digest }
-    for crt,txt,status in x509.public_crt:
-        log_level = log.debug
-        sha256sum = hash_target(fname)
+    salt_padding_bits_list = Options.salt_padding_bits
+    if not isinstance(salt_padding_bits_list, (list,tuple)):
+        salt_padding_bits_list = [ salt_padding_bits_list ]
+
+    sha256sum = ''.join(f'{x:02x}' for x in digest)
+
+    for crt,txt,pcrt_status in x509.public_crt:
+        args = { 'signature': sig, 'data': digest }
         pubkey = crt.get_pubkey().to_cryptography_key()
-        if isinstance(pubkey, rsa.RSAPublicKey):
-            args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()),
-                #salt_length=padding.PSS.MAX_LENGTH)
-                salt_length=32)
-            args['algorithm'] = utils.Prehashed(chosen_hash)
-        try:
-            pubkey.verify(**args)
-            log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
-                    short_fname, fname, status, sha256sum, txt)
-            return status
-        except InvalidSignature:
-            status = STATUS.FAIL
-            if check_verif_timestamp(fname):
-                log_level = log.critical
-            log_level('%s | file "%s" | status: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
-                    short_fname, fname, status, sha256sum, txt)
-            pass
-    return STATUS.FAIL
+        for salt_padding_bits in salt_padding_bits_list:
+            salt_padding_bits = _format_padding_bits(salt_padding_bits)
+            if isinstance(pubkey, rsa.RSAPublicKey):
+                args['padding'] = padding.PSS( mgf=padding.MGF1(hashes.SHA256()), salt_length=salt_padding_bits)
+                args['algorithm'] = utils.Prehashed(chosen_hash)
+            try:
+                pubkey.verify(**args)
+                log_info('verify_signature(%s, %s) | sbp: %s | status: %s | sha256sum: "%s" | (1) public cert fingerprint and requester: "%s"',
+                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), pcrt_status, sha256sum, txt)
+                if Options.verify_cache_age < 1:
+                    return pcrt_status
+                return _set_verify_cache(cache_key, pcrt_status)
+            except TypeError as tee:
+                log_error('verify_signature(%s, %s) | sbp: %s | internal error using %s.verify() (%s): (2) %s',
+                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), type(pubkey).__name__, stringify_cert_files(crt), tee)
+            except InvalidSignature:
+                log_error('verify_signature(%s, %s) InvalidSignature | sbp: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
+                        fname, sfname, _format_padding_bits_txt(salt_padding_bits), sha256sum, txt)
+    status = STATUS.FAIL
+    log_error('verify_signature(%s, %s) UnverifiedSignature | status: %s | sha256sum: "%s" | (4)',
+            fname, sfname, status, sha256sum)
+    return _set_verify_cache(cache_key, status)
 
 
 def iterate_manifest(mfname):
@@ -545,7 +689,8 @@ def iterate_manifest(mfname):
                 yield manifested_fname
 
 
-def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='public.crt', ca_crt='ca-root.crt', extra_crt=None):
+def verify_files(targets, mfname=None, sfname=None,
+        public_crt=None, ca_crt=None, extra_crt=None):
     """ given a list of `targets`, a MANIFEST, and a SIGNATURE file:
 
         1. Check the signature of the manifest, mark the 'MANIFEST' item of the return as:
@@ -561,9 +706,13 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
     """
 
     if mfname is None:
-        mfname = 'MANIFEST'
+        mfname = Options.manifest_file_name
     if sfname is None:
-        sfname = 'SIGNATURE'
+        sfname = Options.signature_file_name
+    if public_crt is None:
+        public_crt = Options.public_crt
+    if ca_crt is None:
+        ca_crt = Options.ca_crt
 
     log.debug("verifying: files: %s | mfname: %s | sfname: %s | public_crt: %s| ca_crt: %s",
             targets, mfname, sfname, public_crt, ca_crt)
@@ -578,7 +727,10 @@ def verify_files(targets, mfname='MANIFEST', sfname='SIGNATURE', public_crt='pub
     sf_dir, _ = os.path.split(sfname)
 
     if mf_dir and mf_dir == sf_dir:
-        trunc = mf_dir + '/'
+        if hubblestack.utils.platform.is_windows():
+            trunc = mf_dir
+        else:
+            trunc = mf_dir + '/'
     else:
         trunc = None
 
@@ -663,31 +815,44 @@ def find_wrapf(not_found={'path': '', 'rel': ''}, real_path='path'):
     """
     def wrapper(find_file_f):
         def _p(fnd):
+            # real_path is poorly named. it should contain the name of the key
+            # where we'll find the real path of the file we're finding with
+            # find_file_f()
             return fnd.get(real_path, fnd.get('path', ''))
 
         def inner(path, saltenv, *a, **kwargs):
-            f_mani = find_file_f('MANIFEST', saltenv, *a, **kwargs )
-            f_sign = find_file_f('SIGNATURE', saltenv, *a, **kwargs )
-            f_pub_cert = find_file_f('CERTIFICATES', saltenv, *a, **kwargs)
             f_path = find_file_f(path, saltenv, *a, **kwargs)
-            real_path = _p(f_path)
-            mani_path = _p(f_mani)
-            sign_path = _p(f_sign)
-            cert_path = _p(f_pub_cert)
-            log.debug('path: %s | manifest: "%s" | signature: "%s"',
-                    path,  mani_path, sign_path)
-            if not real_path:
+            p_path = _p( f_path )
+
+            if not p_path:
+                # if the file doesn't exist anyway, there's no reason to continue
                 return f_path
-            verify_res = verify_files([real_path],
+
+            mani_path = _p( find_file_f(Options.manifest_file_name, saltenv, *a, **kwargs ) )
+            sign_path = _p( find_file_f(Options.signature_file_name, saltenv, *a, **kwargs ) )
+            cert_path = _p( find_file_f(Options.certificates_file_name, saltenv, *a, **kwargs) )
+
+            log.debug('path: %s | f_path: %s | p_path: %s | manifest: "%s" | signature: "%s"',
+                path, f_path, p_path, mani_path, sign_path)
+
+            verify_res = verify_files([p_path],
                                         mfname=mani_path, sfname=sign_path,
-                                        public_crt=Options.public_crt, ca_crt=Options.ca_crt, extra_crt=cert_path)
+                                        public_crt=Options.public_crt,
+                                        ca_crt=Options.ca_crt, extra_crt=cert_path)
+
             log.debug('verify: %s', dict(**verify_res))
-            vrg = verify_res.get(real_path, STATUS.UNKNOWN)
+
+            vrg = verify_res.get(p_path, STATUS.UNKNOWN)
             if vrg == STATUS.VERIFIED:
                 return f_path
             if vrg == STATUS.UNKNOWN and not Options.require_verify:
                 return f_path
-            log.debug('claiming not found')
+            log.debug('claiming not found: %s (%s)', path, f_path)
+            if log.isEnabledFor(logging.DEBUG):
+                import inspect
+                for idx,frame in enumerate(inspect.stack()[1:60]):
+                    if 'hubblestack' in frame.filename:
+                        log.debug('find caller[%d] %s %s() %s', idx, frame.filename, frame.function, frame.lineno)
             return dict(**not_found)
         return inner
     return wrapper

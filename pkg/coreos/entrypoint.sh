@@ -1,17 +1,30 @@
 #!/bin/bash
 #Moving hubble source code logic in the shell script
+
+# if ENTRYPOINT is given a CMD other than nothing
+# abort here and do that other CMD
+if [ $# -gt 0 ]
+then exec "$@"
+fi
+
 set -x -e
-git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+if [ ! -d "${HUBBLE_SRC_PATH}" ]
+then git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+fi
+
 cd "${HUBBLE_SRC_PATH}"
 git checkout "${HUBBLE_CHECKOUT_ENV}"
+
+HUBBLE_VERSION_ENV="$( sed -e 's/^v//' -e 's/[_-]rc/rc/g' <<< "$HUBBLE_VERSION_ENV" )"
 
 cp -rf "${HUBBLE_SRC_PATH}"/* /hubble_build
 rm -rf /hubble_build/.git
 
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.orig
-
 sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT_ENV}/g" -e "s/COMMIT_NOT_SET/$(cd ${HUBBLE_SRC_PATH}; git describe --long --always --tags)/g" /hubble_build/hubblestack/__init__.py
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixed
+
+sed -i -e "s/'.*'/'$HUBBLE_VERSION_ENV'/g" /hubble_build/hubblestack/version.py
 
 eval "$(pyenv init -)"
 
@@ -21,12 +34,6 @@ python_binary="$(pyenv which python)"
 while [ -L "$python_binary" ]
 do python_binary="$(readlink -f "$python_binary")"
 done
-
-# if ENTRYPOINT is given a CMD other than nothing
-# abort here and do that other CMD
-if [ $# -gt 0 ]
-then exec "$@"
-fi
 
 # from now on, exit on error (rather than && every little thing)
 PS4=$'-------------=: '
@@ -69,11 +76,13 @@ cd /hubble_build
 
 # we may have preinstalled requirements that may need upgrading
 # pip install . might not upgrade/downgrade the requirements
+pip install wheel
 python setup.py egg_info
 pip install --upgrade \
     -r hubblestack.egg-info/requires.txt \
     -r optional-requirements.txt \
     -r package-requirements.txt
+pip freeze > /data/requirements.txt
 
 [ -f ${_HOOK_DIR:-./pkg}/hook-hubblestack.py ] || exit 1
 
@@ -106,10 +115,11 @@ mkdir -p /var/log/hubble_osquery/backuplogs
 
 mkdir -p /etc/systemd/system
 mkdir -p /etc/profile.d
-mkdir -p /etc/hubble
+mkdir -p /etc/hubble/hubble.d
 
-cp -v /hubble_build/pkg/hubble.service /etc/systemd/system
+cp -v /hubble_build/pkg/hubble.service /etc/hubble/hubble-example.service
 cp -v /hubble_build/conf/hubble-profile.sh /etc/profile.d/
+cp -v /hubble_build/conf/hubble-d-conf     /etc/hubble/hubble.d
 
 if [ -f /data/hubble ]
 then cp -v /data/hubble /etc/hubble/
@@ -126,14 +136,14 @@ if [ -d /data/opt ]
 then cp -r /data/opt/* /opt
 fi
 
-PKG_FILE="/data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.coreos.tar.gz"
+PKG_FILE="/data/hubblestack-${HUBBLE_VERSION_ENV}-${HUBBLE_ITERATION}.coreos.tar.gz"
 
 tar -cSPvvzf "$PKG_FILE" \
     --exclude opt/hubble/pyenv \
     /etc/hubble /opt/hubble /opt/osquery \
     /etc/profile.d/hubble-profile.sh \
     /var/log/hubble_osquery/backuplogs \
-    /etc/systemd/system/hubble.service \
+    /etc/hubble/hubble-example.service \
     2>&1 | tee /hubble_build/deb-pkg-start-tar.log
 
 openssl dgst -sha256 "$PKG_FILE" > "$PKG_FILE".sha256

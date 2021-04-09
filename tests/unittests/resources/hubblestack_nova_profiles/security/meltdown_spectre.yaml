@@ -1,0 +1,150 @@
+#
+# The following checks aim to detect if a relevant mitigation technique against
+# Meltdown or Spectre vulnerabilities is active.
+# This is done in two separate checks: first checks if a needed kernel feature
+# is present, the second checks if the feature reports as active or at
+# least is not disabled. If both checks succeed, a host should be protected against
+# the vulnerability in question.
+# The reasoning for this approach was two fold:
+# * in some Linux distros there was no other way to detect.
+# * in large fleets of different Linux flavors tracking many different types of
+# check results can become burdensome.
+#
+
+grep:
+  blacklist:
+    linux-meltdown-not-disabled:
+      data:
+        '*':
+          - '/sys/devices/system/cpu/vulnerabilities/meltdown':
+              tag: 'CVE-2017-5754-fix-enabled'
+              pattern: 'Vulnerable'
+              match_on_file_missing: True
+      description: 'Check if CVE-2017-5754 mitigation has NOT been disabled in Linux.'
+    linux-spectrev1-not-disabled:
+      data:
+        '*':
+          - '/sys/devices/system/cpu/vulnerabilities/spectre_v1':
+              tag: 'CVE-2017-5753-fix-enabled'
+              pattern: 'Vulnerable'
+              match_on_file_missing: True
+      description: 'Check if CVE-2017-5753 mitigation has NOT been disabled in Linux.'
+    linux-spectrev2-not-disabled:
+      data:
+        '*':
+          - '/sys/devices/system/cpu/vulnerabilities/spectre_v2':
+              tag: 'CVE-2017-5715-fix-enabled'
+              pattern: 'Vulnerable'
+              match_on_file_missing: True
+      description: 'Check if CVE-2017-5715 mitigation has NOT been disabled in Linux.'
+    linux-mds-not-disabled:
+      data:
+        '*':
+          - '/sys/devices/system/cpu/vulnerabilities/mds':
+              tag: 'CVE-2018-12130-fix-enabled'
+              pattern: 'Vulnerable'
+              match_on_file_missing: True
+              grep_args:
+                - '-i'
+      description: 'Check if CVE-2018-12130 mitigation has NOT been disabled in Linux.'
+    linux-l1tf-not-disabled:
+      data:
+        '*':
+          - '/sys/devices/system/cpu/vulnerabilities/l1tf':
+              tag: 'CVE-2018-3620-fix-enabled'
+              pattern: 'Vulnerable'
+              match_on_file_missing: True
+              grep_args:
+                - '-i'
+      description: 'Check if CVE-2018-3620 mitigation has NOT been disabled in Linux.'
+  whitelist:
+    check_cpuinfo_for_pcid:
+      data:
+        '*':
+          - '/proc/cpuinfo':
+              tag: 'Meltdown-pcid'
+              pattern: 'flags'
+              match_output: ' pcid'
+              grep_args:
+                - '-i'
+      description: 'Check the /proc/cpuinfo file for the pcid flag.'
+    check_cpuinfo_for_invpcid:
+      data:
+        '*':
+          - '/proc/cpuinfo':
+              tag: 'Meltdown-invpcid'
+              pattern: 'flags'
+              match_output: ' invpcid '
+              grep_args:
+                - '-i'
+      description: 'Check the /proc/cpuinfo file for the invpcid flag.'
+    check_cpuinfo_for_invpcid_single:
+      data:
+        '*':
+          - '/proc/cpuinfo':
+              tag: 'Meltdown-invpcid_single'
+              pattern: 'flags'
+              match_output: ' invpcid_single'
+              grep_args:
+                - '-i'
+      description: 'Check the /proc/cpuinfo file for the invpcid_single flag.'
+    check_cpuinfo_for_intel:
+      data:
+        '*':
+          - '/proc/cpuinfo':
+              tag: 'Meltdown-intel'
+              pattern: 'vendor_id'
+              match_output: ' GenuineIntel'
+      description: 'Check if it is an Intel cpu.'
+
+stat:
+  linux-mds-present:
+    data:
+      '*':
+          - '/sys/devices/system/cpu/vulnerabilities/mds':
+              tag: 'CVE-2018-12130-fix-present'
+              user: root
+              uid: 0
+              group: root
+              gid: 0
+    description: 'Check for CVE-2018-12130 mitigation capability presence in Linux.'
+  linux-l1tf-present:
+    data:
+      '*':
+          - '/sys/devices/system/cpu/vulnerabilities/l1tf':
+              tag: 'CVE-2018-3620-fix-present'
+              user: root
+              uid: 0
+              group: root
+              gid: 0
+    description: 'Check for CVE-2018-3620 mitigation capability presence in Linux.'
+  linux-meltdown-present:
+    data:
+      '*':
+          - '/sys/devices/system/cpu/vulnerabilities/meltdown':
+              tag: 'CVE-2017-5754-fix-present'
+              user: root
+              uid: 0
+              group: root
+              gid: 0
+    description: 'Check for CVE-2017-5754 mitigation capability presence in Linux.'
+  linux-spectrev1-present:
+    data:
+      '*':
+          - '/sys/devices/system/cpu/vulnerabilities/spectre_v1':
+              tag: 'CVE-2017-5753-fix-present'
+              user: root
+              uid: 0
+              group: root
+              gid: 0
+    description: 'Check for CVE-2017-5753 mitigation capability presence in Linux.'
+  linux-spectrev2-present:
+    data:
+      '*':
+          - '/sys/devices/system/cpu/vulnerabilities/spectre_v2':
+              tag: 'CVE-2017-5715-fix-present'
+              user: root
+              uid: 0
+              group: root
+              gid: 0
+    description: 'Check for CVE-2017-5715 mitigation capability presence in Linux.'

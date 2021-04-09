@@ -1,0 +1,722 @@
+# This profile is temporary, and is a copy-paste from the
+# debian-8-level-1-scored-v1-0-0.yaml. Eventually it should be replaced
+# with a Debian-7 official one.
+
+grep:
+  whitelist:
+
+    local_only_mta:
+      data:
+        Debian*7:
+          - '/etc/exim4/update-exim4.conf':
+              tag: 'CIS-6.15'
+              pattern: "^dc_local_interfaces = '127.0.0.1'"
+      description: Configure Mail Transfer Agent for Local-Only Mode
+
+    mounts_tmp_partition:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.1'
+              pattern: '/tmp'
+      description: Create Separate Partition for /tmp
+
+    mounts_tmp_partition_nodev:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.2'
+              pattern: '/tmp'
+              match_output: 'nodev'
+      description: Set nodev option for /tmp Partition
+
+    mounts_tmp_partition_nosuid:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.3'
+              pattern: '/tmp'
+              match_output: 'nosuid'
+      description: Set nosuid option for /tmp Partition
+
+    mounts_tmp_partition_noexec:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.4'
+              pattern: '/tmp'
+              match_output: 'nosuid'
+      description: Set noexec option for /tmp Partition
+
+    mounts_var_partition:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.5'
+              pattern: '/var'
+      description: Create Separate Partition for /var
+
+    fstab_var_tmp_bind_mount:
+      data:
+        Debian*7:
+          - '/etc/fstab':
+              tag: 'CIS-2.6'
+              pattern: '/var'
+              match_output: '/var/tmp'
+      description: Bind Mount the /var/tmp directory to /tmp
+
+    mounts_var_log_partition:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.7'
+              pattern: '/var/log'
+      description: Create Separate Partition for /var/log
+
+    mounts_var_log_audit_partition:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.8'
+              pattern: '/var/log/audit'
+      description: Create Separate Partition for /var/log/audit
+
+    mounts_home_partition:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.9'
+              pattern: '/home'
+      description: Create Separate Partition for /home
+
+    mounts_home_partition_nodev:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.10'
+              pattern: '/home'
+              match_output: 'nodev'
+      description: Add nodev Option to /home
+
+    mounts_dev_shm_partition_nodev:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.14'
+              pattern: '/dev/shm'
+              match_output: 'nodev'
+      description: Add nodev Option to /run/shm Partition
+
+    mounts_dev_shm_partition_nosuid:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.15'
+              pattern: '/dev/shm'
+              match_output: 'nosuid'
+      description: Add nosuid Option to /run/shm Partition
+
+    mounts_dev_shm_partition_noexec:
+      data:
+        Debian*7:
+          - '/proc/mounts':
+              tag: 'CIS-2.16'
+              pattern: '/dev/shm'
+              match_output: 'noexec'
+      description: Add noexec Option to /run/shm Partition
+
+    configure_ntp:
+      data:
+        Debian*7:
+          - '/etc/ntp.conf':
+              tag: 'CIS-6.5'
+              pattern: 'restrict default'
+      description: Configure Network Time Protocol (NTP)
+
+    rsyslog_remote_logging:
+      data:
+        Debian*7:
+          - '/etc/rsyslog.conf':
+              tag: 'CIS-8.2.5'
+              pattern: "^*.*[^I][^I]*@"
+      description: Configure rsyslog to Send Logs to a Remote Log Host
+
+    passwd_limit_reuse:
+      data:
+        Debian*7:
+          - '/etc/pam.d/common-password':
+              tag: 'CIS-9.2.3'
+              pattern: "remember"
+              match_output: "5"
+      description: Limit Password Reuse
+
+    sshd_protocol_2:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.1'
+              pattern: "^Protocol"
+              match_output: 'Protocol 2'
+      description: Set SSH Protocol to 2
+
+    sshd_loglevel_info:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.2'
+              pattern: "^LogLevel"
+              match_output: 'LogLevel INFO'
+      description: Set LogLevel to INFO
+
+    sshd_x11_forwarding:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.4'
+              pattern: "^X11Forwarding"
+              match_output: 'X11Forwarding no'
+      description: Disable SSH X11 Forwarding
+
+    sshd_max_auth_retries:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.5'
+              pattern: "^MaxAuthTries"
+              match_output_regex: True
+              match_output: "^MaxAuthTries +[1-4]$"
+      description: Set SSH MaxAuthTries to 4 or Less
+
+    sshd_ignore_rhosts:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.6'
+              pattern: "^IgnoreRhosts"
+              match_output: "IgnoreRhosts yes"
+      description: Set SSH IgnoreRhosts to Yes
+
+    sshd_hostbased_auth:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.7'
+              pattern: "^HostbasedAuthentication"
+              match_output: "HostbasedAuthentication no"
+      description: Set SSH HostbasedAuthentication to No
+
+    sshd_disable_root_login:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.8'
+              pattern: "^PermitRootLogin"
+              match_output: "PermitRootLogin no"
+      description: Disable SSH Root Login
+
+    sshd_permit_empty_passwords:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.9'
+              pattern: "^PermitEmptyPasswords"
+              match_output: "PermitEmptyPasswords no"
+      description: Set SSH PermitEmptyPasswords to No
+
+    sshd_permit_user_environment:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.10'
+              pattern: "^PermitUserEnvironment"
+              match_output: "PermitUserEnvironment no"
+      description: Do Not Allow Users to Set Environment Options
+
+    sshd_approved_cipher:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.11'
+              pattern: "Ciphers"
+              match_output: "^Ciphers aes256-ctr,aes192-ctr,aes128-ctr$|^Ciphers aes256-ctr,aes128-ctr,aes192-ctr$|^Ciphers aes192-ctr,aes128-ctr,aes256-ctr$|^Ciphers aes192-ctr,aes256-ctr,aes128-ctr$|^Ciphers aes128-ctr,aes256-ctr,aes192-ctr$|^Ciphers aes128-ctr,aes192-ctr,aes256-ctr$"
+              match_output_regex: True
+      description: Use Only Approved Cipher in Counter Mode
+
+    sshd_idle_timeout:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.12'
+              pattern: "^ClientAliveInterval"
+              match_output: ^ClientAliveInterval +([1-2]{0,1}\d{1,2}|300)$
+              match_output_regex: True
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.12'
+              pattern: "^ClientAliveCountMax"
+              match_output: "^ClientAliveCountMax +[0-3]$"
+              match_output_regex: True
+      description: Set Idle Timeout Interval for User Login
+
+    sshd_limit_access:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.13'
+              pattern: "^AllowUsers"
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.13'
+              pattern: "^AllowGroups"
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.13'
+              pattern: "^DenyUsers"
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.13'
+              pattern: "^DenyGroups"
+      description: Limit Access via SSH
+
+    sshd_banner:
+      data:
+        Debian*7:
+          - '/etc/ssh/sshd_config':
+              tag: 'CIS-9.3.14'
+              pattern: "^Banner"
+      description: Set SSH Banner
+
+    restrict_access_su:
+      data:
+        Debian*7:
+          - '/etc/pam.d/su':
+              tag: 'CIS-9.5'
+              pattern: "pam_wheel.so"
+      description: Restrict Access to the su Command
+
+    passwd_expiration_days:
+      data:
+        Debian*7:
+          - '/etc/login.defs':
+              tag: 'CIS-10.1.1'
+              pattern: "PASS_MAX_DAYS"
+              match_output: "90"
+      description: Set Password Expiration Days
+
+    passwd_change_min_days:
+      data:
+        Debian*7:
+          - '/etc/login.defs':
+              tag: 'CIS-10.1.2'
+              pattern: "PASS_MIN_DAYS"
+              match_output: "7"
+      description: Set Password Change Minimum Number of Days
+
+    passwd_expiry_warning:
+      data:
+        Debian*7:
+          - '/etc/login.defs':
+              tag: 'CIS-10.1.3'
+              pattern: "PASS_WARN_AGE"
+              match_output: "7"
+      description: Set Password Expiring Warning Days
+
+    default_umask:
+      data:
+        Debian*7:
+          - '/etc/bash.bashrc':
+              tag: 'CIS-10.4'
+              pattern: "^umask 077"
+          - '/etc/profile.d/*':
+              tag: 'CIS-10.4'
+              pattern: "^umask 077"
+      description: Set Default umask for Users
+
+stat:
+  grub_conf_own:
+    data:
+      Debian*7:
+        - '/boot/grub/grub.cfg':
+            tag: 'CIS-3.1'
+            user: 'root'
+            group: 'root'
+    description: Set User/Group Owner on bootloader config
+
+  grub_conf_perm:
+    data:
+      Debian*7:
+        - '/boot/grub/grub.cfg':
+            tag: 'CIS-3.2'
+            mode: 600
+    description: Set Permissions on bootloader config
+
+  boot_loader_passwd:
+    data:
+      Debian*7:
+        - '/boot/grub/grub.cfg':
+            tag: 'CIS-3.3'
+            pattern: "^password"
+    description: Set Boot Loader Password
+
+  restrict_core_dumps:
+    data:
+      Debian*7:
+        - '/etc/security/limits.conf':
+            tag: 'CIS-4.1'
+            pattern: 'hard core'
+    description: Restrict Core Dumps
+
+  cron_hourly:
+    data:
+      Debian*7:
+        - '/etc/cron.hourly':
+            tag: 'CIS-9.1.3'
+            mode: 700
+            user: 'root'
+            group: 'root'
+    description: Set User/Group Owner and Permission on /etc/cron.hourly
+
+  cron_daily:
+    data:
+      Debian*7:
+        - '/etc/cron.daily':
+            tag: 'CIS-9.1.4'
+            mode: 700
+            user: 'root'
+            group: 'root'
+    description: Set User/Group Owner and Permission on /etc/cron.daily
+
+  cron_weekly:
+    data:
+      Debian*7:
+        - '/etc/cron.weekly':
+            tag: 'CIS-9.1.5'
+            mode: 700
+            user: 'root'
+            group: 'root'
+    description: Set User/Group Owner and Permission on /etc/cron.weekly
+
+  cron_monthly:
+    data:
+      Debian*7:
+        - '/etc/cron.monthly':
+            tag: 'CIS-9.1.6'
+            mode: 700
+            user: 'root'
+            group: 'root'
+    description: Set User/Group Owner and Permission on /etc/cron.monthly
+
+  cron_d:
+    data:
+      Debian*7:
+        - '/etc/cron.d':
+            tag: 'CIS-9.1.7'
+            mode: 700
+            user: 'root'
+            group: 'root'
+    description: Set User/Group Owner and Permission on /etc/cron.d
+
+  sshd_config:
+    data:
+      Debian*7:
+        - '/etc/ssh/sshd_config':
+            tag: 'CIS-9.3.3'
+            mode: 600
+            user: 'root'
+            group: 'root'
+    description: Set Permissions on /etc/ssh/sshd_config
+
+  passwd_perm:
+    data:
+      Debian*7:
+        - '/etc/passwd':
+            tag: 'CIS-12.1'
+            mode: 644
+    description: Verify Permissions on /etc/passwd
+
+  passwd_own:
+    data:
+      Debian*7:
+        - '/etc/passwd':
+            tag: 'CIS-12.4'
+            user: 'root'
+            group: 'root'
+    description: Verify User/Group Ownership on /etc/passwd
+
+  shadow_perm:
+    data:
+      Debian*7:
+        - '/etc/shadow':
+            tag: 'CIS-12.2'
+            mode: 640
+    description: Verify Permissions on /etc/shadow
+
+  shadow_own:
+    data:
+      Debian*7:
+        - '/etc/shadow':
+            tag: 'CIS-12.5'
+            user: 'root'
+            group: 'root'
+    description: Verify User/Group Ownership on /etc/shadow
+
+  group_perm:
+    data:
+      Debian*7:
+        - '/etc/group':
+            tag: 'CIS-12.3'
+            mode: 644
+        - '/etc/group':
+            tag: 'CIS-12.3'
+            user: 'root'
+            group: 'root'
+    description: Verify Permissions on /etc/group
+
+  single_user_auth:
+    data:
+      Debian*7:
+        - '/etc/shadow':
+            tag: 'CIS-3.4'
+            pattern: "^root:[*\\!]:"
+    description: Require Authentication for Single-User Mode
+
+  hosts_allow:
+    data:
+      Debian*7:
+        - '/etc/hosts.allow':
+            tag: 'CIS-7.4.3'
+            mode: 644
+    description: Verify Permissions on /etc/hosts.allow
+
+  hosts_deny:
+    data:
+      Debian*7:
+        - '/etc/hosts.deny':
+            tag: 'CIS-7.4.5'
+            mode: 644
+    description: Verify Permissions on /etc/hosts.deny
+
+  legacy_passwd_entries:
+    data:
+      Debian*7:
+        - '/etc/passwd':
+            tag: 'CIS-13.2'
+            pattern: "^+:"
+    description: Verify No Legacy "+" Entries Exist in /etc/passwd File
+
+  legacy_shadow_entries:
+    data:
+      Debian*7:
+        - '/etc/shadow':
+            tag: 'CIS-13.3'
+            pattern: "^+:"
+    description: Verify No Legacy "+" Entries Exist in /etc/shadow File
+
+  legacy_group_entries:
+    data:
+      Debian*7:
+        - '/etc/group':
+            tag: 'CIS-13.4'
+            pattern: "^+:"
+    description: Verify No Legacy "+" Entries Exist in /etc/group File
+
+sysctl:
+  randomize_va_space:
+    data:
+      Debian*7:
+        - 'kernel.randomize_va_space':
+            tag: 'CIS-4.3'
+            match_output: '2'
+    description: Enable Randomized Virtual Memory Region Placement
+
+  ip_forwarding:
+    data:
+      Debian*7:
+        - 'net.ipv4.ip_forward':
+            tag: 'CIS-7.1.1'
+            match_output: '0'
+    description: Disable IP Forwarding
+
+  send_packet_redirect:
+    data:
+      Debian*7:
+        - 'net.ipv4.conf.all.send_redirects':
+            tag: 'CIS-7.1.2'
+            match_output: '0'
+        - 'net.ipv4.conf.default.send_redirects':
+            tag: 'CIS-7.1.2'
+            match_output: '0'
+    description: Disable Send Packet Redirects
+
+  source_routed_packet_acceptance:
+    data:
+      Debian*7:
+        - 'net.ipv4.conf.all.accept_source_route':
+            tag: 'CIS-7.2.1'
+            match_output: '0'
+        - 'net.ipv4.conf.default.accept_source_route':
+            tag: 'CIS-7.2.1'
+            match_output: '0'
+    description: Disable Source Routed Packet Acceptance
+
+  icmp_redirect_acceptance:
+    data:
+      Debian*7:
+        - 'net.ipv4.conf.all.accept_redirects':
+            tag: 'CIS-7.2.2'
+            match_output: '0'
+        - 'net.ipv4.conf.default.accept_redirects':
+            tag: 'CIS-7.2.2'
+            match_output: '0'
+    description: Disable ICMP Redirect Acceptance
+
+  icmp_secure_redirect_acceptance:
+    data:
+      Debian*7:
+        - 'net.ipv4.conf.all.secure_redirects':
+            tag: 'CIS-7.2.3'
+            match_output: '0'
+        - 'net.ipv4.conf.default.secure_redirects':
+            tag: 'CIS-7.2.3'
+            match_output: '0'
+    description: Disable Secure ICMP Redirect Acceptance
+
+  log_suspicious_packets:
+    data:
+      Debian*7:
+        - 'net.ipv4.conf.all.log_martians':
+            tag: 'CIS-7.2.4'
+            match_output: '1'
+        - 'net.ipv4.conf.default.log_martians':
+            tag: 'CIS-7.2.4'
+            match_output: '1'
+    description: Log Suspicious Packets
+
+  ignore_broadcast_requests:
+    data:
+      Debian*7:
+        - 'net.ipv4.icmp_echo_ignore_broadcasts':
+            tag: 'CIS-7.2.5'
+            match_output: '1'
+    description: Enable Ignore Broadcast Requests
+
+  bad_error_message_protection:
+    data:
+      Debian*7:
+        - 'net.ipv4.icmp_ignore_bogus_error_responses':
+            tag: 'CIS-7.2.6'
+            match_output: '1'
+    description: Enable Bad Error Message Protection
+
+  source_route_validation:
+    data:
+      Debian*7:
+        - 'net.ipv4.conf.all.rp_filter':
+            tag: 'CIS-7.2.7'
+            match_output: '1'
+        - 'net.ipv4.conf.default.rp_filter':
+            tag: 'CIS-7.2.7'
+            match_output: '1'
+    description: Enable RFC-recommended Source Route Validation
+
+  tcp_syn_cookies:
+    data:
+      Debian*7:
+        - 'net.ipv4.tcp_syncookies':
+            tag: 'CIS-7.2.8'
+            match_output: '1'
+    description: Enable TCP SYN Cookies
+
+pkg:
+  blacklist:
+
+    prelink:
+      data:
+        Debian*7:
+          - 'prelink': 'CIS-4.4'
+      description: Disable Prelink
+
+    nis:
+      data:
+        Debian*7:
+          - 'nis': 'CIS-5.1.1'
+      description: Ensure NIS is not installed
+
+    rsh-clients:
+      data:
+        Debian*7:
+        - 'rsh-client': CIS-5.1.3
+        - 'rsh-redone-client': CIS-5.1.3
+      description: Ensure rsh client is not installed
+    rsh-server:
+      data:
+        Debian*7:
+        - 'rsh-server': CIS-5.1.2
+      description: Ensure rsh server is not enabled
+
+    talk:
+      data:
+        Debian*7:
+          - 'talk': 'CIS-5.1.5'
+      description: Ensure talk client is not installed
+
+    telnet:
+      data:
+        Debian*7:
+          - 'telnet': 'CIS-5.1.6'
+          - 'telnet-server': 'CIS-5.1.6'
+      description: Ensure telnet server is not enabled
+
+    tftp:
+      data:
+        Debian*7:
+          - 'tftp': 'CIS-5.1.7'
+          - 'atftp': 'CIS-5.1.7'
+      description: Ensure tftp-server is not enabled
+
+    xinetd:
+      data:
+        Debian*7:
+          - 'xinetd': 'CIS-5.1.8'
+      description: Ensure xinetd is not enabled
+
+    xorg-server:
+      data:
+        Debian*7:
+          - 'xserver-xorg-core': 'CIS-6.1'
+      description: Ensure the X Window system is not installed
+
+    avahi-daemon:
+      data:
+        Debian*7:
+          - 'avahi-daemon': 'CIS-6.2'
+      description: Ensure Avahi Server is not enabled
+
+    dhcp:
+      data:
+        Debian*7:
+          - 'isc-dhcp-server': 'CIS-6.4'
+      description: Ensure DHCP Server is not enabled
+
+  whitelist:
+
+    tcp_wrappers:
+      data:
+        Debian*7:
+          - 'tcpd': 'CIS-7.4.1'
+      description: Install TCP Wrappers
+
+    iptables:
+      data:
+        Debian*7:
+          - 'iptables': 'CIS-7.7'
+          - 'iptables-persistent': 'CIS-7.7'
+      description: Ensure Firewall is active
+
+    rsyslog:
+      data:
+        Debian*7:
+          - 'rsyslog': 'CIS-8.2.1'
+      description: Install the rsyslog package
+
+    cracklib:
+      data:
+        Debian*7:
+          - 'libpam-cracklib': 'CIS-9.2.1'
+      description: Set Password Creation Requirement Parameters Using pam_cracklib

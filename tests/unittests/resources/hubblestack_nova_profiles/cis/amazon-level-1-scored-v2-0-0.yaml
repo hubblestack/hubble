@@ -1,0 +1,1206 @@
+# NOTE: This CIS Profile only includes Level 1 Scored Items for Amazon Linux*
+# NOTE: Within this file, there are a few sections that should be tailored to your
+#       organization's specific policy.  Search for '# NOTE: ' comments through the file.
+
+# TODO: Checks that aren't implemented yet:
+#       3.6.5
+#       4.2.4
+#       6.2.6-19
+
+
+
+grep:
+  blacklist:
+    message_of_the_day:
+      data:
+        'Amazon Linux*':
+        - /etc/motd:
+            pattern: '"(\\\v|\\\r|\\\m|\\\s)"'
+            grep_args:
+              - '-E'
+            tag: CIS-1.7.1.1
+      description: Ensure message of the day is configured properly
+    legacy_passwd_entries_group:
+      data:
+        'Amazon Linux*':
+        - /etc/group:
+            pattern: '^+:'
+            tag: CIS-6.2.4
+      description: Ensure no legacy "+" entries exist in /etc/group
+    legacy_passwd_entries_passwd:
+      data:
+        'Amazon Linux*':
+        - /etc/passwd:
+            pattern: '^+:'
+            tag: CIS-6.2.2
+      description: Ensure no legacy "+" entries exist in /etc/passwd
+    legacy_passwd_entries_shadow:
+      data:
+        'Amazon Linux*':
+        - /etc/shadow:
+            pattern: '^+:'
+            tag: CIS-6.2.3
+      description: Ensure no legacy "+" entries exist in /etc/shadow
+    disable_mount_cramfs:
+      data:
+        'Amazon Linux*':
+        - /proc/modules:
+            pattern: "^cramfs "
+            tag: CIS-1.1.1.1
+      description: Ensure mounting of cramfs filesystems is disabled
+    disable_mount_freevxfs:
+      data:
+        'Amazon Linux*':
+        - /proc/modules:
+            pattern: "^freevxfs "
+            tag: CIS-1.1.1.2
+      description: Ensure mounting of freevxfs filesystems is disabled
+    disable_mount_jffs2:
+      data:
+        'Amazon Linux*':
+        - /proc/modules:
+            pattern: "^jffs2 "
+            tag: CIS-1.1.1.3
+      description: Ensure mounting of jffs2 filesystems is disabled
+    disable_mount_hfs:
+      data:
+        'Amazon Linux*':
+        - /proc/modules:
+            pattern: "^hfs "
+            tag: CIS-1.1.1.4
+      description: Ensure mounting of hfs filesystems is disabled
+    disable_mount_hfsplus:
+      data:
+        'Amazon Linux*':
+        - /proc/modules:
+            pattern: "^hfsplus "
+            tag: CIS-1.1.1.5
+      description: Ensure mounting of hfsplus filesystems is disabled
+    disable_mount_squashfs:
+      data:
+        'Amazon Linux*':
+        - /proc/modules:
+            pattern: "^squashfs "
+            tag: CIS-1.1.1.6
+      description: Ensure mounting of squashfs filesystems is disabled
+    disable_mount_udf:
+      data:
+        'Amazon Linux*':
+        - /proc/modules:
+            pattern: "^udf "
+            tag: CIS-1.1.1.7
+      description: Ensure mounting of udf filesystems is disabled
+    disable_mount_fat:
+      data:
+        'Amazon Linux*':
+        - /proc/modules:
+            pattern: "^vfat "
+            tag: CIS-1.1.1.8
+      description: Ensure mounting of FAT filesystems is disabled
+  whitelist:
+    activate_gpg_check:
+      data:
+        'Amazon Linux*':
+        - /etc/yum.conf:
+            match_output: gpgcheck=1
+            pattern: gpgcheck
+            tag: CIS-1.2.3
+      description: Ensure gpgcheck is globally activated
+    aide_filesystem_scans:
+      data:
+        'Amazon Linux*':
+        - /etc/cron.d:
+            pattern: aide
+            grep_args:
+              - '-r'
+            tag: CIS-1.3.2
+      description: Ensure filesystem integrity is regularly checked
+    single_user_mode_check:
+      data:
+        'Amazon Linux*':
+        - /etc/sysconfig/init:
+            match_output: SINGLE=/sbin/sulogin
+            pattern: ^SINGLE
+            tag: CIS-1.4.2
+      description: Ensure authentication required for single user mode
+    interactive_boot_check:
+      data:
+        'Amazon Linux*':
+        - /etc/sysconfig/init:
+            match_output: PROMPT=no
+            pattern: "^PROMPT="
+            tag: CIS-1.4.3
+      description: Ensure interactive boot is not enabled
+    configure_ntp:
+      data:
+        'Amazon Linux*':
+        - /etc/ntp.conf:
+            pattern: ^restrict
+            match_output: default
+            tag: CIS-2.2.1.2
+        - /etc/ntp.conf:
+            pattern: restrict -6 default
+            tag: CIS-2.2.1.2
+        - /etc/ntp.conf:
+            tag: CIS-2.2.1.2
+            pattern: '^server'
+        - /etc/sysconfig/ntpd:
+            tag: CIS-2.2.1.2
+            pattern: '^OPTIONS'
+            match_output: '-u ntp:ntp'
+      description: Ensure ntp is configured
+    configure_chrony:
+      data:
+        'Amazon Linux*':
+        - /etc/chrony.conf:
+            tag: CIS-2.2.1.3
+            pattern: '^server'
+            match_output: 'server *'
+            match_output_regex: True
+        - /etc/sysconfig/chronyd:
+            tag: CIS-2.2.1.3
+            pattern: ^OPTIONS
+            match_output: 'OPTIONS="-u chrony"'
+      description: Ensure chrony is configured
+    local_mail:
+      data:
+        'Amazon Linux*':
+        - /etc/postfix/main.cf:
+            pattern: ^inet_interfaces
+            match_output: localhost
+            tag: CIS-2.2.15
+      description: Ensure mail transfer agent is configured for local-only mode
+    default_umask:
+      data:
+        'Amazon Linux*':
+        - /etc/bashrc:
+            pattern: umask
+            match_pattern: '027'
+            tag: CIS-5.4.4
+        - /etc/profile:
+            pattern: umask
+            match_pattern: '027'
+            tag: CIS-5.4.4
+      description: Ensure default user umask is 027 or more restrictive
+    mounts_var_tmp_partition_nodev:
+      data:
+        'Amazon Linux*':
+        - /proc/mounts:
+            match_output: nodev
+            pattern: /var/tmp
+            tag: CIS-1.1.8
+      description: Ensure nodev option set on /var/tmp partition
+    mounts_var_tmp_partition_nosuid:
+      data:
+        'Amazon Linux*':
+        - /proc/mounts:
+            match_output: nosuid
+            pattern: /var/tmp
+            tag: CIS-1.1.9
+      description: Ensure nosuid option set on /var/tmp partition
+    mounts_var_tmp_partition_noexec:
+      data:
+        'Amazon Linux*':
+        - /proc/mounts:
+            match_output: noexec
+            pattern: /var/tmp
+            tag: CIS-1.1.10
+      description: Ensure noexec option set on /var/tmp partition
+    mounts_dev_shm_partition_nodev:
+      data:
+        'Amazon Linux*':
+        - /proc/mounts:
+            match_output: nodev
+            pattern: /dev/shm
+            tag: CIS-1.1.15
+      description: Ensure nodev option set on /dev/shm partition
+    mounts_dev_shm_partition_noexec:
+      data:
+        'Amazon Linux*':
+        - /proc/mounts:
+            match_output: noexec
+            pattern: /dev/shm
+            tag: CIS-1.1.17
+      description: Ensure noexec option set on /dev/shm partition
+    mounts_dev_shm_partition_nosuid:
+      data:
+        'Amazon Linux*':
+        - /proc/mounts:
+            match_output: nosuid
+            pattern: /dev/shm
+            tag: CIS-1.1.16
+      description: Ensure nosuid option set on /dev/shm partition
+    mounts_home_partition_nodev:
+      data:
+        'Amazon Linux*':
+        - /proc/mounts:
+            match_output: nodev
+            pattern: /home
+            tag: CIS-1.1.14
+      description: Ensure nodev option set on /home partition
+    mounts_tmp_partition_nodev:
+      data:
+        'Amazon Linux*':
+        - /proc/mounts:
+            match_output: nodev
+            pattern: /tmp
+            tag: CIS-1.1.3
+      description: Ensure nodev option set on /tmp partition
+    mounts_tmp_partition_noexec:
+      data:
+        'Amazon Linux*':
+        - /proc/mounts:
+            match_output: noexec
+            pattern: /tmp
+            tag: CIS-1.1.5
+      description: Ensure noexec option set on /tmp partition
+    mounts_tmp_partition_nosuid:
+      data:
+        'Amazon Linux*':
+        - /proc/mounts:
+            match_output: nosuid
+            pattern: /tmp
+            tag: CIS-1.1.4
+      description: Ensure nosuid option set on /tmp partition
+    hosts_allow:
+      data:
+        'Amazon Linux*':
+        - /etc/hosts.allow:
+            pattern: ALL
+            tag: CIS-3.4.2
+      description: Ensure /etc/hosts.allow is configured
+    hosts_deny:
+      data:
+        'Amazon Linux*':
+        - /etc/hosts.deny:
+            pattern:  ALL
+            tag: CIS-3.4.3
+      description: Ensure /etc/hosts.deny is configured
+    firewall_default_deny:
+      data:
+        'Amazon Linux*':
+        - /etc/sysconfig/iptables:
+            pattern: :INPUT
+            match_output: DROP
+            tag: CIS-3.6.2
+        - /etc/sysconfig/iptables:
+            pattern: :FORWARD
+            match_pattern: DROP
+            tag: CIS-3.6.2
+        - /etc/sysconfig/iptables:
+            pattern: :OUTPUT
+            match_output: DROP
+            tag: CIS-3.6.2
+      description: Ensure default deny firewall policy
+    firewall_accept_lo:
+      data:
+        'Amazon Linux*':
+        - /etc/sysconfig/iptables:
+            pattern: '"\-A INPUT \-i lo \-j"'
+            match_output: ACCEPT
+            tag: CIS-3.6.3
+        - /etc/sysconfig/iptables:
+            pattern: '"\-A OUTPUT \-o lo \-j"'
+            match_output: ACCEPT
+            tag: CIS-3.6.3
+        - /etc/sysconfig/iptables:
+            pattern: '"\-A INPUT \-s 127.0.0.0/8 \-j"'
+            match_output: DROP
+            tag: CIS-3.6.3
+      description: Ensure loopback traffic is configured
+    rsyslog_file_perms:
+      data:
+        'Amazon Linux*':
+        - /etc/rsyslog.conf:
+            pattern: '^\$FileCreateMode'
+            match_output: '0640'
+            tag: CIS-4.2.1.3
+      description: Ensure rsyslog default file permissions configured
+    rsyslog_remote_logging:
+      data:
+        'Amazon Linux*':
+        - /etc/rsyslog.conf:
+            pattern: ^*.*[^I][^I]*@
+            tag: CIS-4.2.1.4
+      description: Ensure rsyslog is configured to send logs to a remote log host
+    syslog-ng_file_perms:
+      data:
+        'Amazon Linux*':
+        - /etc/syslog-ng/syslog-ng.conf:
+            pattern: ^options
+            match_output: 'perm(0640)'
+            tag: CIS-4.2.2.3
+      description: Ensure syslog-ng default file permissions configured
+    limit_password_reuse:
+      data:
+        'Amazon Linux*':
+        - /etc/pam.d/system-auth:
+            pattern: '"^password\s+sufficient\s+pam_unix\.so.*"'
+            match_output: remember=5
+            grep_args:
+              - '-E'
+            tag: CIS-5.3.3
+      description: Ensure password reuse is limited
+    password_hash:
+      data:
+        'Amazon Linux*':
+        - /etc/pam.d/password-auth:
+            pattern: '"^password\s+\w+\s+pam_unix\.so"'
+            match_output: sha512
+            grep_args:
+              - '-E'
+            tag: CIS-5.3.4
+      description: Ensure password hashing algorithm is SHA-512
+    limit_su_command_access:
+      data:
+        'Amazon Linux*':
+        - /etc/pam.d/su:
+            match_output: use_uid
+            pattern: pam_wheel.so
+            tag: CIS-5.5
+        - /etc/group:
+            pattern: wheel
+            tag: CIS-5.5
+      description: Ensure access to the su command is restricted
+    pam_pwquality_try_first_pass:
+      data:
+        'Amazon Linux*':
+        - /etc/pam.d/system-auth:
+            match_output: try_first_pass
+            pattern: pam_pwquality.so
+            tag: CIS-5.3.1
+        - /etc/pam.d/system-auth:
+            match_output: retry=3
+            pattern: pam_pwquality.so
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: minlen
+            match_output: '14'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: dcredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: ucredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: ocredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+        - /etc/security/pwquality.conf:
+            pattern: lcredit
+            match_output: '-1'
+            tag: CIS-5.3.1
+      description: Ensure password creation requirements are configured
+    passwd_change_min_days:
+      data:
+        'Amazon Linux*':
+        - /etc/login.defs:
+            match_output: '7'
+            pattern: PASS_MIN_DAYS
+            tag: CIS-5.4.1.2
+      description: Ensure minimum days between password changes is 7 or more
+    passwd_expiration_days:
+      data:
+        'Amazon Linux*':
+        - /etc/login.defs:
+            match_output: '90'
+            pattern: PASS_MAX_DAYS
+            tag: CIS-5.4.1.1
+      description: Ensure password expiration is 90 days or less
+    passwd_expiry_warning:
+      data:
+        'Amazon Linux*':
+        - /etc/login.defs:
+            match_output: '7'
+            pattern: PASS_WARN_AGE
+            tag: CIS-5.4.1.3
+      description: Ensure password expiration warning days is 7 or more
+    passwd_inactive:
+      data:
+        'Amazon Linux*':
+        - /etc/default/useradd:
+            pattern: INACTIVE=30
+            tag: CIS-5.4.1.4
+      description: Ensure inactive password lock is 30 days or less
+    restrict_core_dumps:
+      data:
+        'Amazon Linux*':
+        - /etc/security/limits.conf:
+            match_output: '0'
+            pattern: '"* hard core"'
+            tag: CIS-1.5.1
+      description: Ensure core dumps are restricted
+    sshd_approved_cipher:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: '^Ciphers aes256-ctr,aes192-ctr,aes128-ctr$|^Ciphers aes256-ctr,aes128-ctr,aes192-ctr$|^Ciphers aes192-ctr,aes128-ctr,aes256-ctr$|^Ciphers aes192-ctr,aes256-ctr,aes128-ctr$|^Ciphers aes128-ctr,aes256-ctr,aes192-ctr$|^Ciphers aes128-ctr,aes192-ctr,aes256-ctr$'
+            match_output_regex: True
+            pattern: ^Ciphers
+            tag: CIS-5.2.11
+      description: Ensure only approved ciphers are used
+    sshd_approved_macs:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: 'MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-512,hmac-sha2-256,umac-128@openssh.com'
+            pattern: ^MACs
+            tag: CIS-5.2.12
+      description: Ensure only approved MAC algorithms are used
+    sshd_banner:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: "/etc/issue.net"
+            pattern: ^Banner
+            tag: CIS-5.2.16
+      description: Ensure SSH warning banner is configured
+    sshd_disable_root_login:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: PermitRootLogin no
+            pattern: ^PermitRootLogin
+            tag: CIS-5.2.8
+      description: Ensure SSH root login is disabled
+    sshd_hostbased_auth:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: HostbasedAuthentication no
+            pattern: ^HostbasedAuthentication
+            tag: CIS-5.2.7
+      description: Ensure SSH HostbasedAuthentication is disabled
+    sshd_idle_timeout:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: ^ClientAliveInterval +([1-2]{0,1}\d{1,2}|300)$
+            match_output_regex: True
+            pattern: ^ClientAliveInterval
+            tag: CIS-5.2.13
+        - /etc/ssh/sshd_config:
+            match_output: "^ClientAliveCountMax +[0-3]$"
+            match_output_regex: True
+            pattern: ^ClientAliveCountMax
+            tag: CIS-5.2.13
+      description: Ensure SSH Idle Timeout Interval is configured
+    sshd_gracetime:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            pattern: ^LoginGraceTime
+            match_output: ^LoginGraceTime ([0-5]{0,1}\d|60|1m)$
+            match_output_regex: True
+            tag: CIS-5.2.14
+      description: Ensure SSH LoginGraceTime is set to one minute or less
+    sshd_ignore_rhosts:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: IgnoreRhosts yes
+            pattern: ^IgnoreRhosts
+            tag: CIS-5.2.6
+      description: Ensure SSH IgnoreRhosts is enabled
+    sshd_limit_access:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            pattern: ^AllowUsers
+            match_output: 'AllowUsers *'
+            match_output_regex: True
+            tag: CIS-5.2.15
+        - /etc/ssh/sshd_config:
+            pattern: ^AllowGroups
+            match_output: 'AllowGroups *'
+            match_output_regex: True
+            tag: CIS-5.2.15
+        - /etc/ssh/sshd_config:
+            pattern: ^DenyUsers
+            match_output: 'DenyUsers *'
+            match_output_regex: True
+            tag: CIS-5.2.15
+        - /etc/ssh/sshd_config:
+            pattern: ^DenyGroups
+            match_output: 'DenyGroups *'
+            match_output_regex: True
+            tag: CIS-5.2.15
+      description: Ensure SSH access is limited
+    sshd_loglevel_info:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: LogLevel INFO
+            pattern: ^LogLevel
+            tag: CIS-5.2.3
+      description: Ensure SSH LogLevel is set to INFO
+    sshd_max_auth_retries:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: "^MaxAuthTries +[1-4]$"
+            pattern: ^MaxAuthTries
+            match_output_regex: True
+            tag: CIS-5.2.5
+      description: Ensure SSH MaxAuthTries is set to 4 or less
+    sshd_permit_empty_passwords:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: PermitEmptyPasswords no
+            pattern: ^PermitEmptyPasswords
+            tag: CIS-5.2.9
+      description: Ensure SSH PermitEmptyPasswords is disabled
+    sshd_permit_user_environment:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: PermitUserEnvironment no
+            pattern: ^PermitUserEnvironment
+            tag: CIS-5.2.10
+      description: Ensure SSH PermitUserEnvironment is disabled
+    sshd_protocol_2:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: Protocol 2
+            pattern: ^Protocol
+            tag: CIS-5.2.2
+      description: Ensure SSH Protocol is set to 2
+    sshd_x11_forwarding:
+      data:
+        'Amazon Linux*':
+        - /etc/ssh/sshd_config:
+            match_output: X11Forwarding no
+            pattern: ^X11Forwarding
+            tag: CIS-5.2.4
+      description: Ensure SSH X11 forwarding is disabled
+    lockout_account:
+      data:
+        'Amazon Linux*':
+        - /etc/pam.d/system-auth:
+            pattern: '"^auth\s+required\s+pam_faillock\.so.*"'
+            match_output: deny=5
+            grep_args:
+              - '-E'
+            tag: CIS-5.3.2
+        - /etc/pam.d/password-auth:
+            pattern: '"^auth\s+required\s+pam_faillock\.so.*"'
+            match_output: deny=5
+            grep_args:
+              - '-E'
+            tag: CIS-5.3.2
+      description: Ensure lockout for failed password attempts is configured
+pkg:
+  blacklist:
+    avahi-daemon:
+      data:
+        'Amazon Linux*':
+        - avahi-daemon: CIS-2.2.3
+      description: Ensure Avahi Server is not enabled
+    cups:
+      data:
+        'Amazon Linux*':
+        - cups: CIS-2.2.4
+      description: Ensure CUPS is not enabled
+    dhcp:
+      data:
+        'Amazon Linux*':
+        - dhcp: CIS-2.2.5
+      description: Ensure DHCP Server is not enabled
+    slapd:
+      data:
+        'Amazon Linux*':
+        - openldap-servers: CIS-2.2.6
+      description: Ensure LDAP server is not enabled
+    ftp:
+      data:
+        'Amazon Linux*':
+        - perl-ftpd: CIS-2.2.9
+        - proftpd: CIS-2.2.9
+        - pure-ftpd: CIS-2.2.9
+        - vsftpd: CIS-2.2.9
+      description: Ensure FTP Server is not enabled
+    nis-client:
+      data:
+        'Amazon Linux*':
+        - ypbind: CIS-2.3.1
+      description: Ensure NIS Client is not installed
+    nis-server:
+      data:
+        'Amazon Linux*':
+        - ypserv: CIS-2.2.16
+      description: Ensure NIS Server is not enabled
+    rsh-client:
+      data:
+        'Amazon Linux*':
+        - rsh: CIS-2.3.2
+      description: Ensure rsh client is not installed
+    rsh-server:
+      data:
+        'Amazon Linux*':
+        - rsh-server: CIS-2.1.6
+      description: Ensure rsh server is not enabled
+    talk-client:
+      data:
+        'Amazon Linux*':
+        - talk: CIS-2.3.3
+      description: Ensure talk client is not installed
+    talk-server:
+      data:
+        'Amazon Linux*':
+        - talk-server: CIS-2.1.7
+      description: Ensure talk server is not enabled
+    telnet-client:
+      data:
+        'Amazon Linux*':
+        - telnet: CIS-2.3.4
+      description: Ensure telnet client is not installed
+    telnet-server:
+      data:
+        'Amazon Linux*':
+        - telnet-server: CIS-2.1.8
+      description: Ensure telnet server is not enabled
+    tftp-server:
+      data:
+        'Amazon Linux*':
+        - tftp-server: CIS-2.1.9
+      description: Ensure tftp server is not enabled
+    xinetd:
+      data:
+        'Amazon Linux*':
+        - xinetd: CIS-2.1.11
+      description: Ensure xinetd is not enabled
+    xorg-x11-server-common:
+      data:
+        'Amazon Linux*':
+        - xorg-x11-server-common: CIS-2.2.2
+      description: Ensure X Window System is not installed
+    prelink:
+      data:
+        'Amazon Linux*':
+        - prelink: CIS-1.5.4
+      description: Ensure prelink is disabled
+    ldap_clients:
+      data:
+        'Amazon Linux*':
+        - openldap-clients: CIS-2.3.5
+      description: Ensure LDAP client is not installed
+  whitelist:
+    aide:
+      data:
+        'Amazon Linux*':
+        - aide: CIS-1.3.1
+      description: Ensure AIDE is installed
+    tcp_wrappers:
+      data:
+        'Amazon Linux*':
+        - tcp_wrappers: CIS-3.4.1
+      description: Ensure TCP Wrappers is installed
+    iptables:
+      data:
+        'Amazon Linux*':
+        - iptables: CIS-3.6.1
+      description: Ensure iptables is installed
+    syslog:
+      data:
+        'Amazon Linux*':
+        - rsyslog: CIS-4.2.3
+      description: Ensure rsyslog or syslog-ng is installed
+    syslog-ng:
+      data:
+        'Amazon Linux*':
+        - syslog-ng: CIS-4.2.3
+      description: Ensure rsyslog or syslog-ng is installed
+service:
+  blacklist:
+    autofs:
+      data:
+        'Amazon Linux*':
+        - autofs: CIS-1.1.19
+      description: Disable Automounting
+    rsync:
+      data:
+        'Amazon Linux*':
+        - rsyncd: CIS-2.1.10
+      description:  Ensure rsync service is not enabled
+    nfs:
+      data:
+        'Amazon Linux*':
+        - nfs: CIS-2.2.7
+      description: Ensure NFS and RPC are not enabled
+    rpc:
+      data:
+        'Amazon Linux*':
+        - rpcbind: CIS-2.2.7
+      description: Ensure NFS and RPC are not enabled
+    named:
+      data:
+        'Amazon Linux*':
+        - named: CIS-2.2.8
+      description: Ensure DNS Server is not enabled
+    httpd:
+      data:
+        'Amazon Linux*':
+        - httpd: CIS-2.2.10
+      description:  Ensure HTTP server is not enabled
+    pop3_imap:
+      data:
+        'Amazon Linux*':
+        - dovecot: CIS-2.2.11
+      description: Ensure IMAP and POP3 server is not enabled
+    samba:
+      data:
+        'Amazon Linux*':
+        - smb: CIS-2.2.12
+      description: Ensure Samba is not enabled
+    http_proxy:
+      data:
+        'Amazon Linux*':
+        - squid: CIS-2.2.13
+      description: Ensure HTTP Proxy Server is not enabled
+    snmp:
+      data:
+        'Amazon Linux*':
+        - snmpd: CIS-2.2.14
+      description:  Ensure SNMP Server is not enabled
+    chargen_disabled:
+      data:
+        'Amazon Linux*':
+        - chargen-dgram: CIS-2.1.1
+        - chargen-stream: CIS-2.1.1
+      description: Ensure chargen services are not enabled
+    daytime_disabled:
+      data:
+        'Amazon Linux*':
+        - daytime-dgram: CIS-2.1.2
+        - daytime-stream: CIS-2.1.2
+      description: Ensure daytime services are not enabled
+    discard_disabled:
+      data:
+        'Amazon Linux*':
+        - discard-dgram: CIS-2.1.3
+        - discard-stream: CIS-2.1.3
+      description: Ensure discard services are not enabled
+    echo_disabled:
+      data:
+        'Amazon Linux*':
+        - echo-dgram: CIS-2.1.4
+        - echo-stream: CIS-2.1.4
+      description: Ensure echo services are not enabled
+    time_disabled:
+      data:
+        'Amazon Linux*':
+        - time-dgram: CIS-2.1.5
+        - time-stream: CIS-2.1.5
+      description: Ensure time services are not enabled
+  whitelist:
+    crond_running:
+      data:
+        'Amazon Linux*':
+        - crond: CIS-5.1.1
+      description: Ensure cron daemon is enabled
+    rsyslogd_running:
+      data:
+        'Amazon Linux*':
+        - rsyslog: CIS-4.2.1.1
+      description: Ensure rsyslog Service is enabled
+    syslog-ng_running:
+      data:
+        'Amazon Linux*':
+        - syslog-ng: CIS-4.2.2.1
+      description: Ensure syslog-ng service is enabled
+stat:
+  at_cron_allow:
+    data:
+      'Amazon Linux*':
+      - /etc/cron.deny:
+          gid: null
+          group: null
+          mode: null
+          tag: CIS-5.1.8
+          uid: null
+          user: null
+      - /etc/at.deny:
+          gid: null
+          group: null
+          mode: null
+          tag: CIS-5.1.8
+          uid: null
+          user: null
+      - /etc/cron.allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-5.1.8
+          uid: 0
+          user: root
+      - /etc/at.allow:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-5.1.8
+          uid: 0
+          user: root
+    description: Ensure at/cron is restricted to authorized users
+  cron_d:
+    data:
+      'Amazon Linux*':
+      - /etc/cron.d:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-5.1.7
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/cron.d are configured
+  cron_daily:
+    data:
+      'Amazon Linux*':
+      - /etc/cron.daily:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-5.1.4
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/cron.daily are configured
+  cron_hourly:
+    data:
+      'Amazon Linux*':
+      - /etc/cron.hourly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-5.1.3
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/cron.hourly are configured
+  cron_monthly:
+    data:
+      'Amazon Linux*':
+      - /etc/cron.monthly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-5.1.6
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/cron.monthly are configured
+  cron_weekly:
+    data:
+      'Amazon Linux*':
+      - /etc/cron.weekly:
+          gid: 0
+          group: root
+          mode: 700
+          tag: CIS-5.1.5
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/cron.weekly are configured
+  crontab:
+    data:
+      'Amazon Linux*':
+      - /etc/crontab:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-5.1.2
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/crontab are configured
+  passwd_own_perm:
+    data:
+      'Amazon Linux*':
+      - /etc/passwd:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-6.1.2
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/passwd are configured
+  shadow_own_perm:
+    data:
+      'Amazon Linux*':
+      - /etc/shadow:
+          gid: 0
+          group: root
+          mode: 000
+          tag: CIS-6.1.3
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/shadow are configured
+  group_own_perm:
+    data:
+      'Amazon Linux*':
+      - /etc/group:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-6.1.4
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/group are configured
+  gshadow_own_perm:
+    data:
+      'Amazon Linux*':
+      - /etc/gshadow:
+          gid: 0
+          group: root
+          mode: 0
+          tag: CIS-6.1.5
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/gshadow are configured
+  passwd-_own_perm:
+    data:
+      'Amazon Linux*':
+      - /etc/passwd-:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.6
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/passwd- are configured
+  shadow-_own_perm:
+    data:
+      'Amazon Linux*':
+      - /etc/shadow-:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.7
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/shadow- are configured
+  group-_own_perm:
+    data:
+      'Amazon Linux*':
+      - /etc/group-:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.8
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/group- are configured
+  gshadow-_own_perm:
+    data:
+      'Amazon Linux*':
+      - /etc/gshadow-:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-6.1.9
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/gshadow- are configured
+  grub_conf_own_perm:
+    data:
+      'Amazon Linux*':
+      - /etc/grub.conf:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-1.4.1
+          uid: 0
+          user: root
+    description: Ensure permissions on bootloader config are configured
+  hosts_allow:
+    data:
+      'Amazon Linux*':
+      - /etc/hosts.allow:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-3.4.4
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/hosts.allow are configured
+  hosts_deny:
+    data:
+      'Amazon Linux*':
+      - /etc/hosts.deny:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-3.4.5
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/hosts.deny are configured
+  sshd_config:
+    data:
+      'Amazon Linux*':
+      - /etc/ssh/sshd_config:
+          gid: 0
+          group: root
+          mode: 600
+          tag: CIS-5.2.1
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/ssh/sshd_config are configured
+  warning_banner_issue:
+    data:
+      'Amazon Linux*':
+      - /etc/issue:
+          gid: 0
+          group: root
+          mode: 644
+          tag: CIS-1.7.1.5
+          uid: 0
+          user: root
+    description: Ensure permissions on /etc/issue are configured
+sysctl:
+  bad_error_message_protection:
+    data:
+      'Amazon Linux*':
+      - net.ipv4.icmp_ignore_bogus_error_responses:
+          match_output: '1'
+          tag: CIS-3.2.6
+    description: Ensure bogus ICMP responses are ignored
+  icmp_redirect_acceptance:
+    data:
+      'Amazon Linux*':
+      - net.ipv4.conf.all.accept_redirects:
+          match_output: '0'
+          tag: CIS-3.2.2
+      - net.ipv4.conf.default.accept_redirects:
+          match_output: '0'
+          tag: CIS-3.2.2
+    description: Ensure ICMP redirects are not accepted
+  ignore_broadcast_requests:
+    data:
+      'Amazon Linux*':
+      - net.ipv4.icmp_echo_ignore_broadcasts:
+          match_output: '1'
+          tag: CIS-3.2.5
+    description: Ensure broadcast ICMP requests are ignored
+  ip_forwarding:
+    data:
+      'Amazon Linux*':
+      - net.ipv4.ip_forward:
+          match_output: '0'
+          tag: CIS-3.1.1
+    description: Ensure IP forwarding is disabled
+  log_suspicious_packets:
+    data:
+      'Amazon Linux*':
+      - net.ipv4.conf.all.log_martians:
+          match_output: '1'
+          tag: CIS-3.2.4
+      - net.ipv4.conf.default.log_martians:
+          match_output: '1'
+          tag: CIS-3.2.4
+    description: Ensure suspicious packets are logged
+  reverse_path_filtering:
+    data:
+      'Amazon Linux*':
+        - net.ipv4.conf.all.rp_filter:
+            match_output: '1'
+            tag: CIS-3.2.7
+        - net.ipv4.conf.default.rp_filter:
+            match_output: '1'
+            tag: CIS-3.2.7
+    description: Ensure Reverse Path Filtering is enabled
+  ipv6_adverts:
+    data:
+      'Amazon Linux*':
+      - net.ipv6.conf.all.accept_ra:
+          match_output: '0'
+          tag: CIS-3.3.1
+      - net.ipv6.conf.default.accept_ra:
+          match_output: '0'
+          tag: CIS-3.3.1
+    description: Ensure IPv6 router advertisements are not accepted
+  ipv6_redir:
+    data:
+      'Amazon Linux*':
+      - net.ipv6.conf.all.accept_redirects:
+          match_output: '0'
+          tag: CIS-3.3.2
+      - net.ipv6.conf.default.accept_redirects:
+          match_output: '0'
+          tag: CIS-3.3.2
+    description: Ensure IPv6 redirects are not accepted
+  randomize_va_space:
+    data:
+      'Amazon Linux*':
+      - kernel.randomize_va_space:
+          match_output: '2'
+          tag: CIS-1.5.3
+    description: Ensure address space layout randomization (ASLR) is enabled
+  restrict_suid_core_dumps:
+    data:
+      'Amazon Linux*':
+      - fs.suid_dumpable:
+          match_output: '0'
+          tag: CIS-1.5.1
+    description: Ensure core dumps are restricted
+  secure_icmp_redirect_acceptance:
+    data:
+      'Amazon Linux*':
+      - net.ipv4.conf.all.secure_redirects:
+          match_output: '0'
+          tag: CIS-3.2.3
+      - net.ipv4.conf.default.secure_redirects:
+          match_output: '0'
+          tag: CIS-3.2.3
+    description: Ensure secure ICMP redirects are not accepted
+  send_packet_redirect:
+    data:
+      'Amazon Linux*':
+      - net.ipv4.conf.all.send_redirects:
+          match_output: '0'
+          tag: CIS-3.1.2
+      - net.ipv4.conf.default.send_redirects:
+          match_output: '0'
+          tag: CIS-3.1.2
+    description: Ensure packet redirect sending is disabled
+  source_routed_packet_acceptance:
+    data:
+      'Amazon Linux*':
+      - net.ipv4.conf.all.accept_source_route:
+          match_output: '0'
+          tag: CIS-3.2.1
+      - net.ipv4.conf.default.accept_source_route:
+          match_output: '0'
+          tag: CIS-3.2.1
+    description: Ensure source routed packets are not accepted
+  tcp_syn_cookies:
+    data:
+      'Amazon Linux*':
+      - net.ipv4.tcp_syncookies:
+          match_output: '1'
+          tag: CIS-3.2.8
+    description: Ensure TCP SYN Cookies is enabled
+
+misc:
+  ensure_password_fields_non_empty:
+    data:
+      'Amazon*Linux*2016*':
+       tag: CIS-6.2.1
+       function: check_password_fields_not_empty
+       description: Ensure password fields are not empty
+  default_group_for_root_account:
+    data:
+      'Amazon*Linux*2016*':
+       tag: CIS-5.4.3
+       function: default_group_for_root
+       description: Ensure default group for the root account is GID 0
+  system_account_non_login:
+    data:
+      'Amazon*Linux*2016*':
+       tag: CIS-5.4.2
+       function: system_account_non_login
+       description: Ensure system accounts are non-login
+  root_is_only_uid_0_account:
+    data:
+      'Amazon*Linux*2016*':
+       tag: CIS-6.2.5
+       function: root_is_only_uid_0_account
+       description: Ensure root is the only UID 0 account

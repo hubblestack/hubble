@@ -1,22 +1,19 @@
-from PyInstaller.utils.hooks import collect_submodules
+from PyInstaller.utils.hooks import collect_submodules, collect_data_files
 
 HIDDEN_IMPORTS = [
+    'yaml',
     'ssl',
     'objgraph',
-    'Cryptodome',
     'OpenSSL',
     'argparse',
     'base64',
-    'HTMLParser',
     'json',
     'logging',
     'requests',
     'functools',
-    'BaseHTTPServer',
     'argparse',
     'logging',
     'time',
-    'pprint',
     'os',
     'random',
     'signal',
@@ -26,7 +23,6 @@ HIDDEN_IMPORTS = [
     'boto3',
     'botocore',
     'imp',
-    'six',
     'inspect',
     'yaml',
     'traceback',
@@ -38,15 +34,27 @@ HIDDEN_IMPORTS = [
     'vulners',
     'sqlite3',
 
-    # fdg readfile.json tries to absolute import a module during lazy load. Too
-    # late for the packer to notice it should be packed in the binary.
-    # marking it here for "hidden import"
-    'hubblestack.utils.encoding',
-
-    # signign uses pycryptodome and pyopenssl and various other things
-    # make sure pyinstaller see this
-    'hubblestack.utils.signing',
+    'hubblestack',
+    'hubblestack.daemon',
+    'hubblestack.loader',
 ]
+
+LOADERS = [
+    'hubblestack',
+    'hubblestack.audit',
+    'hubblestack.comparators',
+    'hubblestack.fdg',
+    'hubblestack.files',
+    'hubblestack.fileserver',
+    'hubblestack.grains',
+    'hubblestack.matchers',
+    'hubblestack.modules',
+    'hubblestack.platform',
+    'hubblestack.returners',
+    'hubblestack.serializers',
+    'hubblestack.utils',
+]
+
 
 try:
     import hubblestack.pre_packaged_certificates
@@ -54,8 +62,14 @@ try:
 except ImportError:
     pass
 
-def _yield_all(HI):
-    for i in HI:
-        yield from collect_submodules(i)
+datas = list()
+binaries = list()
+hiddenimports = list(HIDDEN_IMPORTS)
 
-hiddenimports = list(_yield_all(HIDDEN_IMPORTS))
+for l in LOADERS:
+    datas.extend(collect_data_files(l, subdir='.', include_py_files=True))
+
+datas = list((path,mod) for path,mod in datas if path.endswith(('.py', '.pyc')))
+
+for i in HIDDEN_IMPORTS:
+    hiddenimports.extend( collect_submodules(i) )

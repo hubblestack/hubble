@@ -3,7 +3,7 @@
 # osquery needs to be built once. Resulting tar file can be used in hubblev4 Dockerfiles.
 # Before building hubble, build osquery using a Dockerfile in pkg/osquery/ directory.
 # To build this image: 1. copy previously built osquery_4hubble.tar to directory with this Dockerfile
-#                      2. docker build -t <image_name> --build-arg=HUBBLE_CHECKOUT=<tag or commit> .
+#                      2. docker build -t <image_name> --build-arg HUBBLE_CHECKOUT=<tag or commit> --build-arg HUBBLE_VERSION=<Hubble Version> .
 # The resulting image is ready to build and run pyinstaller on container start that should 
 # create hubble<version>-debian.tar.gz in the /data directory inside the container.
 # Mount /data volume into a directory on the host to access the package.
@@ -99,7 +99,7 @@ RUN apt-get install -y libbz2-dev libsqlite3-dev \
  && rm -rf /var/cache/apt
 
 # use pyenv
-ARG PYENV_VERSION=3.6.10
+ARG PYENV_VERSION=3.7.9
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
 ENV PYENV_ROOT=/opt/hubble/pyenv
 ENV PATH=$PYENV_ROOT/bin:$PATH
@@ -125,7 +125,7 @@ RUN /opt/osquery/osqueryi --version
 #use the following variables to choose the version of hubble
 ARG HUBBLE_CHECKOUT=v4.0.1
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
-ENV HUBBLE_VERSION=4.0.1
+ARG HUBBLE_VERSION=4.5.0
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_SRC_PATH=/hubble_src
@@ -141,5 +141,6 @@ WORKDIR /hubble_build
 
 COPY entrypoint.sh /entrypoint.sh
 ENV HUBBLE_CHECKOUT_ENV=$HUBBLE_CHECKOUT
+ENV HUBBLE_VERSION_ENV=$HUBBLE_VERSION
 ENV HUBBLE_GIT_URL_ENV=$HUBBLE_GIT_URL
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

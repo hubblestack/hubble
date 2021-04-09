@@ -1,13 +1,9 @@
-# Updates yaml with PDF Table of Contents.  Create new file with changes to most recent file labeled with CIS document version
-
 
 from glob import glob
 import os
 import PyPDF2
 import re
 import yaml
-
-from salt.ext.six.moves import input
 
 new_yaml = {}
 

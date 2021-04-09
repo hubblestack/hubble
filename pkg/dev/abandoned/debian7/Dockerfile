@@ -174,7 +174,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make install
 
 # use pyenv
-ARG PYENV_VERSION=3.6.10
+ARG PYENV_VERSION=3.7.9
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
 ENV PYENV_ROOT=/usr/local/pyenv
 ENV PATH=$PYENV_ROOT/bin:$PATH
@@ -198,7 +198,7 @@ RUN apt-get install -y ruby ruby-dev rubygems gcc make \
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=v4.0.0
+ARG HUBBLE_CHECKOUT=v4.5.0
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_VERSION=4.0.0
 ENV HUBBLE_ITERATION=1

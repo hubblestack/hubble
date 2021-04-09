@@ -68,7 +68,7 @@ import logging
 
 import fnmatch
 import re
-import salt.utils
+import hubblestack.utils
 
 log = logging.getLogger(__name__)
 
@@ -98,7 +98,7 @@ def audit(data_list, tags, labels, **kwargs):
 
     ret = {'Success': [], 'Failure': [], 'Controlled': []}
 
-    if __tags__ and not __salt__['config.get']('hubblestack:nova:enable_command_module',
+    if __tags__ and not __mods__['config.get']('hubblestack:nova:enable_command_module',
                                                False):
         ret['Errors'] = ['command module has not been explicitly enabled in '
                          'config. Please set hubblestack:nova:enable_command_module '
@@ -117,11 +117,11 @@ def audit(data_list, tags, labels, **kwargs):
                 for command_data in tag_data['commands']:
                     for command, command_args in command_data.items():
                         if 'shell' in command_args:
-                            cmd_ret = __salt__['cmd.run'](command,
+                            cmd_ret = __mods__['cmd.run'](command,
                                                           python_shell=True,
                                                           shell=command_args['shell'])
                         else:
-                            cmd_ret = __salt__['cmd.run'](command,
+                            cmd_ret = __mods__['cmd.run'](command,
                                                           python_shell=True)
 
                         found = False

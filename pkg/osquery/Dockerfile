@@ -9,14 +9,14 @@ FROM ubuntu:18.04
 #osquery build start
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/osquery/osquery.git
-ENV OSQUERY_SRC_VERSION=4.3.0
+ENV OSQUERY_SRC_VERSION=4.6.0
 
 #building osquery requires osquery-toolchain and cmake
 #make sure osquery-toolchain is compatible with the osquery version you want to build
 ENV OSQUERY_TOOLCHAIN_SRC_URL=https://github.com/osquery/osquery-toolchain/releases/download/1.1.0/osquery-toolchain-1.1.0-x86_64.tar.xz
 ENV OSQUERY_TOOLCHAIN_SRC_SHA256=9cc3980383e0626276d3762af60035f36ada5886389a1292774e89db013a2353
-ENV CMAKE_SRC_URL=https://github.com/Kitware/CMake/releases/download/v3.14.6/cmake-3.14.6-Linux-x86_64.tar.gz
-ENV CMAKE_SRC_SHA256=82e08e50ba921035efa82b859c74c5fbe27d3e49a4003020e3c77618a4e912cd
+ENV CMAKE_SRC_URL=https://cmake.org/files/v3.17/cmake-3.17.5-Linux-x86_64.tar.gz
+ENV CMAKE_SRC_SHA256=897142368b15a5693c999a7ed2187be20c1b41a68c3711379d32a33469bb29ba8
 #prepare the requirements for building
 RUN apt-get -y update && apt-get -y upgrade \
  && apt-get -y install --no-install-recommends wget ca-certificates xz-utils git python3 bison flex make \
@@ -47,7 +47,8 @@ USER root
 
 #collect all files and prepare them into a tar file
 RUN mkdir -p /opt/osquery/lenses /opt/osquery/yara /opt/osquery/extensions \
- && cp /home/"$OSQUERY_BUILD_USER"/osquery/build/osquery/osqueryd /opt/osquery \
+ && cp /home/"$OSQUERY_BUILD_USER"/osquery/build/osquery/osqueryd /opt/osquery/hubble_osqueryd \
+ && cp /home/"$OSQUERY_BUILD_USER"/osquery/build/osquery/osqueryd /opt/osquery/osqueryi \
  && cp -r /home/"$OSQUERY_BUILD_USER"/osquery/libraries/cmake/source/augeas/src/lenses /opt/osquery/ \
  && rm -rf /opt/osquery/lenses/tests/ \
  && chown -R root. /opt/osquery \

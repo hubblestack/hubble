@@ -15,6 +15,7 @@ chardet
 croniter
 cryptography
 daemon
+defusedxml
 futures
 gitdb2
 gitpython

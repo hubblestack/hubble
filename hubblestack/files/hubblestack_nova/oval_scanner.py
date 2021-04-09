@@ -45,14 +45,11 @@ from __future__ import absolute_import
 
 import defusedxml.ElementTree as etree
 from xml.etree.ElementTree import Element
-import re
 import json
 import datetime
 import requests
 import logging
 import hubblestack.utils.platform
-from pkg_resources import parse_version
-
 
 def __virtual__():
     return not hubblestack.utils.platform.is_windows()
@@ -194,38 +191,8 @@ def get_impact(local_ver, distro_name, **kargs):
     """Compare local package ver to vulnerability ver in rpm distros"""
     logging.debug('get_rpm_impact')
     impact = {}
-    if distro_name in ('centos', 'redhat'):
-        impact = parse_rpm_version(impact, local_ver, **kargs)
-    elif __mods__['pkg.version_cmp'](kargs['ver'], local_ver) > 0:
+    if __mods__['pkg.version_cmp'](kargs['ver'], local_ver) > 0:
         impact = create_impact(impact, local_ver, **kargs)
-    return impact
-
-
-def parse_rpm_version(impact, local_ver, **kargs):
-    """rpmdevtools ver comparison is broken, so manually compare versions"""
-    logging.debug('parse_rpm_version')
-    local_version = local_ver.split('.centos')[0]
-    if not re.search(":", local_version):
-        local_version = '0:' + local_version
-    split_local_ver = re.split(':+|.el', local_version)
-    split_impact_ver = re.split(':+|.el', kargs['ver'])
-    check_release_local = split_local_ver[2].split('_')[0]
-    check_release_impact = split_impact_ver[2].split('_')[0]
-    if (
-        not re.search('.el', local_ver, re.IGNORECASE)
-        and parse_version(split_local_ver[0]) <= parse_version(split_impact_ver[0])
-        and parse_version(split_local_ver[1]) < parse_version(split_impact_ver[1])
-    ) or (
-        parse_version(split_local_ver[0]) <= parse_version(split_impact_ver[0])
-        and parse_version(split_local_ver[1]) < parse_version(split_impact_ver[1])
-        and split_local_ver[2] <= split_impact_ver[2]
-    ) or (
-        parse_version(split_local_ver[0]) <= parse_version(split_impact_ver[0])
-        and parse_version(split_local_ver[1]) <= parse_version(split_impact_ver[1])
-        and split_local_ver[2] < split_impact_ver[2]
-    ):
-        if (check_release_local == check_release_impact):
-            impact = create_impact(impact, local_ver, **kargs)
     return impact
 
 

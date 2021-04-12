@@ -92,7 +92,7 @@ RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
  && rm -rf /var/cache/yum
 
 # things we may need to build a python
-RUN yum install -y bzip2-devel \
+RUN yum install -y bzip2-devel sqlite-devel \
  && yum clean all \
  && rm -rf /var/cache/yum
 

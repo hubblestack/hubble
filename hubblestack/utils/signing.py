@@ -661,10 +661,10 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
                     return pcrt_status
                 return _set_verify_cache(cache_key, pcrt_status)
             except TypeError as tee:
-                log_error('verify_signature(%s, %s) | sbp: %s | internal error using %s.verify() (%s): (2) %s',
+                log_info('verify_signature(%s, %s) | sbp: %s | internal error using %s.verify() (%s): (2) %s',
                         fname, sfname, _format_padding_bits_txt(salt_padding_bits), type(pubkey).__name__, stringify_cert_files(crt), tee)
             except InvalidSignature:
-                log_error('verify_signature(%s, %s) InvalidSignature | sbp: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
+                log_info('verify_signature(%s, %s) InvalidSignature | sbp: %s | sha256sum: "%s" | public cert fingerprint and requester: "%s"',
                         fname, sfname, _format_padding_bits_txt(salt_padding_bits), sha256sum, txt)
     status = STATUS.FAIL
     log_error('verify_signature(%s, %s) UnverifiedSignature | status: %s | sha256sum: "%s" | (4)',

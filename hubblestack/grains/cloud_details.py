@@ -17,14 +17,14 @@ def get_cloud_details():
     if not aws.get('cloud_details'):
         log.debug("Unable to fetch AWS details. Now trying to fetch Azure details")
         azure = _get_azure_details()
-        if azure.get('cloud_details'):
+        if not azure.get('cloud_details'):
             log.debug("Unable to fetch Azure details. Now trying to fetch GCP details")
             gcp = _get_gcp_details()
-            if gcp['cloud_details']:
+            if not gcp.get('cloud_details'):
+                log.debug("Unable to fetch details from AWS/Azure/GCP. Please verify the instance settings.")
+            else:
                 log.debug("Fetched instance metadata from GCP")
                 grains.update(gcp)
-            else:
-                log.debug("Unable to fetch details from AWS/Azure/GCP. Please verify the instance settings.")
         else:
             log.debug("Fetched instance metadata from Azure")
             grains.update(azure)

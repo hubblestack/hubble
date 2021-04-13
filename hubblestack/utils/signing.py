@@ -413,7 +413,6 @@ class X509AwareCertBucket:
                     # X509_V_ERR_CERT_HAS_EXPIRED                  10
                     # X509_V_ERR_CRL_HAS_EXPIRED                   12
                     status = STATUS.FAIL
-                # log at either log.error or log.critical according to the error code
                 if check_verif_timestamp(digest, dampener_limit=seconds_day):
                     log_level = log.splunk
                     if status == STATUS.FAIL:

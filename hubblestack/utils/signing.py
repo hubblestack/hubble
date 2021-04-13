@@ -366,7 +366,6 @@ class X509AwareCertBucket:
                 status = STATUS.VERIFIED
             except ossl.X509StoreContextError as exception_object:
                 status = STATUS.FAIL
-                pass
             if check_verif_timestamp(digest, dampener_limit=seconds_day):
                 log_level = log.splunk
                 if status == STATUS.FAIL:

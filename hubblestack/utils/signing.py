@@ -365,13 +365,12 @@ class X509AwareCertBucket:
                 self.trusted.append(digest)
                 status = STATUS.VERIFIED
             except ossl.X509StoreContextError as exception_object:
-                # log at either log.error or log.critical according to the error code
                 status = STATUS.FAIL
                 pass
             if check_verif_timestamp(digest, dampener_limit=seconds_day):
                 log_level = log.splunk
                 if status == STATUS.FAIL:
-                    log_level = log.critical
+                    log_level = log.error
                 elif status == STATUS.UNKNOWN:
                     log_level = log.error
             str_untrusted = stringify_cert_files(untrusted_crt)
@@ -394,7 +393,7 @@ class X509AwareCertBucket:
                 if check_verif_timestamp(digest, dampener_limit=seconds_day):
                     log_level = log.splunk
                     if status == STATUS.FAIL:
-                        log_level = log.critical
+                        log_level = log.error
                     elif status == STATUS.UNKNOWN:
                         log_level = log.error
                 str_public = stringify_cert_files(public_crt)
@@ -419,7 +418,7 @@ class X509AwareCertBucket:
                 if check_verif_timestamp(digest, dampener_limit=seconds_day):
                     log_level = log.splunk
                     if status == STATUS.FAIL:
-                        log_level = log.critical
+                        log_level = log.error
                     elif status == STATUS.UNKNOWN:
                         log_level = log.error
                 str_public = stringify_cert_files(public_crt)
@@ -605,7 +604,7 @@ def verify_signature(fname, sfname, public_crt=None, ca_crt=None, extra_crt=None
     """
 
     if check_verif_timestamp(fname):
-        log_error = log.critical
+        log_error = log.error
         log_info  = log.info
     else:
         log_error = log_info = log.debug
@@ -789,7 +788,7 @@ def verify_files(targets, mfname=None, sfname=None,
             status = STATUS.FAIL
         if check_verif_timestamp(digest):
             if status == STATUS.FAIL:
-                log_level = log.critical
+                log_level = log.error
             elif status == STATUS.UNKNOWN:
                 log_level = log.error
         # logs according to the STATUS of target file

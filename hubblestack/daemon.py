@@ -830,7 +830,7 @@ def setup_fips_mode():
     fips_mode_enable = __opts__.get('fips_mode', False)
 
     if not fips_mode_enable:
-        log.debug('FIPS mode not configured')
+        print('FIPS mode not configured')
         return
 
     if hubblestack.utils.platform.is_windows():
@@ -838,15 +838,11 @@ def setup_fips_mode():
         # As Python patch is different on Windows
         import os
         os.environ["ENABLE_FIPS"] = "1"
-        log.info('FIPS mode enabled')
+        print('FIPS mode enabled')
 
-    try:
-        import ssl
-        ssl.FIPS_mode_set(1)
-        log.debug('FIPS mode: {0}'.format(ssl.FIPS_mode()))
-        log.info('FIPS mode enabled')
-    except:
-        log.error('Could not set FIPS mode! Continuing...')
+    import ssl
+    ssl.FIPS_mode_set(1)
+    print('FIPS mode enabled')
 
 def parse_args(args=None):
     """

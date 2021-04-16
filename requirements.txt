@@ -11,6 +11,7 @@ chardet
 croniter
 # cryptography
 daemon
+defusedxml
 distro
 futures
 gitdb2

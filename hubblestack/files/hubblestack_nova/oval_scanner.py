@@ -49,6 +49,8 @@ import json
 import datetime
 import requests
 import logging
+import os
+from os import path
 import hubblestack.utils.platform
 
 def __virtual__():
@@ -70,7 +72,7 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 return ret
             local_pkgs = __mods__['pkg.list_pkgs']()
             if distro_name in ('debian'):
-                logging.info('Referencing source packages to binary packages. This could take awhile...'.format(distro_name.capitalize()))
+                logging.info('Referencing source packages to binary packages. This could take awhile...')
                 pkg_src_ref = build_pkg_src_ref(local_pkgs)
             else:
                 pkg_src_ref = {}
@@ -118,10 +120,11 @@ def write_report_to_file(opt_output_file, report):
     time = datetime.datetime.now()
     now = time.strftime("%Y-%m-%d@%H:%M:%S")
     logging.info('Writing CVE data to {0}'.format(opt_output_file))
-    if __mods__['file.file_exists'](opt_output_file):
-        logging.info('Found existing log, backing up...')
+    if path.exists(opt_output_file):
+        logging.info('Found existing log at {0}, backing up...'.format(opt_output_file))
         back_up = opt_output_file + now
-        __mods__['file.rename'](opt_output_file, back_up)
+        os.rename(opt_output_file, back_up)
+        logging.info('Backed up to {0}.'.format(back_up))
     with open(opt_output_file, 'w') as outfile:
         outfile.write(json.dumps(report, indent=2, sort_keys=True))
 
@@ -206,6 +209,7 @@ def create_impact(impact, local_ver, **kargs):
         'advisory': kargs['advisory'],
         'cve': kargs['cve']
     }
+    logging.debug('Impact is: {0}'.format(impact))
     return impact
 
 

@@ -30,7 +30,7 @@ follows:
 nova:
   'G@kernel:Linux and not G@osfinger:*CoreOS*':
     ## - cve.vulners <-- ensure other CVE scanners are not active
-    - cve.oval <-- assuming the yaml is oval.yaml in this example
+    - oval.yaml <-- assuming the yaml is oval.yaml in this example
 
 When run, the scanner will parse the source OVAL file into a readable
 dictionary, maps OVAL definitions directly to OVAL object and OVAL state

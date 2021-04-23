@@ -98,6 +98,9 @@ RUN yum install -y bzip2-devel sqlite-devel \
 
 
 # OpenSSL build steps
+# We are building Openssl-fips to enable FIPS mode through Python.
+# This build of openssl is a specialised build for FIPS only.
+# https://www.openssl.org/docs/fips.html
 RUN mkdir -p /usr/local/src/ /python_installation \
   && cd /usr/local/src/ \
   && curl -O https://www.openssl.org/source/openssl-fips-2.0.16.tar.gz \
@@ -116,6 +119,8 @@ RUN mkdir -p /usr/local/src/ /python_installation \
   && echo "/usr/local/ssl/lib" > /etc/ld.so.conf.d/openssl-1.0.2t.conf \
   && ldconfig -v
 
+# This patch in Python is to expose get/set methods in Python.
+# so that we can enable fips mode via openssl
 RUN yum -y install patch
 ADD python_patch_3.9.2.patch /python_installation/
 ARG PYENV_VERSION=3.9.2
@@ -142,10 +147,10 @@ RUN /opt/osquery/osqueryi --version
 ARG HUBBLE_CHECKOUT=fips
 ARG HUBBLE_VERSION=4.5.0
 ENV HUBBLE_ITERATION=1
-ENV HUBBLE_URL=https://github.com/goravsingal/hubble
+ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
 ENV HUBBLE_SUMMARY="Profile based on-demand auditing and monitoring tool"
-ARG HUBBLE_GIT_URL=https://github.com/goravsingal/hubble.git
+ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"

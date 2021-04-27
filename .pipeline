@@ -79,6 +79,7 @@ pipeline {
                     echo "---=: CONFIGURE TEST ENVIRONMENT :=---"
                     source /etc/profile.d/kersplat.sh
                     export PY_V="$TEST_PY_V"
+                    pyenv install $TEST_PY_V
                     pyenv local $TEST_PY_V
                     pyenv shell $TEST_PY_V
                     echo "pyenv version-name: $(pyenv version-name)"

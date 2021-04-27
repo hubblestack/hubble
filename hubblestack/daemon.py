@@ -460,6 +460,8 @@ def load_config(args=None):
     # it will default to a platform specific file (see get_config() and DEFAULT_OPTS in hs.config)
     __opts__ = hubblestack.config.get_config(parsed_args.get('configfile'))
 
+    # Configure FIPS mode
+    setup_fips_mode()
 
     # Loading default included config options and updating them in the main __opts__
     default_include_config_options = hubblestack.config.include_config(
@@ -819,6 +821,28 @@ def clear_selective_context():
     # Fixing bug: Package list is not refreshed
     # clear the package list so that pkg module can fetch it as fresh in next cycle
     __context__.pop('pkg.list_pkgs', None)
+
+def setup_fips_mode():
+    """
+    Setup FIPS mode
+    """
+    global __opts__
+    fips_mode_enable = __opts__.get('fips_mode', False)
+
+    if not fips_mode_enable:
+        # print('FIPS mode not configured')
+        return
+
+    if hubblestack.utils.platform.is_windows():
+        # On windows, we have to set an environment variable
+        # As Python patch is different on Windows
+        import os
+        os.environ["ENABLE_FIPS"] = "1"
+        # print('FIPS mode enabled')
+
+    import ssl
+    ssl.FIPS_mode_set(1)
+    # print('FIPS mode enabled')
 
 def parse_args(args=None):
     """

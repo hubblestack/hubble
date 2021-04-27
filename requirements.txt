@@ -9,7 +9,7 @@ certifi
 cffi
 chardet
 croniter
-cryptography
+# cryptography
 daemon
 distro
 futures

@@ -37,7 +37,6 @@ import hashlib
 import yaml
 import zlib
 import traceback
-from inspect import getfullargspec
 
 import hubblestack.utils.files
 import hubblestack.utils.platform
@@ -55,7 +54,6 @@ hubble_status = HubbleStatus(__name__, 'top', 'queries', 'osqueryd_monitor', 'os
 __virtualname__ = 'nebula'
 __RESULT_LOG_OFFSET__ = {}
 OSQUERYD_NEEDS_RESTART = False
-isFipsEnabled = True if 'usedforsecurity' in getfullargspec(hashlib.new).kwonlyargs else False
 
 def __virtual__():
     return __virtualname__
@@ -1235,12 +1233,9 @@ def _osqueryd_restart_required(hashfile, flagfile):
     try:
         with open(flagfile, "r") as open_file:
             file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
-            if isFipsEnabled:
-                hash_md5 = hashlib.md5(usedforsecurity=False)
-            else:
-                hash_md5 = hashlib.md5()
-            hash_md5.update(file_content.encode('ISO-8859-1'))
-            new_hash = hash_md5.hexdigest()
+            hash_sha256 = hashlib.sha256()
+            hash_sha256.update(file_content.encode('ISO-8859-1'))
+            new_hash = hash_sha256.hexdigest()
 
         if not os.path.isfile(hashfile):
             with open(hashfile, "w") as hfile:
@@ -1321,12 +1316,9 @@ def _restart_osqueryd(pidfile,
 
     with open(flagfile, "r") as open_file:
         file_content = open_file.read().lower().rstrip('\n\r ').strip('\n\r')
-        if isFipsEnabled:
-            hash_md5 = hashlib.md5(usedforsecurity=False)
-        else:
-            hash_md5 = hashlib.md5()
-        hash_md5.update(file_content.encode('ISO-8859-1'))
-        new_hash = hash_md5.hexdigest()
+        hash_sha256 = hashlib.sha256()
+        hash_sha256.update(file_content.encode('ISO-8859-1'))
+        new_hash = hash_sha256.hexdigest()
 
     with open(hashfile, "w") as hfile:
         hfile.write(new_hash)

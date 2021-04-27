@@ -96,8 +96,29 @@ RUN yum install -y bzip2-devel sqlite-devel \
  && yum clean all \
  && rm -rf /var/cache/yum
 
-# use pyenv
-ARG PYENV_VERSION=3.7.9
+
+# OpenSSL build steps
+RUN mkdir -p /usr/local/src/ /python_installation \
+  && cd /usr/local/src/ \
+  && curl -O https://www.openssl.org/source/openssl-fips-2.0.16.tar.gz \
+  && curl -O https://www.openssl.org/source/openssl-1.0.2t.tar.gz \
+  && tar -xvf openssl-fips-2.0.16.tar.gz \
+  && cd openssl-fips-2.0.16 \
+  && ./config \
+  && make install \
+  && cd ../ \
+  && tar -xvf openssl-1.0.2t.tar.gz \
+  && cd openssl-1.0.2t \
+  && ./config shared fips no-ssl2 no-ssl3 \
+  && make depend \
+  && make install \
+  && cd ../ && rm -rf openssl-fips-2.0.16.tar.gz ./openssl-fips-2.0.16 \
+  && echo "/usr/local/ssl/lib" > /etc/ld.so.conf.d/openssl-1.0.2t.conf \
+  && ldconfig -v
+
+RUN yum -y install patch
+ADD python_patch_3.9.2.patch /python_installation/
+ARG PYENV_VERSION=3.9.2
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
 ENV PYENV_ROOT=/opt/hubble/pyenv
 ENV PATH=$PYENV_ROOT/bin:$PATH
@@ -107,11 +128,8 @@ RUN umask 022 \
  && chmod 0755 /usr/bin/pyenv-installer \
  && /usr/bin/pyenv-installer \
  && eval "$(pyenv init -)" \
- && pyenv install $PYENV_VERSION \
+ && pyenv install --patch $PYENV_VERSION < /python_installation/python_patch_3.9.2.patch \
  && pyenv global $PYENV_VERSION
-
-RUN eval "$(pyenv init -)" \
- && pip -v install --upgrade pip
 
 #extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
 ARG OSQUERY_TAR_FILENAME=osquery_4hubble.tar
@@ -121,13 +139,13 @@ RUN /opt/osquery/osqueryi --version
 #pyinstaller start
 #commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 #use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=v4.0.0
+ARG HUBBLE_CHECKOUT=fips
 ARG HUBBLE_VERSION=4.5.0
 ENV HUBBLE_ITERATION=1
-ENV HUBBLE_URL=https://github.com/hubblestack/hubble
+ENV HUBBLE_URL=https://github.com/goravsingal/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
 ENV HUBBLE_SUMMARY="Profile based on-demand auditing and monitoring tool"
-ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
+ARG HUBBLE_GIT_URL=https://github.com/goravsingal/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"

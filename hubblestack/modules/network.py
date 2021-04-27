@@ -12,7 +12,6 @@ import re
 import socket
 import time
 from multiprocessing.pool import ThreadPool
-from inspect import getfullargspec
 
 # Import hubble libs
 import hubblestack.utils.decorators.path
@@ -22,7 +21,6 @@ from hubblestack.utils._compat import ipaddress
 from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
-isFipsEnabled = True if 'usedforsecurity' in getfullargspec(hashlib.new).kwonlyargs else False
 
 def __virtual__():
     """
@@ -1482,110 +1480,6 @@ def mod_hostname(hostname):
             )
 
     return True
-
-
-def connect(host, port=None, **kwargs):
-    """
-    Test connectivity to a host using a particular
-    port from the minion.
-
-    .. versionadded:: 2014.7.0
-
-    CLI Example:
-
-    .. code-block:: bash
-
-        salt '*' network.connect archlinux.org 80
-
-        salt '*' network.connect archlinux.org 80 timeout=3
-
-        salt '*' network.connect archlinux.org 80 timeout=3 family=ipv4
-
-        salt '*' network.connect google-public-dns-a.google.com port=53 proto=udp timeout=3
-    """
-
-    ret = {"result": None, "comment": ""}
-
-    if not host:
-        ret["result"] = False
-        ret["comment"] = "Required argument, host, is missing."
-        return ret
-
-    if not port:
-        ret["result"] = False
-        ret["comment"] = "Required argument, port, is missing."
-        return ret
-
-    proto = kwargs.get("proto", "tcp")
-    timeout = kwargs.get("timeout", 5)
-    family = kwargs.get("family", None)
-
-    if hubblestack.utils.validate.net.ipv4_addr(host) or hubblestack.utils.validate.net.ipv6_addr(
-        host
-    ):
-        address = host
-    else:
-        address = "{0}".format(__utils__["network.sanitize_host"](host))
-
-    try:
-        if proto == "udp":
-            __proto = socket.SOL_UDP
-        else:
-            __proto = socket.SOL_TCP
-            proto = "tcp"
-
-        if family:
-            if family == "ipv4":
-                __family = socket.AF_INET
-            elif family == "ipv6":
-                __family = socket.AF_INET6
-            else:
-                __family = 0
-        else:
-            __family = 0
-
-        (family, socktype, _proto, garbage, _address) = socket.getaddrinfo(
-            address, port, __family, 0, __proto
-        )[0]
-    except socket.gaierror:
-        ret["result"] = False
-        ret["comment"] = "Unable to resolve host {0} on {1} port {2}".format(
-            host, proto, port
-        )
-        return ret
-
-    try:
-        skt = socket.socket(family, socktype, _proto)
-        skt.settimeout(timeout)
-
-        if proto == "udp":
-            # Generate a random string of a
-            # decent size to test UDP connection
-            if isFipsEnabled:
-                md5h = hashlib.md5(usedforsecurity=False)
-            else:
-                md5h = hashlib.md5()
-            md5h.update(datetime.datetime.now().strftime("%s"))
-            msg = md5h.hexdigest()
-            skt.sendto(msg, _address)
-            recv, svr = skt.recvfrom(255)
-            skt.close()
-        else:
-            skt.connect(_address)
-            skt.shutdown(2)
-    except Exception as exc:  # pylint: disable=broad-except
-        ret["result"] = False
-        ret["comment"] = "Unable to connect to {0} ({1}) on {2} port {3}".format(
-            host, _address[0], proto, port
-        )
-        return ret
-
-    ret["result"] = True
-    ret["comment"] = "Successfully connected to {0} ({1}) on {2} port {3}".format(
-        host, _address[0], proto, port
-    )
-    return ret
-
 
 def is_private(ip_addr):
     """

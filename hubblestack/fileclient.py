@@ -218,7 +218,7 @@ class Client(object):
         # We want to make sure files start with this *directory*, use
         # '/' explicitly because the master (that's generating the
         # list of files) only runs on POSIX
-        if not path.endswith('/'):
+        if not hubblestack.utils.platform.is_windows() and not path.endswith('/'):
             path = path + '/'
 
         log.info(

@@ -132,10 +132,9 @@ RUN umask 022 \
  && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
  && chmod 0755 /usr/bin/pyenv-installer \
  && /usr/bin/pyenv-installer \
- && eval "$(pyenv init -)" \
+ && eval "$(pyenv init --path)" \
  && pyenv install --patch $PYENV_VERSION < /python_installation/python_patch_3.9.2.patch \
  && pyenv global $PYENV_VERSION
-
 #extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
 ARG OSQUERY_TAR_FILENAME=osquery_4hubble.tar
 ADD ${OSQUERY_TAR_FILENAME} /opt/osquery/

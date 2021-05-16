@@ -26,8 +26,7 @@ cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixe
 
 sed -i -e "s/'.*'/'$HUBBLE_VERSION_ENV'/g" /hubble_build/hubblestack/version.py
 
-eval "$(pyenv init -)"
-
+eval "$(pyenv init --path)"
 # locate some pyenv things
 pyenv_prefix="$(pyenv prefix)"
 python_binary="$(pyenv which python)"

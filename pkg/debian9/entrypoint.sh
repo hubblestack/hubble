@@ -9,22 +9,22 @@ fi
 
 set -x -e
 if [ ! -d "${HUBBLE_SRC_PATH}" ]
-then git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+then git clone "${HUBBLE_GIT_URL}" "${HUBBLE_SRC_PATH}"
 fi
 
 cd "${HUBBLE_SRC_PATH}"
-git checkout "${HUBBLE_CHECKOUT_ENV}"
+git checkout "${HUBBLE_CHECKOUT}"
 
-HUBBLE_VERSION_ENV="$( sed -e 's/^v//' -e 's/[_-]rc/rc/g' <<< "$HUBBLE_VERSION_ENV" )"
+HUBBLE_VERSION="$( sed -e 's/^v//' -e 's/[_-]rc/rc/g' <<< "$HUBBLE_VERSION" )"
 
 cp -rf "${HUBBLE_SRC_PATH}"/* /hubble_build
 rm -rf /hubble_build/.git
 
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.orig
-sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT_ENV}/g" -e "s/COMMIT_NOT_SET/$(cd ${HUBBLE_SRC_PATH}; git describe --long --always --tags)/g" /hubble_build/hubblestack/__init__.py
+sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" -e "s/COMMIT_NOT_SET/$(cd ${HUBBLE_SRC_PATH}; git describe --long --always --tags)/g" /hubble_build/hubblestack/__init__.py
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixed
 
-sed -i -e "s/'.*'/'$HUBBLE_VERSION_ENV'/g" /hubble_build/hubblestack/version.py
+sed -i -e "s/'.*'/'$HUBBLE_VERSION'/g" /hubble_build/hubblestack/version.py
 
 eval "$(pyenv init --path)"
 # locate some pyenv things
@@ -146,7 +146,7 @@ if [ "X$NO_TAR" = X1 ]; then
 fi 2>/dev/null
 
 # deb pkg start
-tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION_ENV}.tar.gz \
+tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz \
     --exclude opt/hubble/pyenv \
     /etc/hubble /opt/hubble /opt/osquery \
     /etc/profile.d/hubble-profile.sh \
@@ -154,17 +154,17 @@ tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION_ENV}.tar.gz \
     /var/log/hubble_osquery/backuplogs \
     2>&1 | tee /hubble_build/deb-pkg-start-tar.log
 
-PKG_STRUCT_DIR=/hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}
-mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}
-tar -xSzvvf /data/hubblestack-${HUBBLE_VERSION_ENV}.tar.gz -C $PKG_STRUCT_DIR
+PKG_STRUCT_DIR=/hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
+mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
+tar -xSzvvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C $PKG_STRUCT_DIR
 
 # also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
 if [ -d /data/opt ]
-then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}/opt/
+then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/opt/
 fi
 
 # symlink to have hubble binary in path
-cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}
+cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
 mkdir -p usr/bin
 ln -sf /opt/hubble/hubble usr/bin/hubble
 
@@ -176,7 +176,7 @@ fi
 # fpm start
 fpm -s dir -t deb \
     -n hubblestack \
-    -v ${HUBBLE_VERSION_ENV} \
+    -v ${HUBBLE_VERSION} \
     --iteration ${HUBBLE_ITERATION} \
     --url ${HUBBLE_URL} \
     --deb-no-default-config-files \
@@ -186,7 +186,7 @@ fpm -s dir -t deb \
     etc/hubble opt usr /var/log/hubble_osquery/backuplogs
 
 # edit to change iteration number, if necessary
-PKG_BASE_NAME=${HUBBLE_VERSION_ENV}-${HUBBLE_ITERATION}
+PKG_BASE_NAME=${HUBBLE_VERSION}-${HUBBLE_ITERATION}
 PKG_OUT_EXT=amd64.deb
 PKG_FIN_EXT=deb9.$PKG_OUT_EXT
 PKG_ONAME="hubblestack_${PKG_BASE_NAME}_$PKG_OUT_EXT"

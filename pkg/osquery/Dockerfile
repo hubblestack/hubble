@@ -6,46 +6,49 @@
 
 FROM ubuntu:18.04
 
-#osquery build start
+# osquery build start
 ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/osquery/osquery.git
-ENV OSQUERY_SRC_VERSION=4.6.0
+ENV OSQUERY_SRC_VERSION=4.7.0
 
-#building osquery requires osquery-toolchain and cmake
-#make sure osquery-toolchain is compatible with the osquery version you want to build
-ENV OSQUERY_TOOLCHAIN_SRC_URL=https://github.com/osquery/osquery-toolchain/releases/download/1.1.0/osquery-toolchain-1.1.0-x86_64.tar.xz
-ENV OSQUERY_TOOLCHAIN_SRC_SHA256=9cc3980383e0626276d3762af60035f36ada5886389a1292774e89db013a2353
-ENV CMAKE_SRC_URL=https://cmake.org/files/v3.17/cmake-3.17.5-Linux-x86_64.tar.gz
-ENV CMAKE_SRC_SHA256=897142368b15a5693c999a7ed2187be20c1b41a68c3711379d32a33469bb29ba8
-#prepare the requirements for building
+# prepare the requirements for building
 RUN apt-get -y update && apt-get -y upgrade \
  && apt-get -y install --no-install-recommends wget ca-certificates xz-utils git python3 bison flex make \
  && apt-get clean && rm -rf /var/lib/apt/lists/* \
  && useradd --shell /bin/bash --create-home --user-group "$OSQUERY_BUILD_USER"
 
-RUN wget -q "$OSQUERY_TOOLCHAIN_SRC_URL" -O osquery-toolchain-x86_64.tar.xz \
- && echo "$OSQUERY_TOOLCHAIN_SRC_SHA256 osquery-toolchain-x86_64.tar.xz" | sha256sum -c - \
- && tar xf osquery-toolchain-x86_64.tar.xz -C /usr/local \
- && wget -q "$CMAKE_SRC_URL" -O cmake-Linux-x86_64.tar.gz \
- && echo "$CMAKE_SRC_SHA256 cmake-Linux-x86_64.tar.gz" | sha256sum -c - \
- && tar xf cmake-Linux-x86_64.tar.gz -C /usr/local --strip 1 
+# building osquery requires osquery-toolchain and cmake
+# make sure osquery-toolchain is compatible with the osquery version you want to build
+# ARCH has the boring default of x86_64, but for arm we'd pick aarch64
+ARG ARCH=x86_64
+ENV OSQUERY_TOOLCHAIN_SRC_URL=https://github.com/osquery/osquery-toolchain/releases/download/1.1.0/osquery-toolchain-1.1.0-$ARCH.tar.xz
+ENV CMAKE_SRC_URL=https://github.com/Kitware/CMake/releases/download/v3.20.2/cmake-3.20.2-linux-$ARCH.tar.gz
+
+COPY $ARCH.sums /root
+
+RUN wget -q "$OSQUERY_TOOLCHAIN_SRC_URL"
+RUN wget -q "$CMAKE_SRC_URL"
+RUN sha256sum -c /root/$ARCH.sums
+RUN tar xf osquery-toolchain-*.tar.xz -C /usr/local
+RUN tar xf cmake-*.tar.gz -C /usr/local --strip 1
 
 USER $OSQUERY_BUILD_USER
 
+ENV OSQUERY_IGNORE_CMAKE_MAX_VERSION_CHECK=TRUE
 RUN cd /home/"$OSQUERY_BUILD_USER" \
  && git clone "$OSQUERY_GIT_URL" \
  && cd osquery/ \
  && git checkout "$OSQUERY_SRC_VERSION" \
  && mkdir build \
  && cd build \
- && cmake -DOSQUERY_TOOLCHAIN_SYSROOT=/usr/local/osquery-toolchain .. \
-#adjust j to number of cores available for building
- && cmake --build . -j4 \
+ && cmake -DOSQUERY_IGNORE_CMAKE_MAX_VERSION_CHECK=TRUE \
+          -DOSQUERY_TOOLCHAIN_SYSROOT=/usr/local/osquery-toolchain .. \
+ && cmake --build . -j`nproc` \
  && /usr/local/osquery-toolchain/usr/bin/strip osquery/osqueryd
 
 USER root
 
-#collect all files and prepare them into a tar file
+# collect all files and prepare them into a tar file
 RUN mkdir -p /opt/osquery/lenses /opt/osquery/yara /opt/osquery/extensions \
  && cp /home/"$OSQUERY_BUILD_USER"/osquery/build/osquery/osqueryd /opt/osquery/hubble_osqueryd \
  && cp /home/"$OSQUERY_BUILD_USER"/osquery/build/osquery/osqueryd /opt/osquery/osqueryi \
@@ -54,4 +57,5 @@ RUN mkdir -p /opt/osquery/lenses /opt/osquery/yara /opt/osquery/extensions \
  && chown -R root. /opt/osquery \
  && chmod -R 500 /opt/osquery/*
 
-CMD [ "/bin/bash", "-c", "cd /opt/osquery ; tar -cvf /data/${OSQUERY_TAR_FILENAME:-osquery_4hubble.tar} *" ]
+ENV ARCH=$ARCH
+CMD [ "/bin/bash", "-c", "cd /opt/osquery ; tar -cvf /data/${OSQUERY_TAR_FILENAME:-osquery_4hubble.$ARCH.tar} *" ]

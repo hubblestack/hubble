@@ -27,12 +27,6 @@ cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixe
 sed -i -e "s/'.*'/'$HUBBLE_VERSION'/g" /hubble_build/hubblestack/version.py
 
 eval "$(pyenv init --path)"
-# locate some pyenv things
-pyenv_prefix="$(pyenv prefix)"
-python_binary="$(pyenv which python)"
-while [ -L "$python_binary" ]
-do python_binary="$(readlink -f "$python_binary")"
-done
 
 # from now on, exit on error (rather than && every little thing)
 PS4=$'-------------=: '
@@ -86,7 +80,7 @@ pip freeze > /data/requirements.txt
 [ -f ${_HOOK_DIR:-./pkg}/hook-hubblestack.py ] || exit 1
 
 rm -rf build dist /opt/hubble/hubble-libs /hubble_build/hubble.spec
-export LD_LIBRARY_PATH=$pyenv_prefix/lib:/opt/hubble/lib:/opt/hubble-libs
+export LD_LIBRARY_PATH=$(pyenv prefix)/lib:/opt/hubble/lib:/opt/hubble-libs
 export LD_RUN_PATH=$LD_LIBRARY_PATH
 pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL:-INFO} \
     --additional-hooks-dir ${_HOOK_DIR:-./pkg} \

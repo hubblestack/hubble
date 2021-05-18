@@ -9,30 +9,24 @@ fi
 
 set -x -e
 if [ ! -d "${HUBBLE_SRC_PATH}" ]
-then git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+then git clone "${HUBBLE_GIT_URL}" "${HUBBLE_SRC_PATH}"
 fi
 
 cd "${HUBBLE_SRC_PATH}"
-git checkout "${HUBBLE_CHECKOUT_ENV}"
+git checkout "${HUBBLE_CHECKOUT}"
 
-HUBBLE_VERSION_ENV="$( sed -e 's/^v//' -e 's/[_-]rc/rc/g' <<< "$HUBBLE_VERSION_ENV" )"
+HUBBLE_VERSION="$( sed -e 's/^v//' -e 's/[_-]rc/rc/g' <<< "$HUBBLE_VERSION" )"
 
 cp -rf "${HUBBLE_SRC_PATH}"/* /hubble_build
 rm -rf /hubble_build/.git
 
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.orig
-sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT_ENV}/g" -e "s/COMMIT_NOT_SET/$(cd ${HUBBLE_SRC_PATH}; git describe --long --always --tags)/g" /hubble_build/hubblestack/__init__.py
+sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" -e "s/COMMIT_NOT_SET/$(cd ${HUBBLE_SRC_PATH}; git describe --long --always --tags)/g" /hubble_build/hubblestack/__init__.py
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixed
 
-sed -i -e "s/'.*'/'$HUBBLE_VERSION_ENV'/g" /hubble_build/hubblestack/version.py
+sed -i -e "s/'.*'/'$HUBBLE_VERSION'/g" /hubble_build/hubblestack/version.py
 
 eval "$(pyenv init --path)"
-# locate some pyenv things
-pyenv_prefix="$(pyenv prefix)"
-python_binary="$(pyenv which python)"
-while [ -L "$python_binary" ]
-do python_binary="$(readlink -f "$python_binary")"
-done
 
 # from now on, exit on error (rather than && every little thing)
 PS4=$'-------------=: '
@@ -86,7 +80,7 @@ pip freeze > /data/requirements.txt
 [ -f ${_HOOK_DIR:-./pkg}/hook-hubblestack.py ] || exit 1
 
 rm -rf build dist /opt/hubble/hubble-libs /hubble_build/hubble.spec
-export LD_LIBRARY_PATH=$pyenv_prefix/lib:/opt/hubble/lib:/opt/hubble-libs
+export LD_LIBRARY_PATH=$(pyenv prefix)/lib:/opt/hubble/lib:/opt/hubble-libs
 export LD_RUN_PATH=$LD_LIBRARY_PATH
 pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL:-INFO} \
     --additional-hooks-dir ${_HOOK_DIR:-./pkg} \
@@ -135,7 +129,7 @@ if [ -d /data/opt ]
 then cp -r /data/opt/* /opt
 fi
 
-PKG_FILE="/data/hubblestack-${HUBBLE_VERSION_ENV}-${HUBBLE_ITERATION}.coreos.tar.gz"
+PKG_FILE="/data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.coreos.tar.gz"
 
 tar -cSPvvzf "$PKG_FILE" \
     --exclude opt/hubble/pyenv \

@@ -167,18 +167,6 @@ if [ "X$NO_FPM" = X1 ]; then
     exit 0
 fi
 
-# fpm start
-fpm -s dir -t deb \
-    -n hubblestack \
-    -v ${HUBBLE_VERSION} \
-    --iteration ${HUBBLE_ITERATION} \
-    --url ${HUBBLE_URL} \
-    --deb-no-default-config-files \
-    --after-install /hubble_build/conf/afterinstall-systemd.sh \
-    --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
-    --before-remove /hubble_build/conf/beforeremove.sh \
-    etc/hubble opt usr /var/log/hubble_osquery/backuplogs
-
 # for whatever reason, packages normally don't use the $(uname -m) name
 # of the architecture, prefering misnomers like 'amd64' for 'x86_64'
 # ... strange, but:
@@ -188,11 +176,23 @@ case "${ARCH:-$(uname -m)}" in
 esac
 
 # edit to change iteration number, if necessary
-PKG_BASE_NAME=${HUBBLE_VERSION_ENV}-${HUBBLE_ITERATION}
+PKG_BASE_NAME=${HUBBLE_VERSION}-${HUBBLE_ITERATION}
 PKG_OUT_EXT=$PACKAGE_NAME_ARCH.deb
 PKG_FIN_EXT=deb10.$PKG_OUT_EXT
-PKG_ONAME="hubblestack_${PKG_BASE_NAME}_$PKG_OUT_EXT"
 PKG_FNAME="hubblestack-${PKG_BASE_NAME}.$PKG_FIN_EXT"
 
-cp -va "$PKG_ONAME" /data/"$PKG_FNAME"
-openssl dgst -sha256 /data/"$PKG_FNAME" > /data/"$PKG_FNAME".sha256
+# fpm start
+fpm -s dir -t deb \
+    -n hubblestack \
+    --package $PKG_FNAME --force \
+    -v ${HUBBLE_VERSION} \
+    --iteration ${HUBBLE_ITERATION} \
+    --url ${HUBBLE_URL} \
+    --deb-no-default-config-files \
+    --after-install /hubble_build/conf/afterinstall-systemd.sh \
+    --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
+    --before-remove /hubble_build/conf/beforeremove.sh \
+    etc/hubble opt usr /var/log/hubble_osquery/backuplogs
+
+cp -va $PKG_FNAME /data/$PKG_FNAME
+openssl dgst -sha256 /data/$PKG_FNAME > /data/$PKG_FNAME.sha256

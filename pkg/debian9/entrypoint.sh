@@ -184,7 +184,7 @@ PKG_FNAME="hubblestack-${PKG_BASE_NAME}.$PKG_FIN_EXT"
 # fpm start
 fpm -s dir -t deb \
     -n hubblestack \
-    --package $PKG_FNAME --force \
+    --package /data/$PKG_FNAME --force \
     -v ${HUBBLE_VERSION} \
     --iteration ${HUBBLE_ITERATION} \
     --url ${HUBBLE_URL} \
@@ -194,5 +194,4 @@ fpm -s dir -t deb \
     --before-remove /hubble_build/conf/beforeremove.sh \
     etc/hubble opt usr /var/log/hubble_osquery/backuplogs
 
-cp -va $PKG_FNAME /data/$PKG_FNAME
 openssl dgst -sha256 /data/$PKG_FNAME > /data/$PKG_FNAME.sha256

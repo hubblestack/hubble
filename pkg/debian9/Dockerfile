@@ -12,19 +12,22 @@
 FROM debian:9
 
 RUN apt-get update \
- && apt-get -y upgrade
+ && apt-get -y upgrade \
+ && apt-get clean \
+ && rm -rf /var/cache/apt
 
 # paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
 
 # install packages that should be needed for ligbit2 compilation and successful pyinstaller run
-RUN apt-get -y install git curl \
+RUN apt-get update \
+ && apt-get -y install git curl \
     python-dev libffi-dev libssl-dev libyaml-dev libssh2-1 libssh2-1-dev autoconf automake libtool \
     libxml2-dev libxslt1-dev python-cffi \
     zlib1g-dev cmake python-setuptools  \
     gcc wget python-pip openssl \
-    && apt-get clean \
-    && rm -rf /var/cache/apt
+ && apt-get clean \
+ && rm -rf /var/cache/apt
 
 # libcurl install start
 # install libcurl to avoid depending on host version

@@ -17,10 +17,10 @@ FROM debian:8
 RUN apt-get update \
  && apt-get -y upgrade
 
-#paths that hubble or hubble parts need in the package
+# paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
 
-#install packages that should be needed for ligbit2 compilation and successful pyinstaller run
+# install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN apt-get -y install git curl \
     python-dev libffi-dev libssl-dev libyaml-dev libssh2-1 libssh2-1-dev autoconf automake libtool \
     libxml2-dev libxslt1-dev zlib1g-dev cmake python-setuptools \
@@ -28,9 +28,9 @@ RUN apt-get -y install git curl \
  && apt-get clean \
  && rm -rf /var/cache/apt
 
-#libcurl install start
-#install libcurl to avoid depending on host version
-#requires autoconf libtool libssh2-devel zlib-devel autoconf
+# libcurl install start
+# install libcurl to avoid depending on host version
+# requires autoconf libtool libssh2-devel zlib-devel autoconf
 ENV LIBCURL_SRC_URL=https://github.com/curl/curl.git
 ENV LIBCURL_SRC_VERSION=curl-7_64_1
 ENV LIBCURL_TEMP=/tmp/libcurl

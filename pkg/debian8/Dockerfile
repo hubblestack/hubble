@@ -10,6 +10,9 @@
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 
 FROM debian:8
+# NOTE: we made the changes to allow aarch64 builds of debian8 packages, but
+# there's no upstream debian:8 docker builds available. Perhaps it's just not
+# realistic to get this working.
 
 RUN apt-get update \
  && apt-get -y upgrade
@@ -43,9 +46,9 @@ RUN mkdir -p "$LIBCURL_TEMP" \
  && make install \
  && rm -rf "$LIBCURL_TEMP"
 
-#git install start
-#install git so that git package won't be a package dependency
-#requires make git libcurl-devel autoconf zlib-devel gcc
+# git install start
+# install git so that git package won't be a package dependency
+# requires make git libcurl-devel autoconf zlib-devel gcc
 ENV GIT_SRC_URL=https://github.com/git/git.git
 ENV GIT_SRC_VERSION=v2.21.0
 ENV GITTEMP=/tmp/gittemp
@@ -63,16 +66,17 @@ RUN mkdir -p "$GITTEMP" \
  && make install \
  && rm -rf "$GITTEMP"
 
-#clean up of /opt/hubble
+# clean up of /opt/hubble
 RUN rm /opt/hubble/bin/curl* \
  && rm -rf /opt/hubble/include /opt/hubble/share
 
-#libgit2 install start
-#must precede pyinstaller requirements
-ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v0.26.5.tar.gz
-#it turns out github provided release files can change. so even though the code hopefully hasn't changed, the hash has.
-ENV LIBGIT2_SRC_SHA256=52e28a5166564bc4365a2e4112f5e5c6e334708dbf13596241b2fd34efc1b0a9
-ENV LIBGIT2_SRC_VERSION=0.26.5
+# libgit2 install start
+# must precede pyinstaller requirements
+ENV LIBGIT2_SRC_VERSION=1.1.0
+ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v${LIBGIT2_SRC_VERSION}.tar.gz
+# it turns out github provided release files can change. so even though the
+# code hopefully hasn't changed, the hash has.
+ENV LIBGIT2_SRC_SHA256=41a6d5d740fd608674c7db8685685f45535323e73e784062cf000a633d420d1e
 ENV LIBGIT2TEMP=/tmp/libgit2temp
 RUN mkdir -p "$LIBGIT2TEMP" \
  && cd "$LIBGIT2TEMP" \
@@ -86,10 +90,10 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make install \
  && rm -rf "$LIBGIT2TEMP"
 
-#fpm package making requirements start
+# fpm package making requirements start
 RUN apt-get install -y ruby ruby-dev rubygems gcc make \
  && gem install --no-ri --no-rdoc ffi --version 1.12.2 \
- && gem install --no-ri --no-rdoc fpm --version 1.11.0 \
+ && gem install --no-ri --no-rdoc fpm \
  && apt-get clean \
  && rm -rf /var/cache/apt
 
@@ -98,7 +102,7 @@ RUN apt-get install -y libbz2-dev libsqlite3-dev \
  && rm -rf /var/cache/apt
 
 # use pyenv
-ARG PYENV_VERSION=3.6.10
+ARG PYENV_VERSION=3.7.9
 ENV PYENV_INSTALLER_URL=https://raw.githubusercontent.com/pyenv/pyenv-installer/master/bin/pyenv-installer
 ENV PYENV_ROOT=/opt/hubble/pyenv
 ENV PATH=$PYENV_ROOT/bin:$PATH
@@ -114,15 +118,16 @@ RUN umask 022 \
 RUN eval "$(pyenv init --path)" \ 
  && pip -v install --upgrade pip
 
-#extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
-ARG OSQUERY_TAR_FILENAME=osquery_4hubble.tar
+# extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
+ARG ARCH=x86_64
+ARG OSQUERY_TAR_FILENAME=osquery_4hubble.$ARCH.tar
 ADD ${OSQUERY_TAR_FILENAME} /opt/osquery/
 RUN /opt/osquery/osqueryi --version
 
-#pyinstaller start
-#commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
-#use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=v4.0.0
+# pyinstaller start
+# commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
+# use the following variables to choose the version of hubble
+ARG HUBBLE_CHECKOUT=v4.5.0
 ARG HUBBLE_VERSION=4.5.0
 ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_ITERATION=1
@@ -139,7 +144,8 @@ VOLUME /data
 WORKDIR /hubble_build
 
 COPY entrypoint.sh /entrypoint.sh
-ENV HUBBLE_CHECKOUT_ENV=$HUBBLE_CHECKOUT
-ENV HUBBLE_VERSION_ENV=$HUBBLE_VERSION
-ENV HUBBLE_GIT_URL_ENV=$HUBBLE_GIT_URL
+ENV ARCH=$ARCH
+ENV HUBBLE_CHECKOUT=$HUBBLE_CHECKOUT
+ENV HUBBLE_VERSION=$HUBBLE_VERSION
+ENV HUBBLE_GIT_URL=$HUBBLE_GIT_URL
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

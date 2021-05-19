@@ -467,6 +467,12 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
 
     mod_dict_class = hubblestack.utils.odict.OrderedDict
 
+    def __del__(self):
+        # clear any possible circular refs
+        self.pack.clear()
+        self.missing_modules.clear()
+        self.loaded_modules.clear()
+
     def __init__(self,
                  module_dirs,
                  opts=None,

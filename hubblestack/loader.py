@@ -773,6 +773,7 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         '''
         Strip out of the opts any logger instance
         '''
+
         if '__grains__' not in self.pack:
             self.context_dict['grains'] = opts.get('grains', {})
             self.pack['__grains__'] = hubblestack.utils.context.NamespacedDictWrapper(self.context_dict, 'grains')
@@ -781,12 +782,7 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
             self.context_dict['pillar'] = opts.get('pillar', {})
             self.pack['__pillar__'] = hubblestack.utils.context.NamespacedDictWrapper(self.context_dict, 'pillar')
 
-        mod_opts = {}
-        for key, val in list(opts.items()):
-            if key == 'logger':
-                continue
-            mod_opts[key] = val
-        return mod_opts
+        return { k,v for k,v in opts.items() if k not in ('logger',) }
 
     def _iter_files(self, mod_name):
         '''

@@ -192,6 +192,7 @@ def modules(
         static_modules=static_modules,
     )
 
+    # XXX: this is the very definition of a circular ref
     ret.pack['__mods__'] = ret
 
     return ret

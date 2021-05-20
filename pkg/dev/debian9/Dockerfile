@@ -108,11 +108,11 @@ RUN umask 022 \
  && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
  && chmod 0755 /usr/bin/pyenv-installer \
  && /usr/bin/pyenv-installer \
- && eval "$(pyenv init -)" \
+ && eval "$(pyenv init --path)" \ 
  && pyenv install $PYENV_VERSION \
  && pyenv global $PYENV_VERSION
 
-RUN eval "$(pyenv init -)" \
+RUN eval "$(pyenv init --path)" \ 
  && pip -v install --upgrade pip
 
 #extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg

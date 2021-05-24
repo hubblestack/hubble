@@ -123,6 +123,10 @@ def audit(data_list, tags, labels, debug=False, **kwargs):
                 # getting the stats using salt
                 if os.path.exists(name):
                     salt_ret = __mods__['file.stats'](name)
+                    # re-setting the value of mode because when reading profiles, the value is
+                    # read as 0 and not 0000.
+                    if salt_ret.get('mode') == '0000':
+                        salt_ret['mode'] = '0'
                 else:
                     salt_ret = {}
                 if not salt_ret:

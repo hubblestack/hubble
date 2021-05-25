@@ -176,10 +176,10 @@ case "${ARCH:-$(uname -m)}" in
 esac
 
 # edit to change iteration number, if necessary
-PKG_BASE_NAME=${HUBBLE_VERSION}-${HUBBLE_ITERATION}
+PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
 PKG_OUT_EXT=$PACKAGE_NAME_ARCH.deb
 PKG_FIN_EXT=deb9.$PKG_OUT_EXT
-PKG_FNAME="hubblestack-${PKG_BASE_NAME}.$PKG_FIN_EXT"
+PKG_FNAME=${PKG_BASE_NAME}.$PKG_FIN_EXT
 
 # fpm start
 fpm -s dir -t deb \

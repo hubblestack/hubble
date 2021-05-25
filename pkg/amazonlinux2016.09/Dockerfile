@@ -4,14 +4,17 @@
 # Before building hubble, build osquery using a Dockerfile in pkg/osquery/ directory.
 # To build this image: 1. copy previously built osquery_4hubble.tar to directory with this Dockerfile
 #                      2. docker build -t <image_name> --build-arg HUBBLE_CHECKOUT=<tag or commit> --build-arg HUBBLE_VERSION=<Hubble Version> .
-# The resulting image is ready to build and run pyinstaller on container start that should 
+# The resulting image is ready to build and run pyinstaller on container start that should
 # create hubble<version>-al.tar.gz in the /data directory inside the container.
 # Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 
 FROM amazonlinux:2016.09
 
-RUN yum makecache fast && yum -y update
+RUN apt-get update \
+ && apt-get -y upgrade \
+ && apt-get clean \
+ && rm -rf /var/cache/apt
 
 #paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
@@ -106,11 +109,11 @@ RUN umask 022 \
  && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
  && chmod 0755 /usr/bin/pyenv-installer \
  && /usr/bin/pyenv-installer \
- && eval "$(pyenv init --path)" \ 
+ && eval "$(pyenv init --path)" \
  && pyenv install $PYENV_VERSION \
  && pyenv global $PYENV_VERSION
 
-RUN eval "$(pyenv init --path)" \ 
+RUN eval "$(pyenv init --path)" \
  && pip -v install --upgrade pip
 
 #extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
@@ -140,7 +143,7 @@ VOLUME /data
 WORKDIR /hubble_build
 
 COPY entrypoint.sh /entrypoint.sh
-ENV HUBBLE_CHECKOUT_ENV=$HUBBLE_CHECKOUT
-ENV HUBBLE_VERSION_ENV=$HUBBLE_VERSION
-ENV HUBBLE_GIT_URL_ENV=$HUBBLE_GIT_URL
+ENV HUBBLE_CHECKOUT=$HUBBLE_CHECKOUT
+ENV HUBBLE_VERSION=$HUBBLE_VERSION
+ENV HUBBLE_GIT_URL=$HUBBLE_GIT_URL
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

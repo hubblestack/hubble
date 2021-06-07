@@ -6,10 +6,13 @@ repos:
   - id: check-yaml
   - id: end-of-file-fixer
   - id: trailing-whitespace
+  - id: mixed-line-ending
+  - id: check-merge-conflict
 - repo: https://github.com/psf/black
   rev: 20.8b1
   hooks:
   - id: black
+    args: ['--line-length', '119']
 - repo: https://github.com/pre-commit/mirrors-pylint
   rev: 'v2.6.0'
   hooks:

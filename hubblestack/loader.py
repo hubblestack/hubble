@@ -76,6 +76,35 @@ PY3_PRE_EXT = \
 # Will be set to pyximport module at runtime if cython is enabled in config.
 pyximport = None
 
+PRESERVABLE_OPTS = dict()
+
+def set_preservable_opts(opts):
+    '''
+    This is a scope hack designed to make sure any __opts__ we pass to the
+    modules can survive recycling of the lazy loaders.
+
+    To be sure, this is to protect an anti-pattern where the modules sometimes
+    store data for reporting in __opts__ (why did we start doing this?).
+
+    We call this from hubblestack.daemon.refresh_grains.
+    '''
+
+    oid = id(opts)
+    if oid not in PRESERVABLE_OPTS:
+        log.debug('setting %d to be preservable opts', oid)
+        PRESERVABLE_OPTS[oid] = opts.copy()
+
+def get_preserved_opts(opts):
+    ''' part of a scope hack, see: set_preservable_opts
+        we call this from __prep_mod_opts to invoke the scope hack
+    '''
+
+    oid = id(opts)
+    ret = PRESERVABLE_OPTS.get(oid)
+    if ret:
+        log.debug('preserved opts found (%d)', oid)
+    return ret
+
 def _module_dirs(
         opts,
         ext_type,
@@ -468,7 +497,7 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
     mod_dict_class = hubblestack.utils.odict.OrderedDict
 
     def __del__(self):
-        # clear any possible circular refs
+        log.debug('clearing possible memory leaks by emptying pack, missing_modules and loaded_modules dicts')
         self.pack.clear()
         self.missing_modules.clear()
         self.loaded_modules.clear()
@@ -789,7 +818,15 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
             self.context_dict['pillar'] = opts.get('pillar', {})
             self.pack['__pillar__'] = hubblestack.utils.context.NamespacedDictWrapper(self.context_dict, 'pillar')
 
-        return { k,v for k,v in opts.items() if k not in ('logger',) }
+        ret = opts.copy()
+        for item in ('logger',):
+            if item in ret:
+                del ret[item]
+        po = get_preserved_opts(opts)
+        if po is not None:
+            po.update(ret)
+            return po
+        return ret
 
     def _iter_files(self, mod_name):
         '''

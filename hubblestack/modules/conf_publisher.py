@@ -2,6 +2,7 @@
 """
 Module to send config options to splunk
 """
+import os
 import logging
 import copy
 import hubblestack.log

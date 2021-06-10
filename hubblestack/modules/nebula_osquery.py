@@ -108,7 +108,8 @@ def queries(query_group,
         query_file = [query_file]
 
     # 'POP' is for tracking persistent opts protection
-    log.debug('POP adding nebula_queries to __opts__ (id=%d)', id(__opts__))
+    if os.environ.get('NOISY_POP_DEBUG'):
+        log.error('POP adding nebula_queries to __opts__ (id=%d)', id(__opts__))
 
     query_data = _get_query_data(query_file)
     __opts__['nebula_queries'] = query_data

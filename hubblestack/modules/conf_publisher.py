@@ -49,7 +49,8 @@ def publish(report_directly_to_splunk=True, remove_dots=True, *args):
                 opts_to_log[arg] = __opts__[arg]
 
     # 'POP' is for tracking persistent opts protection
-    log.debug('POP config_publish (id=%d)', id(__opts__))
+    if os.environ.get('NOISY_POP_DEBUG'):
+        log.error('POP config_publish (id=%d)', id(__opts__))
 
     filtered_conf = hubblestack.log.filter_logs(opts_to_log, remove_dots=remove_dots)
 

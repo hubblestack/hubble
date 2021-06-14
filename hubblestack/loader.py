@@ -221,7 +221,9 @@ def modules(
         static_modules=static_modules,
     )
 
-    # XXX: this is the very definition of a circular ref
+    # this is the very definition of a circular ref...  we added a destructor
+    # to deal with this, although the newest pythons periodically detect
+    # detached circular ref items during garbage collection.
     ret.pack['__mods__'] = ret
 
     return ret

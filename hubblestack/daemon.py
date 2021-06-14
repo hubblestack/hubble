@@ -697,8 +697,19 @@ def refresh_grains(initial=False):
     global __returners__
     global __context__
 
+    # 'POP' is for tracking persistent opts protection
+    if os.environ.get('NOISY_POP_DEBUG'):
+        log.error('POP refreshing grains (id=%d)', id(__opts__))
+
     persist, old_grains = {}, {}
-    if not initial:
+    if initial:
+        if not os.environ.get('NO_PRESERVE_OPTS'):
+            if os.environ.get('NOISY_POP_DEBUG'):
+                log.error('POP setting __opts__ to preservable (id=%d)', id(__opts__))
+            hubblestack.loader.set_preservable_opts(__opts__)
+        elif os.environ.get('NOISY_POP_DEBUG'):
+            log.error('POP we are not attemting to protect __opts__ from lazyloader reloads')
+    else:
         old_grains = copy.deepcopy(__grains__)
         for grain in __opts__.get('grains_persist', []):
             if grain in __grains__:

@@ -21,7 +21,6 @@ jobs:
           which pip
           python --version
           pip --version
-          bash mk-requires.sh
           python -m pip install --upgrade pip
           python -m pip install --upgrade pytest
           bash mk-requires.sh

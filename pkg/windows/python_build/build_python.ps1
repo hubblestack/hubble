@@ -17,7 +17,7 @@ Write-Host ('Downloading python...')
 Invoke-WebRequest -Uri https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tar.xz -OutFile 'C:\python_dev\Python-3.9.2.tar.xz'
 
 Write-Host ('Installing Choco...')
-iex ((New-Object System.Net.WebClient).DownloadString("https://chocolatey.org/install.ps1")); \
+iex ((New-Object System.Net.WebClient).DownloadString("https://chocolatey.org/install.ps1"));
 
 choco install git 7zip.install patch -y;
 cd C:\python_dev

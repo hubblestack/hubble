@@ -1,5 +1,9 @@
-New-Item -ItemType directory -Path C:\python_dev
-New-Item -ItemType directory -Path C:\buildtools
+if (!(Test-Path 'C:\python_dev')) {
+  New-Item 'C:\python_dev' -ItemType Directory
+}
+if (!(Test-Path 'C:\buildtools')) {
+  New-Item 'C:\buildtools' -ItemType Directory
+}
 Copy-Item 'build.bat' -Destination 'C:\python_dev\build.bat' -Force
 Copy-Item 'fips_python.patch' -Destination 'C:\python_dev\fips_python.patch' -Force
 

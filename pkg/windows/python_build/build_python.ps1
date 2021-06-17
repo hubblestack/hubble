@@ -1,5 +1,9 @@
-New-Item -ItemType directory -Path C:\python_dev
-New-Item -ItemType directory -Path C:\buildtools
+if (!(Test-Path 'C:\python_dev')) {
+  New-Item 'C:\python_dev' -ItemType Directory
+}
+if (!(Test-Path 'C:\buildtools')) {
+  New-Item 'C:\buildtools' -ItemType Directory
+}
 Copy-Item 'build.bat' -Destination 'C:\python_dev\build.bat' -Force
 Copy-Item 'fips_python.patch' -Destination 'C:\python_dev\fips_python.patch' -Force
 
@@ -17,7 +21,7 @@ Write-Host ('Downloading python...')
 Invoke-WebRequest -Uri https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tar.xz -OutFile 'C:\python_dev\Python-3.9.2.tar.xz'
 
 Write-Host ('Installing Choco...')
-iex ((New-Object System.Net.WebClient).DownloadString("https://chocolatey.org/install.ps1")); \
+iex ((New-Object System.Net.WebClient).DownloadString("https://chocolatey.org/install.ps1"));
 
 choco install git 7zip.install patch -y;
 cd C:\python_dev

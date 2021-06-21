@@ -839,6 +839,7 @@ def setup_fips_mode():
         import os
         os.environ["ENABLE_FIPS"] = "1"
         # print('FIPS mode enabled')
+        return
 
     import ssl
     ssl.FIPS_mode_set(1)

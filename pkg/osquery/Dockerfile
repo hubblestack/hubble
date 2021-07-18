@@ -10,6 +10,7 @@ FROM ubuntu:18.04
 RUN apt-get -y update && apt-get -y upgrade \
  && apt-get -y update && apt-get -y install --no-install-recommends \
     wget ca-certificates xz-utils git python3 bison flex make build-essential openssl libssl-dev \
+    ccache cppcheck \
  && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # osquery build start
@@ -18,6 +19,7 @@ ENV OSQUERY_BUILD_USER=osquerybuilder
 ENV OSQUERY_GIT_URL=https://github.com/osquery/osquery.git
 ENV OSQUERY_SRC_VERSION=4.8.0
 ENV CMAKE_SRC_VERSION=3.20.2
+ENV CMAKE_URL_SVER=3.20
 ENV OSQUERY_TOOLCHAIN_VERSION=1.1.0
 
 # building osquery requires osquery-toolchain and cmake
@@ -25,17 +27,20 @@ ENV OSQUERY_TOOLCHAIN_VERSION=1.1.0
 ENV OSQUERY_TOOLCHAIN_SRC_URL=https://github.com/osquery/osquery-toolchain/releases/download/$OSQUERY_TOOLCHAIN_VERSION/osquery-toolchain-$OSQUERY_TOOLCHAIN_VERSION-XARCHX.tar.xz
 ENV CMAKE_BNAME=cmake-$CMAKE_SRC_VERSION
 ENV CMAKE_FNAME=$CMAKE_BNAME.tar.gz
-ENV CMAKE_SRC_URL=https://cmake.org/files/$CMAKE_SRC_VERSION/$CMAKE_FNAME
+ENV CMAKE_SRC_URL=https://cmake.org/files/v$CMAKE_URL_SVER/$CMAKE_FNAME
 
 RUN useradd --shell /bin/bash --create-home --user-group "$OSQUERY_BUILD_USER"
 
 # buildx gives us "TARGETPLATFORM", but we need x86_64/aarch64 rather than linux/amd64 / linux/arm64
 # so we just use uname -m
 
-COPY aarch64.sums x86_64.sums /root
+COPY aarch64.sums x86_64.sums /root/
+
+WORKDIR /root
 
 RUN ARCH=$(uname -m) \
   ; OSQUERY_TOOLCHAIN_SRC_URL=$(echo $OSQUERY_TOOLCHAIN_SRC_URL | sed s/XARCHX/$ARCH/) \
+  ; set -x \
   ; wget -q "$CMAKE_SRC_URL" \
  && wget -q "$OSQUERY_TOOLCHAIN_SRC_URL" -O osquery-toolchain-$ARCH.tar.xz \
  && sha256sum -c /root/$ARCH.sums \
@@ -45,23 +50,29 @@ RUN ARCH=$(uname -m) \
  && rm $CMAKE_FNAME
 
 RUN cd $CMAKE_BNAME && ./bootstrap -- -DCMAKE_BUILD_TYPE:STRING=Release \
- && cd $CMAKE_BNAME && make \
- && cd $CMAKE_BNAME && make install
+ && make -j`nproc` \
+ && make install \
+ && make clean
 
 USER $OSQUERY_BUILD_USER
+WORKDIR /home/$OSQUERY_BUILD_USER
 
-ENV OSQUERY_IGNORE_CMAKE_MAX_VERSION_CHECK=TRUE
-
-RUN cd /home/"$OSQUERY_BUILD_USER" \
- && git clone "$OSQUERY_GIT_URL" \
+RUN git clone "$OSQUERY_GIT_URL" \
  && cd osquery/ \
- && git checkout "$OSQUERY_SRC_VERSION"
+ && git checkout "$OSQUERY_SRC_VERSION" \
+ && mkdir -vp build
 
-RUN mkdir -vp osquery/build \
- && cd osquery/build \
- && cmake -DOSQUERY_TOOLCHAIN_SYSROOT=/usr/local/osquery-toolchain .. \
- && cmake --build . -j`nproc` \
- && /usr/local/osquery-toolchain/usr/bin/strip osquery/osqueryd
+WORKDIR /home/$OSQUERY_BUILD_USER/osquery/build
+
+RUN cmake -DOSQUERY_IGNORE_CMAKE_MAX_VERSION_CHECK=TRUE \
+          -DOSQUERY_TOOLCHAIN_SYSROOT=/usr/local/osquery-toolchain \
+          -DOSQUERY_NO_DEBUG_SYMBOLS=FALSE \
+          -DOSQUERY_BUILD_TESTS=OFF \
+          -DOSQUERY_BUILD_ROOT_TESTS=OFF \
+          -DCPACK_GENERATOR=productbuild ..
+
+RUN cmake --build . -j`nproc`
+RUN /usr/local/osquery-toolchain/usr/bin/strip osquery/osqueryd
 
 USER root
 

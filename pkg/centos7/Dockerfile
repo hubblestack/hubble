@@ -4,7 +4,7 @@
 # Before building hubble, build osquery using a Dockerfile in pkg/osquery/ directory.
 # To build this image: 1. copy previously built osquery_4hubble.tar to directory with this Dockerfile
 #                      2. docker build -t <image_name> --build-arg HUBBLE_CHECKOUT=<tag or commit> --build-arg HUBBLE_VERSION=<Hubble Version> .
-# The resulting image is ready to build and run pyinstaller on container start that should 
+# The resulting image is ready to build and run pyinstaller on container start that should
 # create hubble<version>-centos7.tar.gz in the /data directory inside the container.
 # Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
@@ -106,43 +106,33 @@ RUN umask 022 \
  && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
  && chmod 0755 /usr/bin/pyenv-installer \
  && /usr/bin/pyenv-installer \
- && eval "$(pyenv init --path)" \ 
+ && eval "$(pyenv init --path)" \
  && pyenv install $PYENV_VERSION \
  && pyenv global $PYENV_VERSION
 
-RUN eval "$(pyenv init --path)" \ 
+RUN eval "$(pyenv init --path)" \
  && pip -v install --upgrade pip
-
-# extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
-ARG ARCH=x86_64
-ARG OSQUERY_TAR_FILENAME=osquery_4hubble.$ARCH.tar
-ADD ${OSQUERY_TAR_FILENAME} /opt/osquery/
-RUN /opt/osquery/osqueryi --version
 
 # pyinstaller start
 # commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 # use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=v4.0.0
+ARG HUBBLE_CHECKOUT=v4.5.0
 ARG HUBBLE_VERSION=4.5.0
+ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
 ENV HUBBLE_SUMMARY="Profile based on-demand auditing and monitoring tool"
-ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
-
-RUN mkdir /data
-VOLUME /data
-
-WORKDIR /hubble_build
-
-COPY entrypoint.sh /entrypoint.sh
-ENV ARCH=$ARCH
 ENV HUBBLE_CHECKOUT=$HUBBLE_CHECKOUT
 ENV HUBBLE_VERSION=$HUBBLE_VERSION
 ENV HUBBLE_GIT_URL=$HUBBLE_GIT_URL
+
+VOLUME /data
+WORKDIR /hubble_build
+COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

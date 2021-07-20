@@ -412,7 +412,9 @@ def _get_container_service(container):
 
     Try account_key, sas_token, and no auth in that order
     """
-    account_url = f'https://{container["account_name"]}.blob.core.windows.net'
+    # the account_url_suffix can be provided via config. Defaults to "blob.core.windows.net"
+    account_url_suffix = container.get("account_url_suffix", "blob.core.windows.net")
+    account_url = f'https://{container["account_name"]}.{account_url_suffix}'
     
     proxies = None
     if 'proxy' in container:

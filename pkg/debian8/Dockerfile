@@ -4,7 +4,7 @@
 # Before building hubble, build osquery using a Dockerfile in pkg/osquery/ directory.
 # To build this image: 1. copy previously built osquery_4hubble.tar to directory with this Dockerfile
 #                      2. docker build -t <image_name> --build-arg HUBBLE_CHECKOUT=<tag or commit> --build-arg HUBBLE_VERSION=<Hubble Version> .
-# The resulting image is ready to build and run pyinstaller on container start that should 
+# The resulting image is ready to build and run pyinstaller on container start that should
 # create hubble<version>-debian.tar.gz in the /data directory inside the container.
 # Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
@@ -15,16 +15,18 @@ FROM debian:8
 # realistic to get this working.
 
 RUN apt-get update \
- && apt-get -y upgrade
+ && apt-get -y upgrade \
+ && apt-get clean \
+ && rm -rf /var/cache/apt
 
 # paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
 
 # install packages that should be needed for ligbit2 compilation and successful pyinstaller run
-RUN apt-get -y install git curl \
+RUN apt-get update \
+ && apt-get -y install git curl \
     python-dev libffi-dev libssl-dev libyaml-dev libssh2-1 libssh2-1-dev autoconf automake libtool \
-    libxml2-dev libxslt1-dev zlib1g-dev cmake python-setuptools \
-    gcc wget openssl \
+    libxml2-dev libxslt1-dev zlib1g-dev cmake python-setuptools gcc wget openssl \
  && apt-get clean \
  && rm -rf /var/cache/apt
 
@@ -111,18 +113,12 @@ RUN umask 022 \
  && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
  && chmod 0755 /usr/bin/pyenv-installer \
  && /usr/bin/pyenv-installer \
- && eval "$(pyenv init --path)" \ 
+ && eval "$(pyenv init --path)" \
  && pyenv install $PYENV_VERSION \
  && pyenv global $PYENV_VERSION
 
-RUN eval "$(pyenv init --path)" \ 
+RUN eval "$(pyenv init --path)" \
  && pip -v install --upgrade pip
-
-# extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
-ARG ARCH=x86_64
-ARG OSQUERY_TAR_FILENAME=osquery_4hubble.$ARCH.tar
-ADD ${OSQUERY_TAR_FILENAME} /opt/osquery/
-RUN /opt/osquery/osqueryi --version
 
 # pyinstaller start
 # commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
@@ -137,15 +133,12 @@ ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
-
-RUN mkdir /data
-VOLUME /data
-
-WORKDIR /hubble_build
-
-COPY entrypoint.sh /entrypoint.sh
-ENV ARCH=$ARCH
 ENV HUBBLE_CHECKOUT=$HUBBLE_CHECKOUT
 ENV HUBBLE_VERSION=$HUBBLE_VERSION
 ENV HUBBLE_GIT_URL=$HUBBLE_GIT_URL
+
+RUN mkdir /data
+VOLUME /data
+WORKDIR /hubble_build
+COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

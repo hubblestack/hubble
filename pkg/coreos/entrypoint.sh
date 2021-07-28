@@ -12,6 +12,27 @@ if [ ! -d "${HUBBLE_SRC_PATH}" ]
 then git clone "${HUBBLE_GIT_URL}" "${HUBBLE_SRC_PATH}"
 fi
 
+OSQUERY_TAR_FILENAMES=(
+  /data/osquery_4hubble.$(uname -m).tar
+  /data/osquery_4hubble.tar
+)
+
+if [ ! -d /opt/osquery ]
+then mkdir -vp /opt/osquery
+fi
+
+for filename in "${OSQUERY_TAR_FILENAMES[@]}"; do
+    if [ -e "$filename" ]; then
+        tar -C /opt/osquery -xvvf "$filename"
+        break
+    fi
+done
+
+if [ ! -x /opt/osquery/osqueryi ]
+then echo please provide a working osquery tarfile; exit 1
+else /opt/osquery/osqueryi --version
+fi
+
 cd "${HUBBLE_SRC_PATH}"
 git checkout "${HUBBLE_CHECKOUT}"
 
@@ -129,7 +150,15 @@ if [ -d /data/opt ]
 then cp -r /data/opt/* /opt
 fi
 
-PKG_FILE="/data/hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}.coreos.tar.gz"
+case "${ARCH:-$(uname -m)}" in
+    aarch64) PACKAGE_NAME_ARCH=arm64 ;;
+    *) PACKAGE_NAME_ARCH=amd64 ;;
+esac
+
+# edit to change iteration number, if necessary
+PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
+PKG_FNAME=coreos.$PACKAGE_NAME_ARCH.tar.gz
+PKG_FILE="/data/$PKG_FNAME"
 
 tar -cSPvvzf "$PKG_FILE" \
     --exclude opt/hubble/pyenv \

@@ -9,30 +9,45 @@ fi
 
 set -x -e
 if [ ! -d "${HUBBLE_SRC_PATH}" ]
-then git clone "${HUBBLE_GIT_URL_ENV}" "${HUBBLE_SRC_PATH}"
+then git clone "${HUBBLE_GIT_URL}" "${HUBBLE_SRC_PATH}"
+fi
+
+OSQUERY_TAR_FILENAMES=(
+  /data/osquery_4hubble.$(uname -m).tar
+  /data/osquery_4hubble.tar
+)
+
+if [ ! -d /opt/osquery ]
+then mkdir -vp /opt/osquery
+fi
+
+for filename in "${OSQUERY_TAR_FILENAMES[@]}"; do
+    if [ -e "$filename" ]; then
+        tar -C /opt/osquery -xvvf "$filename"
+        break
+    fi
+done
+
+if [ ! -x /opt/osquery/osqueryi ]
+then echo please provide a working osquery tarfile; exit 1
+else /opt/osquery/osqueryi --version
 fi
 
 cd "${HUBBLE_SRC_PATH}"
-git checkout "${HUBBLE_CHECKOUT_ENV}"
+git checkout "${HUBBLE_CHECKOUT}"
 
-HUBBLE_VERSION_ENV="$( sed -e 's/^v//' -e 's/[_-]rc/rc/g' <<< "$HUBBLE_VERSION_ENV" )"
+HUBBLE_VERSION="$( sed -e 's/^v//' -e 's/[_-]rc/rc/g' <<< "$HUBBLE_VERSION" )"
 
 cp -rf "${HUBBLE_SRC_PATH}"/* /hubble_build
 rm -rf /hubble_build/.git
 
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.orig
-sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT_ENV}/g" -e "s/COMMIT_NOT_SET/$(cd ${HUBBLE_SRC_PATH}; git describe --long --always --tags)/g" /hubble_build/hubblestack/__init__.py
+sed -i -e "s/BRANCH_NOT_SET/${HUBBLE_CHECKOUT}/g" -e "s/COMMIT_NOT_SET/$(cd ${HUBBLE_SRC_PATH}; git describe --long --always --tags)/g" /hubble_build/hubblestack/__init__.py
 cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixed
 
-sed -i -e "s/'.*'/'$HUBBLE_VERSION_ENV'/g" /hubble_build/hubblestack/version.py
+sed -i -e "s/'.*'/'$HUBBLE_VERSION'/g" /hubble_build/hubblestack/version.py
 
 eval "$(pyenv init --path)"
-# locate some pyenv things
-pyenv_prefix="$(pyenv prefix)"
-python_binary="$(pyenv which python)"
-while [ -L "$python_binary" ]
-do python_binary="$(readlink -f "$python_binary")"
-done
 
 # from now on, exit on error (rather than && every little thing)
 PS4=$'-------------=: '
@@ -86,7 +101,7 @@ pip freeze > /data/requirements.txt
 [ -f ${_HOOK_DIR:-./pkg}/hook-hubblestack.py ] || exit 1
 
 rm -rf build dist /opt/hubble/hubble-libs /hubble_build/hubble.spec
-export LD_LIBRARY_PATH=$pyenv_prefix/lib:/opt/hubble/lib:/opt/hubble-libs
+export LD_LIBRARY_PATH=$(pyenv prefix)/lib:/opt/hubble/lib:/opt/hubble-libs
 export LD_RUN_PATH=$LD_LIBRARY_PATH
 pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL:-INFO} \
     --additional-hooks-dir ${_HOOK_DIR:-./pkg} \
@@ -146,7 +161,7 @@ if [ "X$NO_TAR" = X1 ]; then
 fi 2>/dev/null
 
 # deb pkg start
-tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION_ENV}.tar.gz \
+tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz \
     --exclude opt/hubble/pyenv \
     /etc/hubble /opt/hubble /opt/osquery \
     /etc/profile.d/hubble-profile.sh \
@@ -154,17 +169,17 @@ tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION_ENV}.tar.gz \
     /var/log/hubble_osquery/backuplogs \
     2>&1 | tee /hubble_build/deb-pkg-start-tar.log
 
-PKG_STRUCT_DIR=/hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}
-mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}
-tar -xSzvvf /data/hubblestack-${HUBBLE_VERSION_ENV}.tar.gz -C $PKG_STRUCT_DIR
+PKG_STRUCT_DIR=/hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
+mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
+tar -xSzvvf /data/hubblestack-${HUBBLE_VERSION}.tar.gz -C $PKG_STRUCT_DIR
 
 # also bring in anything from a /data/opt/ directory so we can bundle other executables if needed
 if [ -d /data/opt ]
-then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}/opt/
+then cp -r /data/opt/* /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}/opt/
 fi
 
 # symlink to have hubble binary in path
-cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION_ENV}
+cd /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
 mkdir -p usr/bin
 ln -sf /opt/hubble/hubble usr/bin/hubble
 
@@ -173,10 +188,25 @@ if [ "X$NO_FPM" = X1 ]; then
     exit 0
 fi
 
+# for whatever reason, packages normally don't use the $(uname -m) name
+# of the architecture, prefering misnomers like 'amd64' for 'x86_64'
+# ... strange, but:
+case "${ARCH:-$(uname -m)}" in
+    aarch64) PACKAGE_NAME_ARCH=arm64 ;;
+    *) PACKAGE_NAME_ARCH=amd64 ;;
+esac
+
+# edit to change iteration number, if necessary
+PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
+PKG_OUT_EXT=$PACKAGE_NAME_ARCH.deb
+PKG_FIN_EXT=deb10.$PKG_OUT_EXT
+PKG_FNAME=${PKG_BASE_NAME}.$PKG_FIN_EXT
+
 # fpm start
 fpm -s dir -t deb \
     -n hubblestack \
-    -v ${HUBBLE_VERSION_ENV} \
+    --package /data/$PKG_FNAME --force \
+    -v ${HUBBLE_VERSION} \
     --iteration ${HUBBLE_ITERATION} \
     --url ${HUBBLE_URL} \
     --deb-no-default-config-files \
@@ -185,12 +215,4 @@ fpm -s dir -t deb \
     --before-remove /hubble_build/conf/beforeremove.sh \
     etc/hubble opt usr /var/log/hubble_osquery/backuplogs
 
-# edit to change iteration number, if necessary
-PKG_BASE_NAME=${HUBBLE_VERSION_ENV}-${HUBBLE_ITERATION}
-PKG_OUT_EXT=amd64.deb
-PKG_FIN_EXT=deb10.$PKG_OUT_EXT
-PKG_ONAME="hubblestack_${PKG_BASE_NAME}_$PKG_OUT_EXT"
-PKG_FNAME="hubblestack-${PKG_BASE_NAME}.$PKG_FIN_EXT"
-
-cp -va "$PKG_ONAME" /data/"$PKG_FNAME"
-openssl dgst -sha256 /data/"$PKG_FNAME" > /data/"$PKG_FNAME".sha256
+openssl dgst -sha256 /data/$PKG_FNAME > /data/$PKG_FNAME.sha256

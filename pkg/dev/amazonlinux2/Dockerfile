@@ -5,22 +5,23 @@
 # To build this image: 1. copy previously built osquery_4hubble.tar to directory with this Dockerfile
 #                      2. docker build -t <image_name> --build-arg HUBBLE_CHECKOUT=<tag or commit> --build-arg HUBBLE_VERSION=<Hubble Version> .
 # The resulting image is ready to build and run pyinstaller on container start that should
-# create hubble<version>-al.tar.gz in the /data directory inside the container.
+# create hubble<version>-centos8.tar.gz in the /data directory inside the container.
 # Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 
-FROM amazonlinux:2016.09
+FROM amazonlinux:2
+
+RUN yum -y update && yum clean all && rm -rf /var/cache/yum
 
 # paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
 
 # install packages that should be needed for ligbit2 compilation and successful pyinstaller run
-RUN yum makecache fast \
- && yum -y update \
- && yum -y install git \
-    libffi-devel openssl-devel libffi libssh2-devel autoconf automake libtool \
+RUN yum -y install git \
+    libffi-devel openssl-devel libffi libssh-devel autoconf automake libtool \
     libxml2-devel libxslt-devel libjpeg-devel zlib-devel \
-    make cmake gcc python-devel python-setuptools wget openssl \
+    libssh2-devel \
+    make gcc python3-devel wget openssl \
     && yum clean all \
     && rm -rf /var/cache/yum
 
@@ -37,7 +38,13 @@ RUN mkdir -p "$LIBCURL_TEMP" \
  && cd curl \
  && git checkout "$LIBCURL_SRC_VERSION" \
  && ./buildconf \
- && ./configure --prefix=/opt/hubble --disable-ldap --without-nss --disable-manual --disable-gopher --disable-smtp --disable-smb --disable-imap --disable-pop3 --disable-tftp --disable-telnet --disable-dict --disable-ldaps --disable-ldap --disable-rtsp --with-libssh2 \
+ && ./configure --prefix=/opt/hubble --disable-ldap \
+        --without-nss --disable-manual --disable-gopher \
+        --disable-smtp --disable-smb --disable-imap \
+        --disable-pop3 --disable-tftp --disable-telnet \
+        --disable-dict --disable-ldaps --disable-ldap \
+        --disable-rtsp \
+        --with-libssh2 \
  && make \
  && make install \
  && rm -rf "$LIBCURL_TEMP"
@@ -66,12 +73,19 @@ RUN mkdir -p "$GITTEMP" \
 RUN rm /opt/hubble/bin/curl* \
  && rm -rf /opt/hubble/include /opt/hubble/share
 
+COPY aarch64.sums x86_64.sums /root/
+RUN ARCH=$(uname -m) VER=3.20.2 ; FNAME="cmake-$VER-linux-$ARCH.tar.gz" \
+  ; wget https://github.com/Kitware/CMake/releases/download/v$VER/$FNAME \
+ && sha256sum -c /root/$ARCH.sums \
+ && tar xf $FNAME -C /usr/local --strip 1 \
+ && rm $FNAME
+
 # libgit2 install start
 # must precede pyinstaller requirements
-ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v0.26.5.tar.gz
+ENV LIBGIT2_SRC_VERSION=1.1.0
+ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v$LIBGIT2_SRC_VERSION.tar.gz
 # it turns out github provided release files can change. so even though the code hopefully hasn't changed, the hash has.
-ENV LIBGIT2_SRC_SHA256=52e28a5166564bc4365a2e4112f5e5c6e334708dbf13596241b2fd34efc1b0a9
-ENV LIBGIT2_SRC_VERSION=0.26.5
+ENV LIBGIT2_SRC_SHA256=41a6d5d740fd608674c7db8685685f45535323e73e784062cf000a633d420d1e
 ENV LIBGIT2TEMP=/tmp/libgit2temp
 RUN mkdir -p "$LIBGIT2TEMP" \
  && cd "$LIBGIT2TEMP" \
@@ -84,17 +98,15 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make install \
  && rm -rf "$LIBGIT2TEMP"
 
-# fpm package making requirements start
-RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
- && gem install --no-ri --no-rdoc ffi --version 1.12.2 \
- && gem install --no-ri --no-rdoc fpm --version 1.11.0 \
+# things we may need to build python and get fpm working
+RUN yum -y update \
+ && yum install -y ruby ruby-devel rpm-build rubygems gcc make bzip2-devel sqlite-devel \
  && yum clean all \
  && rm -rf /var/cache/yum
 
-# things we may need to build a python
-RUN yum install -y bzip2-devel sqlite-devel \
- && yum clean all \
- && rm -rf /var/cache/yum
+# install fpm
+RUN gem install --no-ri --no-rdoc ffi --version 1.12.2 \
+ && gem install --no-ri --no-rdoc fpm --version 1.11
 
 # use pyenv
 ARG PYENV_VERSION=3.7.9
@@ -116,8 +128,8 @@ RUN eval "$(pyenv init --path)" \
 # pyinstaller start
 # commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 # use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=v4.5.0
-ARG HUBBLE_VERSION=4.5.0
+ARG HUBBLE_CHECKOUT=v4.5.1
+ARG HUBBLE_VERSION=4.5.1
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
@@ -128,11 +140,15 @@ ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
+
+RUN mkdir /data
+VOLUME /data
+
+WORKDIR /hubble_build
+
+COPY entrypoint.sh /entrypoint.sh
+ENV ARCH=$ARCH
 ENV HUBBLE_CHECKOUT=$HUBBLE_CHECKOUT
 ENV HUBBLE_VERSION=$HUBBLE_VERSION
 ENV HUBBLE_GIT_URL=$HUBBLE_GIT_URL
-
-VOLUME /data
-WORKDIR /hubble_build
-COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

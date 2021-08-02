@@ -4,7 +4,7 @@
 # Before building hubble, build osquery using a Dockerfile in pkg/osquery/ directory.
 # To build this image: 1. copy previously built osquery_4hubble.tar to directory with this Dockerfile
 #                      2. docker build -t <image_name> --build-arg HUBBLE_CHECKOUT=<tag or commit> --build-arg HUBBLE_VERSION=<Hubble Version> .
-# The resulting image is ready to build and run pyinstaller on container start that should 
+# The resulting image is ready to build and run pyinstaller on container start that should
 # create hubble<version>-centos7.tar.gz in the /data directory inside the container.
 # Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
@@ -13,10 +13,10 @@ FROM centos:7
 
 RUN yum makecache fast && yum -y update
 
-#paths that hubble or hubble parts need in the package
+# paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
 
-#install packages that should be needed for ligbit2 compilation and successful pyinstaller run
+# install packages that should be needed for ligbit2 compilation and successful pyinstaller run
 RUN yum -y install git \
     libffi-devel openssl-devel libffi libssh2-devel autoconf automake libtool \
     libxml2-devel libxslt-devel libjpeg-devel zlib-devel \
@@ -24,9 +24,9 @@ RUN yum -y install git \
     && yum clean all \
     && rm -rf /var/cache/yum
 
-#libcurl install start
-#install libcurl to avoid depending on host version
-#requires autoconf libtool libssh2-devel zlib-devel autoconf
+# libcurl install start
+# install libcurl to avoid depending on host version
+# requires autoconf libtool libssh2-devel zlib-devel autoconf
 ENV LIBCURL_SRC_URL=https://github.com/curl/curl.git
 ENV LIBCURL_SRC_VERSION=curl-7_64_1
 ENV LIBCURL_TEMP=/tmp/libcurl
@@ -42,9 +42,9 @@ RUN mkdir -p "$LIBCURL_TEMP" \
  && make install \
  && rm -rf "$LIBCURL_TEMP"
 
-#git install start
-#install git so that git package won't be a package dependency
-#requires make git libcurl-devel autoconf zlib-devel gcc
+# git install start
+# install git so that git package won't be a package dependency
+# requires make git libcurl-devel autoconf zlib-devel gcc
 ENV GIT_SRC_URL=https://github.com/git/git.git
 ENV GIT_SRC_VERSION=v2.21.0
 ENV GITTEMP=/tmp/gittemp
@@ -62,14 +62,14 @@ RUN mkdir -p "$GITTEMP" \
  && make install \
  && rm -rf "$GITTEMP"
 
-#clean up of /opt/hubble
+# clean up of /opt/hubble
 RUN rm /opt/hubble/bin/curl* \
  && rm -rf /opt/hubble/include /opt/hubble/share
 
-#libgit2 install start
-#must precede pyinstaller requirements
+# libgit2 install start
+# must precede pyinstaller requirements
 ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v0.26.5.tar.gz
-#it turns out github provided release files can change. so even though the code hopefully hasn't changed, the hash has.
+# it turns out github provided release files can change. so even though the code hopefully hasn't changed, the hash has.
 ENV LIBGIT2_SRC_SHA256=52e28a5166564bc4365a2e4112f5e5c6e334708dbf13596241b2fd34efc1b0a9
 ENV LIBGIT2_SRC_VERSION=0.26.5
 ENV LIBGIT2TEMP=/tmp/libgit2temp
@@ -84,7 +84,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && make install \
  && rm -rf "$LIBGIT2TEMP"
 
-#fpm package making requirements start
+# fpm package making requirements start
 RUN yum install -y ruby ruby-devel rpmbuild rpm-build rubygems gcc make \
  && gem install --no-ri --no-rdoc ffi --version 1.12.2 \
  && gem install --no-ri --no-rdoc fpm --version 1.11.0 \
@@ -106,41 +106,33 @@ RUN umask 022 \
  && curl -s -S -L "$PYENV_INSTALLER_URL" -o /usr/bin/pyenv-installer \
  && chmod 0755 /usr/bin/pyenv-installer \
  && /usr/bin/pyenv-installer \
- && eval "$(pyenv init --path)" \ 
+ && eval "$(pyenv init --path)" \
  && pyenv install $PYENV_VERSION \
  && pyenv global $PYENV_VERSION
 
-RUN eval "$(pyenv init --path)" \ 
+RUN eval "$(pyenv init --path)" \
  && pip -v install --upgrade pip
 
-#extract osquery files. optionally pass in osquery filename with OSQUERY_TAR_FILENAME build-arg
-ARG OSQUERY_TAR_FILENAME=osquery_4hubble.tar
-ADD ${OSQUERY_TAR_FILENAME} /opt/osquery/
-RUN /opt/osquery/osqueryi --version
-
-#pyinstaller start
-#commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
-#use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=v4.0.0
+# pyinstaller start
+# commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
+# use the following variables to choose the version of hubble
+ARG HUBBLE_CHECKOUT=v4.5.0
 ARG HUBBLE_VERSION=4.5.0
+ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
 ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
 ENV HUBBLE_SUMMARY="Profile based on-demand auditing and monitoring tool"
-ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
+ENV HUBBLE_CHECKOUT=$HUBBLE_CHECKOUT
+ENV HUBBLE_VERSION=$HUBBLE_VERSION
+ENV HUBBLE_GIT_URL=$HUBBLE_GIT_URL
 
-RUN mkdir /data
 VOLUME /data
-
 WORKDIR /hubble_build
-
 COPY entrypoint.sh /entrypoint.sh
-ENV HUBBLE_CHECKOUT_ENV=$HUBBLE_CHECKOUT
-ENV HUBBLE_VERSION_ENV=$HUBBLE_VERSION
-ENV HUBBLE_GIT_URL_ENV=$HUBBLE_GIT_URL
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

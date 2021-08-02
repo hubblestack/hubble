@@ -48,6 +48,12 @@ cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixe
 sed -i -e "s/'.*'/'$HUBBLE_VERSION'/g" /hubble_build/hubblestack/version.py
 
 eval "$(pyenv init --path)"
+# locate some pyenv things
+pyenv_prefix="$(pyenv prefix)"
+python_binary="$(pyenv which python)"
+while [ -L "$python_binary" ]
+do python_binary="$(readlink -f "$python_binary")"
+done
 
 # from now on, exit on error (rather than && every little thing)
 PS4=$'-------------=: '
@@ -101,7 +107,7 @@ pip freeze > /data/requirements.txt
 [ -f ${_HOOK_DIR:-./pkg}/hook-hubblestack.py ] || exit 1
 
 rm -rf build dist /opt/hubble/hubble-libs /hubble_build/hubble.spec
-export LD_LIBRARY_PATH=$(pyenv prefix)/lib:/opt/hubble/lib:/opt/hubble-libs
+export LD_LIBRARY_PATH=$pyenv_prefix/lib:/opt/hubble/lib:/opt/hubble-libs
 export LD_RUN_PATH=$LD_LIBRARY_PATH
 pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL:-INFO} \
     --additional-hooks-dir ${_HOOK_DIR:-./pkg} \
@@ -160,14 +166,14 @@ if [ "X$NO_TAR" = X1 ]; then
     exit 0
 fi 2>/dev/null
 
-# deb pkg start
+# rpm pkg start
 tar -cSPvvzf /data/hubblestack-${HUBBLE_VERSION}.tar.gz \
     --exclude opt/hubble/pyenv \
     /etc/hubble /opt/hubble /opt/osquery \
     /etc/profile.d/hubble-profile.sh \
     /usr/lib/systemd/system/hubble.service \
     /var/log/hubble_osquery/backuplogs \
-    2>&1 | tee /hubble_build/deb-pkg-start-tar.log
+    2>&1 | tee /hubble_build/rpm-pkg-start-tar.log
 
 PKG_STRUCT_DIR=/hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
 mkdir -p /hubble_build/debbuild/hubblestack-${HUBBLE_VERSION}
@@ -198,21 +204,24 @@ esac
 
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
-PKG_OUT_EXT=$PACKAGE_NAME_ARCH.deb
-PKG_FIN_EXT=deb9.$PKG_OUT_EXT
-PKG_FNAME=${PKG_BASE_NAME}.$PKG_FIN_EXT
+PKG_OUT_EXT=$PACKAGE_NAME_ARCH.rpm
+PKG_FIN_EXT=al2.$PKG_OUT_EXT
+PKG_FNAME="$PKG_BASE_NAME.$PKG_FIN_EXT"
 
 # fpm start
-fpm -s dir -t deb \
+# https://fedoraproject.org/wiki/Releases/FeatureBuildId
+fpm -s dir -t rpm \
     -n hubblestack \
     --package /data/$PKG_FNAME --force \
     -v ${HUBBLE_VERSION} \
     --iteration ${HUBBLE_ITERATION} \
     --url ${HUBBLE_URL} \
-    --deb-no-default-config-files \
+    --description "${HUBBLE_DESCRIPTION}" \
+    --rpm-summary "${HUBBLE_SUMMARY}" \
+    --rpm-rpmbuild-define "_build_id_links none" \
     --after-install /hubble_build/conf/afterinstall-systemd.sh \
     --after-upgrade /hubble_build/conf/afterupgrade-systemd.sh \
     --before-remove /hubble_build/conf/beforeremove.sh \
     etc/hubble opt usr /var/log/hubble_osquery/backuplogs
 
-openssl dgst -sha256 /data/$PKG_FNAME > /data/$PKG_FNAME.sha256
+openssl dgst -sha256 /data/"$PKG_FNAME" > /data/"$PKG_FNAME".sha256

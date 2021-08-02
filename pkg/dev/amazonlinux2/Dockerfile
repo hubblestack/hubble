@@ -140,15 +140,16 @@ ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
 ENV _INCLUDE_PATH=""
 ENV LD_LIBRARY_PATH=/opt/hubble/lib:/lib:/lib64:/usr/lib:/usr/lib64:/usr/local/lib:/usr/local/lib64
-
-RUN mkdir /data
-VOLUME /data
-
-WORKDIR /hubble_build
-
-COPY entrypoint.sh /entrypoint.sh
-ENV ARCH=$ARCH
 ENV HUBBLE_CHECKOUT=$HUBBLE_CHECKOUT
 ENV HUBBLE_VERSION=$HUBBLE_VERSION
 ENV HUBBLE_GIT_URL=$HUBBLE_GIT_URL
+
+# leaving this blank will cause the entrypoint to look for either osquery_4hubble.tar
+# or osquery_4_hubble.$(uname -m).tar
+ARG OSQUERY_TAR_FILENAME=
+ENV OSQUERY_TAR_FILENAME=$OSQUERY_TAR_FILENAME
+
+VOLUME /data
+WORKDIR /hubble_build
+COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/bin/bash", "/entrypoint.sh" ]

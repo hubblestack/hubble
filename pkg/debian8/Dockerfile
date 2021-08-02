@@ -26,9 +26,39 @@ RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osque
 RUN apt-get update \
  && apt-get -y install git curl \
     python-dev libffi-dev libssl-dev libyaml-dev libssh2-1 libssh2-1-dev autoconf automake libtool \
-    libxml2-dev libxslt1-dev zlib1g-dev cmake python-setuptools gcc wget openssl \
+    libxml2-dev libxslt1-dev zlib1g-dev cmake python-setuptools gcc wget build-essential \
  && apt-get clean \
  && rm -rf /var/cache/apt
+
+# modern pythons require a slightly newer openssl (they say 1.1.x, but 1.0.0t
+# from backports seems to work)
+RUN echo deb http://archive.debian.org/debian-archive/debian jessie-backports main \
+  > /etc/apt/sources.list.d/jessie-backports.list \
+ && apt-get -o Acquire::Check-Valid-Until=false update \
+ && apt-get install -t jessie-backports -y openssl \
+ && apt-get clean \
+ && rm -rf /var/cache/apt /etc/apt/sources.list.d/jessie-backports.list
+
+# we need (at least) cmake 3.5.x to build libgit2
+ENV CMAKE_SRC_VERSION=3.20.2
+ENV CMAKE_URL_SVER=3.20
+ENV CMAKE_BNAME=cmake-$CMAKE_SRC_VERSION
+ENV CMAKE_FNAME=$CMAKE_BNAME.tar.gz
+ENV CMAKE_SRC_URL=https://cmake.org/files/v$CMAKE_URL_SVER/$CMAKE_FNAME
+
+WORKDIR /root
+COPY aarch64.sums x86_64.sums /root/
+RUN ARCH=$(uname -m) \
+  ; wget -q "$CMAKE_SRC_URL" \
+ && sha256sum -c /root/$ARCH.sums \
+ && tar -xf $CMAKE_FNAME \
+ && rm $CMAKE_FNAME
+
+RUN cd $CMAKE_BNAME && ./bootstrap -- -DCMAKE_BUILD_TYPE:STRING=Release \
+ && make -j`nproc` \
+ && make install \
+ && make clean
+
 
 # libcurl install start
 # install libcurl to avoid depending on host version
@@ -95,6 +125,7 @@ RUN mkdir -p "$LIBGIT2TEMP" \
 # fpm package making requirements start
 RUN apt-get install -y ruby ruby-dev rubygems gcc make \
  && gem install --no-ri --no-rdoc ffi --version 1.12.2 \
+ && gem install --no-ri --no-rdoc git --version 1.6 \
  && gem install --no-ri --no-rdoc fpm \
  && apt-get clean \
  && rm -rf /var/cache/apt

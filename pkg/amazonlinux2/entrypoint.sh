@@ -12,6 +12,27 @@ if [ ! -d "${HUBBLE_SRC_PATH}" ]
 then git clone "${HUBBLE_GIT_URL}" "${HUBBLE_SRC_PATH}"
 fi
 
+OSQUERY_TAR_FILENAMES=(
+  /data/osquery_4hubble.$(uname -m).tar
+  /data/osquery_4hubble.tar
+)
+
+if [ ! -d /opt/osquery ]
+then mkdir -vp /opt/osquery
+fi
+
+for filename in "${OSQUERY_TAR_FILENAMES[@]}"; do
+    if [ -e "$filename" ]; then
+        tar -C /opt/osquery -xvvf "$filename"
+        break
+    fi
+done
+
+if [ ! -x /opt/osquery/osqueryi ]
+then echo please provide a working osquery tarfile; exit 1
+else /opt/osquery/osqueryi --version
+fi
+
 cd "${HUBBLE_SRC_PATH}"
 git checkout "${HUBBLE_CHECKOUT}"
 

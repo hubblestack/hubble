@@ -12,6 +12,27 @@ if [ ! -d "${HUBBLE_SRC_PATH}" ]
 then git clone "${HUBBLE_GIT_URL}" "${HUBBLE_SRC_PATH}"
 fi
 
+OSQUERY_TAR_FILENAMES=(
+  /data/osquery_4hubble.$(uname -m).tar
+  /data/osquery_4hubble.tar
+)
+
+if [ ! -d /opt/osquery ]
+then mkdir -vp /opt/osquery
+fi
+
+for filename in "${OSQUERY_TAR_FILENAMES[@]}"; do
+    if [ -e "$filename" ]; then
+        tar -C /opt/osquery -xvvf "$filename"
+        break
+    fi
+done
+
+if [ ! -x /opt/osquery/osqueryi ]
+then echo please provide a working osquery tarfile; exit 1
+else /opt/osquery/osqueryi --version
+fi
+
 cd "${HUBBLE_SRC_PATH}"
 git checkout "${HUBBLE_CHECKOUT}"
 
@@ -27,6 +48,12 @@ cp /hubble_build/hubblestack/__init__.py /hubble_build/hubblestack/__init__.fixe
 sed -i -e "s/'.*'/'$HUBBLE_VERSION'/g" /hubble_build/hubblestack/version.py
 
 eval "$(pyenv init --path)"
+# locate some pyenv things
+pyenv_prefix="$(pyenv prefix)"
+python_binary="$(pyenv which python)"
+while [ -L "$python_binary" ]
+do python_binary="$(readlink -f "$python_binary")"
+done
 
 # from now on, exit on error (rather than && every little thing)
 PS4=$'-------------=: '
@@ -80,7 +107,7 @@ pip freeze > /data/requirements.txt
 [ -f ${_HOOK_DIR:-./pkg}/hook-hubblestack.py ] || exit 1
 
 rm -rf build dist /opt/hubble/hubble-libs /hubble_build/hubble.spec
-export LD_LIBRARY_PATH=$(pyenv prefix)/lib:/opt/hubble/lib:/opt/hubble-libs
+export LD_LIBRARY_PATH=$pyenv_prefix/lib:/opt/hubble/lib:/opt/hubble-libs
 export LD_RUN_PATH=$LD_LIBRARY_PATH
 pyinstaller --onedir --noconfirm --log-level ${_BINARY_LOG_LEVEL:-INFO} \
     --additional-hooks-dir ${_HOOK_DIR:-./pkg} \
@@ -167,11 +194,19 @@ if [ "X$NO_FPM" = X1 ]; then
     exit 0
 fi
 
+# for whatever reason, packages normally don't use the $(uname -m) name
+# of the architecture, prefering misnomers like 'amd64' for 'x86_64'
+# ... strange, but:
+case "${ARCH:-$(uname -m)}" in
+    aarch64) PACKAGE_NAME_ARCH=arm64 ;;
+    *) PACKAGE_NAME_ARCH=amd64 ;;
+esac
+
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
-PKG_OUT_EXT=x86_64.rpm
-PKG_FIN_EXT=al1609.$PKG_OUT_EXT
-PKG_FNAME=$PKG_BASE_NAME.$PKG_FIN_EXT
+PKG_OUT_EXT=$PACKAGE_NAME_ARCH.rpm
+PKG_FIN_EXT=el7.$PKG_OUT_EXT
+PKG_FNAME="$PKG_BASE_NAME.$PKG_FIN_EXT"
 
 # fpm start
 fpm -s dir -t rpm \
@@ -187,4 +222,4 @@ fpm -s dir -t rpm \
     --before-remove /hubble_build/conf/beforeremove.sh \
     etc/init.d etc/hubble opt usr /var/log/hubble_osquery/backuplogs
 
-openssl dgst -sha256 /data/$PKG_FNAME > /data/$PKG_FNAME.sha256
+openssl dgst -sha256 /data/"$PKG_FNAME" > /data/"$PKG_FNAME".sha256

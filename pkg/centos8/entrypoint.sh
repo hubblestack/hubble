@@ -12,10 +12,10 @@ if [ ! -d "${HUBBLE_SRC_PATH}" ]
 then git clone "${HUBBLE_GIT_URL}" "${HUBBLE_SRC_PATH}"
 fi
 
-OSQUERY_TAR_FILENAMES=(
-  /data/osquery_4hubble.$(uname -m).tar
-  /data/osquery_4hubble.tar
-)
+if [ -n "$OSQUERY_TAR_FILENAME" ]
+then OSQUERY_TAR_FILENAMES=( $OSQUERY_TAR_FILENAME )
+else OSQUERY_TAR_FILENAMES=( /data/osquery_4hubble.$(uname -m).tar /data/osquery_4hubble.tar )
+fi
 
 if [ ! -d /opt/osquery ]
 then mkdir -vp /opt/osquery

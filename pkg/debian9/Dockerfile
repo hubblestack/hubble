@@ -135,6 +135,11 @@ ENV HUBBLE_CHECKOUT=$HUBBLE_CHECKOUT
 ENV HUBBLE_VERSION=$HUBBLE_VERSION
 ENV HUBBLE_GIT_URL=$HUBBLE_GIT_URL
 
+# leaving this blank will cause the entrypoint to look for either osquery_4hubble.tar
+# or osquery_4_hubble.$(uname -m).tar
+ARG OSQUERY_TAR_FILENAME=
+ENV OSQUERY_TAR_FILENAME=$OSQUERY_TAR_FILENAME
+
 VOLUME /data
 WORKDIR /hubble_build
 COPY entrypoint.sh /entrypoint.sh

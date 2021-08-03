@@ -17,7 +17,7 @@ RUN apt-get -y update && apt-get -y upgrade \
 ENV OSQUERY_BUILD_USER=osquerybuilder
 
 ENV OSQUERY_GIT_URL=https://github.com/osquery/osquery.git
-ENV OSQUERY_SRC_VERSION=4.8.0
+ENV OSQUERY_SRC_VERSION=4.9.0
 ENV CMAKE_SRC_VERSION=3.20.2
 ENV CMAKE_URL_SVER=3.20
 ENV OSQUERY_TOOLCHAIN_VERSION=1.1.0

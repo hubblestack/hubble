@@ -5,60 +5,25 @@
 # To build this image: 1. copy previously built osquery_4hubble.tar to directory with this Dockerfile
 #                      2. docker build -t <image_name> --build-arg HUBBLE_CHECKOUT=<tag or commit> --build-arg HUBBLE_VERSION=<Hubble Version> .
 # The resulting image is ready to build and run pyinstaller on container start that should
-# create hubble<version>-debian.tar.gz in the /data directory inside the container.
+# create hubble<version>-centos8.tar.gz in the /data directory inside the container.
 # Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 
-FROM debian:8
-# NOTE: we made the changes to allow aarch64 builds of debian8 packages, but
-# there's no upstream debian:8 docker builds available. Perhaps it's just not
-# realistic to get this working.
+FROM amazonlinux:2
 
-RUN apt-get update \
- && apt-get -y upgrade \
- && apt-get clean \
- && rm -rf /var/cache/apt
+RUN yum -y update && yum clean all && rm -rf /var/cache/yum
 
 # paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
 
 # install packages that should be needed for ligbit2 compilation and successful pyinstaller run
-RUN apt-get update \
- && apt-get -y install git curl \
-    python-dev libffi-dev libssl-dev libyaml-dev libssh2-1 libssh2-1-dev autoconf automake libtool \
-    libxml2-dev libxslt1-dev zlib1g-dev cmake python-setuptools gcc wget build-essential \
- && apt-get clean \
- && rm -rf /var/cache/apt
-
-# modern pythons require a slightly newer openssl (they say 1.1.x, but 1.0.0t
-# from backports seems to work)
-RUN echo deb http://archive.debian.org/debian-archive/debian jessie-backports main \
-  > /etc/apt/sources.list.d/jessie-backports.list \
- && apt-get -o Acquire::Check-Valid-Until=false update \
- && apt-get install -t jessie-backports -y openssl \
- && apt-get clean \
- && rm -rf /var/cache/apt /etc/apt/sources.list.d/jessie-backports.list
-
-# we need (at least) cmake 3.5.x to build libgit2
-ENV CMAKE_SRC_VERSION=3.20.2
-ENV CMAKE_URL_SVER=3.20
-ENV CMAKE_BNAME=cmake-$CMAKE_SRC_VERSION
-ENV CMAKE_FNAME=$CMAKE_BNAME.tar.gz
-ENV CMAKE_SRC_URL=https://cmake.org/files/v$CMAKE_URL_SVER/$CMAKE_FNAME
-
-WORKDIR /root
-COPY aarch64.sums x86_64.sums /root/
-RUN ARCH=$(uname -m) \
-  ; wget -q "$CMAKE_SRC_URL" \
- && sha256sum -c /root/$ARCH.sums \
- && tar -xf $CMAKE_FNAME \
- && rm $CMAKE_FNAME
-
-RUN cd $CMAKE_BNAME && ./bootstrap -- -DCMAKE_BUILD_TYPE:STRING=Release \
- && make -j`nproc` \
- && make install \
- && make clean
-
+RUN yum -y install git \
+    libffi-devel openssl-devel libffi libssh-devel autoconf automake libtool \
+    libxml2-devel libxslt-devel libjpeg-devel zlib-devel \
+    libssh2-devel \
+    make gcc python3-devel wget openssl \
+    && yum clean all \
+    && rm -rf /var/cache/yum
 
 # libcurl install start
 # install libcurl to avoid depending on host version
@@ -73,7 +38,13 @@ RUN mkdir -p "$LIBCURL_TEMP" \
  && cd curl \
  && git checkout "$LIBCURL_SRC_VERSION" \
  && ./buildconf \
- && ./configure --prefix=/opt/hubble --disable-ldap --without-nss --disable-manual --disable-gopher --disable-smtp --disable-smb --disable-imap --disable-pop3 --disable-tftp --disable-telnet --disable-dict --disable-ldaps --disable-ldap --disable-rtsp --with-libssh2 \
+ && ./configure --prefix=/opt/hubble --disable-ldap \
+        --without-nss --disable-manual --disable-gopher \
+        --disable-smtp --disable-smb --disable-imap \
+        --disable-pop3 --disable-tftp --disable-telnet \
+        --disable-dict --disable-ldaps --disable-ldap \
+        --disable-rtsp \
+        --with-libssh2 \
  && make \
  && make install \
  && rm -rf "$LIBCURL_TEMP"
@@ -102,12 +73,18 @@ RUN mkdir -p "$GITTEMP" \
 RUN rm /opt/hubble/bin/curl* \
  && rm -rf /opt/hubble/include /opt/hubble/share
 
+COPY aarch64.sums x86_64.sums /root/
+RUN ARCH=$(uname -m) VER=3.20.2 ; FNAME="cmake-$VER-linux-$ARCH.tar.gz" \
+  ; wget https://github.com/Kitware/CMake/releases/download/v$VER/$FNAME \
+ && sha256sum -c /root/$ARCH.sums \
+ && tar xf $FNAME -C /usr/local --strip 1 \
+ && rm $FNAME
+
 # libgit2 install start
 # must precede pyinstaller requirements
 ENV LIBGIT2_SRC_VERSION=1.1.0
-ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v${LIBGIT2_SRC_VERSION}.tar.gz
-# it turns out github provided release files can change. so even though the
-# code hopefully hasn't changed, the hash has.
+ENV LIBGIT2_SRC_URL=https://github.com/libgit2/libgit2/archive/v$LIBGIT2_SRC_VERSION.tar.gz
+# it turns out github provided release files can change. so even though the code hopefully hasn't changed, the hash has.
 ENV LIBGIT2_SRC_SHA256=41a6d5d740fd608674c7db8685685f45535323e73e784062cf000a633d420d1e
 ENV LIBGIT2TEMP=/tmp/libgit2temp
 RUN mkdir -p "$LIBGIT2TEMP" \
@@ -116,23 +93,20 @@ RUN mkdir -p "$LIBGIT2TEMP" \
  && echo "$LIBGIT2_SRC_SHA256  libgit2.tar.gz" | sha256sum -c - \
  && tar xzf libgit2.tar.gz \
  && cd libgit2-"$LIBGIT2_SRC_VERSION"/ \
- && export LIBGIT2=/usr/local/ \
- && cmake . -DCMAKE_INSTALL_PREFIX=$LIBGIT2 \
+ && cmake . -DCMAKE_INSTALL_PREFIX=/usr/local/ \
  && make \
  && make install \
  && rm -rf "$LIBGIT2TEMP"
 
-# fpm package making requirements start
-RUN apt-get install -y ruby ruby-dev rubygems gcc make \
- && gem install --no-ri --no-rdoc ffi --version 1.12.2 \
- && gem install --no-ri --no-rdoc git --version 1.6 \
- && gem install --no-ri --no-rdoc fpm \
- && apt-get clean \
- && rm -rf /var/cache/apt
+# things we may need to build python and get fpm working
+RUN yum -y update \
+ && yum install -y ruby ruby-devel rpm-build rubygems gcc make bzip2-devel sqlite-devel \
+ && yum clean all \
+ && rm -rf /var/cache/yum
 
-RUN apt-get install -y libbz2-dev libsqlite3-dev \
- && apt-get clean \
- && rm -rf /var/cache/apt
+# install fpm
+RUN gem install --no-ri --no-rdoc ffi --version 1.12.2 \
+ && gem install --no-ri --no-rdoc fpm --version 1.11
 
 # use pyenv
 ARG PYENV_VERSION=3.7.9
@@ -154,11 +128,13 @@ RUN eval "$(pyenv init --path)" \
 # pyinstaller start
 # commands specified for ENTRYPOINT and CMD are executed when the container is run, not when the image is built
 # use the following variables to choose the version of hubble
-ARG HUBBLE_CHECKOUT=v4.5.0
-ARG HUBBLE_VERSION=4.5.0
-ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
+ARG HUBBLE_CHECKOUT=v4.5.1
+ARG HUBBLE_VERSION=4.5.1
 ENV HUBBLE_ITERATION=1
 ENV HUBBLE_URL=https://github.com/hubblestack/hubble
+ENV HUBBLE_DESCRIPTION="Hubble is a modular, open-source, security & compliance auditing framework which is built in python, using SaltStack as a library."
+ENV HUBBLE_SUMMARY="Profile based on-demand auditing and monitoring tool"
+ARG HUBBLE_GIT_URL=https://github.com/hubblestack/hubble.git
 ENV HUBBLE_SRC_PATH=/hubble_src
 ENV _HOOK_DIR="./pkg/"
 ENV _BINARY_LOG_LEVEL="INFO"
@@ -168,6 +144,8 @@ ENV HUBBLE_CHECKOUT=$HUBBLE_CHECKOUT
 ENV HUBBLE_VERSION=$HUBBLE_VERSION
 ENV HUBBLE_GIT_URL=$HUBBLE_GIT_URL
 
+# leaving this blank will cause the entrypoint to look for either osquery_4hubble.tar
+# or osquery_4_hubble.$(uname -m).tar
 ARG OSQUERY_TAR_FILENAME=
 ENV OSQUERY_TAR_FILENAME=$OSQUERY_TAR_FILENAME
 

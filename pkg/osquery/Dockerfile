@@ -6,46 +6,77 @@
 
 FROM ubuntu:18.04
 
-#osquery build start
-ENV OSQUERY_BUILD_USER=osquerybuilder
-ENV OSQUERY_GIT_URL=https://github.com/osquery/osquery.git
-ENV OSQUERY_SRC_VERSION=4.6.0
-
-#building osquery requires osquery-toolchain and cmake
-#make sure osquery-toolchain is compatible with the osquery version you want to build
-ENV OSQUERY_TOOLCHAIN_SRC_URL=https://github.com/osquery/osquery-toolchain/releases/download/1.1.0/osquery-toolchain-1.1.0-x86_64.tar.xz
-ENV OSQUERY_TOOLCHAIN_SRC_SHA256=9cc3980383e0626276d3762af60035f36ada5886389a1292774e89db013a2353
-ENV CMAKE_SRC_URL=https://cmake.org/files/v3.17/cmake-3.17.5-Linux-x86_64.tar.gz
-ENV CMAKE_SRC_SHA256=897142368b15a5693c999a7ed2187be20c1b41a68c3711379d32a33469bb29ba8
-#prepare the requirements for building
+# prepare the requirements for building
 RUN apt-get -y update && apt-get -y upgrade \
- && apt-get -y install --no-install-recommends wget ca-certificates xz-utils git python3 bison flex make \
- && apt-get clean && rm -rf /var/lib/apt/lists/* \
- && useradd --shell /bin/bash --create-home --user-group "$OSQUERY_BUILD_USER"
+ && apt-get -y update && apt-get -y install --no-install-recommends \
+    wget ca-certificates xz-utils git python3 bison flex make build-essential openssl libssl-dev \
+    ccache cppcheck \
+ && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-RUN wget -q "$OSQUERY_TOOLCHAIN_SRC_URL" -O osquery-toolchain-x86_64.tar.xz \
- && echo "$OSQUERY_TOOLCHAIN_SRC_SHA256 osquery-toolchain-x86_64.tar.xz" | sha256sum -c - \
- && tar xf osquery-toolchain-x86_64.tar.xz -C /usr/local \
- && wget -q "$CMAKE_SRC_URL" -O cmake-Linux-x86_64.tar.gz \
- && echo "$CMAKE_SRC_SHA256 cmake-Linux-x86_64.tar.gz" | sha256sum -c - \
- && tar xf cmake-Linux-x86_64.tar.gz -C /usr/local --strip 1 
+# osquery build start
+ENV OSQUERY_BUILD_USER=osquerybuilder
+
+ENV OSQUERY_GIT_URL=https://github.com/osquery/osquery.git
+ENV OSQUERY_SRC_VERSION=4.9.0
+ENV CMAKE_SRC_VERSION=3.20.2
+ENV CMAKE_URL_SVER=3.20
+ENV OSQUERY_TOOLCHAIN_VERSION=1.1.0
+
+# building osquery requires osquery-toolchain and cmake
+# make sure osquery-toolchain is compatible with the osquery version you want to build
+ENV OSQUERY_TOOLCHAIN_SRC_URL=https://github.com/osquery/osquery-toolchain/releases/download/$OSQUERY_TOOLCHAIN_VERSION/osquery-toolchain-$OSQUERY_TOOLCHAIN_VERSION-XARCHX.tar.xz
+ENV CMAKE_BNAME=cmake-$CMAKE_SRC_VERSION
+ENV CMAKE_FNAME=$CMAKE_BNAME.tar.gz
+ENV CMAKE_SRC_URL=https://cmake.org/files/v$CMAKE_URL_SVER/$CMAKE_FNAME
+
+RUN useradd --shell /bin/bash --create-home --user-group "$OSQUERY_BUILD_USER"
+
+# buildx gives us "TARGETPLATFORM", but we need x86_64/aarch64 rather than linux/amd64 / linux/arm64
+# so we just use uname -m
+
+COPY aarch64.sums x86_64.sums /root/
+
+WORKDIR /root
+
+RUN ARCH=$(uname -m) \
+  ; OSQUERY_TOOLCHAIN_SRC_URL=$(echo $OSQUERY_TOOLCHAIN_SRC_URL | sed s/XARCHX/$ARCH/) \
+  ; set -x \
+  ; wget -q "$CMAKE_SRC_URL" \
+ && wget -q "$OSQUERY_TOOLCHAIN_SRC_URL" -O osquery-toolchain-$ARCH.tar.xz \
+ && sha256sum -c /root/$ARCH.sums \
+ && tar -xf osquery-toolchain-$ARCH.tar.xz -C /usr/local \
+ && rm osquery-toolchain-$ARCH.tar.xz \
+ && tar -xf $CMAKE_FNAME \
+ && rm $CMAKE_FNAME
+
+RUN cd $CMAKE_BNAME && ./bootstrap -- -DCMAKE_BUILD_TYPE:STRING=Release \
+ && make -j`nproc` \
+ && make install \
+ && make clean
 
 USER $OSQUERY_BUILD_USER
+WORKDIR /home/$OSQUERY_BUILD_USER
 
-RUN cd /home/"$OSQUERY_BUILD_USER" \
- && git clone "$OSQUERY_GIT_URL" \
+RUN git clone "$OSQUERY_GIT_URL" \
  && cd osquery/ \
  && git checkout "$OSQUERY_SRC_VERSION" \
- && mkdir build \
- && cd build \
- && cmake -DOSQUERY_TOOLCHAIN_SYSROOT=/usr/local/osquery-toolchain .. \
-#adjust j to number of cores available for building
- && cmake --build . -j4 \
- && /usr/local/osquery-toolchain/usr/bin/strip osquery/osqueryd
+ && mkdir -vp build
+
+WORKDIR /home/$OSQUERY_BUILD_USER/osquery/build
+
+RUN cmake -DOSQUERY_IGNORE_CMAKE_MAX_VERSION_CHECK=TRUE \
+          -DOSQUERY_TOOLCHAIN_SYSROOT=/usr/local/osquery-toolchain \
+          -DOSQUERY_NO_DEBUG_SYMBOLS=FALSE \
+          -DOSQUERY_BUILD_TESTS=OFF \
+          -DOSQUERY_BUILD_ROOT_TESTS=OFF \
+          -DCPACK_GENERATOR=productbuild ..
+
+RUN cmake --build . -j`nproc`
+RUN /usr/local/osquery-toolchain/usr/bin/strip osquery/osqueryd
 
 USER root
 
-#collect all files and prepare them into a tar file
+# collect all files and prepare them into a tar file
 RUN mkdir -p /opt/osquery/lenses /opt/osquery/yara /opt/osquery/extensions \
  && cp /home/"$OSQUERY_BUILD_USER"/osquery/build/osquery/osqueryd /opt/osquery/hubble_osqueryd \
  && cp /home/"$OSQUERY_BUILD_USER"/osquery/build/osquery/osqueryd /opt/osquery/osqueryi \
@@ -54,4 +85,7 @@ RUN mkdir -p /opt/osquery/lenses /opt/osquery/yara /opt/osquery/extensions \
  && chown -R root. /opt/osquery \
  && chmod -R 500 /opt/osquery/*
 
-CMD [ "/bin/bash", "-c", "cd /opt/osquery ; tar -cvf /data/${OSQUERY_TAR_FILENAME:-osquery_4hubble.tar} *" ]
+VOLUME /data
+WORKDIR /opt/osquery
+
+CMD [ "/bin/bash", "-c", "tar -cvf /data/${OSQUERY_TAR_FILENAME:-osquery_4hubble.$(uname -m).tar} *" ]

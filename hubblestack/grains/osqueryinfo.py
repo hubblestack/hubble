@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """ Handle metadata about osquery: return version and path as grains """
-import os
-import socket
+import psutil
+import subprocess
 
 import hubblestack.utils.path
 import hubblestack.modules.cmdmod
@@ -11,29 +11,30 @@ __mods__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet}
 
 def _osquery_host_state():
     """
-    Query host kernel process for NETLINK subscribers.
+    Query host NETLINK subscriber interface for Auditd subscriptions that would
+    hinder osquery data collection.
     """
-    grains = {}
-    sock = socket.socket(
-        socket.AF_NETLINK,
-        socket.SOCK_RAW,
-        socket.NETLINK_ROUTE
-    )
-    sock.settimeout(10)
-    sock.bind(os.getpid(), 0)
-    sock.sendto(
-        b"\x14\x00\x00\x00\x12\x00\x01\x03\x00\x00\x00\x00\xd5\x1b\x00\x00\x11\x00\x00\x00",
-        (0, 0)
-    )
-    try:
-        resp = sock.recvfrom(1024)
-        if resp:
-            grains["osquery_ready"] = True
-    except:
-        grains["osquery_ready"] = False
-    finally:
-        sock.close()
-    return grains
+    netlink_pids_raw = subprocess.check_output(["cat", "/proc/net/netlink"])
+    netlink_pids = [
+        line.split()[2] for line in netlink_pids_raw.strip().split(b'\n')[1:]
+    ]
+    for pid in netlink_pids:
+        pid = int(pid)
+        # PIDs 0 and 1 should be excluded as they are kernel processes
+        if pid in (0, 1):
+            continue
+        try:
+            proc = psutil.Process(pid)
+            # this is useless if there are any processes, other than auditd,
+            # that might prevent osquery from working.
+            # the osquery docs only mention auditd as a blocker
+            # but one cannot be too sure. but this makes everyone of them
+            # a suspect
+            if proc.name().rsplit('/', 1)[-1] == 'auditd' and proc.status() == psutil.STATUS_RUNNING:
+                return {"osquery_readiness": False}
+        except psutil.NoSuchProcess:
+            continue
+    return {"osquery_readiness": True}
 
 
 def osquerygrain():

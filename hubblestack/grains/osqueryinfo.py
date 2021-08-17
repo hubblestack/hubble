@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 """ Handle metadata about osquery: return version and path as grains """
 import psutil
-import subprocess
 
 import hubblestack.utils.path
 import hubblestack.modules.cmdmod
@@ -14,9 +13,11 @@ def _osquery_host_state():
     Query host NETLINK subscriber interface for Auditd subscriptions that would
     hinder osquery data collection.
     """
-    netlink_pids_raw = subprocess.check_output(["cat", "/proc/net/netlink"])
+    grains ={"osquery_ready": {"auditd_status": None, "auditd_present": False, "auditd_pid": -1}}
+    with open("/proc/net/netlink", "r") as fobj:
+        content = fobj.read()
     netlink_pids = [
-        line.split()[2] for line in netlink_pids_raw.strip().split(b'\n')[1:]
+        line.split()[2] for line in content.strip().split('\n')[1:]
     ]
     for pid in netlink_pids:
         pid = int(pid)
@@ -30,11 +31,13 @@ def _osquery_host_state():
             # the osquery docs only mention auditd as a blocker
             # but one cannot be too sure. but this makes everyone of them
             # a suspect
-            if proc.name().rsplit('/', 1)[-1] == 'auditd' and proc.status() == psutil.STATUS_RUNNING:
-                return {"osquery_readiness": False}
+            if proc.name().rsplit('/', 1)[-1] == 'auditd':
+                grains["osquery_ready"]["auditd_status"] = p.status()
+                grains["osquery_ready"]["auditd_present"] = False
+                grains["osquery_ready"]["auditd_pid"] = proc.pid
         except psutil.NoSuchProcess:
             continue
-    return {"osquery_readiness": True}
+    return grains
 
 
 def osquerygrain():

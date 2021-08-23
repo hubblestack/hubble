@@ -13,16 +13,18 @@ def _osquery_host_state():
     Query host NETLINK subscriber interface for Auditd subscriptions that would
     hinder osquery data collection.
     """
-    grains ={"osquery_ready": {"auditd_status": None, "auditd_present": False, "auditd_pid": -1}}
+    # should check if systemd-journald-audit.socket is configured too
+    grains ={"osquery_ready": ""}
     with open("/proc/net/netlink", "r") as fobj:
         content = fobj.read()
     netlink_pids = [
         line.split()[2] for line in content.strip().split('\n')[1:]
     ]
+    current_pid = psutil.Process().pid
     for pid in netlink_pids:
         pid = int(pid)
         # PIDs 0 and 1 should be excluded as they are kernel processes
-        if pid in (0, 1):
+        if pid in (0, 1, current_pid):
             continue
         try:
             proc = psutil.Process(pid)
@@ -32,9 +34,8 @@ def _osquery_host_state():
             # but one cannot be too sure. but this makes everyone of them
             # a suspect
             if proc.name().rsplit('/', 1)[-1] == 'auditd':
-                grains["osquery_ready"]["auditd_status"] = p.status()
-                grains["osquery_ready"]["auditd_present"] = False
-                grains["osquery_ready"]["auditd_pid"] = proc.pid
+                grains["osquery_ready"] = f"auditd_status:{proc.status()}," \
+                f"auditd_present:True,auditd_pid:{proc.pid()}"
         except psutil.NoSuchProcess:
             continue
     return grains

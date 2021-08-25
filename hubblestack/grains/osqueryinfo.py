@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """ Handle metadata about osquery: return version and path as grains """
+import subprocess
 import psutil
 
 import hubblestack.utils.path
@@ -10,29 +11,40 @@ __mods__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet}
 
 def _osquery_host_state():
     """
-    Query host NETLINK subscriber interface for Auditd subscriptions that would
+    Query host's NETLINK subscriber interface for Auditd subscriptions that would
     hinder osquery data collection.
+
+    The exclusion list comprises kernel PIDs like 0 and 1, and also numbers too high
+    to be considered correct PIDs.
     """
     # should check if systemd-journald-audit.socket is configured too
-    grains ={
-        "auditd_stats": "auditd_present:False,auditd_status:None,auditd_pid:-1"
+    grains = {
+        "auditd_info": "auditd_present:False,auditd_status:None"
     }
+    try:
+        auditd_socket_status = subprocess.check_output(
+            ["systemctl", "status", "systemd-journald-audit.socket"]
+        )
+        if b"active (running)" in auditd_socket_status:
+            grains["auditd_info"] = "auditd_present:True,auditd_status:running"
+            return grains
+    except FileNotFoundError:
+        pass
+
     excluded_pids = (0, 1, psutil.Process().pid)
     with open("/proc/net/netlink", "r") as content:
-        next(content)
+        next(content)  # skip the header
         for line in content:
             pid = line.strip().split()[2]
 
             pid = int(pid)
-            if pid in excluded_pids or pid > 2147483647:
-                # our target process cannot be a kernel process, python itself
-                # or have an ID higher then 2 ^ 31
+            if pid in excluded_pids or pid > 2 ** 31 - 1:
                 continue
             if psutil.pid_exists(pid):
                 proc = psutil.Process(pid)
                 if proc.name().rsplit('/', 1)[-1] == "auditd":
-                    grains["auditd_stats"] = f"auditd_present:True," \
-                    f"auditd_status:{proc.status()},auditd_pid:{proc.pid()}"
+                    grains["auditd_info"] = f"auditd_present:True," \
+                    f"auditd_status:{proc.status()}"
                     break
     return grains
 

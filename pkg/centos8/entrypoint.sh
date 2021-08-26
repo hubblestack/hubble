@@ -188,17 +188,11 @@ if [ "X$NO_FPM" = X1 ]; then
     exit 0
 fi
 
-# for whatever reason, packages normally don't use the $(uname -m) name
-# of the architecture, prefering misnomers like 'amd64' for 'x86_64'
-# ... strange, but:
-case "${ARCH:-$(uname -m)}" in
-    aarch64) PACKAGE_NAME_ARCH=arm64 ;;
-    *) PACKAGE_NAME_ARCH=amd64 ;;
-esac
+PACKAGE_NAME_ARCH="${ARCH:-$(uname -m)}"
 
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
-PKG_OUT_EXT=$PACKAGE_NAME_ARCH.deb
+PKG_OUT_EXT=$PACKAGE_NAME_ARCH.rpm
 PKG_FIN_EXT=el8.$PKG_OUT_EXT
 PKG_FNAME=${PKG_BASE_NAME}.$PKG_FIN_EXT
 

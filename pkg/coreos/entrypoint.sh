@@ -150,10 +150,7 @@ if [ -d /data/opt ]
 then cp -r /data/opt/* /opt
 fi
 
-case "${ARCH:-$(uname -m)}" in
-    aarch64) PACKAGE_NAME_ARCH=arm64 ;;
-    *) PACKAGE_NAME_ARCH=amd64 ;;
-esac
+PACKAGE_NAME_ARCH="${ARCH:-$(uname -m)}"
 
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}

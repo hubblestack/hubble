@@ -154,7 +154,9 @@ PACKAGE_NAME_ARCH="${ARCH:-$(uname -m)}"
 
 # edit to change iteration number, if necessary
 PKG_BASE_NAME=hubblestack-${HUBBLE_VERSION}-${HUBBLE_ITERATION}
-PKG_FNAME=coreos.$PACKAGE_NAME_ARCH.tar.gz
+PKG_OUT_EXT=$PACKAGE_NAME_ARCH.tar.gz
+PKG_FIN_EXT=coreos.$PKG_OUT_EXT
+PKG_FNAME=$PKG_BASE_NAME.$PKG_FIN_EXT
 PKG_FILE="/data/$PKG_FNAME"
 
 tar -cSPvvzf "$PKG_FILE" \

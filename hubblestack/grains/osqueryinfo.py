@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """ Handle metadata about osquery: return version and path as grains """
+import logging
 import subprocess
 import psutil
 
@@ -7,6 +8,8 @@ import hubblestack.utils.path
 import hubblestack.modules.cmdmod
 
 __mods__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet}
+
+log = logging.getLogger(__name__)
 
 
 def _osquery_host_state():
@@ -17,7 +20,6 @@ def _osquery_host_state():
     The exclusion list comprises kernel PIDs like 0 and 1, and also numbers too high
     to be considered correct PIDs.
     """
-    # should check if systemd-journald-audit.socket is configured too
     grains = {
         "auditd_info": "auditd_present:False,auditd_status:None"
     }
@@ -29,7 +31,9 @@ def _osquery_host_state():
             grains["auditd_info"] = "auditd_present:True,auditd_status:running"
             return grains
     except FileNotFoundError:
-        pass
+        log.debug(
+            "Unable to query systemd for auditd info, checking netlink..."
+        )
 
     excluded_pids = (0, 1, psutil.Process().pid)
     with open("/proc/net/netlink", "r") as content:

@@ -7,7 +7,7 @@ import psutil
 import hubblestack.utils.path
 import hubblestack.modules.cmdmod
 
-__mods__ = {'cmd.run': hubblestack.modules.cmdmod._run_quiet}
+__mods__ = {"cmd.run": hubblestack.modules.cmdmod._run_quiet}
 
 log = logging.getLogger(__name__)
 
@@ -20,20 +20,14 @@ def _osquery_host_state():
     The exclusion list comprises kernel PIDs like 0 and 1, and also numbers too high
     to be considered correct PIDs.
     """
-    grains = {
-        "auditd_info": "auditd_present:False,auditd_status:None"
-    }
+    grains = {"auditd_info": "auditd_present:False,auditd_status:None"}
     try:
-        auditd_socket_status = subprocess.check_output(
-            ["systemctl", "status", "systemd-journald-audit.socket"]
-        )
+        auditd_socket_status = subprocess.check_output(["systemctl", "status", "systemd-journald-audit.socket"])
         if b"active (running)" in auditd_socket_status:
             grains["auditd_info"] = "auditd_present:True,auditd_status:running"
             return grains
     except FileNotFoundError:
-        log.debug(
-            "Unable to query systemd for auditd info, checking netlink..."
-        )
+        log.debug("Unable to query systemd for auditd info, checking netlink...")
 
     excluded_pids = (0, 1, psutil.Process().pid)
     with open("/proc/net/netlink", "r") as content:
@@ -46,9 +40,8 @@ def _osquery_host_state():
                 continue
             if psutil.pid_exists(pid):
                 proc = psutil.Process(pid)
-                if proc.name().rsplit('/', 1)[-1] == "auditd":
-                    grains["auditd_info"] = f"auditd_present:True," \
-                    f"auditd_status:{proc.status()}"
+                if proc.name().rsplit("/", 1)[-1] == "auditd":
+                    grains["auditd_info"] = f"auditd_present:True," f"auditd_status:{proc.status()}"
                     break
     return grains
 
@@ -62,16 +55,16 @@ def osquerygrain():
     #   osqueryversion
     #   osquerybinpath
     grains = {}
-    option = '--version'
+    option = "--version"
 
     # Prefer our /opt/osquery/osqueryi if present
-    osqueryipaths = ('/opt/osquery/osqueryi', 'osqueryi', '/usr/bin/osqueryi')
+    osqueryipaths = ("/opt/osquery/osqueryi", "osqueryi", "/usr/bin/osqueryi")
     for path in osqueryipaths:
         if hubblestack.utils.path.which(path):
-            for item in __mods__['cmd.run']('{0} {1}'.format(path, option)).split():
+            for item in __mods__["cmd.run"]("{0} {1}".format(path, option)).split():
                 if item[:1].isdigit():
-                    grains['osqueryversion'] = item
-                    grains['osquerybinpath'] = hubblestack.utils.path.which(path)
+                    grains["osqueryversion"] = item
+                    grains["osquerybinpath"] = hubblestack.utils.path.which(path)
                     break
             break
     grains.update(_osquery_host_state())

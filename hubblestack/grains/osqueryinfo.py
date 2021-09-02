@@ -17,8 +17,8 @@ def _osquery_host_state():
     Query host's NETLINK subscriber interface for Auditd subscriptions that would
     hinder osquery data collection.
 
-    The exclusion list comprises kernel PIDs like 0 and 1, and also numbers too high
-    to be considered correct PIDs.
+    The exclusion list comprises kernel PIDs like 0 and 1, and also numbers higher than
+    the system's max_pid value.
     """
     grains = {"auditd_info": "auditd_present:False,auditd_status:None"}
     try:
@@ -30,13 +30,16 @@ def _osquery_host_state():
         log.debug("Unable to query systemd for auditd info, checking netlink...")
 
     excluded_pids = (0, 1, psutil.Process().pid)
+    with open("/proc/sys/kernel/pid_max") as fobj:
+        max_pid = int(fobj.read().strip())
+
     with open("/proc/net/netlink", "r") as content:
         next(content)  # skip the header
         for line in content:
             pid = line.strip().split()[2]
 
             pid = int(pid)
-            if pid in excluded_pids or pid > 2 ** 31 - 1:
+            if pid in excluded_pids or pid > max_pid:
                 continue
             if psutil.pid_exists(pid):
                 proc = psutil.Process(pid)

@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-import socket
 import json
 import time
 import copy
@@ -20,7 +19,7 @@ hubble_status = hubblestack.status.HubbleStatus(__name__)
 
 from .dq import DiskQueue, NoQueue, QueueCapacityError
 from inspect import getfullargspec
-from hubblestack.utils.stdrec import update_payload
+from hubblestack.utils.stdrec import update_payload, get_fqdn
 from hubblestack.utils.encoding import encode_something_to_bytes
 
 __version__ = "1.0"
@@ -82,7 +81,7 @@ class Payload:
 
     def __init__(self, dat, eventtime="", no_queue=False):
         if self.host is None:
-            self.__class__.host = socket.gethostname()
+            self.__class__.host = get_fqdn()
 
         self.no_queue = no_queue or dat.pop("_no_queue", False)
 
@@ -249,7 +248,7 @@ class HEC(object):
         if host:
             self.host = host
         else:
-            self.host = socket.gethostname()
+            self.host = get_fqdn()
 
         Payload.host = self.host
 

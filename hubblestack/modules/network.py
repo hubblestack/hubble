@@ -22,7 +22,8 @@ from hubblestack.utils._compat import ipaddress
 from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)
-isFipsEnabled = True if 'usedforsecurity' in getfullargspec(hashlib.new).kwonlyargs else False
+IS_FIPS_ENABLED = True if "usedforsecurity" in getfullargspec(hashlib.new).kwonlyargs else False
+
 
 def __virtual__():
     """
@@ -85,13 +86,9 @@ def ping(host, timeout=False, return_boolean=False):
     """
     if timeout:
         if __grains__["kernel"] == "SunOS":
-            cmd = "ping -c 4 {1} {0}".format(
-                timeout, __utils__["network.sanitize_host"](host)
-            )
+            cmd = "ping -c 4 {1} {0}".format(timeout, __utils__["network.sanitize_host"](host))
         else:
-            cmd = "ping -W {0} -c 4 {1}".format(
-                timeout, __utils__["network.sanitize_host"](host)
-            )
+            cmd = "ping -W {0} -c 4 {1}".format(timeout, __utils__["network.sanitize_host"](host))
     else:
         cmd = "ping -c 4 {0}".format(__utils__["network.sanitize_host"](host))
     if return_boolean:
@@ -212,10 +209,7 @@ def _netinfo_openbsd():
     Get process information for network connections using fstat
     """
     ret = {}
-    _fstat_re = re.compile(
-        r"internet(6)? (?:stream tcp 0x\S+ (\S+)|dgram udp (\S+))"
-        r"(?: [<>=-]+ (\S+))?$"
-    )
+    _fstat_re = re.compile(r"internet(6)? (?:stream tcp 0x\S+ (\S+)|dgram udp (\S+))" r"(?: [<>=-]+ (\S+))?$")
     out = __mods__["cmd.run"]("fstat")
     for line in out.splitlines():
         try:
@@ -245,9 +239,9 @@ def _netinfo_openbsd():
         else:
             remote_addr = ".".join(remote_addr.rsplit(":", 1))
 
-        ret.setdefault(local_addr, {}).setdefault(remote_addr, {}).setdefault(
-            proto, {}
-        ).setdefault(pid, {})["user"] = user
+        ret.setdefault(local_addr, {}).setdefault(remote_addr, {}).setdefault(proto, {}).setdefault(pid, {})[
+            "user"
+        ] = user
         ret[local_addr][remote_addr][proto][pid]["cmd"] = cmd
     return ret
 
@@ -259,18 +253,16 @@ def _netinfo_freebsd_netbsd():
     ret = {}
     # NetBSD requires '-n' to disable port-to-service resolution
     out = __mods__["cmd.run"](
-        "sockstat -46 {0} | tail -n+2".format(
-            "-n" if __grains__["kernel"] == "NetBSD" else ""
-        ),
+        "sockstat -46 {0} | tail -n+2".format("-n" if __grains__["kernel"] == "NetBSD" else ""),
         python_shell=True,
     )
     for line in out.splitlines():
         user, cmd, pid, _, proto, local_addr, remote_addr = line.split()
         local_addr = ".".join(local_addr.rsplit(":", 1))
         remote_addr = ".".join(remote_addr.rsplit(":", 1))
-        ret.setdefault(local_addr, {}).setdefault(remote_addr, {}).setdefault(
-            proto, {}
-        ).setdefault(pid, {})["user"] = user
+        ret.setdefault(local_addr, {}).setdefault(remote_addr, {}).setdefault(proto, {}).setdefault(pid, {})[
+            "user"
+        ] = user
         ret[local_addr][remote_addr][proto][pid]["cmd"] = cmd
     return ret
 
@@ -364,9 +356,7 @@ def _netstat_bsd():
         try:
             # Master pid for this connection will be the pid whose ppid isn't
             # in the subset dict we created above
-            master_pid = next(
-                iter(x for x, y in conn_ppid.items() if y not in ptr)
-            )
+            master_pid = next(iter(x for x, y in conn_ppid.items() if y not in ptr))
         except StopIteration:
             continue
         ret[idx]["user"] = ptr[master_pid]["user"]
@@ -636,10 +626,7 @@ def _netstat_route_freebsd():
     out = __mods__["cmd.run"](cmd, python_shell=True)
     for line in out.splitlines():
         comps = line.split()
-        if (
-            __grains__["os"] == "FreeBSD"
-            and int(__grains__.get("osmajorrelease", 0)) < 10
-        ):
+        if __grains__["os"] == "FreeBSD" and int(__grains__.get("osmajorrelease", 0)) < 10:
             ret.append(
                 {
                     "addr_family": "inet",
@@ -939,16 +926,14 @@ def traceroute(host):
             #   Modern traceroute for Linux, version 2.0.19, Dec 10 2012
             # Darwin and FreeBSD traceroute version looks like: Version 1.4a12+[FreeBSD|Darwin]
 
-            version_raw = re.findall(
-                r".*[Vv]ersion (\d+)\.([\w\+]+)\.*(\w*)", version_out
-            )[0]
+            version_raw = re.findall(r".*[Vv]ersion (\d+)\.([\w\+]+)\.*(\w*)", version_out)[0]
             log.debug("traceroute_version_raw: %s", version_raw)
             traceroute_version = []
-            for t in version_raw:
+            for i in version_raw:
                 try:
-                    traceroute_version.append(int(t))
+                    traceroute_version.append(int(i))
                 except ValueError:
-                    traceroute_version.append(t)
+                    traceroute_version.append(i)
 
             if len(traceroute_version) < 3:
                 traceroute_version.append(0)
@@ -1272,9 +1257,7 @@ def ip_addrs(interface=None, include_loopback=False, cidr=None, type=None):
 
         salt '*' network.ip_addrs
     """
-    addrs = __utils__["network.ip_addrs"](
-        interface=interface, include_loopback=include_loopback
-    )
+    addrs = __utils__["network.ip_addrs"](interface=interface, include_loopback=include_loopback)
     if cidr:
         return [i for i in addrs if __utils__["network.in_subnet"](cidr, [i])]
     else:
@@ -1283,7 +1266,6 @@ def ip_addrs(interface=None, include_loopback=False, cidr=None, type=None):
         elif type == "private":
             return [i for i in addrs if is_private(i)]
         return addrs
-
 
 
 def ip_addrs6(interface=None, include_loopback=False, cidr=None):
@@ -1304,9 +1286,7 @@ def ip_addrs6(interface=None, include_loopback=False, cidr=None):
 
         salt '*' network.ip_addrs6
     """
-    addrs = __utils__["network.ip_addrs6"](
-        interface=interface, include_loopback=include_loopback
-    )
+    addrs = __utils__["network.ip_addrs6"](interface=interface, include_loopback=include_loopback)
     if cidr:
         return [i for i in addrs if __utils__["network.in_subnet"](cidr, [i])]
     return addrs
@@ -1365,15 +1345,9 @@ def mod_hostname(hostname):
     if hostname is None:
         return False
 
-    hostname_cmd = __utils__["path.which"]("hostnamectl") or __utils__["path.which"](
-        "hostname"
-    )
+    hostname_cmd = __utils__["path.which"]("hostnamectl") or __utils__["path.which"]("hostname")
     if __utils__["platform.is_sunos"]():
-        uname_cmd = (
-            "/usr/bin/uname"
-            if __utils__["platform.is_smartos"]()
-            else __utils__["path.which"]("uname")
-        )
+        uname_cmd = "/usr/bin/uname" if __utils__["platform.is_smartos"]() else __utils__["path.which"]("uname")
         check_hostname_cmd = __utils__["path.which"]("check-hostname")
 
     # Grab the old hostname so we know which hostname to change and then
@@ -1398,12 +1372,16 @@ def mod_hostname(hostname):
 
     if hostname_cmd.endswith("hostnamectl"):
         result = __mods__["cmd.run_all"](
-            "{0} set-hostname {1}".format(hostname_cmd, hostname,)
+            "{0} set-hostname {1}".format(
+                hostname_cmd,
+                hostname,
+            )
         )
         if result["retcode"] != 0:
             log.debug(
                 "{0} was unable to set hostname. Error: {1}".format(
-                    hostname_cmd, result["stderr"],
+                    hostname_cmd,
+                    result["stderr"],
                 )
             )
             return False
@@ -1435,9 +1413,7 @@ def mod_hostname(hostname):
     # new hostname
     if __grains__["os_family"] == "RedHat":
         with __utils__["files.fopen"]("/etc/sysconfig/network", "r") as fp_:
-            network_c = [
-                __utils__["stringutils.to_unicode"](_l) for _l in fp_.readlines()
-            ]
+            network_c = [__utils__["stringutils.to_unicode"](_l) for _l in fp_.readlines()]
 
         with __utils__["files.fopen"]("/etc/sysconfig/network", "w") as fh_:
             for net in network_c:
@@ -1446,9 +1422,7 @@ def mod_hostname(hostname):
                     quote_type = __utils__["stringutils.is_quoted"](old_hostname)
                     fh_.write(
                         __utils__["stringutils.to_str"](
-                            "HOSTNAME={1}{0}{1}\n".format(
-                                __utils__["stringutils.dequote"](hostname), quote_type
-                            )
+                            "HOSTNAME={1}{0}{1}\n".format(__utils__["stringutils.dequote"](hostname), quote_type)
                         )
                     )
                 else:
@@ -1459,13 +1433,9 @@ def mod_hostname(hostname):
         if __grains__["lsb_distrib_id"] == "nilrt":
             str_hostname = __utils__["stringutils.to_str"](hostname)
             nirtcfg_cmd = "/usr/local/natinst/bin/nirtcfg"
-            nirtcfg_cmd += " --set section=SystemSettings,token='Host_Name',value='{0}'".format(
-                str_hostname
-            )
+            nirtcfg_cmd += " --set section=SystemSettings,token='Host_Name',value='{0}'".format(str_hostname)
             if __mods__["cmd.run_all"](nirtcfg_cmd)["retcode"] != 0:
-                raise CommandExecutionError(
-                    "Couldn't set hostname to: {0}\n".format(str_hostname)
-                )
+                raise CommandExecutionError("Couldn't set hostname to: {0}\n".format(str_hostname))
     elif __grains__["os_family"] == "OpenBSD":
         with __utils__["files.fopen"]("/etc/myname", "w") as fh_:
             fh_.write(__utils__["stringutils.to_str"](hostname + "\n"))
@@ -1475,11 +1445,7 @@ def mod_hostname(hostname):
         with __utils__["files.fopen"]("/etc/nodename", "w") as fh_:
             fh_.write(__utils__["stringutils.to_str"](hostname.split(".")[0] + "\n"))
         with __utils__["files.fopen"]("/etc/defaultdomain", "w") as fh_:
-            fh_.write(
-                __utils__["stringutils.to_str"](
-                    ".".join(hostname.split(".")[1:]) + "\n"
-                )
-            )
+            fh_.write(__utils__["stringutils.to_str"](".".join(hostname.split(".")[1:]) + "\n"))
 
     return True
 
@@ -1520,9 +1486,7 @@ def connect(host, port=None, **kwargs):
     timeout = kwargs.get("timeout", 5)
     family = kwargs.get("family", None)
 
-    if hubblestack.utils.validate.net.ipv4_addr(host) or hubblestack.utils.validate.net.ipv6_addr(
-        host
-    ):
+    if hubblestack.utils.validate.net.ipv4_addr(host) or hubblestack.utils.validate.net.ipv6_addr(host):
         address = host
     else:
         address = "{0}".format(__utils__["network.sanitize_host"](host))
@@ -1544,14 +1508,10 @@ def connect(host, port=None, **kwargs):
         else:
             __family = 0
 
-        (family, socktype, _proto, garbage, _address) = socket.getaddrinfo(
-            address, port, __family, 0, __proto
-        )[0]
+        (family, socktype, _proto, garbage, _address) = socket.getaddrinfo(address, port, __family, 0, __proto)[0]
     except socket.gaierror:
         ret["result"] = False
-        ret["comment"] = "Unable to resolve host {0} on {1} port {2}".format(
-            host, proto, port
-        )
+        ret["comment"] = "Unable to resolve host {0} on {1} port {2}".format(host, proto, port)
         return ret
 
     try:
@@ -1561,7 +1521,7 @@ def connect(host, port=None, **kwargs):
         if proto == "udp":
             # Generate a random string of a
             # decent size to test UDP connection
-            if isFipsEnabled:
+            if IS_FIPS_ENABLED:
                 md5h = hashlib.md5(usedforsecurity=False)
             else:
                 md5h = hashlib.md5()
@@ -1575,15 +1535,11 @@ def connect(host, port=None, **kwargs):
             skt.shutdown(2)
     except Exception as exc:  # pylint: disable=broad-except
         ret["result"] = False
-        ret["comment"] = "Unable to connect to {0} ({1}) on {2} port {3}".format(
-            host, _address[0], proto, port
-        )
+        ret["comment"] = "Unable to connect to {0} ({1}) on {2} port {3}".format(host, _address[0], proto, port)
         return ret
 
     ret["result"] = True
-    ret["comment"] = "Successfully connected to {0} ({1}) on {2} port {3}".format(
-        host, _address[0], proto, port
-    )
+    ret["comment"] = "Successfully connected to {0} ({1}) on {2} port {3}".format(host, _address[0], proto, port)
     return ret
 
 
@@ -1694,9 +1650,7 @@ def _mod_bufsize_linux(iface, *args, **kwargs):
     if not kwargs:
         return ret
     if args:
-        ret["comment"] = "Unknown arguments: " + " ".join(
-            [str(item) for item in args]
-        )
+        ret["comment"] = "Unknown arguments: " + " ".join([str(item) for item in args])
         return ret
     eargs = ""
     for kw in ["rx", "tx", "rx-mini", "rx-jumbo"]:
@@ -1800,13 +1754,17 @@ def default_route(family=None):
     if __grains__["kernel"] == "Linux":
         default_route["inet"] = ["0.0.0.0", "default"]
         default_route["inet6"] = ["::/0", "default"]
-    elif __grains__["os"] in [
-        "FreeBSD",
-        "NetBSD",
-        "OpenBSD",
-        "MacOS",
-        "Darwin",
-    ] or __grains__["kernel"] in ("SunOS", "AIX"):
+    elif (
+        __grains__["os"]
+        in [
+            "FreeBSD",
+            "NetBSD",
+            "OpenBSD",
+            "MacOS",
+            "Darwin",
+        ]
+        or __grains__["kernel"] in ("SunOS", "AIX")
+    ):
         default_route["inet"] = ["default"]
         default_route["inet6"] = ["default"]
     else:
@@ -1820,10 +1778,7 @@ def default_route(family=None):
                     continue
                 ret.append(route)
         else:
-            if (
-                route["destination"] in default_route["inet"]
-                or route["destination"] in default_route["inet6"]
-            ):
+            if route["destination"] in default_route["inet"] or route["destination"] in default_route["inet6"]:
                 ret.append(route)
 
     return ret
@@ -2015,9 +1970,7 @@ def ip_networks(interface=None, include_loopback=False, verbose=False):
         salt '*' network.list_networks interface=docker0,enp*
         salt '*' network.list_networks interface=eth*
     """
-    return __utils__["network.ip_networks"](
-        interface=interface, include_loopback=include_loopback, verbose=verbose
-    )
+    return __utils__["network.ip_networks"](interface=interface, include_loopback=include_loopback, verbose=verbose)
 
 
 def ip_networks6(interface=None, include_loopback=False, verbose=False):
@@ -2040,9 +1993,7 @@ def ip_networks6(interface=None, include_loopback=False, verbose=False):
         salt '*' network.list_networks6 interface=docker0,enp*
         salt '*' network.list_networks6 interface=eth*
     """
-    return __utils__["network.ip_networks6"](
-        interface=interface, include_loopback=include_loopback, verbose=verbose
-    )
+    return __utils__["network.ip_networks6"](interface=interface, include_loopback=include_loopback, verbose=verbose)
 
 
 def fqdns():
@@ -2054,8 +2005,8 @@ def fqdns():
     # fqdns
 
     # Possible value for h_errno defined in netdb.h
-    HOST_NOT_FOUND = 1
-    NO_DATA = 4
+    HOST_NOT_FOUND = 1  ## pylint: disable=invalid-name
+    NO_DATA = 4  ## pylint: disable=invalid-name
 
     fqdns = set()
 

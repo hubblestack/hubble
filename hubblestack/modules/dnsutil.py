@@ -3,7 +3,7 @@
 
 import socket
 import datetime
-from hubblestack.utils.stdreq import get_fqdn
+from hubblestack.utils.stdrec import get_fqdn
 
 
 class HostNotFoundError(Exception):
@@ -44,7 +44,7 @@ def unique_identifying_dns_ping(dom="superfake.tld"):
 
 def A(name):  # pylint: disable=invalid-name
     """
-    Return the A record(s) for ``host``.
+    Return the A record(s) for ``name``.
 
     Always returns a list.
 
@@ -64,7 +64,7 @@ def A(name):  # pylint: disable=invalid-name
 
 def AAAA(name):  # pylint: disable=invalid-name
     """
-    Return the AAAA record(s) for ``host``.
+    Return the AAAA record(s) for ``name``.
 
     Always returns a list.
 
@@ -83,19 +83,29 @@ def AAAA(name):  # pylint: disable=invalid-name
 
 def PTR(addr):  # pylint: disable=invalid-name
     """
-    Return the PTR record(s) for ``ip_addr``.
+    Return a PTR record for ``addr``.
 
-    Always returns a list.
+    This function differs somewhat from A and AAAA above. It works on both ipv4
+    and ipv6 addresses without having to reverse anything or spell out
+    ".in-addr.arpa", but it also returns scalars rather than lists.
+
+    socket.gethostbyaddr() does not return the convenient list of results that
+    socket.getaddrinfo() does; so without implementing a heavy-weight actual
+    DNS client, enumerating the list of PTR records isn't a resonable thing to
+    do.
+
+    ∴ PTR() returns a single scalar name, not a list; probably a round-robin
+    result, assuming no other caching is taking place.
 
     CLI Example:
 
     .. code-block:: bash
 
         hubble dnsutil.PTR 8.8.8.8
+        hubble dnsutil.PTR 2001:4860:4860::8888
     """
-    rev = ".".join(reversed(host.split("."))) + ".in-addr.arpa" if not addr.endswith("in-addr.arpa") else addr
     try:
-        name = [sock[4][0] for sock in socket.getaddrinfo(rev, None, socket.AF_INET, 0, socket.SOCK_RAW)]
+        name, *_ = socket.gethostbyaddr(addr)
         return name
     except socket.gaierror as e:
         raise HostNotFoundError(f"Unable to resolve {rev}") from e

@@ -18,6 +18,7 @@ repos:
   rev: 'v2.6.0'
   hooks:
   - id: pylint
+    exclude: '^tests/'
   - id: pylint
     name: no-bad-escapes
     entry: python -m pylint --confidence='' -d all -e anomalous-backslash-in-string,anomalous-unicode-escape-in-string

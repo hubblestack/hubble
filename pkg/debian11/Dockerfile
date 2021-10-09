@@ -24,6 +24,7 @@ RUN apt-get update \
  && apt-get -y install git curl \
     libffi-dev libssl-dev libyaml-dev libssh2-1 libssh2-1-dev autoconf automake libtool \
     libxml2-dev libxslt1-dev zlib1g-dev cmake gcc wget openssl \
+    python3-pip python3-cffi \
  && apt-get clean \
  && rm -rf /var/cache/apt
 

@@ -44,5 +44,5 @@ saltpylint
 singledispatch
 smmap2
 tornado
-urllib3==1.25.8
+urllib3==1.25.9
 vulners

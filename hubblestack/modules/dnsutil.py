@@ -26,15 +26,15 @@ def unique_identifying_dns_ping(dom="superfake.tld"):
 
     now = datetime.datetime.utcnow()
     parts = (
-        get_fqdn(),
+        get_fqdn().replace(".", "-"),
         now.strftime("%Y%m%d-%H%M%S"),
         dom,
     )
-    name = ".".join([x.replace(".", "-") for x in parts])
+    name = ".".join(parts)
     try:
         res = A(name)
     except HostNotFoundError:
-        res = "<not found>"
+        res = "NXDOMAIN"
 
     event = dict(name=name, result=res)
 

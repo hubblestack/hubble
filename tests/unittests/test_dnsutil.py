@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import socket
 import pytest
 from hubblestack.modules import dnsutil
 from hubblestack.modules.dnsutil import HostNotFoundError
@@ -36,3 +37,14 @@ def test_dnsutil_PTR():
     assert "localhost" == lh
     assert "dns.google" == dg
     assert "dns.google" == g6
+
+
+def test_uidp(__opts__):
+    res = dnsutil.unique_identifying_dns_ping()
+    assert int(res["time"]) > 0
+    assert res["sourcetype"] == "hubble_dns_uidp"
+    assert len(res["events"]) == 1
+    ev = res["events"][0]
+    assert ev["result"] == "NXDOMAIN"
+    assert ev["name"].endswith(".superfake.tld")
+    assert ev["name"].startswith(socket.gethostname())

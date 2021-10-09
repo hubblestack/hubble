@@ -9,7 +9,7 @@
 # Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 
-FROM rockylinux:8
+FROM rockylinux/rockylinux:8
 
 # paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs

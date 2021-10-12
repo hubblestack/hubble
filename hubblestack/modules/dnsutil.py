@@ -2,8 +2,7 @@
 # coding: utf-8
 
 import socket
-import datetime
-from hubblestack.utils.stdrec import get_fqdn
+import uuid
 
 
 class HostNotFoundError(Exception):
@@ -26,7 +25,7 @@ def unique_identifying_dns_ping(dom="superfake.tld"):
 
     now = datetime.datetime.utcnow()
     parts = (
-        get_fqdn().replace(".", "-"),
+        uuid.uuid4(),  # uuid1 contains host network addr, uuid4 is "random"
         now.strftime("%Y%m%d-%H%M%S"),
         dom,
     )

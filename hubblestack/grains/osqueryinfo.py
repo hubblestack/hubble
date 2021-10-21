@@ -20,11 +20,12 @@ def _osquery_host_state():
     The exclusion list comprises kernel PIDs like 0 and 1, and also numbers higher than
     the system's max_pid value.
     """
-    grains = {"auditd_info": "auditd_present:False,auditd_status:None"}
+    grains = {"auditd_info": {"auditd_present": False}}
     try:
         auditd_socket_status = subprocess.check_output(["systemctl", "status", "systemd-journald-audit.socket"])
         if b"active (running)" in auditd_socket_status:
-            grains["auditd_info"] = "auditd_present:True,auditd_status:running"
+            grains["auditd_info"]["auditd_present"] = True
+            grains["auditd_info"]["auditd_user"] = "systemd-journald"
             return grains
     except FileNotFoundError:
         log.debug("Unable to query systemd for auditd info, checking netlink...")
@@ -36,7 +37,12 @@ def _osquery_host_state():
     with open("/proc/net/netlink", "r") as content:
         next(content)  # skip the header
         for line in content:
-            pid = line.strip().split()[2]
+            sline = line.strip().split()
+            eth = sline[1]
+            pid = sline[2]
+
+            if eth != 9:  # 9 is the auditd interface number. we believe it never changes
+                continue
 
             pid = int(pid)
             if pid in excluded_pids or pid > max_pid:
@@ -44,7 +50,8 @@ def _osquery_host_state():
             if psutil.pid_exists(pid):
                 proc = psutil.Process(pid)
                 if proc.name().rsplit("/", 1)[-1] == "auditd":
-                    grains["auditd_info"] = f"auditd_present:True," f"auditd_status:{proc.status()}"
+                    grains["auditd_info"]["auditd_present"] = True
+                    grains["auditd_info"]["auditd_user"] = proc.name()
                     break
     return grains
 

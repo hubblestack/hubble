@@ -15,7 +15,7 @@ def test_run(__mods__):
         usr = get_user()
         cmd_results = __mods__["safecommand.run"]("whoami")
         safe_catchlog = __mods__["run_catchlog.run"]("whoami")
-        assert usr == safe_catchlog == cmd_results
+        assert usr == safe_catchlog["events"][0] == cmd_results
 
 
 def test_catchlog(__mods__):
@@ -25,6 +25,6 @@ def test_catchlog(__mods__):
 
     with open("testing.txt", "w") as fh:
         fh.writelines("err blah testing")
-    ret = __mods__["run_catchlog.run"](file_check="testing.txt", search="err")
-    assert ret["events"] == ["[file_error_line]: err blah testing"]
+    ret = __mods__["run_catchlog.run"]("echo", file_check="testing.txt", search="err")
+    assert ret["events"][1] == "[file_error_line]: err blah testing"
     remove("testing.txt")

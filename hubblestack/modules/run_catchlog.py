@@ -12,8 +12,8 @@ log = logging.getLogger(__name__)
 
 def run(*args, file_check=None, offset=30, search="Error", **kwargs):
     """
-    This function allows a specific command to be run and searches for a specific
-    keyword within that log.
+    This function allows a specific command to be run and searches for a
+    keyword within a log file specified.
 
     args:
          The rest of the args for the command. Can be a string or a list.
@@ -28,6 +28,8 @@ def run(*args, file_check=None, offset=30, search="Error", **kwargs):
     ret = {"time": now, "sourcetype": "hubble_run_catchlog", "events": events}
 
     output = __mods__["safecommand.run"](*args, **kwargs)
+    events.append(output)
+
     if file_check:
         try:
             with open(file_check, "r") as fh:

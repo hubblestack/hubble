@@ -47,4 +47,3 @@ def test_uidp(__opts__):
     ev = res["events"][0]
     assert ev["result"] == "NXDOMAIN"
     assert ev["name"].endswith(".superfake.tld")
-    assert ev["name"].startswith(socket.gethostname())

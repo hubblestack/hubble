@@ -30,7 +30,7 @@ def unique_identifying_dns_ping(dom="superfake.tld"):
         now.strftime("%Y%m%d-%H%M%S"),
         dom,
     )
-    name = ".".join(parts)
+    name = ".".join([str(x) for x in parts])
     try:
         res = A(name)
     except HostNotFoundError:

@@ -1,8 +1,6 @@
 import mock
 import os
 
-import hubblestack.modules.process_tree as process_tree
-
 
 class TestProcessTree:
     """
@@ -10,31 +8,38 @@ class TestProcessTree:
     """
 
     @mock.patch("hubblestack.fdg.process_status._run_query")
-    def test_tree_valid(self, mock_query):
+    def test_tree_valid(self, mock_query, __mods__):
         """
         Test that the function returns the correct value when the osquery returns a valid value.
         """
+        proc_d4 = {"pid": "4", "name": "d", "ppid": "3"}
+        proc_c3 = {"pid": "3", "name": "c", "ppid": "1"}
+        proc_b2 = {"pid": "2", "name": "b", "ppid": "1"}
+        proc_a1 = {"pid": "1", "name": "a", "ppid": "0"}
         mock_query.return_value = {
-            "data": [
-                {"ppid": "123", "pname": "foo", "pid": "321", "name": "oof"},
-                {"ppid": "123", "pname": "foo", "pid": "213", "name": "ofo"},
-                {"ppid": "1", "pname": "bar", "pid": "111", "name": "rab"},
-            ],
+            "data": [proc_a1, proc_b2, proc_c3, proc_d4],
             "result": True,
         }
-        ret = process_tree.tree()
-        print(ret)
+
+        def reformat_for_events(pid=None, name=None, ancestors=[], **_):
+            if ancestors is None:
+                return dict(pid=pid, name=name)
+            return dict(pid=pid, name=name, ancestors=[reformat_for_events(**x, ancestors=None) for x in ancestors])
+
+        ret = __mods__["process_tree.tree"]()
         expect_events = [
-            {"pid": "123", "name": "foo", "children": [{"pid": "321", "name": "oof"}, {"pid": "213", "name": "ofo"}]},
-            {"pid": "1", "name": "bar", "children": [{"pid": "111", "name": "rab"}]},
+            reformat_for_events(**proc_a1),
+            reformat_for_events(**proc_b2, ancestors=[proc_a1]),
+            reformat_for_events(**proc_c3, ancestors=[proc_a1]),
+            reformat_for_events(**proc_d4, ancestors=[proc_c3, proc_a1]),
         ]
         assert ret["events"] == expect_events
 
     @mock.patch("hubblestack.fdg.process_status._run_query")
-    def test_tree_invalid(self, mock_query):
+    def test_tree_invalid(self, mock_query, __mods__):
         """
         Test that when the osquery call fails, the function returns None.
         """
         mock_query.return_value = None
-        ret = process_tree.tree()
+        ret = __mods__["process_tree.tree"]()
         assert ret is None

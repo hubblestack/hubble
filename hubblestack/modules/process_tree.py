@@ -14,12 +14,9 @@ def __virtual__():
 
 
 def _get_processes():
-    query = (
-        "SELECT main.pid ppid, main.name pname, kids.pid pid, kids.name name "
-        "FROM processes AS main JOIN processes AS kids ON kids.parent = main.pid "
-        "ORDER BY ppid"
-    )
-    res = process_status._run_query(query)
+    if not hasattr(process_status, "__mods__"):
+        process_status.__mods__ = __mods__
+    res = process_status._run_query("SELECT parent as ppid, name, pid from processes order by pid")
     try:
         ret = process_status._convert_to_str(res["data"])
     except (KeyError, TypeError):
@@ -29,10 +26,12 @@ def _get_processes():
 
 
 def tree(sourcetype=SOURCETYPE):
-    """Return a list of dicts containing the `pid`, `name` and `children` of all
+    """Return a list of dicts containing the `pid`, `name` and `ancestors` of all
     the processes.
-    `children` is a list of dicts containing the fields `name` and `pid`"""
+    `ancestors` is a list of dicts containing the fields `name` and `pid`
+    """
     processes = _get_processes()
+
     # sanity check
     if not processes:
         return None
@@ -41,10 +40,10 @@ def tree(sourcetype=SOURCETYPE):
 
     def ancestors(pid):
         ret = list()
-        tmp = processes.get(pid)
+        tmp = processes.get(processes.get(pid).get("ppid"))
         while tmp is not None:
             ret.append({"pid": tmp["pid"], "name": tmp["name"]})
-            tmp = processes.get(tmp["ppid"])
+            tmp = processes.get(tmp.get("ppid"))
         return ret
 
     now = int(time.time())

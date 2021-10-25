@@ -20,6 +20,7 @@ data_files = [
 
 build_dependencies = [
     "distro",
+    "difusedxml",
     "msgpack",
     "pyyaml",
     "objgraph",

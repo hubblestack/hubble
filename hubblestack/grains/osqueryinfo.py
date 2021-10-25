@@ -12,7 +12,7 @@ __mods__ = {"cmd.run": hubblestack.modules.cmdmod._run_quiet}
 log = logging.getLogger(__name__)
 
 
-def _osquery_host_state():
+def osquery_host_state():
     """
     Query host's NETLINK subscriber interface for Auditd subscriptions that would
     hinder osquery data collection.
@@ -77,5 +77,4 @@ def osquerygrain():
                     grains["osquerybinpath"] = hubblestack.utils.path.which(path)
                     break
             break
-    grains.update(_osquery_host_state())
     return grains

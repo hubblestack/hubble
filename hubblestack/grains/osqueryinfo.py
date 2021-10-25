@@ -26,8 +26,8 @@ def osquery_host_state():
             grains["auditd_info"]["auditd_present"] = True
             grains["auditd_info"]["auditd_user"] = "systemd-journald"
             return grains
-    except FileNotFoundError:
-        log.info("Unable to query systemd for auditd info, checking netlink...")
+    except Exception as e:
+        log.info("Unable to query systemd for auditd info, checking netlink: %s", e)
 
     try:
         import psutil

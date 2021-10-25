@@ -3,6 +3,8 @@
 import logging
 import subprocess
 
+import psutil
+
 import hubblestack.utils.path
 import hubblestack.modules.cmdmod
 
@@ -30,12 +32,10 @@ def osquery_host_state():
         log.info("Unable to query systemd for auditd info, checking netlink: %s", e)
 
     try:
-        import psutil
-
         excluded_pids = (0, 1, psutil.Process().pid)
         with open("/proc/sys/kernel/pid_max") as fobj:
             max_pid = int(fobj.read().strip())
-    except (ModuleNotFoundError, FileNotFoundError):
+    except FileNotFoundError:
         log.info("Unable to learn pid_max from /proc/, guessing it's something like 128k")
         max_pid = 128e3
 

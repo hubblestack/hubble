@@ -11,7 +11,6 @@ chardet
 croniter
 cryptography
 daemon
-defusedxml
 distro
 futures
 gitdb2
@@ -44,5 +43,5 @@ saltpylint
 singledispatch
 smmap2
 tornado
-urllib3==1.25.9
+urllib3>=1.26.5
 vulners

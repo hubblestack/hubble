@@ -11,8 +11,8 @@ chardet
 croniter
 cryptography
 daemon
+defusedxml
 distro
-futures
 gitdb2
 gitpython
 gprof2dot

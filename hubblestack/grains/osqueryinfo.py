@@ -21,47 +21,67 @@ def osquery_host_state():
     The exclusion list comprises kernel PIDs like 0 and 1, and also numbers higher than
     the system's max_pid value.
     """
-    grains = {"auditd_info": {"auditd_present": False}}
-    try:
-        auditd_socket_status = subprocess.check_output(["systemctl", "status", "systemd-journald-audit.socket"])
-        if b"active (running)" in auditd_socket_status:
-            grains["auditd_info"]["auditd_present"] = True
-            grains["auditd_info"]["auditd_user"] = "systemd-journald"
-            return grains
-    except Exception as e:
-        log.info("Unable to query systemd for auditd info, checking netlink: %s", e)
+    deets = {
+        "auditd_present": False,
+        "systemd_journald_audit_socket": "unknown",
+        "auditd_service": "unknown",
+        "netlink_eth9_pids": "none found",
+    }
+    grains = {"auditd_info": deets}
+
+    for grain_key, systemd_name in (
+        ("systemd_journald_audit_socket", "systemd-journald-audit.socket"),
+        ("auditd_service", "auditd.service"),
+    ):
+        try:
+            auditd_socket_status = subprocess.check_output(["systemctl", "status", systemd_name])
+            if b"active (running)" in auditd_socket_status:
+                deets["auditd_present"] = True
+                deets[grain_key] = True
+            else:
+                deets["auditd_present"] = True
+                deets[grain_key] = "inactive"
+        except subprocess.CalledProcessError:
+            log.info("%s doesn't seem to be running according to systemd")
+        except Exception as e:
+            log.info("Unknown exception checking systemctl for %s status: %s", systemd_name, e)
 
     try:
-        excluded_pids = (0, 1, psutil.Process().pid)
         with open("/proc/sys/kernel/pid_max") as fobj:
             max_pid = int(fobj.read().strip())
     except FileNotFoundError:
-        log.info("Unable to learn pid_max from /proc/, guessing it's something like 128k")
+        log.info("Unable to learn pid_max from /proc/sys/kernel/pid_max, guessing it's something like 128k")
         max_pid = 128e3
 
+    excluded_pids = (0, 1, psutil.Process().pid)
     try:
         with open("/proc/net/netlink", "r") as content:
             next(content)  # skip the header
             for line in content:
                 sline = line.strip().split()
-                eth = sline[1]
-                pid = sline[2]
+                try:
+                    eth = int(sline[1])
+                    pid = int(sline[2])
+                except TypeError:
+                    continue
 
                 if eth != 9:  # 9 is the auditd interface number. we believe it never changes
                     continue
 
-                pid = int(pid)
                 if pid in excluded_pids or pid > max_pid:
                     continue
+
                 if psutil.pid_exists(pid):
                     proc = psutil.Process(pid)
-                    if proc.name().rsplit("/", 1)[-1] == "auditd":
-                        grains["auditd_info"]["auditd_present"] = True
-                        grains["auditd_info"]["auditd_user"] = proc.name()
-                        break
+                    name = proc.name()
+                    if name.rsplit("/", 1)[-1] == "auditd":
+                        if not isinstance(deets["netlink_eth9_pids"], list):
+                            deets["netlink_eth9_pids"] = list()
+                        deets["auditd_present"] = True
+                        deets["netlink_eth9_pids"].append({"pid": pid, "name": name})
     except FileNotFoundError:
         log.info("Unable to interrogate /proc/net/netlink for eth=9 socket info")
-        grains["auditd_info"]["netlink_missing"] = True
+        deets["netlink_missing"] = True
 
     return grains
 

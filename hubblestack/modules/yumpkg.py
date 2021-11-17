@@ -52,7 +52,7 @@ def __virtual__():
 
     enabled = ('amazon', 'xcp', 'xenserver', 'virtuozzolinux', 'virtuozzo')
 
-    if os_family == 'redhat' or os_grain in enabled:
+    if os_family == 'rocky' or os_family == 'redhat' or os_grain in enabled:
         return __virtualname__
     return (False, "Module yumpkg: no yum based system detected")
 

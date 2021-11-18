@@ -56,6 +56,7 @@ def __virtual__():
         return __virtualname__
     return (False, "Module yumpkg: no yum based system detected")
 
+
 def list_pkgs(versions_as_list=False, **kwargs):
     '''
     List the packages currently installed as a dict. By default, the dict
@@ -96,7 +97,8 @@ def list_pkgs(versions_as_list=False, **kwargs):
     if contextkey not in __context__:
         ret = {}
         cmd = ['rpm', '-qa', '--queryformat',
-               hubblestack.utils.pkg.rpm.QUERYFORMAT.replace('%{REPOID}', '(none)') + '\n']
+               hubblestack.utils.pkg.rpm.QUERYFORMAT.replace('%{REPOID}',
+                                                             '(none)') + '\n']
         output = __mods__['cmd.run'](cmd,
                                      python_shell=False,
                                      output_loglevel='trace')
@@ -106,7 +108,8 @@ def list_pkgs(versions_as_list=False, **kwargs):
                 osarch=__grains__['osarch']
             )
             if pkginfo is not None:
-                # see rpm version string rules available at https://goo.gl/UGKPNd
+                # see rpm version string rules
+                # available at https://goo.gl/UGKPNd
                 pkgver = pkginfo.version
                 epoch = ''
                 release = ''
@@ -134,6 +137,7 @@ def list_pkgs(versions_as_list=False, **kwargs):
         versions_as_list,
         attr)
 
+
 def version(*names, **kwargs):
     '''
     Returns a string representing the package version or an empty string if not
@@ -157,7 +161,9 @@ def version_cmp(pkg1, pkg2, ignore_epoch=False):
         .. versionadded:: 2015.8.10,2016.3.2
     '''
 
-    return __mods__['lowpkg.version_cmp'](pkg1, pkg2, ignore_epoch=ignore_epoch)
+    return __mods__['lowpkg.version_cmp'](pkg1,
+                                          pkg2, ignore_epoch=ignore_epoch)
+
 
 def refresh_db(**kwargs):
     '''
@@ -213,15 +219,19 @@ def refresh_db(**kwargs):
 
     if check_update_:
         update_cmd = ['--quiet', '--assumeyes', 'check-update']
-        if (__grains__.get('os_family') == 'RedHat'
-           and __grains__.get('osmajorrelease') == 7):
-            # This feature is disabled because it is not used by Salt and adds a
-            # lot of extra time to the command with large repos like EPEL
+        if (__grains__.get('os_family') == 'RedHat' and
+                __grains__.get('osmajorrelease') == 7):
+            # This feature is disabled because
+            # it is not used by Salt and adds a
+            # lot of extra time to the command with
+            # large repos like EPEL
             update_cmd.append('--setopt=autocheck_running_kernel=false')
         update_cmd.extend(options)
-        ret = retcodes.get(_call_yum(update_cmd, ignore_retcode=True)['retcode'], False)
+        ret = retcodes.get(_call_yum(update_cmd,
+                                     ignore_retcode=True)['retcode'], False)
 
     return ret
+
 
 def _call_yum(args, **kwargs):
     '''
@@ -229,15 +239,18 @@ def _call_yum(args, **kwargs):
     '''
     params = {'output_loglevel': 'trace',
               'python_shell': False,
-              'env': hubblestack.utils.environment.get_module_environment(globals())}
+              'env':
+              hubblestack.utils.environment.get_module_environment(globals())}
     params.update(kwargs)
     cmd = []
-    if hubblestack.utils.systemd.has_scope(__context__) and __mods__['config.get']('systemd.scope', True):
+    if hubblestack.utils.systemd.has_scope(__context__) and \
+            __mods__['config.get']('systemd.scope', True):
         cmd.extend(['systemd-run', '--scope'])
     cmd.append(_yum())
     cmd.extend(args)
 
     return __mods__['cmd.run_all'](cmd, **params)
+
 
 def _yum():
     '''
@@ -246,8 +259,8 @@ def _yum():
     '''
     contextkey = 'yum_bin'
     if contextkey not in __context__:
-        if ('fedora' in __grains__['os'].lower()
-           and int(__grains__['osrelease']) >= 22):
+        if ('fedora' in __grains__['os'].lower() and
+                int(__grains__['osrelease']) >= 22):
             __context__[contextkey] = 'dnf'
         else:
             __context__[contextkey] = 'yum'

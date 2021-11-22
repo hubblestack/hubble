@@ -12,10 +12,11 @@ log = logging.getLogger(__name__)
 
 
 def get_splunk_options(**kwargs):
+    """ get splunk options from hubblestack.hec in an overridable way """
     if not kwargs:
-        kwargs['sourcetype'] = 'hubble_osquery'
-    if '_nick' not in kwargs or not isinstance(kwargs['_nick'], dict):
-        kwargs['_nick'] = {'sourcetype_nebula': 'sourcetype'}
+        kwargs["sourcetype"] = "hubble_osquery"
+    if "_nick" not in kwargs or not isinstance(kwargs["_nick"], dict):
+        kwargs["_nick"] = {"sourcetype_nebula": "sourcetype"}
     return gso(**kwargs)
 
 
@@ -37,27 +38,27 @@ def publish(report_directly_to_splunk=True, remove_dots=True, *args):
        __opts__ (excluding password/token) would be published
 
     """
-    log.debug('Started publishing config to splunk')
+    log.debug("Started publishing config to splunk")
 
     opts_to_log = {}
     if not args:
         opts_to_log = copy.deepcopy(__opts__)
-        if 'grains' in opts_to_log:
-            opts_to_log.pop('grains')
+        if "grains" in opts_to_log:
+            opts_to_log.pop("grains")
     else:
         for arg in args:
             if arg in __opts__:
                 opts_to_log[arg] = __opts__[arg]
 
     # 'POP' is for tracking persistent opts protection
-    if os.environ.get('NOISY_POP_DEBUG'):
-        log.error('POP config_publish (id=%d)', id(__opts__))
+    if os.environ.get("NOISY_POP_DEBUG"):
+        log.error("POP config_publish (id=%d)", id(__opts__))
 
     filtered_conf = hubblestack.log.filter_logs(opts_to_log, remove_dots=remove_dots)
 
     if report_directly_to_splunk:
-        hubblestack.log.emit_to_splunk(filtered_conf, 'INFO', 'hubblestack.hubble_config')
-        log.debug('Published config to splunk')
+        hubblestack.log.emit_to_splunk(filtered_conf, "INFO", "hubblestack.hubble_config")
+        log.debug("Published config to splunk")
 
     return filtered_conf
 
@@ -70,8 +71,8 @@ def _filter_config(opts_to_log, remove_dots=True):
     filtered_conf = _remove_sensitive_info(opts_to_log, patterns_to_filter)
     if remove_dots:
         for key in filtered_conf.keys():
-            if '.' in key:
-                filtered_conf[key.replace('.', '_')] = filtered_conf.pop(key)
+            if "." in key:
+                filtered_conf[key.replace(".", "_")] = filtered_conf.pop(key)
     return filtered_conf
 
 
@@ -83,7 +84,8 @@ def _remove_sensitive_info(obj, patterns_to_filter):
         obj = {
             key: _remove_sensitive_info(value, patterns_to_filter)
             for key, value in obj.items()
-            if not any(patt in key for patt in patterns_to_filter)}
+            if not any(patt in key for patt in patterns_to_filter)
+        }
     elif isinstance(obj, list):
         obj = [_remove_sensitive_info(item, patterns_to_filter) for item in obj]
     return obj

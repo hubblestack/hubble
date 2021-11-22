@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 
-import socket
 import json
 import time
 import copy
@@ -11,92 +10,97 @@ import certifi
 import urllib3
 
 import logging
+
 log = logging.getLogger(__name__)
 
 import hubblestack.status
+
 hubble_status = hubblestack.status.HubbleStatus(__name__)
 
-from . dq import DiskQueue, NoQueue, QueueCapacityError
+from .dq import DiskQueue, NoQueue, QueueCapacityError
 from inspect import getfullargspec
-from hubblestack.utils.stdrec import update_payload
+from hubblestack.utils.stdrec import update_payload, get_fqdn
 from hubblestack.utils.encoding import encode_something_to_bytes
 
-__version__ = '1.0'
+__version__ = "1.0"
 
-_max_content_bytes = 100000
-http_event_collector_debug = False
+MAX_CONTENT_BYTES = 100000
+HTTP_EVENT_COLLECTOR_DEBUG = False
 
 # the list of collector URLs given to the HEC object
 # are hashed into an md5 string that identifies the URL set
 # these maximums are per URL set, not for the entire disk cache
-max_diskqueue_size  = 10 * (1024 ** 2)
-isFipsEnabled = True if 'usedforsecurity' in getfullargspec(hashlib.new).kwonlyargs else False
+MAX_DISKQUEUE_SIZE = 10 * (1024 ** 2)
+IS_FIPS_ENABLED = True if "usedforsecurity" in getfullargspec(hashlib.new).kwonlyargs else False
 
 
 def count_input(payload):
-    hs_key = ':'.join(['input', payload.sourcetype])
+    """increment hstatus accounting counters for payload"""
+    hs_key = ":".join(["input", payload.sourcetype])
     hubble_status.add_resource(hs_key)
     hubble_status.mark(hs_key, timestamp=payload.time)
     # NOTE: t=payload.time is an undocumented mark() argument
     # that ensures the first_t and last_t include the given timestamp
     # (without this, the accounting likely wouldn't work)
 
-class Payload(object):
-    """ formatters for final payload stringification
-        and a convenient place to store retry counter information
 
-        note that formatting a payload is different from formatting an event
-        say our event is a line like
-          "Sat Aug 18 ProcessName [3828282] DEBUG: oops"
-        or perhaps some data like
-          {'blah': 'happened"}
-        Then the payload would look like this:
-          {'host': 'something', 'sourcetype': 'something', 'event': 'Sat Aug 18...'}
-          {'host': 'something', 'sourcetype': 'something', 'event': {'blah': 'happened'}}
+class Payload:
+    """formatters for final payload stringification
+    and a convenient place to store retry counter information
 
-        For reasons regarding the above, we provide a classmethod to format events:
+    note that formatting a payload is different from formatting an event
+    say our event is a line like
+      "Sat Aug 18 ProcessName [3828282] DEBUG: oops"
+    or perhaps some data like
+      {'blah': 'happened"}
+    Then the payload would look like this:
+      {'host': 'something', 'sourcetype': 'something', 'event': 'Sat Aug 18...'}
+      {'host': 'something', 'sourcetype': 'something', 'event': {'blah': 'happened'}}
 
-        p = Payload.format_event({'blah': 'happened'}, sourcetype='blah')
+    For reasons regarding the above, we provide a classmethod to format events:
+
+    p = Payload.format_event({'blah': 'happened'}, sourcetype='blah')
     """
+
     host = None
 
     @classmethod
     def format_event(cls, event, **payload):
-        if 'host' not in payload:
-            payload['host'] = cls.host
-        if 'sourcetype' not in payload:
-            payload['sourcetype'] = 'hubble'
-        payload['event'] = event
+        if "host" not in payload:
+            payload["host"] = cls.host
+        if "sourcetype" not in payload:
+            payload["sourcetype"] = "hubble"
+        payload["event"] = event
         return cls(payload)
 
     @classmethod
-    def promote(cls, payload, eventtime='', no_queue=False):
+    def promote(cls, payload, eventtime="", no_queue=False):
         if isinstance(payload, cls):
             return payload
         return Payload(payload, eventtime=eventtime, no_queue=no_queue)
 
-    def __init__(self, dat, eventtime='', no_queue=False):
+    def __init__(self, dat, eventtime="", no_queue=False):
         if self.host is None:
-            self.__class__.host = socket.gethostname()
+            self.__class__.host = get_fqdn()
 
-        self.no_queue = no_queue or dat.pop('_no_queue', False)
+        self.no_queue = no_queue or dat.pop("_no_queue", False)
 
-        if 'host' not in dat or dat['host'] is None:
-            dat['host'] = self.host
+        if "host" not in dat or dat["host"] is None:
+            dat["host"] = self.host
 
         now = time.time()
         if eventtime:
-            dat['time'] = eventtime
-        elif 'time' not in dat:
-            dat['time'] = now
+            dat["time"] = eventtime
+        elif "time" not in dat:
+            dat["time"] = now
 
-        self.sourcetype = dat.get('sourcetype', 'hubble')
-        self.time       = dat.get('time', now)
+        self.sourcetype = dat.get("sourcetype", "hubble")
+        self.time = dat.get("time", now)
 
         self.dat = json.dumps(dat)
 
     def __repr__(self):
-        return 'Payload({0})'.format(self)
+        return "Payload({0})".format(self)
 
     def __str__(self):
         return self.dat
@@ -106,6 +110,8 @@ class Payload(object):
 
 
 class OutageInfo(object):
+    """container for tracking possible outage start/stop times and age"""
+
     def __init__(self):
         self.last_check = self.start = time.time()
 
@@ -120,30 +126,35 @@ class OutageInfo(object):
     def age(self):
         return time.time() - self.start
 
+
 # Thanks to George Starcher for the http_event_collector class (https://github.com/georgestarcher/)
 # Default batch max size to match splunk's default limits for max byte
 # See http_input stanza in limits.conf; note in testing I had to limit to
 # 100,000 to avoid http event collector breaking connection Auto flush will
 # occur if next event payload will exceed limit
 
+
 class HEC(object):
+    """container for tracking http event collector service endpoints and related event events"""
+
     last_flush = 0
     flushing_queue = False
-    abort_flush    = False
+    abort_flush = False
     direct_logging = False
     outages = dict()
     fails = dict()
 
     class Server(object):
+        """container for tracking outages, fails, and uri info about an individual server"""
+
         bad = False
 
-        def __init__(self, host, port=8080, proto='https'):
-            if '://' in host:
-                proto,host = host.split('://')
-            if ':' in host:
-                host,port = host.split(':')
-            self.uri = '{proto}://{host}:{port}/services/collector/event'.format(
-                proto=proto, host=host, port=port)
+        def __init__(self, host, port=8080, proto="https"):
+            if "://" in host:
+                proto, host = host.split("://")
+            if ":" in host:
+                host, port = host.split(":")
+            self.uri = "{proto}://{host}:{port}/services/collector/event".format(proto=proto, host=host, port=port)
             if self.uri not in HEC.fails:
                 HEC.fails[self.uri] = 0
 
@@ -156,10 +167,10 @@ class HEC(object):
             HEC.fails[self.uri] = v
 
         def __str__(self):
-            r = self.uri
+            ret = self.uri
             if self.fails:
-                r += ' (fails: {0})'.format(self.fails)
-            return r
+                ret += " (fails: {0})".format(self.fails)
+            return ret
 
         @property
         def outage(self):
@@ -174,14 +185,26 @@ class HEC(object):
                 del HEC.outages[self.uri]
                 self.fails = 0
 
-
-    def __init__(self, token, index, http_event_server, host='', http_event_port='8088',
-                 http_event_server_ssl=True, http_event_collector_ssl_verify=True,
-                 max_bytes=_max_content_bytes, proxy=None, timeout=9.05,
-                 disk_queue=False, disk_queue_size=max_diskqueue_size,
-                 disk_queue_compression=5, max_queue_cycles=80, max_bad_request_cycles=40,
-                 outage_recheck_time=300, num_fails_indicate_outage=10):
-
+    def __init__(
+        self,
+        token,
+        index,
+        http_event_server,
+        host="",
+        http_event_port="8088",
+        http_event_server_ssl=True,
+        http_event_collector_ssl_verify=True,
+        max_bytes=MAX_CONTENT_BYTES,
+        proxy=None,
+        timeout=9.05,
+        disk_queue=False,
+        disk_queue_size=MAX_DISKQUEUE_SIZE,
+        disk_queue_compression=5,
+        max_queue_cycles=80,
+        max_bad_request_cycles=40,
+        outage_recheck_time=300,
+        num_fails_indicate_outage=10,
+    ):
 
         self.max_queue_cycles = max_queue_cycles
         self.max_bad_request_cycles = max_bad_request_cycles
@@ -193,13 +216,13 @@ class HEC(object):
         self.timeout = timeout
         self.token = token
         self.default_index = index
-        self.batchEvents = []
-        self.maxByteLength = max_bytes
-        self.currentByteLength = 0
+        self.batch_events = []
+        self.max_byte_length = max_bytes
+        self.current_byte_length = 0
         self.server_uri = []
 
         if proxy:
-            proxy_s = proxy.split('://')
+            proxy_s = proxy.split("://")
             if len(proxy_s) == 2:
                 # the form http://host:port is preferred, so we can just use
                 # the value directly although this does work, essentially all
@@ -215,9 +238,9 @@ class HEC(object):
                 # this may not work for the various tinyproxy and etc running out there
                 # but to make those older configs continue to work, we leave this behavior
                 # however, using a form 'http://hostname:port' will disable it
-                self.proxy = 'https://{0}'.format(proxy)
+                self.proxy = "https://{0}".format(proxy)
             else:
-                self.proxy = 'http://{0}'.format(proxy)
+                self.proxy = "http://{0}".format(proxy)
         else:
             self.proxy = None
 
@@ -225,7 +248,7 @@ class HEC(object):
         if host:
             self.host = host
         else:
-            self.host = socket.gethostname()
+            self.host = get_fqdn()
 
         Payload.host = self.host
 
@@ -238,52 +261,52 @@ class HEC(object):
             servers = [servers]
         for server in servers:
             if http_event_server_ssl:
-                self.server_uri.append(self.Server(server, http_event_port, proto='https'))
+                self.server_uri.append(self.Server(server, http_event_port, proto="https"))
             else:
-                self.server_uri.append(self.Server(server, http_event_port, proto='http'))
+                self.server_uri.append(self.Server(server, http_event_port, proto="http"))
 
         # build headers once
-        self.headers = urllib3.make_headers( keep_alive=True,
-            user_agent='hubble-hec/{0}'.format(__version__),
-            accept_encoding=True)
-        self.headers.update({ 'Content-Type': 'application/json',
-            'Authorization': 'Splunk {0}'.format(self.token) })
+        self.headers = urllib3.make_headers(
+            keep_alive=True, user_agent="hubble-hec/{0}".format(__version__), accept_encoding=True
+        )
+        self.headers.update({"Content-Type": "application/json", "Authorization": "Splunk {0}".format(self.token)})
 
         # 2019-09-24: lowered retries from 3 (9s + 3*9s = 36s) to 1 (9s + 9s = 18s)
         # Each new event could potentially take half a minute with 3 retries.
         # Since Hubble is single threaded, that seems like a horribly long time.
         # (When retries fail, we potentially queue to disk anyway.)
         pm_kw = {
-            'timeout': self.timeout,
-            'retries': urllib3.util.retry.Retry(
-                total=1,   # total retries; overrides other counts below
-                connect=3, # number of retires on connection errors
-                read=3,    # number of retires on read errors
+            "timeout": self.timeout,
+            "retries": urllib3.util.retry.Retry(
+                total=1,  # total retries; overrides other counts below
+                connect=3,  # number of retires on connection errors
+                read=3,  # number of retires on read errors
                 status=3,  # number of retires on bad status codes
-                redirect=10, # avoid redirect loops by limiting redirects to 10
-                respect_retry_after_header=True)
+                redirect=10,  # avoid redirect loops by limiting redirects to 10
+                respect_retry_after_header=True,
+            ),
         }
 
         if http_event_collector_ssl_verify:
-            pm_kw.update({'cert_reqs': 'CERT_REQUIRED', 'ca_certs': certifi.where()})
+            pm_kw.update({"cert_reqs": "CERT_REQUIRED", "ca_certs": certifi.where()})
         else:
-            pm_kw.update({'cert_reqs': 'CERT_NONE'})
+            pm_kw.update({"cert_reqs": "CERT_NONE"})
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         if self.proxy:
-            log.debug('using ProxyManager(%s)', self.proxy)
+            log.debug("using ProxyManager(%s)", self.proxy)
             self.pool_manager = urllib3.ProxyManager(self.proxy, **pm_kw)
         else:
             self.pool_manager = urllib3.PoolManager(**pm_kw)
 
         if disk_queue:
-            if isFipsEnabled:
+            if IS_FIPS_ENABLED:
                 md5 = hashlib.md5(usedforsecurity=False)
             else:
                 md5 = hashlib.md5()
-            uril = sorted([ x.uri for x in self.server_uri ])
-            for u in uril:
-                md5.update(encode_something_to_bytes(u))
+            uril = sorted([x.uri for x in self.server_uri])
+            for url_ in uril:
+                md5.update(encode_something_to_bytes(url_))
             actual_disk_queue = os.path.join(disk_queue, md5.hexdigest())
             log.debug("disk_queue for %s: %s", uril, actual_disk_queue)
             self.queue = DiskQueue(actual_disk_queue, size=disk_queue_size, compression=disk_queue_compression)
@@ -291,9 +314,8 @@ class HEC(object):
             self.queue = NoQueue()
 
     def _payload_msg(self, message, *a):
-        event = dict(loggername='hubblestack.hec.obj', message=message % a)
-        payload = dict(index=self.default_index,
-            time=int(time.time()), sourcetype='hubble_log', event=event)
+        event = dict(loggername="hubblestack.hec.obj", message=message % a)
+        payload = dict(index=self.default_index, time=int(time.time()), sourcetype="hubble_log", event=event)
         update_payload(payload)
         return str(Payload(payload))
 
@@ -305,68 +327,68 @@ class HEC(object):
             HEC.abort_flush = True
         if self.queue.cn < 1 and not HEC.direct_logging:
             HEC.direct_logging = True
-            self._direct_send_msg('queue(start)')
+            self._direct_send_msg("queue(start)")
             HEC.direct_logging = False
-        p = str(payload)
+        payload_string = str(payload)
         # should be at info level; error for production logging:
-        log.error('Sending to Splunk failed, queueing %d octets to disk', len(p))
+        log.error("Sending to Splunk failed, queueing %d octets to disk", len(payload_string))
         try:
             if meta_data is None:
                 meta_data = dict()
-            if 'queued_to_disk' not in meta_data:
-                meta_data['queued_to_disk'] = 0
-            meta_data['queued_to_disk'] += 1
-            log.debug(' meta_data: %s', meta_data)
-            self.queue.put(p, **meta_data)
+            if "queued_to_disk" not in meta_data:
+                meta_data["queued_to_disk"] = 0
+            meta_data["queued_to_disk"] += 1
+            log.debug(" meta_data: %s", meta_data)
+            self.queue.put(payload_string, **meta_data)
         except QueueCapacityError:
             # was at info level, but this is an error condition worth logging
             log.error("disk queue is full, dropping payload")
 
-
-    def queueEvent(self, dat, eventtime='', no_queue=False):
+    def queueEvent(self, dat, eventtime="", no_queue=False):
         if not isinstance(dat, Payload):
             dat = Payload(dat, eventtime, no_queue=no_queue)
-        if dat.no_queue: # here you silly hec, queue this no_queue payload...
+        if dat.no_queue:  # here you silly hec, queue this no_queue payload...
             return
         count_input(dat)
         self._queue_event(dat)
 
     def flushQueue(self):
         if HEC.flushing_queue:
-            log.debug('already flushing queue')
+            log.debug("already flushing queue")
             return
         if self.queue.cn < 1:
-            log.debug('nothing in queue')
+            log.debug("nothing in queue")
             return
         HEC.flushing_queue = True
         HEC.abort_flush = False
-        self._direct_send_msg('queue(flush) eventscount=%d', self.queue.cn)
+        self._direct_send_msg("queue(flush) eventscount=%d", self.queue.cn)
         dt = time.time() - HEC.last_flush
         if dt >= self.retry_diskqueue_interval and self.queue.cn:
             # was at debug level. bumped to error level for production logging
-            log.error('flushing queue eventscount=%d; NOTE: queued events may contain more than one payload/event',
-                self.queue.cn)
+            log.error(
+                "flushing queue eventscount=%d; NOTE: queued events may contain more than one payload/event",
+                self.queue.cn,
+            )
         HEC.last_flush = time.time()
         while HEC.flushing_queue:
             x, meta_data = self.queue.getz()
             if not x:
                 break
-            log.debug('pulled %d octets from queue; meta_data: %s', len(x), meta_data)
+            log.debug("pulled %d octets from queue; meta_data: %s", len(x), meta_data)
             self._send(x, meta_data=meta_data)
             if HEC.abort_flush:
-                log.error('aborting flush (probably due to new queue item)')
+                log.error("aborting flush (probably due to new queue item)")
                 break
         HEC.flushing_queue = False
         if self.queue.cn < 1:
-            self._direct_send_msg('queue(end)')
-            log.error('flushing complete eventscount=%d', self.queue.cn)
-
+            self._direct_send_msg("queue(end)")
+            log.error("flushing complete eventscount=%d", self.queue.cn)
 
     def _send(self, *payload, **kwargs):
         now = time.time()
-        data = ' '.join([ str(x) for x in payload ])
+        data = " ".join([str(x) for x in payload])
 
-        servers = [ x for x in self.server_uri if not x.bad ]
+        servers = [x for x in self.server_uri if not x.bad]
         if not servers:
             # NOTE: the only "bad" condition is an urllib3 LocationParseError (config typo)
             log.error("all servers are marked 'bad', aborting send")
@@ -376,10 +398,10 @@ class HEC(object):
         # (meta_data is written to disk alongside the payload(s) if
         # diskqueueing is enabled and the payloads are destined to disk, rather
         # than Splunk)
-        meta_data = kwargs.get('meta_data')
+        meta_data = kwargs.get("meta_data")
         if not isinstance(meta_data, dict):
             meta_data = dict()
-        for i in ('send_attempts', 'bad_request'):
+        for i in ("send_attempts", "bad_request"):
             if i not in meta_data:
                 meta_data[i] = 0
 
@@ -410,19 +432,19 @@ class HEC(object):
 
         possible_queue = False
         for server in sorted(servers, key=lambda u: u.fails):
-            log.debug('trying to send %d octets to %s', len(data), server.uri)
+            log.debug("trying to send %d octets to %s", len(data), server.uri)
             if server.outage:
                 if server.outage.last_check_age < self.outage_recheck_time:
-                    log.debug('flagged as having an outage, skipping send attempt')
+                    log.debug("flagged as having an outage, skipping send attempt")
                     possible_queue = True
                     continue
                 else:
-                    log.info('flagged as having an outage -- but it is time for a recheck')
+                    log.info("flagged as having an outage -- but it is time for a recheck")
                     server.outage.checking()
             try:
                 # Remember that we tried to send this
-                meta_data['send_attempts'] += 1
-                r = self.pool_manager.request('POST', server.uri, body=data, headers=self.headers)
+                meta_data["send_attempts"] += 1
+                res = self.pool_manager.request("POST", server.uri, body=data, headers=self.headers)
                 server.fails = 0
                 if server.outage:
                     server.outage = False
@@ -431,8 +453,9 @@ class HEC(object):
                 server.bad = True
                 continue
             except Exception as e:
-                log.error('presumed minor error with "%s" (mark fail and continue): %s',
-                    server.uri, repr(e), exc_info=True)
+                log.error(
+                    'presumed minor error with "%s" (mark fail and continue): %s', server.uri, repr(e), exc_info=True
+                )
                 possible_queue = True
                 server.fails += 1
                 if not server.outage and server.fails >= self.num_fails_indicate_outage:
@@ -440,80 +463,80 @@ class HEC(object):
                     server.outage = True
                 continue
 
-            if r.status < 400:
-                log.debug('octets accepted')
-                return r
+            if res.status < 400:
+                log.debug("octets accepted")
+                return res
 
-            elif r.status == 400 and r.reason.lower() == 'bad request':
-                log.info('message not accepted (%d %s); incrementing bad_request counter',
-                    r.status, r.reason)
+            elif res.status == 400 and res.reason.lower() == "bad request":
+                log.info("message not accepted (%d %s); incrementing bad_request counter", res.status, res.reason)
                 # try to queue the message if we don't find some other way to send it
                 possible_queue = True
                 # If Splunk said it doesn't want this message, increment the opinion counter
-                meta_data['bad_request'] += 1
-            elif r.status == 403:
-                log.error('invalid or expired token (%d %s)', r.status, r.reason)
+                meta_data["bad_request"] += 1
+            elif res.status == 403:
+                log.error("invalid or expired token (%d %s)", res.status, res.reason)
                 possible_queue = True
 
         # if we get here and something above thinks a queue is a good idea
         # then queue it! \o/
         if possible_queue:
-            log.debug('possible_queue indicated')
+            log.debug("possible_queue indicated")
 
             if self.queue:
                 # If we've already tried to send this more than max_queue_cycles times,
                 # we consider that Splunk doesn't want it for some reason.
-                if meta_data['send_attempts'] > self.max_queue_cycles:
-                    log.error('dropping message that appears to have cycled more than %d times',
-                        meta_data['send_attempts'])
+                if meta_data["send_attempts"] > self.max_queue_cycles:
+                    log.error(
+                        "dropping message that appears to have cycled more than %d times", meta_data["send_attempts"]
+                    )
                     return None
 
                 # If Splunk actually says it doesn't want it more than
                 # max_bad_request_cycles, we consider that Splunk may have actually
                 # said so (and it wasn't just an opinionated load balancer or
                 # something).
-                if meta_data['bad_request'] > self.max_bad_request_cycles:
-                    log.error('dropping message that Splunk said (%d times) it does not want',
-                        meta_data['bad_request'])
+                if meta_data["bad_request"] > self.max_bad_request_cycles:
+                    log.error(
+                        "dropping message that Splunk said (%d times) it does not want", meta_data["bad_request"]
+                    )
                     return None
 
                 # Drop these infos to disk.
                 self._queue_event(data, meta_data=meta_data)
             else:
-                log.debug('queue is NoQueue, not actually queueing anything')
+                log.debug("queue is NoQueue, not actually queueing anything")
 
-    def _finish_send(self, r):
-        if r is not None and hasattr(r, 'status') and hasattr(r, 'reason'):
-            log.debug('_send() result: %d %s', r.status, r.reason)
+    def _finish_send(self, res):
+        if res is not None and hasattr(res, "status") and hasattr(res, "reason"):
+            log.debug("_send() result: %d %s", res.status, res.reason)
             if self.queue:
                 self.flushQueue()
 
-
-    def sendEvent(self, payload, eventtime='', no_queue=False):
+    def sendEvent(self, payload, eventtime="", no_queue=False):
         payload = Payload.promote(payload, eventtime=eventtime, no_queue=no_queue)
         count_input(payload)
-        r = self._send(payload)
-        self._finish_send(r)
+        res = self._send(payload)
+        self._finish_send(res)
 
-
-    def batchEvent(self, dat, eventtime='', no_queue=False):
+    def batchEvent(self, dat, eventtime="", no_queue=False):
         payload = Payload.promote(dat, eventtime, no_queue=False)
 
-        if (self.currentByteLength + len(payload)) > self.maxByteLength:
+        if (self.current_byte_length + len(payload)) > self.max_byte_length:
             self.flushBatch()
-            if http_event_collector_debug:
-                log.debug('auto flushing')
+            if HTTP_EVENT_COLLECTOR_DEBUG:
+                log.debug("auto flushing")
         else:
-            self.currentByteLength = self.currentByteLength + len(payload)
+            self.current_byte_length = self.current_byte_length + len(payload)
         count_input(payload)
-        self.batchEvents.append(payload)
-
+        self.batch_events.append(payload)
 
     def flushBatch(self):
-        if self.batchEvents:
-            r = self._send( *self.batchEvents )
-            self.batchEvents = []
-            self.currentByteLength = 0
-            self._finish_send(r)
+        if self.batch_events:
+            res = self._send(*self.batch_events)
+            self.batch_events = []
+            self.current_byte_length = 0
+            self._finish_send(res)
 
-http_event_collector = HEC
+
+# this is a special exception to various naming rules for historical reasons
+http_event_collector = HEC  ## pylint: disable=invalid-name

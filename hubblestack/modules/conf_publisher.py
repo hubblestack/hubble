@@ -2,6 +2,7 @@
 """
 Module to send config options to splunk
 """
+import os
 import logging
 import copy
 import hubblestack.log
@@ -47,6 +48,10 @@ def publish(report_directly_to_splunk=True, remove_dots=True, *args):
         for arg in args:
             if arg in __opts__:
                 opts_to_log[arg] = __opts__[arg]
+
+    # 'POP' is for tracking persistent opts protection
+    if os.environ.get('NOISY_POP_DEBUG'):
+        log.error('POP config_publish (id=%d)', id(__opts__))
 
     filtered_conf = hubblestack.log.filter_logs(opts_to_log, remove_dots=remove_dots)
 

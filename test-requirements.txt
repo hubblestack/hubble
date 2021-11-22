@@ -3,7 +3,6 @@ backports-abc
 certifi
 chardet
 croniter
-futures
 gitdb2
 gitpython
 gprof2dot

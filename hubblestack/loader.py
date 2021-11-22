@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-'''
+"""
 The Salt loader is the core to Salt's plugin system, the loader scans
 directories for python loadable code and organizes the code into the
 plugin interfaces used by Salt.
-'''
+"""
 
 import os
 import re
@@ -51,7 +51,7 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 HUBBLE_BASE_PATH = os.path.abspath(hubblestack.syspaths.INSTALL_DIR)
-LOADED_BASE_NAME = 'hubble.loaded'
+LOADED_BASE_NAME = "hubble.loaded"
 
 MODULE_KIND_SOURCE = 1
 MODULE_KIND_COMPILED = 2
@@ -59,33 +59,64 @@ MODULE_KIND_EXTENSION = 3
 MODULE_KIND_PKG_DIRECTORY = 5
 SUFFIXES = []
 for suffix in importlib.machinery.EXTENSION_SUFFIXES:
-    SUFFIXES.append((suffix, 'rb', MODULE_KIND_EXTENSION))
+    SUFFIXES.append((suffix, "rb", MODULE_KIND_EXTENSION))
 for suffix in importlib.machinery.SOURCE_SUFFIXES:
-    SUFFIXES.append((suffix, 'rb', MODULE_KIND_SOURCE))
+    SUFFIXES.append((suffix, "rb", MODULE_KIND_SOURCE))
 for suffix in importlib.machinery.BYTECODE_SUFFIXES:
-    SUFFIXES.append((suffix, 'rb', MODULE_KIND_COMPILED))
+    SUFFIXES.append((suffix, "rb", MODULE_KIND_COMPILED))
 MODULE_KIND_MAP = {
     MODULE_KIND_SOURCE: importlib.machinery.SourceFileLoader,
     MODULE_KIND_COMPILED: importlib.machinery.SourcelessFileLoader,
-    MODULE_KIND_EXTENSION: importlib.machinery.ExtensionFileLoader
+    MODULE_KIND_EXTENSION: importlib.machinery.ExtensionFileLoader,
 }
 
-PY3_PRE_EXT = \
-    re.compile(r'\.cpython-{0}{1}(\.opt-[1-9])?'.format(*sys.version_info[:2]))
+PY3_PRE_EXT = re.compile(r"\.cpython-{0}{1}(\.opt-[1-9])?".format(*sys.version_info[:2]))
 
 # Will be set to pyximport module at runtime if cython is enabled in config.
-pyximport = None
+pyximport = None  # pylint: disable=invalid-name
+
+PRESERVABLE_OPTS = dict()
+
+
+def set_preservable_opts(opts):
+    """
+    This is a scope hack designed to make sure any __opts__ we pass to the
+    modules can survive recycling of the lazy loaders.
+
+    To be sure, this is to protect an anti-pattern where the modules sometimes
+    store data for reporting in __opts__ (why did we start doing this?).
+
+    We call this from hubblestack.daemon.refresh_grains.
+    """
+
+    oid = id(opts)
+    if oid not in PRESERVABLE_OPTS:
+        log.debug("setting %d to be preservable opts", oid)
+        PRESERVABLE_OPTS[oid] = opts.copy()
+
+
+def get_preserved_opts(opts):
+    """part of a scope hack, see: set_preservable_opts
+    we call this from __prep_mod_opts to invoke the scope hack
+    """
+
+    oid = id(opts)
+    ret = PRESERVABLE_OPTS.get(oid)
+    if ret:
+        log.debug("preserved opts found (%d)", oid)
+    return ret
+
 
 def _module_dirs(
-        opts,
-        ext_type,
-        tag=None,
-        int_type=None,
-        ext_dirs=True,
-        ext_type_dirs=None,
-        base_path=None,
-        explain=False,
-        ):
+    opts,
+    ext_type,
+    tag=None,
+    int_type=None,
+    ext_dirs=True,
+    ext_type_dirs=None,
+    base_path=None,
+    explain=False,
+):
 
     if tag is None:
         tag = ext_type
@@ -94,19 +125,19 @@ def _module_dirs(
     # module in salt, we want to replace it with the grains module from hubble,
     # so hubble's path should come last.
 
-    ext_types = os.path.join(opts['extension_modules'], ext_type)
+    ext_types = os.path.join(opts["extension_modules"], ext_type)
     sys_types = os.path.join(base_path or HUBBLE_BASE_PATH, int_type or ext_type)
 
-    hubblestack_type = 'hubblestack_' + (int_type or ext_type)
-    files_base_types = os.path.join(base_path or HUBBLE_BASE_PATH, 'files', hubblestack_type)
+    hubblestack_type = "hubblestack_" + (int_type or ext_type)
+    files_base_types = os.path.join(base_path or HUBBLE_BASE_PATH, "files", hubblestack_type)
 
     ext_type_types = []
     if ext_dirs:
         if tag is not None and ext_type_dirs is None:
-            ext_type_dirs = '{0}_dirs'.format(tag)
+            ext_type_dirs = "{0}_dirs".format(tag)
         if ext_type_dirs in opts:
             ext_type_types.extend(opts[ext_type_dirs])
-        for entry_point in pkg_resources.iter_entry_points('hubble.loader', ext_type_dirs):
+        for entry_point in pkg_resources.iter_entry_points("hubble.loader", ext_type_dirs):
             try:
                 loaded_entry_point = entry_point.load()
                 for path in loaded_entry_point():
@@ -117,35 +148,34 @@ def _module_dirs(
 
     cli_module_dirs = []
     # The dirs can be any module dir, or a in-tree _{ext_type} dir
-    for _dir in opts.get('module_dirs', []):
+    for _dir in opts.get("module_dirs", []):
         # Prepend to the list to match cli argument ordering
         maybe_dir = os.path.join(_dir, ext_type)
         if os.path.isdir(maybe_dir):
             cli_module_dirs.insert(0, maybe_dir)
             continue
 
-        maybe_dir = os.path.join(_dir, '_{0}'.format(ext_type))
+        maybe_dir = os.path.join(_dir, "_{0}".format(ext_type))
         if os.path.isdir(maybe_dir):
             cli_module_dirs.insert(0, maybe_dir)
 
     as_tuple = (cli_module_dirs, ext_type_types, [files_base_types, ext_types, sys_types])
-    log.debug('_module_dirs() => %s', as_tuple)
+    log.debug("_module_dirs() => %s", as_tuple)
     if explain:
         return as_tuple
     return cli_module_dirs + ext_type_types + [files_base_types, ext_types, sys_types]
 
 
 def modules(
-        opts,
-        context=None,
-        utils=None,
-        whitelist=None,
-        initial_load=False,
-        loaded_base_name=None,
-        notify=False,
-        static_modules=None,
-        proxy=None):
-    '''
+    opts,
+    context=None,
+    utils=None,
+    whitelist=None,
+    loaded_base_name=None,
+    static_modules=None,
+    proxy=None,
+):
+    """
     Load execution modules
 
     Returns a dictionary of execution modules appropriate for the current
@@ -162,10 +192,7 @@ def modules(
                             configuration.
 
     :param list whitelist: A list of modules which should be whitelisted.
-    :param bool initial_load: Deprecated flag! Unused.
     :param str loaded_base_name: A string marker for the loaded base name.
-    :param bool notify: Flag indicating that an event should be fired upon
-                        completion of module loading.
 
     .. code-block:: python
 
@@ -178,64 +205,65 @@ def modules(
         __utils__ = hubblestack.loader.utils(__opts__)
         __mods__ = hubblestack.loader.modules(__opts__, utils=__utils__)
         __mods__['test.ping']()
-    '''
+    """
     # TODO Publish documentation for module whitelisting
     if not whitelist:
-        whitelist = opts.get('whitelist_modules', None)
+        whitelist = opts.get("whitelist_modules", None)
     ret = LazyLoader(
-        _module_dirs(opts, 'modules', 'module'),
+        _module_dirs(opts, "modules", "module"),
         opts,
-        tag='module',
-        pack={'__context__': context, '__utils__': utils, '__proxy__': proxy},
+        tag="module",
+        pack={"__context__": context, "__utils__": utils, "__proxy__": proxy},
         whitelist=whitelist,
         loaded_base_name=loaded_base_name,
         static_modules=static_modules,
     )
 
-    ret.pack['__mods__'] = ret
+    # this is the very definition of a circular ref...  we added a destructor
+    # to deal with this, although the newest pythons periodically detect
+    # detached circular ref items during garbage collection.
+    ret.pack["__mods__"] = ret
 
     return ret
 
 
 def returners(opts, functions, whitelist=None, context=None, proxy=None):
-    '''
+    """
     Returns the returner modules
-    '''
+    """
     return LazyLoader(
-        _module_dirs(opts, 'returners', 'returner'),
+        _module_dirs(opts, "returners", "returner"),
         opts,
-        tag='returner',
+        tag="returner",
         whitelist=whitelist,
-        pack={'__mods__': functions, '__context__': context, '__proxy__': proxy or {}},
+        pack={"__mods__": functions, "__context__": context, "__proxy__": proxy or {}},
     )
 
 
 def utils(opts, whitelist=None, context=None, proxy=None):
-    '''
+    """
     Returns the utility modules
-    '''
+    """
     return LazyLoader(
-        _module_dirs(opts, 'utils', ext_type_dirs='utils_dirs'),
+        _module_dirs(opts, "utils", ext_type_dirs="utils_dirs"),
         opts,
-        tag='utils',
+        tag="utils",
         whitelist=whitelist,
-        pack={'__context__': context, '__proxy__': proxy or {}},
+        pack={"__context__": context, "__proxy__": proxy or {}},
     )
 
 
 def fileserver(opts, backends):
-    '''
+    """
     Returns the file server modules
-    '''
-    return LazyLoader(_module_dirs(opts, 'fileserver'),
-                      opts,
-                      tag='fileserver',
-                      whitelist=backends,
-                      pack={'__utils__': utils(opts)})
+    """
+    return LazyLoader(
+        _module_dirs(opts, "fileserver"), opts, tag="fileserver", whitelist=backends, pack={"__utils__": utils(opts)}
+    )
 
 
-def grain_funcs(opts, proxy=None):
-    '''
+def grain_funcs(opts):
+    """
     Returns the grain functions
 
       .. code-block:: python
@@ -245,81 +273,72 @@ def grain_funcs(opts, proxy=None):
 
           __opts__ = hubblestack.config.get_config('/etc/salt/minion')
           grainfuncs = hubblestack.loader.grain_funcs(__opts__)
-    '''
+    """
     return LazyLoader(
         _module_dirs(
             opts,
-            'grains',
-            'grain',
-            ext_type_dirs='grains_dirs',
+            "grains",
+            "grain",
+            ext_type_dirs="grains_dirs",
         ),
         opts,
-        tag='grains',
+        tag="grains",
     )
 
 
-def grains(opts, force_refresh=False, proxy=None):
-    '''
+def grains(opts, force_refresh=False):
+    """
     Return the functions for the dynamic grains and the values for the static
     grains.
 
     Since grains are computed early in the startup process, grains functions
-    do not have __mods__ or __proxy__ available.  At proxy-minion startup,
-    this function is called with the proxymodule LazyLoader object so grains
-    functions can communicate with their controlled device.
+    do not have __mods__ available.
 
     .. code-block:: python
 
         import hubblestack.config
         import hubblestack.loader
 
-        __opts__ = hubblestack.config.get_config('/etc/salt/minion')
+        __opts__ = hubblestack.config.get_config('/etc/hubble/hubble')
         __grains__ = hubblestack.loader.grains(__opts__)
         print __grains__['id']
-    '''
+    """
     # Need to re-import hubblestack.config, somehow it got lost when a minion is starting
     import hubblestack.config
-    # if we have no grains, lets try loading from disk (TODO: move to decorator?)
-    cfn = os.path.join(
-        opts['cachedir'],
-        'grains.cache.p'
-    )
 
-    if opts.get('skip_grains', False):
+    # if we have no grains, lets try loading from disk (TODO: move to decorator?)
+    cfn = os.path.join(opts["cachedir"], "grains.cache.p")
+
+    if opts.get("skip_grains", False):
         return {}
-    grains_deep_merge = opts.get('grains_deep_merge', False) is True
-    if 'conf_file' in opts:
+    grains_deep_merge = opts.get("grains_deep_merge", False) is True
+    if "conf_file" in opts:
         pre_opts = {}
-        pre_opts.update(hubblestack.config.load_config(
-            opts['conf_file'], 'HUBBLE_CONFIG',
-            hubblestack.config.DEFAULT_OPTS['conf_file']
-        ))
-        default_include = pre_opts.get(
-            'default_include', opts['default_include']
+        pre_opts.update(
+            hubblestack.config.load_config(
+                opts["conf_file"], "HUBBLE_CONFIG", hubblestack.config.DEFAULT_OPTS["conf_file"]
+            )
         )
-        include = pre_opts.get('include', [])
-        pre_opts.update(hubblestack.config.include_config(
-            default_include, opts['conf_file'], verbose=False
-        ))
-        pre_opts.update(hubblestack.config.include_config(
-            include, opts['conf_file'], verbose=True
-        ))
-        if 'grains' in pre_opts:
-            opts['grains'] = pre_opts['grains']
+        default_include = pre_opts.get("default_include", opts["default_include"])
+        include = pre_opts.get("include", [])
+        pre_opts.update(hubblestack.config.include_config(default_include, opts["conf_file"], verbose=False))
+        pre_opts.update(hubblestack.config.include_config(include, opts["conf_file"], verbose=True))
+        if "grains" in pre_opts:
+            opts["grains"] = pre_opts["grains"]
         else:
-            opts['grains'] = {}
+            opts["grains"] = {}
     else:
-        opts['grains'] = {}
+        opts["grains"] = {}
 
     grains_data = {}
-    funcs = grain_funcs(opts, proxy=None)
+    funcs = grain_funcs(opts)
     if force_refresh:  # if we refresh, lets reload grain modules
         funcs.clear()
     # Run core grains
     for key in funcs:
-        if not key.startswith('core.'):
+        if not key.startswith("core."):
             continue
-        log.trace('Loading %s grain', key)
+        log.trace("Loading %s grain", key)
         ret = funcs[key]()
         if not isinstance(ret, dict):
             continue
@@ -330,28 +349,21 @@ def grains(opts, force_refresh=False, proxy=None):
 
     # Run the rest of the grains
     for key in funcs:
-        if key.startswith('core.') or key == '_errors':
+        if key.startswith("core.") or key == "_errors":
             continue
         try:
-            # Grains are loaded too early to take advantage of the injected
-            # __proxy__ variable.  Pass an instance of that LazyLoader
-            # here instead to grains functions if the grains functions take
-            # one parameter.  Then the grains can have access to the
-            # proxymodule for retrieving information from the connected
-            # device.
-            log.trace('Loading %s grain', key)
+            log.trace("Loading %s grain", key)
             parameters = hubblestack.utils.args.get_function_argspec(funcs[key]).args
             kwargs = {}
-            if 'proxy' in parameters:
-                kwargs['proxy'] = proxy
-            if 'grains' in parameters:
-                kwargs['grains'] = grains_data
+            if "grains" in parameters:
+                kwargs["grains"] = grains_data
             ret = funcs[key](**kwargs)
         except Exception:
             log.critical(
-                'Failed to load grains defined in grain file %s in '
-                'function %s, error:\n', key, funcs[key],
-                exc_info=True
+                "Failed to load grains defined in grain file %s in " "function %s, error:\n",
+                key,
+                funcs[key],
+                exc_info=True,
             )
             continue
         if not isinstance(ret, dict):
@@ -361,25 +373,26 @@ def grains(opts, force_refresh=False, proxy=None):
         else:
             grains_data.update(ret)
 
-    grains_data.update(opts['grains'])
+    grains_data.update(opts["grains"])
     # Write cache if enabled
-    if opts.get('grains_cache', False):
+    if opts.get("grains_cache", False):
         with hubblestack.utils.files.set_umask(0o077):
             try:
                 if hubblestack.utils.platform.is_windows():
                     # Late import
                     import hubblestack.modules.cmdmod
+
                     # Make sure cache file isn't read-only
                     hubblestack.modules.cmdmod._run_quiet('attrib -R "{0}"'.format(cfn))
-                with hubblestack.utils.files.fopen(cfn, 'w+b') as fp_:
+                with hubblestack.utils.files.fopen(cfn, "w+b") as fp_:
                     try:
                         serial = hubblestack.payload.Serial(opts)
                         serial.dump(grains_data, fp_)
                     except TypeError as e:
-                        log.error('Failed to serialize grains cache: %s', e)
+                        log.error("Failed to serialize grains cache: %s", e)
                         raise  # re-throw for cleanup
             except Exception as e:
-                log.error('Unable to write to grains cache file %s: %s', cfn, e)
+                log.error("Unable to write to grains cache file %s: %s", cfn, e)
                 # Based on the original exception, the file may or may not have been
                 # created. If it was, we will remove it now, as the exception means
                 # the serialized data is not to be trusted, no matter what the
@@ -388,33 +401,35 @@ def grains(opts, force_refresh=False, proxy=None):
                     os.unlink(cfn)
 
     if grains_deep_merge:
-        hubblestack.utils.dictupdate.update(grains_data, opts['grains'])
+        hubblestack.utils.dictupdate.update(grains_data, opts["grains"])
     else:
-        grains_data.update(opts['grains'])
+        grains_data.update(opts["grains"])
     return hubblestack.utils.data.decode(grains_data, preserve_tuples=True)
 
+
 def render(opts, functions):
-    '''
+    """
     Returns the render modules
-    '''
-    pack = {'__mods__': functions,
-            '__grains__': opts.get('grains', {})}
+    """
+    pack = {"__mods__": functions, "__grains__": opts.get("grains", {})}
     ret = LazyLoader(
         _module_dirs(
             opts,
-            'renderers',
-            'render',
-            ext_type_dirs='render_dirs',
+            "renderers",
+            "render",
+            ext_type_dirs="render_dirs",
         ),
         opts,
-        tag='render',
+        tag="render",
         pack=pack,
     )
-    rend = FilterDictWrapper(ret, '.render')
+    rend = FilterDictWrapper(ret, ".render")
 
-    if not check_render_pipe_str(opts['renderer'], rend, opts['renderer_blacklist'], opts['renderer_whitelist']):
-        err = ('The renderer {0} is unavailable, this error is often because '
-               'the needed software is unavailable'.format(opts['renderer']))
+    if not check_render_pipe_str(opts["renderer"], rend, opts["renderer_blacklist"], opts["renderer_whitelist"]):
+        err = (
+            "The renderer {0} is unavailable, this error is often because "
+            "the needed software is unavailable".format(opts["renderer"])
+        )
         log.critical(err)
         raise LoaderError(err)
     return rend
@@ -424,7 +439,7 @@ def _generate_module(name):
     if name in sys.modules:
         return
 
-    code = "'''Salt loaded {0} parent module'''".format(name.split('.')[-1])
+    code = "'''Salt loaded {0} parent module'''".format(name.split(".")[-1])
     # ModuleType can't accept a unicode type on PY2
     module = types.ModuleType(str(name))  # future lint: disable=blacklisted-function
     exec(code, module.__dict__)
@@ -433,12 +448,12 @@ def _generate_module(name):
 
 def _mod_type(module_path):
     if module_path.startswith(HUBBLE_BASE_PATH):
-        return 'int'
-    return 'ext'
+        return "int"
+    return "ext"
 
 
 class LazyLoader(hubblestack.utils.lazy.LazyDict):
-    '''
+    """
     A pseduo-dictionary which has a set of keys which are the
     name of the module and function, delimited by a dot. When
     the value of the key is accessed, the function is then loaded
@@ -462,39 +477,48 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
     # TODO:
         - move modules_max_memory into here
         - singletons (per tag)
-    '''
+    """
 
     mod_dict_class = hubblestack.utils.odict.OrderedDict
 
-    def __init__(self,
-                 module_dirs,
-                 opts=None,
-                 tag='module',
-                 loaded_base_name=None,
-                 mod_type_check=None,
-                 pack=None,
-                 whitelist=None,
-                 virtual_enable=True,
-                 static_modules=None,
-                 funcname_filter=None,
-                 xlate_modnames=None,
-                 xlate_funcnames=None,
-                 proxy=None,
-                 virtual_funcs=None,
-                 ):  # pylint: disable=W0231
-        '''
+    def __del__(self):
+        # trying to use logging in here works for debugging, but later causes
+        # problems at runtime during global destruction.
+        # log.debug("clearing possible memory leaks by emptying pack, missing_modules and loaded_modules dicts")
+        self.pack.clear()
+        self.missing_modules.clear()
+        self.loaded_modules.clear()
+
+    def __init__(
+        self,
+        module_dirs,
+        opts=None,
+        tag="module",
+        loaded_base_name=None,
+        mod_type_check=None,
+        pack=None,
+        whitelist=None,
+        virtual_enable=True,
+        static_modules=None,
+        funcname_filter=None,
+        xlate_modnames=None,
+        xlate_funcnames=None,
+        proxy=None,
+        virtual_funcs=None,
+    ):  # pylint: disable=W0231
+        """
         In pack, if any of the values are None they will be replaced with an
         empty context-specific dict
-        '''
+        """
 
         self.funcname_filter = funcname_filter
-        self.xlate_modnames  = xlate_modnames
+        self.xlate_modnames = xlate_modnames
         self.xlate_funcnames = xlate_funcnames
 
         self.pack = {} if pack is None else pack
         if opts is None:
             opts = {}
-        threadsafety = not opts.get('multiprocessing')
+        threadsafety = not opts.get("multiprocessing")
         self.context_dict = hubblestack.utils.context.ContextDict(threadsafe=threadsafety)
         self.opts = self.__prep_mod_opts(opts)
 
@@ -503,8 +527,8 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         self.loaded_base_name = loaded_base_name or LOADED_BASE_NAME
         self.mod_type_check = mod_type_check or _mod_type
 
-        if '__context__' not in self.pack:
-            self.pack['__context__'] = None
+        if "__context__" not in self.pack:
+            self.pack["__context__"] = None
 
         for k, v in self.pack.items():
             if v is None:  # if the value of a pack is None, lets make an empty dict
@@ -525,21 +549,13 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
             virtual_funcs = []
         self.virtual_funcs = virtual_funcs
 
-        self.disabled = set(
-            self.opts.get(
-                'disable_{0}{1}'.format(
-                    self.tag,
-                    '' if self.tag[-1] == 's' else 's'
-                ),
-                []
-            )
-        )
+        self.disabled = set(self.opts.get("disable_{0}{1}".format(self.tag, "" if self.tag[-1] == "s" else "s"), []))
 
         # A map of suffix to description for imp
         self.suffix_map = {}
         # A list to determine precedence of extensions
         # Prefer packages (directories) over modules (single files)!
-        self.suffix_order = ['']
+        self.suffix_order = [""]
         for (suffix, mode, kind) in SUFFIXES:
             self.suffix_map[suffix] = (suffix, mode, kind)
             self.suffix_order.append(suffix)
@@ -550,23 +566,23 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         super(LazyLoader, self).__init__()  # late init the lazy loader
         # create all of the import namespaces
 
-        for subspace in ('int', 'ext', 'e_int', 'salt'):
-            _generate_module('.'.join([self.loaded_base_name, tag]))
-            _generate_module('.'.join([self.loaded_base_name, tag, subspace]))
+        for subspace in ("int", "ext", "e_int", "salt"):
+            _generate_module(".".join([self.loaded_base_name, tag]))
+            _generate_module(".".join([self.loaded_base_name, tag, subspace]))
 
     def __getitem__(self, item):
-        '''
+        """
         Override the __getitem__ in order to decorate the returned function if we need
         to last-minute inject globals
-        '''
+        """
         return super(LazyLoader, self).__getitem__(item)
 
     def __getattr__(self, mod_name):
-        '''
+        """
         Allow for "direct" attribute access-- this allows jinja templates to
         access things like `hubblestack.test.ping()`
-        '''
-        if mod_name in ('__getstate__', '__setstate__'):
+        """
+        if mod_name in ("__getstate__", "__setstate__"):
             return object.__getattribute__(self, mod_name)
 
         # if we have an attribute named that, lets return it.
@@ -589,45 +605,46 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
             raise AttributeError(mod_name)
 
     def missing_fun_string(self, function_name):
-        '''
+        """
         Return the error string for a missing function.
 
         This can range from "not available' to "__virtual__" returned False
-        '''
-        mod_name = function_name.split('.')[0]
+        """
+        mod_name = function_name.split(".")[0]
         if mod_name in self.loaded_modules:
-            return '\'{0}\' is not available.'.format(function_name)
+            return "'{0}' is not available.".format(function_name)
         else:
             try:
                 reason = self.missing_modules[mod_name]
             except KeyError:
-                return '\'{0}\' is not available.'.format(function_name)
+                return "'{0}' is not available.".format(function_name)
             else:
                 if reason is not None:
-                    return '\'{0}\' __virtual__ returned False: {1}'.format(mod_name, reason)
+                    return "'{0}' __virtual__ returned False: {1}".format(mod_name, reason)
                 else:
-                    return '\'{0}\' __virtual__ returned False'.format(mod_name)
+                    return "'{0}' __virtual__ returned False".format(mod_name)
 
     def _refresh_file_mapping(self):
-        '''
+        """
         refresh the mapping of the FS on disk
-        '''
+        """
         # map of suffix to description for imp
-        if self.opts.get('cython_enable', True) is True:
+        if self.opts.get("cython_enable", True) is True:
             try:
-                global pyximport
-                pyximport = __import__('pyximport')  # pylint: disable=import-error
+                global pyximport  # pylint: disable=invalid-name
+                pyximport = __import__("pyximport")  # pylint: disable=import-error
                 pyximport.install()
                 # add to suffix_map so file_mapping will pick it up
-                self.suffix_map['.pyx'] = tuple()
+                self.suffix_map[".pyx"] = tuple()
             except ImportError:
-                log.info('Cython is enabled in the options but not present '
-                    'in the system path. Skipping Cython modules.')
+                log.info(
+                    "Cython is enabled in the options but not present " "in the system path. Skipping Cython modules."
+                )
         # Allow for zipimport of modules
-        if self.opts.get('enable_zip_modules', True) is True:
-            self.suffix_map['.zip'] = tuple()
+        if self.opts.get("enable_zip_modules", True) is True:
+            self.suffix_map[".zip"] = tuple()
         # allow for module dirs
-        self.suffix_map[''] = ('', '', MODULE_KIND_PKG_DIRECTORY)
+        self.suffix_map[""] = ("", "", MODULE_KIND_PKG_DIRECTORY)
 
         # create mapping of filename (without suffix) to (path, suffix)
         # The files are added in order of priority, so order *must* be retained.
@@ -636,29 +653,26 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         opt_match = []
 
         def _replace_pre_ext(obj):
-            '''
+            """
             Hack so we can get the optimization level that we replaced (if
             any) out of the re.sub call below. We use a list here because
             it is a persistent data structure that we will be able to
             access after re.sub is called.
-            '''
+            """
             opt_match.append(obj)
-            return ''
+            return ""
 
         for mod_dir in self.module_dirs:
             try:
                 # Make sure we have a sorted listdir in order to have
                 # expectable override results
-                files = sorted(
-                    x for x in os.listdir(mod_dir) if x != '__pycache__'
-                )
+                files = sorted(x for x in os.listdir(mod_dir) if x != "__pycache__")
             except OSError:
                 continue  # Next mod_dir
 
             try:
                 pycache_files = [
-                    os.path.join('__pycache__', x) for x in
-                    sorted(os.listdir(os.path.join(mod_dir, '__pycache__')))
+                    os.path.join("__pycache__", x) for x in sorted(os.listdir(os.path.join(mod_dir, "__pycache__")))
                 ]
             except OSError:
                 pass
@@ -668,28 +682,29 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
             for filename in files:
                 try:
                     dirname, basename = os.path.split(filename)
-                    if basename.startswith('_'):
+                    if basename.startswith("_"):
                         # skip private modules
                         # log messages omitted for obviousness
                         continue  # Next filename
                     f_noext, ext = os.path.splitext(basename)
                     f_noext = PY3_PRE_EXT.sub(_replace_pre_ext, f_noext)
                     try:
-                        opt_level = int(
-                            opt_match.pop().group(1).rsplit('-', 1)[-1]
-                        )
+                        opt_level = int(opt_match.pop().group(1).rsplit("-", 1)[-1])
                     except (AttributeError, IndexError, ValueError):
                         # No regex match or no optimization level matched
                         opt_level = 0
                     try:
-                        opt_index = self.opts['optimization_order'].index(opt_level)
+                        opt_index = self.opts["optimization_order"].index(opt_level)
                     except KeyError:
                         log.trace(
-                            'Disallowed optimization level %d for module '
-                            'name \'%s\', skipping. Add %d to the '
-                            '\'optimization_order\' config option if you '
-                            'do not want to ignore this optimization '
-                            'level.', opt_level, f_noext, opt_level
+                            "Disallowed optimization level %d for module "
+                            "name '%s', skipping. Add %d to the "
+                            "'optimization_order' config option if you "
+                            "do not want to ignore this optimization "
+                            "level.",
+                            opt_level,
+                            f_noext,
+                            opt_level,
                         )
                         continue
                     else:
@@ -700,20 +715,17 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
                     if ext not in self.suffix_map:
                         continue  # Next filename
                     if f_noext in self.disabled:
-                        log.trace(
-                            'Skipping %s, it is disabled by configuration',
-                            filename
-                        )
+                        log.trace("Skipping %s, it is disabled by configuration", filename)
                         continue  # Next filename
                     fpath = os.path.join(mod_dir, filename)
                     # if its a directory, lets allow us to load that
-                    if ext == '':
+                    if ext == "":
                         # is there something __init__?
                         subfiles = os.listdir(fpath)
                         for suffix in self.suffix_order:
-                            if '' == suffix:
+                            if "" == suffix:
                                 continue  # Next suffix (__init__ must have a suffix)
-                            init_file = '__init__{0}'.format(suffix)
+                            init_file = "__init__{0}".format(suffix)
                             if init_file in subfiles:
                                 break
                         else:
@@ -725,21 +737,17 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
                     except KeyError:
                         pass
                     else:
-                        if '' in (curr_ext, ext) and curr_ext != ext:
-                            log.error(
-                                'Module/package collision: \'%s\' and \'%s\'',
-                                fpath,
-                                self.file_mapping[f_noext][0]
-                            )
+                        if "" in (curr_ext, ext) and curr_ext != ext:
+                            log.error("Module/package collision: '%s' and '%s'", fpath, self.file_mapping[f_noext][0])
 
-                        if ext == '.pyc' and curr_ext == '.pyc':
+                        if ext == ".pyc" and curr_ext == ".pyc":
                             # Check the optimization level
                             if opt_index >= curr_opt_index:
                                 # Module name match, but a higher-priority
                                 # optimization level was already matched, skipping.
                                 continue
 
-                    if not dirname and ext == '.pyc':
+                    if not dirname and ext == ".pyc":
                         # On Python 3, we should only load .pyc files from the
                         # __pycache__ subdirectory (i.e. when dirname is not an
                         # empty string).
@@ -751,13 +759,13 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
                 except OSError:
                     continue
         for smod in self.static_modules:
-            f_noext = smod.split('.')[-1]
-            self.file_mapping[f_noext] = (smod, '.o', 0)
+            f_noext = smod.split(".")[-1]
+            self.file_mapping[f_noext] = (smod, ".o", 0)
 
     def clear(self):
-        '''
+        """
         Clear the dict
-        '''
+        """
         with self._lock:
             super(LazyLoader, self).clear()  # clear the lazy loader
             self.loaded_files = set()
@@ -765,33 +773,37 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
             self.loaded_modules = {}
             # if we have been loaded before, lets clear the file mapping since
             # we obviously want a re-do
-            if hasattr(self, 'opts'):
+            if hasattr(self, "opts"):
                 self._refresh_file_mapping()
             self.initial_load = False
 
     def __prep_mod_opts(self, opts):
-        '''
+        """
         Strip out of the opts any logger instance
-        '''
-        if '__grains__' not in self.pack:
-            self.context_dict['grains'] = opts.get('grains', {})
-            self.pack['__grains__'] = hubblestack.utils.context.NamespacedDictWrapper(self.context_dict, 'grains')
+        """
 
-        if '__pillar__' not in self.pack:
-            self.context_dict['pillar'] = opts.get('pillar', {})
-            self.pack['__pillar__'] = hubblestack.utils.context.NamespacedDictWrapper(self.context_dict, 'pillar')
+        if "__grains__" not in self.pack:
+            self.context_dict["grains"] = opts.get("grains", {})
+            self.pack["__grains__"] = hubblestack.utils.context.NamespacedDictWrapper(self.context_dict, "grains")
 
-        mod_opts = {}
-        for key, val in list(opts.items()):
-            if key == 'logger':
-                continue
-            mod_opts[key] = val
-        return mod_opts
+        if "__pillar__" not in self.pack:
+            self.context_dict["pillar"] = opts.get("pillar", {})
+            self.pack["__pillar__"] = hubblestack.utils.context.NamespacedDictWrapper(self.context_dict, "pillar")
+
+        ret = opts.copy()
+        for item in ("logger",):
+            if item in ret:
+                del ret[item]
+        pres_opt = get_preserved_opts(opts)
+        if pres_opt is not None:
+            pres_opt.update(ret)
+            return pres_opt
+        return ret
 
     def _iter_files(self, mod_name):
-        '''
+        """
         Iterate over all file_mapping files in order of closeness to mod_name
-        '''
+        """
         # do we have an exact match?
         if mod_name in self.file_mapping:
             yield mod_name
@@ -807,15 +819,12 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
                 yield k
 
     def _reload_submodules(self, mod):
-        submodules = (
-            getattr(mod, sname) for sname in dir(mod) if
-            isinstance(getattr(mod, sname), mod.__class__)
-        )
+        submodules = (getattr(mod, sname) for sname in dir(mod) if isinstance(getattr(mod, sname), mod.__class__))
 
         # reload only custom "sub"modules
         for submodule in submodules:
             # it is a submodule if the name is in a namespace under mod
-            if submodule.__name__.startswith(mod.__name__ + '.'):
+            if submodule.__name__.startswith(mod.__name__ + "."):
                 reload_module(submodule)
                 self._reload_submodules(submodule)
 
@@ -826,37 +835,31 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         fpath_dirname = os.path.dirname(fpath)
         try:
             sys.path.append(fpath_dirname)
-            if fpath_dirname.endswith('__pycache__'):
-                sys.path.append( os.path.dirname(fpath_dirname) )
-            if suffix == '.pyx':
+            if fpath_dirname.endswith("__pycache__"):
+                sys.path.append(os.path.dirname(fpath_dirname))
+            if suffix == ".pyx":
                 mod = pyximport.load_module(name, fpath, tempfile.gettempdir())
-            elif suffix == '.o':
+            elif suffix == ".o":
                 top_mod = __import__(fpath, globals(), locals(), [])
-                comps = fpath.split('.')
+                comps = fpath.split(".")
                 if len(comps) < 2:
                     mod = top_mod
                 else:
                     mod = top_mod
                     for subname in comps[1:]:
                         mod = getattr(mod, subname)
-            elif suffix == '.zip':
+            elif suffix == ".zip":
                 mod = zipimporter(fpath).load_module(name)
             else:
                 desc = self.suffix_map[suffix]
                 # if it is a directory, we don't open a file
                 try:
-                    mod_namespace = '.'.join((
-                        self.loaded_base_name,
-                        self.mod_type_check(fpath),
-                        self.tag,
-                        name))
+                    mod_namespace = ".".join((self.loaded_base_name, self.mod_type_check(fpath), self.tag, name))
                 except TypeError:
-                    mod_namespace = '{0}.{1}.{2}.{3}'.format(
-                        self.loaded_base_name,
-                        self.mod_type_check(fpath),
-                        self.tag,
-                        name)
-                if suffix == '':
+                    mod_namespace = "{0}.{1}.{2}.{3}".format(
+                        self.loaded_base_name, self.mod_type_check(fpath), self.tag, name
+                    )
+                if suffix == "":
                     # pylint: disable=no-member
                     # Package directory, look for __init__
                     loader_details = [
@@ -864,10 +867,7 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
                         (importlib.machinery.SourcelessFileLoader, importlib.machinery.BYTECODE_SUFFIXES),
                         (importlib.machinery.ExtensionFileLoader, importlib.machinery.EXTENSION_SUFFIXES),
                     ]
-                    file_finder = importlib.machinery.FileFinder(
-                        fpath_dirname,
-                        *loader_details
-                    )
+                    file_finder = importlib.machinery.FileFinder(fpath_dirname, *loader_details)
                     spec = file_finder.find_spec(mod_namespace)
                     if spec is None:
                         raise ImportError()
@@ -887,9 +887,7 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
                 else:
                     # pylint: disable=no-member
                     loader = MODULE_KIND_MAP[desc[2]](mod_namespace, fpath)
-                    spec = importlib.util.spec_from_file_location(
-                        mod_namespace, fpath, loader=loader
-                    )
+                    spec = importlib.util.spec_from_file_location(mod_namespace, fpath, loader=loader)
                     if spec is None:
                         raise ImportError()
                     # TODO: Get rid of load_module in favor of
@@ -898,27 +896,28 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
                     # with the magic dunders we pack into the loaded
                     # modules, most notably with salt-ssh's __opts__.
                     mod = spec.loader.load_module()
-                    #mod = importlib.util.module_from_spec(spec)
-                    #spec.loader.exec_module(mod)
+                    # mod = importlib.util.module_from_spec(spec)
+                    # spec.loader.exec_module(mod)
                     # pylint: enable=no-member
                     sys.modules[mod_namespace] = mod
         except IOError:
             raise
         except ImportError as exc:
-            if 'magic number' in str(exc):
-                error_msg = 'Failed to import {0} {1}. Bad magic number. If migrating from Python2 to Python3, remove all .pyc files and try again.'.format(self.tag, name)
+            if "magic number" in str(exc):
+                error_msg = "Failed to import {0} {1}. Bad magic number. If migrating from Python2 to Python3, remove all .pyc files and try again.".format(
+                    self.tag, name
+                )
                 log.warning(error_msg)
                 self.missing_modules[name] = error_msg
-            log.debug(
-                'Failed to import %s %s:\n',
-                self.tag, name, exc_info=True
-            )
+            log.debug("Failed to import %s %s:\n", self.tag, name, exc_info=True)
             self.missing_modules[name] = exc
             return False
         except Exception as error:
             log.error(
-                'Failed to import %s %s, this is due most likely to a '
-                'syntax error:\n', self.tag, name, exc_info=True
+                "Failed to import %s %s, this is due most likely to a " "syntax error:\n",
+                self.tag,
+                name,
+                exc_info=True,
             )
             self.missing_modules[name] = error
             return False
@@ -928,22 +927,19 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
             except Exception:
                 pass
             else:
-                tgt_fn = os.path.join('salt', 'utils', 'process.py')
-                if fn_.endswith(tgt_fn) and '_handle_signals' in caller:
+                tgt_fn = os.path.join("salt", "utils", "process.py")
+                if fn_.endswith(tgt_fn) and "_handle_signals" in caller:
                     # Race conditon, SIGTERM or SIGINT received while loader
                     # was in process of loading a module. Call sys.exit to
                     # ensure that the process is killed.
                     sys.exit(0)
-            log.error(
-                'Failed to import %s %s as the module called exit()\n',
-                self.tag, name, exc_info=True
-            )
+            log.error("Failed to import %s %s as the module called exit()\n", self.tag, name, exc_info=True)
             self.missing_modules[name] = error
             return False
         finally:
             sys.path.remove(fpath_dirname)
 
-        if hasattr(mod, '__opts__'):
+        if hasattr(mod, "__opts__"):
             mod.__opts__.update(self.opts)
         else:
             mod.__opts__ = self.opts
@@ -952,24 +948,21 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         for p_name, p_value in self.pack.items():
             setattr(mod, p_name, p_value)
 
-        module_name = mod.__name__.rsplit('.', 1)[-1]
+        module_name = mod.__name__.rsplit(".", 1)[-1]
         if callable(self.xlate_modnames):
-            module_name = self.xlate_modnames([module_name], name, fpath, suffix, mod, mode='module_name')
-            name        = self.xlate_modnames([name], name, fpath, suffix, mod, mode='name')
+            module_name = self.xlate_modnames([module_name], name, fpath, suffix, mod, mode="module_name")
+            name = self.xlate_modnames([name], name, fpath, suffix, mod, mode="name")
 
         # Call a module's initialization method if it exists
-        module_init = getattr(mod, '__init__', None)
+        module_init = getattr(mod, "__init__", None)
         if inspect.isfunction(module_init):
             try:
                 module_init(self.opts)
             except TypeError as e:
                 log.error(e)
             except Exception:
-                err_string = '__init__ failed'
-                log.debug(
-                    'Error loading %s.%s: %s',
-                    self.tag, module_name, err_string, exc_info=True
-                )
+                err_string = "__init__ failed"
+                log.debug("Error loading %s.%s: %s", self.tag, module_name, err_string, exc_info=True)
                 self.missing_modules[module_name] = err_string
                 self.missing_modules[name] = err_string
                 return False
@@ -977,15 +970,13 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         # if virtual modules are enabled, we need to look for the
         # __virtual__() function inside that module and run it.
         if self.virtual_enable:
-            virtual_funcs_to_process = ['__virtual__'] + self.virtual_funcs
+            virtual_funcs_to_process = ["__virtual__"] + self.virtual_funcs
             for virtual_func in virtual_funcs_to_process:
-                virtual_ret, module_name, virtual_err, virtual_aliases = \
-                    self._process_virtual(mod, module_name, virtual_func)
+                virtual_ret, module_name, virtual_err, virtual_aliases = self._process_virtual(
+                    mod, module_name, virtual_func
+                )
                 if virtual_err is not None:
-                    log.trace(
-                        'Error loading %s.%s: %s',
-                        self.tag, module_name, virtual_err
-                    )
+                    log.trace("Error loading %s.%s: %s", self.tag, module_name, virtual_err)
 
                 # if _process_virtual returned a non-True value then we are
                 # supposed to not process this module
@@ -997,24 +988,20 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         else:
             virtual_aliases = ()
 
-        if getattr(mod, '__load__', False) is not False:
+        if getattr(mod, "__load__", False) is not False:
             log.info(
-                'The functions from module \'%s\' are being loaded from the '
-                'provided __load__ attribute', module_name
+                "The functions from module '%s' are being loaded from the " "provided __load__ attribute", module_name
             )
 
         # If we had another module by the same virtual name, we should put any
         # new functions under the existing dictionary.
         mod_names = [module_name] + list(virtual_aliases)
         if callable(self.xlate_modnames):
-            mod_names = self.xlate_modnames(mod_names, name, fpath, suffix, mod, mode='mod_names')
-        mod_dict = dict((
-            (x, self.loaded_modules.get(x, self.mod_dict_class()))
-            for x in mod_names
-        ))
+            mod_names = self.xlate_modnames(mod_names, name, fpath, suffix, mod, mode="mod_names")
+        mod_dict = dict(((x, self.loaded_modules.get(x, self.mod_dict_class())) for x in mod_names))
 
-        for attr in getattr(mod, '__load__', dir(mod)):
-            if attr.startswith('_'):
+        for attr in getattr(mod, "__load__", dir(mod)):
+            if attr.startswith("_"):
                 # private functions are skipped
                 continue
             func = getattr(mod, attr)
@@ -1031,15 +1018,16 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
             #
             # It default's of course to the found callable attribute name
             # if no alias is defined.
-            funcname = getattr(mod, '__func_alias__', {}).get(attr, attr)
+            funcname = getattr(mod, "__func_alias__", {}).get(attr, attr)
             for tgt_mod in mod_names:
                 try:
-                    full_funcname = '.'.join((tgt_mod, funcname))
+                    full_funcname = ".".join((tgt_mod, funcname))
                 except TypeError:
-                    full_funcname = '{0}.{1}'.format(tgt_mod, funcname)
+                    full_funcname = "{0}.{1}".format(tgt_mod, funcname)
                 if callable(self.xlate_funcnames):
                     funcname, full_funcname = self.xlate_funcnames(
-                        name, fpath, suffix, tgt_mod, funcname, full_funcname, mod, func)
+                        name, fpath, suffix, tgt_mod, funcname, full_funcname, mod, func
+                    )
                 # Save many references for lookups
                 # Careful not to overwrite existing (higher priority) functions
                 if full_funcname not in self._dict:
@@ -1053,25 +1041,22 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         try:
             Depends.enforce_dependencies(self._dict, self.tag, name)
         except RuntimeError as exc:
-            log.info(
-                'Depends.enforce_dependencies() failed for the following '
-                'reason: %s', exc
-            )
+            log.info("Depends.enforce_dependencies() failed for the following " "reason: %s", exc)
 
         for tgt_mod in mod_names:
             self.loaded_modules[tgt_mod] = mod_dict[tgt_mod]
         return True
 
     def _load(self, key):
-        '''
+        """
         Load a single item if you have it
-        '''
+        """
         # if the key doesn't have a '.' then it isn't valid for this mod dict
         if not isinstance(key, str):
-            raise KeyError('The key must be a string.')
-        if '.' not in key:
-            raise KeyError('The key \'{0}\' should contain a \'.\''.format(key))
-        mod_name, _ = key.split('.', 1)
+            raise KeyError("The key must be a string.")
+        if "." not in key:
+            raise KeyError("The key '{0}' should contain a '.'".format(key))
+        mod_name, _ = key.split(".", 1)
         with self._lock:
             # It is possible that the key is in the dictionary after
             # acquiring the lock due to another thread loading it.
@@ -1080,8 +1065,10 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
             # if the modulename isn't in the whitelist, don't bother
             if self.whitelist and mod_name not in self.whitelist:
                 log.error(
-                    'Failed to load function %s because its module (%s) is '
-                    'not in the whitelist: %s', key, mod_name, self.whitelist
+                    "Failed to load function %s because its module (%s) is " "not in the whitelist: %s",
+                    key,
+                    mod_name,
+                    self.whitelist,
                 )
                 raise KeyError(key)
 
@@ -1116,9 +1103,9 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         return ret
 
     def _load_all(self):
-        '''
+        """
         Load all of them
-        '''
+        """
         with self._lock:
             for name in self.file_mapping:
                 if name in self.loaded_files or name in self.missing_modules:
@@ -1133,16 +1120,16 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
             self._load_all()
 
     def _apply_outputter(self, func, mod):
-        '''
+        """
         Apply the __outputter__ variable to the functions
-        '''
-        if hasattr(mod, '__outputter__'):
+        """
+        if hasattr(mod, "__outputter__"):
             outp = mod.__outputter__
             if func.__name__ in outp:
                 func.__outputter__ = outp[func.__name__]
 
-    def _process_virtual(self, mod, module_name, virtual_func='__virtual__'):
-        '''
+    def _process_virtual(self, mod, module_name, virtual_func="__virtual__"):
+        """
         Given a loaded module and its default name determine its virtual name
 
         This function returns a tuple. The first value will be either True or
@@ -1154,7 +1141,7 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         The default name can be calculated as follows::
 
             module_name = mod.__name__.rsplit('.', 1)[-1]
-        '''
+        """
 
         # The __virtual__ function will return either a True or False value.
         # If it returns a True value it can also set a module level attribute
@@ -1167,30 +1154,29 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         # namespace collisions. And finally it allows modules to return False
         # if they are not intended to run on the given platform or are missing
         # dependencies.
-        virtual_aliases = getattr(mod, '__virtual_aliases__', tuple())
+        virtual_aliases = getattr(mod, "__virtual_aliases__", tuple())
         try:
             error_reason = None
-            if hasattr(mod, '__virtual__') and inspect.isfunction(mod.__virtual__):
+            if hasattr(mod, "__virtual__") and inspect.isfunction(mod.__virtual__):
                 try:
                     start = time.time()
                     virtual = getattr(mod, virtual_func)()
                     if isinstance(virtual, tuple):
                         error_reason = virtual[1]
                         virtual = virtual[0]
-                    if self.opts.get('virtual_timer', False):
+                    if self.opts.get("virtual_timer", False):
                         end = time.time() - start
-                        msg = 'Virtual function took {0} seconds for {1}'.format(
-                                end, module_name)
+                        msg = "Virtual function took {0} seconds for {1}".format(end, module_name)
                         log.warning(msg)
                 except Exception as exc:
                     error_reason = (
-                        'Exception raised when processing __virtual__ function'
-                        ' for {0}. Module will not be loaded: {1}'.format(
-                            mod.__name__, exc))
+                        "Exception raised when processing __virtual__ function"
+                        " for {0}. Module will not be loaded: {1}".format(mod.__name__, exc)
+                    )
                     log.error(error_reason, exc_info=True)
                     virtual = None
                 # Get the module's virtual name
-                virtualname = getattr(mod, '__virtualname__', virtual)
+                virtualname = getattr(mod, "__virtualname__", virtual)
                 if not virtual:
                     # if __virtual__() evaluates to False then the module
                     # wasn't meant for this platform or it's not supposed to
@@ -1200,10 +1186,12 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
                     # improperly loaded
                     if virtual is None:
                         log.warning(
-                            '%s.__virtual__() is wrongly returning `None`. '
-                            'It should either return `True`, `False` or a new '
-                            'name. If you\'re the developer of the module '
-                            '\'%s\', please fix this.', mod.__name__, module_name
+                            "%s.__virtual__() is wrongly returning `None`. "
+                            "It should either return `True`, `False` or a new "
+                            "name. If you're the developer of the module "
+                            "'%s', please fix this.",
+                            mod.__name__,
+                            module_name,
                         )
 
                     return (False, module_name, error_reason, virtual_aliases)
@@ -1214,20 +1202,16 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
                 if virtual is not True and module_name != virtual:
                     # The module is renaming itself. Updating the module name
                     # with the new name
-                    log.trace('Loaded %s as virtual %s', module_name, virtual)
+                    log.trace("Loaded %s as virtual %s", module_name, virtual)
 
-                    if not hasattr(mod, '__virtualname__'):
+                    if not hasattr(mod, "__virtualname__"):
                         hubblestack.utils.versions.warn_until(
-                            'Hydrogen',
-                            'The \'{0}\' module is renaming itself in its '
-                            '__virtual__() function ({1} => {2}). Please '
-                            'set it\'s virtual name as the '
-                            '\'__virtualname__\' module attribute. '
-                            'Example: "__virtualname__ = \'{2}\'"'.format(
-                                mod.__name__,
-                                module_name,
-                                virtual
-                            )
+                            "Hydrogen",
+                            "The '{0}' module is renaming itself in its "
+                            "__virtual__() function ({1} => {2}). Please "
+                            "set it's virtual name as the "
+                            "'__virtualname__' module attribute. "
+                            "Example: \"__virtualname__ = '{2}'\"".format(mod.__name__, module_name, virtual),
                         )
 
                     if virtualname != virtual:
@@ -1235,11 +1219,13 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
                         # being returned by the __virtual__() function. This
                         # should be considered an error.
                         log.error(
-                            'The module \'%s\' is showing some bad usage. Its '
-                            '__virtualname__ attribute is set to \'%s\' yet the '
-                            '__virtual__() function is returning \'%s\'. These '
-                            'values should match!',
-                            mod.__name__, virtualname, virtual
+                            "The module '%s' is showing some bad usage. Its "
+                            "__virtualname__ attribute is set to '%s' yet the "
+                            "__virtual__() function is returning '%s'. These "
+                            "values should match!",
+                            mod.__name__,
+                            virtualname,
+                            virtual,
                         )
 
                     module_name = virtualname
@@ -1260,20 +1246,19 @@ class LazyLoader(hubblestack.utils.lazy.LazyDict):
         except Exception:
             # If the module throws an exception during __virtual__()
             # then log the information and continue to the next.
-            log.error(
-                'Failed to read the virtual function for %s: %s',
-                self.tag, module_name, exc_info=True
-            )
+            log.error("Failed to read the virtual function for %s: %s", self.tag, module_name, exc_info=True)
             return (False, module_name, error_reason, virtual_aliases)
 
         return (True, module_name, None, virtual_aliases)
 
+
 class FilterDictWrapper(MutableMapping):
-    '''
+    """
     Create a dict which wraps another dict with a specific key suffix on get
 
     This is to replace "filter_load"
-    '''
+    """
+
     def __init__(self, d, suffix):
         self._dict = d
         self.suffix = suffix
@@ -1293,20 +1278,17 @@ class FilterDictWrapper(MutableMapping):
     def __iter__(self):
         for key in self._dict:
             if key.endswith(self.suffix):
-                yield key.replace(self.suffix, '')
+                yield key.replace(self.suffix, "")
 
 
 def matchers(opts):
-    '''
+    """
     Return the matcher services plugins
-    '''
-    return LazyLoader(
-        _module_dirs(opts, 'matchers'),
-        opts,
-        tag='matchers'
-    )
+    """
+    return LazyLoader(_module_dirs(opts, "matchers"), opts, tag="matchers")
 
-def _nova_funcname_filter(funcname, mod):
+
+def _nova_funcname_filter(funcname, mod):  # pylint: disable=unused-argument
     """
     reject function names that aren't "audit"
 
@@ -1318,33 +1300,37 @@ def _nova_funcname_filter(funcname, mod):
         True :- sure, we can provide this function
         False :- skip this one
     """
-    if funcname == 'audit':
+    if funcname == "audit":
         return True
     return False
 
-def _nova_xlate_modnames(mod_names, name, fpath, suffix, mod, mode='mod_names'):
+
+def _nova_xlate_modnames(mod_names, name, fpath, suffix, mod, mode="mod_names"):  # pylint: disable=unused-argument
     """
-        Translate (xlate) "service" into "/service"
+    Translate (xlate) "service" into "/service"
 
-        args:
-            name   :- the name of the module we're loading (e.g., 'service')
-            fpath  :- the file path of the module we're loading
-            suffix :- the suffix of the module we're loading (e.g., '.pyc', usually)
-            mod    :- the actual imported module (allowing mod.__file__ examination)
-            mode   :- the name of the load_module variable being translated
+    args:
+        name   :- the name of the module we're loading (e.g., 'service')
+        fpath  :- the file path of the module we're loading
+        suffix :- the suffix of the module we're loading (e.g., '.pyc', usually)
+        mod    :- the actual imported module (allowing mod.__file__ examination)
+        mode   :- the name of the load_module variable being translated
 
-        return:
-            either a list of new names (for "mod_names") or a single new name
-            (for "name" and "module_name")
+    return:
+        either a list of new names (for "mod_names") or a single new name
+        (for "name" and "module_name")
     """
 
-    new_modname = '/' + name
+    new_modname = "/" + name
 
     if mode in ("module_name", "name"):
         return new_modname
-    return [ new_modname ]
+    return [new_modname]
 
-def _nova_xlate_funcnames(name, fpath, suffix, tgt_mod, funcname, full_funcname, mod, func):
+
+def _nova_xlate_funcnames(
+    name, fpath, suffix, tgt_mod, funcname, full_funcname, mod, func
+):  # pylint: disable=unused-argument
     """
     Translate (xlate) "service.audit" into "/service.py"
 
@@ -1366,12 +1352,13 @@ def _nova_xlate_funcnames(name, fpath, suffix, tgt_mod, funcname, full_funcname,
         funcname='py' and full_funcname='/service.py'.
     """
     new_funcname = suffix[1:]
-    if new_funcname == 'pyc':
-        new_funcname = 'py'
-    return new_funcname, '.'.join([name, new_funcname])
+    if new_funcname == "pyc":
+        new_funcname = "py"
+    return new_funcname, ".".join([name, new_funcname])
+
 
 def nova(hubble_dir, opts, modules, context=None):
-    '''
+    """
     Return a nova (!lazy) loader.
 
     This does return a LazyLoader, but hubble.audit module always iterates the
@@ -1401,31 +1388,31 @@ def nova(hubble_dir, opts, modules, context=None):
     before anyway, which seems to be the reason for the special sync() section
     of the hubble.audit.
 
-    '''
+    """
 
     loader = LazyLoader(
-        _module_dirs(opts, 'nova'),
+        _module_dirs(opts, "nova"),
         opts,
-        tag='nova',
+        tag="nova",
         funcname_filter=_nova_funcname_filter,
         xlate_modnames=_nova_xlate_modnames,
         xlate_funcnames=_nova_xlate_funcnames,
-        pack={ '__context__': context, '__mods__': modules }
+        pack={"__context__": context, "__mods__": modules},
     )
 
-    loader.__data__ = d = dict()
-    loader.__missing_data__ = md = dict()
+    loader.__data__ = data = dict()
+    loader.__missing_data__ = missing_data = dict()
 
     for mod_dir in hubble_dir:
         for path, _, filenames in os.walk(mod_dir):
             for filename in filenames:
                 pathname = os.path.join(path, filename)
-                name = pathname[len(mod_dir):]
-                if filename.endswith('.yaml'):
+                name = pathname[len(mod_dir) :]
+                if filename.endswith(".yaml"):
                     try:
-                        with open(pathname, 'r') as fh:
-                            d[name] = yaml.safe_load(fh)
+                        with open(pathname, "r") as fh:
+                            data[name] = yaml.safe_load(fh)
                     except Exception as exc:
-                        md[name] = str(exc)
-                        log.exception('Error loading yaml from %s', pathnmame)
+                        missing_data[name] = str(exc)
+                        log.exception("Error loading yaml from %s", pathnmame)
     return loader

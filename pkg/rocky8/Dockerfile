@@ -9,7 +9,7 @@
 # Mount /data volume into a directory on the host to access the package.
 # To run the container:  docker run -it --rm -v `pwd`:/data <image_name>
 
-FROM rockylinux/rockylinux:8
+FROM rockylinux/rockylinux:8.4
 
 # paths that hubble or hubble parts need in the package
 RUN mkdir -p /etc/hubble/hubble.d /opt/hubble /opt/osquery /var/log/hubble_osquery/backuplogs
@@ -34,8 +34,8 @@ RUN mkdir -p "$LIBCURL_TEMP" \
  && git clone "$LIBCURL_SRC_URL" \
  && cd curl \
  && git checkout "$LIBCURL_SRC_VERSION" \
- && ./buildconf \
- && ./configure --prefix=/opt/hubble --disable-ldap \
+ && `pwd`/buildconf \
+ && `pwd`/configure --prefix=/opt/hubble --disable-ldap \
         --without-nss --disable-manual --disable-gopher \
         --disable-smtp --disable-smb --disable-imap \
         --disable-pop3 --disable-tftp --disable-telnet \

@@ -34,8 +34,8 @@ RUN mkdir -p "$LIBCURL_TEMP" \
  && git clone "$LIBCURL_SRC_URL" \
  && cd curl \
  && git checkout "$LIBCURL_SRC_VERSION" \
- && ./buildconf \
- && ./configure --prefix=/opt/hubble --disable-ldap \
+ && `pwd`/buildconf \
+ && `pwd`/configure --prefix=/opt/hubble --disable-ldap \
         --without-nss --disable-manual --disable-gopher \
         --disable-smtp --disable-smb --disable-imap \
         --disable-pop3 --disable-tftp --disable-telnet \

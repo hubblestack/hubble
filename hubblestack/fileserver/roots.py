@@ -158,19 +158,29 @@ def update():
     # if you have an old map, load that
     if os.path.exists(mtime_map_path):
         with hubblestack.utils.files.fopen(mtime_map_path, 'rb') as fp_:
+            row = 0
+            line = ''
             for line in fp_:
-                line = hubblestack.utils.stringutils.to_unicode(line)
                 try:
-                    file_path, mtime = line.replace('\n', '').split(':', 1)
-                    old_mtime_map[file_path] = mtime
-                    if mtime != new_mtime_map.get(file_path, mtime):
-                        data['files']['changed'].append(file_path)
-                except ValueError:
-                    # Document the invalid entry in the log
+                    row += 1
+                    line = hubblestack.utils.stringutils.to_unicode(line)
+                except UnicodeDecodeError:
                     log.warning(
-                        'Skipped invalid cache mtime entry in %s: %s',
-                        mtime_map_path, line
+                        'Unable to decode cache mtime entry in %s:%d',
+                        mtime_map_path, row
                     )
+                else: 
+                    try:
+                        file_path, mtime = line.replace('\n', '').split(':', 1)
+                        old_mtime_map[file_path] = mtime
+                        if mtime != new_mtime_map.get(file_path, mtime):
+                            data['files']['changed'].append(file_path)
+                    except ValueError:
+                        # Document the invalid entry in the log
+                        log.warning(
+                            'Skipped invalid cache mtime entry in %s: %s',
+                            mtime_map_path, line
+                        )
 
     # compare the maps, set changed to the return value
     data['changed'] = hubblestack.fileserver.diff_mtime_map(old_mtime_map, new_mtime_map)

@@ -159,7 +159,6 @@ def update():
     if os.path.exists(mtime_map_path):
         with hubblestack.utils.files.fopen(mtime_map_path, 'rb') as fp_:
             row = 0
-            line = ''
             for line in fp_:
                 try:
                     row += 1

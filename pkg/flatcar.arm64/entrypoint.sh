@@ -29,11 +29,6 @@ for filename in "${OSQUERY_TAR_FILENAMES[@]}"; do
     fi
 done
 
-ls -l /opt/osquery/bin
-
-ln -s /opt/osquery/bin/osqueryd /opt/osquery/osqueryi
-ln -s /opt/osquery/bin/osqueryd /opt/osquery/osqueryd
-
 if [ ! -L /opt/osquery/osqueryi ]
 then echo please provide a working osquery tarfile; exit 1
 else /opt/osquery/osqueryi --version

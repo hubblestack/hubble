@@ -29,7 +29,7 @@ for filename in "${OSQUERY_TAR_FILENAMES[@]}"; do
     fi
 done
 
-if [ ! -L /opt/osquery/osqueryi ]
+if [ ! -x /opt/osquery/osqueryi ]
 then echo please provide a working osquery tarfile; exit 1
 else /opt/osquery/osqueryi --version
 fi

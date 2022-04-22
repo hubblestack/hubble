@@ -23,8 +23,7 @@ fi
 
 for filename in "${OSQUERY_TAR_FILENAMES[@]}"; do
     if [ -e "$filename" ]; then
-        # tar -C /opt/osquery -xvvf "$filename"
-        tar -C / -xvvf "$filename"
+        tar -C /opt/osquery -xvvf "$filename"
         break
     fi
 done

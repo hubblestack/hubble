@@ -42,7 +42,7 @@ def osquery_host_state():
                 deets["auditd_present"] = True
                 deets[grain_key] = "inactive"
         except subprocess.CalledProcessError:
-            log.info("%s doesn't seem to be running according to systemd")
+            log.info("%s doesn't seem to be running according to systemd", systemd_name)
         except Exception as e:
             log.info("Unknown exception checking systemctl for %s status: %s", systemd_name, e)
 

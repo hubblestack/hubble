@@ -131,7 +131,7 @@ mkdir -p /etc/systemd/system
 mkdir -p /etc/profile.d
 mkdir -p /etc/hubble/hubble.d
 
-cp -v /hubble_build/pkg/hubble.service /etc/hubble/hubble-example.service
+cp -v /hubble_build/pkg/hubble_flatcar.service /etc/hubble/hubble-example.service
 cp -v /hubble_build/conf/hubble-profile.sh /etc/profile.d/
 cp -v /hubble_build/conf/hubble-d-conf     /etc/hubble/hubble.d
 

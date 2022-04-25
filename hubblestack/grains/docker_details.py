@@ -24,6 +24,9 @@ def __virtual__():
 
 
 def get_docker_details(grains):
+    """
+    Get docker details
+    """
     docker_grains = {}
 
     docker_details = {}
@@ -41,8 +44,13 @@ def get_docker_details(grains):
 
 
 def _is_docker_installed(grains):
+    """
+    Check if docker is installed
+    """
     os_family = grains.get("os_family", "unknown").lower()
     if "coreos" in os_family:
+        return True
+    elif "flatcar" in os_family:
         return True
     elif "debian" in os_family:
         osquery_sql = 'select name from deb_packages where name like "%docker%"'
@@ -63,6 +71,9 @@ def _is_docker_installed(grains):
 
 
 def _is_docker_process_running():
+    """
+    Check if docker is running
+    """
     osquery_sql = 'select name from processes where name LIKE "%dockerd%"'
     query_result = osquery_util(query_sql=osquery_sql)
     if len(query_result) != 0:

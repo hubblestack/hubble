@@ -44,6 +44,8 @@ def _is_docker_installed(grains):
     os_family = grains.get("os_family", "unknown").lower()
     if "coreos" in os_family:
         return True
+    elif "flatcar" in os_family:
+        return True
     elif "debian" in os_family:
         osquery_sql = 'select name from deb_packages where name like "%docker%"'
     elif "redhat" in os_family:

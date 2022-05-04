@@ -1,0 +1,16 @@
+[Unit]
+Description=Hubblestack
+Requires=network-online.target
+After=network-online.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/hubble.pid
+ExecStart=/opt/hubble/hubble -d
+Restart=always
+RestartSec=300
+MemoryAccounting=true
+Environment=SSL_CERT_DIR=/usr/share/ca-certificates/
+
+[Install]
+WantedBy=multi-user.target

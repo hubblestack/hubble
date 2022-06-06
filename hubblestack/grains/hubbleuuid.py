@@ -28,6 +28,7 @@ def hubble_uuid():
                               existing_uuid, cached_uuid)
                     # Write the previous UUID to the cache file
                     try:
+                        os.makedirs(os.path.dirnames(cached_uuid_path), exist_ok=True))
                         with open(cached_uuid_path, 'w') as cache_file:
                             cache_file.write(existing_uuid)
                     except Exception:

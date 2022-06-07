@@ -52,6 +52,8 @@ HTTP_EVENT_COLLECTOR_DEBUG = False
 
 log = logging.getLogger(__name__)
 
+messageFilter = MessageFilter.instance(__name__)
+
 
 def returner(ret):
     """
@@ -215,5 +217,7 @@ def _update_event(custom_fields, event):
     remove_keys = [k for k,v in event.items() if v is None or v == ""]
     for k in remove_keys:
         del event[k]
+
+    event = messageFilter.filter(event)
 
     return event

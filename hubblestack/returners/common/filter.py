@@ -27,7 +27,6 @@ class MessageFilter:
    _filters = None
 
 
-
    def _get_filters(self):
         """
           Get the filter objects for this flow
@@ -46,7 +45,7 @@ class MessageFilter:
         for f in files:
             try:
                 # example: hubblestack.returners.common.filters.sequence
-                module = base_module + f.split('.')[0] 
+                module = base_module + f.split('.')[0]
                 log.info("found module %s" % module)
                 _filter = getattr(importlib.import_module(module), "Filter")()
                 self._filters.append(_filter)
@@ -55,10 +54,7 @@ class MessageFilter:
 
         return self._filters
 
-        
-
    def filter(self, msg):
-
         _msg = msg.copy()
         for f in self._get_filters():
             if _msg is not None:

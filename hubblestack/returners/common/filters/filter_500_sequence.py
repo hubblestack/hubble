@@ -13,7 +13,6 @@ class Filter(filter.Filter):
            add a sequence number if the msg does not have one already
         """
         if 'seq' not in msg.keys():
-          self.cnt = self.cnt + 1 
+          self.cnt = self.cnt + 1
           msg['seq'] = self.cnt
         return msg
-

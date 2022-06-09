@@ -18,6 +18,7 @@ event collector. Required config/pillar settings:
 
 import time
 import hubblestack.utils.stdrec as stdrec
+from hubblestack.returners.common.filter import MessageFilter
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
 
 
@@ -54,6 +55,7 @@ def _build_hec(opts):
     hec = http_event_collector(*args, **kwargs)
     return hec
 
+messageFilter = MessageFilter.instance(__file__)
 
 def returner(retdata):
     """
@@ -87,14 +89,16 @@ def returner(retdata):
         idx = opts.get('index')
 
         for event in events:
-            payload = {
-                'host': stdrec.get_fqdn(),
-                'event': event,
-                'sourcetype': _get_key(event, 'sourcetype', t_sourcetype),
-                'time': str(int(_get_key(event, 'time', t_time)))}
-            if idx:
-                payload['index'] = idx
-            # add various std host info data and index extracted fields
-            stdrec.update_payload(payload)
-            hec.batchEvent(payload)
+            event = messageFilter.filter(event)
+            if event is not None:
+                payload = {
+                    'host': stdrec.get_fqdn(),
+                    'event': event,
+                    'sourcetype': _get_key(event, 'sourcetype', t_sourcetype),
+                    'time': str(int(_get_key(event, 'time', t_time)))}
+                if idx:
+                    payload['index'] = idx
+                # add various std host info data and index extracted fields
+                stdrec.update_payload(payload)
+                hec.batchEvent(payload)
         hec.flushBatch()

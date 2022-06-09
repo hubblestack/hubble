@@ -68,7 +68,7 @@ class MessageFilter:
 
 class Filter:
     """
-    Base Filter class.   classes in filters module extend from this
+      Base filter class
     """
     def filter(self):
         pass

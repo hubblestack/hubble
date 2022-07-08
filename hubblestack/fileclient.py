@@ -256,7 +256,7 @@ class Client(object):
             cachedir = self.get_cachedir(cachedir)
             scan_target = os.path.join(cachedir, "files", saltenv, path)
             log.debug("cache_dir(%s) cleanup_existing is set", path)
-            to_remove = set(scan_files(scan_target, cachedir)) - set(ret)
+            to_remove = set(scan_files(scan_target)) - set(ret)
             for i, item in enumerate(to_remove):
                 log.debug("cache_dir(%s) to_remove[%d]: %s", path, i, item)
                 os.unlink(item)

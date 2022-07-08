@@ -41,7 +41,7 @@ log = logging.getLogger(__name__)
 MAX_FILENAME_LENGTH = 255
 
 
-def get_file_client(opts, pillar=False):
+def get_file_client(opts):
     '''
     Read in the ``file_client`` option and return the correct type of file
     server
@@ -257,7 +257,7 @@ class Client(object):
                         os.makedirs(minion_dir)
                     ret.append(minion_dir)
 
-        def scan_files(target, cachedir):
+        def scan_files(target):
             log.debug('cache_dir(%s) scanning %s for files that should be removed', path, target)
             for wpath, dirs, files in os.walk(target):
                 for file in files:
@@ -688,7 +688,7 @@ class Client(object):
                 hubblestack.utils.files.rename(dest_tmp, dest)
                 return dest
         except HTTPError as exc:
-            raise MinionError('HTTP error {0} reading {1}: {3}'.format(
+            raise MinionError('HTTP error {0} reading {1}: {2}'.format(
                 exc.code,
                 url,
                 BaseHTTPRequestHandler.responses[exc.code]))

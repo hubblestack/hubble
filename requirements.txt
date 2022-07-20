@@ -27,7 +27,7 @@ patch==1.*
 psutil
 pycryptodome
 pygit2
-pyinotify
+pyinotify; sys_platform != 'darwin'
 pyinstaller
 pylint
 pyopenssl

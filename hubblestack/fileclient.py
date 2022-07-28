@@ -476,7 +476,7 @@ class Client(object):
                     form = hubblestack.utils.files.HASHES_REVMAP[len(source_hash)]
                     if hubblestack.utils.hashutils.get_hash(dest, form) == source_hash:
                         log.debug(
-                            "Cached copy of %s (%s) matches source_hash %s, " "skipping download",
+                            "Cached copy of %s (%s) matches source_hash %s, skipping download",
                             url,
                             dest,
                             source_hash,
@@ -775,11 +775,11 @@ class RemoteClient(Client):
         if not dest2check:
             rel_path = self._check_proto(path)
 
-            log.debug("In saltenv '%s', looking at rel_path '%s' to resolve " "'%s'", saltenv, rel_path, path)
+            log.debug("In saltenv '%s', looking at rel_path '%s' to resolve '%s'", saltenv, rel_path, path)
             with self._cache_loc(rel_path, saltenv, cachedir=cachedir) as cache_dest:
                 dest2check = cache_dest
 
-        log.debug("In saltenv '%s', ** considering ** path '%s' to resolve " "'%s'", saltenv, dest2check, path)
+        log.debug("In saltenv '%s', ** considering ** path '%s' to resolve '%s'", saltenv, dest2check, path)
 
         if dest2check and os.path.isfile(dest2check):
             if not hubblestack.utils.platform.is_windows():

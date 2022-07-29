@@ -46,7 +46,7 @@ import os
 import stat
 import pathlib
 import re
-from pystemd.systemd1 import Manager()
+from pystemd.systemd1 import Manager
 from hubblestack.exceptions import CommandExecutionError
 
 log = logging.getLogger(__name__)

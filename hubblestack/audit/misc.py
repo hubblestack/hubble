@@ -262,9 +262,8 @@ import pathlib
 import logging
 
 import re
-
+from pystemd.systemd1 import Manager
 from hubblestack.exceptions import CommandExecutionError
-from collections import Counter
 
 import hubblestack.module_runner.comparator
 from hubblestack.module_runner.runner import Caller

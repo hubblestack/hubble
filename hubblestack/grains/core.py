@@ -99,9 +99,7 @@ if hubblestack.utils.platform.is_windows():
             'will be missing'
         )
 
-HAS_UNAME = True
-if not hasattr(os, 'uname'):
-    HAS_UNAME = False
+HAS_UNAME = hasattr(os, 'uname')
 
 _INTERFACES = {}
 

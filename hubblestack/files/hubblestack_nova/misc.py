@@ -585,7 +585,8 @@ def check_all_users_home_directory(max_system_uid):
     """
     with open('/etc/passwd', 'r') as passwd:
         lines = passwd.readlines()
-        users_uids_dirs = [' '.join([item.split(':')[0], item.split(':')[2], item.split(':')[5], item.split(':')[6].strip()]) for item in lines]
+        items = item.split(':')[0], item.split(':')[2], item.split(':')[5], item.split(':')[6].strip()
+        users_uids_dirs = [' '.join(items) for item in lines]
     error = []
     for user_data in users_uids_dirs:
         user_uid_dir = user_data.strip().split(" ")

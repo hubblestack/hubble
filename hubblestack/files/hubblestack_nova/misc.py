@@ -275,8 +275,7 @@ def check_password_fields_not_empty(reason=''):
     """
     result = ''
     with open('/etc/shadow','r') as shadow:
-        lines = shadow.readlines()
-        for line in lines:
+        for line in shadow.readlines():
             if line.split(':')[1] is "":
                 result += f"{line.split(':')[0]} does not have a password \n"
         return True if result == '' else result
@@ -333,8 +332,7 @@ def default_group_for_root(reason=''):
     Ensure default group for the root account is GID 0
     """
     with open('/etc/passwd', 'r') as passwd:
-        lines = passwd.readlines()
-        for line in lines:
+        for line in passwd.readlines():
             if line[:3] == 'root' and line.split(':')[3] == '0':
                 return True
         return False
@@ -346,8 +344,7 @@ def root_is_only_uid_0_account(reason=''):
     """
     uid0_accounts = []
     with open('/etc/passwd', 'r') as passwd:
-        lines = passwd.readlines()
-        for line in lines:
+        for line in passwd.readlines():
             if line.split(':')[2] == '0':
                 uid0_accounts.append(line.split(':')[0])
     if 'root' in uid0_accounts:
@@ -667,8 +664,7 @@ def check_users_dot_files(reason=''):
     to_ignore = lambda x: any([item in x for item in ['root', 'halt', 'sync', 'shutdown', '/sbin/nologin']])
     users_dirs = []
     with open('/etc/passwd', 'r') as passwd:
-        lines = passwd.readlines()
-        for line in lines:
+        for line in passwd.readlines():
             if not to_ignore(line):
                 users_dirs.append(' '.join([line.split(':')[0], line.split(':')[5]]))
 
@@ -701,8 +697,7 @@ def check_users_forward_files(reason=''):
     error = []
     users_dirs = []
     with open('/etc/passwd', 'r') as passwd:
-        lines = passwd.readlines()
-        for line in lines:
+        for line in passwd.readlines():
             users_dirs.append(' '.join([line.split(':')[0], line.split(':')[5]]))
     for user_dir in users_dirs:
         user_dir = user_dir.split()
@@ -724,8 +719,7 @@ def check_users_netrc_files(reason=''):
     error = []
     users_dirs = []
     with open('/etc/passwd', 'r') as passwd:
-        lines = passwd.readlines()
-        for line in lines:
+        for line in passwd.readlines():
             users_dirs.append(' '.join([line.split(':')[0], line.split(':')[5]]))
     for user_dir in users_dirs:
         user_dir = user_dir.split()
@@ -790,8 +784,7 @@ def check_users_rhosts_files(reason=''):
     to_ignore = lambda x: any([item in x for item in ['root', 'halt', 'sync', 'shutdown', '/sbin/nologin']])
     users_dirs = []
     with open('/etc/passwd', 'r') as passwd:
-        lines = passwd.readlines()
-        for line in lines:
+        for line in passwd.readlines():
             if not to_ignore(line):
                 users_dirs.append(' '.join([line.split(':')[0], line.split(':')[5]]))
     error = []
@@ -813,8 +806,7 @@ def check_netrc_files_accessibility(reason=''):
     to_ignore = lambda x: any([item in x for item in ['root', 'halt', 'sync', 'shutdown', '/sbin/nologin']])
     users_dirs = []
     with open('/etc/passwd', 'r') as passwd:
-        lines = passwd.readlines()
-        for line in lines:
+        for line in passwd.readlines():
             if not to_ignore(line):
                 users_dirs.append(line.split(':')[5])
 

@@ -348,7 +348,7 @@ def root_is_only_uid_0_account(reason=''):
     with open('/etc/passwd', 'r') as passwd:
         lines = passwd.readlines()
         for line in lines:
-            if line.split(':')[2] == '0'
+            if line.split(':')[2] == '0':
                 uid0_accounts.append(line.split(':')[0])
     if 'root' in uid0_accounts:
         return True if len(uid0_accounts) == 1 else False

@@ -448,13 +448,13 @@ def _check_password_fields_not_empty(block_id, block_dict, extra_args):
     """
     Ensure password fields are not empty
     """
-    result = ''
-    with open('/etc/shadow', 'r') as shadow:
+    result = ""
+    with open("/etc/shadow", "r") as shadow:
         lines = shadow.readlines()
         for line in lines:
-            if line.split(':')[1] is "":
+            if line.split(":")[1] is "":
                 result += f"{line.split(':')[0]} does not have a password \n"
-        return True if result == '' else result
+        return True if result == "" else result
 
 
 def _system_account_non_login(block_id, block_dict, extra_args=None):
@@ -486,10 +486,10 @@ def _default_group_for_root(block_id, block_dict, extra_args):
     """
     Ensure default group for the root account is GID 0
     """
-    with open('/etc/passwd', 'r') as passwd:
+    with open("/etc/passwd", "r") as passwd:
         lines = passwd.readlines()
         for line in lines:
-            if line[:3] == 'root' and line.split(':')[3] == '0':
+            if line[:3] == "root" and line.split(":")[3] == "0":
                 return True
         return False
 
@@ -499,15 +499,15 @@ def _root_is_only_uid_0_account(block_id, block_dict, extra_args):
     Ensure root is the only UID 0 account
     """
     uid0_accounts = []
-    with open('/etc/passwd', 'r') as passwd:
+    with open("/etc/passwd", "r") as passwd:
         lines = passwd.readlines()
         for line in lines:
-            if line.split(':')[2] == '0':
-                uid0_accounts.append(line.split(':')[0])
-    if 'root' in uid0_accounts:
+            if line.split(":")[2] == "0":
+                uid0_accounts.append(line.split(":")[0])
+    if "root" in uid0_accounts:
         return True if len(uid0_accounts) == 1 else False
     else:
-        raise Exception('Missing root account')
+        raise Exception("Missing root account")
 
 
 def _check_time_synchronization(block_id, block_dict, extra_args):
@@ -517,49 +517,49 @@ def _check_time_synchronization(block_id, block_dict, extra_args):
     manager = Manager()
     manager.load()
     services = manager.Manager.ListUnitFiles()
-    success = any([item for item in services if b'systemd-timesyncd' in item[0]
-                   or b'ntpd' in item[0]
-                   and b'enabled' in item[1]])
-    return success or 'neither ntpd nor timesyncd is running'
+    success = any(
+        [item for item in services if b"systemd-timesyncd" in item[0] or b"ntpd" in item[0] and b"enabled" in item[1]]
+    )
+    return success or "neither ntpd nor timesyncd is running"
 
 
 def _check_path_integrity(block_id, block_dict, extra_args):
     """
     Ensure that system PATH variable is not malformed.
     """
-    path_value = os.environ.get('PATH')
-    output = ''
-    for item in path_value.split(':'):
-        if item is '':
-            output += 'Empty Directory in PATH (::)\n'
-        if item is '.':
-            output += 'PATH contains .\n'
+    path_value = os.environ.get("PATH")
+    output = ""
+    for item in path_value.split(":"):
+        if item is "":
+            output += "Empty Directory in PATH (::)\n"
+        if item is ".":
+            output += "PATH contains .\n"
 
-    if path_value[-1] is ':':
-        output += 'Trailing : in PATH\n'
+    if path_value[-1] is ":":
+        output += "Trailing : in PATH\n"
 
-    paths = path_value.split(':')
+    paths = path_value.split(":")
     for path in paths:
         permissions = os.stat(path)
         if os.path.isdir(path):
             if bool(permissions & stat.S_IWGRP):
-                output += f'Group write permissions set on directory {path}\n'
+                output += f"Group write permissions set on directory {path}\n"
             if bool(permissions & stat.S_IWOTH):
-                output += f'Other write permissions set on directory {path}\n'
-            if pathlib.Path(path).owner() != 'root':
-                output += f'{path} is not owned by root\n'
+                output += f"Other write permissions set on directory {path}\n"
+            if pathlib.Path(path).owner() != "root":
+                output += f"{path} is not owned by root\n"
         else:
-            output += f'{path} is not a directory\n'
+            output += f"{path} is not a directory\n"
 
-    return True if output.strip() == '' else output
+    return True if output.strip() == "" else output
 
 
 def _check_duplicate_uids(block_id, block_dict, extra_args):
     """
     Return False if any duplicate user id exist in /etc/group file, else return True
     """
-    with open('/etc/passwd', 'r') as passwd:
-        users = [item.split(':')[2] for item in passwd.readlines()]
+    with open("/etc/passwd", "r") as passwd:
+        users = [item.split(":")[2] for item in passwd.readlines()]
         duplicate_uids = [item for item in set(users) if users.count(item) > 1]
     if duplicate_uids is None or duplicate_uids == []:
         return True
@@ -570,8 +570,8 @@ def _check_duplicate_gids(block_id, block_dict, extra_args):
     """
     Return False if any duplicate group id exist in /etc/group file, else return True
     """
-    with open('/etc/group', 'r') as group:
-        users = [item.split(':')[2] for item in group.readlines()]
+    with open("/etc/group", "r") as group:
+        users = [item.split(":")[2] for item in group.readlines()]
         duplicate_gids = [item for item in set(users) if users.count(item) > 1]
     if duplicate_gids is None or duplicate_gids == []:
         return True
@@ -582,8 +582,8 @@ def _check_duplicate_unames(block_id, block_dict, extra_args):
     """
     Return False if any duplicate user names exist in /etc/group file, else return True
     """
-    with open('/etc/passwd', 'r') as passwd:
-        users = [item.split(':')[0] for item in passwd.readlines()]
+    with open("/etc/passwd", "r") as passwd:
+        users = [item.split(":")[0] for item in passwd.readlines()]
         duplicate_unames = [item for item in set(users) if users.count(item) > 1]
     if duplicate_unames is None or duplicate_unames == []:
         return True
@@ -594,8 +594,8 @@ def _check_duplicate_gnames(block_id, block_dict, extra_args):
     """
     Return False if any duplicate group names exist in /etc/group file, else return True
     """
-    with open('/etc/group', 'r') as group:
-        groups = [item.split(':')[0] for item in group.readlines()]
+    with open("/etc/group", "r") as group:
+        groups = [item.split(":")[0] for item in group.readlines()]
         duplicate_gnames = [item for item in set(groups) if groups.count(item) > 1]
     if duplicate_gnames is None or duplicate_gnames == []:
         return True
@@ -680,24 +680,24 @@ def _check_ssh_timeout_config(block_id, block_dict, extra_args):
     """
 
     checks = [False, False]
-    with open('/etc/ssh/sshd_config', 'r') as sshconfig:
+    with open("/etc/ssh/sshd_config", "r") as sshconfig:
         for line in sshconfig.readlines():
-            if line.startswith('ClientAliveInterval'):
+            if line.startswith("ClientAliveInterval"):
                 try:
                     if int(line.split()[-1]) > 300:
                         return "ClientAliveInterval value should be less than equal to 300"
                     else:
                         checks[0] = True
                 except ValueError:
-                    raise ValueError('ClientAliveInterval should be an integer')
-            if line.startswith('ClientAliveCountMax'):
+                    raise ValueError("ClientAliveInterval should be an integer")
+            if line.startswith("ClientAliveCountMax"):
                 try:
                     if int(line.split()[-1]) > 3:
                         return "ClientAliveCountMax value should be less than equal to 3"
                     else:
                         checks[1] = True
                 except ValueError:
-                    raise ValueError('ClientAliveCountMax should be an integer')
+                    raise ValueError("ClientAliveCountMax should be an integer")
     return all(checks)
 
 
@@ -705,22 +705,32 @@ def _check_all_users_home_directory(block_id, block_dict, extra_args=None):
     """
     Ensure all users' home directories exist
     """
-    with open('/etc/passwd', 'r') as passwd:
+    with open("/etc/passwd", "r") as passwd:
         lines = passwd.readlines()
         users_uids_dirs = [
-            ' '.join([item.split(':')[0], item.split(':')[2], item.split(':')[5], item.split(':')[6].strip()]) for item
-            in lines]
+            " ".join([item.split(":")[0], item.split(":")[2], item.split(":")[5], item.split(":")[6].strip()])
+            for item in lines
+        ]
     error = []
     for user_data in users_uids_dirs:
         user_uid_dir = user_data.strip().split(" ")
         if len(user_uid_dir) < 4:
-            user_uid_dir = user_uid_dir + [''] * (4 - len(user_uid_dir))
+            user_uid_dir = user_uid_dir + [""] * (4 - len(user_uid_dir))
         if user_uid_dir[1].isdigit():
-            if not _is_valid_home_directory(user_uid_dir[2], True) and int(user_uid_dir[1]) >= max_system_uid and \
-                    user_uid_dir[0] != "nfsnobody" \
-                    and 'nologin' not in user_uid_dir[3] and 'false' not in user_uid_dir[3]:
-                error += ["Either home directory " + user_uid_dir[2] + " of user " + user_uid_dir[
-                    0] + " is invalid or does not exist."]
+            if (
+                not _is_valid_home_directory(user_uid_dir[2], True)
+                and int(user_uid_dir[1]) >= max_system_uid
+                and user_uid_dir[0] != "nfsnobody"
+                and "nologin" not in user_uid_dir[3]
+                and "false" not in user_uid_dir[3]
+            ):
+                error += [
+                    "Either home directory "
+                    + user_uid_dir[2]
+                    + " of user "
+                    + user_uid_dir[0]
+                    + " is invalid or does not exist."
+                ]
         else:
             error += ["User " + user_uid_dir[0] + " has invalid uid " + user_uid_dir[1]]
     return True if not error else str(error)
@@ -777,29 +787,47 @@ def _check_users_own_their_home(block_id, block_dict, extra_args=None):
     max_system_uid = runner_utils.get_param_for_module(block_id, block_dict, "max_system_uid")
     max_system_uid = int(max_system_uid)
 
-    with open('/etc/passwd', 'r') as passwd:
+    with open("/etc/passwd", "r") as passwd:
         lines = passwd.readlines()
         users_uids_dirs = [
-            ' '.join([item.split(':')[0], item.split(':')[2], item.split(':')[5], item.split(':')[6].strip()]) for item
-            in lines]
+            " ".join([item.split(":")[0], item.split(":")[2], item.split(":")[5], item.split(":")[6].strip()])
+            for item in lines
+        ]
     error = []
     for user_data in users_uids_dirs:
         user_uid_dir = user_data.strip().split(" ")
         if len(user_uid_dir) < 4:
-            user_uid_dir = user_uid_dir + [''] * (4 - len(user_uid_dir))
+            user_uid_dir = user_uid_dir + [""] * (4 - len(user_uid_dir))
         if user_uid_dir[1].isdigit():
             if not _is_valid_home_directory(user_uid_dir[2]):
-                if int(user_uid_dir[1]) >= max_system_uid and 'nologin' not in user_uid_dir[3] and 'false' not in \
-                        user_uid_dir[3]:
-                    error += ["Either home directory " + user_uid_dir[2] + " of user " + user_uid_dir[
-                        0] + " is invalid or does not exist."]
-            elif int(user_uid_dir[1]) >= max_system_uid and user_uid_dir[0] != "nfsnobody" and 'nologin' not in \
-                    user_uid_dir[3] \
-                    and 'false' not in user_uid_dir[3]:
-                owner = __mods__['cmd.run']("stat -L -c \"%U\" \"" + user_uid_dir[2] + "\"")
+                if (
+                    int(user_uid_dir[1]) >= max_system_uid
+                    and "nologin" not in user_uid_dir[3]
+                    and "false" not in user_uid_dir[3]
+                ):
+                    error += [
+                        "Either home directory "
+                        + user_uid_dir[2]
+                        + " of user "
+                        + user_uid_dir[0]
+                        + " is invalid or does not exist."
+                    ]
+            elif (
+                int(user_uid_dir[1]) >= max_system_uid
+                and user_uid_dir[0] != "nfsnobody"
+                and "nologin" not in user_uid_dir[3]
+                and "false" not in user_uid_dir[3]
+            ):
+                owner = __mods__["cmd.run"]('stat -L -c "%U" "' + user_uid_dir[2] + '"')
                 if owner != user_uid_dir[0]:
-                    error += ["The home directory " + user_uid_dir[2] + " of user " + user_uid_dir[
-                        0] + " is owned by " + owner]
+                    error += [
+                        "The home directory "
+                        + user_uid_dir[2]
+                        + " of user "
+                        + user_uid_dir[0]
+                        + " is owned by "
+                        + owner
+                    ]
         else:
             error += ["User " + user_uid_dir[0] + " has invalid uid " + user_uid_dir[1]]
 
@@ -811,26 +839,26 @@ def _check_users_dot_files(block_id, block_dict, extra_args):
     Ensure users' dot files are not group or world writable
     """
 
-    to_ignore = lambda x: any([item in x for item in ['root', 'halt', 'sync', 'shutdown', '/sbin/nologin']])
+    to_ignore = lambda x: any([item in x for item in ["root", "halt", "sync", "shutdown", "/sbin/nologin"]])
     users_dirs = []
-    with open('/etc/passwd', 'r') as passwd:
+    with open("/etc/passwd", "r") as passwd:
         lines = passwd.readlines()
         for line in lines:
             if not to_ignore(line):
-                users_dirs.append(' '.join([line.split(':')[0], line.split(':')[5]]))
+                users_dirs.append(" ".join([line.split(":")[0], line.split(":")[5]]))
 
     error = []
     for user_dir in users_dirs:
         user_dir = user_dir.split()
         if len(user_dir) < 2:
-            user_dir = user_dir + [''] * (2 - len(user_dir))
+            user_dir = user_dir + [""] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
-            dot_files = _execute_shell_command("find " + user_dir[1] + " -name \".*\"").strip()
-            dot_files = dot_files.split('\n') if dot_files != "" else []
+            dot_files = _execute_shell_command("find " + user_dir[1] + ' -name ".*"').strip()
+            dot_files = dot_files.split("\n") if dot_files != "" else []
             for dot_file in dot_files:
                 if os.path.isfile(dot_file):
-                    path_details = __mods__['file.stats'](dot_file)
-                    given_permission = path_details.get('mode')
+                    path_details = __mods__["file.stats"](dot_file)
+                    given_permission = path_details.get("mode")
                     file_permission = given_permission[-3:]
                     if file_permission[1] in ["2", "3", "6", "7"]:
                         error += ["Group Write permission set on file " + dot_file + " for user " + user_dir[0]]
@@ -847,19 +875,20 @@ def _check_users_forward_files(block_id, block_dict, extra_args):
 
     error = []
     users_dirs = []
-    with open('/etc/passwd', 'r') as passwd:
+    with open("/etc/passwd", "r") as passwd:
         lines = passwd.readlines()
         for line in lines:
-            users_dirs.append(' '.join([line.split(':')[0], line.split(':')[5]]))
+            users_dirs.append(" ".join([line.split(":")[0], line.split(":")[5]]))
     for user_dir in users_dirs:
         user_dir = user_dir.split()
         if len(user_dir) < 2:
-            user_dir = user_dir + [''] * (2 - len(user_dir))
+            user_dir = user_dir + [""] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
-            forward_file = _execute_shell_command("find " + user_dir[1] + " -maxdepth 1 -name \".forward\"").strip()
+            forward_file = _execute_shell_command("find " + user_dir[1] + ' -maxdepth 1 -name ".forward"').strip()
             if forward_file is not None and os.path.isfile(forward_file):
                 error += [
-                    "Home directory: " + user_dir[1] + ", for user: " + user_dir[0] + " has " + forward_file + " file"]
+                    "Home directory: " + user_dir[1] + ", for user: " + user_dir[0] + " has " + forward_file + " file"
+                ]
 
     return True if error == [] else str(error)
 
@@ -871,16 +900,16 @@ def _check_users_netrc_files(block_id, block_dict, extra_args):
 
     error = []
     users_dirs = []
-    with open('/etc/passwd', 'r') as passwd:
+    with open("/etc/passwd", "r") as passwd:
         lines = passwd.readlines()
         for line in lines:
-            users_dirs.append(' '.join([line.split(':')[0], line.split(':')[5]]))
+            users_dirs.append(" ".join([line.split(":")[0], line.split(":")[5]]))
     for user_dir in users_dirs:
         user_dir = user_dir.split()
         if len(user_dir) < 2:
-            user_dir = user_dir + [''] * (2 - len(user_dir))
+            user_dir = user_dir + [""] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
-            netrc_file = _execute_shell_command("find " + user_dir[1] + " -maxdepth 1 -name \".netrc\"").strip()
+            netrc_file = _execute_shell_command("find " + user_dir[1] + ' -maxdepth 1 -name ".netrc"').strip()
             if netrc_file is not None and os.path.isfile(netrc_file):
                 error += ["Home directory: " + user_dir[1] + ", for user: " + user_dir[0] + " has .netrc file"]
 
@@ -891,12 +920,12 @@ def _check_groups_validity(block_id, block_dict, extra_args):
     """
     Ensure all groups in /etc/passwd exist in /etc/group
     """
-    with open('/etc/passwd', 'r') as passwd:
+    with open("/etc/passwd", "r") as passwd:
         lines = passwd.readlines()
-        group_ids_in_passwd = set([line.split(':')[3] for line in lines])
-    with open('/etc/group', 'r') as group:
+        group_ids_in_passwd = set([line.split(":")[3] for line in lines])
+    with open("/etc/group", "r") as group:
         lines = group.readlines()
-        group_ids_in_group = set([line.split(':')[2] for line in lines])
+        group_ids_in_group = set([line.split(":")[2] for line in lines])
     invalid_group_ids = group_ids_in_passwd.difference(group_ids_in_group)
     output_list = [f"Invalid groupid: {item} in /etc/passwd file" for item in invalid_group_ids]
 
@@ -935,20 +964,20 @@ def _check_users_rhosts_files(block_id, block_dict, extra_args):
     Ensure no users have .rhosts files
     """
 
-    to_ignore = lambda x: any([item in x for item in ['root', 'halt', 'sync', 'shutdown', '/sbin/nologin']])
+    to_ignore = lambda x: any([item in x for item in ["root", "halt", "sync", "shutdown", "/sbin/nologin"]])
     users_dirs = []
-    with open('/etc/passwd', 'r') as passwd:
+    with open("/etc/passwd", "r") as passwd:
         lines = passwd.readlines()
         for line in lines:
             if not to_ignore(line):
-                users_dirs.append(' '.join([line.split(':')[0], line.split(':')[5]]))
+                users_dirs.append(" ".join([line.split(":")[0], line.split(":")[5]]))
     error = []
     for user_dir in users_dirs:
         user_dir = user_dir.split()
         if len(user_dir) < 2:
-            user_dir = user_dir + [''] * (2 - len(user_dir))
+            user_dir = user_dir + [""] * (2 - len(user_dir))
         if _is_valid_home_directory(user_dir[1]):
-            rhosts_file = _execute_shell_command("find " + user_dir[1] + " -maxdepth 1 -name \".rhosts\"").strip()
+            rhosts_file = _execute_shell_command("find " + user_dir[1] + ' -maxdepth 1 -name ".rhosts"').strip()
             if rhosts_file is not None and os.path.isfile(rhosts_file):
                 error += ["Home directory: " + user_dir[1] + ", for user: " + user_dir[0] + " has .rhosts file"]
     return True if error == [] else str(error)
@@ -959,32 +988,32 @@ def _check_netrc_files_accessibility(block_id, block_dict, extra_args):
     Ensure users' .netrc Files are not group or world accessible
     """
 
-    to_ignore = lambda x: any([item in x for item in ['root', 'halt', 'sync', 'shutdown', '/sbin/nologin']])
+    to_ignore = lambda x: any([item in x for item in ["root", "halt", "sync", "shutdown", "/sbin/nologin"]])
     users_dirs = []
-    with open('/etc/passwd', 'r') as passwd:
+    with open("/etc/passwd", "r") as passwd:
         lines = passwd.readlines()
         for line in lines:
             if not to_ignore(line):
-                users_dirs.append(line.split(':')[5])
+                users_dirs.append(line.split(":")[5])
 
-    output = ''
+    output = ""
     for user_dir in users_dirs:
-        net_rc_files = [f for f in pathlib.Path(user_dir).iterdir() if f.is_file() and str(f).endswith('.netrc')]
+        net_rc_files = [f for f in pathlib.Path(user_dir).iterdir() if f.is_file() and str(f).endswith(".netrc")]
         for rc_file in net_rc_files:
             permissions = rc_file.stat().st_mode
             if bool(permissions & stat.S_IRGRP):
-                output += f'Group Read set on {str(rc_file)}\n'
+                output += f"Group Read set on {str(rc_file)}\n"
             if bool(permissions & stat.S_IWGRP):
-                output += f'Group Write set on {str(rc_file)}\n'
+                output += f"Group Write set on {str(rc_file)}\n"
             if bool(permissions & stat.S_IXGRP):
-                output += f'Group Execute set on {str(rc_file)}\n'
+                output += f"Group Execute set on {str(rc_file)}\n"
             if bool(permissions & stat.S_IROTH):
-                output += f'Other Read set on {str(rc_file)}\n'
+                output += f"Other Read set on {str(rc_file)}\n"
             if bool(permissions & stat.S_IWOTH):
-                output += f'Other Write set on {str(rc_file)}\n'
+                output += f"Other Write set on {str(rc_file)}\n"
             if bool(permissions & stat.S_IXOTH):
-                output += f'Other Execute set on {str(rc_file)}\n'
-    return True if output.strip() == '' else output
+                output += f"Other Execute set on {str(rc_file)}\n"
+    return True if output.strip() == "" else output
 
 
 def _grep(path, pattern, *args):
@@ -1118,16 +1147,16 @@ def _mail_conf_check(block_id, block_dict, extra_args):
     Ensure mail transfer agent is configured for local-only mode
     """
     valid_addresses = ["localhost", "127.0.0.1", "::1"]
-    if os.path.isfile('/etc/postfix/main.cf'):
-        with open('/etc/postfix/main.cf') as ef:
-            inet_addresses = [line for line in ef.readlines() if 'inet_interfaces' in line][0]
-        mail_addresses = inet_addresses.split('=')[1].replace(' ', '').strip()
-        mail_addresses = mail_addresses.split(',') if mail_addresses != "" else []
+    if os.path.isfile("/etc/postfix/main.cf"):
+        with open("/etc/postfix/main.cf") as main_file:
+            inet_addresses = [line for line in main_file.readlines() if "inet_interfaces" in line][0]
+        mail_addresses = inet_addresses.split("=")[1].replace(" ", "").strip()
+        mail_addresses = mail_addresses.split(",") if mail_addresses != "" else []
         mail_addresses = list(map(str.strip, mail_addresses))
         invalid_addresses = list(set(mail_addresses) - set(valid_addresses))
         return str(invalid_addresses) if invalid_addresses != [] else True
     else:
-        raise FileNotFoundError('Postfix configuration file missing: /etc/postfix/maain.cf')
+        raise FileNotFoundError("Postfix configuration file missing: /etc/postfix/maain.cf")
 
 
 def _ensure_max_password_expiration(block_id, block_dict, extra_args=None):

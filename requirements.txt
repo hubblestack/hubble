@@ -32,6 +32,7 @@ pyinstaller
 pylint
 pyopenssl
 pyparsing
+pystemd
 pytest
 pytest-cov
 pytest-html

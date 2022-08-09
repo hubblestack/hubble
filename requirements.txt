@@ -36,7 +36,6 @@ pystemd
 pytest
 pytest-cov
 pytest-html
-pytest-pythonpath
 python-dateutil
 pyyaml
 requests>=2.13.0

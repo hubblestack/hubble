@@ -45,6 +45,7 @@ import io as cStringIO
 import hubblestack.utils.platform
 
 from time import time
+from binascii import b2a_base64, a2b_base64
 from collections import OrderedDict, namedtuple
 
 # In any case, pycrypto won't do the job. The below requires pycryptodome.
@@ -60,7 +61,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding, utils
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives.serialization import load_pem_private_key
+from cryptography.hazmat.primitives.serialization import load_pem_private_key, Encoding, PrivateFormat, NoEncryption
 
 MANIFEST_RE = re.compile(r"^\s*(?P<digest>[0-9a-fA-F]+)\s+(?P<fname>.+)$")
 log = logging.getLogger(__name__)
@@ -541,6 +542,44 @@ def manifest(targets, mfname=None):
         descend_targets(targets, append_hash)
 
 
+def encode_pem(data: bytes, marker: str) -> str:
+    """
+    Encode a bytestring as base64, using the PEM format.
+    :param data: bytestring to be encoded
+    :param marker: PEM format specific header
+    :returns: PEM encoded string
+    """
+    output = "-----BEGIN {}-----\n".format(marker)
+    chunks = [b2a_base64(data[i : i + 48]).decode("latin-1") for i in range(0, len(data), 48)]
+    output += "".join(chunks)
+    output += "-----END {}-----".format(marker)
+    return output
+
+
+def decode_pem(data: bytes) -> str:
+    """
+    Decode a bytestring encoded in the PEM format
+    :param data: bytestring to be decoded
+    :returns: decoded string
+    """
+    # Verify Pre-Encapsulation Boundary
+    pattern = re.compile(r"\s*-----BEGIN (.*)-----\s+")
+    m = pattern.match(data)
+    if not m:
+        raise ValueError("Not a valid PEM pre boundary")
+    marker = m.group(1)
+
+    # Verify Post-Encapsulation Boundary
+    pattern = re.compile(r"-----END (.*)-----\s*$")
+    m = pattern.search(data)
+    if not m or m.group(1) != marker:
+        raise ValueError("Not a valid PEM post boundary")
+    data = data.replace(" ", "").split()
+    output = a2b_base64("".join(data[1:-1]))
+
+    return output
+
+
 def sign_target(fname, ofname, private_key=None, **kwargs):  # pylint: disable=unused-argument
     """
     Sign a given `fname` and write the signature to `ofname`.
@@ -572,7 +611,7 @@ def sign_target(fname, ofname, private_key=None, **kwargs):  # pylint: disable=u
     sig = first_key.sign(**args)
     with open(ofname, "w") as fh:
         log.error("writing signature of %s to %s", os.path.abspath(fname), os.path.abspath(ofname))
-        fh.write(PEM.encode(sig, "Detached Signature of {}".format(fname)))
+        fh.write(encode_pem(sig, "Detached Signature of {}".format(fname)))
         fh.write("\n")
 
 
@@ -664,7 +703,7 @@ def verify_signature(
 
     try:
         with open(sfname, "r") as fh:
-            sig, _, _ = PEM.decode(fh.read())  # also returns header and decrypted-status
+            sig = decode_pem(fh.read())
     except IOError:
         status = STATUS.UNKNOWN
         verif_key = ":".join([fname, sfname])

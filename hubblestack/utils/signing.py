@@ -51,8 +51,6 @@ from collections import OrderedDict, namedtuple
 # In any case, pycrypto won't do the job. The below requires pycryptodome.
 # (M2Crypto is the other choice; but the docs are weaker, mostly non-existent.)
 
-from Crypto.IO import PEM
-
 import OpenSSL.crypto as ossl
 import OpenSSL._util
 

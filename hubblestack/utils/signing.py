@@ -79,7 +79,7 @@ OpenSSL._util.byte_string = _our_byte_string
 VERIFY_LOG_TIMESTAMPS = {}
 # How often in seconds 3600 = 1 hour to set log level to log.error/critical
 # maybe set in /etc/hubble/hubble
-VERIFY_LOG_DAMPENER_LIM = 3600
+VERIFY_LOG_DAMPENER_LIM = [3600]
 
 
 def _format_padding_bits(x):
@@ -132,11 +132,8 @@ def check_verify_timestamp(target, dampener_limit=None):
             -- False if it isn't greater than or equal to when the time() value of
                 verif_log_timestamps
     """
-    global VERIFY_LOG_TIMESTAMPS
-    global VERIFY_LOG_DAMPENER_LIM
-
     if dampener_limit is None:
-        dampener_limit = VERIFY_LOG_DAMPENER_LIM
+        dampener_limit = VERIFY_LOG_DAMPENER_LIM[0]
 
     # get the ts of the last time a profile failed a verification check
     ts_0 = VERIFY_LOG_TIMESTAMPS.get(target)
@@ -572,6 +569,7 @@ def decode_pem(data: bytes) -> str:
     m = pattern.search(data)
     if not m or m.group(1) != marker:
         raise ValueError("Not a valid PEM post boundary")
+
     data = data.replace(" ", "").split()
     output = a2b_base64("".join(data[1:-1]))
 
@@ -861,7 +859,6 @@ def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None
                     if manifested_fname in digests:
                         digests[manifested_fname] = digest
     # number of seconds before a FAIL or UNKNOWN is set to the returner
-    global VERIFY_LOG_TIMESTAMPS
     # compare actual digests of files (if they exist) to the manifested digests
     for vfname in digests:
         digest = digests[vfname]

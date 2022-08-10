@@ -65,7 +65,7 @@ MANIFEST_RE = re.compile(r"^\s*(?P<digest>[0-9a-fA-F]+)\s+(?P<fname>.+)$")
 log = logging.getLogger(__name__)
 
 
-def _our_byte_string(x):
+def _our_byte_string(x, charmap="utf-8"):  # pylint: disable=unused-argument
     # MONKEYPATCH OpenSSL._utils:byte_string to avoid "charmap" issues on POSIX
     # locale platforms
     return x.encode("utf-8")
@@ -118,7 +118,7 @@ def check_is_ca(crt):
     return False
 
 
-def check_verif_timestamp(target, dampener_limit=None):
+def check_verify_timestamp(target, dampener_limit=None):
     """This function writes/updates a timestamp cache
     file for profiles
     Args:
@@ -228,7 +228,7 @@ def split_certs(fh):
                     yield ossl.load_certificate(ossl.FILETYPE_PEM, ret)
                 except Exception as exception_object:
                     status = STATUS.UNKNOWN
-                    if check_verif_timestamp(fh):
+                    if check_verify_timestamp(fh):
                         log_level = log.warning
                     log_level(
                         '%s: | file: "%s" | cert decoding status: %s | attempting as PEM encoded private key',
@@ -261,7 +261,7 @@ def read_certs(*fnames):
                         yield i
             except Exception as exception_object:
                 log_level = log.debug
-                if check_verif_timestamp(fname):
+                if check_verify_timestamp(fname):
                     log_level = log.error
                 log_level('error while reading "%s": %s', fname, exception_object)
 
@@ -360,7 +360,7 @@ class X509AwareCertBucket:
             self.store.add_cert(i)  # add cert to keyring as a trusted cert
             self.trusted.append(digest)
             log_level = log.debug
-            if check_verif_timestamp(digest, dampener_limit=seconds_day):
+            if check_verify_timestamp(digest, dampener_limit=seconds_day):
                 log_level = log.splunk
             status = STATUS.VERIFIED
             str_ca = stringify_cert_files(ca_crt)
@@ -382,7 +382,7 @@ class X509AwareCertBucket:
                 status = STATUS.VERIFIED
             except ossl.X509StoreContextError as exception_object:
                 status = STATUS.FAIL
-            if check_verif_timestamp(digest, dampener_limit=seconds_day):
+            if check_verify_timestamp(digest, dampener_limit=seconds_day):
                 log_level = log.splunk
                 if status == STATUS.FAIL:
                     log_level = log.error
@@ -404,7 +404,7 @@ class X509AwareCertBucket:
                 ossl.X509StoreContext(self.store, i).verify_certificate()
                 status = STATUS.VERIFIED
                 self.trusted.append(digest)
-                if check_verif_timestamp(digest, dampener_limit=seconds_day):
+                if check_verify_timestamp(digest, dampener_limit=seconds_day):
                     log_level = log.splunk
                     if status == STATUS.FAIL:
                         log_level = log.error
@@ -427,7 +427,7 @@ class X509AwareCertBucket:
                     # X509_V_ERR_CERT_HAS_EXPIRED                  10
                     # X509_V_ERR_CRL_HAS_EXPIRED                   12
                     status = STATUS.FAIL
-                if check_verif_timestamp(digest, dampener_limit=seconds_day):
+                if check_verify_timestamp(digest, dampener_limit=seconds_day):
                     log_level = log.splunk
                     if status == STATUS.FAIL:
                         log_level = log.error
@@ -449,7 +449,7 @@ class X509AwareCertBucket:
 
 
 def stringify_ossl_cert(a_cert_obj):
-    """try to stryingy a cert object into its subject components and digest hexification.
+    """Try to stringify a cert object into its subject components and digest hexification.
 
     E.g. (with extra newline added for line-wrap):
         3E:9C:58:F5:27:89:A8:F4:B7:AB:4D:1C:56:C8:4E:F0:03:0F:C8:C3
@@ -674,7 +674,7 @@ def verify_signature(
     return STATUS.VERIFIED if both the signature and the CA sig match
     """
 
-    if check_verif_timestamp(fname):
+    if check_verify_timestamp(fname):
         log_error = log.error
         log_info = log.info
     else:
@@ -887,7 +887,7 @@ def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None
             # We do have a MANIFEST entry and it doesn't match: FAIL with or
             # without a matching SIGNATURE
             status = STATUS.FAIL
-        if check_verif_timestamp(digest):
+        if check_verify_timestamp(digest):
             if status == STATUS.FAIL:
                 log_level = log.error
             elif status == STATUS.UNKNOWN:

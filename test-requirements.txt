@@ -12,7 +12,7 @@ mock
 msgpack
 ntplib
 psutil
-pyinotify
+pyinotify; platform_system == "Linux"
 pytest
 pytest-cov
 pytest-html

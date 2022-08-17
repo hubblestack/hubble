@@ -27,12 +27,12 @@ patch==1.*
 psutil
 pycryptodome
 pygit2
-pyinotify
+pyinotify; platform_system == "Linux"
 pyinstaller
 pylint
 pyopenssl
 pyparsing
-pystemd
+pystemd; platform_system == "Linux"
 pytest
 pytest-cov
 pytest-html

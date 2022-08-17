@@ -5,9 +5,11 @@ Test the fim (pulsar) internals for various correctness
 import os
 import shutil
 import logging
+from tests.support.unit import TestCase, skipIf
 
 from hubblestack.exceptions import CommandExecutionError
 import hubblestack.modules.pulsar as pulsar
+import hubblestack.utils.platform
 
 log = logging.getLogger(__name__)
 
@@ -23,6 +25,7 @@ class TestPulsar(object):
         var = pulsar._enqueue
         assert var != 0
 
+    @skipIf(not hubblestack.utils.platform.is_linux(), "System is not Linux")
     def test_get_notifier(self):
         pulsar.__context__ = {}
         var = pulsar._get_notifier
@@ -252,6 +255,7 @@ class TestPulsar2(object):
         assert_len_listify_is(oogly_list, 4)
         assert_str_listify_is(oogly_list, [1,2,5,'one'])
 
+    @skipIf(not hubblestack.utils.platform.is_linux(), "System is not Linux")
     def test_add_watch(self, modality='add-watch'):
         options = {}
         kwargs = { self.atdir: options }
@@ -304,6 +308,7 @@ class TestPulsar2(object):
     def test_watch_new_files(self):
         self.test_add_watch(modality='watch_new_files')
 
+    @skipIf(not hubblestack.utils.platform.is_linux(), "System is not Linux")
     def test_recurse_without_watch_files(self):
         config1 = {self.atdir: { 'recurse': False }}
         config2 = {self.atdir: { 'recurse': True  }}
@@ -359,12 +364,14 @@ class TestPulsar2(object):
         set2 = set(self.watch_manager.watch_db)
         return set0, set1, set2
 
+    @skipIf(not hubblestack.utils.platform.is_linux(), "System is not Linux")
     def test_pruning_watch_files_false(self):
         set0, set1, set2 = self.config_make_files_watch_process_reconfig({self.atdir:{}}, None, mk_files=2)
         assert set0 == set([self.atdir])
         assert set1 == set([self.atdir])
         assert set2 == set()
 
+    @skipIf(not hubblestack.utils.platform.is_linux(), "System is not Linux")
     def test_pruning_watch_new_files_then_false(self):
         config1 = {self.atdir: { 'watch_new_files': True }}
         config2 = {self.atdir: { 'watch_new_files': False }}
@@ -375,6 +382,7 @@ class TestPulsar2(object):
         assert set1 == set([self.atdir, fname1, fname2])
         assert set2 == set([self.atdir])
 
+    @skipIf(not hubblestack.utils.platform.is_linux(), "System is not Linux")
     def test_pruning_watch_files_then_false(self):
         config1 = {self.atdir: { 'watch_files': True }}
         config2 = {self.atdir: { 'watch_files': False }}
@@ -385,6 +393,7 @@ class TestPulsar2(object):
         assert set1 == set([self.atdir, self.atfile, fname1, fname2])
         assert set2 == set([self.atdir])
 
+    @skipIf(not hubblestack.utils.platform.is_linux(), "System is not Linux")
     def test_pruning_watch_new_files_then_nothing(self):
         config1 = {self.atdir: { 'watch_new_files': True }}
         set0, set1, set2 = self.config_make_files_watch_process_reconfig(config1, None, mk_files=2)
@@ -394,6 +403,7 @@ class TestPulsar2(object):
         assert set1 == set([self.atdir, fname1, fname2])
         assert set2 == set()
 
+    @skipIf(not hubblestack.utils.platform.is_linux(), "System is not Linux")
     def test_pruning_watch_files_then_nothing(self):
         config1 = {self.atdir: { 'watch_files': True }}
         set0, set1, set2 = self.config_make_files_watch_process_reconfig(config1, None, mk_files=2)
@@ -403,6 +413,7 @@ class TestPulsar2(object):
         assert set1 == set([self.atdir, fname1, fname2, self.atfile])
         assert set2 == set()
 
+    @skipIf(not hubblestack.utils.platform.is_linux(), "System is not Linux")
     def test_watch_files_events(self):
         config = {self.atdir: { 'watch_files': True }}
         self.reset(**config)
@@ -448,6 +459,7 @@ class TestPulsar2(object):
         assert set_ == set1
         assert events_ == ['IN_MODIFY({})'.format(self.atfile)]
 
+    @skipIf(not hubblestack.utils.platform.is_linux(), "System is not Linux")
     def test_single_file_events(self):
         config = {self.atfile: dict()}
         self.reset(**config)
@@ -493,6 +505,7 @@ class TestPulsar2(object):
         assert set_ == set1
         assert events_ == ['IN_MODIFY({})'.format(self.atfile)]
 
+    @skipIf(not hubblestack.utils.platform.is_linux(), "System is not Linux")
     def test_fim_single_file(self):
         config = {self.atfile: {}}
         self.reset(**config)

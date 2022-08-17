@@ -1,4 +1,5 @@
 import hubblestack.filter.filter
+import threading
 
 class Filter(hubblestack.filter.filter.Filter):
     """
@@ -8,6 +9,7 @@ class Filter(hubblestack.filter.filter.Filter):
     def __init__(self, filter_name, config=None):
       super().__init__(filter_name, config)
       self.config = config
+      self.semaphore = threading.Semaphore(1)
 
     cnt = 0
 
@@ -20,8 +22,12 @@ class Filter(hubblestack.filter.filter.Filter):
         return msg
 
     def getNextValue(self):
-        self.cnt = self.cnt + 1  # TODO: thread safety
-        value = str(self.cnt).rjust(self.getPadding(), "0")
+        my_cnt = None
+        with self.semaphore:
+          self.cnt = self.cnt + 1
+          my_cnt = self.cnt
+
+        value = str(my_cnt).rjust(self.getPadding(), "0")
         return value
 
     def getPadding(self):

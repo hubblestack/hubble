@@ -353,7 +353,10 @@ def _execute_function(jobdata, func, returners, args, kwargs):
     """ Run the scheduled function """
     log.debug('Executing scheduled function %s', func)
     jobdata['last_run'] = time.time()
+
+    # Actually run the function
     ret = __mods__[func](*args, **kwargs)
+
     if __opts__['log_level'] == 'debug':
         log.debug('Job returned:\n%s', ret)
     for returner in returners:

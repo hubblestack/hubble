@@ -4,15 +4,19 @@ class Filter:
     """
 
     def __init__(self, filter_name, config=None):
-        self._process_config(config)
         self.filter_name = filter_name
+        if config != None:
+            self.config = config.copy()
+        else:
+            self.config = {}
 
     def _process_config(self, config=None):
         if config == None:
             return
 
-        if "label" in config:
-            self.label = config["label"]
 
     def getLabel(self):
-        return self.label
+        return self.config.get("label", self.filter_name)
+
+    def get_subclass_name(self):
+        return self.__class__.__name__

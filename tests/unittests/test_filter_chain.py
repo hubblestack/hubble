@@ -19,7 +19,7 @@ default:
         fc = FilterChain("bob", "default")
     assert fc.filter_config["sequence"] != None
     assert fc.chain[0].filter_name == "sequence"
-    assert fc.chain[0].label == "seq"
+    assert fc.chain[0].getLabel() == "seq"
 
     msg = fc.chain[0].filter({"bob": "alice"})
     assert msg["seq"] == "1"
@@ -36,7 +36,7 @@ default:
         fc = FilterChain("bob", "default")
     assert fc.filter_config["sequence"] != None
     assert fc.chain[0].filter_name == "sequence"
-    assert fc.chain[0].label == "seq"
+    assert fc.chain[0].getLabel() == "seq"
 
     msg = fc.chain[0].filter({"bob": "alice"})
     assert msg["seq"] == "00001"

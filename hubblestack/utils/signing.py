@@ -62,6 +62,9 @@ from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
 from hubblestack.utils.signing_utils import encode_pem, decode_pem
 
+from enum import Enum
+
+
 MANIFEST_RE = re.compile(r"^\s*(?P<digest>[0-9a-fA-F]+)\s+(?P<fname>.+)$")
 log = logging.getLogger(__name__)
 
@@ -153,7 +156,7 @@ def check_verify_timestamp(target, dampener_limit=None):
     return False
 
 
-class STATUS:
+class STATUS(Enum):
     """container for status code (strings)"""
 
     FAIL = "fail"

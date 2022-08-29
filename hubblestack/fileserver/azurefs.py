@@ -57,7 +57,7 @@ import hubblestack.fileserver
 import hubblestack.utils.files
 import hubblestack.utils.gzip_util
 import hubblestack.utils.hashutils
-from hubblestack.utils.signing import find_wrapf
+from hubblestack.utils.signing_utils import find_file_func_wrapper
 
 try:
     from azure.storage.blob import BlobServiceClient
@@ -95,7 +95,7 @@ def __virtual__():
     return True
 
 
-@find_wrapf(not_found={"path": "", "rel": ""})
+@find_file_func_wrapper(not_found={"path": "", "rel": ""})
 def find_file(path, saltenv="base", **kwargs):  # pylint: disable=unused-argument
     """
     Search the environment for the relative path

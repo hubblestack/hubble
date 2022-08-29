@@ -45,7 +45,6 @@ import io as cStringIO
 import hubblestack.utils.platform
 
 from time import time
-from binascii import b2a_base64, a2b_base64
 from collections import OrderedDict, namedtuple
 
 # In any case, pycrypto won't do the job. The below requires pycryptodome.
@@ -60,6 +59,8 @@ from cryptography.hazmat.primitives.asymmetric import padding, utils
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
+
+from hubblestack.utils.signing_utils import encode_pem, decode_pem
 
 MANIFEST_RE = re.compile(r"^\s*(?P<digest>[0-9a-fA-F]+)\s+(?P<fname>.+)$")
 log = logging.getLogger(__name__)
@@ -537,45 +538,6 @@ def manifest(targets, mfname=None):
         descend_targets(targets, append_hash)
 
 
-def encode_pem(data: bytes, marker: str) -> str:
-    """
-    Encode a bytestring as base64, using the PEM format.
-    :param data: bytestring to be encoded
-    :param marker: PEM format specific header
-    :returns: PEM encoded string
-    """
-    output = "-----BEGIN {}-----\n".format(marker)
-    chunks = [b2a_base64(data[i : i + 48]).decode("latin-1") for i in range(0, len(data), 48)]
-    output += "".join(chunks)
-    output += "-----END {}-----".format(marker)
-    return output
-
-
-def decode_pem(data: bytes) -> str:
-    """
-    Decode a bytestring encoded in the PEM format
-    :param data: bytestring to be decoded
-    :returns: decoded string
-    """
-    # Verify Pre-Encapsulation Boundary
-    pattern = re.compile(r"\s*-----BEGIN (.*)-----\s+")
-    m = pattern.match(data)
-    if not m:
-        raise ValueError("Not a valid PEM pre boundary")
-    marker = m.group(1)
-
-    # Verify Post-Encapsulation Boundary
-    pattern = re.compile(r"-----END (.*)-----\s*$")
-    m = pattern.search(data)
-    if not m or m.group(1) != marker:
-        raise ValueError("Not a valid PEM post boundary")
-
-    data = data.replace(" ", "").split()
-    output = a2b_base64("".join(data[1:-1]))
-
-    return output
-
-
 def sign_target(fname, ofname, private_key=None, **kwargs):  # pylint: disable=unused-argument
     """
     Sign a given `fname` and write the signature to `ofname`.
@@ -899,72 +861,3 @@ def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None
     for k, v in xlate.items():
         ret[v] = ret.pop(k)
     return ret
-
-
-#### wrappers:
-def find_wrapf(not_found={"path": "", "rel": ""}, real_path="path"):
-    """
-    Wrap a filesystem find_file function and return the original result if the
-    MANIFEST and SIGNATURE indicate the file is valid. If the file is not verified
-    and Options.require_verify is False (the default); but the file did not
-    explicity fail to match the MANIFEST, continue to return the original find result.
-
-    Otherwise, return a pretend not-found result instead of the original repo result.
-    """
-
-    def wrapper(find_file_f):
-        def _p(fnd):
-            # real_path is poorly named. it should contain the name of the key
-            # where we'll find the real path of the file we're finding with
-            # find_file_f()
-            return fnd.get(real_path, fnd.get("path", ""))
-
-        def inner(path, saltenv, *a, **kwargs):
-            f_path = find_file_f(path, saltenv, *a, **kwargs)
-            p_path = _p(f_path)
-
-            if not p_path:
-                # if the file doesn't exist anyway, there's no reason to continue
-                return f_path
-
-            mani_path = _p(find_file_f(Options.manifest_file_name, saltenv, *a, **kwargs))
-            sign_path = _p(find_file_f(Options.signature_file_name, saltenv, *a, **kwargs))
-            cert_path = _p(find_file_f(Options.certificates_file_name, saltenv, *a, **kwargs))
-
-            log.debug(
-                'path: %s | f_path: %s | p_path: %s | manifest: "%s" | signature: "%s"',
-                path,
-                f_path,
-                p_path,
-                mani_path,
-                sign_path,
-            )
-
-            verify_res = verify_files(
-                [p_path],
-                mfname=mani_path,
-                sfname=sign_path,
-                public_crt=Options.public_crt,
-                ca_crt=Options.ca_crt,
-                extra_crt=cert_path,
-            )
-
-            log.debug("verify: %s", dict(**verify_res))
-
-            vrg = verify_res.get(p_path, STATUS.UNKNOWN)
-            if vrg == STATUS.VERIFIED:
-                return f_path
-            if vrg == STATUS.UNKNOWN and not Options.require_verify:
-                return f_path
-            log.debug("claiming not found: %s (%s)", path, f_path)
-            if log.isEnabledFor(logging.DEBUG):
-                import inspect
-
-                for idx, frame in enumerate(inspect.stack()[1:60]):
-                    if "hubblestack" in frame.filename:
-                        log.debug("find caller[%d] %s %s() %s", idx, frame.filename, frame.function, frame.lineno)
-            return dict(**not_found)
-
-        return inner
-
-    return wrapper

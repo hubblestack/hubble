@@ -1,16 +1,20 @@
 import logging
+import os
 import re
 from binascii import b2a_base64, a2b_base64
+from enum import Enum
 
-from hubblestack.utils.signing import Options, log, verify_files, STATUS
+from hubblestack.utils.signing import Options, log, verify_files
 
 
 def encode_pem(data: bytes, marker: str) -> str:
     """
     Encode a bytestring as base64, using the PEM format.
-    :param data: bytestring to be encoded
-    :param marker: PEM format specific header
-    :returns: PEM encoded string
+    Parameters:
+        data (bytes) : payload that will be encoded
+        marker (str) : PEM format specific header
+    Returns:
+        PEM-encoded string
     """
     output = "-----BEGIN {}-----\n".format(marker)
     chunks = [b2a_base64(data[i : i + 48]).decode("latin-1") for i in range(0, len(data), 48)]
@@ -19,11 +23,13 @@ def encode_pem(data: bytes, marker: str) -> str:
     return output
 
 
-def decode_pem(data: bytes) -> str:
+def decode_pem(data: str) -> bytes:
     """
     Decode a bytestring encoded in the PEM format
-    :param data: bytestring to be decoded
-    :returns: decoded string
+    Parameters
+        data (str): payload that will be decoded
+    Returns:
+         output (bytes)
     """
     # Verify Pre-Encapsulation Boundary
     pattern = re.compile(r"\s*-----BEGIN (.*)-----\s+")
@@ -49,7 +55,7 @@ def find_file_func_wrapper(not_found=None, real_path="path"):
     Wrap a filesystem find_file function and return the original result if the
     MANIFEST and SIGNATURE indicate the file is valid. If the file is not verified
     and Options.require_verify is False (the default); but the file did not
-    explicity fail to match the MANIFEST, continue to return the original find result.
+    explicitly fail to match the MANIFEST, continue to return the original find result.
 
     Otherwise, return a pretend not-found result instead of the original repo result.
     """
@@ -80,7 +86,7 @@ def find_file_func_wrapper(not_found=None, real_path="path"):
             )
 
             log.debug(
-                'path: %s | f_path: %s | p_path: %s | manifest: "%s" | signature: "%s"',
+                'path: %s | f_path: %s | p_path: %s | create_manifest: "%s" | signature: "%s"',
                 path,
                 f_path,
                 p_path,
@@ -116,3 +122,72 @@ def find_file_func_wrapper(not_found=None, real_path="path"):
         return inner
 
     return wrapper
+
+
+def stringify_ossl_cert(certificate_obj):
+    """
+    Try to stringify a cert object into its subject components and digest hexification.
+
+    E.g. (with extra newline added for line-wrap):
+        3E:9C:58:F5:27:89:A8:F4:B7:AB:4D:1C:56:C8:4E:F0:03:0F:C8:C3
+        C=US/ST=State/L=City/O=Org/OU=Group/CN=Certy Cert #1
+    """
+    if isinstance(certificate_obj, (list, tuple)):
+        return ", ".join([stringify_ossl_cert(i) for i in certificate_obj])
+    return "/".join(["=".join([j.decode() for j in i]) for i in certificate_obj.get_subject().get_components()])
+
+
+def normalize_path(path, trunc=None):
+    """
+    Attempt to translate /<path>/./<to>////<files>/.bashrc
+    to /<path>/<to>/<files>/.bashrc; optionally truncating
+    the path if it starts with the given trunc kwarg string.
+    """
+    norm = os.path.normpath(path)
+    if trunc:
+        if norm.startswith(os.path.sep + trunc + os.path.sep):
+            norm = norm[len(trunc) + 2 :]
+        elif norm.startswith(trunc + os.path.sep):
+            norm = norm[len(trunc) + 1 :]
+        elif norm.startswith(os.path.sep + trunc):
+            norm = norm[len(trunc) + 1 :]
+        elif norm.startswith(trunc):
+            norm = norm[len(trunc) :]
+    return norm
+
+
+def run_callback(targets, callback):
+    """
+    Recursively invoke the `callback` on each target. Targets can be either files or
+    directories.
+    """
+    for filename in targets:
+        if os.path.isfile(filename):
+            callback(filename)
+        if os.path.isdir(filename):
+            for dirpath, dirnames, filenames in os.walk(filename):
+                for fname in filenames:
+                    absolute_file_path = os.path.join(dirpath, fname)
+                    callback(absolute_file_path)
+
+
+def _get_file_stat(fname):
+    if isinstance(fname, str):
+        try:
+            st = os.stat(fname)  # pylint: disable=invalid-name ; this is fine
+            return os.path.abspath(fname), st.st_mtime, st.st_ctime
+        except FileNotFoundError:
+            pass
+    return tuple()
+
+
+def _cache_key(*files):
+    return sum((_get_file_stat(x) for x in files), tuple())
+
+
+class STATUS(Enum):
+    """container for status code (strings)"""
+
+    FAIL = "fail"
+    VERIFIED = "verified"
+    UNKNOWN = "unknown"

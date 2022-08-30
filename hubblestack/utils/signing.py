@@ -40,7 +40,6 @@ something like the following in a repo root.
 import os
 import logging
 import re
-import json
 import io as cStringIO
 import hubblestack.utils.platform
 
@@ -60,10 +59,15 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
 
-from hubblestack.utils.signing_utils import encode_pem, decode_pem
-
-from enum import Enum
-
+from hubblestack.utils.signing_helpers import (
+    encode_pem,
+    decode_pem,
+    stringify_ossl_cert,
+    normalize_path,
+    run_callback,
+    _cache_key,
+    STATUS,
+)
 
 MANIFEST_RE = re.compile(r"^\s*(?P<digest>[0-9a-fA-F]+)\s+(?P<fname>.+)$")
 log = logging.getLogger(__name__)
@@ -154,14 +158,6 @@ def check_verify_timestamp(target, dampener_limit=None):
         VERIFY_LOG_TIMESTAMPS[target] = new_ts
         return True
     return False
-
-
-class STATUS(Enum):
-    """container for status code (strings)"""
-
-    FAIL = "fail"
-    VERIFIED = "verified"
-    UNKNOWN = "unknown"
 
 
 class Options(object):
@@ -449,42 +445,6 @@ class X509AwareCertBucket:
             self.public_crt.append(self.PublicCertObj(i, digest, status))
 
 
-def stringify_ossl_cert(a_cert_obj):
-    """Try to stringify a cert object into its subject components and digest hexification.
-
-    E.g. (with extra newline added for line-wrap):
-        3E:9C:58:F5:27:89:A8:F4:B7:AB:4D:1C:56:C8:4E:F0:03:0F:C8:C3
-        C=US/ST=State/L=City/O=Org/OU=Group/CN=Certy Cert #1
-    """
-    if isinstance(a_cert_obj, (list, tuple)):
-        return ", ".join([stringify_ossl_cert(i) for i in a_cert_obj])
-    return "/".join(["=".join([j.decode() for j in i]) for i in a_cert_obj.get_subject().get_components()])
-
-
-def jsonify(obj, indent=2):
-    """cury function to add default indent=2 to json.dumps(obj, indent=indent)"""
-    return json.dumps(obj, indent=indent)
-
-
-def normalize_path(path, trunc=None):
-    """attempt to translate /home/./jettero////files/.bashrc
-    to /home/jettero/files/.bashrc; optionally truncating
-    the path if it starts with the given trunc kwarg string.
-    """
-    norm = os.path.normpath(path)
-    if trunc:
-        if norm.startswith(os.path.sep + trunc + os.path.sep):
-            norm = norm[len(trunc) + 2 :]
-        elif norm.startswith(trunc + os.path.sep):
-            norm = norm[len(trunc) + 1 :]
-        elif norm.startswith(os.path.sep + trunc):
-            norm = norm[len(trunc) + 1 :]
-        elif norm.startswith(trunc):
-            norm = norm[len(trunc) :]
-    # log.debug("normalize_path(%s) --> %s", path, norm)
-    return norm
-
-
 def hash_target(fname, obj_mode=False, chosen_hash=None):
     """read in a file (fname) and either return the hex digest
     (obj_mode=False) or a sha256 object pre-populated with the contents of
@@ -507,24 +467,9 @@ def hash_target(fname, obj_mode=False, chosen_hash=None):
     return hex_digest
 
 
-def descend_targets(targets, callback):
+def create_manifest(targets, mfname=None):
     """
-    recurse into the given `targets` (files or directories) and invoke the `callback`
-    callback on each file found.
-    """
-    for fname in targets:
-        if os.path.isfile(fname):
-            callback(fname)
-        if os.path.isdir(fname):
-            for dirpath, dirnames, filenames in os.walk(fname):
-                for fname in filenames:
-                    fname_ = os.path.join(dirpath, fname)
-                    callback(fname_)
-
-
-def manifest(targets, mfname=None):
-    """
-    Produce a manifest file given `targets`.
+    Produce a create_manifest file given `targets`.
     """
 
     if mfname is None:
@@ -538,7 +483,7 @@ def manifest(targets, mfname=None):
             mfh.write("{} {}\n".format(digest, fname))
             log.debug("wrote %s %s to %s", digest, fname, mfname)
 
-        descend_targets(targets, append_hash)
+        run_callback(targets, append_hash)
 
 
 def sign_target(fname, ofname, private_key=None, **kwargs):  # pylint: disable=unused-argument
@@ -574,20 +519,6 @@ def sign_target(fname, ofname, private_key=None, **kwargs):  # pylint: disable=u
         log.error("writing signature of %s to %s", os.path.abspath(fname), os.path.abspath(ofname))
         fh.write(encode_pem(sig, "Detached Signature of {}".format(fname)))
         fh.write("\n")
-
-
-def _stat_file(fname):
-    if isinstance(fname, str):
-        try:
-            st = os.stat(fname)  # pylint: disable=invalid-name ; this is fine
-            return (os.path.abspath(fname), st.st_mtime, st.st_ctime)
-        except FileNotFoundError:
-            pass
-    return tuple()
-
-
-def _cache_key(*files):
-    return sum((_stat_file(x) for x in files), tuple())
 
 
 VERIFY_CACHE = dict()
@@ -750,12 +681,12 @@ def iterate_manifest(mfname):
 def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None, extra_crt=None):
     """given a list of `targets`, a MANIFEST, and a SIGNATURE file:
 
-    1. Check the signature of the manifest, mark the 'MANIFEST' item of the return as:
+    1. Check the signature of the create_manifest, mark the 'MANIFEST' item of the return as:
          STATUS.FAIL if the signature doesn't match
          STATUS.UNKNOWN if the certificate signature can't be verified with the ca cert
          STATUS.VERIFIED if both the signature and the CA sig match
     2. mark all targets as STATUS.UNKNOWN
-    3. check the digest of each target against the manifest, mark each file as
+    3. check the digest of each target against the create_manifest, mark each file as
          STATUS.FAIL if the digest doesn't match
          STATUS.*, the status of the MANIFEST file above
 
@@ -783,8 +714,8 @@ def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None
     ret = OrderedDict()
     ret[mfname] = verify_signature(mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt, extra_crt=extra_crt)
     # ret[mfname] is the strongest claim we can make about the files we're
-    # verifiying if they match their hash in the manifest, the best we can say
-    # is whatever is the status of the manifest iteslf.
+    # verifiying if they match their hash in the create_manifest, the best we can say
+    # is whatever is the status of the create_manifest itself.
 
     mf_dir, _ = os.path.split(mfname)
     sf_dir, _ = os.path.split(sfname)
@@ -797,7 +728,7 @@ def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None
     else:
         trunc = None
 
-    # prepopulate digests with STATUS.UNKNOWN, skip things that shouldn't be
+    # pre-populate digests with STATUS.UNKNOWN, skip things that shouldn't be
     # digested (MANIFEST, SIGNATURE, etc) and build a database mapping
     # normalized names back to given target names.
     xlate = dict()
@@ -807,7 +738,7 @@ def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None
     for otarget in targets:
         target = normalize_path(otarget, trunc=trunc)
 
-        log.debug("found manifest for %s (%s)", otarget, target)
+        log.debug("found create_manifest for %s (%s)", otarget, target)
         if otarget != target:
             xlate[target] = otarget
         if target in digests or target in (mfname, sfname):
@@ -856,7 +787,11 @@ def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None
                 log_level = log.error
         # logs according to the STATUS of target file
         log_level(
-            'file: "%s" | status: %s | manifest sha256: "%s" | real sha256: "%s"', vfname, status, digest, new_hash
+            'file: "%s" | status: %s | create_manifest sha256: "%s" | real sha256: "%s"',
+            vfname,
+            status,
+            digest,
+            new_hash,
         )
         ret[vfname] = status
 

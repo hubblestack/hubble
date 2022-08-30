@@ -38,13 +38,11 @@ something like the following in a repo root.
 """
 
 import os
-import logging
 import re
 import io as cStringIO
-import hubblestack.utils.platform
 
 from time import time
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 
 # In any case, pycrypto won't do the job. The below requires pycryptodome.
 # (M2Crypto is the other choice; but the docs are weaker, mostly non-existent.)
@@ -67,10 +65,11 @@ from hubblestack.utils.signing_helpers import (
     run_callback,
     _cache_key,
     STATUS,
+    Options,
+    log,
 )
 
 MANIFEST_RE = re.compile(r"^\s*(?P<digest>[0-9a-fA-F]+)\s+(?P<fname>.+)$")
-log = logging.getLogger(__name__)
 
 
 def _our_byte_string(x, charmap="utf-8"):  # pylint: disable=unused-argument
@@ -158,46 +157,6 @@ def check_verify_timestamp(target, dampener_limit=None):
         VERIFY_LOG_TIMESTAMPS[target] = new_ts
         return True
     return False
-
-
-class Options(object):
-    """
-    The Options class is simply a convenience interface for interacting with repo_signing options.
-
-    Instead of `__mods__['config.get']('repo_signing:public_crt')`, write `Options.public_crt`.
-    """
-
-    class Defaults:
-        """defaults storage for options"""
-
-        require_verify = False
-        verify_cache_age = 600
-        ca_crt = "/etc/hubble/sign/ca-root.crt"
-        public_crt = "/etc/hubble/sign/public.crt"
-        private_key = "/etc/hubble/sign/private.key"
-        manifest_file_name = "MANIFEST"
-        signature_file_name = "SIGNATURE"
-        certificates_file_name = "CERTIFICATES"
-        salt_padding_bits = ["max", 32]
-        # The first generation signature padding bits were 32 (only) the
-        # crypto-recommended is "however many we can fit". AWS CloudHSM is
-        # incompatible with max, ... we'll need to try both. See below.
-
-    def __getattribute__(self, name):
-        """If the option exists in the default pseudo meta class
-        Try to find the option with config.get under repo_signing.
-        Failing that, return the default from the pseudo meta class.
-        If the option name isn't in the defaults, raise the exception.
-        """
-        try:
-            return object.__getattribute__(self, name)
-        except AttributeError:
-            pass
-        try:
-            default = getattr(self.Defaults, name)
-            return __mods__["config.get"]("repo_signing:{}".format(name), default)
-        except AttributeError:
-            raise
 
 
 # replace class with instance
@@ -676,126 +635,3 @@ def iterate_manifest(mfname):
                 _, manifested_fname = matched.groups()
                 manifested_fname = normalize_path(manifested_fname)
                 yield manifested_fname
-
-
-def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None, extra_crt=None):
-    """given a list of `targets`, a MANIFEST, and a SIGNATURE file:
-
-    1. Check the signature of the create_manifest, mark the 'MANIFEST' item of the return as:
-         STATUS.FAIL if the signature doesn't match
-         STATUS.UNKNOWN if the certificate signature can't be verified with the ca cert
-         STATUS.VERIFIED if both the signature and the CA sig match
-    2. mark all targets as STATUS.UNKNOWN
-    3. check the digest of each target against the create_manifest, mark each file as
-         STATUS.FAIL if the digest doesn't match
-         STATUS.*, the status of the MANIFEST file above
-
-    return a mapping from the input target list to the status values (a dict of filename: status)
-    """
-
-    if mfname is None:
-        mfname = Options.manifest_file_name
-    if sfname is None:
-        sfname = Options.signature_file_name
-    if public_crt is None:
-        public_crt = Options.public_crt
-    if ca_crt is None:
-        ca_crt = Options.ca_crt
-
-    log.debug(
-        "verifying: files: %s | mfname: %s | sfname: %s | public_crt: %s| ca_crt: %s",
-        targets,
-        mfname,
-        sfname,
-        public_crt,
-        ca_crt,
-    )
-
-    ret = OrderedDict()
-    ret[mfname] = verify_signature(mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt, extra_crt=extra_crt)
-    # ret[mfname] is the strongest claim we can make about the files we're
-    # verifiying if they match their hash in the create_manifest, the best we can say
-    # is whatever is the status of the create_manifest itself.
-
-    mf_dir, _ = os.path.split(mfname)
-    sf_dir, _ = os.path.split(sfname)
-
-    if mf_dir and mf_dir == sf_dir:
-        if hubblestack.utils.platform.is_windows():
-            trunc = mf_dir
-        else:
-            trunc = mf_dir + "/"
-    else:
-        trunc = None
-
-    # pre-populate digests with STATUS.UNKNOWN, skip things that shouldn't be
-    # digested (MANIFEST, SIGNATURE, etc) and build a database mapping
-    # normalized names back to given target names.
-    xlate = dict()
-    digests = OrderedDict()
-    if not targets:
-        targets = list(iterate_manifest(mfname))
-    for otarget in targets:
-        target = normalize_path(otarget, trunc=trunc)
-
-        log.debug("found create_manifest for %s (%s)", otarget, target)
-        if otarget != target:
-            xlate[target] = otarget
-        if target in digests or target in (mfname, sfname):
-            continue
-        digests[target] = STATUS.UNKNOWN
-    # populate digests with the hashes from the MANIFEST
-    if os.path.isfile(mfname):
-        with open(mfname, "r") as fh:
-            for line in fh.readlines():
-                matched = MANIFEST_RE.match(line)
-                if matched:
-                    digest, manifested_fname = matched.groups()
-                    manifested_fname = normalize_path(manifested_fname)
-                    if manifested_fname in digests:
-                        digests[manifested_fname] = digest
-    # number of seconds before a FAIL or UNKNOWN is set to the returner
-    # compare actual digests of files (if they exist) to the manifested digests
-    for vfname in digests:
-        digest = digests[vfname]
-        htname = os.path.join(trunc, vfname) if trunc else vfname
-        new_hash = hash_target(htname)
-
-        log_level = log.debug
-        if digest == STATUS.UNKNOWN:
-            # digests[vfname] is either UNKNOWN (from the targets population)
-            # or it's a digest from the MANIFEST. If UNKNOWN, we have nothing to compare
-            # so we return UNKNOWN
-            status = STATUS.UNKNOWN
-            # check to see if the the status of a failed target has been sent is the last
-            # x seconds, we reset time and set log level accordingly. the same for FAIL
-        elif digest == new_hash:
-            # path gets same status as MANIFEST
-            # Cool, the digest matches, but rather than mark STATUS.VERIFIED,
-            # we mark it with the same status as the MANIFEST itself --
-            # presumably it's signed (STATUS.VERIFIED); but perhaps it's only
-            # UNKNOWN or even FAIL.
-            status = ret[mfname]
-        else:
-            # We do have a MANIFEST entry and it doesn't match: FAIL with or
-            # without a matching SIGNATURE
-            status = STATUS.FAIL
-        if check_verify_timestamp(digest):
-            if status == STATUS.FAIL:
-                log_level = log.error
-            elif status == STATUS.UNKNOWN:
-                log_level = log.error
-        # logs according to the STATUS of target file
-        log_level(
-            'file: "%s" | status: %s | create_manifest sha256: "%s" | real sha256: "%s"',
-            vfname,
-            status,
-            digest,
-            new_hash,
-        )
-        ret[vfname] = status
-
-    # fix any normalized names so the caller gets back their specified targets
-    for k, v in xlate.items():
-        ret[v] = ret.pop(k)
-    return ret

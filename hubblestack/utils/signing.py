@@ -708,10 +708,9 @@ def verify_signature(
 
     try:
         with open(sfname, "r") as fh:
-            sig, _, _ = decode_pem(fh.read())  # also returns header and decrypted-status
+            sig = decode_pem(fh.read())
     except IOError:
         status = STATUS.UNKNOWN
-        verif_key = ":".join([fname, sfname])
         log_error('%s | file "%s" | status: %s ', short_fname, fname, status)
         return status
 

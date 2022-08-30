@@ -42,6 +42,7 @@ import logging
 import re
 import io as cStringIO
 from binascii import b2a_base64, a2b_base64
+from dataclasses import dataclass
 from enum import Enum
 
 import hubblestack.utils.platform
@@ -155,14 +156,15 @@ def check_verif_timestamp(target, dampener_limit=None):
     return False
 
 
-class STATUS(Enum):
+@dataclass
+class STATUS:
     """
     Status code strings
     """
 
-    FAIL = "fail"
-    VERIFIED = "verified"
-    UNKNOWN = "unknown"
+    FAIL = "fail"  # pylint: disable=invalid-name
+    VERIFIED = "verified"  # pylint: disable=invalid-name
+    UNKNOWN = "unknown"  # pylint: disable=invalid-name
 
 
 class Options(object):
@@ -229,7 +231,7 @@ def split_certs(fh):
                 log_level = log.debug
                 try:
                     yield ossl.load_certificate(ossl.FILETYPE_PEM, ret)
-                except Exception as exception_object:
+                except Exception:
                     status = STATUS.UNKNOWN
                     if check_verif_timestamp(fh):
                         log_level = log.warning

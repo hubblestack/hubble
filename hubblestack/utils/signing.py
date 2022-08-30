@@ -40,7 +40,6 @@ something like the following in a repo root.
 import os
 import logging
 import re
-import json
 import io as cStringIO
 from binascii import b2a_base64, a2b_base64
 from enum import Enum
@@ -121,7 +120,8 @@ def check_is_ca(crt):
 
 
 def check_verif_timestamp(target, dampener_limit=None):
-    """This function writes/updates a timestamp cache
+    """
+    This function writes/updates a timestamp cache
     file for profiles
     Args:
         target -- string path of target file
@@ -156,7 +156,9 @@ def check_verif_timestamp(target, dampener_limit=None):
 
 
 class STATUS(Enum):
-    """container for status code (strings)"""
+    """
+    Status code strings
+    """
 
     FAIL = "fail"
     VERIFIED = "verified"
@@ -208,7 +210,8 @@ Options = Options()  # pylint: disable=invalid-name ; this is fine
 
 
 def split_certs(fh):
-    """attempt to split certs found in given filehandle into separate openssl cert objects
+    """
+    Attempt to split certs found in given filehandle into separate openssl cert objects
 
     returns a generator, for list, use `list(split_cerst(fh))`
     """
@@ -241,7 +244,8 @@ def split_certs(fh):
 
 
 def read_certs(*fnames):
-    """given a list of filenames (as varargs), attempt to find all certs in all named files.
+    """
+    Given a list of filenames (as varargs), attempt to find all certs in all named files.
 
     returns openssl objects as a generator.
     for a list: `list(read_certs('filename1', 'filename2'))`
@@ -267,7 +271,9 @@ def read_certs(*fnames):
 
 
 def stringify_cert_files(cert):
-    """this function returns a string version of cert(s) for returner"""
+    """
+    This function returns a string version of cert(s) for returner
+    """
     if isinstance(cert, (tuple, list)) and cert:
         return ", ".join([stringify_cert_files(c) for c in cert])
     elif hasattr(cert, "source_filename"):
@@ -449,7 +455,8 @@ class X509AwareCertBucket:
 
 
 def stringify_ossl_cert(a_cert_obj):
-    """try to stryingy a cert object into its subject components and digest hexification.
+    """
+    Try to stringify a cert object into its subject components and digest hexification.
 
     E.g. (with extra newline added for line-wrap):
         3E:9C:58:F5:27:89:A8:F4:B7:AB:4D:1C:56:C8:4E:F0:03:0F:C8:C3
@@ -460,14 +467,9 @@ def stringify_ossl_cert(a_cert_obj):
     return "/".join(["=".join([j.decode() for j in i]) for i in a_cert_obj.get_subject().get_components()])
 
 
-def jsonify(obj, indent=2):
-    """cury function to add default indent=2 to json.dumps(obj, indent=indent)"""
-    return json.dumps(obj, indent=indent)
-
-
 def normalize_path(path, trunc=None):
-    """attempt to translate /home/./jettero////files/.bashrc
-    to /home/jettero/files/.bashrc; optionally truncating
+    """attempt to translate /<path>/./<to>////<file>/.bashrc
+    to /<path>/<to>/<file>/.bashrc; optionally truncating
     the path if it starts with the given trunc kwarg string.
     """
     norm = os.path.normpath(path)
@@ -480,7 +482,6 @@ def normalize_path(path, trunc=None):
             norm = norm[len(trunc) + 1 :]
         elif norm.startswith(trunc):
             norm = norm[len(trunc) :]
-    # log.debug("normalize_path(%s) --> %s", path, norm)
     return norm
 
 
@@ -506,7 +507,7 @@ def hash_target(fname, obj_mode=False, chosen_hash=None):
     return hex_digest
 
 
-def descend_targets(targets, callback):
+def run_callback_on_targets(targets, callback):
     """
     recurse into the given `targets` (files or directories) and invoke the `callback`
     callback on each file found.
@@ -521,9 +522,9 @@ def descend_targets(targets, callback):
                     callback(fname_)
 
 
-def manifest(targets, mfname=None):
+def create_manifest(targets, mfname=None):
     """
-    Produce a manifest file given `targets`.
+    Produce a create_manifest file given `targets`.
     """
 
     if mfname is None:
@@ -537,7 +538,7 @@ def manifest(targets, mfname=None):
             mfh.write("{} {}\n".format(digest, fname))
             log.debug("wrote %s %s to %s", digest, fname, mfname)
 
-        descend_targets(targets, append_hash)
+        run_callback_on_targets(targets, append_hash)
 
 
 def encode_pem(data: bytes, marker: str) -> str:
@@ -631,7 +632,7 @@ def _cache_key(*files):
     return sum((get_file_stats(x) for x in files), tuple())
 
 
-VERIFY_CACHE = dict()
+VERIFY_CACHE = {}
 
 
 def _clean_verify_cache(old=None):
@@ -791,12 +792,12 @@ def iterate_manifest(mfname):
 def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None, extra_crt=None):
     """given a list of `targets`, a MANIFEST, and a SIGNATURE file:
 
-    1. Check the signature of the manifest, mark the 'MANIFEST' item of the return as:
+    1. Check the signature of the create_manifest, mark the 'MANIFEST' item of the return as:
          STATUS.FAIL if the signature doesn't match
          STATUS.UNKNOWN if the certificate signature can't be verified with the ca cert
          STATUS.VERIFIED if both the signature and the CA sig match
     2. mark all targets as STATUS.UNKNOWN
-    3. check the digest of each target against the manifest, mark each file as
+    3. check the digest of each target against the create_manifest, mark each file as
          STATUS.FAIL if the digest doesn't match
          STATUS.*, the status of the MANIFEST file above
 
@@ -824,8 +825,8 @@ def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None
     ret = OrderedDict()
     ret[mfname] = verify_signature(mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt, extra_crt=extra_crt)
     # ret[mfname] is the strongest claim we can make about the files we're
-    # verifiying if they match their hash in the manifest, the best we can say
-    # is whatever is the status of the manifest iteslf.
+    # verifiying if they match their hash in the create_manifest, the best we can say
+    # is whatever is the status of the create_manifest iteslf.
 
     mf_dir, _ = os.path.split(mfname)
     sf_dir, _ = os.path.split(sfname)
@@ -848,7 +849,7 @@ def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None
     for otarget in targets:
         target = normalize_path(otarget, trunc=trunc)
 
-        log.debug("found manifest for %s (%s)", otarget, target)
+        log.debug("found create_manifest for %s (%s)", otarget, target)
         if otarget != target:
             xlate[target] = otarget
         if target in digests or target in (mfname, sfname):
@@ -898,7 +899,11 @@ def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None
                 log_level = log.error
         # logs according to the STATUS of target file
         log_level(
-            'file: "%s" | status: %s | manifest sha256: "%s" | real sha256: "%s"', vfname, status, digest, new_hash
+            'file: "%s" | status: %s | create_manifest sha256: "%s" | real sha256: "%s"',
+            vfname,
+            status,
+            digest,
+            new_hash,
         )
         ret[vfname] = status
 
@@ -909,46 +914,46 @@ def verify_files(targets, mfname=None, sfname=None, public_crt=None, ca_crt=None
 
 
 #### wrappers:
-def find_wrapf(not_found={"path": "", "rel": ""}, real_path="path"):
+def find_file_wrapper(not_found={"path": "", "rel": ""}, real_path="path"):
     """
     Wrap a filesystem find_file function and return the original result if the
     MANIFEST and SIGNATURE indicate the file is valid. If the file is not verified
     and Options.require_verify is False (the default); but the file did not
-    explicity fail to match the MANIFEST, continue to return the original find result.
+    explicitly fail to match the MANIFEST, continue to return the original find result.
 
     Otherwise, return a pretend not-found result instead of the original repo result.
     """
 
-    def wrapper(find_file_f):
-        def _p(fnd):
+    def wrapper(find_file_function):
+        def normalize_path(fnd):
             # real_path is poorly named. it should contain the name of the key
             # where we'll find the real path of the file we're finding with
-            # find_file_f()
+            # find_file_function()
             return fnd.get(real_path, fnd.get("path", ""))
 
         def inner(path, saltenv, *a, **kwargs):
-            f_path = find_file_f(path, saltenv, *a, **kwargs)
-            p_path = _p(f_path)
+            file_path = find_file_function(path, saltenv, *a, **kwargs)
+            normalized_path = normalize_path(file_path)
 
-            if not p_path:
+            if not normalized_path:
                 # if the file doesn't exist anyway, there's no reason to continue
-                return f_path
+                return file_path
 
-            mani_path = _p(find_file_f(Options.manifest_file_name, saltenv, *a, **kwargs))
-            sign_path = _p(find_file_f(Options.signature_file_name, saltenv, *a, **kwargs))
-            cert_path = _p(find_file_f(Options.certificates_file_name, saltenv, *a, **kwargs))
+            mani_path = normalize_path(find_file_function(Options.manifest_file_name, saltenv, *a, **kwargs))
+            sign_path = normalize_path(find_file_function(Options.signature_file_name, saltenv, *a, **kwargs))
+            cert_path = normalize_path(find_file_function(Options.certificates_file_name, saltenv, *a, **kwargs))
 
             log.debug(
-                'path: %s | f_path: %s | p_path: %s | manifest: "%s" | signature: "%s"',
+                'path: %s | file_path: %s | normalized_path: %s | create_manifest: "%s" | signature: "%s"',
                 path,
-                f_path,
-                p_path,
+                file_path,
+                normalized_path,
                 mani_path,
                 sign_path,
             )
 
             verify_res = verify_files(
-                [p_path],
+                [normalized_path],
                 mfname=mani_path,
                 sfname=sign_path,
                 public_crt=Options.public_crt,
@@ -958,12 +963,12 @@ def find_wrapf(not_found={"path": "", "rel": ""}, real_path="path"):
 
             log.debug("verify: %s", dict(**verify_res))
 
-            vrg = verify_res.get(p_path, STATUS.UNKNOWN)
+            vrg = verify_res.get(normalized_path, STATUS.UNKNOWN)
             if vrg == STATUS.VERIFIED:
-                return f_path
+                return file_path
             if vrg == STATUS.UNKNOWN and not Options.require_verify:
-                return f_path
-            log.debug("claiming not found: %s (%s)", path, f_path)
+                return file_path
+            log.debug("claiming not found: %s (%s)", path, file_path)
             if log.isEnabledFor(logging.DEBUG):
                 import inspect
 

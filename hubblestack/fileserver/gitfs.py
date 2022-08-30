@@ -51,33 +51,43 @@ Walkthrough <tutorial-gitfs>`.
 import logging
 
 PER_REMOTE_OVERRIDES = (
-    'base', 'mountpoint', 'root', 'ssl_verify',
-    'saltenv_whitelist', 'saltenv_blacklist',
-    'env_whitelist', 'env_blacklist', 'refspecs',
-    'disable_saltenv_mapping', 'ref_types', 'update_interval',
+    "base",
+    "mountpoint",
+    "root",
+    "ssl_verify",
+    "saltenv_whitelist",
+    "saltenv_blacklist",
+    "env_whitelist",
+    "env_blacklist",
+    "refspecs",
+    "disable_saltenv_mapping",
+    "ref_types",
+    "update_interval",
 )
-PER_REMOTE_ONLY = ('all_saltenvs', 'name', 'saltenv')
+PER_REMOTE_ONLY = ("all_saltenvs", "name", "saltenv")
 
 # Auth support (auth params can be global or per-remote, too)
-AUTH_PROVIDERS = ('pygit2',)
-AUTH_PARAMS = ('user', 'password', 'pubkey', 'privkey', 'passphrase',
-               'insecure_auth')
+AUTH_PROVIDERS = ("pygit2",)
+AUTH_PARAMS = ("user", "password", "pubkey", "privkey", "passphrase", "insecure_auth")
 
-from hubblestack.utils.signing import find_wrapf
+from hubblestack.utils.signing import find_file_wrapper
 from hubblestack.utils.gitfs import GitFS
 from hubblestack.exceptions import FileserverConfigError
 
 log = logging.getLogger(__name__)
 
 # Define the module's virtual name
-__virtualname__ = 'gitfs'
+__virtualname__ = "gitfs"
 
 
 def _gitfs(init_remotes=True):
-    return GitFS(__opts__, __opts__['gitfs_remotes'],
-                 per_remote_overrides=PER_REMOTE_OVERRIDES,
-                 per_remote_only=PER_REMOTE_ONLY,
-                 init_remotes=init_remotes)
+    return GitFS(
+        __opts__,
+        __opts__["gitfs_remotes"],
+        per_remote_overrides=PER_REMOTE_OVERRIDES,
+        per_remote_only=PER_REMOTE_ONLY,
+        init_remotes=init_remotes,
+    )
 
 
 def __virtual__():
@@ -85,7 +95,7 @@ def __virtual__():
     Only load if the desired provider module is present and gitfs is enabled
     properly in the master config file.
     """
-    if __virtualname__ not in __opts__['fileserver_backend']:
+    if __virtualname__ not in __opts__["fileserver_backend"]:
         return False
     try:
         _gitfs(init_remotes=False)
@@ -106,7 +116,7 @@ def clear_cache():
     return _gitfs(init_remotes=False).clear_cache()
 
 
-def clear_lock(remote=None, lock_type='update'):
+def clear_lock(remote=None, lock_type="update"):
     """
     Clear update.lk
     """
@@ -145,8 +155,8 @@ def envs(ignore_cache=False):
     return _gitfs().envs(ignore_cache=ignore_cache)
 
 
-@find_wrapf(not_found={'rel': '', 'path': ''}, real_path='path')
-def find_file(path, tgt_env='base', **kwargs):  # pylint: disable=W0613
+@find_file_wrapper(not_found={"rel": "", "path": ""}, real_path="path")
+def find_file(path, tgt_env="base", **kwargs):  # pylint: disable=W0613
     """
     Find the first file to match the path and ref, read the file out of git
     and send the path to the newly cached file

@@ -43,6 +43,7 @@ import re
 import json
 import io as cStringIO
 from binascii import b2a_base64, a2b_base64
+from enum import Enum
 
 import hubblestack.utils.platform
 
@@ -154,7 +155,7 @@ def check_verif_timestamp(target, dampener_limit=None):
     return False
 
 
-class STATUS:
+class STATUS(Enum):
     """container for status code (strings)"""
 
     FAIL = "fail"

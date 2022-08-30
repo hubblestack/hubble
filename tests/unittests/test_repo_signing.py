@@ -4,7 +4,7 @@
 import os, sys
 from pytest import fixture
 import hubblestack.utils.signing as sig
-import hubblestack.utils.signing_utils
+import hubblestack.utils.signing_helpers
 
 
 @fixture(scope="module", params=["rsa", "448", "25519"])
@@ -42,9 +42,9 @@ def cdb(fname, t, n, fmt="{t}-{n}"):
     return os.path.join(base, fname)
 
 
-V = sig.STATUS.VERIFIED
-U = sig.STATUS.UNKNOWN
-F = sig.STATUS.FAIL
+V = hubblestack.utils.signing_helpers.STATUS.VERIFIED
+U = hubblestack.utils.signing_helpers.STATUS.UNKNOWN
+F = hubblestack.utils.signing_helpers.STATUS.FAIL
 
 
 def test_read_certs(no_ppc, cdbt):
@@ -120,7 +120,7 @@ def test_x509_basics(no_ppc, cdbt):
     # rsa2:public-1 and rsa2:private-1 are from a totally different ca-root
     # this should give us a real actual FAIL condition *iff* the CN matches.
     #
-    # NOTE: that the fail condition will not manifest unless teh issuer CN
+    # NOTE: that the fail condition will not create_manifest unless teh issuer CN
     # matches between the rsa1/ and rsa2/ certificate databases. If the CN of
     # the issuer differs, the code will be 20 (issuer not found) rather than
     # 7 (signature failed)
@@ -198,9 +198,9 @@ def test_no_SIGNATURE(__mods__, targets, no_ppc, cdbt):
 
 def test_no_MANIFEST(__mods__, targets, no_ppc, cdbt):
     # If we have a SIGNATURE without a MANIFEST, we should fail, because our
-    # MANIFEST hash will not match the signed hash -- a sig without manifest is
+    # MANIFEST hash will not match the signed hash -- a sig without create_manifest is
     # probably a really bad sign and also a rare condition anyway. Also,
-    # without the manifest, the most we can say about the rest of the files is
+    # without the create_manifest, the most we can say about the rest of the files is
     # UNKNOWN
     sig.Options.ca_crt = (cdb("ca-root.crt", cdbt, 1), cdb("bundle.pem", cdbt, 1))
     sig.Options.public_crt = cdb("public-1.crt", cdbt, 1)
@@ -216,7 +216,7 @@ def test_no_MANIFEST(__mods__, targets, no_ppc, cdbt):
 def test_no_MANIFEST_or_SIGNATURE(__mods__, targets, no_ppc, cdbt):
     # if we have a SIGNATURE without a MANIFEST, we should fail
     # because our MANIFEST hash will not match the signed hash
-    # (a sig without manifest is probably a really bad sign and also a rare condition anyway)
+    # (a sig without create_manifest is probably a really bad sign and also a rare condition anyway)
     sig.Options.ca_crt = (cdb("ca-root.crt", cdbt, 1), cdb("bundle.pem", cdbt, 1))
     sig.Options.public_crt = cdb("public-1.crt", cdbt, 1)
     sig.Options.private_key = cdb("private-1.key", cdbt, 1)
@@ -383,7 +383,7 @@ def test_msign_and_verify_signature(__mods__, targets, no_ppc, cdbt):
     __mods__["signing.msign"](*targets)
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
 
-    assert res == sig.STATUS.VERIFIED
+    assert res == hubblestack.utils.signing_helpers.STATUS.VERIFIED
 
     sig.Options.public_crt = cdb("public-1.crt", cdbt, 1)
     sig.Options.private_key = cdb("private-2.key", cdbt, 1)
@@ -391,7 +391,7 @@ def test_msign_and_verify_signature(__mods__, targets, no_ppc, cdbt):
     __mods__["signing.msign"](*targets)
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
 
-    assert res == sig.STATUS.FAIL
+    assert res == hubblestack.utils.signing_helpers.STATUS.FAIL
 
     sig.Options.public_crt = cdb("public-1.crt", cdbt, 2)
     sig.Options.private_key = cdb("private-1.key", cdbt, 2)
@@ -399,7 +399,7 @@ def test_msign_and_verify_signature(__mods__, targets, no_ppc, cdbt):
     __mods__["signing.msign"](*targets)
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
 
-    assert res == sig.STATUS.FAIL
+    assert res == hubblestack.utils.signing_helpers.STATUS.FAIL
 
 
 def test_various_padding_bits(__mods__, targets, no_ppc, cdbt):
@@ -414,7 +414,7 @@ def test_various_padding_bits(__mods__, targets, no_ppc, cdbt):
     # check either 'max' or 32 or whatever
     sig.Options.salt_padding_bits = ["max", 32]
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
-    assert res == sig.STATUS.VERIFIED
+    assert res == hubblestack.utils.signing_helpers.STATUS.VERIFIED
 
     # sign with max-bit-salt-padding
     sig.Options.salt_padding_bits = "max"
@@ -422,16 +422,20 @@ def test_various_padding_bits(__mods__, targets, no_ppc, cdbt):
     # check with max or 32 or whatever
     sig.Options.salt_padding_bits = ["max", 32]
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
-    assert res == sig.STATUS.VERIFIED
+    assert res == hubblestack.utils.signing_helpers.STATUS.VERIFIED
 
     # check one more time with 32/max instead of max/32 (shouldn't matter)
     sig.Options.salt_padding_bits = [32, "max"]
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
-    assert res == sig.STATUS.VERIFIED
+    assert res == hubblestack.utils.signing_helpers.STATUS.VERIFIED
 
     # The padding thing really only applies to RSA.
     # So, for the below expected failures, it's only when cdbt is 'rsa'.
-    expected = sig.STATUS.FAIL if cdbt == "rsa" else sig.STATUS.VERIFIED
+    expected = (
+        hubblestack.utils.signing_helpers.STATUS.FAIL
+        if cdbt == "rsa"
+        else hubblestack.utils.signing_helpers.STATUS.VERIFIED
+    )
 
     # sign with max-bit-salt-padding
     sig.Options.salt_padding_bits = "max"
@@ -459,4 +463,4 @@ def test_like_a_daemon_with_bundle(__mods__, no_ppc, cdbt):
     res = __mods__["signing.verify"]("tests/unittests/conftest.py")
     assert len(res) == 2
     for item in res:
-        assert res[item] == sig.STATUS.VERIFIED
+        assert res[item] == hubblestack.utils.signing_helpers.STATUS.VERIFIED

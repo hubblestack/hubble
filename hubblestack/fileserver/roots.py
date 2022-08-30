@@ -28,7 +28,7 @@ import hubblestack.utils.path
 import hubblestack.utils.platform
 import hubblestack.utils.stringutils
 
-from hubblestack.utils.signing_utils import find_file_func_wrapper
+from hubblestack.utils.signing_helpers import find_file_func_wrapper
 
 log = logging.getLogger(__name__)
 

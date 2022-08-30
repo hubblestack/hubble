@@ -94,7 +94,7 @@ from urllib.parse import quote as _quote
 
 # pylint: enable=import-error,no-name-in-module,redefined-builtin
 
-from hubblestack.utils.signing_utils import find_file_func_wrapper
+from hubblestack.utils.signing_helpers import find_file_func_wrapper
 
 log = logging.getLogger(__name__)
 

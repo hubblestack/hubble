@@ -70,7 +70,7 @@ PER_REMOTE_ONLY = ("all_saltenvs", "name", "saltenv")
 AUTH_PROVIDERS = ("pygit2",)
 AUTH_PARAMS = ("user", "password", "pubkey", "privkey", "passphrase", "insecure_auth")
 
-from hubblestack.utils.signing_utils import find_file_func_wrapper
+from hubblestack.utils.signing_helpers import find_file_func_wrapper
 from hubblestack.utils.gitfs import GitFS
 from hubblestack.exceptions import FileserverConfigError
 

@@ -110,7 +110,7 @@ def get_modules():
             for file_name in file_names:
                 base_name, file_extension = os.path.splitext(file_name)
 
-                # If a module file or module manifest is present, check if
+                # If a module file or module create_manifest is present, check if
                 # the base name matches the directory name.
 
                 if file_extension.lower() in valid_extensions:

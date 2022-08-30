@@ -57,7 +57,7 @@ import hubblestack.fileserver
 import hubblestack.utils.files
 import hubblestack.utils.gzip_util
 import hubblestack.utils.hashutils
-from hubblestack.utils.signing_utils import find_file_func_wrapper
+from hubblestack.utils.signing_helpers import find_file_func_wrapper
 
 try:
     from azure.storage.blob import BlobServiceClient

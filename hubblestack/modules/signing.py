@@ -7,10 +7,12 @@ import hubblestack.utils.signing as HuS
 
 log = logging.getLogger(__name__)
 
-__virtualname__ = 'signing'
+__virtualname__ = "signing"
+
 
 def __virtual__():
     return True
+
 
 def msign(*targets, **kw):
     """
@@ -22,12 +24,13 @@ def msign(*targets, **kw):
         private_key :- the private key to use for the signature (default
             /etc/hubble/sign/private.key)
     """
-    mfname = kw.get('mfname', HuS.Options.manifest_file_name)
-    sfname = kw.get('sfname', HuS.Options.signature_file_name)
-    private_key = kw.get('private_key', HuS.Options.private_key)
+    mfname = kw.get("mfname", HuS.Options.manifest_file_name)
+    sfname = kw.get("sfname", HuS.Options.signature_file_name)
+    private_key = kw.get("private_key", HuS.Options.private_key)
 
-    HuS.manifest(targets, mfname=mfname)
+    HuS.create_manifest(targets, mfname=mfname)
     HuS.sign_target(mfname, sfname, private_key=private_key)
+
 
 def verify(*targets, **kw):
     """
@@ -46,21 +49,31 @@ def verify(*targets, **kw):
                   found.
     """
 
-    mfname = kw.get('mfname', HuS.Options.manifest_file_name)
-    sfname = kw.get('sfname', HuS.Options.signature_file_name)
-    cfname = kw.get('cfname', HuS.Options.certificates_file_name)
-    public_crt = kw.get('public_crt', HuS.Options.public_crt)
-    ca_crt = kw.get('ca_crt', HuS.Options.ca_crt)
+    mfname = kw.get("mfname", HuS.Options.manifest_file_name)
+    sfname = kw.get("sfname", HuS.Options.signature_file_name)
+    cfname = kw.get("cfname", HuS.Options.certificates_file_name)
+    public_crt = kw.get("public_crt", HuS.Options.public_crt)
+    ca_crt = kw.get("ca_crt", HuS.Options.ca_crt)
     pwd = os.path.abspath(os.path.curdir)
 
-    log.debug('signing.verify(targets=%s, mfname=%s, sfname=%s, public_crt=%s, ca_crt=%s, cfname=%s, pwd=%s)',
-        targets, mfname, sfname, public_crt, ca_crt, cfname, pwd)
+    log.debug(
+        "signing.verify(targets=%s, mfname=%s, sfname=%s, public_crt=%s, ca_crt=%s, cfname=%s, pwd=%s)",
+        targets,
+        mfname,
+        sfname,
+        public_crt,
+        ca_crt,
+        cfname,
+        pwd,
+    )
 
-    return dict(HuS.verify_files(targets, mfname=mfname, sfname=sfname,
-        public_crt=public_crt, ca_crt=ca_crt, extra_crt=cfname))
+    return dict(
+        HuS.verify_files(targets, mfname=mfname, sfname=sfname, public_crt=public_crt, ca_crt=ca_crt, extra_crt=cfname)
+    )
+
 
 def enumerate():
-    """ enumerate installed certificates """
+    """enumerate installed certificates"""
 
     x509 = HuS.X509AwareCertBucket()
-    return [ ' '.join(x.split()[1:]) for x in x509.trusted ]
+    return [" ".join(x.split()[1:]) for x in x509.trusted]

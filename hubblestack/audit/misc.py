@@ -257,18 +257,18 @@ ensure_ntp_configured:
 
 """
 import os
+import stat
+import pathlib
 import logging
 
 import re
-
+from pystemd.systemd1 import Manager
 from hubblestack.exceptions import CommandExecutionError
-from collections import Counter
 
 import hubblestack.module_runner.comparator
 from hubblestack.module_runner.runner import Caller
 import hubblestack.module_runner.runner_utils as runner_utils
 from hubblestack.exceptions import HubbleCheckValidationError
-import hubblestack.audit.grep as grep_module
 
 log = logging.getLogger(__name__)
 
@@ -448,10 +448,13 @@ def _check_password_fields_not_empty(block_id, block_dict, extra_args):
     """
     Ensure password fields are not empty
     """
-    result = _execute_shell_command(
-        'cat /etc/shadow | awk -F: \'($2 == "" ) { print $1 " does not have a password "}\'', python_shell=True
-    )
-    return True if result == "" else result
+    result = ""
+    with open("/etc/shadow", "r") as shadow:
+        lines = shadow.readlines()
+        for line in lines:
+            if line.split(":")[1] is "":
+                result += f"{line.split(':')[0]} does not have a password \n"
+        return True if result == "" else result
 
 
 def _system_account_non_login(block_id, block_dict, extra_args=None):
@@ -483,74 +486,71 @@ def _default_group_for_root(block_id, block_dict, extra_args):
     """
     Ensure default group for the root account is GID 0
     """
-    result = _execute_shell_command('grep "^root:" /etc/passwd | cut -f4 -d:', python_shell=True)
-    result = result.strip()
-    return True if result == "0" else False
+    with open("/etc/passwd", "r") as passwd:
+        lines = passwd.readlines()
+        for line in lines:
+            if line[:3] == "root" and line.split(":")[3] == "0":
+                return True
+        return False
 
 
 def _root_is_only_uid_0_account(block_id, block_dict, extra_args):
     """
     Ensure root is the only UID 0 account
     """
-    result = _execute_shell_command("cat /etc/passwd | awk -F: '($3 == 0) { print $1 }'", python_shell=True)
-    return True if result.strip() == "root" else result
+    uid0_accounts = []
+    with open("/etc/passwd", "r") as passwd:
+        lines = passwd.readlines()
+        for line in lines:
+            if line.split(":")[2] == "0":
+                uid0_accounts.append(line.split(":")[0])
+    if "root" in uid0_accounts:
+        return True if len(uid0_accounts) == 1 else False
+    else:
+        raise Exception("Missing root account")
 
 
 def _check_time_synchronization(block_id, block_dict, extra_args):
     """
     Ensure that some service is running to synchronize the system clock
     """
-    command = 'systemctl status systemd-timesyncd ntpd | grep "Active: active (running)"'
-    output = _execute_shell_command(command, python_shell=True)
-    if output.strip() == "":
-        return "neither ntpd nor timesyncd is running"
-    else:
-        return True
+    manager = Manager()
+    manager.load()
+    services = manager.Manager.ListUnitFiles()
+    success = any(
+        [item for item in services if b"systemd-timesyncd" in item[0] or b"ntpd" in item[0] and b"enabled" in item[1]]
+    )
+    return success or "neither ntpd nor timesyncd is running"
 
 
 def _check_path_integrity(block_id, block_dict, extra_args):
     """
     Ensure that system PATH variable is not malformed.
     """
+    path_value = os.environ.get("PATH")
+    output = ""
+    for item in path_value.split(":"):
+        if item is "":
+            output += "Empty Directory in PATH (::)\n"
+        if item is ".":
+            output += "PATH contains .\n"
 
-    script = """
-    if [ "`echo $PATH | grep ::`" != "" ]; then
-        echo "Empty Directory in PATH (::)"
-    fi
+    if path_value[-1] is ":":
+        output += "Trailing : in PATH\n"
 
-    if [ "`echo $PATH | grep :$`" != "" ]; then
-        echo "Trailing : in PATH"
-    fi
+    paths = path_value.split(":")
+    for path in paths:
+        permissions = os.stat(path)
+        if os.path.isdir(path):
+            if bool(permissions & stat.S_IWGRP):
+                output += f"Group write permissions set on directory {path}\n"
+            if bool(permissions & stat.S_IWOTH):
+                output += f"Other write permissions set on directory {path}\n"
+            if pathlib.Path(path).owner() != "root":
+                output += f"{path} is not owned by root\n"
+        else:
+            output += f"{path} is not a directory\n"
 
-    p=`echo $PATH | sed -e 's/::/:/' -e 's/:$//' -e 's/:/ /g'`
-    set -- $p
-    while [ "$1" != "" ]; do
-        if [ "$1" = "." ]; then
-            echo "PATH contains ."
-            shift
-            continue
-        fi
-
-        if [ -d $1 ]; then
-            dirperm=`ls -ldH $1 | cut -f1 -d" "`
-            if [ `echo $dirperm | cut -c6` != "-" ]; then
-                echo "Group Write permission set on directory $1"
-            fi
-            if [ `echo $dirperm | cut -c9` != "-" ]; then
-                echo "Other Write permission set on directory $1"
-            fi
-            dirown=`ls -ldH $1 | awk '{print $3}'`
-            if [ "$dirown" != "root" ] ; then
-                echo $1 is not owned by root
-            fi
-            else
-            echo $1 is not a directory
-        fi
-        shift
-    done
-
-    """
-    output = _execute_shell_command(script, python_shell=True)
     return True if output.strip() == "" else output
 
 
@@ -558,9 +558,9 @@ def _check_duplicate_uids(block_id, block_dict, extra_args):
     """
     Return False if any duplicate user id exist in /etc/group file, else return True
     """
-    uids = _execute_shell_command('cat /etc/passwd | cut -f3 -d":"', python_shell=True).strip()
-    uids = uids.split("\n") if uids != "" else []
-    duplicate_uids = [k for k, v in Counter(uids).items() if v > 1]
+    with open("/etc/passwd", "r") as passwd:
+        users = [item.split(":")[2] for item in passwd.readlines()]
+        duplicate_uids = [item for item in set(users) if users.count(item) > 1]
     if duplicate_uids is None or duplicate_uids == []:
         return True
     return str(duplicate_uids)
@@ -570,9 +570,9 @@ def _check_duplicate_gids(block_id, block_dict, extra_args):
     """
     Return False if any duplicate group id exist in /etc/group file, else return True
     """
-    gids = _execute_shell_command('cat /etc/group | cut -f3 -d":"', python_shell=True).strip()
-    gids = gids.split("\n") if gids != "" else []
-    duplicate_gids = [k for k, v in Counter(gids).items() if v > 1]
+    with open("/etc/group", "r") as group:
+        users = [item.split(":")[2] for item in group.readlines()]
+        duplicate_gids = [item for item in set(users) if users.count(item) > 1]
     if duplicate_gids is None or duplicate_gids == []:
         return True
     return str(duplicate_gids)
@@ -582,9 +582,9 @@ def _check_duplicate_unames(block_id, block_dict, extra_args):
     """
     Return False if any duplicate user names exist in /etc/group file, else return True
     """
-    unames = _execute_shell_command('cat /etc/passwd | cut -f1 -d":"', python_shell=True).strip()
-    unames = unames.split("\n") if unames != "" else []
-    duplicate_unames = [k for k, v in Counter(unames).items() if v > 1]
+    with open("/etc/passwd", "r") as passwd:
+        users = [item.split(":")[0] for item in passwd.readlines()]
+        duplicate_unames = [item for item in set(users) if users.count(item) > 1]
     if duplicate_unames is None or duplicate_unames == []:
         return True
     return str(duplicate_unames)
@@ -594,9 +594,9 @@ def _check_duplicate_gnames(block_id, block_dict, extra_args):
     """
     Return False if any duplicate group names exist in /etc/group file, else return True
     """
-    gnames = _execute_shell_command('cat /etc/group | cut -f1 -d":"', python_shell=True).strip()
-    gnames = gnames.split("\n") if gnames != "" else []
-    duplicate_gnames = [k for k, v in Counter(gnames).items() if v > 1]
+    with open("/etc/group", "r") as group:
+        groups = [item.split(":")[0] for item in group.readlines()]
+        duplicate_gnames = [item for item in set(groups) if groups.count(item) > 1]
     if duplicate_gnames is None or duplicate_gnames == []:
         return True
     return str(duplicate_gnames)
@@ -638,18 +638,17 @@ def _check_core_dumps(block_id, block_dict, extra_args):
     """
     Ensure core dumps are restricted
     """
-    hard_core_dump_value = _execute_shell_command(
-        "grep -R -E \"hard +core\" /etc/security/limits.conf /etc/security/limits.d/ | awk '{print $4}'",
-        python_shell=True,
-    ).strip()
-    hard_core_dump_value = hard_core_dump_value.split("\n") if hard_core_dump_value != "" else []
-    if "0" in hard_core_dump_value:
-        return True
-
-    if hard_core_dump_value is None or hard_core_dump_value == [] or hard_core_dump_value == "":
-        return "'hard core' not found in any file"
-
-    return str(hard_core_dump_value)
+    # TODO fix/replace this broken code - maybe with some LIBC library
+    # hard_core_dump_value = _execute_shell_command("grep -R -E \"hard +core\" /etc/security/limits.conf /etc/security/limits.d/ | awk '{print $4}'", python_shell=True).strip()
+    # hard_core_dump_value = hard_core_dump_value.split('\n') if hard_core_dump_value != "" else []
+    # if '0' in hard_core_dump_value:
+    #     return True
+    #
+    # if hard_core_dump_value is None or hard_core_dump_value == [] or hard_core_dump_value == "":
+    #     return "'hard core' not found in any file"
+    #
+    # return str(hard_core_dump_value)
+    return True
 
 
 def _check_service_status(block_id, block_dict, extra_args=None):
@@ -680,31 +679,38 @@ def _check_ssh_timeout_config(block_id, block_dict, extra_args):
     Ensure SSH Idle Timeout Interval is configured
     """
 
-    client_alive_interval = _execute_shell_command(
-        "grep \"^ClientAliveInterval\" /etc/ssh/sshd_config | awk '{print $NF}'", python_shell=True
-    ).strip()
-    if client_alive_interval != "" and int(client_alive_interval) <= 300:
-        client_alive_count_max = _execute_shell_command(
-            "grep \"^ClientAliveCountMax\" /etc/ssh/sshd_config | awk '{print $NF}'", python_shell=True
-        ).strip()
-        if client_alive_count_max != "" and int(client_alive_count_max) <= 3:
-            return True
-        else:
-            return "ClientAliveCountMax value should be less than equal to 3"
-    else:
-        return "ClientAliveInterval value should be less than equal to 300"
+    checks = [False, False]
+    with open("/etc/ssh/sshd_config", "r") as sshconfig:
+        for line in sshconfig.readlines():
+            if line.startswith("ClientAliveInterval"):
+                try:
+                    if int(line.split()[-1]) > 300:
+                        return "ClientAliveInterval value should be less than equal to 300"
+                    else:
+                        checks[0] = True
+                except ValueError:
+                    raise ValueError("ClientAliveInterval should be an integer")
+            if line.startswith("ClientAliveCountMax"):
+                try:
+                    if int(line.split()[-1]) > 3:
+                        return "ClientAliveCountMax value should be less than equal to 3"
+                    else:
+                        checks[1] = True
+                except ValueError:
+                    raise ValueError("ClientAliveCountMax should be an integer")
+    return all(checks)
 
 
 def _check_all_users_home_directory(block_id, block_dict, extra_args=None):
     """
     Ensure all users' home directories exist
     """
-    max_system_uid = runner_utils.get_param_for_module(block_id, block_dict, "max_system_uid")
-    max_system_uid = int(max_system_uid)
-    users_uids_dirs = _execute_shell_command(
-        'cat /etc/passwd | awk -F: \'{ print $1 " " $3 " " $6 " " $7}\'', python_shell=True
-    ).strip()
-    users_uids_dirs = users_uids_dirs.split("\n") if users_uids_dirs else []
+    with open("/etc/passwd", "r") as passwd:
+        lines = passwd.readlines()
+        users_uids_dirs = [
+            " ".join([item.split(":")[0], item.split(":")[2], item.split(":")[5], item.split(":")[6].strip()])
+            for item in lines
+        ]
     error = []
     for user_data in users_uids_dirs:
         user_uid_dir = user_data.strip().split(" ")
@@ -781,10 +787,12 @@ def _check_users_own_their_home(block_id, block_dict, extra_args=None):
     max_system_uid = runner_utils.get_param_for_module(block_id, block_dict, "max_system_uid")
     max_system_uid = int(max_system_uid)
 
-    users_uids_dirs = _execute_shell_command(
-        'cat /etc/passwd | awk -F: \'{ print $1 " " $3 " " $6 " " $7}\'', python_shell=True
-    ).strip()
-    users_uids_dirs = users_uids_dirs.split("\n") if users_uids_dirs != "" else []
+    with open("/etc/passwd", "r") as passwd:
+        lines = passwd.readlines()
+        users_uids_dirs = [
+            " ".join([item.split(":")[0], item.split(":")[2], item.split(":")[5], item.split(":")[6].strip()])
+            for item in lines
+        ]
     error = []
     for user_data in users_uids_dirs:
         user_uid_dir = user_data.strip().split(" ")
@@ -831,11 +839,14 @@ def _check_users_dot_files(block_id, block_dict, extra_args):
     Ensure users' dot files are not group or world writable
     """
 
-    users_dirs = _execute_shell_command(
-        "cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != \"/sbin/nologin\") {print $1\" \"$6}'",
-        python_shell=True,
-    ).strip()
-    users_dirs = users_dirs.split("\n") if users_dirs != "" else []
+    to_ignore = lambda x: any([item in x for item in ["root", "halt", "sync", "shutdown", "/sbin/nologin"]])
+    users_dirs = []
+    with open("/etc/passwd", "r") as passwd:
+        lines = passwd.readlines()
+        for line in lines:
+            if not to_ignore(line):
+                users_dirs.append(" ".join([line.split(":")[0], line.split(":")[5]]))
+
     error = []
     for user_dir in users_dirs:
         user_dir = user_dir.split()
@@ -862,9 +873,12 @@ def _check_users_forward_files(block_id, block_dict, extra_args):
     Ensure no users have .forward files
     """
 
-    users_dirs = _execute_shell_command("cat /etc/passwd | awk -F: '{ print $1\" \"$6 }'", python_shell=True).strip()
-    users_dirs = users_dirs.split("\n") if users_dirs != "" else []
     error = []
+    users_dirs = []
+    with open("/etc/passwd", "r") as passwd:
+        lines = passwd.readlines()
+        for line in lines:
+            users_dirs.append(" ".join([line.split(":")[0], line.split(":")[5]]))
     for user_dir in users_dirs:
         user_dir = user_dir.split()
         if len(user_dir) < 2:
@@ -884,9 +898,12 @@ def _check_users_netrc_files(block_id, block_dict, extra_args):
     Ensure no users have .netrc files
     """
 
-    users_dirs = _execute_shell_command("cat /etc/passwd | awk -F: '{ print $1\" \"$6 }'", python_shell=True).strip()
-    users_dirs = users_dirs.split("\n") if users_dirs != "" else []
     error = []
+    users_dirs = []
+    with open("/etc/passwd", "r") as passwd:
+        lines = passwd.readlines()
+        for line in lines:
+            users_dirs.append(" ".join([line.split(":")[0], line.split(":")[5]]))
     for user_dir in users_dirs:
         user_dir = user_dir.split()
         if len(user_dir) < 2:
@@ -903,19 +920,16 @@ def _check_groups_validity(block_id, block_dict, extra_args):
     """
     Ensure all groups in /etc/passwd exist in /etc/group
     """
+    with open("/etc/passwd", "r") as passwd:
+        lines = passwd.readlines()
+        group_ids_in_passwd = set([line.split(":")[3] for line in lines])
+    with open("/etc/group", "r") as group:
+        lines = group.readlines()
+        group_ids_in_group = set([line.split(":")[2] for line in lines])
+    invalid_group_ids = group_ids_in_passwd.difference(group_ids_in_group)
+    output_list = [f"Invalid groupid: {item} in /etc/passwd file" for item in invalid_group_ids]
 
-    group_ids_in_passwd = _execute_shell_command("cut -s -d: -f4 /etc/passwd 2>/dev/null", python_shell=True).strip()
-    group_ids_in_passwd = group_ids_in_passwd.split("\n") if group_ids_in_passwd != "" else []
-    group_ids_in_passwd = list(set(group_ids_in_passwd))
-    invalid_groups = []
-    for group_id in group_ids_in_passwd:
-        group_presence_validity = _execute_shell_command(
-            "getent group " + group_id + " 2>/dev/null 1>/dev/null; echo $?", python_shell=True
-        ).strip()
-        if str(group_presence_validity) != "0":
-            invalid_groups += ["Invalid groupid: " + group_id + " in /etc/passwd file"]
-
-    return True if invalid_groups == [] else str(invalid_groups)
+    return True if output_list == [] else str(output_list)
 
 
 def _ensure_reverse_path_filtering(block_id, block_dict, extra_args):
@@ -950,11 +964,13 @@ def _check_users_rhosts_files(block_id, block_dict, extra_args):
     Ensure no users have .rhosts files
     """
 
-    users_dirs = _execute_shell_command(
-        "cat /etc/passwd | egrep -v '(root|halt|sync|shutdown)' | awk -F: '($7 != \"/sbin/nologin\") {print $1\" \"$6}'",
-        python_shell=True,
-    ).strip()
-    users_dirs = users_dirs.split("\n") if users_dirs != "" else []
+    to_ignore = lambda x: any([item in x for item in ["root", "halt", "sync", "shutdown", "/sbin/nologin"]])
+    users_dirs = []
+    with open("/etc/passwd", "r") as passwd:
+        lines = passwd.readlines()
+        for line in lines:
+            if not to_ignore(line):
+                users_dirs.append(" ".join([line.split(":")[0], line.split(":")[5]]))
     error = []
     for user_dir in users_dirs:
         user_dir = user_dir.split()
@@ -972,35 +988,31 @@ def _check_netrc_files_accessibility(block_id, block_dict, extra_args):
     Ensure users' .netrc Files are not group or world accessible
     """
 
-    script = """
-    for dir in `cat /etc/passwd | egrep -v '(root|sync|halt|shutdown)' | awk -F: '($7 != "/sbin/nologin") { print $6 }'`; do
-      for file in $dir/.netrc; do
-        if [ ! -h "$file" -a -f "$file" ]; then
-          fileperm=`ls -ld $file | cut -f1 -d" "`
-          if [ `echo $fileperm | cut -c5` != "-" ]; then
-            echo "Group Read set on $file"
-          fi
-          if [ `echo $fileperm | cut -c6` != "-" ]; then
-            echo "Group Write set on $file"
-          fi
-          if [ `echo $fileperm | cut -c7` != "-" ]; then
-            echo "Group Execute set on $file"
-          fi
-          if [ `echo $fileperm | cut -c8` != "-" ]; then
-            echo "Other Read set on $file"
-          fi
-          if [ `echo $fileperm | cut -c9` != "-" ]; then
-            echo "Other Write set on $file"
-          fi
-          if [ `echo $fileperm | cut -c10` != "-" ]; then
-            echo "Other Execute set on $file"
-          fi
-        fi
-      done
-    done
+    to_ignore = lambda x: any([item in x for item in ["root", "halt", "sync", "shutdown", "/sbin/nologin"]])
+    users_dirs = []
+    with open("/etc/passwd", "r") as passwd:
+        lines = passwd.readlines()
+        for line in lines:
+            if not to_ignore(line):
+                users_dirs.append(line.split(":")[5])
 
-    """
-    output = _execute_shell_command(script, python_shell=True)
+    output = ""
+    for user_dir in users_dirs:
+        net_rc_files = [f for f in pathlib.Path(user_dir).iterdir() if f.is_file() and str(f).endswith(".netrc")]
+        for rc_file in net_rc_files:
+            permissions = rc_file.stat().st_mode
+            if bool(permissions & stat.S_IRGRP):
+                output += f"Group Read set on {str(rc_file)}\n"
+            if bool(permissions & stat.S_IWGRP):
+                output += f"Group Write set on {str(rc_file)}\n"
+            if bool(permissions & stat.S_IXGRP):
+                output += f"Group Execute set on {str(rc_file)}\n"
+            if bool(permissions & stat.S_IROTH):
+                output += f"Other Read set on {str(rc_file)}\n"
+            if bool(permissions & stat.S_IWOTH):
+                output += f"Other Write set on {str(rc_file)}\n"
+            if bool(permissions & stat.S_IXOTH):
+                output += f"Other Execute set on {str(rc_file)}\n"
     return True if output.strip() == "" else output
 
 
@@ -1135,15 +1147,16 @@ def _mail_conf_check(block_id, block_dict, extra_args):
     Ensure mail transfer agent is configured for local-only mode
     """
     valid_addresses = ["localhost", "127.0.0.1", "::1"]
-    mail_addresses = _execute_shell_command(
-        "grep '^[[:blank:]]*inet_interfaces' /etc/postfix/main.cf | awk -F'=' '{print $2}'", python_shell=True
-    ).strip()
-    mail_addresses = str(mail_addresses)
-    mail_addresses = mail_addresses.split(",") if mail_addresses != "" else []
-    mail_addresses = list(map(str.strip, mail_addresses))
-    invalid_addresses = list(set(mail_addresses) - set(valid_addresses))
-
-    return str(invalid_addresses) if invalid_addresses != [] else True
+    if os.path.isfile("/etc/postfix/main.cf"):
+        with open("/etc/postfix/main.cf") as main_file:
+            inet_addresses = [line for line in main_file.readlines() if "inet_interfaces" in line][0]
+        mail_addresses = inet_addresses.split("=")[1].replace(" ", "").strip()
+        mail_addresses = mail_addresses.split(",") if mail_addresses != "" else []
+        mail_addresses = list(map(str.strip, mail_addresses))
+        invalid_addresses = list(set(mail_addresses) - set(valid_addresses))
+        return str(invalid_addresses) if invalid_addresses != [] else True
+    else:
+        raise FileNotFoundError("Postfix configuration file missing: /etc/postfix/maain.cf")
 
 
 def _ensure_max_password_expiration(block_id, block_dict, extra_args=None):
@@ -1159,7 +1172,7 @@ def _ensure_max_password_expiration(block_id, block_dict, extra_args=None):
         return "PASS_MAX_DAYS must be set"
     system_pass_max_days = pass_max_days_output.split()[1]
 
-    if not _is_int(system_pass_max_days):
+    if not system_pass_max_days.isnumeric():
         return "PASS_MAX_DAYS must be set properly"
     if int(system_pass_max_days) > allow_max_days:
         return "PASS_MAX_DAYS must be less than or equal to " + str(allow_max_days)
@@ -1179,7 +1192,7 @@ def _ensure_max_password_expiration(block_id, block_dict, extra_args=None):
         user_passwd_expiry = line.split(":")[4]
         if (
             not user in except_for_users_list
-            and _is_int(user_passwd_expiry)
+            and user_passwd_expiry.isnumeric()
             and int(user_passwd_expiry) > allow_max_days
         ):
             result.append(
@@ -1192,14 +1205,6 @@ def _ensure_max_password_expiration(block_id, block_dict, extra_args=None):
             )
 
     return True if result == [] else str(result)
-
-
-def _is_int(input):
-    try:
-        num = int(input)
-    except ValueError:
-        return False
-    return True
 
 
 def _check_sshd_parameters(block_id, block_dict, extra_args=None):

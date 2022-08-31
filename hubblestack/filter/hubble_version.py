@@ -2,6 +2,7 @@ import logging
 import threading
 
 import hubblestack.filter.filter
+import hubblestack.version
 
 log = logging.getLogger(__name__)
 
@@ -13,16 +14,13 @@ class Filter(hubblestack.filter.filter.Filter):
     def __init__(self, filter_name, config=None):
         super().__init__(filter_name, config)
         self.config = config
-        self.semaphore = threading.Semaphore(1)
-
-    cnt = 0
 
     def filter(self, msg):
         """
         add a sequence number if the msg does not have one already
         """
         if self.getLabel() not in msg.keys():
-            msg[self.getLabel()] = self.getNextValue()
+            msg[self.getLabel()] = hubblestack.version.__version__
             log.info(msg)
         return msg
 
@@ -35,7 +33,3 @@ class Filter(hubblestack.filter.filter.Filter):
         value = str(my_cnt).rjust(self.getPadding(), "0")
         return value
 
-    def getPadding(self):
-        if "padding" in self.config:
-            return int(self.config["padding"])
-        return 0

@@ -14,7 +14,6 @@ class Filter:
         if config == None:
             return
 
-
     def getLabel(self):
         return self.config.get("label", self.filter_name)
 

@@ -45,6 +45,7 @@ import logging
 import time
 from datetime import datetime
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
+import hubblestack.filter.filter_chain as filter_chain
 
 
 _MAX_CONTENT_BYTES = 100000
@@ -154,6 +155,8 @@ def _generate_event(host_args, query_result, query_name, custom_fields, cloud_de
                   'dest_fqdn': host_args['local_fqdn'],
                   'system_uuid': __grains__.get('system_uuid')})
     event.update(cloud_details)
+    filter_chain.get_chain(__name__).filter(event)
+    log.info(event)
 
     for custom_field in custom_fields:
         custom_field_name = 'custom_' + custom_field

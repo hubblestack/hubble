@@ -239,6 +239,17 @@ def returners(opts, functions, whitelist=None, context=None, proxy=None):
         pack={"__mods__": functions, "__context__": context, "__proxy__": proxy or {}},
     )
 
+def filter(opts, whitelist=None, context=None, proxy=None):
+    """
+    Returns the utility modules
+    """
+    return LazyLoader(
+        _module_dirs(opts, "filter", ext_type_dirs="filter_dirs"),
+        opts,
+        tag="filter",
+        whitelist=whitelist,
+        pack={"__context__": context, "__proxy__": proxy or {}},
+    )
 
 def utils(opts, whitelist=None, context=None, proxy=None):
     """
@@ -252,7 +263,6 @@ def utils(opts, whitelist=None, context=None, proxy=None):
         pack={"__context__": context, "__proxy__": proxy or {}},
     )
 
-
 def fileserver(opts, backends):
     """
     Returns the file server modules
@@ -260,7 +270,6 @@ def fileserver(opts, backends):
     return LazyLoader(
         _module_dirs(opts, "fileserver"), opts, tag="fileserver", whitelist=backends, pack={"__utils__": utils(opts)}
     )
-
 
 def grain_funcs(opts):
     """

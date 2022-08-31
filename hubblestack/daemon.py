@@ -3,7 +3,6 @@
 Main entry point for the hubble daemon
 """
 
-# import lockfile
 import argparse
 import copy
 import json
@@ -33,6 +32,8 @@ from croniter import croniter
 
 import hubblestack.loader
 import hubblestack.utils.signing
+import hubblestack.filter
+import hubblestack.filter.filter_chain
 import hubblestack.log
 import hubblestack.log.splunk
 import hubblestack.hec.opt
@@ -884,6 +885,8 @@ def refresh_grains(initial=False):
     hubblestack.hec.opt.__mods__ = __mods__
     hubblestack.hec.opt.__opts__ = __opts__
 
+    hubblestack.filter.filter_chain.__mods__ = __mods__
+
     hubblestack.log.splunk.__grains__ = __grains__
     hubblestack.log.splunk.__mods__ = __mods__
     hubblestack.log.splunk.__opts__ = __opts__
@@ -1173,10 +1176,10 @@ def clean_up_process(received_signal, frame):
     pidfile and anything else that needs to be cleaned up.
     """
     if received_signal is None and frame is None:
-        if not __opts__.get("ignore_running", False):
-            if __opts__["daemonize"]:
-                if os.path.isfile(__opts__["pidfile"]):
-                    os.remove(__opts__["pidfile"])
+        if not __opts__.get("ignore_running", False) and \
+           __opts__["daemonize"] and \
+           os.path.isfile(__opts__["pidfile"]):
+              os.remove(__opts__["pidfile"])
         sys.exit(0)
     try:
         if __mods__["config.get"]("splunklogging", False):

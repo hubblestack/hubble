@@ -10,8 +10,10 @@ class Filter(hubblestack.filter.filter.Filter):
     A Filter for adding a sequence number 'seq' to each message
     """
 
+    DEFAULT_LABEL = "seq"
+
     def __init__(self, filter_name, config=None):
-        super().__init__(filter_name, config)
+        super().__init__(filter_name, self.DEFAULT_LABEL, config)
         self.config = config
         self.semaphore = threading.Semaphore(1)
 

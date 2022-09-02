@@ -45,7 +45,7 @@ import logging
 import time
 from datetime import datetime
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
-import hubblestack.filter.filter_chain as filter_chain
+from hubblestack.filter.filter_chain import FilterChain
 
 
 _MAX_CONTENT_BYTES = 100000
@@ -97,9 +97,8 @@ def returner(ret):
                         event_time = _check_time(query_result)
                         hec.batchEvent(payload, eventtime=event_time)
             hec.flushBatch()
-    except Exception:
-        log.exception('Error ocurred in splunk_nebula_return')
-    return
+    except Exception as e:
+        log.exception(f"Error ocurred in splunk_nebula_return: {e}")
 
 
 def _build_args(ret):
@@ -109,10 +108,10 @@ def _build_args(ret):
     """
     # Sometimes fqdn is blank. If it is, replace it with minion_id
     fqdn = __grains__['fqdn'] if __grains__['fqdn'] else ret['id']
+
+    # TODO: create give_me_a_reasonable_ip_address utility function
     try:
-        fqdn_ip4 = __grains__.get('local_ip4')
-        if not fqdn_ip4:
-            fqdn_ip4 = __grains__['fqdn_ip4'][0]
+        fqdn_ip4 = __grains__.get('local_ip4') or __grains__['fqdn_ip4'][0]
     except IndexError:
         try:
             fqdn_ip4 = __grains__['ipv4'][0]
@@ -155,9 +154,8 @@ def _generate_event(host_args, query_result, query_name, custom_fields, cloud_de
                   'dest_fqdn': host_args['local_fqdn'],
                   'system_uuid': __grains__.get('system_uuid')})
     event.update(cloud_details)
-    filter_chain.get_chain(__name__).filter(event)
-    log.info(event)
-
+    FilterChain.get_chain(__name__).filter(event)
+ 
     for custom_field in custom_fields:
         custom_field_name = 'custom_' + custom_field
         custom_field_value = __mods__['config.get'](custom_field, '')
@@ -185,7 +183,7 @@ def _generate_payload(host_args, opts, query_data, cloud_details, index_extracte
                'index': opts['index']}
     if opts['add_query_to_sourcetype']:
         payload.update(
-            {'sourcetype': "%s_%s" % (opts['sourcetype'], query_name)})
+            {'sourcetype': f"{opts['sourcetype']}_{query_name}"})
     else:
         payload.update({'sourcetype': opts['sourcetype']})
 

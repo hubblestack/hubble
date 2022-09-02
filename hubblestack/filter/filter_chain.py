@@ -38,15 +38,15 @@ class FilterChain:
         self._load_config()
 
     def _load_config(self):
-        config_path = "salt://filter_chain.yaml"
-        config_path = __mods__["cp.cache_file"](config_path)
+        self.config_path = __mods__["cp.cache_file"](self.config_path)
         try:
-            with open(config_path, 'r') as handle:
+            with open(self.config_path, 'r') as handle:
                 self.config = yaml.safe_load(handle)
         except Exception as e:
             self.config = {"default": {"filter": { "default": {
                  "sequence_id": { "label": "seq", "type": "hubblestack.filter.seq_id" },
-                 "hubble_version": { "label": "hubble_version", "type": "hubblestack.hubble_version"}}}}}
+                 "hubble_version": { "label": "hubble_version", "type": "hubblestack.filter.hubble_version"},
+                 "filter_error": { "label": "load_error", "type": "hubblestack.filter.static_value", "value": "true"}}}}}
             raise CommandExecutionError(f"Could not load filter config: {e}")
 
         if not isinstance(self.config, dict) or \
@@ -59,7 +59,7 @@ class FilterChain:
         self.config = self.config['filter'][self.config_label]
  
         for filter_name in self.config:
-            new_fltr = self._get_filter_class(self.config[filter_name]["type"])(filter_name, self.config[filter_tag])
+            new_fltr = self._get_filter_class(self.config[filter_name]["type"])(filter_name, self.config[filter_name])
             self.chain.append(new_fltr)
 
     def filter(self, msg=None):

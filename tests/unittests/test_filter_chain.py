@@ -27,8 +27,8 @@ def test_load():
 
     fc = filter_chain.FilterChain("bob", "default")
     assert fc.config["sequence_id"] != None
-    assert fc.chain[0].filter_name == "sequence_id"
-    assert fc.chain[0].getLabel() == "seq"
+    assert fc.chain[0].name == "sequence_id"
+    assert fc.chain[0].get_label() == "seq"
 
     msg = fc.chain[0].filter({"bob": "alice"})
     assert msg["seq"] == "1"
@@ -69,8 +69,8 @@ def test_pad():
     filter_chain.__mods__ = {'cp.cache_file': cp_cache_file}
     fc = filter_chain.FilterChain("bob", "default")
     assert fc.config["sequence_id"] != None
-    assert fc.chain[0].filter_name == "sequence_id"
-    assert fc.chain[0].getLabel() == "seq"
+    assert fc.chain[0].name == "sequence_id"
+    assert fc.chain[0].get_label() == "seq"
 
     msg = fc.chain[0].filter({"bob": "alice"})
     assert msg["seq"] == "00001"

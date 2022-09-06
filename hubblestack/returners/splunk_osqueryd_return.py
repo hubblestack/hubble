@@ -122,10 +122,7 @@ def _generate_and_send_payload(hec, host_args, opts, event, query_results):
     except TypeError:
         pass
 
-
     filter_chain.get_chain(__name__).filter(event)
-    log.info(event)
-
 
     payload = {'host': host_args['fqdn'],
                'index': opts['index'],

@@ -33,34 +33,44 @@ class FilterChain:
         """
         self.config_path = config_path
         self.config_label = config_label
-        self.config = {}
-        self.chain = []   
-        self._load_config()
 
-    def _load_config(self):
-        self.config_path = __mods__["cp.cache_file"](self.config_path)
+        # force the loading of the config.  # anti-pattern
+        self._config = self.config
+        self._chain = self.chain
+
+    @property
+    def config(self):
+        self.cached_path = __mods__["cp.cache_file"](self.config_path)
+
         try:
-            with open(self.config_path, 'r') as handle:
-                self.config = yaml.safe_load(handle)
+            with open(self.cached_path, 'r') as handle:
+                _config = yaml.safe_load(handle)
         except Exception as e:
-            self.config = {"default": {"filter": { "default": {
+            _config = {"default": {"filter": { "default": {
                  "sequence_id": { "label": "seq", "type": "hubblestack.filter.seq_id" },
                  "hubble_version": { "label": "hubble_version", "type": "hubblestack.filter.hubble_version"},
                  "filter_error": { "label": "load_error", "type": "hubblestack.filter.static_value", "value": "true"}}}}}
             raise CommandExecutionError(f"Could not load filter config: {e}")
 
-        if not isinstance(self.config, dict) or \
-            "filter" not in self.config or \
-            not(isinstance(self.config["filter"], dict)) or \
-            self.config_label not in self.config["filter"].keys() or \
-            not(isinstance(self.config["filter"][self.config_label], dict)):
+        if not isinstance(_config, dict) or \
+            "filter" not in _config or \
+            not(isinstance(_config["filter"], dict)) or \
+            self.config_label not in _config["filter"].keys() or \
+            not(isinstance(_config["filter"][self.config_label], dict)):
             raise CommandExecutionError("FilterChain config not formatted correctly")
 
-        self.config = self.config['filter'][self.config_label]
- 
+        _config = _config['filter'][self.config_label]
+
+        return _config
+
+    @property
+    def chain(self):
+        _chain = []
         for filter_name in self.config:
             new_fltr = self._get_filter_class(self.config[filter_name]["type"])(filter_name, self.config[filter_name])
-            self.chain.append(new_fltr)
+            _chain.append(new_fltr)
+        return _chain
+
 
     def filter(self, msg=None):
         for filter in self.chain:
@@ -74,10 +84,10 @@ class FilterChain:
         return getattr(module, "Filter")
 
     @staticmethod
-    def get_chain(chain_name):
+    def get_chain(chain_name, filter_path="salt://filter_chain.yaml"):
         if chain_name not in chains.keys():
             log.info(f"REBUILDING CHAINS for {chain_name}")
-            chains[chain_name] = FilterChain("filter_chain.yaml")
+            chains[chain_name] = FilterChain(filter_path)
         log.info(f"GOT CHAIN {chain_name}")
 
         return chains[chain_name]

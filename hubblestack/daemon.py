@@ -886,6 +886,7 @@ def refresh_grains(initial=False):
     hubblestack.hec.opt.__opts__ = __opts__
 
     hubblestack.filter.filter_chain.__mods__ = __mods__
+    hubblestack.filter.filter_chain.__opts__ = __opts__
 
     hubblestack.log.splunk.__grains__ = __grains__
     hubblestack.log.splunk.__mods__ = __mods__

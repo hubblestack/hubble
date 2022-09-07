@@ -1692,7 +1692,10 @@ def os_data():
             grains["systemd"] = {}
             systemd_info = __mods__["cmd.run"]("systemctl --version").splitlines()
             grains["systemd"]["version"] = systemd_info[0].split()[1]
-            grains["systemd"]["features"] = systemd_info[1]
+            if len(systemd_info) > 1:
+                grains["systemd"]["features"] = systemd_info[1]
+            else:
+                grains["systemd"]["features"] = ""
 
         # Add init grain
         grains["init"] = "unknown"

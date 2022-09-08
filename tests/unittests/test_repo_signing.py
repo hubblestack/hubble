@@ -41,9 +41,9 @@ def cdb(fname, t, n, fmt="{t}-{n}"):
     return os.path.join(base, fname)
 
 
-V = sig.STATUS.VERIFIED
-U = sig.STATUS.UNKNOWN
-F = sig.STATUS.FAIL
+V = sig.STATUS.VERIFIED.value
+U = sig.STATUS.UNKNOWN.value
+F = sig.STATUS.FAIL.value
 
 
 def test_read_certs(no_ppc, cdbt):
@@ -382,7 +382,7 @@ def test_msign_and_verify_signature(__mods__, targets, no_ppc, cdbt):
     __mods__["signing.msign"](*targets)
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
 
-    assert res == sig.STATUS.VERIFIED
+    assert res == sig.STATUS.VERIFIED.value
 
     sig.Options.public_crt = cdb("public-1.crt", cdbt, 1)
     sig.Options.private_key = cdb("private-2.key", cdbt, 1)
@@ -390,7 +390,7 @@ def test_msign_and_verify_signature(__mods__, targets, no_ppc, cdbt):
     __mods__["signing.msign"](*targets)
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
 
-    assert res == sig.STATUS.FAIL
+    assert res == sig.STATUS.FAIL.value
 
     sig.Options.public_crt = cdb("public-1.crt", cdbt, 2)
     sig.Options.private_key = cdb("private-1.key", cdbt, 2)
@@ -398,7 +398,7 @@ def test_msign_and_verify_signature(__mods__, targets, no_ppc, cdbt):
     __mods__["signing.msign"](*targets)
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
 
-    assert res == sig.STATUS.FAIL
+    assert res == sig.STATUS.FAIL.value
 
 
 def test_various_padding_bits(__mods__, targets, no_ppc, cdbt):
@@ -413,7 +413,7 @@ def test_various_padding_bits(__mods__, targets, no_ppc, cdbt):
     # check either 'max' or 32 or whatever
     sig.Options.salt_padding_bits = ["max", 32]
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
-    assert res == sig.STATUS.VERIFIED
+    assert res == sig.STATUS.VERIFIED.value
 
     # sign with max-bit-salt-padding
     sig.Options.salt_padding_bits = "max"
@@ -421,16 +421,16 @@ def test_various_padding_bits(__mods__, targets, no_ppc, cdbt):
     # check with max or 32 or whatever
     sig.Options.salt_padding_bits = ["max", 32]
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
-    assert res == sig.STATUS.VERIFIED
+    assert res == sig.STATUS.VERIFIED.value
 
     # check one more time with 32/max instead of max/32 (shouldn't matter)
     sig.Options.salt_padding_bits = [32, "max"]
     res = sig.verify_signature("MANIFEST", "SIGNATURE", public_crt=sig.Options.public_crt, ca_crt=sig.Options.ca_crt)
-    assert res == sig.STATUS.VERIFIED
+    assert res == sig.STATUS.VERIFIED.value
 
     # The padding thing really only applies to RSA.
     # So, for the below expected failures, it's only when cdbt is 'rsa'.
-    expected = sig.STATUS.FAIL if cdbt == "rsa" else sig.STATUS.VERIFIED
+    expected = sig.STATUS.FAIL.value if cdbt == "rsa" else sig.STATUS.VERIFIED.value
 
     # sign with max-bit-salt-padding
     sig.Options.salt_padding_bits = "max"
@@ -458,4 +458,4 @@ def test_like_a_daemon_with_bundle(__mods__, no_ppc, cdbt):
     res = __mods__["signing.verify"]("tests/unittests/conftest.py")
     assert len(res) == 2
     for item in res:
-        assert res[item] == sig.STATUS.VERIFIED
+        assert res[item] == sig.STATUS.VERIFIED.value

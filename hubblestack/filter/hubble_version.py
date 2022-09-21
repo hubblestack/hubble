@@ -1,10 +1,7 @@
-import logging
 import threading
 
 from hubblestack.filter.base import BaseFilter
 import hubblestack.version
-
-log = logging.getLogger(__name__)
 
 class Filter(BaseFilter):
     """
@@ -22,7 +19,6 @@ class Filter(BaseFilter):
         """
         if self.get_label() not in msg.keys():
             msg[self.get_label()] = hubblestack.version.__version__
-            log.info(msg)
         return msg
 
     

@@ -170,6 +170,7 @@ def _generate_event(host_args, query_result, query_name, custom_fields, cloud_de
     )
     event.update(cloud_details)
     FilterChain.get_chain(__name__).filter(event)
+    log.info(event)
 
     for custom_field in custom_fields:
         custom_field_name = "custom_" + custom_field

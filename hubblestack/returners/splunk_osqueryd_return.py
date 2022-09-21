@@ -46,7 +46,7 @@ import time
 import copy
 from datetime import datetime
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
-import hubblestack.filter.filter_chain as filter_chain 
+from hubblestack.filter.filter_chain import FilterChain 
 
 _MAX_CONTENT_BYTES = 100000
 HTTP_EVENT_COLLECTOR_DEBUG = False
@@ -122,7 +122,7 @@ def _generate_and_send_payload(hec, host_args, opts, event, query_results):
     except TypeError:
         pass
 
-    filter_chain.get_chain(__name__).filter(event)
+    FilterChain.get_chain(__name__).filter(event)
 
     payload = {'host': host_args['fqdn'],
                'index': opts['index'],

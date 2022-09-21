@@ -36,7 +36,7 @@ class FilterChain:
 
         # force the loading of the config.  # anti-pattern
         self._config = self.config
-        self._chain = self.chain
+        self._chain = None
 
     @property
     def config(self):
@@ -44,32 +44,34 @@ class FilterChain:
 
         try:
             with open(self.cached_path, 'r') as handle:
-                _config = yaml.safe_load(handle)
+                yaml_config = yaml.safe_load(handle)
         except Exception as e:
-            _config = {"default": {"filter": { "default": {
+            yaml__config = {"default": {"filter": { "default": {
                  "sequence_id": { "label": "seq", "type": "hubblestack.filter.seq_id" },
                  "hubble_version": { "label": "hubble_version", "type": "hubblestack.filter.hubble_version"},
                  "filter_error": { "label": "load_error", "type": "hubblestack.filter.static_value", "value": "true"}}}}}
             raise CommandExecutionError(f"Could not load filter config: {e}")
 
-        if not isinstance(_config, dict) or \
-            "filter" not in _config or \
-            not(isinstance(_config["filter"], dict)) or \
-            self.config_label not in _config["filter"].keys() or \
-            not(isinstance(_config["filter"][self.config_label], dict)):
+        if not isinstance(yaml_config, dict) or \
+            "filter" not in yaml_config or \
+            not(isinstance(yaml_config["filter"], dict)) or \
+            self.config_label not in yaml_config["filter"].keys() or \
+            not(isinstance(yaml_config["filter"][self.config_label], dict)):
             raise CommandExecutionError("FilterChain config not formatted correctly")
 
-        _config = _config['filter'][self.config_label]
+        yaml_config = yaml_config['filter'][self.config_label]
 
-        return _config
+        return yaml_config
 
     @property
     def chain(self):
-        _chain = []
-        for filter_name in self.config:
-            new_fltr = self._get_filter_class(self.config[filter_name]["type"])(filter_name, self.config[filter_name])
-            _chain.append(new_fltr)
-        return _chain
+        if self._chain is None or len(self._chain) == 0:
+            _chain = []
+            for filter_name in self.config:
+                new_fltr = self._get_filter_class(self.config[filter_name]["type"])(filter_name, self.config[filter_name])
+                _chain.append(new_fltr)
+            self._chain = _chain
+        return self._chain
 
 
     def filter(self, msg=None):
@@ -78,6 +80,7 @@ class FilterChain:
                 filter.filter(msg)
             except Exception as e:
                 log.error(f"Error processing filters: {e}")
+        log.debug(msg)
 
     def _get_filter_class(self, filter_tag):
         module = importlib.import_module(filter_tag)

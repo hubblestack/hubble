@@ -10,6 +10,12 @@ ExecStart=/opt/hubble/hubble -d
 Restart=always
 RestartSec=300
 MemoryAccounting=true
+CPUQuota=5%
+CPUWeight=10
+IOWeight=10
+MemorySwapMax=0
+
+
 
 [Install]
 WantedBy=multi-user.target

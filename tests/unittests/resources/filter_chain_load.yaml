@@ -1,0 +1,5 @@
+filter:
+  default:
+    sequence_id:
+      label: "seq"
+      type: "hubblestack.filter.seq_id"

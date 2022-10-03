@@ -1145,7 +1145,7 @@ def _validate_file_roots(file_roots):
     """
     if not isinstance(file_roots, dict):
         log.warning(
-            "The file_roots parameter is not properly formatted," " using defaults"
+            "The file_roots parameter is not properly formatted, using defaults"
         )
         return {"base": _expand_glob_path([hubblestack.syspaths.BASE_FILE_ROOTS_DIR])}
     return _normalize_roots(file_roots)
@@ -1323,7 +1323,7 @@ def _absolute_path(path, relative_to=None):
         _abspath = os.path.join(relative_to, path)
         if os.path.isfile(_abspath):
             log.debug(
-                "Relative path '%s' converted to existing absolute path " "'%s'",
+                "Relative path '%s' converted to existing absolute path '%s'",
                 path,
                 _abspath,
             )

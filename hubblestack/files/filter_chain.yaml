@@ -1,0 +1,9 @@
+filter:
+  default:
+    sequence_id:
+      label: "seq"
+      type: "hubblestack.filter.seq_id"
+      padding: 0
+    hubble_version:
+      label: "hubble_version"
+      type: "hubblestack.filter.hubble_version"

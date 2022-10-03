@@ -46,17 +46,18 @@ import time
 import copy
 from datetime import datetime
 from hubblestack.hec import http_event_collector, get_splunk_options, make_hec_args
+from hubblestack.filter.filter_chain import FilterChain 
 
 _MAX_CONTENT_BYTES = 100000
 HTTP_EVENT_COLLECTOR_DEBUG = False
 
 log = logging.getLogger(__name__)
 
-
 def returner(ret):
     """
     Get osqueryd data and post it to Splunk
     """
+
     data = ret['return']
     if not data:
         return
@@ -120,6 +121,8 @@ def _generate_and_send_payload(hec, host_args, opts, event, query_results):
         index_extracted_fields.extend(__opts__.get('splunk_index_extracted_fields', []))
     except TypeError:
         pass
+
+    FilterChain.get_chain(__name__).filter(event)
 
     payload = {'host': host_args['fqdn'],
                'index': opts['index'],

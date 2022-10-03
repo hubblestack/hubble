@@ -91,9 +91,10 @@ import hubblestack.utils.hashutils
 
 # pylint: disable=import-error,no-name-in-module,redefined-builtin
 from urllib.parse import quote as _quote
+
 # pylint: enable=import-error,no-name-in-module,redefined-builtin
 
-from hubblestack.utils.signing import find_wrapf
+from hubblestack.utils.signing import find_file_wrapper
 
 log = logging.getLogger(__name__)
 
@@ -119,33 +120,32 @@ def update():
 
     if S3_SYNC_ON_UPDATE and metadata:
         # sync the buckets to the local cache
-        log.info('Syncing local cache from S3...')
+        log.info("Syncing local cache from S3...")
         for saltenv, env_meta in metadata.items():
             for bucket_files in _find_files(env_meta):
                 for bucket, files in bucket_files.items():
                     for file_path in files:
                         cached_file_path = _get_cached_file_name(bucket, saltenv, file_path)
-                        log.info('%s - %s : %s', bucket, saltenv, file_path)
+                        log.info("%s - %s : %s", bucket, saltenv, file_path)
 
                         # load the file from S3 if it's not in the cache or it's old
                         _get_file_from_s3(metadata, saltenv, bucket, file_path, cached_file_path)
 
-        log.info('Sync local cache from S3 completed.')
+        log.info("Sync local cache from S3 completed.")
 
 
-@find_wrapf(not_found={'bucket': None, 'path': None}, real_path='cpath')
-def find_file(path, saltenv='base', **kwargs):
+@find_file_wrapper(not_found={"bucket": None, "path": None}, real_path="cpath")
+def find_file(path, saltenv="base", **kwargs):
     """
     Look through the buckets cache file for a match.
     If the field is found, it is retrieved from S3 only if its cached version
     is missing, or if the MD5 does not match.
     """
-    if 'env' in kwargs:
+    if "env" in kwargs:
         # "env" is not supported; Use "saltenv".
-        kwargs.pop('env')
+        kwargs.pop("env")
 
-    fnd = {'bucket': None,
-           'path': None}
+    fnd = {"bucket": None, "path": None}
 
     metadata = _init()
     if not metadata or saltenv not in metadata:
@@ -160,23 +160,23 @@ def find_file(path, saltenv='base', **kwargs):
     for bucket in env_files:
         for bucket_name, files in bucket.items():
             if path in files and not fs.is_file_ignored(__opts__, path):
-                fnd['bucket'] = bucket_name
-                fnd['path'] = path
+                fnd["bucket"] = bucket_name
+                fnd["path"] = path
                 break
         else:
             continue  # only executes if we didn't break
         break
 
-    if not fnd['path'] or not fnd['bucket']:
+    if not fnd["path"] or not fnd["bucket"]:
         return fnd
 
-    fnd['cpath'] = _get_cached_file_name(fnd['bucket'], saltenv, path)
+    fnd["cpath"] = _get_cached_file_name(fnd["bucket"], saltenv, path)
 
     try:
         # jit load the file from S3 if it's not in the cache or it's old
-        _get_file_from_s3(metadata, saltenv, fnd['bucket'], path, fnd['cpath'])
+        _get_file_from_s3(metadata, saltenv, fnd["bucket"], path, fnd["cpath"])
     except Exception as exc:
-        if not os.path.isfile(fnd['cpath']):
+        if not os.path.isfile(fnd["cpath"]):
             raise exc
 
     return fnd
@@ -186,26 +186,23 @@ def file_hash(load, fnd):
     """
     Return an MD5 file hash
     """
-    if 'env' in load:
+    if "env" in load:
         # "env" is not supported; Use "saltenv".
-        load.pop('env')
+        load.pop("env")
 
     ret = {}
 
-    if 'saltenv' not in load:
+    if "saltenv" not in load:
         return ret
 
-    if 'path' not in fnd or 'bucket' not in fnd or not fnd['path']:
+    if "path" not in fnd or "bucket" not in fnd or not fnd["path"]:
         return ret
 
-    cached_file_path = _get_cached_file_name(
-        fnd['bucket'],
-        load['saltenv'],
-        fnd['path'])
+    cached_file_path = _get_cached_file_name(fnd["bucket"], load["saltenv"], fnd["path"])
 
     if os.path.isfile(cached_file_path):
-        ret['hsum'] = hubblestack.utils.hashutils.get_hash(cached_file_path)
-        ret['hash_type'] = 'md5'
+        ret["hsum"] = hubblestack.utils.hashutils.get_hash(cached_file_path)
+        ret["hash_type"] = "md5"
 
     return ret
 
@@ -214,38 +211,34 @@ def serve_file(load, fnd):
     """
     Return a chunk from a file based on the data received
     """
-    if 'env' in load:
+    if "env" in load:
         # "env" is not supported; Use "saltenv".
-        load.pop('env')
+        load.pop("env")
 
-    ret = {'data': '',
-           'dest': ''}
+    ret = {"data": "", "dest": ""}
 
-    if 'path' not in load or 'loc' not in load or 'saltenv' not in load:
+    if "path" not in load or "loc" not in load or "saltenv" not in load:
         return ret
 
-    if 'path' not in fnd or 'bucket' not in fnd:
+    if "path" not in fnd or "bucket" not in fnd:
         return ret
 
-    gzip = load.get('gzip', None)
+    gzip = load.get("gzip", None)
 
     # get the saltenv/path file from the cache
-    cached_file_path = _get_cached_file_name(
-        fnd['bucket'],
-        load['saltenv'],
-        fnd['path'])
+    cached_file_path = _get_cached_file_name(fnd["bucket"], load["saltenv"], fnd["path"])
 
-    ret['dest'] = _trim_env_off_path([fnd['path']], load['saltenv'])[0]
+    ret["dest"] = _trim_env_off_path([fnd["path"]], load["saltenv"])[0]
 
-    with hubblestack.utils.files.fopen(cached_file_path, 'rb') as fp_:
-        fp_.seek(load['loc'])
-        data = fp_.read(__opts__['file_buffer_size'])
+    with hubblestack.utils.files.fopen(cached_file_path, "rb") as fp_:
+        fp_.seek(load["loc"])
+        data = fp_.read(__opts__["file_buffer_size"])
         if data and not hubblestack.utils.files.is_binary(cached_file_path):
             data = data.decode(__salt_system_encoding__)
         if gzip and data:
             data = hubblestack.utils.gzip_util.compress(data, gzip)
-            ret['gzip'] = gzip
-        ret['data'] = data
+            ret["gzip"] = gzip
+        ret["data"] = data
     return ret
 
 
@@ -253,16 +246,16 @@ def file_list(load):
     """
     Return a list of all files on the file server in a specified environment
     """
-    if 'env' in load:
+    if "env" in load:
         # "env" is not supported; Use "saltenv".
-        load.pop('env')
+        load.pop("env")
 
     ret = []
 
-    if 'saltenv' not in load:
+    if "saltenv" not in load:
         return ret
 
-    saltenv = load['saltenv']
+    saltenv = load["saltenv"]
     metadata = _init()
 
     if not metadata or saltenv not in metadata:
@@ -275,7 +268,7 @@ def file_list(load):
     return ret
 
 
-def file_list_emptydirs(load): # pylint: disable=unused-argument ; just a todo
+def file_list_emptydirs(load):  # pylint: disable=unused-argument ; just a todo
     """
     Return a list of all empty directories on the master
     """
@@ -289,16 +282,16 @@ def dir_list(load):
     """
     Return a list of all directories on the master
     """
-    if 'env' in load:
+    if "env" in load:
         # "env" is not supported; Use "saltenv".
-        load.pop('env')
+        load.pop("env")
 
     ret = []
 
-    if 'saltenv' not in load:
+    if "saltenv" not in load:
         return ret
 
-    saltenv = load['saltenv']
+    saltenv = load["saltenv"]
     metadata = _init()
 
     if not metadata or saltenv not in metadata:
@@ -321,26 +314,26 @@ def _get_s3_key():
     """
 
     defaults = {
-        'https_enable': True,
-        'verify_ssl': True,
-        'location': None,
-        'path_style': None,
-        'service_url': None,
-        'keyid': None,
-        'key': None,
-        'cache_expire': S3_CACHE_EXPIRE,
+        "https_enable": True,
+        "verify_ssl": True,
+        "location": None,
+        "path_style": None,
+        "service_url": None,
+        "keyid": None,
+        "key": None,
+        "cache_expire": S3_CACHE_EXPIRE,
     }
 
     ret = dict()
     for k in defaults:
-        s3k = 's3.' + k
+        s3k = "s3." + k
         ret[k] = __opts__.get(s3k, defaults[k])
 
     # kms_keyid = __opts__['aws.kmw.keyid'] if 'aws.kms.keyid' in __opts__ else None
     #
     # original was likely bugged: aws.kms.keyid is probably right, but people
     # that needed this may have entered it incorrectly to match. Support both for now.
-    ret['kms_keyid'] = __opts__.get('aws.kms.keyid', __opts__.get('aws.kmw.keyid'))
+    ret["kms_keyid"] = __opts__.get("aws.kms.keyid", __opts__.get("aws.kmw.keyid"))
 
     return ret
 
@@ -351,10 +344,10 @@ def _init():
     specified and cache the data to disk.
     """
     cache_file = _get_buckets_cache_filename()
-    cache_expire_time = float(_get_s3_key().get('cache_expire'))
+    cache_expire_time = float(_get_s3_key().get("cache_expire"))
     exp = time.time() - cache_expire_time
 
-    log.debug('S3 cache expire time is %ds', cache_expire_time)
+    log.debug("S3 cache expire time is %ds", cache_expire_time)
     # check mtime of the buckets files cache
     metadata = None
     try:
@@ -386,7 +379,7 @@ def _get_cache_dir():
     Return the path to the s3cache dir
     """
     # Or is that making too many assumptions?
-    return os.path.join(__opts__['cachedir'], 's3cache')
+    return os.path.join(__opts__["cachedir"], "s3cache")
 
 
 def _get_cached_file_name(bucket_name, saltenv, path):
@@ -411,7 +404,7 @@ def _get_buckets_cache_filename():
     if not os.path.exists(cache_dir):
         os.makedirs(cache_dir)
 
-    return os.path.join(cache_dir, 'buckets_files.cache')
+    return os.path.join(cache_dir, "buckets_files.cache")
 
 
 def _refresh_buckets_cache_file(cache_file):
@@ -419,38 +412,40 @@ def _refresh_buckets_cache_file(cache_file):
     Retrieve the content of all buckets and cache the metadata to the buckets
     cache file
     """
-    log.debug('Refreshing buckets cache file')
+    log.debug("Refreshing buckets cache file")
 
     s3_key_kwargs = _get_s3_key()
     metadata = {}
 
     # helper s3 query function
-    def __get_s3_meta(bucket, key=s3_key_kwargs['key'], keyid=s3_key_kwargs['keyid']):
-        ret, marker = [], ''
+    def __get_s3_meta(bucket, key=s3_key_kwargs["key"], keyid=s3_key_kwargs["keyid"]):
+        ret, marker = [], ""
         while True:
-            tmp = __utils__['s3.query'](key=key,
-                                        keyid=keyid,
-                                        kms_keyid=keyid,
-                                        bucket=bucket,
-                                        service_url=s3_key_kwargs['service_url'],
-                                        verify_ssl=s3_key_kwargs['verify_ssl'],
-                                        location=s3_key_kwargs['location'],
-                                        return_bin=False,
-                                        path_style=s3_key_kwargs['path_style'],
-                                        https_enable=s3_key_kwargs['https_enable'],
-                                        params={'marker': marker})
+            tmp = __utils__["s3.query"](
+                key=key,
+                keyid=keyid,
+                kms_keyid=keyid,
+                bucket=bucket,
+                service_url=s3_key_kwargs["service_url"],
+                verify_ssl=s3_key_kwargs["verify_ssl"],
+                location=s3_key_kwargs["location"],
+                return_bin=False,
+                path_style=s3_key_kwargs["path_style"],
+                https_enable=s3_key_kwargs["https_enable"],
+                params={"marker": marker},
+            )
             if not tmp:
                 return None
 
             headers = []
             for header in tmp:
-                if 'Key' in header:
+                if "Key" in header:
                     break
                 headers.append(header)
             ret.extend(tmp)
-            if all([header.get('IsTruncated', 'false') == 'false' for header in headers]):
+            if all([header.get("IsTruncated", "false") == "false" for header in headers]):
                 break
-            marker = tmp[-1]['Key']
+            marker = tmp[-1]["Key"]
         return ret
 
     def _parse_buckets(buckets, salt_env=None):
@@ -471,36 +466,34 @@ def _refresh_buckets_cache_file(cache_file):
                 continue
 
             # grab only the files/dirs
-            files = [k for k in s3_meta if 'Key' in k]
+            files = [k for k in s3_meta if "Key" in k]
             bucket_files_list.append({bucket_name: files})
 
             # check to see if we added any keys, otherwise investigate possible error conditions
             if not files:
                 meta_response = {}
                 for k in s3_meta:
-                    if 'Code' in k or 'Message' in k:
+                    if "Code" in k or "Message" in k:
                         # assumes no duplicate keys, consisdent with current error response.
                         meta_response.update(k)
                 # attempt use of human readable output first.
                 try:
-                    log.warning(
-                        "'%s' response for bucket '%s'", meta_response['Message'], bucket_name)
+                    log.warning("'%s' response for bucket '%s'", meta_response["Message"], bucket_name)
                     continue
                 except KeyError:
                     # no human readable error message provided
-                    if 'Code' in meta_response:
-                        log.warning(
-                            "'%s' response for bucket '%s'", meta_response['Code'], bucket_name)
+                    if "Code" in meta_response:
+                        log.warning("'%s' response for bucket '%s'", meta_response["Code"], bucket_name)
                         continue
                     else:
-                        log.warning('S3 Error! Do you have any files in your S3 bucket?')
+                        log.warning("S3 Error! Do you have any files in your S3 bucket?")
                         return {}
 
             # one environment per bucket, nothing left to parse
             if salt_env:
                 continue
 
-            environments = set([(os.path.dirname(k['Key']).split('/', 1))[0] for k in files])
+            environments = set([(os.path.dirname(k["Key"]).split("/", 1))[0] for k in files])
 
             # pull out the files for the environment
             _parse_env(environments=environments, bucket_name=bucket_name, files=files)
@@ -517,7 +510,7 @@ def _refresh_buckets_cache_file(cache_file):
         """
         for saltenv in environments:
             # grab only files/dirs that match this saltenv
-            env_files = [k for k in files if k['Key'].startswith(saltenv)]
+            env_files = [k for k in files if k["Key"].startswith(saltenv)]
 
             if saltenv not in metadata:
                 metadata[saltenv] = []
@@ -550,9 +543,9 @@ def _refresh_buckets_cache_file(cache_file):
     if os.path.isfile(cache_file):
         os.remove(cache_file)
 
-    log.debug('Writing buckets cache file')
+    log.debug("Writing buckets cache file")
 
-    with hubblestack.utils.files.fopen(cache_file, 'wb') as fp_:
+    with hubblestack.utils.files.fopen(cache_file, "wb") as fp_:
         pickle.dump(metadata, fp_)
 
     return metadata
@@ -562,19 +555,17 @@ def _read_buckets_cache_file(cache_file):
     """
     Return the contents of the buckets cache file
     """
-    log.debug('Reading buckets cache file')
+    log.debug("Reading buckets cache file")
 
-    with hubblestack.utils.files.fopen(cache_file, 'rb') as fp_:
+    with hubblestack.utils.files.fopen(cache_file, "rb") as fp_:
         try:
             data = pickle.load(fp_)
             # check for 'corrupted' cache data ex: {u'base':[]}
             if not any(data.values()):
                 data = None
 
-        except (pickle.UnpicklingError, AttributeError, EOFError, ImportError,
-                IndexError, KeyError) as eobj:
-            log.info('error unpickling buckets cache file (%s): %s',
-                cache_file, repr(eobj))
+        except (pickle.UnpicklingError, AttributeError, EOFError, ImportError, IndexError, KeyError) as eobj:
+            log.info("error unpickling buckets cache file (%s): %s", cache_file, repr(eobj))
             data = None
 
     return data
@@ -589,8 +580,8 @@ def _find_files(metadata):
 
     for bucket_dict in metadata:
         for bucket_name, data in bucket_dict.items():
-            file_paths = [k['Key'] for k in data]
-            file_paths = [k for k in file_paths if not k.endswith('/')]
+            file_paths = [k["Key"] for k in data]
+            file_paths = [k for k in file_paths if not k.endswith("/")]
             if bucket_name not in found:
                 found[bucket_name] = True
                 ret.append({bucket_name: file_paths})
@@ -615,10 +606,10 @@ def _find_dirs(metadata):
     for bucket_dict in metadata:
         for bucket_name, data in bucket_dict.items():
             dir_paths = set()
-            for path in [k['Key'] for k in data]:
-                prefix = ''
-                for part in path.split('/')[:-1]:
-                    directory = prefix + part + '/'
+            for path in [k["Key"] for k in data]:
+                prefix = ""
+                for part in path.split("/")[:-1]:
+                    directory = prefix + part + "/"
                     dir_paths.add(directory)
                     prefix = directory
             if bucket_name not in found:
@@ -642,13 +633,13 @@ def _find_file_meta(metadata, bucket_name, saltenv, path):
     for bucket in env_meta:
         if bucket_name in bucket:
             bucket_meta = bucket[bucket_name]
-    files_meta = list(list(filter((lambda k: 'Key' in k), bucket_meta)))
+    files_meta = list(list(filter((lambda k: "Key" in k), bucket_meta)))
 
     for item_meta in files_meta:
-        if 'Key' in item_meta and item_meta['Key'] == path:
+        if "Key" in item_meta and item_meta["Key"] == path:
             try:
                 # Get rid of quotes surrounding md5
-                item_meta['ETag'] = item_meta['ETag'].strip('"')
+                item_meta["ETag"] = item_meta["ETag"].strip('"')
             except KeyError:
                 pass
             return item_meta
@@ -661,7 +652,7 @@ def _get_buckets():
     Return the configuration buckets
     """
 
-    return __opts__['s3.buckets'] if 's3.buckets' in __opts__ else {}
+    return __opts__["s3.buckets"] if "s3.buckets" in __opts__ else {}
 
 
 def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
@@ -676,35 +667,36 @@ def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
         Helper function that gets the file from S3 and checks if it can be skipped.
         Returns True if the file was downloaded and False if the download was skipped.
         """
-        ret = __utils__['s3.query'](
-            key=s3_key_kwargs['key'],
-            keyid=s3_key_kwargs['keyid'],
-            kms_keyid=s3_key_kwargs['keyid'],
-            method='HEAD',
+        ret = __utils__["s3.query"](
+            key=s3_key_kwargs["key"],
+            keyid=s3_key_kwargs["keyid"],
+            kms_keyid=s3_key_kwargs["keyid"],
+            method="HEAD",
             bucket=bucket_name,
-            service_url=s3_key_kwargs['service_url'],
-            verify_ssl=s3_key_kwargs['verify_ssl'],
-            location=s3_key_kwargs['location'],
+            service_url=s3_key_kwargs["service_url"],
+            verify_ssl=s3_key_kwargs["verify_ssl"],
+            location=s3_key_kwargs["location"],
             path=_quote(path),
             local_file=cached_file_path,
             full_headers=True,
-            path_style=s3_key_kwargs['path_style'],
-            https_enable=s3_key_kwargs['https_enable'])
+            path_style=s3_key_kwargs["path_style"],
+            https_enable=s3_key_kwargs["https_enable"],
+        )
         if ret:
-            for header_name, header_value in ret['headers'].items():
+            for header_name, header_value in ret["headers"].items():
                 header_name = header_name.strip()
                 header_value = header_value.strip()
-                if str(header_name).lower() == 'last-modified':
-                    s3_file_mtime = datetime.datetime.strptime(
-                        header_value, '%a, %d %b %Y %H:%M:%S %Z')
-                elif str(header_name).lower() == 'content-length':
+                if str(header_name).lower() == "last-modified":
+                    s3_file_mtime = datetime.datetime.strptime(header_value, "%a, %d %b %Y %H:%M:%S %Z")
+                elif str(header_name).lower() == "content-length":
                     s3_file_size = int(header_value)
-            if cached_file_data['size'] == s3_file_size and \
-                    cached_file_data['mtime'] > s3_file_mtime:
+            if cached_file_data["size"] == s3_file_size and cached_file_data["mtime"] > s3_file_mtime:
                 log.info(
-                    '%s - %s : %s skipped download since cached file size '
-                    'equal to and mtime after s3 values',
-                    bucket_name, saltenv, path)
+                    "%s - %s : %s skipped download since cached file size " "equal to and mtime after s3 values",
+                    bucket_name,
+                    saltenv,
+                    path,
+                )
                 return False
         return True
 
@@ -712,42 +704,46 @@ def _get_file_from_s3(metadata, saltenv, bucket_name, path, cached_file_path):
     if os.path.isfile(cached_file_path):
         file_meta = _find_file_meta(metadata, bucket_name, saltenv, path)
         if file_meta:
-            if file_meta['ETag'].find('-') == -1:
-                cached_md5 = hubblestack.utils.hashutils.get_hash(cached_file_path, 'md5')
+            if file_meta["ETag"].find("-") == -1:
+                cached_md5 = hubblestack.utils.hashutils.get_hash(cached_file_path, "md5")
 
                 # hashes match we have a cache hit
-                if cached_md5 == file_meta['ETag']:
+                if cached_md5 == file_meta["ETag"]:
                     return
             else:
                 cached_file_stat = os.stat(cached_file_path)
                 cached_file_data = {
-                    'size': cached_file_stat.st_size,
-                    'mtime': datetime.datetime.fromtimestamp(cached_file_stat.st_mtime),
-                    'lastmod': datetime.datetime.strptime(
-                        file_meta['LastModified'], '%Y-%m-%dT%H:%M:%S.%fZ')}
+                    "size": cached_file_stat.st_size,
+                    "mtime": datetime.datetime.fromtimestamp(cached_file_stat.st_mtime),
+                    "lastmod": datetime.datetime.strptime(file_meta["LastModified"], "%Y-%m-%dT%H:%M:%S.%fZ"),
+                }
 
-                if (cached_file_data['size'] == int(file_meta['Size']) and
-                        cached_file_data['mtime'] > cached_file_data['lastmod']):
-                    log.debug('cached file size equal to metadata size and '
-                              'cached file mtime later than metadata last '
-                              'modification time.')
+                if (
+                    cached_file_data["size"] == int(file_meta["Size"])
+                    and cached_file_data["mtime"] > cached_file_data["lastmod"]
+                ):
+                    log.debug(
+                        "cached file size equal to metadata size and "
+                        "cached file mtime later than metadata last "
+                        "modification time."
+                    )
                     if not _get_file():
                         # skipped download
                         return
 
     # ... or get the file from S3
-    __utils__['s3.query'](
-        key=s3_key_kwargs['key'],
-        keyid=s3_key_kwargs['keyid'],
-        kms_keyid=s3_key_kwargs['keyid'],
+    __utils__["s3.query"](
+        key=s3_key_kwargs["key"],
+        keyid=s3_key_kwargs["keyid"],
+        kms_keyid=s3_key_kwargs["keyid"],
         bucket=bucket_name,
-        service_url=s3_key_kwargs['service_url'],
-        verify_ssl=s3_key_kwargs['verify_ssl'],
-        location=s3_key_kwargs['location'],
+        service_url=s3_key_kwargs["service_url"],
+        verify_ssl=s3_key_kwargs["verify_ssl"],
+        location=s3_key_kwargs["location"],
         path=_quote(path),
         local_file=cached_file_path,
-        path_style=s3_key_kwargs['path_style'],
-        https_enable=s3_key_kwargs['https_enable'],
+        path_style=s3_key_kwargs["path_style"],
+        https_enable=s3_key_kwargs["https_enable"],
     )
 
 
@@ -772,4 +768,4 @@ def _is_env_per_bucket():
     elif isinstance(buckets, list):
         return False
     else:
-        raise ValueError('Incorrect s3.buckets type given in config')
+        raise ValueError("Incorrect s3.buckets type given in config")
